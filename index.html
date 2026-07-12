@@ -292,6 +292,14 @@
                     <div class="card full-width"><div class="card-header"><h3><i class="fa-solid fa-chalkboard-user" style="color:#f44336;margin-right:8px"></i> Instrutores</h3></div><div class="card-body"><p style="color:#888;text-align:center;padding:40px">Pagina em desenvolvimento...</p></div></div>
                 </div>
                 <div id="admin-formados" class="admin-section">
+                    <div class="alunos-tabs">
+                        <button class="alunos-tab active" data-tab="ativos" onclick="switchFormadosTab('ativos', this)">
+                            <i class="fa-solid fa-check-circle"></i> Ativos <span class="tab-count" id="tab-count-formados-ativos">0</span>
+                        </button>
+                        <button class="alunos-tab" data-tab="pendentes" onclick="switchFormadosTab('pendentes', this)">
+                            <i class="fa-solid fa-clock"></i> Pendentes <span class="tab-count" id="tab-count-formados-pendentes">0</span>
+                        </button>
+                    </div>
                     <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-award" style="color:#ff9800;margin-right:8px"></i> Formados <span class="alunos-count" id="formados-count-badge"></span></h3>
@@ -313,7 +321,7 @@
                             </div>
                             <table class="data-table">
                                 <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Cursos</th><th>Data Formacao</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                    <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Cursos</th><th>Data Formacao</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
                                 </thead>
                                 <tbody id="formados-table-body"></tbody>
                             </table>

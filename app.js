@@ -1569,29 +1569,53 @@ let editingFormadoDocId = null;
 let formadoUploadedFiles = [];
 let formadoCertFrente = null;
 let formadoCertVerso = null;
+let currentFormadosTab = 'ativos';
 
 const formadoFields = ['ff-nome','ff-cpf','ff-nascimento','ff-estado-civil','ff-nacionalidade','ff-naturalidade','ff-profissao','ff-mae','ff-pai','ff-email','ff-whatsapp','ff-endereco','ff-numero','ff-bairro','ff-cidade','ff-estado','ff-altura','ff-peso','ff-fator-rh','ff-data-formacao','ff-matricula'];
+
+function switchFormadosTab(tab, btn) {
+    currentFormadosTab = tab;
+    document.querySelectorAll('#admin-formados .alunos-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderFormadosList();
+}
 
 function renderFormadosList() {
     const tbody = document.getElementById('formados-table-body');
     const badge = document.getElementById('formados-count-badge');
     if (!tbody) return;
+    const ativos = formados.filter(f => f.status === 'Ativo' || !f.status).length;
+    const pendentes = formados.filter(f => f.status === 'Pendente').length;
+    const countAtivos = document.getElementById('tab-count-formados-ativos');
+    const countPendentes = document.getElementById('tab-count-formados-pendentes');
+    if (countAtivos) countAtivos.textContent = ativos;
+    if (countPendentes) countPendentes.textContent = pendentes;
     if (badge) badge.textContent = formados.length + ' formado' + (formados.length !== 1 ? 's' : '');
-    if (!formados.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum formado cadastrado</td></tr>'; return; }
+    if (!formados.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:24px">Nenhum formado cadastrado</td></tr>'; return; }
     const search = (document.getElementById('formados-search') || {}).value || '';
-    const filtered = search ? formados.filter(f => (f.nome || '').toLowerCase().includes(search.toLowerCase()) || (f.cpf || '').includes(search.replace(/\D/g, ''))) : formados;
+    let filtered = formados.filter(f => {
+        const matchTab = currentFormadosTab === 'ativos' ? (f.status === 'Ativo' || !f.status) : f.status === 'Pendente';
+        const matchSearch = !search || (f.nome || '').toLowerCase().includes(search.toLowerCase()) || (f.cpf || '').includes(search.replace(/\D/g, ''));
+        return matchTab && matchSearch;
+    });
+    if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#888;padding:24px">Nenhum formado ${currentFormadosTab === 'ativos' ? 'ativo' : 'pendente'}</td></tr>`; return; }
     tbody.innerHTML = filtered.map((f, i) => {
         const cursos = (f.cursos || []).join(', ') || '-';
+        const sc = f.status === 'Ativo' || !f.status ? 'green' : 'pendente';
+        const statusLabel = f.status || 'Pendente';
         return `<tr>
             <td>${f.nome || ''}</td>
             <td>${formatCPFDisplay(f.cpf)}</td>
             <td style="color:#f57c00;font-weight:600">${f.matricula || '-'}</td>
             <td style="font-size:11px;max-width:200px">${cursos}</td>
             <td>${f.dataFormacao || '-'}</td>
+            <td><span class="badge ${sc}">${statusLabel}</span></td>
             <td style="color:#aaa;font-size:12px">${f.cadastradoPor || '-'}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewFormado('${f.docId}')"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editFormado('${f.docId}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon btn-success" title="${f.status === 'Ativo' || !f.status ? 'Manter Ativo' : 'Ativar'}" onclick="changeFormadoStatus('${f.docId}', 'Ativo')"><i class="fa-solid fa-check"></i></button>
+                <button class="btn-icon btn-warning" title="Marcar Pendente" onclick="changeFormadoStatus('${f.docId}', 'Pendente')"><i class="fa-solid fa-clock"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteFormado('${f.docId}')"><i class="fa-solid fa-trash"></i></button>
             </div></td>
         </tr>`;
@@ -1599,6 +1623,12 @@ function renderFormadosList() {
 }
 
 function filterFormados() { renderFormadosList(); }
+
+async function changeFormadoStatus(docId, newStatus) {
+    try {
+        await dbFirestore.collection(FB_FORMADOS).doc(docId).set({ status: newStatus }, { merge: true });
+    } catch(e) { alert('Erro ao alterar status: ' + e.message); }
+}
 
 function generateMatricula(cpf, dataFormacao) {
     let year = new Date().getFullYear();
@@ -1704,6 +1734,7 @@ async function handleFormadoSubmit(event) {
     if (formadoCertFrente) data.certFrente = formadoCertFrente;
     if (formadoCertVerso) data.certVerso = formadoCertVerso;
     data.cadastradoPor = currentUserData ? currentUserData.nome : 'Desconhecido';
+    data.status = editingFormadoDocId ? (formados.find(f => f.docId === editingFormadoDocId) || {}).status || 'Pendente' : 'Pendente';
     data.dataCadastro = editingFormadoDocId ? (formados.find(f => f.docId === editingFormadoDocId) || {}).dataCadastro || new Date().toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
     try {
         if (editingFormadoDocId) {

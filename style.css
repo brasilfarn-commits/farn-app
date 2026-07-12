@@ -1860,6 +1860,26 @@ select.config-input option {
     box-shadow: 0 4px 15px rgba(198,40,40,0.4);
 }
 
+.btn-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(255,152,0,0.15);
+    border: 1px solid rgba(255,152,0,0.3);
+    border-radius: 6px;
+    color: #ff9800;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-warning:hover {
+    background: rgba(255,152,0,0.25);
+    border-color: #ff9800;
+}
+
 .confirm-warning {
     color: #ff9800;
     font-size: 13px;
