@@ -230,7 +230,8 @@ async function initApp() {
         document.getElementById('screen-login').classList.remove('active');
         document.getElementById('screen-admin').classList.add('active');
         applyUserPermissions();
-        showAdminSection('admin-home', document.querySelector('.nav-item'));
+        const firstVisible = document.querySelector('#screen-admin .sidebar-nav .nav-item:not([style*="display: none"])');
+        if (firstVisible) firstVisible.click();
         await populateTurmaSelect();
         renderList();
         renderTurmasList();
@@ -340,7 +341,8 @@ function enterAdminPanel() {
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-admin').classList.add('active');
     applyUserPermissions();
-    showAdminSection('admin-home', document.querySelector('.nav-item'));
+    const firstVisible = document.querySelector('#screen-admin .sidebar-nav .nav-item:not([style*="display: none"])');
+    if (firstVisible) firstVisible.click();
     populateTurmaSelect();
     renderList();
     renderTurmasList();
@@ -350,14 +352,17 @@ function applyUserPermissions() {
     if (!currentUserData) return;
     const p = currentUserData.permissoes || [];
     const isGeral = currentUserData.cpf === ADMIN_CPF;
+    const hasPre = p.includes('pre-inscricao');
+    const hasAdmin = p.includes('admin');
+    const hasInstrutor = p.includes('instrutor');
     const navItems = {
-        'admin-pre-inscricao': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
-        'admin-alunos': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
-        'admin-turmas': p.includes('instrutor') || p.includes('admin') || isGeral,
-        'admin-instrutores': p.includes('instrutor') || p.includes('admin') || isGeral,
-        'admin-formados': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
-        'admin-relatorios': p.includes('admin') || isGeral,
-        'admin-config': true
+        'admin-pre-inscricao': hasPre || isGeral,
+        'admin-alunos': hasPre || isGeral,
+        'admin-turmas': hasInstrutor || isGeral,
+        'admin-instrutores': hasInstrutor || isGeral,
+        'admin-formados': hasPre || isGeral,
+        'admin-relatorios': hasAdmin || isGeral,
+        'admin-config': hasAdmin || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
