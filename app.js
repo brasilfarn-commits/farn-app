@@ -1603,7 +1603,7 @@ function filterFormados() { renderFormadosList(); }
 function generateMatricula(cpf) {
     const year = new Date().getFullYear();
     const last5 = (cpf || '').replace(/\D/g, '').slice(-5);
-    return year + last5;
+    return String(year).slice(-4) + last5;
 }
 
 function openFormFormado(docId) {
