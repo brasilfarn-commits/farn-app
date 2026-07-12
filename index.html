@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -25,7 +25,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        const dbFirebase = firebase.database();
+        const dbFirestore = firebase.firestore();
     </script>
     <script>
         if ('serviceWorker' in navigator) {

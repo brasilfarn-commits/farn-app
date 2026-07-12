@@ -10,18 +10,24 @@ let pendingDeleteTurmaIndex = null;
 let editingTurmaIndex = null;
 let currentAluno = null;
 
-/* ===== FIREBASE SINCRONIZACAO ===== */
+/* ===== FIREBASE SINCRONIZACAO (Firestore) ===== */
 
-const FB_KEY_CANDIDATOS = 'candidatos';
-const FB_KEY_TURMAS = 'turmas';
+const FB_CANDIDATOS = 'candidatos';
+const FB_TURMAS = 'turmas';
 let firebaseReady = false;
 
 function backupCandidatos() {
-    try { dbFirebase.ref(FB_KEY_CANDIDATOS).set(candidatos); } catch(e) {}
+    try {
+        const ref = dbFirestore.collection(FB_CANDIDATOS).doc('lista');
+        ref.set({ dados: JSON.parse(JSON.stringify(candidatos)) });
+    } catch(e) { console.error('Erro ao salvar candidatos:', e); }
 }
 
 function backupTurmas() {
-    try { dbFirebase.ref(FB_KEY_TURMAS).set(turmas); } catch(e) {}
+    try {
+        const ref = dbFirestore.collection(FB_TURMAS).doc('lista');
+        ref.set({ dados: JSON.parse(JSON.stringify(turmas)) });
+    } catch(e) { console.error('Erro ao salvar turmas:', e); }
 }
 
 function initFirebaseListeners() {
@@ -29,21 +35,35 @@ function initFirebaseListeners() {
         let loaded = 0;
         const checkReady = () => { loaded++; if (loaded === 2) { firebaseReady = true; resolve(); } };
 
-        dbFirebase.ref(FB_KEY_CANDIDATOS).on('value', (snap) => {
-            candidatos = snap.val() || [];
+        dbFirestore.collection(FB_CANDIDATOS).doc('lista').onSnapshot((doc) => {
+            if (doc.exists && doc.data().dados) {
+                candidatos = doc.data().dados;
+            } else {
+                candidatos = [];
+            }
             if (firebaseReady) {
                 renderList();
                 if (typeof renderAlunosList === 'function') renderAlunosList();
             }
             checkReady();
+        }, (error) => {
+            console.error('Erro Firestore candidatos:', error);
+            checkReady();
         });
 
-        dbFirebase.ref(FB_KEY_TURMAS).on('value', (snap) => {
-            turmas = snap.val() || [];
+        dbFirestore.collection(FB_TURMAS).doc('lista').onSnapshot((doc) => {
+            if (doc.exists && doc.data().dados) {
+                turmas = doc.data().dados;
+            } else {
+                turmas = [];
+            }
             if (firebaseReady) {
                 renderTurmasList();
                 populateTurmaSelect();
             }
+            checkReady();
+        }, (error) => {
+            console.error('Erro Firestore turmas:', error);
             checkReady();
         });
 
