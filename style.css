@@ -2597,3 +2597,78 @@ select.config-input option {
     color: #888;
     line-height: 1.4;
 }
+
+/* ===== CURSOS FORMACAO ===== */
+
+.cursos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.curso-item {
+    cursor: pointer;
+}
+
+.curso-item input[type="checkbox"] {
+    display: none;
+}
+
+.curso-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px;
+    background: #1a1a1a;
+    border: 2px solid #2a2a2a;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.curso-card i {
+    font-size: 20px;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.curso-card span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ccc;
+}
+
+.curso-item input:checked + .curso-card {
+    border-color: #ff9800;
+    background: rgba(255, 152, 0, 0.08);
+}
+
+.curso-item input:checked + .curso-card i {
+    color: #ff9800;
+}
+
+.curso-item input:checked + .curso-card span {
+    color: #ff9800;
+}
+
+.cert-preview {
+    margin-top: 8px;
+    text-align: center;
+}
+
+.cert-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border: 2px solid #2a2a2a;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.cert-preview-empty {
+    padding: 20px;
+    border: 2px dashed #2a2a2a;
+    border-radius: 8px;
+    color: #555;
+    font-size: 12px;
+}

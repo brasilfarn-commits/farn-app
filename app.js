@@ -10,6 +10,7 @@ let pendingDeleteTurmaIndex = null;
 let editingTurmaIndex = null;
 let currentAluno = null;
 let usuarios = [];
+let formados = [];
 let currentUserData = null;
 
 /* ===== FIREBASE SINCRONIZACAO (Firestore) ===== */
@@ -17,6 +18,7 @@ let currentUserData = null;
 const FB_CANDIDATOS = 'candidatos';
 const FB_TURMAS = 'turmas';
 const FB_USUARIOS = 'usuarios';
+const FB_FORMADOS = 'formados';
 let firebaseReady = false;
 let firebaseError = false;
 
@@ -74,7 +76,7 @@ function initFirebaseListeners() {
         let loaded = 0;
         const checkReady = () => {
             loaded++;
-            if (loaded >= 3) {
+            if (loaded >= 4) {
                 firebaseReady = true;
                 showFirebaseStatus(true);
                 resolve();
@@ -139,6 +141,23 @@ function initFirebaseListeners() {
             checkReady();
         }, (error) => {
             console.error('Erro Firestore usuarios:', error);
+            checkReady();
+        });
+
+        dbFirestore.collection(FB_FORMADOS).onSnapshot((snap) => {
+            const result = [];
+            snap.forEach(doc => {
+                if (doc.id !== '_index') {
+                    const data = doc.data();
+                    data.docId = doc.id;
+                    result.push(data);
+                }
+            });
+            formados = result;
+            if (firebaseReady && typeof renderFormadosList === 'function') renderFormadosList();
+            checkReady();
+        }, (error) => {
+            console.error('Erro Firestore formados:', error);
             checkReady();
         });
 
@@ -438,7 +457,7 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-relatorios': 'Relatorios', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
 }
 
@@ -654,6 +673,14 @@ function deleteCandidato(i) {
 }
 
 async function confirmDelete() {
+    if (window._pendingDeleteFormado) {
+        try {
+            await dbFirestore.collection(FB_FORMADOS).doc(window._pendingDeleteFormado).delete();
+        } catch(e) { alert('Erro ao excluir: ' + e.message); }
+        window._pendingDeleteFormado = null;
+        closeConfirmModal();
+        return;
+    }
     if (pendingDeleteTurmaIndex !== null) {
         if (pendingDeleteTurmaIndex !== null) {
             turmas.splice(pendingDeleteTurmaIndex, 1);
@@ -1534,4 +1561,409 @@ function toggleUsuarioSenha() {
     const icon = document.getElementById('uf-eye-icon');
     if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
     else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+}
+
+/* ===== GERENCIAR FORMADOS ===== */
+
+let editingFormadoDocId = null;
+let formadoUploadedFiles = [];
+let formadoCertFrente = null;
+let formadoCertVerso = null;
+
+const formadoFields = ['ff-nome','ff-cpf','ff-nascimento','ff-estado-civil','ff-nacionalidade','ff-naturalidade','ff-profissao','ff-mae','ff-pai','ff-email','ff-whatsapp','ff-endereco','ff-numero','ff-bairro','ff-cidade','ff-estado','ff-altura','ff-peso','ff-fator-rh','ff-data-formacao','ff-matricula'];
+
+function renderFormadosList() {
+    const tbody = document.getElementById('formados-table-body');
+    const badge = document.getElementById('formados-count-badge');
+    if (!tbody) return;
+    if (badge) badge.textContent = formados.length + ' formado' + (formados.length !== 1 ? 's' : '');
+    if (!formados.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum formado cadastrado</td></tr>'; return; }
+    const search = (document.getElementById('formados-search') || {}).value || '';
+    const filtered = search ? formados.filter(f => (f.nome || '').toLowerCase().includes(search.toLowerCase()) || (f.cpf || '').includes(search.replace(/\D/g, ''))) : formados;
+    tbody.innerHTML = filtered.map((f, i) => {
+        const cursos = (f.cursos || []).join(', ') || '-';
+        return `<tr>
+            <td>${f.nome || ''}</td>
+            <td>${formatCPFDisplay(f.cpf)}</td>
+            <td style="color:#f57c00;font-weight:600">${f.matricula || '-'}</td>
+            <td style="font-size:11px;max-width:200px">${cursos}</td>
+            <td>${f.dataFormacao || '-'}</td>
+            <td style="color:#aaa;font-size:12px">${f.cadastradoPor || '-'}</td>
+            <td><div class="actions-cell">
+                <button class="btn-icon btn-info" title="Visualizar" onclick="viewFormado('${f.docId}')"><i class="fa-solid fa-eye"></i></button>
+                <button class="btn-icon" title="Editar" onclick="editFormado('${f.docId}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteFormado('${f.docId}')"><i class="fa-solid fa-trash"></i></button>
+            </div></td>
+        </tr>`;
+    }).join('');
+}
+
+function filterFormados() { renderFormadosList(); }
+
+function generateMatricula(cpf) {
+    const year = new Date().getFullYear();
+    const last5 = (cpf || '').replace(/\D/g, '').slice(-5);
+    return year + last5;
+}
+
+function openFormFormado(docId) {
+    editingFormadoDocId = docId || null;
+    formadoUploadedFiles = [];
+    formadoCertFrente = null;
+    formadoCertVerso = null;
+    const form = document.getElementById('form-formado');
+    form.reset();
+    document.getElementById('formado-photo-preview').classList.add('hidden');
+    document.getElementById('formado-photo-placeholder').style.display = '';
+    document.getElementById('formado-btn-remove-photo').style.display = 'none';
+    document.querySelectorAll('.ff-curso-check').forEach(cb => cb.checked = false);
+    document.getElementById('ff-cert-frente-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
+    document.getElementById('ff-cert-verso-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
+    document.getElementById('ff-files-list').innerHTML = '';
+    if (docId) {
+        const f = formados.find(f => f.docId === docId);
+        if (f) {
+            document.getElementById('formado-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#ff9800;margin-right:8px"></i> Editar Formado';
+            document.getElementById('ff-nome').value = f.nome || '';
+            document.getElementById('ff-cpf').value = f.cpf || '';
+            document.getElementById('ff-nascimento').value = f.nascimento || '';
+            document.getElementById('ff-estado-civil').value = f.estadoCivil || '';
+            document.getElementById('ff-nacionalidade').value = f.nacionalidade || '';
+            document.getElementById('ff-naturalidade').value = f.naturalidade || '';
+            document.getElementById('ff-profissao').value = f.profissao || '';
+            document.getElementById('ff-mae').value = f.mae || '';
+            document.getElementById('ff-pai').value = f.pai || '';
+            document.getElementById('ff-email').value = f.email || '';
+            document.getElementById('ff-whatsapp').value = f.whatsapp || '';
+            document.getElementById('ff-endereco').value = f.endereco || '';
+            document.getElementById('ff-numero').value = f.numero || '';
+            document.getElementById('ff-bairro').value = f.bairro || '';
+            document.getElementById('ff-cidade').value = f.cidade || '';
+            document.getElementById('ff-estado').value = f.estado || '';
+            document.getElementById('ff-altura').value = f.altura || '';
+            document.getElementById('ff-peso').value = f.peso || '';
+            document.getElementById('ff-fator-rh').value = f.fatorRh || '';
+            document.getElementById('ff-matricula').value = f.matricula || '';
+            document.getElementById('ff-data-formacao').value = f.dataFormacaoRaw || '';
+            (f.cursos || []).forEach(c => {
+                const cb = document.querySelector(`.ff-curso-check[value="${c}"]`);
+                if (cb) cb.checked = true;
+            });
+            if (f.photoDataUrl) {
+                document.getElementById('formado-photo-preview').src = f.photoDataUrl;
+                document.getElementById('formado-photo-preview').classList.remove('hidden');
+                document.getElementById('formado-photo-placeholder').style.display = 'none';
+                document.getElementById('formado-btn-remove-photo').style.display = '';
+            }
+            if (f.certFrente) {
+                document.getElementById('ff-cert-frente-preview').innerHTML = `<img src="${f.certFrente}">`;
+                formadoCertFrente = f.certFrente;
+            }
+            if (f.certVerso) {
+                document.getElementById('ff-cert-verso-preview').innerHTML = `<img src="${f.certVerso}">`;
+                formadoCertVerso = f.certVerso;
+            }
+        }
+    } else {
+        document.getElementById('formado-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#ff9800;margin-right:8px"></i> Novo Formado';
+        document.getElementById('ff-cert-frente-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
+        document.getElementById('ff-cert-verso-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
+    }
+    showAdminSection('admin-form-formado');
+}
+
+function editFormado(docId) { openFormFormado(docId); }
+
+async function handleFormadoSubmit(event) {
+    event.preventDefault();
+    const cpf = document.getElementById('ff-cpf').value.replace(/\D/g, '');
+    if (cpf.length !== 11) { alert('CPF invalido.'); return false; }
+    const cursos = [];
+    document.querySelectorAll('.ff-curso-check:checked').forEach(cb => cursos.push(cb.value));
+    if (cursos.length === 0) { alert('Selecione pelo menos um curso de formacao.'); return false; }
+    const data = {};
+    formadoFields.forEach(id => {
+        const key = id.replace('ff-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'ff-cpf') data[key] = el.value.replace(/\D/g, '');
+        else data[key] = el.value;
+    });
+    data.cursos = cursos;
+    data.dataFormacao = document.getElementById('ff-data-formacao').value ? new Date(document.getElementById('ff-data-formacao').value).toLocaleDateString('pt-BR') : '';
+    data.dataFormacaoRaw = document.getElementById('ff-data-formacao').value;
+    data.matricula = document.getElementById('ff-matricula').value || generateMatricula(cpf);
+    const photoPreview = document.getElementById('formado-photo-preview');
+    if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
+        data.photoDataUrl = photoPreview.src;
+    }
+    if (formadoCertFrente) data.certFrente = formadoCertFrente;
+    if (formadoCertVerso) data.certVerso = formadoCertVerso;
+    data.cadastradoPor = currentUserData ? currentUserData.nome : 'Desconhecido';
+    data.dataCadastro = editingFormadoDocId ? (formados.find(f => f.docId === editingFormadoDocId) || {}).dataCadastro || new Date().toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
+    try {
+        if (editingFormadoDocId) {
+            await dbFirestore.collection(FB_FORMADOS).doc(editingFormadoDocId).set(data, { merge: true });
+        } else {
+            const docId = cpf;
+            await dbFirestore.collection(FB_FORMADOS).doc(docId).set(data);
+        }
+        editingFormadoDocId = null;
+        showAdminSection('admin-formados');
+    } catch(e) {
+        alert('Erro ao salvar formado: ' + e.message);
+    }
+    return false;
+}
+
+async function deleteFormado(docId) {
+    const f = formados.find(f => f.docId === docId);
+    if (!f) return;
+    pendingDeleteIndex = null;
+    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o formado <strong>${f.nome}</strong>?`;
+    document.getElementById('modal-confirm-overlay').classList.remove('hidden');
+    window._pendingDeleteFormado = docId;
+}
+
+const origConfirmDelete = typeof confirmDelete === 'function' ? confirmDelete : null;
+
+async function confirmDeleteFormados() {
+    if (window._pendingDeleteFormado) {
+        try {
+            await dbFirestore.collection(FB_FORMADOS).doc(window._pendingDeleteFormado).delete();
+        } catch(e) { alert('Erro ao excluir: ' + e.message); }
+        window._pendingDeleteFormado = null;
+        closeConfirmModal();
+        return;
+    }
+    if (origConfirmDelete) origConfirmDelete();
+}
+
+function viewFormado(docId) {
+    const f = formados.find(f => f.docId === docId); if (!f) return;
+    document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#ff9800"></i> Detalhes do Formado';
+    const photoSrc = f.photoDataUrl || null;
+    const cursos = (f.cursos || []).map(c => `<span class="usuario-tag usuario-tag-pre" style="background:rgba(255,152,0,0.15);color:#ff9800">${c}</span>`).join(' ');
+    document.getElementById('modal-body').innerHTML = `
+        ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #ff9800;border-radius:8px" alt="Foto 3x4"></div>` : ''}
+        <div class="detail-grid">
+            <div class="detail-section-title">Dados Pessoais</div>
+            <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value">${f.nome}</span></div>
+            <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(f.cpf)}</span></div>
+            <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${f.nascimento||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Estado Civil</span><span class="detail-value">${f.estadoCivil||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Nacionalidade</span><span class="detail-value">${f.nacionalidade||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Naturalidade</span><span class="detail-value">${f.naturalidade||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Mae</span><span class="detail-value">${f.mae||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Pai</span><span class="detail-value">${f.pai||'---'}</span></div>
+            <div class="detail-section-title">Contato</div>
+            <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value">${f.email||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">WhatsApp</span><span class="detail-value">${f.whatsapp||'---'}</span></div>
+            <div class="detail-section-title">Endereco</div>
+            <div class="detail-item full"><span class="detail-label">Endereco</span><span class="detail-value">${f.endereco||'---'}, ${f.numero||''}</span></div>
+            <div class="detail-item"><span class="detail-label">Bairro</span><span class="detail-value">${f.bairro||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Cidade/UF</span><span class="detail-value">${f.cidade||'---'} - ${f.estado||'---'}</span></div>
+            <div class="detail-section-title">Dados Fisicos</div>
+            <div class="detail-item"><span class="detail-label">Altura</span><span class="detail-value">${f.altura||'---'} cm</span></div>
+            <div class="detail-item"><span class="detail-label">Peso</span><span class="detail-value">${f.peso||'---'} kg</span></div>
+            <div class="detail-item"><span class="detail-label">Fator RH</span><span class="detail-value">${f.fatorRh||'---'}</span></div>
+            <div class="detail-section-title">Formacao</div>
+            <div class="detail-item"><span class="detail-label">Matricula</span><span class="detail-value" style="color:#f57c00;font-weight:700">${f.matricula||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Data Formacao</span><span class="detail-value">${f.dataFormacao||'---'}</span></div>
+            <div class="detail-item full"><span class="detail-label">Cursos</span><span class="detail-value">${cursos||'---'}</span></div>
+            <div class="detail-section-title">Certificado Classe 01</div>
+            <div class="detail-item">${f.certFrente ? `<span class="detail-label">Frente</span><br><img src="${f.certFrente}" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #333">` : '<span class="detail-label">Frente: ---</span>'}</div>
+            <div class="detail-item">${f.certVerso ? `<span class="detail-label">Verso</span><br><img src="${f.certVerso}" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #333">` : '<span class="detail-label">Verso: ---</span>'}</div>
+            <div class="detail-section-title">Cadastro</div>
+            <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#f57c00;font-weight:600">${f.cadastradoPor||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Data Cadastro</span><span class="detail-value">${f.dataCadastro||'---'}</span></div>
+        </div>`;
+    openModal();
+}
+
+function resetFormFormado() {
+    document.getElementById('form-formado').reset();
+    document.getElementById('formado-photo-preview').classList.add('hidden');
+    document.getElementById('formado-photo-placeholder').style.display = '';
+    document.getElementById('formado-btn-remove-photo').style.display = 'none';
+    document.querySelectorAll('.ff-curso-check').forEach(cb => cb.checked = false);
+    document.getElementById('ff-cert-frente-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
+    document.getElementById('ff-cert-verso-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
+    document.getElementById('ff-files-list').innerHTML = '';
+    formadoCertFrente = null;
+    formadoCertVerso = null;
+    formadoUploadedFiles = [];
+}
+
+function handleFormadoPhotoUpload(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300; canvas.height = 400;
+            canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                document.getElementById('formado-photo-preview').src = url;
+                document.getElementById('formado-photo-preview').classList.remove('hidden');
+                document.getElementById('formado-photo-placeholder').style.display = 'none';
+                document.getElementById('formado-btn-remove-photo').style.display = '';
+            }, 'image/jpeg', 0.5);
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeFormadoPhoto() {
+    document.getElementById('formado-photo-preview').classList.add('hidden');
+    document.getElementById('formado-photo-preview').src = '';
+    document.getElementById('formado-photo-placeholder').style.display = '';
+    document.getElementById('formado-btn-remove-photo').style.display = 'none';
+    document.getElementById('formado-photo-input').value = '';
+}
+
+function openFormadoCamera() {
+    saveFormState();
+    saveLoginState();
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const overlay = document.createElement('div');
+        overlay.id = 'camera-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+        document.body.appendChild(overlay);
+        const video = document.getElementById('camera-video');
+        let stream = null;
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 800 }, height: { ideal: 600 } } })
+        .then(function(s) { stream = s; video.srcObject = stream; })
+        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
+        document.getElementById('camera-capture').onclick = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300; canvas.height = 400;
+            canvas.getContext('2d').drawImage(video, 0, 0, 300, 400);
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                document.getElementById('formado-photo-preview').src = url;
+                document.getElementById('formado-photo-preview').classList.remove('hidden');
+                document.getElementById('formado-photo-placeholder').style.display = 'none';
+                document.getElementById('formado-btn-remove-photo').style.display = '';
+            }, 'image/jpeg', 0.5);
+        };
+        document.getElementById('camera-cancel').onclick = function() {
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+        };
+    } else {
+        document.getElementById('formado-photo-input').click();
+    }
+}
+
+function handleCertUpload(event, side) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const maxW = 800;
+            const ratio = Math.min(maxW / img.width, maxW / img.height, 1);
+            canvas.width = img.width * ratio;
+            canvas.height = img.height * ratio;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+                const reader2 = new FileReader();
+                reader2.onload = function(ev) {
+                    const dataUrl = ev.target.result;
+                    if (side === 'frente') {
+                        formadoCertFrente = dataUrl;
+                        document.getElementById('ff-cert-frente-preview').innerHTML = `<img src="${dataUrl}">`;
+                    } else {
+                        formadoCertVerso = dataUrl;
+                        document.getElementById('ff-cert-verso-preview').innerHTML = `<img src="${dataUrl}">`;
+                    }
+                };
+                reader2.readAsDataURL(blob);
+            }, 'image/jpeg', 0.6);
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function openCertCamera(side) {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const overlay = document.createElement('div');
+        overlay.id = 'camera-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+        document.body.appendChild(overlay);
+        const video = document.getElementById('camera-video');
+        let stream = null;
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1200 }, height: { ideal: 900 } } })
+        .then(function(s) { stream = s; video.srcObject = stream; })
+        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
+        document.getElementById('camera-capture').onclick = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 800;
+            canvas.height = video.videoHeight || 600;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+            canvas.toBlob(function(blob) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const dataUrl = ev.target.result;
+                    if (side === 'frente') {
+                        formadoCertFrente = dataUrl;
+                        document.getElementById('ff-cert-frente-preview').innerHTML = `<img src="${dataUrl}">`;
+                    } else {
+                        formadoCertVerso = dataUrl;
+                        document.getElementById('ff-cert-verso-preview').innerHTML = `<img src="${dataUrl}">`;
+                    }
+                };
+                reader.readAsDataURL(blob);
+            }, 'image/jpeg', 0.6);
+        };
+        document.getElementById('camera-cancel').onclick = function() {
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+        };
+    } else {
+        document.getElementById(side === 'frente' ? 'ff-cert-frente-input' : 'ff-cert-verso-input').click();
+    }
+}
+
+function handleFormadoFilesUpload(event) { Array.from(event.target.files).forEach(f => addFormadoFile(f)); }
+
+function addFormadoFile(file) {
+    if (formadoUploadedFiles.length >= 5) { alert('Maximo de 5 arquivos.'); return; }
+    formadoUploadedFiles.push({ id: Date.now() + Math.random(), file });
+    renderFormadoFilesList();
+}
+
+function renderFormadoFilesList() {
+    const list = document.getElementById('ff-files-list'); if (!list) return;
+    list.innerHTML = formadoUploadedFiles.map(f => {
+        const icon = f.file.name.endsWith('.pdf') ? 'fa-file-pdf' : f.file.name.match(/\.(jpg|jpeg|png)$/i) ? 'fa-file-image' : 'fa-file';
+        return `<div class="file-item"><i class="fa-solid ${icon}" style="color:#f57c00"></i><span class="file-name">${f.file.name}</span><span class="file-size">${(f.file.size/1024).toFixed(1)}KB</span><button type="button" class="btn-icon btn-danger-icon" onclick="removeFormadoFile(${f.id})"><i class="fa-solid fa-trash"></i></button></div>`;
+    }).join('');
+}
+
+function removeFormadoFile(id) { formadoUploadedFiles = formadoUploadedFiles.filter(f => f.id !== id); renderFormadoFilesList(); }
+
+function exportExcelFormados() {
+    if (!formados.length) { alert('Nenhum formado para exportar.'); return; }
+    let csv = 'Nome,CPF,Matricula,Cursos,Data Formacao,Cadastrado por\n';
+    formados.forEach(f => {
+        csv += `"${f.nome||''}","${formatCPFDisplay(f.cpf)}","${f.matricula||''}","${(f.cursos||[]).join('; ')}","${f.dataFormacao||''}","${f.cadastradoPor||''}"\n`;
+    });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'formados_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
 }
