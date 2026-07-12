@@ -15,32 +15,79 @@ let currentAluno = null;
 const FB_CANDIDATOS = 'candidatos';
 const FB_TURMAS = 'turmas';
 let firebaseReady = false;
+let firebaseError = false;
+
+function showFirebaseStatus(ok) {
+    let el = document.getElementById('firebase-status');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'firebase-status';
+        el.style.cssText = 'position:fixed;bottom:8px;left:8px;padding:6px 12px;border-radius:6px;font-size:11px;z-index:99999;font-weight:600;';
+        document.body.appendChild(el);
+    }
+    if (ok) {
+        el.style.background = '#1b5e20';
+        el.style.color = '#a5d6a7';
+        el.textContent = 'Online';
+    } else {
+        el.style.background = '#b71c1c';
+        el.style.color = '#ef9a9a';
+        el.textContent = 'Offline';
+    }
+}
+
+function candidatoToDoc(c) {
+    const copy = Object.assign({}, c);
+    delete copy.photoDataUrl;
+    return copy;
+}
 
 function backupCandidatos() {
-    try {
-        const ref = dbFirestore.collection(FB_CANDIDATOS).doc('lista');
-        ref.set({ dados: JSON.parse(JSON.stringify(candidatos)) });
-    } catch(e) { console.error('Erro ao salvar candidatos:', e); }
+    if (!firebaseReady && !firebaseError) return;
+    const batch = dbFirestore.batch();
+    const ref = dbFirestore.collection(FB_CANDIDATOS);
+    batch.set(ref.doc('_index'), { count: candidatos.length, timestamp: Date.now() });
+    candidatos.forEach((c, i) => {
+        const id = c.id ? String(c.id) : String(i);
+        batch.set(ref.doc(id), candidatoToDoc(c));
+    });
+    batch.commit().catch(e => console.error('Erro ao salvar candidatos:', e));
 }
 
 function backupTurmas() {
-    try {
-        const ref = dbFirestore.collection(FB_TURMAS).doc('lista');
-        ref.set({ dados: JSON.parse(JSON.stringify(turmas)) });
-    } catch(e) { console.error('Erro ao salvar turmas:', e); }
+    if (!firebaseReady && !firebaseError) return;
+    const batch = dbFirestore.batch();
+    const ref = dbFirestore.collection(FB_TURMAS);
+    batch.set(ref.doc('_index'), { count: turmas.length, timestamp: Date.now() });
+    turmas.forEach((t, i) => {
+        const id = t.id ? String(t.id) : String(i);
+        batch.set(ref.doc(id), t);
+    });
+    batch.commit().catch(e => console.error('Erro ao salvar turmas:', e));
 }
 
 function initFirebaseListeners() {
     return new Promise((resolve) => {
         let loaded = 0;
-        const checkReady = () => { loaded++; if (loaded === 2) { firebaseReady = true; resolve(); } };
-
-        dbFirestore.collection(FB_CANDIDATOS).doc('lista').onSnapshot((doc) => {
-            if (doc.exists && doc.data().dados) {
-                candidatos = doc.data().dados;
-            } else {
-                candidatos = [];
+        const checkReady = () => {
+            loaded++;
+            if (loaded >= 2) {
+                firebaseReady = true;
+                showFirebaseStatus(true);
+                resolve();
             }
+        };
+
+        dbFirestore.collection(FB_CANDIDATOS).onSnapshot((snap) => {
+            const result = [];
+            snap.forEach(doc => {
+                if (doc.id !== '_index') {
+                    const data = doc.data();
+                    data.id = parseInt(doc.id) || doc.id;
+                    result.push(data);
+                }
+            });
+            candidatos = result;
             if (firebaseReady) {
                 renderList();
                 if (typeof renderAlunosList === 'function') renderAlunosList();
@@ -48,15 +95,21 @@ function initFirebaseListeners() {
             checkReady();
         }, (error) => {
             console.error('Erro Firestore candidatos:', error);
+            firebaseError = true;
+            showFirebaseStatus(false);
             checkReady();
         });
 
-        dbFirestore.collection(FB_TURMAS).doc('lista').onSnapshot((doc) => {
-            if (doc.exists && doc.data().dados) {
-                turmas = doc.data().dados;
-            } else {
-                turmas = [];
-            }
+        dbFirestore.collection(FB_TURMAS).onSnapshot((snap) => {
+            const result = [];
+            snap.forEach(doc => {
+                if (doc.id !== '_index') {
+                    const data = doc.data();
+                    data.id = parseInt(doc.id) || doc.id;
+                    result.push(data);
+                }
+            });
+            turmas = result;
             if (firebaseReady) {
                 renderTurmasList();
                 populateTurmaSelect();
@@ -64,10 +117,12 @@ function initFirebaseListeners() {
             checkReady();
         }, (error) => {
             console.error('Erro Firestore turmas:', error);
+            firebaseError = true;
+            showFirebaseStatus(false);
             checkReady();
         });
 
-        setTimeout(() => { if (!firebaseReady) { firebaseReady = true; resolve(); } }, 5000);
+        setTimeout(() => { if (!firebaseReady) { firebaseReady = true; showFirebaseStatus(false); resolve(); } }, 8000);
     });
 }
 
