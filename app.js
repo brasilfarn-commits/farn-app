@@ -1180,6 +1180,55 @@ function openBrowserCamera() {
     };
 }
 
+function openDocCamera() {
+    saveFormState();
+    saveLoginState();
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        openDocCameraBrowser();
+    } else {
+        document.getElementById('camera-input').click();
+    }
+}
+
+function openDocCameraBrowser() {
+    const overlay = document.createElement('div');
+    overlay.id = 'camera-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+    document.body.appendChild(overlay);
+
+    const video = document.getElementById('camera-video');
+    let stream = null;
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1200 }, height: { ideal: 900 } } })
+    .then(function(s) {
+        stream = s;
+        video.srcObject = stream;
+    })
+    .catch(function(err) {
+        document.body.removeChild(overlay);
+        alert('Nao foi possivel acessar a camera: ' + err.message);
+    });
+
+    document.getElementById('camera-capture').onclick = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 800;
+        canvas.height = video.videoHeight || 600;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        document.body.removeChild(overlay);
+        canvas.toBlob(function(blob) {
+            const file = new File([blob], 'documento_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+            addFile(file);
+        }, 'image/jpeg', 0.7);
+    };
+
+    document.getElementById('camera-cancel').onclick = function() {
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        document.body.removeChild(overlay);
+    };
+}
+
 function removePhoto() {
     document.getElementById('photo-preview').src = '';
     document.getElementById('photo-preview').classList.add('hidden');
