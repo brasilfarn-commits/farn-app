@@ -2388,6 +2388,32 @@ select.config-input option {
     color: #e65100;
 }
 
+.formado-welcome-hero {
+    text-align: center;
+    padding: 24px 20px 20px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.formado-hero-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(255,152,0,0.15);
+}
+
+.formado-welcome-hero .formado-greeting {
+    margin-bottom: 6px;
+}
+
+.formado-welcome-hero .portal-sub {
+    margin: 0;
+}
+
 .formado-stats-row {
     display: flex;
     gap: 16px;
