@@ -128,7 +128,31 @@ function initFirebaseListeners() {
 
 /* ===== INICIALIZACAO ===== */
 
+function migrateLocalStorage() {
+    try {
+        const lsCandidatos = localStorage.getItem('farn_candidatos');
+        const lsTurmas = localStorage.getItem('farn_turmas');
+        if (lsCandidatos) {
+            const parsed = JSON.parse(lsCandidatos);
+            if (parsed.length > candidatos.length) {
+                candidatos = parsed;
+                backupCandidatos();
+            }
+            localStorage.removeItem('farn_candidatos');
+        }
+        if (lsTurmas) {
+            const parsed = JSON.parse(lsTurmas);
+            if (parsed.length > turmas.length) {
+                turmas = parsed;
+                backupTurmas();
+            }
+            localStorage.removeItem('farn_turmas');
+        }
+    } catch(e) {}
+}
+
 async function initApp() {
+    migrateLocalStorage();
     await initFirebaseListeners();
 }
 
