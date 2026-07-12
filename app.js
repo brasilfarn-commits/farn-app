@@ -240,6 +240,18 @@ async function initApp() {
             showAdminSection('admin-form-candidato', document.querySelector('.nav-item:nth-child(2)'));
             await populateTurmaSelect();
         }
+    } else {
+        const lastCpf = getLastLogin();
+        if (lastCpf) {
+            const cpfInput = document.getElementById('cpf');
+            if (cpfInput) {
+                let v = lastCpf;
+                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                cpfInput.value = v;
+            }
+        }
     }
 }
 
@@ -301,6 +313,7 @@ async function handleLogin(event) {
     if (selectedLoginRole === 'admin') {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
             currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+            saveLastLogin(cpf);
             enterAdminPanel();
             saveLoginState();
             return false;
@@ -313,6 +326,7 @@ async function handleLogin(event) {
             return false;
         }
         currentUserData = user;
+        saveLastLogin(cpf);
         enterAdminPanel();
         saveLoginState();
     } else if (selectedLoginRole === 'aluno') {
@@ -1187,6 +1201,14 @@ function clearLoginState() {
         localStorage.removeItem('farn_login');
         localStorage.removeItem('farn_user_data');
     } catch(e) {}
+}
+
+function saveLastLogin(cpf) {
+    try { localStorage.setItem('farn_last_cpf', cpf); } catch(e) {}
+}
+
+function getLastLogin() {
+    try { return localStorage.getItem('farn_last_cpf') || ''; } catch(e) { return ''; }
 }
 
 function handlePhotoUpload(event) {
