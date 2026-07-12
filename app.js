@@ -1751,6 +1751,7 @@ function openFormFormado(docId) {
             document.getElementById('ff-peso').value = f.peso || '';
             document.getElementById('ff-fator-rh').value = f.fatorRh || '';
             document.getElementById('ff-matricula').value = f.matricula || '';
+            document.getElementById('ff-senha').value = f.senha || '';
             document.getElementById('ff-data-formacao').value = f.dataFormacaoRaw || '';
             (f.cursos || []).forEach(c => {
                 const cb = document.querySelector(`.ff-curso-check[value="${c}"]`);
@@ -1800,6 +1801,8 @@ async function handleFormadoSubmit(event) {
     data.dataFormacao = document.getElementById('ff-data-formacao').value ? new Date(document.getElementById('ff-data-formacao').value).toLocaleDateString('pt-BR') : '';
     data.dataFormacaoRaw = document.getElementById('ff-data-formacao').value;
     data.matricula = document.getElementById('ff-matricula').value || generateMatricula(cpf, document.getElementById('ff-data-formacao').value);
+    const ffSenha = document.getElementById('ff-senha').value;
+    if (ffSenha) data.senha = ffSenha;
     const photoPreview = document.getElementById('formado-photo-preview');
     if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
         data.photoDataUrl = photoPreview.src;
@@ -1898,6 +1901,7 @@ function resetFormFormado() {
     document.getElementById('ff-cert-frente-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
     document.getElementById('ff-cert-verso-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
     document.getElementById('ff-files-list').innerHTML = '';
+    document.getElementById('ff-senha').value = '';
     formadoCertFrente = null;
     formadoCertVerso = null;
     formadoUploadedFiles = [];
