@@ -352,17 +352,14 @@ function applyUserPermissions() {
     if (!currentUserData) return;
     const p = currentUserData.permissoes || [];
     const isGeral = currentUserData.cpf === ADMIN_CPF;
-    const hasPre = p.includes('pre-inscricao');
-    const hasAdmin = p.includes('admin');
-    const hasInstrutor = p.includes('instrutor');
     const navItems = {
-        'admin-pre-inscricao': hasPre || isGeral,
-        'admin-alunos': hasPre || isGeral,
-        'admin-turmas': hasInstrutor || isGeral,
-        'admin-instrutores': hasInstrutor || isGeral,
-        'admin-formados': hasPre || isGeral,
-        'admin-relatorios': hasAdmin || isGeral,
-        'admin-config': hasAdmin || isGeral
+        'admin-pre-inscricao': p.includes('pre-inscricao') || isGeral,
+        'admin-alunos': p.includes('alunos') || isGeral,
+        'admin-turmas': p.includes('turmas') || isGeral,
+        'admin-instrutores': p.includes('instrutores') || isGeral,
+        'admin-formados': p.includes('formados') || isGeral,
+        'admin-relatorios': p.includes('relatorios') || isGeral,
+        'admin-config': p.includes('config') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -1358,10 +1355,16 @@ function renderUsuariosList() {
     if (empty) empty.style.display = 'none';
     list.innerHTML = usuarios.map(u => {
         const permTags = (u.permissoes || []).map(p => {
-            if (p === 'pre-inscricao') return '<span class="usuario-tag usuario-tag-pre">Pre-Inscricao</span>';
-            if (p === 'admin') return '<span class="usuario-tag usuario-tag-admin">Admin</span>';
-            if (p === 'instrutor') return '<span class="usuario-tag usuario-tag-instrutor">Instrutor</span>';
-            return '';
+            const labels = {
+                'pre-inscricao': '<span class="usuario-tag usuario-tag-pre">Pre-Inscricao</span>',
+                'alunos': '<span class="usuario-tag usuario-tag-pre">Alunos</span>',
+                'turmas': '<span class="usuario-tag usuario-tag-instrutor">Turmas</span>',
+                'instrutores': '<span class="usuario-tag usuario-tag-instrutor">Instrutores</span>',
+                'formados': '<span class="usuario-tag usuario-tag-pre">Formados</span>',
+                'relatorios': '<span class="usuario-tag usuario-tag-admin">Relatorios</span>',
+                'config': '<span class="usuario-tag usuario-tag-admin">Config</span>'
+            };
+            return labels[p] || '';
         }).join('');
         const statusBadge = u.ativo === false ? '<span style="color:#f44336;font-size:11px;font-weight:600">Inativo</span>' : '<span style="color:#4caf50;font-size:11px;font-weight:600">Ativo</span>';
         return `<div class="usuario-row">
@@ -1384,8 +1387,12 @@ function openUsuarioForm(docId) {
     const form = document.getElementById('usuario-form');
     form.reset();
     document.getElementById('uf-perm-pre').checked = false;
-    document.getElementById('uf-perm-admin').checked = false;
-    document.getElementById('uf-perm-instrutor').checked = false;
+    document.getElementById('uf-perm-alunos').checked = false;
+    document.getElementById('uf-perm-turmas').checked = false;
+    document.getElementById('uf-perm-instrutores').checked = false;
+    document.getElementById('uf-perm-formados').checked = false;
+    document.getElementById('uf-perm-relatorios').checked = false;
+    document.getElementById('uf-perm-config').checked = false;
     if (docId) {
         const u = usuarios.find(u => u.docId === docId);
         if (u) {
@@ -1395,13 +1402,17 @@ function openUsuarioForm(docId) {
             document.getElementById('uf-senha').value = u.senha || '';
             const p = u.permissoes || [];
             if (p.includes('pre-inscricao')) document.getElementById('uf-perm-pre').checked = true;
-            if (p.includes('admin')) document.getElementById('uf-perm-admin').checked = true;
-            if (p.includes('instrutor')) document.getElementById('uf-perm-instrutor').checked = true;
+            if (p.includes('alunos')) document.getElementById('uf-perm-alunos').checked = true;
+            if (p.includes('turmas')) document.getElementById('uf-perm-turmas').checked = true;
+            if (p.includes('instrutores')) document.getElementById('uf-perm-instrutores').checked = true;
+            if (p.includes('formados')) document.getElementById('uf-perm-formados').checked = true;
+            if (p.includes('relatorios')) document.getElementById('uf-perm-relatorios').checked = true;
+            if (p.includes('config')) document.getElementById('uf-perm-config').checked = true;
         }
     } else {
         document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#2196f3;margin-right:8px"></i> Novo Usuario';
     }
-    showAdminSection('admin-form-usuario', document.querySelector('.nav-usuarios'));
+    showAdminSection('admin-form-usuario', null);
 }
 
 function editUsuario(docId) {
@@ -1418,8 +1429,12 @@ async function handleSaveUsuario(event) {
     if (senha.length < 4) { alert('Senha deve ter minimo 4 caracteres.'); return false; }
     const permissoes = [];
     if (document.getElementById('uf-perm-pre').checked) permissoes.push('pre-inscricao');
-    if (document.getElementById('uf-perm-admin').checked) permissoes.push('admin');
-    if (document.getElementById('uf-perm-instrutor').checked) permissoes.push('instrutor');
+    if (document.getElementById('uf-perm-alunos').checked) permissoes.push('alunos');
+    if (document.getElementById('uf-perm-turmas').checked) permissoes.push('turmas');
+    if (document.getElementById('uf-perm-instrutores').checked) permissoes.push('instrutores');
+    if (document.getElementById('uf-perm-formados').checked) permissoes.push('formados');
+    if (document.getElementById('uf-perm-relatorios').checked) permissoes.push('relatorios');
+    if (document.getElementById('uf-perm-config').checked) permissoes.push('config');
     if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
     const userData = { nome, cpf, senha, permissoes, ativo: true };
     try {
