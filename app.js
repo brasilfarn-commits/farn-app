@@ -387,11 +387,16 @@ async function editCandidato(index) {
     document.getElementById('fc-camisa').value = c.camisa || '';
     document.getElementById('fc-calcado').value = c.calcado || '';
     document.getElementById('fc-turma').value = c.turma || '';
-    if (c.photoDataUrl) {
-        document.getElementById('photo-preview').src = c.photoDataUrl;
-        document.getElementById('photo-preview').classList.remove('hidden');
-        document.getElementById('photo-placeholder').style.display = 'none';
-        document.getElementById('btn-remove-photo').style.display = '';
+    if (c.hasPhoto) {
+        const saved = localStorage.getItem('farn_photo_' + c.cpf);
+        if (saved) {
+            document.getElementById('photo-preview').src = saved;
+            document.getElementById('photo-preview').classList.remove('hidden');
+            document.getElementById('photo-placeholder').style.display = 'none';
+            document.getElementById('btn-remove-photo').style.display = '';
+        } else {
+            removePhoto();
+        }
     } else {
         removePhoto();
     }
@@ -434,9 +439,10 @@ async function handleCandidatoSubmit(event) {
 
     const photoPreview = document.getElementById('photo-preview');
     if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
-        data.photoDataUrl = photoPreview.src;
-    } else if (editingIndex !== null && candidatos[editingIndex].photoDataUrl) {
-        data.photoDataUrl = candidatos[editingIndex].photoDataUrl;
+        try { localStorage.setItem('farn_photo_' + data.cpf, photoPreview.src); } catch(e) {}
+        data.hasPhoto = true;
+    } else if (editingIndex !== null && candidatos[editingIndex].hasPhoto) {
+        data.hasPhoto = true;
     }
 
     if (editingIndex !== null) {
@@ -486,8 +492,9 @@ function renderList() {
 function viewCandidato(i) {
     const c = candidatos[i]; if (!c) return;
     document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#1e88e5"></i> Detalhes do Candidato';
+    const photoSrc = c.hasPhoto ? localStorage.getItem('farn_photo_' + c.cpf) : null;
     document.getElementById('modal-body').innerHTML = `
-        ${c.photoDataUrl ? `<div style="text-align:center;margin-bottom:16px"><img src="${c.photoDataUrl}" style="width:120px;height:160px;object-fit:cover;border:2px solid #1e88e5;border-radius:8px" alt="Foto 3x4"></div>` : ''}
+        ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #1e88e5;border-radius:8px" alt="Foto 3x4"></div>` : ''}
         <div class="detail-grid">
             <div class="detail-section-title">Dados Pessoais</div>
             <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value">${c.nome}</span></div>
@@ -559,6 +566,7 @@ async function confirmDelete() {
 
 function printCandidato(i) {
     const c = candidatos[i]; if (!c) return;
+    const photoSrc = c.hasPhoto ? localStorage.getItem('farn_photo_' + c.cpf) : null;
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - ${c.nome}</title><style>
         body{font-family:Arial,sans-serif;padding:40px;color:#222}h1{color:#1a237e;font-size:20px}h2{font-size:16px;margin:20px 0 10px;border-bottom:2px solid #1a237e;padding-bottom:6px}
@@ -1037,48 +1045,47 @@ function closeConfirmModal(e) { if (e && e.target !== e.currentTarget) return; d
 
 function handlePhotoUpload(event) {
     const file = event.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const img = new Image();
-            img.onload = function() {
-                try {
-                    const canvas = document.createElement('canvas');
-                    const MAX_W = 300;
-                    const MAX_H = 400;
-                    let w = img.width, h = img.height;
-                    if (w > MAX_W) { h = h * MAX_W / w; w = MAX_W; }
-                    if (h > MAX_H) { w = w * MAX_H / h; h = MAX_H; }
-                    canvas.width = Math.round(w);
-                    canvas.height = Math.round(h);
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const compressed = canvas.toDataURL('image/jpeg', 0.5);
-                    document.getElementById('photo-preview').src = compressed;
-                    document.getElementById('photo-preview').classList.remove('hidden');
-                    document.getElementById('photo-placeholder').style.display = 'none';
-                    document.getElementById('btn-remove-photo').style.display = '';
-                    img.src = '';
-                } catch(err) {
-                    console.error('Erro ao comprimir foto:', err);
-                    document.getElementById('photo-preview').src = e.target.result;
-                    document.getElementById('photo-preview').classList.remove('hidden');
-                    document.getElementById('photo-placeholder').style.display = 'none';
-                    document.getElementById('btn-remove-photo').style.display = '';
-                }
-            };
-            img.onerror = function() {
-                alert('Nao foi possivel carregar a imagem.');
-            };
-            img.src = e.target.result;
-        } catch(err) {
-            console.error('Erro geral na foto:', err);
-        }
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+
+    if (typeof createImageBitmap === 'function' && typeof Image !== 'undefined') {
+        createImageBitmap(file, { resizeWidth: 300, resizeHeight: 400, resizeQuality: 'low' }).then(function(bitmap) {
+            ctx.drawImage(bitmap, 0, 0, 300, 400);
+            bitmap.close();
+            setPhotoPreview(canvas.toDataURL('image/jpeg', 0.5));
+        }).catch(function() {
+            fallbackPhotoLoad(file);
+        });
+    } else {
+        fallbackPhotoLoad(file);
+    }
+}
+
+function fallbackPhotoLoad(file) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    const blob = new Blob([file], { type: file.type });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = function() {
+        ctx.drawImage(img, 0, 0, 300, 400);
+        URL.revokeObjectURL(url);
+        img.src = '';
+        setPhotoPreview(canvas.toDataURL('image/jpeg', 0.5));
     };
-    reader.onerror = function() {
-        alert('Erro ao ler o arquivo.');
-    };
-    reader.readAsDataURL(file);
+    img.onerror = function() { URL.revokeObjectURL(url); alert('Erro ao carregar foto.'); };
+    img.src = url;
+}
+
+function setPhotoPreview(dataUrl) {
+    document.getElementById('photo-preview').src = dataUrl;
+    document.getElementById('photo-preview').classList.remove('hidden');
+    document.getElementById('photo-placeholder').style.display = 'none';
+    document.getElementById('btn-remove-photo').style.display = '';
 }
 
 function openCamera() { const i = document.getElementById('photo-input'); i.setAttribute('capture', 'user'); i.click(); }
