@@ -350,8 +350,6 @@ function applyUserPermissions() {
     if (!currentUserData) return;
     const p = currentUserData.permissoes || [];
     const isGeral = currentUserData.cpf === ADMIN_CPF;
-    const navUsuarios = document.querySelector('.nav-usuarios');
-    if (navUsuarios) navUsuarios.style.display = isGeral ? '' : 'none';
     const navItems = {
         'admin-pre-inscricao': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
         'admin-alunos': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
@@ -359,7 +357,7 @@ function applyUserPermissions() {
         'admin-instrutores': p.includes('instrutor') || p.includes('admin') || isGeral,
         'admin-formados': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
         'admin-relatorios': p.includes('admin') || isGeral,
-        'admin-config': p.includes('admin') || isGeral
+        'admin-config': true
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
