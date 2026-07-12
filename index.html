@@ -149,6 +149,10 @@
                         <i class="fa-solid fa-gear"></i>
                         <span>Configuracoes</span>
                     </a>
+                    <a href="#" class="nav-item nav-usuarios" onclick="showAdminSection('admin-usuarios', this); renderUsuariosList()" style="display:none">
+                        <i class="fa-solid fa-users-gear"></i>
+                        <span>Usuarios</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -291,6 +295,83 @@
                 </div>
                 <div id="admin-config" class="admin-section">
                     <div class="card full-width"><div class="card-header"><h3><i class="fa-solid fa-gear" style="color:#888;margin-right:8px"></i> Configurações</h3></div><div class="card-body"><p style="color:#888;text-align:center;padding:40px">Pagina em desenvolvimento...</p></div></div>
+                </div>
+                <div id="admin-usuarios" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-users-gear" style="color:#2196f3;margin-right:8px"></i> Gerenciar Usuarios</h3>
+                            <div class="header-actions">
+                                <button class="btn-primary" onclick="openUsuarioForm()">
+                                    <i class="fa-solid fa-plus"></i> Novo Usuario
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="usuarios-empty" class="empty-state" style="display:none"><i class="fa-solid fa-users"></i><p>Nenhum usuario cadastrado</p></div>
+                            <div id="usuarios-list" class="table-responsive"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="admin-form-usuario" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3 id="usuario-form-title"><i class="fa-solid fa-user-plus" style="color:#2196f3;margin-right:8px"></i> Novo Usuario</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="usuario-form" onsubmit="return handleSaveUsuario(event)">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Nome Completo *</label>
+                                        <input type="text" id="uf-nome" required placeholder="Nome do usuario">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>CPF *</label>
+                                        <input type="text" id="uf-cpf" required placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Senha *</label>
+                                        <div class="input-group">
+                                            <input type="password" id="uf-senha" required placeholder="Minimo 4 caracteres" minlength="4">
+                                            <button type="button" class="btn-icon" onclick="toggleUsuarioSenha()"><i class="fa-solid fa-eye" id="uf-eye-icon"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-section" style="margin-top:20px">
+                                    <label style="font-weight:600;color:#fff;margin-bottom:12px;display:block"><i class="fa-solid fa-lock" style="color:#f57c00;margin-right:6px"></i> Permissoes de Acesso</label>
+                                    <div class="permissoes-grid">
+                                        <label class="permissao-item">
+                                            <input type="checkbox" id="uf-perm-pre" value="pre-inscricao">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-file-pen"></i>
+                                                <span>Pre-Inscricao</span>
+                                                <small>Cadastrar e gerenciar pre-cadastros</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" id="uf-perm-admin" value="admin">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-user-shield"></i>
+                                                <span>Administrador</span>
+                                                <small>Acesso total ao sistema</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" id="uf-perm-instrutor" value="instrutor">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-chalkboard-user"></i>
+                                                <span>Instrutor</span>
+                                                <small>Gerenciar turmas e instrucao</small>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:12px;margin-top:24px">
+                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-usuarios', document.querySelector('.nav-usuarios'))"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- LISTA PRE-INSCRITOS -->

@@ -9,11 +9,14 @@ let pendingDeleteIndex = null;
 let pendingDeleteTurmaIndex = null;
 let editingTurmaIndex = null;
 let currentAluno = null;
+let usuarios = [];
+let currentUserData = null;
 
 /* ===== FIREBASE SINCRONIZACAO (Firestore) ===== */
 
 const FB_CANDIDATOS = 'candidatos';
 const FB_TURMAS = 'turmas';
+const FB_USUARIOS = 'usuarios';
 let firebaseReady = false;
 let firebaseError = false;
 
@@ -71,7 +74,7 @@ function initFirebaseListeners() {
         let loaded = 0;
         const checkReady = () => {
             loaded++;
-            if (loaded >= 2) {
+            if (loaded >= 3) {
                 firebaseReady = true;
                 showFirebaseStatus(true);
                 resolve();
@@ -119,6 +122,23 @@ function initFirebaseListeners() {
             console.error('Erro Firestore turmas:', error);
             firebaseError = true;
             showFirebaseStatus(false);
+            checkReady();
+        });
+
+        dbFirestore.collection(FB_USUARIOS).onSnapshot((snap) => {
+            const result = [];
+            snap.forEach(doc => {
+                if (doc.id !== '_index') {
+                    const data = doc.data();
+                    data.docId = doc.id;
+                    result.push(data);
+                }
+            });
+            usuarios = result;
+            if (firebaseReady && typeof renderUsuariosList === 'function') renderUsuariosList();
+            checkReady();
+        }, (error) => {
+            console.error('Erro Firestore usuarios:', error);
             checkReady();
         });
 
@@ -209,6 +229,7 @@ async function initApp() {
     if (restoreLoginState()) {
         document.getElementById('screen-login').classList.remove('active');
         document.getElementById('screen-admin').classList.add('active');
+        applyUserPermissions();
         showAdminSection('admin-home', document.querySelector('.nav-item'));
         await populateTurmaSelect();
         renderList();
@@ -276,18 +297,21 @@ async function handleLogin(event) {
     if (!selectedLoginRole) { roleErrorEl.classList.remove('hidden'); return false; }
 
     if (selectedLoginRole === 'admin') {
-        if (cpf !== ADMIN_CPF || password !== ADMIN_SENHA) {
+        if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
+            currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+            enterAdminPanel();
+            saveLoginState();
+            return false;
+        }
+        const user = usuarios.find(u => u.cpf === cpf && u.senha === password && u.ativo !== false);
+        if (!user) {
             errorEl.querySelector('span').textContent = 'CPF ou senha invalidos';
             errorEl.classList.remove('hidden');
             document.getElementById('password').value = '';
             return false;
         }
-        document.getElementById('screen-login').classList.remove('active');
-        document.getElementById('screen-admin').classList.add('active');
-        showAdminSection('admin-home', document.querySelector('.nav-item'));
-        await populateTurmaSelect();
-        renderList();
-        renderTurmasList();
+        currentUserData = user;
+        enterAdminPanel();
         saveLoginState();
     } else if (selectedLoginRole === 'aluno') {
         const aluno = candidatos.find(c => c.cpf === cpf && c.senha === password && c.status === 'Aprovado');
@@ -312,6 +336,53 @@ async function handleLogin(event) {
     return false;
 }
 
+function enterAdminPanel() {
+    document.getElementById('screen-login').classList.remove('active');
+    document.getElementById('screen-admin').classList.add('active');
+    applyUserPermissions();
+    showAdminSection('admin-home', document.querySelector('.nav-item'));
+    populateTurmaSelect();
+    renderList();
+    renderTurmasList();
+}
+
+function applyUserPermissions() {
+    if (!currentUserData) return;
+    const p = currentUserData.permissoes || [];
+    const isGeral = currentUserData.cpf === ADMIN_CPF;
+    const navUsuarios = document.querySelector('.nav-usuarios');
+    if (navUsuarios) navUsuarios.style.display = isGeral ? '' : 'none';
+    const navItems = {
+        'admin-pre-inscricao': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
+        'admin-alunos': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
+        'admin-turmas': p.includes('instrutor') || p.includes('admin') || isGeral,
+        'admin-instrutores': p.includes('instrutor') || p.includes('admin') || isGeral,
+        'admin-formados': p.includes('pre-inscricao') || p.includes('admin') || isGeral,
+        'admin-relatorios': p.includes('admin') || isGeral,
+        'admin-config': p.includes('admin') || isGeral
+    };
+    document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
+        const onclick = item.getAttribute('onclick') || '';
+        const match = onclick.match(/showAdminSection\('([^']+)'/);
+        if (match) {
+            const section = match[1];
+            if (navItems[section] !== undefined) {
+                item.style.display = navItems[section] ? '' : 'none';
+            }
+        }
+    });
+    document.querySelectorAll('#screen-admin .admin-home-card').forEach(card => {
+        const onclick = card.getAttribute('onclick') || '';
+        const match = onclick.match(/showAdminSection\('([^']+)'/);
+        if (match) {
+            const section = match[1];
+            if (navItems[section] !== undefined) {
+                card.style.display = navItems[section] ? '' : 'none';
+            }
+        }
+    });
+}
+
 function handleLogout() {
     document.getElementById('screen-admin').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
@@ -319,6 +390,7 @@ function handleLogout() {
     document.getElementById('password').value = '';
     document.getElementById('login-error').classList.add('hidden');
     editingIndex = null;
+    currentUserData = null;
     clearLoginState();
 }
 
@@ -350,7 +422,7 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-config': 'Configuracoes' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
 }
 
@@ -1084,15 +1156,26 @@ function restoreFormState() {
 }
 
 function saveLoginState() {
-    try { localStorage.setItem('farn_login', 'admin'); } catch(e) {}
+    try {
+        localStorage.setItem('farn_login', 'admin');
+        if (currentUserData) localStorage.setItem('farn_user_data', JSON.stringify(currentUserData));
+    } catch(e) {}
 }
 
 function restoreLoginState() {
-    try { return localStorage.getItem('farn_login') === 'admin'; } catch(e) { return false; }
+    try {
+        if (localStorage.getItem('farn_login') !== 'admin') return false;
+        const ud = localStorage.getItem('farn_user_data');
+        if (ud) currentUserData = JSON.parse(ud);
+        return true;
+    } catch(e) { return false; }
 }
 
 function clearLoginState() {
-    try { localStorage.removeItem('farn_login'); } catch(e) {}
+    try {
+        localStorage.removeItem('farn_login');
+        localStorage.removeItem('farn_user_data');
+    } catch(e) {}
 }
 
 function handlePhotoUpload(event) {
@@ -1254,4 +1337,124 @@ function renderFilesList() {
         const icon = f.file.name.endsWith('.pdf') ? 'fa-file-pdf' : f.file.name.match(/\.(jpg|jpeg|png)$/i) ? 'fa-file-image' : 'fa-file';
         return `<div class="file-item"><i class="fa-solid ${icon}" style="color:#f57c00"></i><span class="file-name">${f.file.name}</span><span class="file-size">${(f.file.size/1024).toFixed(1)}KB</span><button type="button" class="btn-icon btn-danger-icon" onclick="removeFile(${f.id})"><i class="fa-solid fa-trash"></i></button></div>`;
     }).join('');
+}
+
+/* ===== GERENCIAR USUARIOS ===== */
+
+let editingUsuarioDocId = null;
+
+function renderUsuariosList() {
+    const list = document.getElementById('usuarios-list');
+    const empty = document.getElementById('usuarios-empty');
+    if (!list) return;
+    if (usuarios.length === 0) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = '';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    list.innerHTML = usuarios.map(u => {
+        const permTags = (u.permissoes || []).map(p => {
+            if (p === 'pre-inscricao') return '<span class="usuario-tag usuario-tag-pre">Pre-Inscricao</span>';
+            if (p === 'admin') return '<span class="usuario-tag usuario-tag-admin">Admin</span>';
+            if (p === 'instrutor') return '<span class="usuario-tag usuario-tag-instrutor">Instrutor</span>';
+            return '';
+        }).join('');
+        const statusBadge = u.ativo === false ? '<span style="color:#f44336;font-size:11px;font-weight:600">Inativo</span>' : '<span style="color:#4caf50;font-size:11px;font-weight:600">Ativo</span>';
+        return `<div class="usuario-row">
+            <div class="usuario-info">
+                <div class="usuario-nome">${u.nome || ''} ${statusBadge}</div>
+                <div class="usuario-cpf">CPF: ${formatCPFDisplay(u.cpf)}</div>
+                <div class="usuario-permissoes">${permTags}</div>
+            </div>
+            <div class="usuario-actions">
+                <button class="btn-outline btn-sm" onclick="editUsuario('${u.docId}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-outline btn-sm" onclick="toggleUsuarioAtivo('${u.docId}', ${u.ativo !== false})" title="${u.ativo !== false ? 'Desativar' : 'Ativar'}"><i class="fa-solid fa-${u.ativo !== false ? 'ban' : 'check'}"></i></button>
+                <button class="btn-outline btn-sm btn-danger" onclick="deleteUsuario('${u.docId}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function openUsuarioForm(docId) {
+    editingUsuarioDocId = docId || null;
+    const form = document.getElementById('usuario-form');
+    form.reset();
+    document.getElementById('uf-perm-pre').checked = false;
+    document.getElementById('uf-perm-admin').checked = false;
+    document.getElementById('uf-perm-instrutor').checked = false;
+    if (docId) {
+        const u = usuarios.find(u => u.docId === docId);
+        if (u) {
+            document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#2196f3;margin-right:8px"></i> Editar Usuario';
+            document.getElementById('uf-nome').value = u.nome || '';
+            document.getElementById('uf-cpf').value = u.cpf || '';
+            document.getElementById('uf-senha').value = u.senha || '';
+            const p = u.permissoes || [];
+            if (p.includes('pre-inscricao')) document.getElementById('uf-perm-pre').checked = true;
+            if (p.includes('admin')) document.getElementById('uf-perm-admin').checked = true;
+            if (p.includes('instrutor')) document.getElementById('uf-perm-instrutor').checked = true;
+        }
+    } else {
+        document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#2196f3;margin-right:8px"></i> Novo Usuario';
+    }
+    showAdminSection('admin-form-usuario', document.querySelector('.nav-usuarios'));
+}
+
+function editUsuario(docId) {
+    openUsuarioForm(docId);
+}
+
+async function handleSaveUsuario(event) {
+    event.preventDefault();
+    const nome = document.getElementById('uf-nome').value.trim();
+    const cpf = document.getElementById('uf-cpf').value.replace(/\D/g, '');
+    const senha = document.getElementById('uf-senha').value;
+    if (!nome || !cpf || !senha) { alert('Preencha nome, CPF e senha.'); return false; }
+    if (cpf.length !== 11) { alert('CPF invalido.'); return false; }
+    if (senha.length < 4) { alert('Senha deve ter minimo 4 caracteres.'); return false; }
+    const permissoes = [];
+    if (document.getElementById('uf-perm-pre').checked) permissoes.push('pre-inscricao');
+    if (document.getElementById('uf-perm-admin').checked) permissoes.push('admin');
+    if (document.getElementById('uf-perm-instrutor').checked) permissoes.push('instrutor');
+    if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
+    const userData = { nome, cpf, senha, permissoes, ativo: true };
+    try {
+        if (editingUsuarioDocId) {
+            await dbFirestore.collection(FB_USUARIOS).doc(editingUsuarioDocId).set(userData, { merge: true });
+        } else {
+            const exists = usuarios.find(u => u.cpf === cpf);
+            if (exists) { alert('Ja existe um usuario com este CPF.'); return false; }
+            await dbFirestore.collection(FB_USUARIOS).doc(cpf).set(userData);
+        }
+        editingUsuarioDocId = null;
+        showAdminSection('admin-usuarios', document.querySelector('.nav-usuarios'));
+    } catch(e) {
+        alert('Erro ao salvar usuario: ' + e.message);
+    }
+    return false;
+}
+
+async function toggleUsuarioAtivo(docId, currentAtivo) {
+    try {
+        await dbFirestore.collection(FB_USUARIOS).doc(docId).set({ ativo: !currentAtivo }, { merge: true });
+    } catch(e) {
+        alert('Erro ao alterar status: ' + e.message);
+    }
+}
+
+async function deleteUsuario(docId) {
+    if (!confirm('Excluir este usuario permanentemente?')) return;
+    try {
+        await dbFirestore.collection(FB_USUARIOS).doc(docId).delete();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}
+
+function toggleUsuarioSenha() {
+    const input = document.getElementById('uf-senha');
+    const icon = document.getElementById('uf-eye-icon');
+    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
 }
