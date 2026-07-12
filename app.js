@@ -538,6 +538,7 @@ async function handleCandidatoSubmit(event) {
         editingIndex = null;
     } else {
         data.id = Date.now();
+        data.cadastradoPor = currentUserData ? currentUserData.nome : 'Desconhecido';
         candidatos.push(data);
     }
 
@@ -564,6 +565,7 @@ function renderList() {
             <td>${c.nascimento || '-'}</td>
             <td>${c.turma || '-'}</td>
             <td><span class="badge ${sc}">${c.status}</span></td>
+            <td style="color:#aaa;font-size:12px">${c.cadastradoPor || '-'}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
@@ -622,6 +624,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastro</span><span class="detail-value">${c.dataCadastro}</span></div>
+            <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#f57c00;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
         </div>`;
     openModal();
