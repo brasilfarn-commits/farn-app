@@ -2247,6 +2247,27 @@ select.config-input option {
     justify-content: center;
     padding: 40px 24px;
     gap: 40px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #1565c0 #0d1b2a;
+}
+
+.portal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.portal-body::-webkit-scrollbar-track {
+    background: #0d1b2a;
+    border-radius: 4px;
+}
+
+.portal-body::-webkit-scrollbar-thumb {
+    background: #1565c0;
+    border-radius: 4px;
+}
+
+.portal-body::-webkit-scrollbar-thumb:hover {
+    background: #1e88e5;
 }
 
 .portal-welcome {
