@@ -2191,6 +2191,11 @@ select.config-input option {
     .portal-main { padding: 20px; overflow-y: auto; }
     .formado-stats-row { flex-direction: column; }
     .formado-main-row { flex-direction: column; }
+    .formado-right-panel { width: 100%; min-width: 100%; flex-direction: row; border-left: none; border-top: 2px solid #ffcc80; padding: 16px; }
+    .formado-photo-card { display: flex; align-items: center; gap: 16px; }
+    .formado-photo-card .formado-photo-box { width: 60px; height: 80px; margin: 0; flex-shrink: 0; }
+    .formado-photo-card .formado-photo-name, .formado-photo-card .formado-photo-sub { text-align: left; }
+    .formado-photo-mat { display: none; }
 }
 
 @media (max-width: 480px) {
@@ -2348,9 +2353,6 @@ select.config-input option {
 }
 
 .formado-photo-box {
-    width: 80px;
-    height: 100px;
-    margin: 0 auto 12px;
     border-color: #ff9800 !important;
     background: #fff !important;
     box-shadow: 0 4px 16px rgba(255,152,0,0.2);
@@ -2358,6 +2360,71 @@ select.config-input option {
 
 .formado-photo-box .fa-user {
     color: #ccc;
+}
+
+.formado-right-panel {
+    width: 200px;
+    min-width: 200px;
+    background: #fff8f0;
+    border-left: 2px solid #ffcc80;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ff9800 #fff8f0;
+}
+
+.formado-right-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.formado-right-panel::-webkit-scrollbar-track {
+    background: #fff8f0;
+}
+
+.formado-right-panel::-webkit-scrollbar-thumb {
+    background: #ff9800;
+    border-radius: 3px;
+}
+
+.formado-photo-card {
+    text-align: center;
+    width: 100%;
+}
+
+.formado-photo-card .formado-photo-box {
+    width: 100px;
+    height: 130px;
+    margin: 0 auto 12px;
+    border-radius: 10px;
+}
+
+.formado-photo-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 4px;
+}
+
+.formado-photo-sub {
+    font-size: 11px;
+    color: #e65100;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px;
+}
+
+.formado-photo-mat {
+    font-size: 11px;
+    color: #999;
+    margin: 0;
+    padding: 6px 10px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    display: inline-block;
 }
 
 .formado-sub {
@@ -2381,6 +2448,31 @@ select.config-input option {
 
 .formado-main {
     background: #f5f5f5;
+    overflow-y: auto;
+    padding: 28px;
+    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: #ff9800 #e0e0e0;
+}
+
+.formado-main::-webkit-scrollbar {
+    width: 8px;
+}
+
+.formado-main::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 4px;
+}
+
+.formado-main::-webkit-scrollbar-thumb {
+    background: #ff9800;
+    border-radius: 4px;
+}
+
+.formado-main::-webkit-scrollbar-thumb:hover {
+    background: #e65100;
 }
 
 .formado-greeting {
