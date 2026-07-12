@@ -433,6 +433,9 @@ function applyUserPermissions() {
         'admin-turmas': p.includes('turmas') || isGeral,
         'admin-instrutores': p.includes('instrutores') || isGeral,
         'admin-formados': p.includes('formados') || isGeral,
+        'admin-form-formado': p.includes('formados') || isGeral,
+        'admin-pre-cadastro-formados': p.includes('formados') || isGeral,
+        'admin-form-pre-cadastro-formado': p.includes('formados') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
         'admin-config': p.includes('config') || isGeral
     };
@@ -509,7 +512,7 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-relatorios': 'Relatorios', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-pre-cadastro-formados': 'Pre-Cadastro Formados', 'admin-form-pre-cadastro-formado': 'Novo Pre-Cadastro Formado', 'admin-relatorios': 'Relatorios', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
 }
 
@@ -2130,4 +2133,155 @@ function exportExcelFormados() {
     link.href = URL.createObjectURL(blob);
     link.download = 'formados_' + new Date().toISOString().slice(0,10) + '.csv';
     link.click();
+}
+
+// ===== PRE-CADASTRO FORMADOS =====
+
+let preCadastroFormadoPhotoDataUrl = null;
+
+function openFormPreCadastroFormado() {
+    resetFormPreCadastroFormado();
+    document.getElementById('pre-cad-formado-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#ff9800;margin-right:8px"></i> Novo Pre-Cadastro';
+    showAdminSection('admin-form-pre-cadastro-formado');
+}
+
+function renderPreCadastroFormadosList() {
+    const pending = formados.filter(f => !f.status || f.status === 'Pendente');
+    const tbody = document.getElementById('pre-cad-formados-table-body');
+    if (!pending.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:32px">Nenhum pre-cadastro pendente.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = pending.map(f => `
+        <tr>
+            <td>${f.nome||''}</td>
+            <td>${formatCPFDisplay(f.cpf)}</td>
+            <td>${(f.cursos||[]).join(', ')}</td>
+            <td>${f.dataFormacao||''}</td>
+            <td>${f.cadastradoPor||''}</td>
+            <td>
+                <div style="display:flex;gap:6px">
+                    <button class="btn-sm btn-outline" onclick="aprovarPreCadastroFormado('${f.docId}')" title="Aprovar"><i class="fa-solid fa-check"></i></button>
+                    <button class="btn-sm btn-outline btn-danger-outline" onclick="excluirPreCadastroFormado('${f.docId}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterPreCadastroFormados() {
+    const q = (document.getElementById('pre-cad-formados-search').value || '').toLowerCase();
+    const rows = document.querySelectorAll('#pre-cad-formados-table-body tr');
+    rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+}
+
+function handlePreCadastroFormadoPhotoUpload(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300; canvas.height = 400;
+            canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                preCadastroFormadoPhotoDataUrl = url;
+                document.getElementById('pcf-photo-preview').src = url;
+                document.getElementById('pcf-photo-preview').classList.remove('hidden');
+                document.getElementById('pcf-photo-placeholder').style.display = 'none';
+                document.getElementById('pcf-btn-remove-photo').style.display = '';
+            }, 'image/jpeg', 0.5);
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function removePreCadastroFormadoPhoto() {
+    preCadastroFormadoPhotoDataUrl = null;
+    document.getElementById('pcf-photo-preview').classList.add('hidden');
+    document.getElementById('pcf-photo-preview').src = '';
+    document.getElementById('pcf-photo-placeholder').style.display = '';
+    document.getElementById('pcf-btn-remove-photo').style.display = 'none';
+    document.getElementById('pcf-photo-input').value = '';
+}
+
+function resetFormPreCadastroFormado() {
+    document.getElementById('form-pre-cadastro-formado').reset();
+    removePreCadastroFormadoPhoto();
+    document.querySelectorAll('.pcf-curso-check').forEach(cb => cb.checked = false);
+}
+
+async function handlePreCadastroFormadoSubmit(event) {
+    event.preventDefault();
+    const cpf = document.getElementById('pcf-cpf').value.replace(/\D/g, '');
+    const dataFormacao = document.getElementById('pcf-data-formacao').value;
+    const cursos = [];
+    document.querySelectorAll('.pcf-curso-check:checked').forEach(cb => cursos.push(cb.value));
+    if (!cursos.length) { alert('Selecione pelo menos um curso.'); return false; }
+
+    const data = {
+        nome: document.getElementById('pcf-nome').value,
+        cpf: cpf,
+        nascimento: document.getElementById('pcf-nascimento').value,
+        estadoCivil: document.getElementById('pcf-estado-civil').value,
+        nacionalidade: document.getElementById('pcf-nacionalidade').value,
+        naturalidade: document.getElementById('pcf-naturalidade').value,
+        profissao: document.getElementById('pcf-profissao').value,
+        mae: document.getElementById('pcf-mae').value,
+        pai: document.getElementById('pcf-pai').value,
+        email: document.getElementById('pcf-email').value,
+        whatsapp: document.getElementById('pcf-whatsapp').value,
+        endereco: document.getElementById('pcf-endereco').value,
+        numero: document.getElementById('pcf-numero').value,
+        bairro: document.getElementById('pcf-bairro').value,
+        cidade: document.getElementById('pcf-cidade').value,
+        estado: document.getElementById('pcf-estado').value,
+        altura: document.getElementById('pcf-altura').value,
+        peso: document.getElementById('pcf-peso').value,
+        fatorRh: document.getElementById('pcf-fator-rh').value,
+        cursos: cursos,
+        dataFormacao: dataFormacao ? new Date(dataFormacao).toLocaleDateString('pt-BR') : '',
+        dataFormacaoRaw: dataFormacao,
+        matricula: generateMatricula(cpf, dataFormacao),
+        senha: document.getElementById('pcf-senha').value,
+        status: 'Pendente',
+        cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
+        dataCadastro: new Date().toLocaleDateString('pt-BR')
+    };
+
+    if (preCadastroFormadoPhotoDataUrl) {
+        data.photoDataUrl = preCadastroFormadoPhotoDataUrl;
+    }
+
+    try {
+        await dbFirestore.collection(FB_FORMADOS).doc(cpf).set(data);
+        resetFormPreCadastroFormado();
+        showAdminSection('admin-pre-cadastro-formados');
+        renderPreCadastroFormadosList();
+    } catch(e) {
+        alert('Erro ao salvar pre-cadastro: ' + e.message);
+    }
+    return false;
+}
+
+async function aprovarPreCadastroFormado(docId) {
+    try {
+        await dbFirestore.collection(FB_FORMADOS).doc(docId).set({ status: 'Ativo' }, { merge: true });
+        renderPreCadastroFormadosList();
+        renderFormadosList();
+    } catch(e) {
+        alert('Erro ao aprovar: ' + e.message);
+    }
+}
+
+async function excluirPreCadastroFormado(docId) {
+    if (!confirm('Deseja excluir este pre-cadastro?')) return;
+    try {
+        await dbFirestore.collection(FB_FORMADOS).doc(docId).delete();
+        renderPreCadastroFormadosList();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
 }
