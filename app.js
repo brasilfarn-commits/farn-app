@@ -151,8 +151,59 @@ function migrateLocalStorage() {
     } catch(e) {}
 }
 
+function migrateIndexedDB() {
+    return new Promise((resolve) => {
+        try {
+            const request = indexedDB.open('FARN_DB', 2);
+            request.onsuccess = function(e) {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains('candidatos') && !database.objectStoreNames.contains('turmas')) {
+                    resolve();
+                    return;
+                }
+                let pending = 0;
+                const done = () => { pending--; if (pending <= 0) resolve(); };
+
+                if (database.objectStoreNames.contains('candidatos')) {
+                    pending++;
+                    const tx = database.transaction('candidatos', 'readonly');
+                    const store = tx.objectStore('candidatos');
+                    const req = store.getAll();
+                    req.onsuccess = () => {
+                        const data = req.result || [];
+                        if (data.length > candidatos.length) {
+                            candidatos = data;
+                            backupCandidatos();
+                        }
+                        done();
+                    };
+                    req.onerror = () => done();
+                }
+
+                if (database.objectStoreNames.contains('turmas')) {
+                    pending++;
+                    const tx = database.transaction('turmas', 'readonly');
+                    const store = tx.objectStore('turmas');
+                    const req = store.getAll();
+                    req.onsuccess = () => {
+                        const data = req.result || [];
+                        if (data.length > turmas.length) {
+                            turmas = data;
+                            backupTurmas();
+                        }
+                        done();
+                    };
+                    req.onerror = () => done();
+                }
+            };
+            request.onerror = () => resolve();
+        } catch(e) { resolve(); }
+    });
+}
+
 async function initApp() {
     migrateLocalStorage();
+    await migrateIndexedDB();
     await initFirebaseListeners();
 }
 
