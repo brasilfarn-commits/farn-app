@@ -390,19 +390,19 @@ async function handleLogin(event) {
         }
         const cursosList = document.getElementById('portal-formado-cursos-list');
         if (formado.cursos && formado.cursos.length) {
-            cursosList.innerHTML = formado.cursos.map(c => `<div style="padding:6px 10px;background:#1a1a1a;border-radius:8px;margin-top:6px;font-size:12px;color:#ff9800;border:1px solid rgba(255,152,0,0.2)"><i class="fa-solid fa-check-circle" style="margin-right:6px"></i>${c}</div>`).join('');
+            cursosList.innerHTML = formado.cursos.map(c => `<div style="padding:6px 10px;background:#fff3e0;border-radius:8px;margin-top:6px;font-size:12px;color:#e65100;border:1px solid #ffcc80"><i class="fa-solid fa-check-circle" style="margin-right:6px"></i>${c}</div>`).join('');
         } else {
             cursosList.innerHTML = '<p style="font-size:12px;color:#888">Nenhum curso registrado ainda.</p>';
         }
         const certsDiv = document.getElementById('portal-formado-certs');
         if (formado.certFrente || formado.certVerso) {
             let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">';
-            if (formado.certFrente) html += `<div><small style="color:#888">Frente</small><br><img src="${formado.certFrente}" style="max-width:150px;border-radius:8px;border:1px solid #333;margin-top:4px">`;
-            if (formado.certVerso) html += `</div><div><small style="color:#888">Verso</small><br><img src="${formado.certVerso}" style="max-width:150px;border-radius:8px;border:1px solid #333;margin-top:4px">`;
+            if (formado.certFrente) html += `<div><small style="color:#666">Frente</small><br><img src="${formado.certFrente}" style="max-width:150px;border-radius:8px;border:1px solid #ddd;margin-top:4px">`;
+            if (formado.certVerso) html += `</div><div><small style="color:#666">Verso</small><br><img src="${formado.certVerso}" style="max-width:150px;border-radius:8px;border:1px solid #ddd;margin-top:4px">`;
             html += '</div>';
             certsDiv.innerHTML = html;
         } else {
-            certsDiv.innerHTML = '<p style="font-size:12px;color:#888">Nenhum certificado anexado ainda.</p>';
+            certsDiv.innerHTML = '<p style="font-size:12px;color:#999">Nenhum certificado anexado ainda.</p>';
         }
     }
     return false;

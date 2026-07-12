@@ -2323,6 +2323,103 @@ select.config-input option {
     margin: 0 0 16px;
 }
 
+#screen-portal-formado .portal-container {
+    background: #f5f5f5;
+}
+
+#screen-portal-formado .portal-header {
+    background: #fff;
+    border-bottom: 2px solid #ff9800;
+    box-shadow: 0 2px 8px rgba(255,152,0,0.12);
+}
+
+#screen-portal-formado .portal-header-title {
+    color: #e65100;
+}
+
+#screen-portal-formado .portal-body {
+    justify-content: flex-start;
+    padding: 32px 24px;
+    gap: 32px;
+    overflow-y: auto;
+    max-height: calc(100vh - 70px);
+    scrollbar-width: thin;
+    scrollbar-color: #ff9800 #e0e0e0;
+}
+
+#screen-portal-formado .portal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+#screen-portal-formado .portal-body::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 4px;
+}
+
+#screen-portal-formado .portal-body::-webkit-scrollbar-thumb {
+    background: #ff9800;
+    border-radius: 4px;
+}
+
+#screen-portal-formado .portal-body::-webkit-scrollbar-thumb:hover {
+    background: #e65100;
+}
+
+#screen-portal-formado .portal-photo-box {
+    border-color: #ff9800;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(255,152,0,0.2);
+}
+
+#screen-portal-formado .portal-photo-box .fa-user {
+    color: #ccc;
+}
+
+#screen-portal-formado .portal-greeting {
+    color: #222;
+}
+
+#screen-portal-formado .portal-greeting span {
+    color: #e65100;
+}
+
+#screen-portal-formado .portal-sub {
+    color: #666;
+}
+
+#screen-portal-formado .portal-menu-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+#screen-portal-formado .portal-menu-card:hover {
+    border-color: #ff9800;
+    box-shadow: 0 6px 20px rgba(255,152,0,0.18);
+}
+
+#screen-portal-formado .portal-menu-card h3 {
+    color: #333;
+}
+
+#screen-portal-formado .portal-menu-card p {
+    color: #666;
+}
+
+#screen-portal-formado .portal-noticia-item {
+    background: #fff8f0;
+    border-left: 3px solid #ff9800;
+}
+
+#screen-portal-formado .portal-noticia-data {
+    color: #e65100;
+}
+
+#screen-portal-formado .portal-badge {
+    background: #fff3e0;
+    color: #e65100;
+}
+
 .portal-badge {
     display: inline-block;
     background: rgba(245,124,0,0.15);
