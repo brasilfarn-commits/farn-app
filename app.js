@@ -393,7 +393,7 @@ async function handleLogin(event) {
         }
         const cursosList = document.getElementById('portal-formado-cursos-list');
         if (formado.cursos && formado.cursos.length) {
-            cursosList.innerHTML = formado.cursos.map(c => `<div style="padding:6px 10px;background:#fff3e0;border-radius:8px;margin-top:6px;font-size:12px;color:#e65100;border:1px solid #ffcc80"><i class="fa-solid fa-check-circle" style="margin-right:6px"></i>${c}</div>`).join('');
+            cursosList.innerHTML = formado.cursos.map(c => `<span style="display:inline-block;padding:4px 8px;background:#fff3e0;border-radius:6px;font-size:11px;color:#e65100;border:1px solid #ffcc80;margin:3px 2px"><i class="fa-solid fa-check" style="margin-right:4px;font-size:9px"></i>${c}</span>`).join('');
         } else {
             cursosList.innerHTML = '<p class="formado-empty">Nenhum curso registrado ainda.</p>';
         }
