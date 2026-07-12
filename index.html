@@ -1050,42 +1050,80 @@
                 <button class="btn-outline" onclick="logoutPortalFormado()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
             </div>
             <div class="portal-body">
-                <div class="portal-welcome">
-                    <div class="portal-photo-box">
-                        <img id="portal-formado-photo" src="" alt="Foto 3x4" class="portal-photo">
+                <div class="portal-sidebar formado-sidebar">
+                    <div class="portal-sidebar-user">
+                        <div class="portal-photo-box formado-photo-box">
+                            <img id="portal-formado-photo" src="" alt="Foto 3x4" class="portal-photo">
+                        </div>
+                        <h2 class="portal-sidebar-nome"><span id="portal-formado-nome"></span></h2>
+                        <p class="portal-sidebar-sub formado-sub">Formado(a) FARN</p>
                     </div>
-                    <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-formado-nome"></span></h1>
-                    <p class="portal-sub">Seus dados de formacao e certificados</p>
+                    <nav class="portal-sidebar-nav">
+                        <a class="portal-sidebar-link formado-link active"><i class="fa-solid fa-house"></i> Inicio</a>
+                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-id-card"></i> Meus Dados</a>
+                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-certificate"></i> Certificados</a>
+                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-graduation-cap"></i> Cursos</a>
+                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-newspaper"></i> Noticias</a>
+                    </nav>
                 </div>
-                <div class="portal-menu">
-                    <div class="portal-menu-card">
-                        <i class="fa-solid fa-id-card" style="color:#ff9800"></i>
-                        <h3>Meus Dados</h3>
-                        <p id="portal-formado-matricula" style="font-weight:700;font-size:14px"></p>
-                        <p id="portal-formado-cursos" style="font-size:12px"></p>
+                <div class="portal-main formado-main">
+                    <div class="portal-welcome">
+                        <h1 class="portal-greeting formado-greeting">Bem-vindo(a), <span id="portal-formado-nome-top"></span></h1>
+                        <p class="portal-sub">Seus dados de formacao e certificados</p>
                     </div>
-                    <div class="portal-menu-card">
-                        <i class="fa-solid fa-certificate" style="color:#ff9800"></i>
-                        <h3>Certificados</h3>
-                        <div id="portal-formado-certs" style="font-size:12px">
-                            <p>Certificados de formacao disponiveis aqui.</p>
+                    <div class="formado-stats-row">
+                        <div class="formado-stat-card">
+                            <i class="fa-solid fa-id-card"></i>
+                            <div>
+                                <span class="formado-stat-label">Matricula</span>
+                                <span id="portal-formado-matricula" class="formado-stat-value">---</span>
+                            </div>
+                        </div>
+                        <div class="formado-stat-card">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            <div>
+                                <span class="formado-stat-label">Cursos</span>
+                                <span id="portal-formado-cursos-count" class="formado-stat-value">0</span>
+                            </div>
+                        </div>
+                        <div class="formado-stat-card">
+                            <i class="fa-solid fa-calendar-check"></i>
+                            <div>
+                                <span class="formado-stat-label">Status</span>
+                                <span class="formado-stat-value formado-stat-ativo">Ativo</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="portal-menu-card">
-                        <i class="fa-solid fa-graduation-cap" style="color:#ff9800"></i>
-                        <h3>Cursos Concluidos</h3>
-                        <div id="portal-formado-cursos-list"></div>
+                    <div class="formado-main-row">
+                        <div class="formado-card">
+                            <div class="formado-card-header">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <h3>Cursos Concluidos</h3>
+                            </div>
+                            <div class="formado-card-body" id="portal-formado-cursos-list"></div>
+                        </div>
+                        <div class="formado-card">
+                            <div class="formado-card-header">
+                                <i class="fa-solid fa-certificate"></i>
+                                <h3>Certificados</h3>
+                            </div>
+                            <div class="formado-card-body" id="portal-formado-certs">
+                                <p class="formado-empty">Nenhum certificado anexado ainda.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="portal-menu-card portal-card-noticias">
-                        <i class="fa-solid fa-newspaper" style="color:#ff9800"></i>
-                        <h3>Noticias da FARN</h3>
-                        <div class="portal-noticias-list">
-                            <div class="portal-noticia-item">
-                                <span class="portal-noticia-data">10/07/2026</span>
+                    <div class="formado-card">
+                        <div class="formado-card-header">
+                            <i class="fa-solid fa-newspaper"></i>
+                            <h3>Noticias da FARN</h3>
+                        </div>
+                        <div class="formado-card-body">
+                            <div class="formado-noticia">
+                                <span class="formado-noticia-data">10/07/2026</span>
                                 <p>Formandos: atualize seus dados no portal.</p>
                             </div>
-                            <div class="portal-noticia-item">
-                                <span class="portal-noticia-data">01/07/2026</span>
+                            <div class="formado-noticia">
+                                <span class="formado-noticia-data">01/07/2026</span>
                                 <p>Novos cursos de reciclagem disponiveis.</p>
                             </div>
                         </div>

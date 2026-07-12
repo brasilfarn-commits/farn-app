@@ -2186,6 +2186,11 @@ select.config-input option {
     .form-row-3 { grid-template-columns: 1fr; }
     .form-row-4 { grid-template-columns: 1fr; }
     .col-3 { grid-column: span 1; }
+    .portal-sidebar { display: none; }
+    .portal-body { flex-direction: column; }
+    .portal-main { padding: 20px; overflow-y: auto; }
+    .formado-stats-row { flex-direction: column; }
+    .formado-main-row { flex-direction: column; }
 }
 
 @media (max-width: 480px) {
@@ -2337,87 +2342,183 @@ select.config-input option {
     color: #e65100;
 }
 
-#screen-portal-formado .portal-body {
-    justify-content: flex-start;
-    padding: 32px 24px;
-    gap: 32px;
-    overflow-y: auto;
-    max-height: calc(100vh - 70px);
-    scrollbar-width: thin;
-    scrollbar-color: #ff9800 #e0e0e0;
+.formado-sidebar {
+    background: #fff8f0 !important;
+    border-right: 2px solid #ffcc80 !important;
 }
 
-#screen-portal-formado .portal-body::-webkit-scrollbar {
-    width: 8px;
-}
-
-#screen-portal-formado .portal-body::-webkit-scrollbar-track {
-    background: #e0e0e0;
-    border-radius: 4px;
-}
-
-#screen-portal-formado .portal-body::-webkit-scrollbar-thumb {
-    background: #ff9800;
-    border-radius: 4px;
-}
-
-#screen-portal-formado .portal-body::-webkit-scrollbar-thumb:hover {
-    background: #e65100;
-}
-
-#screen-portal-formado .portal-photo-box {
-    border-color: #ff9800;
-    background: #fff;
+.formado-photo-box {
+    border-color: #ff9800 !important;
+    background: #fff !important;
     box-shadow: 0 4px 16px rgba(255,152,0,0.2);
 }
 
-#screen-portal-formado .portal-photo-box .fa-user {
+.formado-photo-box .fa-user {
     color: #ccc;
 }
 
-#screen-portal-formado .portal-greeting {
-    color: #222;
+.formado-sub {
+    color: #e65100 !important;
 }
 
-#screen-portal-formado .portal-greeting span {
-    color: #e65100;
+.formado-link {
+    color: #bf6400 !important;
 }
 
-#screen-portal-formado .portal-sub {
-    color: #666;
+.formado-link:hover, .formado-link.active {
+    background: rgba(255,152,0,0.12) !important;
+    color: #e65100 !important;
+    border-left-color: #ff9800 !important;
 }
 
-#screen-portal-formado .portal-menu-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+.formado-link.active {
+    background: rgba(255,152,0,0.2) !important;
+    font-weight: 700;
 }
 
-#screen-portal-formado .portal-menu-card:hover {
-    border-color: #ff9800;
-    box-shadow: 0 6px 20px rgba(255,152,0,0.18);
+.formado-main {
+    background: #f5f5f5;
 }
 
-#screen-portal-formado .portal-menu-card h3 {
+.formado-greeting {
     color: #333;
 }
 
-#screen-portal-formado .portal-menu-card p {
-    color: #666;
+.formado-greeting span {
+    color: #e65100;
 }
 
-#screen-portal-formado .portal-noticia-item {
+.formado-stats-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.formado-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 20px;
+    flex: 1;
+    min-width: 160px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.formado-stat-card i {
+    font-size: 22px;
+    color: #ff9800;
+}
+
+.formado-stat-label {
+    display: block;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.formado-stat-value {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    margin-top: 2px;
+}
+
+.formado-stat-ativo {
+    color: #43a047;
+}
+
+.formado-main-row {
+    display: flex;
+    gap: 16px;
+}
+
+.formado-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.formado-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
     background: #fff8f0;
-    border-left: 3px solid #ff9800;
+    border-bottom: 1px solid #ffe0b2;
 }
 
-#screen-portal-formado .portal-noticia-data {
-    color: #e65100;
+.formado-card-header i {
+    font-size: 16px;
+    color: #ff9800;
 }
 
-#screen-portal-formado .portal-badge {
-    background: #fff3e0;
-    color: #e65100;
+.formado-card-header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.formado-card-body {
+    padding: 14px 18px;
+    max-height: 240px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ffcc80 #fff;
+}
+
+.formado-card-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.formado-card-body::-webkit-scrollbar-track {
+    background: #fff;
+}
+
+.formado-card-body::-webkit-scrollbar-thumb {
+    background: #ffcc80;
+    border-radius: 3px;
+}
+
+.formado-empty {
+    font-size: 12px;
+    color: #999;
+    margin: 0;
+    text-align: center;
+    padding: 12px;
+}
+
+.formado-noticia {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.formado-noticia:last-child {
+    border-bottom: none;
+}
+
+.formado-noticia-data {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ff9800;
+}
+
+.formado-noticia p {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
 }
 
 .portal-badge {

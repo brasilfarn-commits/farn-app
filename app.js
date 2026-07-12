@@ -381,7 +381,9 @@ async function handleLogin(event) {
         document.getElementById('screen-portal-formado').classList.add('active');
         const primeiroNome = (formado.nome || '').split(' ')[0];
         document.getElementById('portal-formado-nome').textContent = primeiroNome;
-        document.getElementById('portal-formado-matricula').textContent = 'Matricula: ' + (formado.matricula || '---');
+        document.getElementById('portal-formado-nome-top').textContent = primeiroNome;
+        document.getElementById('portal-formado-matricula').textContent = formado.matricula || '---';
+        document.getElementById('portal-formado-cursos-count').textContent = (formado.cursos && formado.cursos.length) ? formado.cursos.length : 0;
         const photoBox = document.querySelector('#screen-portal-formado .portal-photo-box');
         if (formado.photoDataUrl) {
             photoBox.innerHTML = `<img src="${formado.photoDataUrl}" alt="Foto 3x4" class="portal-photo">`;
@@ -392,7 +394,7 @@ async function handleLogin(event) {
         if (formado.cursos && formado.cursos.length) {
             cursosList.innerHTML = formado.cursos.map(c => `<div style="padding:6px 10px;background:#fff3e0;border-radius:8px;margin-top:6px;font-size:12px;color:#e65100;border:1px solid #ffcc80"><i class="fa-solid fa-check-circle" style="margin-right:6px"></i>${c}</div>`).join('');
         } else {
-            cursosList.innerHTML = '<p style="font-size:12px;color:#888">Nenhum curso registrado ainda.</p>';
+            cursosList.innerHTML = '<p class="formado-empty">Nenhum curso registrado ainda.</p>';
         }
         const certsDiv = document.getElementById('portal-formado-certs');
         if (formado.certFrente || formado.certVerso) {
@@ -402,7 +404,7 @@ async function handleLogin(event) {
             html += '</div>';
             certsDiv.innerHTML = html;
         } else {
-            certsDiv.innerHTML = '<p style="font-size:12px;color:#999">Nenhum certificado anexado ainda.</p>';
+            certsDiv.innerHTML = '<p class="formado-empty">Nenhum certificado anexado ainda.</p>';
         }
     }
     return false;
