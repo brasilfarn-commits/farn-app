@@ -383,6 +383,7 @@ async function handleLogin(event) {
         document.getElementById('portal-formado-nome').textContent = primeiroNome;
         document.getElementById('portal-formado-nome-top').textContent = primeiroNome;
         document.getElementById('portal-formado-matricula').textContent = formado.matricula || '---';
+        document.getElementById('portal-formado-matricula-side').textContent = formado.matricula || '---';
         document.getElementById('portal-formado-cursos-count').textContent = (formado.cursos && formado.cursos.length) ? formado.cursos.length : 0;
         const photoBox = document.querySelector('#screen-portal-formado .portal-photo-box');
         if (formado.photoDataUrl) {
