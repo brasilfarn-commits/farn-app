@@ -1039,10 +1039,44 @@ function handlePhotoUpload(event) {
     const file = event.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-        document.getElementById('photo-preview').src = e.target.result;
-        document.getElementById('photo-preview').classList.remove('hidden');
-        document.getElementById('photo-placeholder').style.display = 'none';
-        document.getElementById('btn-remove-photo').style.display = '';
+        try {
+            const img = new Image();
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const MAX_W = 300;
+                    const MAX_H = 400;
+                    let w = img.width, h = img.height;
+                    if (w > MAX_W) { h = h * MAX_W / w; w = MAX_W; }
+                    if (h > MAX_H) { w = w * MAX_H / h; h = MAX_H; }
+                    canvas.width = Math.round(w);
+                    canvas.height = Math.round(h);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.5);
+                    document.getElementById('photo-preview').src = compressed;
+                    document.getElementById('photo-preview').classList.remove('hidden');
+                    document.getElementById('photo-placeholder').style.display = 'none';
+                    document.getElementById('btn-remove-photo').style.display = '';
+                    img.src = '';
+                } catch(err) {
+                    console.error('Erro ao comprimir foto:', err);
+                    document.getElementById('photo-preview').src = e.target.result;
+                    document.getElementById('photo-preview').classList.remove('hidden');
+                    document.getElementById('photo-placeholder').style.display = 'none';
+                    document.getElementById('btn-remove-photo').style.display = '';
+                }
+            };
+            img.onerror = function() {
+                alert('Nao foi possivel carregar a imagem.');
+            };
+            img.src = e.target.result;
+        } catch(err) {
+            console.error('Erro geral na foto:', err);
+        }
+    };
+    reader.onerror = function() {
+        alert('Erro ao ler o arquivo.');
     };
     reader.readAsDataURL(file);
 }
