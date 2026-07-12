@@ -73,6 +73,10 @@
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Portal do Aluno</span>
                             </button>
+                            <button type="button" class="login-role-btn" data-role="formado" onclick="selectLoginRole(this)">
+                                <i class="fa-solid fa-award"></i>
+                                <span>Portal do Formado</span>
+                            </button>
                         </div>
                     </div>
                     <form id="login-form" onsubmit="return handleLogin(event)">
@@ -1029,6 +1033,60 @@
                             <div class="portal-noticia-item">
                                 <span class="portal-noticia-data">25/06/2026</span>
                                 <p>Reuniao com instrutores no dia 28/06 as 19h.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PORTAL DO FORMADO -->
+    <div id="screen-portal-formado" class="screen">
+        <div class="portal-container">
+            <div class="portal-header" style="border-bottom-color:#ff9800">
+                <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
+                <span class="portal-header-title" style="color:#ff9800">Portal do Formado</span>
+                <button class="btn-outline" onclick="logoutPortalFormado()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+            </div>
+            <div class="portal-body">
+                <div class="portal-welcome">
+                    <div class="portal-photo-box" style="border-color:#ff9800">
+                        <img id="portal-formado-photo" src="" alt="Foto 3x4" class="portal-photo">
+                    </div>
+                    <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-formado-nome" style="color:#ff9800"></span></h1>
+                    <p class="portal-sub">Seus dados de formacao e certificados</p>
+                </div>
+                <div class="portal-menu">
+                    <div class="portal-menu-card">
+                        <i class="fa-solid fa-id-card" style="color:#ff9800"></i>
+                        <h3>Meus Dados</h3>
+                        <p id="portal-formado-matricula" style="color:#f57c00;font-weight:700;font-size:14px"></p>
+                        <p id="portal-formado-cursos" style="font-size:12px;color:#aaa"></p>
+                    </div>
+                    <div class="portal-menu-card">
+                        <i class="fa-solid fa-certificate" style="color:#ff9800"></i>
+                        <h3>Certificados</h3>
+                        <div id="portal-formado-certs" style="font-size:12px;color:#aaa">
+                            <p>Certificados de formacao disponiveis aqui.</p>
+                        </div>
+                    </div>
+                    <div class="portal-menu-card">
+                        <i class="fa-solid fa-graduation-cap" style="color:#ff9800"></i>
+                        <h3>Cursos Concluidos</h3>
+                        <div id="portal-formado-cursos-list"></div>
+                    </div>
+                    <div class="portal-menu-card portal-card-noticias">
+                        <i class="fa-solid fa-newspaper" style="color:#ff9800"></i>
+                        <h3>Noticias da FARN</h3>
+                        <div class="portal-noticias-list">
+                            <div class="portal-noticia-item">
+                                <span class="portal-noticia-data">10/07/2026</span>
+                                <p>Formandos: atualize seus dados no portal.</p>
+                            </div>
+                            <div class="portal-noticia-item">
+                                <span class="portal-noticia-data">01/07/2026</span>
+                                <p>Novos cursos de reciclagem disponiveis.</p>
                             </div>
                         </div>
                     </div>

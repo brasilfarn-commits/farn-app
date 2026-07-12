@@ -9,6 +9,7 @@ let pendingDeleteIndex = null;
 let pendingDeleteTurmaIndex = null;
 let editingTurmaIndex = null;
 let currentAluno = null;
+let currentFormado = null;
 let usuarios = [];
 let formados = [];
 let currentUserData = null;
@@ -367,6 +368,42 @@ async function handleLogin(event) {
         } else {
             portalPhotoBox.innerHTML = '<i class="fa-solid fa-user" style="font-size:56px;color:#444"></i>';
         }
+    } else if (selectedLoginRole === 'formado') {
+        const formado = formados.find(f => f.cpf === cpf && f.senha === password && (f.status === 'Ativo' || !f.status));
+        if (!formado) {
+            errorEl.querySelector('span').textContent = 'CPF ou senha invalidos, ou formado nao ativo';
+            errorEl.classList.remove('hidden');
+            document.getElementById('password').value = '';
+            return false;
+        }
+        currentFormado = formado;
+        document.getElementById('screen-login').classList.remove('active');
+        document.getElementById('screen-portal-formado').classList.add('active');
+        const primeiroNome = (formado.nome || '').split(' ')[0];
+        document.getElementById('portal-formado-nome').textContent = primeiroNome;
+        document.getElementById('portal-formado-matricula').textContent = 'Matricula: ' + (formado.matricula || '---');
+        const photoBox = document.querySelector('#screen-portal-formado .portal-photo-box');
+        if (formado.photoDataUrl) {
+            photoBox.innerHTML = `<img src="${formado.photoDataUrl}" alt="Foto 3x4" class="portal-photo">`;
+        } else {
+            photoBox.innerHTML = '<i class="fa-solid fa-user" style="font-size:56px;color:#444"></i>';
+        }
+        const cursosList = document.getElementById('portal-formado-cursos-list');
+        if (formado.cursos && formado.cursos.length) {
+            cursosList.innerHTML = formado.cursos.map(c => `<div style="padding:6px 10px;background:#1a1a1a;border-radius:8px;margin-top:6px;font-size:12px;color:#ff9800;border:1px solid rgba(255,152,0,0.2)"><i class="fa-solid fa-check-circle" style="margin-right:6px"></i>${c}</div>`).join('');
+        } else {
+            cursosList.innerHTML = '<p style="font-size:12px;color:#888">Nenhum curso registrado ainda.</p>';
+        }
+        const certsDiv = document.getElementById('portal-formado-certs');
+        if (formado.certFrente || formado.certVerso) {
+            let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">';
+            if (formado.certFrente) html += `<div><small style="color:#888">Frente</small><br><img src="${formado.certFrente}" style="max-width:150px;border-radius:8px;border:1px solid #333;margin-top:4px">`;
+            if (formado.certVerso) html += `</div><div><small style="color:#888">Verso</small><br><img src="${formado.certVerso}" style="max-width:150px;border-radius:8px;border:1px solid #333;margin-top:4px">`;
+            html += '</div>';
+            certsDiv.innerHTML = html;
+        } else {
+            certsDiv.innerHTML = '<p style="font-size:12px;color:#888">Nenhum certificado anexado ainda.</p>';
+        }
     }
     return false;
 }
@@ -436,6 +473,18 @@ function logoutPortal() {
     document.getElementById('password').value = '';
     document.getElementById('login-error').classList.add('hidden');
     currentAluno = null;
+    selectedLoginRole = 'admin';
+    document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelector('.login-role-btn[data-role="admin"]').classList.add('selected');
+}
+
+function logoutPortalFormado() {
+    document.getElementById('screen-portal-formado').classList.remove('active');
+    document.getElementById('screen-login').classList.add('active');
+    document.getElementById('cpf').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('login-error').classList.add('hidden');
+    currentFormado = null;
     selectedLoginRole = 'admin';
     document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
     document.querySelector('.login-role-btn[data-role="admin"]').classList.add('selected');

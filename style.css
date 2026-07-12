@@ -1488,7 +1488,7 @@ select.config-input option {
 
 .login-role-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
 }
 
@@ -1548,6 +1548,7 @@ select.config-input option {
 .login-role-btn[data-role="alunos"].selected i { color: #64b5f6; }
 .login-role-btn[data-role="formados"].selected i { color: #81c784; }
 .login-role-btn[data-role="instrutores"].selected i { color: #ef9a9a; }
+.login-role-btn[data-role="formado"].selected i { color: #ff9800; }
 
 /* ===== CADASTRO USUARIO ADMIN ===== */
 .cadastro-usuario-grid {
@@ -2165,7 +2166,7 @@ select.config-input option {
 @media (max-width: 768px) {
     .login-left { display: none; }
     .login-right { width: 100%; }
-    .login-role-grid { grid-template-columns: repeat(3, 1fr); }
+    .login-role-grid { grid-template-columns: repeat(2, 1fr); }
     .login-role-btn span { font-size: 9px; }
     .role-grid { grid-template-columns: repeat(2, 1fr); }
     .cadastro-usuario-grid { grid-template-columns: 1fr; }
