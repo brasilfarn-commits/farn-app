@@ -1129,9 +1129,55 @@ function handlePhotoUpload(event) {
 function openCamera() {
     saveFormState();
     saveLoginState();
-    const i = document.getElementById('photo-input');
-    i.setAttribute('capture', 'user');
-    i.click();
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        openBrowserCamera();
+    } else {
+        const i = document.getElementById('photo-input');
+        i.setAttribute('capture', 'user');
+        i.click();
+    }
+}
+
+function openBrowserCamera() {
+    const overlay = document.createElement('div');
+    overlay.id = 'camera-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+    document.body.appendChild(overlay);
+
+    const video = document.getElementById('camera-video');
+    let stream = null;
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 800 }, height: { ideal: 600 } } })
+    .then(function(s) {
+        stream = s;
+        video.srcObject = stream;
+    })
+    .catch(function(err) {
+        document.body.removeChild(overlay);
+        alert('Nao foi possivel acessar a camera: ' + err.message);
+    });
+
+    document.getElementById('camera-capture').onclick = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 300;
+        canvas.height = 400;
+        canvas.getContext('2d').drawImage(video, 0, 0, 300, 400);
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        document.body.removeChild(overlay);
+        canvas.toBlob(function(blob) {
+            const url = URL.createObjectURL(blob);
+            document.getElementById('photo-preview').src = url;
+            document.getElementById('photo-preview').classList.remove('hidden');
+            document.getElementById('photo-placeholder').style.display = 'none';
+            document.getElementById('btn-remove-photo').style.display = '';
+        }, 'image/jpeg', 0.5);
+    };
+
+    document.getElementById('camera-cancel').onclick = function() {
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        document.body.removeChild(overlay);
+    };
 }
 
 function removePhoto() {
