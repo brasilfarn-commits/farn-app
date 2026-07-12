@@ -2348,6 +2348,9 @@ select.config-input option {
 }
 
 .formado-photo-box {
+    width: 80px;
+    height: 100px;
+    margin: 0 auto 12px;
     border-color: #ff9800 !important;
     background: #fff !important;
     box-shadow: 0 4px 16px rgba(255,152,0,0.2);
