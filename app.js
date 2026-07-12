@@ -229,6 +229,7 @@ async function initApp() {
     if (restoreLoginState()) {
         document.getElementById('screen-login').classList.remove('active');
         document.getElementById('screen-admin').classList.add('active');
+        document.getElementById('topbar-user-name').textContent = currentUserData ? currentUserData.nome : 'Administrador';
         applyUserPermissions();
         const firstVisible = document.querySelector('#screen-admin .sidebar-nav .nav-item:not([style*="display: none"])');
         if (firstVisible) firstVisible.click();
@@ -340,6 +341,7 @@ async function handleLogin(event) {
 function enterAdminPanel() {
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-admin').classList.add('active');
+    document.getElementById('topbar-user-name').textContent = currentUserData ? currentUserData.nome : 'Administrador';
     applyUserPermissions();
     const firstVisible = document.querySelector('#screen-admin .sidebar-nav .nav-item:not([style*="display: none"])');
     if (firstVisible) firstVisible.click();
