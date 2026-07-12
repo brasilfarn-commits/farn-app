@@ -2612,23 +2612,28 @@ select.config-input option {
 
 .formado-card-body {
     padding: 14px 18px;
-    max-height: 240px;
+    max-height: 280px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #ffcc80 #fff;
+    scrollbar-color: #ff9800 #f0f0f0;
 }
 
 .formado-card-body::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
 }
 
 .formado-card-body::-webkit-scrollbar-track {
-    background: #fff;
+    background: #f0f0f0;
+    border-radius: 3px;
 }
 
 .formado-card-body::-webkit-scrollbar-thumb {
-    background: #ffcc80;
+    background: #ff9800;
     border-radius: 3px;
+}
+
+.formado-card-body::-webkit-scrollbar-thumb:hover {
+    background: #e65100;
 }
 
 .formado-empty {
