@@ -31,13 +31,19 @@ function initFirebaseListeners() {
 
         dbFirebase.ref(FB_KEY_CANDIDATOS).on('value', (snap) => {
             candidatos = snap.val() || [];
-            backupCandidatos();
+            if (firebaseReady) {
+                renderList();
+                if (typeof renderAlunosList === 'function') renderAlunosList();
+            }
             checkReady();
         });
 
         dbFirebase.ref(FB_KEY_TURMAS).on('value', (snap) => {
             turmas = snap.val() || [];
-            backupTurmas();
+            if (firebaseReady) {
+                renderTurmasList();
+                populateTurmaSelect();
+            }
             checkReady();
         });
 
