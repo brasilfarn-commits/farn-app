@@ -1600,8 +1600,12 @@ function renderFormadosList() {
 
 function filterFormados() { renderFormadosList(); }
 
-function generateMatricula(cpf) {
-    const year = new Date().getFullYear();
+function generateMatricula(cpf, dataFormacao) {
+    let year = new Date().getFullYear();
+    if (dataFormacao) {
+        const d = new Date(dataFormacao);
+        if (!isNaN(d)) year = d.getFullYear();
+    }
     const last5 = (cpf || '').replace(/\D/g, '').slice(-5);
     return String(year).slice(-4) + last5;
 }
@@ -1692,7 +1696,7 @@ async function handleFormadoSubmit(event) {
     data.cursos = cursos;
     data.dataFormacao = document.getElementById('ff-data-formacao').value ? new Date(document.getElementById('ff-data-formacao').value).toLocaleDateString('pt-BR') : '';
     data.dataFormacaoRaw = document.getElementById('ff-data-formacao').value;
-    data.matricula = document.getElementById('ff-matricula').value || generateMatricula(cpf);
+    data.matricula = document.getElementById('ff-matricula').value || generateMatricula(cpf, document.getElementById('ff-data-formacao').value);
     const photoPreview = document.getElementById('formado-photo-preview');
     if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
         data.photoDataUrl = photoPreview.src;
