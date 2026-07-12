@@ -1,0 +1,22 @@
+{
+    "name": "FARN - Forca Auxiliar de Resgate Nacional",
+    "short_name": "FARN",
+    "description": "Sistema de Gestao Educacional - FARN",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#0d0d0d",
+    "theme_color": "#f57c00",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "logo-farn.png.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "logo-farn.png.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
