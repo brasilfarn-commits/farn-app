@@ -1052,6 +1052,32 @@
         </div>
     </div>
 
+    <!-- MODAL MOVER PARA FORMADOS -->
+    <div id="modal-move-formado-overlay" class="modal-overlay hidden" onclick="closeMoveFormadoModal(event)">
+        <div class="modal-content modal-confirm">
+            <div class="confirm-header" style="color:#ff9800">
+                <i class="fa-solid fa-award"></i>
+                <h3>Mover para Formados</h3>
+            </div>
+            <div class="confirm-body" id="move-formado-text"></div>
+            <div style="margin-top:16px">
+                <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Senha do Administrador *</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="move-formado-senha" class="config-input" placeholder="Digite a senha do admin" style="padding-left:44px" onkeydown="if(event.key==='Enter')confirmMoveToFormado()">
+                </div>
+                <div id="move-formado-error" class="error-message hidden" style="margin-top:8px">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>Senha incorreta</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeMoveFormadoModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                <button class="btn-primary" onclick="confirmMoveToFormado()" style="background:linear-gradient(135deg,#e65100,#ff9800)"><i class="fa-solid fa-arrow-right"></i> Mover para Formados</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL TURMA -->
     <div id="modal-turma-overlay" class="modal-overlay hidden" onclick="closeTurmaModal(event)">
         <div class="modal-content modal-confirm">

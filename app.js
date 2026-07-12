@@ -992,6 +992,7 @@ function renderAlunosList() {
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
                 ${c.status === 'Aprovado' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
+                <button class="btn-icon btn-move-formado" title="Mover para Formados" onclick="openMoveFormadoModal(${i})" style="background:rgba(255,152,0,0.15);color:#ff9800;border:1px solid rgba(255,152,0,0.3)"><i class="fa-solid fa-award"></i></button>
                 <div class="status-dropdown">
                     <button class="btn-icon btn-status" title="Alterar Status" onclick="toggleStatusDropdown(event, ${i})"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
                     <div class="status-dropdown-menu hidden" id="status-dd-${i}">
@@ -1570,6 +1571,78 @@ let formadoUploadedFiles = [];
 let formadoCertFrente = null;
 let formadoCertVerso = null;
 let currentFormadosTab = 'ativos';
+let pendingMoveFormadoIndex = null;
+
+/* ===== MOVER ALUNO PARA FORMADOS ===== */
+
+function openMoveFormadoModal(idx) {
+    pendingMoveFormadoIndex = idx;
+    const c = candidatos[idx];
+    if (!c) return;
+    document.getElementById('move-formado-text').innerHTML = `Deseja mover o aluno <strong>${c.nome}</strong> (CPF: ${formatCPFDisplay(c.cpf)}) para a pagina de <strong>Formados</strong>?`;
+    document.getElementById('move-formado-senha').value = '';
+    document.getElementById('move-formado-error').classList.add('hidden');
+    document.getElementById('modal-move-formado-overlay').classList.remove('hidden');
+}
+
+function closeMoveFormadoModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-move-formado-overlay').classList.add('hidden');
+    pendingMoveFormadoIndex = null;
+}
+
+async function confirmMoveToFormado() {
+    const senha = document.getElementById('move-formado-senha').value;
+    const errorEl = document.getElementById('move-formado-error');
+    errorEl.classList.add('hidden');
+    if (senha !== ADMIN_SENHA) {
+        errorEl.classList.remove('hidden');
+        return;
+    }
+    const c = candidatos[pendingMoveFormadoIndex];
+    if (!c) { closeMoveFormadoModal(); return; }
+    const data = {
+        nome: c.nome || '',
+        cpf: c.cpf || '',
+        nascimento: c.nascimento || '',
+        estadoCivil: c.estadoCivil || '',
+        nacionalidade: c.nacionalidade || '',
+        naturalidade: c.naturalidade || '',
+        profissao: c.profissao || '',
+        mae: c.mae || '',
+        pai: c.pai || '',
+        email: c.email || '',
+        whatsapp: c.whatsapp || '',
+        endereco: c.endereco || '',
+        numero: c.numero || '',
+        bairro: c.bairro || '',
+        cidade: c.cidade || '',
+        estado: c.estado || '',
+        altura: c.altura || '',
+        peso: c.peso || '',
+        fatorRh: c.fatorRh || '',
+        photoDataUrl: c.photoDataUrl || null,
+        hasPhoto: c.hasPhoto || false,
+        cursos: [],
+        matricula: '',
+        dataFormacao: '',
+        dataFormacaoRaw: '',
+        certFrente: null,
+        certVerso: null,
+        status: 'Pendente',
+        cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
+        dataCadastro: new Date().toLocaleDateString('pt-BR'),
+        movedFromAlunos: true
+    };
+    try {
+        const docId = c.cpf;
+        await dbFirestore.collection(FB_FORMADOS).doc(docId).set(data);
+        closeMoveFormadoModal();
+        openFormFormado(docId);
+    } catch(e) {
+        alert('Erro ao mover para formados: ' + e.message);
+    }
+}
 
 const formadoFields = ['ff-nome','ff-cpf','ff-nascimento','ff-estado-civil','ff-nacionalidade','ff-naturalidade','ff-profissao','ff-mae','ff-pai','ff-email','ff-whatsapp','ff-endereco','ff-numero','ff-bairro','ff-cidade','ff-estado','ff-altura','ff-peso','ff-fator-rh','ff-data-formacao','ff-matricula'];
 
