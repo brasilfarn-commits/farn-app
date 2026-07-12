@@ -3,20 +3,41 @@
     "short_name": "FARN",
     "description": "Sistema de Gestao Educacional - FARN",
     "start_url": "./index.html",
+    "scope": "./",
     "display": "standalone",
     "background_color": "#0d0d0d",
     "theme_color": "#f57c00",
     "orientation": "portrait",
+    "categories": ["education", "utilities"],
+    "lang": "pt-BR",
+    "dir": "ltr",
+    "prefer_related_applications": false,
     "icons": [
         {
             "src": "logo-farn.png.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
             "src": "logo-farn.png.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Pre-Inscricao",
+            "short_name": "Pre-Inscricao",
+            "url": "./index.html#pre-inscricao",
+            "icons": [{"src": "logo-farn.png.png", "sizes": "96x96"}]
+        },
+        {
+            "name": "Alunos",
+            "short_name": "Alunos",
+            "url": "./index.html#alunos",
+            "icons": [{"src": "logo-farn.png.png", "sizes": "96x96"}]
         }
     ]
 }

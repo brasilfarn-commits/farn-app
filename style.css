@@ -10,6 +10,18 @@ body {
     color: #fff;
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@supports (padding: env(safe-area-inset-top)) {
+    .sidebar { padding-top: env(safe-area-inset-top); }
+    .topbar { padding-top: env(safe-area-inset-top); }
+    .login-container { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+    .btn-login { margin-bottom: env(safe-area-inset-bottom); }
 }
 
 .screen { display: none; height: 100vh; }
