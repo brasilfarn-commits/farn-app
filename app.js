@@ -10,164 +10,45 @@ let pendingDeleteTurmaIndex = null;
 let editingTurmaIndex = null;
 let currentAluno = null;
 
-/* ===== PERSISTENCIA LOCAL (localStorage) ===== */
+/* ===== FIREBASE SINCRONIZACAO ===== */
 
-const LS_KEY_CANDIDATOS = 'farn_candidatos';
-const LS_KEY_TURMAS = 'farn_turmas';
+const FB_KEY_CANDIDATOS = 'candidatos';
+const FB_KEY_TURMAS = 'turmas';
+let firebaseReady = false;
 
 function backupCandidatos() {
-    try { localStorage.setItem(LS_KEY_CANDIDATOS, JSON.stringify(candidatos)); } catch(e) {}
+    try { dbFirebase.ref(FB_KEY_CANDIDATOS).set(candidatos); } catch(e) {}
 }
 
 function backupTurmas() {
-    try { localStorage.setItem(LS_KEY_TURMAS, JSON.stringify(turmas)); } catch(e) {}
+    try { dbFirebase.ref(FB_KEY_TURMAS).set(turmas); } catch(e) {}
 }
 
-function restoreCandidatos() {
-    try {
-        const data = localStorage.getItem(LS_KEY_CANDIDATOS);
-        if (data) candidatos = JSON.parse(data);
-    } catch(e) { candidatos = []; }
-}
+function initFirebaseListeners() {
+    return new Promise((resolve) => {
+        let loaded = 0;
+        const checkReady = () => { loaded++; if (loaded === 2) { firebaseReady = true; resolve(); } };
 
-function restoreTurmas() {
-    try {
-        const data = localStorage.getItem(LS_KEY_TURMAS);
-        if (data) turmas = JSON.parse(data);
-    } catch(e) { turmas = []; }
-}
+        dbFirebase.ref(FB_KEY_CANDIDATOS).on('value', (snap) => {
+            candidatos = snap.val() || [];
+            backupCandidatos();
+            checkReady();
+        });
 
-/* ===== BANCO DE DADOS IndexedDB (backup secundario) ===== */
+        dbFirebase.ref(FB_KEY_TURMAS).on('value', (snap) => {
+            turmas = snap.val() || [];
+            backupTurmas();
+            checkReady();
+        });
 
-const DB_NAME = 'FARN_DB';
-const DB_VERSION = 2;
-const STORE_CANDIDATOS = 'candidatos';
-const STORE_TURMAS = 'turmas';
-let db = null;
-
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = function(e) {
-            const database = e.target.result;
-            if (!database.objectStoreNames.contains(STORE_CANDIDATOS)) {
-                const store = database.createObjectStore(STORE_CANDIDATOS, { keyPath: 'id', autoIncrement: true });
-                store.createIndex('cpf', 'cpf', { unique: false });
-                store.createIndex('nome', 'nome', { unique: false });
-                store.createIndex('status', 'status', { unique: false });
-            }
-            if (!database.objectStoreNames.contains(STORE_TURMAS)) {
-                const store = database.createObjectStore(STORE_TURMAS, { keyPath: 'id', autoIncrement: true });
-                store.createIndex('nome', 'nome', { unique: false });
-            }
-        };
-        request.onsuccess = function(e) { db = e.target.result; resolve(db); };
-        request.onerror = function(e) { console.error('Erro ao abrir banco:', e); reject(e); };
+        setTimeout(() => { if (!firebaseReady) { firebaseReady = true; resolve(); } }, 5000);
     });
-}
-
-function dbGetAll(storeName) {
-    return new Promise((resolve, reject) => {
-        if (!db) { resolve([]); return; }
-        try {
-            const tx = db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => resolve([]);
-        } catch(e) { resolve([]); }
-    });
-}
-
-function dbAdd(storeName, data) {
-    return new Promise((resolve, reject) => {
-        if (!db) { resolve(0); return; }
-        try {
-            const tx = db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.add(data);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        } catch(e) { reject(e); }
-    });
-}
-
-function dbPut(storeName, data) {
-    return new Promise((resolve, reject) => {
-        if (!db) { resolve(); return; }
-        try {
-            const tx = db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.put(data);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        } catch(e) { reject(e); }
-    });
-}
-
-function dbDelete(storeName, id) {
-    return new Promise((resolve, reject) => {
-        if (!db) { resolve(); return; }
-        try {
-            const tx = db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.delete(id);
-            request.onsuccess = () => resolve();
-            request.onerror = () => resolve();
-        } catch(e) { resolve(); }
-    });
-}
-
-/* ===== SINCRONIZAR localStorage <-> IndexedDB ===== */
-
-async function syncFromDB() {
-    try {
-        await openDB();
-    } catch(e) { console.error('Erro ao abrir DB:', e); }
-
-    const dbCandidatos = await dbGetAll(STORE_CANDIDATOS);
-    const dbTurmas = await dbGetAll(STORE_TURMAS);
-
-    const lsCandidatosRaw = localStorage.getItem(LS_KEY_CANDIDATOS);
-    const lsTurmasRaw = localStorage.getItem(LS_KEY_TURMAS);
-    const lsCandidatos = lsCandidatosRaw ? JSON.parse(lsCandidatosRaw) : [];
-    const lsTurmas = lsTurmasRaw ? JSON.parse(lsTurmasRaw) : [];
-
-    if (dbCandidatos.length > lsCandidatos.length) {
-        candidatos = dbCandidatos;
-        backupCandidatos();
-    } else if (lsCandidatos.length > 0) {
-        candidatos = lsCandidatos;
-        for (const c of candidatos) {
-            if (!c.id) {
-                try { c.id = await dbAdd(STORE_CANDIDATOS, c); } catch(e) {}
-            }
-        }
-        backupCandidatos();
-    } else {
-        candidatos = [];
-    }
-
-    if (dbTurmas.length > lsTurmas.length) {
-        turmas = dbTurmas;
-        backupTurmas();
-    } else if (lsTurmas.length > 0) {
-        turmas = lsTurmas;
-        for (const t of turmas) {
-            if (!t.id) {
-                try { t.id = await dbAdd(STORE_TURMAS, t); } catch(e) {}
-            }
-        }
-        backupTurmas();
-    } else {
-        turmas = [];
-    }
 }
 
 /* ===== INICIALIZACAO ===== */
 
 async function initApp() {
-    await syncFromDB();
+    await initFirebaseListeners();
 }
 
 initApp();
@@ -405,10 +286,9 @@ async function handleCandidatoSubmit(event) {
     if (editingIndex !== null) {
         data.id = candidatos[editingIndex].id;
         candidatos[editingIndex] = data;
-        try { await dbPut(STORE_CANDIDATOS, data); } catch(e) {}
         editingIndex = null;
     } else {
-        try { data.id = await dbAdd(STORE_CANDIDATOS, data); } catch(e) {}
+        data.id = Date.now();
         candidatos.push(data);
     }
 
@@ -507,16 +387,12 @@ function deleteCandidato(i) {
 async function confirmDelete() {
     if (pendingDeleteTurmaIndex !== null) {
         if (pendingDeleteTurmaIndex !== null) {
-            const turma = turmas[pendingDeleteTurmaIndex];
-            if (turma && turma.id) try { await dbDelete(STORE_TURMAS, turma.id); } catch(e) {}
             turmas.splice(pendingDeleteTurmaIndex, 1);
             backupTurmas();
             renderTurmasList();
             await populateTurmaSelect();
         }
     } else if (pendingDeleteIndex !== null) {
-        const candidato = candidatos[pendingDeleteIndex];
-        if (candidato && candidato.id) try { await dbDelete(STORE_CANDIDATOS, candidato.id); } catch(e) {}
         candidatos.splice(pendingDeleteIndex, 1);
         backupCandidatos();
         renderList();
@@ -727,7 +603,7 @@ async function importExcelFile(event) {
                 data.senha = data.cpf.substring(0, 6);
             }
 
-            try { data.id = await dbAdd(STORE_CANDIDATOS, data); } catch(e) {}
+            data.id = Date.now() + importados;
             candidatos.push(data);
             importados++;
         }
@@ -853,7 +729,6 @@ async function changeStatus(i, newStatus) {
     if (newStatus === 'Aprovado' && candidatos[i].cpf) {
         candidatos[i].senha = candidatos[i].cpf.substring(0, 6);
     }
-    try { await dbPut(STORE_CANDIDATOS, candidatos[i]); } catch(e) {}
     backupCandidatos();
     document.querySelectorAll('.status-dropdown-menu').forEach(d => d.classList.add('hidden'));
     renderAlunosList();
@@ -960,11 +835,9 @@ async function handleTurmaSubmit(event) {
         const turma = turmas[editingTurmaIndex];
         turma.nome = nome;
         turma.descricao = descricao;
-        try { await dbPut(STORE_TURMAS, turma); } catch(e) {}
         editingTurmaIndex = null;
     } else {
-        const nova = { nome, descricao };
-        try { nova.id = await dbAdd(STORE_TURMAS, nova); } catch(e) {}
+        const nova = { id: Date.now(), nome, descricao };
         turmas.push(nova);
     }
 
