@@ -205,6 +205,19 @@ async function initApp() {
     migrateLocalStorage();
     await migrateIndexedDB();
     await initFirebaseListeners();
+
+    if (restoreLoginState()) {
+        document.getElementById('screen-login').classList.remove('active');
+        document.getElementById('screen-admin').classList.add('active');
+        showAdminSection('admin-home', document.querySelector('.nav-item'));
+        await populateTurmaSelect();
+        renderList();
+        renderTurmasList();
+        if (restoreFormState()) {
+            showAdminSection('admin-form-candidato', document.querySelector('.nav-item:nth-child(2)'));
+            await populateTurmaSelect();
+        }
+    }
 }
 
 initApp();
@@ -275,6 +288,7 @@ async function handleLogin(event) {
         await populateTurmaSelect();
         renderList();
         renderTurmasList();
+        saveLoginState();
     } else if (selectedLoginRole === 'aluno') {
         const aluno = candidatos.find(c => c.cpf === cpf && c.senha === password && c.status === 'Aprovado');
         if (!aluno) {
@@ -305,6 +319,7 @@ function handleLogout() {
     document.getElementById('password').value = '';
     document.getElementById('login-error').classList.add('hidden');
     editingIndex = null;
+    clearLoginState();
 }
 
 function logoutPortal() {
@@ -1043,52 +1058,81 @@ function closeConfirmModal(e) { if (e && e.target !== e.currentTarget) return; d
 
 /* ===== FOTO E ANEXOS ===== */
 
+function saveFormState() {
+    try {
+        const state = {};
+        formFields.forEach(id => { const el = document.getElementById(id); if (el) state[id] = el.value; });
+        state._editingIndex = editingIndex;
+        state._screen = 'admin-form-candidato';
+        localStorage.setItem('farn_form_state', JSON.stringify(state));
+    } catch(e) {}
+}
+
+function restoreFormState() {
+    try {
+        const raw = localStorage.getItem('farn_form_state');
+        if (!raw) return false;
+        const state = JSON.parse(raw);
+        if (state._screen !== 'admin-form-candidato') return false;
+        formFields.forEach(id => { if (state[id] !== undefined) { const el = document.getElementById(id); if (el) el.value = state[id]; } });
+        if (state._editingIndex !== null && state._editingIndex !== undefined) {
+            editingIndex = state._editingIndex;
+        }
+        localStorage.removeItem('farn_form_state');
+        return true;
+    } catch(e) { return false; }
+}
+
+function saveLoginState() {
+    try { localStorage.setItem('farn_login', 'admin'); } catch(e) {}
+}
+
+function restoreLoginState() {
+    try { return localStorage.getItem('farn_login') === 'admin'; } catch(e) { return false; }
+}
+
+function clearLoginState() {
+    try { localStorage.removeItem('farn_login'); } catch(e) {}
+}
+
 function handlePhotoUpload(event) {
     const file = event.target.files[0]; if (!file) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = 300;
-    canvas.height = 400;
-    const ctx = canvas.getContext('2d');
-
-    if (typeof createImageBitmap === 'function' && typeof Image !== 'undefined') {
-        createImageBitmap(file, { resizeWidth: 300, resizeHeight: 400, resizeQuality: 'low' }).then(function(bitmap) {
-            ctx.drawImage(bitmap, 0, 0, 300, 400);
-            bitmap.close();
-            setPhotoPreview(canvas.toDataURL('image/jpeg', 0.5));
-        }).catch(function() {
-            fallbackPhotoLoad(file);
-        });
-    } else {
-        fallbackPhotoLoad(file);
+    if (file.size > 3 * 1024 * 1024) {
+        alert('Foto muito grande (' + Math.round(file.size/1024/1024) + 'MB). Maximo 3MB.');
+        event.target.value = '';
+        return;
     }
-}
-
-function fallbackPhotoLoad(file) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 300;
-    canvas.height = 400;
-    const ctx = canvas.getContext('2d');
-    const blob = new Blob([file], { type: file.type });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = function() {
-        ctx.drawImage(img, 0, 0, 300, 400);
-        URL.revokeObjectURL(url);
-        img.src = '';
-        setPhotoPreview(canvas.toDataURL('image/jpeg', 0.5));
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300;
+            canvas.height = 400;
+            canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
+            img.src = '';
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                document.getElementById('photo-preview').src = url;
+                document.getElementById('photo-preview').classList.remove('hidden');
+                document.getElementById('photo-placeholder').style.display = 'none';
+                document.getElementById('btn-remove-photo').style.display = '';
+            }, 'image/jpeg', 0.5);
+        };
+        img.onerror = function() { alert('Erro ao processar foto.'); };
+        img.src = e.target.result;
     };
-    img.onerror = function() { URL.revokeObjectURL(url); alert('Erro ao carregar foto.'); };
-    img.src = url;
+    reader.onerror = function() { alert('Erro ao ler arquivo.'); };
+    reader.readAsDataURL(file);
 }
 
-function setPhotoPreview(dataUrl) {
-    document.getElementById('photo-preview').src = dataUrl;
-    document.getElementById('photo-preview').classList.remove('hidden');
-    document.getElementById('photo-placeholder').style.display = 'none';
-    document.getElementById('btn-remove-photo').style.display = '';
+function openCamera() {
+    saveFormState();
+    saveLoginState();
+    const i = document.getElementById('photo-input');
+    i.setAttribute('capture', 'user');
+    i.click();
 }
-
-function openCamera() { const i = document.getElementById('photo-input'); i.setAttribute('capture', 'user'); i.click(); }
 
 function removePhoto() {
     document.getElementById('photo-preview').src = '';
