@@ -2496,6 +2496,7 @@ select.config-input option {
 .usuario-tag-pre { background: rgba(245,124,0,0.15); color: #f57c00; }
 .usuario-tag-admin { background: rgba(33,150,243,0.15); color: #2196f3; }
 .usuario-tag-instrutor { background: rgba(156,39,176,0.15); color: #ce93d8; }
+.usuario-tag-turma { background: rgba(76,175,80,0.15); color: #4caf50; }
 
 .usuario-row {
     display: flex;
