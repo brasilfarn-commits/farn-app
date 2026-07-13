@@ -1744,6 +1744,7 @@ function renderFormadosList() {
                 <button class="btn-icon" title="Editar" onclick="editFormado('${f.docId}')"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon btn-success" title="${f.status === 'Ativo' || !f.status ? 'Manter Ativo' : 'Ativar'}" onclick="changeFormadoStatus('${f.docId}', 'Ativo')"><i class="fa-solid fa-check"></i></button>
                 <button class="btn-icon btn-warning" title="Marcar Pendente" onclick="changeFormadoStatus('${f.docId}', 'Pendente')"><i class="fa-solid fa-clock"></i></button>
+                <button class="btn-icon btn-info" title="Voltar para Aluno" onclick="formadoParaAluno('${f.docId}')"><i class="fa-solid fa-user-graduate"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteFormado('${f.docId}')"><i class="fa-solid fa-trash"></i></button>
             </div></td>
         </tr>`;
@@ -1756,6 +1757,41 @@ async function changeFormadoStatus(docId, newStatus) {
     try {
         await dbFirestore.collection(FB_FORMADOS).doc(docId).set({ status: newStatus }, { merge: true });
     } catch(e) { alert('Erro ao alterar status: ' + e.message); }
+}
+
+async function formadoParaAluno(docId) {
+    const f = formados.find(x => x.docId === docId);
+    if (!f) return;
+    if (!confirm(`Deseja mover "${f.nome}" de volta para Aluno(a) aprovado(a)?`)) return;
+    try {
+        const candidatoData = {
+            nome: f.nome || '',
+            cpf: f.cpf || '',
+            nascimento: f.nascimento || '',
+            estadoCivil: f.estadoCivil || '',
+            nacionalidade: f.nacionalidade || '',
+            naturalidade: f.naturalidade || '',
+            profissao: f.profissao || '',
+            mae: f.mae || '',
+            pai: f.pai || '',
+            email: f.email || '',
+            whatsapp: f.whatsapp || '',
+            endereco: f.endereco || '',
+            numero: f.numero || '',
+            bairro: f.bairro || '',
+            cidade: f.cidade || '',
+            estado: f.estado || '',
+            photoDataUrl: f.photoDataUrl || null,
+            status: 'Aprovado',
+            dataAprovacao: new Date().toLocaleDateString('pt-BR'),
+            cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido'
+        };
+        await dbFirestore.collection(FB_CANDIDATOS).doc(f.cpf).set(candidatoData);
+        await dbFirestore.collection(FB_FORMADOS).doc(docId).delete();
+        renderFormadosList();
+    } catch(e) {
+        alert('Erro ao mover para aluno: ' + e.message);
+    }
 }
 
 function generateMatricula(cpf, dataFormacao) {
