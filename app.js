@@ -744,7 +744,11 @@ async function confirmDelete() {
             await populateTurmaSelect();
         }
     } else if (pendingDeleteIndex !== null) {
+        const removed = candidatos[pendingDeleteIndex];
         candidatos.splice(pendingDeleteIndex, 1);
+        if (removed && removed.cpf) {
+            try { await dbFirestore.collection(FB_CANDIDATOS).doc(removed.cpf).delete(); } catch(e) {}
+        }
         backupCandidatos();
         renderList();
         if (typeof renderAlunosList === 'function') renderAlunosList();
