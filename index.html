@@ -801,6 +801,14 @@
                                     <span>Gerenciar Usuarios</span>
                                     <small>Criar, editar e gerenciar permissoes de acesso</small>
                                 </div>
+                                <div class="config-card" onclick="syncAllDatabases()">
+                                    <i class="fa-solid fa-rotate"></i>
+                                    <span>Sincronizar Bancos</span>
+                                    <small>Sincronizar candidatos, turmas, usuarios e formados com o Firestore</small>
+                                    <button id="btn-sync-all" class="btn-primary" style="margin-top:12px" onclick="event.stopPropagation(); syncAllDatabases()">
+                                        <i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -72,6 +72,69 @@ function backupTurmas() {
     batch.commit().catch(e => console.error('Erro ao salvar turmas:', e));
 }
 
+function backupUsuarios() {
+    if (!firebaseReady && !firebaseError) return;
+    const batch = dbFirestore.batch();
+    const ref = dbFirestore.collection(FB_USUARIOS);
+    batch.set(ref.doc('_index'), { count: usuarios.length, timestamp: Date.now() });
+    usuarios.forEach((u, i) => {
+        const id = u.docId ? String(u.docId) : (u.cpf ? String(u.cpf) : String(i));
+        const copy = Object.assign({}, u);
+        delete copy.docId;
+        batch.set(ref.doc(id), copy);
+    });
+    batch.commit().catch(e => console.error('Erro ao salvar usuarios:', e));
+}
+
+function backupFormados() {
+    if (!firebaseReady && !firebaseError) return;
+    const batch = dbFirestore.batch();
+    const ref = dbFirestore.collection(FB_FORMADOS);
+    batch.set(ref.doc('_index'), { count: formados.length, timestamp: Date.now() });
+    formados.forEach((f, i) => {
+        const id = f.docId ? String(f.docId) : (f.cpf ? String(f.cpf) : String(i));
+        const copy = Object.assign({}, f);
+        delete copy.docId;
+        batch.set(ref.doc(id), copy);
+    });
+    batch.commit().catch(e => console.error('Erro ao salvar formados:', e));
+}
+
+async function syncAllDatabases() {
+    if (!firebaseReady && !firebaseError) {
+        alert('Firebase nao conectado. Verifique a conexao.');
+        return;
+    }
+    const btn = document.getElementById('btn-sync-all');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    }
+    try {
+        backupCandidatos();
+        backupTurmas();
+        backupUsuarios();
+        backupFormados();
+        await dbFirestore.collection(FB_CANDIDATOS).get();
+        await dbFirestore.collection(FB_TURMAS).get();
+        await dbFirestore.collection(FB_USUARIOS).get();
+        await dbFirestore.collection(FB_FORMADOS).get();
+        renderList();
+        renderTurmasList();
+        populateTurmaSelect();
+        if (typeof renderUsuariosList === 'function') renderUsuariosList();
+        if (typeof renderFormadosList === 'function') renderFormadosList();
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Sincronizado!';
+        setTimeout(() => {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos'; }
+        }, 2000);
+    } catch (e) {
+        console.error('Erro na sincronizacao:', e);
+        alert('Erro ao sincronizar: ' + e.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos'; }
+    }
+}
+
 function initFirebaseListeners() {
     return new Promise((resolve) => {
         let loaded = 0;
@@ -245,6 +308,8 @@ async function initApp() {
     migrateLocalStorage();
     await migrateIndexedDB();
     await initFirebaseListeners();
+    backupUsuarios();
+    backupFormados();
 
     if (restoreLoginState()) {
         document.getElementById('screen-login').classList.remove('active');
