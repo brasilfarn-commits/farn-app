@@ -1345,13 +1345,19 @@ function openBrowserCamera() {
     const overlay = document.createElement('div');
     overlay.id = 'camera-overlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
     document.body.appendChild(overlay);
 
     const video = document.getElementById('camera-video');
     let stream = null;
+    let currentFacing = 'user';
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 800 }, height: { ideal: 600 } } })
+    function startCamera(facing) {
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 800 }, height: { ideal: 600 } } });
+    }
+
+    startCamera(currentFacing)
     .then(function(s) {
         stream = s;
         video.srcObject = stream;
@@ -1360,6 +1366,19 @@ function openBrowserCamera() {
         document.body.removeChild(overlay);
         alert('Nao foi possivel acessar a camera: ' + err.message);
     });
+
+    document.getElementById('camera-switch').onclick = function() {
+        currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+        startCamera(currentFacing)
+        .then(function(s) {
+            stream = s;
+            video.srcObject = stream;
+        })
+        .catch(function(err) {
+            currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+            alert('Nao foi possivel trocar a camera: ' + err.message);
+        });
+    };
 
     document.getElementById('camera-capture').onclick = function() {
         const canvas = document.createElement('canvas');
@@ -2039,13 +2058,28 @@ function openFormadoCamera() {
         const overlay = document.createElement('div');
         overlay.id = 'camera-overlay';
         overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
         document.body.appendChild(overlay);
         const video = document.getElementById('camera-video');
         let stream = null;
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 800 }, height: { ideal: 600 } } })
+        let currentFacing = 'user';
+
+        function startCamera(facing) {
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 800 }, height: { ideal: 600 } } });
+        }
+
+        startCamera(currentFacing)
         .then(function(s) { stream = s; video.srcObject = stream; })
         .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
+
+        document.getElementById('camera-switch').onclick = function() {
+            currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+            startCamera(currentFacing)
+            .then(function(s) { stream = s; video.srcObject = stream; })
+            .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
+        };
+
         document.getElementById('camera-capture').onclick = function() {
             const canvas = document.createElement('canvas');
             canvas.width = 300; canvas.height = 400;
