@@ -351,6 +351,27 @@ function formatCPF(input) {
     else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
     else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
     input.value = v;
+    updateMatricula(v);
+}
+
+function generateMatricula(cpf) {
+    const digits = (cpf || '').replace(/\D/g, '');
+    if (digits.length < 5) return '';
+    return 'ACD' + digits.slice(-5);
+}
+
+function updateMatricula(cpfFormatted) {
+    const wrapper = document.getElementById('fc-matricula-wrapper');
+    const display = document.getElementById('fc-matricula-display');
+    if (!wrapper || !display) return;
+    const mat = generateMatricula(cpfFormatted);
+    if (mat) {
+        display.textContent = mat;
+        wrapper.style.display = '';
+    } else {
+        wrapper.style.display = 'none';
+        display.textContent = '';
+    }
 }
 
 function formatPhone(input) {
@@ -599,6 +620,7 @@ async function editCandidato(index) {
     await populateTurmaSelect();
     document.getElementById('fc-nome').value = c.nome || '';
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
+    updateMatricula(formatCPFDisplay(c.cpf || ''));
     document.getElementById('fc-nascimento').value = c.nascimento || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
     document.getElementById('fc-nacionalidade').value = c.nacionalidade || '';
@@ -661,6 +683,10 @@ function resetFormCandidato() {
     formFields.forEach(id => { const el = document.getElementById(id); if (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; } });
     document.getElementById('senha-field-wrapper').style.display = 'none';
     document.getElementById('fc-senha').required = false;
+    const mw = document.getElementById('fc-matricula-wrapper');
+    const md = document.getElementById('fc-matricula-display');
+    if (mw) mw.style.display = 'none';
+    if (md) md.textContent = '';
     removePhoto();
     uploadedFiles = [];
     renderFilesList();
@@ -676,6 +702,7 @@ async function handleCandidatoSubmit(event) {
         if (id === 'fc-cpf') data[key] = el.value.replace(/\D/g, '');
         else data[key] = el.value;
     });
+    data.matricula = generateMatricula(data.cpf);
     data.status = editingIndex !== null ? candidatos[editingIndex].status : 'Pendente';
     data.dataCadastro = editingIndex !== null ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
 
@@ -735,6 +762,7 @@ function renderList() {
 
 function viewCandidato(i) {
     const c = candidatos[i]; if (!c) return;
+    const mat = c.matricula || generateMatricula(c.cpf);
     document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#1e88e5"></i> Detalhes do Candidato';
     const photoSrc = c.hasPhoto ? localStorage.getItem('farn_photo_' + c.cpf) : null;
     document.getElementById('modal-body').innerHTML = `
@@ -776,6 +804,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Camisa</span><span class="detail-value">${c.camisa||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Calcado</span><span class="detail-value">${c.calcado||'---'}</span></div>
             <div class="detail-section-title">Turma e Acesso</div>
+            ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><span class="detail-value" style="color:#f57c00;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span></div>` : ''}
             <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastro</span><span class="detail-value">${c.dataCadastro}</span></div>
@@ -823,6 +852,7 @@ async function confirmDelete() {
 
 function printCandidato(i) {
     const c = candidatos[i]; if (!c) return;
+    const mat = c.matricula || generateMatricula(c.cpf);
     const photoSrc = c.hasPhoto ? localStorage.getItem('farn_photo_' + c.cpf) : null;
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - ${c.nome}</title><style>
@@ -851,6 +881,7 @@ function printCandidato(i) {
         <h2>Uniforme</h2>
         <div class="row"><div class="col"><div class="label">Calca</div><div class="val">${c.calca||'---'}</div></div><div class="col"><div class="label">Camisa</div><div class="val">${c.camisa||'---'}</div></div><div class="col"><div class="label">Calcado</div><div class="val">${c.calcado||'---'}</div></div></div>
         <h2>Turma</h2>
+        ${mat ? `<div class="row"><div class="col"><div class="label">Matricula</div><div class="val" style="color:#e65100;font-size:18px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</div></div></div>` : ''}
         <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}</div></div><div class="col"><div class="label">Status</div><div class="val">${c.status}</div></div></div>
         ${c.status === 'Aprovado' && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
         <script>window.onload=function(){window.print();}<\/script></body></html>`);
@@ -1089,7 +1120,7 @@ function renderAlunosList() {
     document.getElementById('tab-count-segunda-chamada').textContent = candidatos.filter(c => c.status === 'Segunda Chamada').length;
 
     if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:24px">Nenhum aluno na aba "${statusFilter}"</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:24px">Nenhum aluno na aba "${statusFilter}"</td></tr>`;
         return;
     }
 
@@ -1105,9 +1136,11 @@ function renderAlunosList() {
     tbody.innerHTML = filtered.map((c, fi) => {
         const i = idxMap[fi];
         const otherStatuses = allStatuses.filter(s => s.value !== c.status);
+        const mat = c.matricula || generateMatricula(c.cpf);
         return `<tr>
             <td>${c.nome}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
+            <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>
             <td>${c.dataCadastro || '-'}</td>
             <td><div class="actions-cell">
@@ -1176,9 +1209,9 @@ function exportExcelAlunos() {
     const statusFilter = STATUS_MAP[currentAlunosTab];
     const filtered = candidatos.filter(c => c.status === statusFilter);
     if (!filtered.length) { alert('Nenhum aluno para exportar nesta aba.'); return; }
-    let csv = 'Nome,CPF,Nascimento,Turma,Status,Data Cadastro\n';
+    let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Status,Data Cadastro\n';
     filtered.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.turma||''}","${c.status}","${c.dataCadastro||''}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.matricula || generateMatricula(c.cpf) || ''}","${c.nascimento||''}","${c.turma||''}","${c.status}","${c.dataCadastro||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `alunos_${statusFilter.toLowerCase().replace(/\s/g,'_')}_farn.csv`; a.click();
@@ -1195,8 +1228,8 @@ function printTableAlunos() {
         td{padding:8px 12px;border-bottom:1px solid #ddd;font-size:13px}tr:nth-child(even){background:#f5f5f5}
         @media print{body{padding:20px}}</style></head><body>
         <h1>FARN - Alunos (${statusFilter})</h1><p class="sub">Impressao: ${new Date().toLocaleDateString('pt-BR')}</p>
-        <table><thead><tr><th>Nome</th><th>CPF</th><th>Turma</th><th>Data Cadastro</th></tr></thead><tbody>
-        ${filtered.map(c => `<tr><td>${c.nome}</td><td>${formatCPFDisplay(c.cpf)}</td><td>${c.turma||'-'}</td><td>${c.dataCadastro||'-'}</td></tr>`).join('')}
+        <table><thead><tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Data Cadastro</th></tr></thead><tbody>
+        ${filtered.map(c => `<tr><td>${c.nome}</td><td>${formatCPFDisplay(c.cpf)}</td><td style="color:#e65100;font-weight:800;font-family:'Courier New',monospace">${c.matricula || generateMatricula(c.cpf) || '-'}</td><td>${c.turma||'-'}</td><td>${c.dataCadastro||'-'}</td></tr>`).join('')}
         </tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
     w.document.close();
 }
