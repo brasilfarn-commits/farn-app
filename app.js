@@ -884,13 +884,18 @@ function portalLoadSidebarFoto() {
 }
 
 function fcCheckFoto3x4Local() {
-    var cpf = document.getElementById('fc-cpf').value.replace(/\D/g, '');
+    var cpfInput = document.getElementById('fc-cpf');
+    if (!cpfInput) return;
+    var cpf = cpfInput.value.replace(/\D/g, '');
     if (cpf.length < 11) {
         document.getElementById('fc-foto3x4-local-box').style.display = 'none';
         return;
     }
     var fullCpf = cpf;
     var dataUrl = localStorage.getItem('foto3x4_' + fullCpf) || localStorage.getItem('farn_photo_' + fullCpf);
+    if (!dataUrl && editingIndex !== null && candidatos[editingIndex]) {
+        dataUrl = candidatos[editingIndex].photoDataUrl || null;
+    }
     var box = document.getElementById('fc-foto3x4-local-box');
     var img = document.getElementById('fc-foto3x4-local-img');
     var msg = document.getElementById('fc-foto3x4-local-msg');
@@ -899,7 +904,7 @@ function fcCheckFoto3x4Local() {
         box.style.display = 'block';
         img.src = dataUrl;
         img.style.display = 'block';
-        msg.textContent = 'Foto capturada no portal deste dispositivo.';
+        msg.textContent = 'Foto disponivel para importacao.';
         msg.style.color = '#66bb6a';
         btn.style.display = '';
     } else {
@@ -914,6 +919,9 @@ function fcCheckFoto3x4Local() {
 function fcImportFoto3x4Local() {
     var cpf = document.getElementById('fc-cpf').value.replace(/\D/g, '');
     var dataUrl = localStorage.getItem('foto3x4_' + cpf) || localStorage.getItem('farn_photo_' + cpf);
+    if (!dataUrl && editingIndex !== null && candidatos[editingIndex]) {
+        dataUrl = candidatos[editingIndex].photoDataUrl || null;
+    }
     if (!dataUrl) return;
     var preview = document.getElementById('photo-preview');
     var placeholder = document.getElementById('photo-placeholder');
@@ -1109,7 +1117,7 @@ async function editCandidato(index) {
     document.getElementById('fc-nome').value = c.nome || '';
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
-    fcCheckFoto3x4Local();
+    setTimeout(function() { fcCheckFoto3x4Local(); }, 100);
     document.getElementById('fc-nascimento').value = c.nascimento || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
     document.getElementById('fc-nacionalidade').value = c.nacionalidade || '';
