@@ -527,6 +527,7 @@ async function handleLogin(event) {
         document.getElementById('screen-portal').classList.add('active');
         const primeiroNome = (aluno.nome || '').split(' ')[0];
         document.getElementById('portal-aluno-nome').textContent = primeiroNome;
+        document.getElementById('portal-aluno-matricula').textContent = 'Matricula: ' + (aluno.matricula || '---');
         const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
         if (aluno.photoDataUrl) {
             portalPhotoBox.innerHTML = `<img id="portal-photo" src="${aluno.photoDataUrl}" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>`;
@@ -674,6 +675,7 @@ function logoutPortal() {
 }
 
 let portalAlunoFotoDataUrl = null;
+let portalAlunoSaveTimeout = null;
 
 function openPortalAlunoDados() {
     if (!currentAluno) return;
@@ -696,6 +698,7 @@ function openPortalAlunoDados() {
 }
 
 function closePortalAlunoDados() {
+    portalAlunoAutoSave(true);
     document.getElementById('modal-portal-aluno-dados').classList.add('hidden');
 }
 
@@ -709,11 +712,15 @@ function handlePortalAlunoFotoUpload(event) {
             canvas.width = 300; canvas.height = 400;
             canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
             canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                portalAlunoFotoDataUrl = url;
-                document.getElementById('portal-aluno-foto-preview').src = url;
-                document.getElementById('portal-aluno-foto-preview').style.display = 'block';
-                document.getElementById('portal-aluno-foto-placeholder').style.display = 'none';
+                const innerReader = new FileReader();
+                innerReader.onloadend = function() {
+                    portalAlunoFotoDataUrl = innerReader.result;
+                    document.getElementById('portal-aluno-foto-preview').src = innerReader.result;
+                    document.getElementById('portal-aluno-foto-preview').style.display = 'block';
+                    document.getElementById('portal-aluno-foto-placeholder').style.display = 'none';
+                    portalAlunoAutoSave(true);
+                };
+                innerReader.readAsDataURL(blob);
             }, 'image/jpeg', 0.5);
         };
         img.src = e.target.result;
@@ -721,24 +728,28 @@ function handlePortalAlunoFotoUpload(event) {
     reader.readAsDataURL(file);
 }
 
-async function savePortalAlunoDados() {
+function portalAlunoScheduleSave() {
+    if (portalAlunoSaveTimeout) clearTimeout(portalAlunoSaveTimeout);
+    portalAlunoSaveTimeout = setTimeout(function() { portalAlunoAutoSave(false); }, 800);
+}
+
+async function portalAlunoAutoSave(silent) {
     if (!currentAluno) return;
+    if (portalAlunoSaveTimeout) { clearTimeout(portalAlunoSaveTimeout); portalAlunoSaveTimeout = null; }
     const email = document.getElementById('portal-aluno-email').value.trim();
     const whatsapp = document.getElementById('portal-aluno-whatsapp').value.trim();
     const msgEl = document.getElementById('portal-aluno-dados-msg');
-
     const updateData = { email: email, whatsapp: whatsapp };
     if (portalAlunoFotoDataUrl) {
         updateData.photoDataUrl = portalAlunoFotoDataUrl;
         try { localStorage.setItem('farn_photo_' + currentAluno.cpf, portalAlunoFotoDataUrl); } catch(e) {}
     }
-
     try {
         await dbFirestore.collection('candidatos').doc(currentAluno.cpf).set(updateData, { merge: true });
         currentAluno.email = email;
         currentAluno.whatsapp = whatsapp;
         if (portalAlunoFotoDataUrl) currentAluno.photoDataUrl = portalAlunoFotoDataUrl;
-        const idx = candidatos.findIndex(c => c.cpf === currentAluno.cpf);
+        const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
         if (idx !== -1) {
             candidatos[idx].email = email;
             candidatos[idx].whatsapp = whatsapp;
@@ -748,18 +759,24 @@ async function savePortalAlunoDados() {
             const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
             portalPhotoBox.innerHTML = '<img id="portal-photo" src="' + currentAluno.photoDataUrl + '" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
         }
-        msgEl.textContent = 'Dados atualizados com sucesso!';
-        msgEl.style.display = 'block';
-        msgEl.style.background = 'rgba(76,175,80,0.15)';
-        msgEl.style.color = '#4caf50';
-        setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+        if (!silent) {
+            msgEl.textContent = 'Salvo automaticamente';
+            msgEl.style.display = 'block';
+            msgEl.style.background = 'rgba(76,175,80,0.15)';
+            msgEl.style.color = '#4caf50';
+            setTimeout(function() { msgEl.style.display = 'none'; }, 2000);
+        }
     } catch(e) {
-        msgEl.textContent = 'Erro ao salvar: ' + e.message;
-        msgEl.style.display = 'block';
-        msgEl.style.background = 'rgba(244,67,54,0.15)';
-        msgEl.style.color = '#f44336';
+        if (!silent) {
+            msgEl.textContent = 'Erro ao salvar: ' + e.message;
+            msgEl.style.display = 'block';
+            msgEl.style.background = 'rgba(244,67,54,0.15)';
+            msgEl.style.color = '#f44336';
+        }
     }
 }
+
+function savePortalAlunoDados() { portalAlunoAutoSave(false); }
 
 function logoutPortalFormado() {
     document.getElementById('screen-portal-formado').classList.remove('active');
@@ -2021,11 +2038,14 @@ function handlePhotoUpload(event) {
             canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
             img.src = '';
             canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                document.getElementById('photo-preview').src = url;
-                document.getElementById('photo-preview').classList.remove('hidden');
-                document.getElementById('photo-placeholder').style.display = 'none';
-                document.getElementById('btn-remove-photo').style.display = '';
+                const adminReader = new FileReader();
+                adminReader.onloadend = function() {
+                    document.getElementById('photo-preview').src = adminReader.result;
+                    document.getElementById('photo-preview').classList.remove('hidden');
+                    document.getElementById('photo-placeholder').style.display = 'none';
+                    document.getElementById('btn-remove-photo').style.display = '';
+                };
+                adminReader.readAsDataURL(blob);
             }, 'image/jpeg', 0.5);
         };
         img.onerror = function() { alert('Erro ao processar foto.'); };
@@ -2094,11 +2114,14 @@ function openBrowserCamera() {
         if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
         document.body.removeChild(overlay);
         canvas.toBlob(function(blob) {
-            const url = URL.createObjectURL(blob);
-            document.getElementById('photo-preview').src = url;
-            document.getElementById('photo-preview').classList.remove('hidden');
-            document.getElementById('photo-placeholder').style.display = 'none';
-            document.getElementById('btn-remove-photo').style.display = '';
+            const capReader = new FileReader();
+            capReader.onloadend = function() {
+                document.getElementById('photo-preview').src = capReader.result;
+                document.getElementById('photo-preview').classList.remove('hidden');
+                document.getElementById('photo-placeholder').style.display = 'none';
+                document.getElementById('btn-remove-photo').style.display = '';
+            };
+            capReader.readAsDataURL(blob);
         }, 'image/jpeg', 0.5);
     };
 
@@ -2147,16 +2170,20 @@ function openPortalPhotoCamera() {
         if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
         document.body.removeChild(overlay);
         canvas.toBlob(function(blob) {
-            const url = URL.createObjectURL(blob);
-            dbFirestore.collection('candidatos').doc(currentAluno.cpf).set({ photoDataUrl: url }, { merge: true })
-            .then(function() {
-                currentAluno.photoDataUrl = url;
-                const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
-                if (idx !== -1) candidatos[idx].photoDataUrl = url;
-                try { localStorage.setItem('farn_photo_' + currentAluno.cpf, url); } catch(e) {}
-                const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
-                portalPhotoBox.innerHTML = '<img id="portal-photo" src="' + url + '" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
-            });
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                const dataUrl = reader.result;
+                dbFirestore.collection('candidatos').doc(currentAluno.cpf).set({ photoDataUrl: dataUrl }, { merge: true })
+                .then(function() {
+                    currentAluno.photoDataUrl = dataUrl;
+                    const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
+                    if (idx !== -1) candidatos[idx].photoDataUrl = dataUrl;
+                    try { localStorage.setItem('farn_photo_' + currentAluno.cpf, dataUrl); } catch(e) {}
+                    const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
+                    portalPhotoBox.innerHTML = '<img id="portal-photo" src="' + dataUrl + '" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
+                });
+            };
+            reader.readAsDataURL(blob);
         }, 'image/jpeg', 0.4);
     };
 
@@ -2832,11 +2859,14 @@ function handleFormadoPhotoUpload(event) {
             canvas.width = 300; canvas.height = 400;
             canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
             canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                document.getElementById('formado-photo-preview').src = url;
-                document.getElementById('formado-photo-preview').classList.remove('hidden');
-                document.getElementById('formado-photo-placeholder').style.display = 'none';
-                document.getElementById('formado-btn-remove-photo').style.display = '';
+                const fUpReader = new FileReader();
+                fUpReader.onloadend = function() {
+                    document.getElementById('formado-photo-preview').src = fUpReader.result;
+                    document.getElementById('formado-photo-preview').classList.remove('hidden');
+                    document.getElementById('formado-photo-placeholder').style.display = 'none';
+                    document.getElementById('formado-btn-remove-photo').style.display = '';
+                };
+                fUpReader.readAsDataURL(blob);
             }, 'image/jpeg', 0.5);
         };
         img.src = e.target.result;
@@ -2888,11 +2918,14 @@ function openFormadoCamera() {
             if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
             document.body.removeChild(overlay);
             canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                document.getElementById('formado-photo-preview').src = url;
-                document.getElementById('formado-photo-preview').classList.remove('hidden');
-                document.getElementById('formado-photo-placeholder').style.display = 'none';
-                document.getElementById('formado-btn-remove-photo').style.display = '';
+                const fReader = new FileReader();
+                fReader.onloadend = function() {
+                    document.getElementById('formado-photo-preview').src = fReader.result;
+                    document.getElementById('formado-photo-preview').classList.remove('hidden');
+                    document.getElementById('formado-photo-placeholder').style.display = 'none';
+                    document.getElementById('formado-btn-remove-photo').style.display = '';
+                };
+                fReader.readAsDataURL(blob);
             }, 'image/jpeg', 0.5);
         };
         document.getElementById('camera-cancel').onclick = function() {
@@ -3240,12 +3273,15 @@ function handlePreCadastroFormadoPhotoUpload(event) {
             canvas.width = 300; canvas.height = 400;
             canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
             canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                preCadastroFormadoPhotoDataUrl = url;
-                document.getElementById('pcf-photo-preview').src = url;
-                document.getElementById('pcf-photo-preview').classList.remove('hidden');
-                document.getElementById('pcf-photo-placeholder').style.display = 'none';
-                document.getElementById('pcf-btn-remove-photo').style.display = '';
+                const pcfReader = new FileReader();
+                pcfReader.onloadend = function() {
+                    preCadastroFormadoPhotoDataUrl = pcfReader.result;
+                    document.getElementById('pcf-photo-preview').src = pcfReader.result;
+                    document.getElementById('pcf-photo-preview').classList.remove('hidden');
+                    document.getElementById('pcf-photo-placeholder').style.display = 'none';
+                    document.getElementById('pcf-btn-remove-photo').style.display = '';
+                };
+                pcfReader.readAsDataURL(blob);
             }, 'image/jpeg', 0.5);
         };
         img.src = e.target.result;
@@ -3296,12 +3332,16 @@ function openPcfPhotoCamera() {
             if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
             document.body.removeChild(overlay);
             canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                preCadastroFormadoPhotoDataUrl = url;
-                document.getElementById('pcf-photo-preview').src = url;
-                document.getElementById('pcf-photo-preview').classList.remove('hidden');
-                document.getElementById('pcf-photo-placeholder').style.display = 'none';
-                document.getElementById('pcf-btn-remove-photo').style.display = '';
+                const pcfCamReader = new FileReader();
+                pcfCamReader.onloadend = function() {
+                    preCadastroFormadoPhotoDataUrl = pcfCamReader.result;
+                    document.getElementById('pcf-photo-preview').src = pcfCamReader.result;
+                    document.getElementById('pcf-photo-preview').classList.remove('hidden');
+                    document.getElementById('pcf-photo-placeholder').style.display = 'none';
+                    document.getElementById('pcf-btn-remove-photo').style.display = '';
+                };
+                pcfCamReader.readAsDataURL(blob);
+            }, 'image/jpeg', 0.5);
             }, 'image/jpeg', 0.5);
         };
 

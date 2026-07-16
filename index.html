@@ -1374,6 +1374,7 @@
                         <img id="portal-photo" src="" alt="Foto 3x4" class="portal-photo">
                         <button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>
                     </div>
+                    <p id="portal-aluno-matricula" style="color:#f57c00;font-size:13px;font-weight:700;letter-spacing:1px;margin:0 0 16px;text-align:center"></p>
                     <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-aluno-nome"></span></h1>
                     <p class="portal-sub">Acompanhe seu desempenho e materiais de estudo</p>
                 </div>
@@ -1420,11 +1421,11 @@
                 </div>
                 <div class="form-group" style="margin-bottom:12px">
                     <label style="color:#aaa;font-size:12px">Email</label>
-                    <input type="email" id="portal-aluno-email" class="config-input" placeholder="seu@email.com">
+                    <input type="email" id="portal-aluno-email" class="config-input" placeholder="seu@email.com" oninput="portalAlunoScheduleSave()">
                 </div>
                 <div class="form-group" style="margin-bottom:16px">
                     <label style="color:#aaa;font-size:12px">WhatsApp / Telefone</label>
-                    <input type="tel" id="portal-aluno-whatsapp" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="formatPhone(this)">
+                    <input type="tel" id="portal-aluno-whatsapp" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="formatPhone(this);portalAlunoScheduleSave()">
                 </div>
                 <div id="portal-aluno-dados-msg" style="display:none;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;text-align:center"></div>
                 <div style="display:flex;gap:8px;justify-content:flex-end">
