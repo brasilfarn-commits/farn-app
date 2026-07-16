@@ -1477,6 +1477,8 @@ async function handleCandidatoSubmit(event) {
 
     if (editingIndex !== null) {
         data.id = candidatos[editingIndex].id;
+        data.photoDataUrl = candidatos[editingIndex].photoDataUrl || null;
+        data.hasPhoto = candidatos[editingIndex].hasPhoto || false;
         candidatos[editingIndex] = data;
         editingIndex = null;
     } else {
