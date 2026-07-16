@@ -13,6 +13,7 @@ let currentFormado = null;
 let usuarios = [];
 let formados = [];
 let currentUserData = null;
+let parceiros = [];
 
 /* ===== FIREBASE SINCRONIZACAO (Firestore) ===== */
 
@@ -20,6 +21,7 @@ const FB_CANDIDATOS = 'candidatos';
 const FB_TURMAS = 'turmas';
 const FB_USUARIOS = 'usuarios';
 const FB_FORMADOS = 'formados';
+const FB_PARCEIROS = 'parceiros';
 let firebaseReady = false;
 let firebaseError = false;
 
@@ -100,6 +102,20 @@ function backupFormados() {
     batch.commit().catch(e => console.error('Erro ao salvar formados:', e));
 }
 
+function backupParceiros() {
+    if (!firebaseReady && !firebaseError) return;
+    const batch = dbFirestore.batch();
+    const ref = dbFirestore.collection(FB_PARCEIROS);
+    batch.set(ref.doc('_index'), { count: parceiros.length, timestamp: Date.now() });
+    parceiros.forEach((p, i) => {
+        const id = p.docId ? String(p.docId) : String(i);
+        const copy = Object.assign({}, p);
+        delete copy.docId;
+        batch.set(ref.doc(id), copy);
+    });
+    batch.commit().catch(e => console.error('Erro ao salvar parceiros:', e));
+}
+
 async function syncAllDatabases() {
     if (!firebaseReady && !firebaseError) {
         alert('Firebase nao conectado. Verifique a conexao.');
@@ -115,15 +131,18 @@ async function syncAllDatabases() {
         backupTurmas();
         backupUsuarios();
         backupFormados();
+        backupParceiros();
         await dbFirestore.collection(FB_CANDIDATOS).get();
         await dbFirestore.collection(FB_TURMAS).get();
         await dbFirestore.collection(FB_USUARIOS).get();
         await dbFirestore.collection(FB_FORMADOS).get();
+        await dbFirestore.collection(FB_PARCEIROS).get();
         renderList();
         renderTurmasList();
         populateTurmaSelect();
         if (typeof renderUsuariosList === 'function') renderUsuariosList();
         if (typeof renderFormadosList === 'function') renderFormadosList();
+        if (typeof renderParceirosList === 'function') renderParceirosList();
         if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Sincronizado!';
         setTimeout(() => {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos'; }
@@ -140,7 +159,7 @@ function initFirebaseListeners() {
         let loaded = 0;
         const checkReady = () => {
             loaded++;
-            if (loaded >= 4) {
+            if (loaded >= 5) {
                 firebaseReady = true;
                 showFirebaseStatus(true);
                 resolve();
@@ -222,6 +241,23 @@ function initFirebaseListeners() {
             checkReady();
         }, (error) => {
             console.error('Erro Firestore formados:', error);
+            checkReady();
+        });
+
+        dbFirestore.collection(FB_PARCEIROS).onSnapshot((snap) => {
+            const result = [];
+            snap.forEach(doc => {
+                if (doc.id !== '_index') {
+                    const data = doc.data();
+                    data.docId = doc.id;
+                    result.push(data);
+                }
+            });
+            parceiros = result;
+            if (firebaseReady && typeof renderParceirosList === 'function') renderParceirosList();
+            checkReady();
+        }, (error) => {
+            console.error('Erro Firestore parceiros:', error);
             checkReady();
         });
 
@@ -310,6 +346,11 @@ async function initApp() {
     await initFirebaseListeners();
     backupUsuarios();
     backupFormados();
+    backupParceiros();
+    initPcfCursosListeners();
+    candidatos.forEach(c => { c.cadastradoPor = 'OZIEL'; });
+    candidatos.forEach(c => { if (!c.dataHoraCadastro && c.dataCadastro) c.dataHoraCadastro = c.dataCadastro + ' 00:00'; });
+    backupCandidatos();
 
     if (restoreLoginState()) {
         document.getElementById('screen-login').classList.remove('active');
@@ -523,6 +564,8 @@ function applyUserPermissions() {
         'admin-pre-cadastro-formados': p.includes('formados') || isGeral,
         'admin-form-pre-cadastro-formado': p.includes('formados') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
+        'admin-parceiros': p.includes('parceiros') || isGeral,
+        'admin-form-parceiro': p.includes('parceiros') || isGeral,
         'admin-config': p.includes('config') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
@@ -598,18 +641,21 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-pre-cadastro-formados': 'Pre-Cadastro Formados', 'admin-form-pre-cadastro-formado': 'Novo Pre-Cadastro Formado', 'admin-relatorios': 'Relatorios', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-pre-cadastro-formados': 'Pre-Cadastro Formados', 'admin-form-pre-cadastro-formado': 'Novo Pre-Cadastro Formado', 'admin-relatorios': 'Relatorios', 'admin-parceiros': 'Parceiros', 'admin-form-parceiro': editingParceiroIndex !== null ? 'Editar Parceiro' : 'Novo Parceiro', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
 }
 
 /* ===== FORM CANDIDATO ===== */
 
-const formFields = ['fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+const formFields = ['fc-turma','fc-parceiro','fc-nome','fc-cpf','fc-nascimento','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
 async function openFormCandidato() {
     editingIndex = null;
     resetFormCandidato();
     await populateTurmaSelect();
+    populateParceiroSelect();
+    const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
+    if (btnAtualizar) btnAtualizar.style.display = 'none';
     document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#f57c00;margin-right:8px"></i> Novo Pre-Cadastro';
     showAdminSection('admin-form-candidato');
 }
@@ -618,6 +664,7 @@ async function editCandidato(index) {
     const c = candidatos[index]; if (!c) return;
     editingIndex = index;
     await populateTurmaSelect();
+    populateParceiroSelect();
     document.getElementById('fc-nome').value = c.nome || '';
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
@@ -651,6 +698,7 @@ async function editCandidato(index) {
     document.getElementById('fc-camisa').value = c.camisa || '';
     document.getElementById('fc-calcado').value = c.calcado || '';
     document.getElementById('fc-turma').value = c.turma || '';
+    document.getElementById('fc-parceiro').value = c.parceiro || '';
     if (c.hasPhoto) {
         const saved = localStorage.getItem('farn_photo_' + c.cpf);
         if (saved) {
@@ -675,6 +723,19 @@ async function editCandidato(index) {
         document.getElementById('fc-senha').required = false;
     }
     document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#f57c00;margin-right:8px"></i> Editar - ' + c.nome;
+    const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
+    if (btnAtualizar) {
+        btnAtualizar.style.display = '';
+        if (c.atualizarCadastro) {
+            btnAtualizar.style.background = '#4caf50';
+            btnAtualizar.style.color = '#fff';
+            btnAtualizar.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Cadastro (Ativo)';
+        } else {
+            btnAtualizar.style.background = 'transparent';
+            btnAtualizar.style.color = '#4caf50';
+            btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro';
+        }
+    }
     showAdminSection('admin-form-candidato');
 }
 
@@ -687,9 +748,32 @@ function resetFormCandidato() {
     const md = document.getElementById('fc-matricula-display');
     if (mw) mw.style.display = 'none';
     if (md) md.textContent = '';
+    const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
+    if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
     removePhoto();
     uploadedFiles = [];
     renderFilesList();
+}
+
+function toggleAtualizarCadastro() {
+    if (editingIndex === null || !candidatos[editingIndex]) return;
+    const c = candidatos[editingIndex];
+    c.atualizarCadastro = !c.atualizarCadastro;
+    backupCandidatos();
+    const btn = document.getElementById('btn-atualizar-cadastro');
+    if (btn) {
+        if (c.atualizarCadastro) {
+            btn.style.background = '#4caf50';
+            btn.style.color = '#fff';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Cadastro (Ativo)';
+        } else {
+            btn.style.background = 'transparent';
+            btn.style.color = '#4caf50';
+            btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro';
+        }
+    }
+    renderList();
+    if (typeof renderAlunosList === 'function') renderAlunosList();
 }
 
 async function handleCandidatoSubmit(event) {
@@ -705,6 +789,10 @@ async function handleCandidatoSubmit(event) {
     data.matricula = generateMatricula(data.cpf);
     data.status = editingIndex !== null ? candidatos[editingIndex].status : 'Pendente';
     data.dataCadastro = editingIndex !== null ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
+    data.dataHoraCadastro = editingIndex !== null ? candidatos[editingIndex].dataHoraCadastro : new Date().toLocaleString('pt-BR');
+    if (editingIndex !== null && candidatos[editingIndex].atualizarCadastro) {
+        data.atualizarCadastro = true;
+    }
 
     const photoPreview = document.getElementById('photo-preview');
     if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
@@ -738,14 +826,16 @@ function renderList() {
     if (!tbody) return;
     const p = candidatos.filter(c => c.status === 'Pendente').length;
     if (badge) badge.textContent = p + ' pendente' + (p !== 1 ? 's' : '');
-    if (!candidatos.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;padding:24px">Nenhum candidato cadastrado</td></tr>'; return; }
+    if (!candidatos.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum candidato cadastrado</td></tr>'; return; }
     tbody.innerHTML = candidatos.map((c, i) => {
         const sc = c.status === 'Aprovado' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
+        const nomeStyle = c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '';
         return `<tr>
-            <td>${c.nome}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td>${c.nascimento || '-'}</td>
-            <td>${c.turma || '-'}</td>
+            <td>${c.turma || '-'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</td>
+            <td style="color:#ff9800;font-weight:600">${c.parceiro || '-'}</td>
             <td><span class="badge ${sc}">${c.status}</span></td>
             <td style="color:#aaa;font-size:12px">${c.cadastradoPor || '-'}</td>
             <td><div class="actions-cell">
@@ -769,7 +859,7 @@ function viewCandidato(i) {
         ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #1e88e5;border-radius:8px" alt="Foto 3x4"></div>` : ''}
         <div class="detail-grid">
             <div class="detail-section-title">Dados Pessoais</div>
-            <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value">${c.nome}</span></div>
+            <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value"${c.atualizarCadastro ? ' style="color:#a5d6a7;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:11px;color:#66bb6a"></i>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(c.cpf)}</span></div>
             <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${c.nascimento||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Estado Civil</span><span class="detail-value">${c.estadoCivil||'---'}</span></div>
@@ -805,9 +895,11 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Calcado</span><span class="detail-value">${c.calcado||'---'}</span></div>
             <div class="detail-section-title">Turma e Acesso</div>
             ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><span class="detail-value" style="color:#f57c00;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span></div>` : ''}
-            <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</span></div>
+            <div class="detail-item"><span class="detail-label">Parceiro</span><span class="detail-value" style="color:#ff9800;font-weight:600">${c.parceiro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastro</span><span class="detail-value">${c.dataCadastro}</span></div>
+            <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#f57c00;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
         </div>`;
@@ -865,7 +957,7 @@ function printCandidato(i) {
             <div><h1>FARN - Forca Auxiliar de Resgate Nacional</h1><p style="color:#666">Ficha do Candidato</p></div>
         </div>
         <h2>Dados Pessoais</h2>
-        <div class="row"><div class="col"><div class="label">Nome</div><div class="val">${c.nome}</div></div></div>
+        <div class="row"><div class="col"><div class="label">Nome</div><div class="val"${c.atualizarCadastro ? ' style="color:#2e7d32;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' [ATUALIZAR]' : ''}</div></div></div>
         <div class="row"><div class="col"><div class="label">CPF</div><div class="val">${formatCPFDisplay(c.cpf)}</div></div><div class="col"><div class="label">Nascimento</div><div class="val">${c.nascimento||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Estado Civil</div><div class="val">${c.estadoCivil||'---'}</div></div><div class="col"><div class="label">Nacionalidade</div><div class="val">${c.nacionalidade||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Profissao</div><div class="val">${c.profissao||'---'}</div></div></div>
@@ -882,8 +974,9 @@ function printCandidato(i) {
         <div class="row"><div class="col"><div class="label">Calca</div><div class="val">${c.calca||'---'}</div></div><div class="col"><div class="label">Camisa</div><div class="val">${c.camisa||'---'}</div></div><div class="col"><div class="label">Calcado</div><div class="val">${c.calcado||'---'}</div></div></div>
         <h2>Turma</h2>
         ${mat ? `<div class="row"><div class="col"><div class="label">Matricula</div><div class="val" style="color:#e65100;font-size:18px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</div></div></div>` : ''}
-        <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}</div></div><div class="col"><div class="label">Status</div><div class="val">${c.status}</div></div></div>
+        <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}${c.turma ? '<br><small style="color:#666;font-size:6px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</div></div><div class="col"><div class="label">Parceiro</div><div class="val" style="color:#e65100;font-weight:700">${c.parceiro||'---'}</div></div></div>
         ${c.status === 'Aprovado' && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
+        ${c.dataHoraCadastro ? `<div class="row"><div class="col"><div class="label">Data/Hora 1o Cadastro</div><div class="val" style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro}</div></div></div>` : ''}
         <script>window.onload=function(){window.print();}<\/script></body></html>`);
     w.document.close();
 }
@@ -1072,9 +1165,9 @@ async function importExcelFile(event) {
 
 function exportExcel() {
     if (!candidatos.length) { alert('Nenhum candidato para exportar.'); return; }
-    let csv = 'Nome,CPF,Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Status,Senha,Cadastro\n';
+    let csv = 'Nome,CPF,Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Parceiro,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     candidatos.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.status}","${c.senha||''}","${c.dataCadastro}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.parceiro||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pre_inscritos_farn.csv'; a.click();
@@ -1120,7 +1213,7 @@ function renderAlunosList() {
     document.getElementById('tab-count-segunda-chamada').textContent = candidatos.filter(c => c.status === 'Segunda Chamada').length;
 
     if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:24px">Nenhum aluno na aba "${statusFilter}"</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum aluno na aba "${statusFilter}"</td></tr>`;
         return;
     }
 
@@ -1137,12 +1230,14 @@ function renderAlunosList() {
         const i = idxMap[fi];
         const otherStatuses = allStatuses.filter(s => s.value !== c.status);
         const mat = c.matricula || generateMatricula(c.cpf);
+        const nomeStyle = c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '';
         return `<tr>
-            <td>${c.nome}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>
-            <td>${c.dataCadastro || '-'}</td>
+            <td style="color:#ff9800;font-weight:600">${c.parceiro || '-'}</td>
+            <td>${c.dataCadastro || '-'}${c.dataHoraCadastro ? '<br><small style="color:#4caf50;font-size:9px">' + c.dataHoraCadastro + '</small>' : ''}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
@@ -1209,9 +1304,9 @@ function exportExcelAlunos() {
     const statusFilter = STATUS_MAP[currentAlunosTab];
     const filtered = candidatos.filter(c => c.status === statusFilter);
     if (!filtered.length) { alert('Nenhum aluno para exportar nesta aba.'); return; }
-    let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Status,Data Cadastro\n';
+    let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Parceiro,Status,Data Cadastro,Data/Hora 1o Cadastro\n';
     filtered.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.matricula || generateMatricula(c.cpf) || ''}","${c.nascimento||''}","${c.turma||''}","${c.status}","${c.dataCadastro||''}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.matricula || generateMatricula(c.cpf) || ''}","${c.nascimento||''}","${c.turma||''}","${c.parceiro||''}","${c.status}","${c.dataCadastro||''}","${c.dataHoraCadastro||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `alunos_${statusFilter.toLowerCase().replace(/\s/g,'_')}_farn.csv`; a.click();
@@ -1228,10 +1323,339 @@ function printTableAlunos() {
         td{padding:8px 12px;border-bottom:1px solid #ddd;font-size:13px}tr:nth-child(even){background:#f5f5f5}
         @media print{body{padding:20px}}</style></head><body>
         <h1>FARN - Alunos (${statusFilter})</h1><p class="sub">Impressao: ${new Date().toLocaleDateString('pt-BR')}</p>
-        <table><thead><tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Data Cadastro</th></tr></thead><tbody>
-        ${filtered.map(c => `<tr><td>${c.nome}</td><td>${formatCPFDisplay(c.cpf)}</td><td style="color:#e65100;font-weight:800;font-family:'Courier New',monospace">${c.matricula || generateMatricula(c.cpf) || '-'}</td><td>${c.turma||'-'}</td><td>${c.dataCadastro||'-'}</td></tr>`).join('')}
+        <table><thead><tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Parceiro</th><th>Data Cadastro</th><th>Data/Hora 1o Cadastro</th></tr></thead><tbody>
+        ${filtered.map(c => `<tr><td>${c.nome}</td><td>${formatCPFDisplay(c.cpf)}</td><td style="color:#e65100;font-weight:800;font-family:'Courier New',monospace">${c.matricula || generateMatricula(c.cpf) || '-'}</td><td>${c.turma||'-'}</td><td style="color:#e65100;font-weight:600">${c.parceiro||'-'}</td><td>${c.dataCadastro||'-'}</td><td style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro||'-'}</td></tr>`).join('')}
         </tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
     w.document.close();
+}
+
+function relatorioUniforme() {
+    const aprovados = candidatos.filter(c => c.status === 'Aprovado');
+    if (!aprovados.length) { alert('Nenhum aluno aprovado para gerar relatorio.'); return; }
+    aprovados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>FARN - Relatorio de Uniforme</title><style>
+        @page{size:A4 portrait;margin:15mm 15mm 15mm 15mm}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial,sans-serif;color:#222;padding:20px;font-size:12px}
+        .header{text-align:center;margin-bottom:6px;border-bottom:3px solid #1a237e;padding-bottom:8px}
+        .header img{height:50px;margin-bottom:4px}
+        .header .title-line{font-size:13px;font-weight:800;color:#1a237e;text-transform:uppercase;letter-spacing:1px}
+        .header .info-line{font-size:10px;color:#666;margin-top:3px;letter-spacing:0.3px}
+        .report-title{text-align:center;font-size:15px;font-weight:800;color:#e65100;margin:10px 0;text-transform:uppercase;letter-spacing:2px;border:2px solid #e65100;padding:7px;border-radius:4px}
+        .info-bar{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:10px;padding:0 4px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#1a237e;color:#fff;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px}
+        td{padding:7px 10px;border-bottom:1px solid #e0e0e0;font-size:11px}
+        tr:nth-child(even){background:#f5f7fa}
+        tr:hover{background:#e8eaf6}
+        td.nome{font-weight:600;max-width:200px}
+        td.matricula{color:#e65100;font-weight:800;font-family:'Courier New',monospace;font-size:12px;letter-spacing:1px}
+        td.center{text-align:center;font-weight:700;font-size:12px;color:#1a237e}
+        th:nth-child(1){width:3%}
+        th:nth-child(2){width:25%}
+        th:nth-child(3){width:15%}
+        th:nth-child(4){width:15%}
+        th:nth-child(5){width:12%}
+        th:nth-child(6){width:12%}
+        th:nth-child(7){width:12%}
+        .print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#1a237e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+        .print-btn:hover{background:#283593}
+        .footer{margin-top:14px;text-align:center;font-size:10px;color:#999;border-top:1px solid #ddd;padding-top:8px}
+        .total{text-align:right;font-size:12px;font-weight:700;color:#333;margin-top:8px;padding-right:4px}
+        @media print{body{padding:0;font-size:11px}.print-btn{display:none}th{background:#1a237e !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#f5f7fa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body>
+        <div class="header">
+            <img src="logo-farn.png.png" alt="FARN">
+            <div class="title-line">FARN - BRASIL - BS.BRASIL - COMMAND BRASIL</div>
+            <div class="info-line">CNPJ: 43.327.929/0001-32 | Telefone: (81) 98403-1538</div>
+        </div>
+        <div class="report-title">Relatorio de Medidas de Uniforme</div>
+        <div class="info-bar">
+            <span>Data: ${new Date().toLocaleDateString('pt-BR')}</span>
+            <span>Total de Aprovados: ${aprovados.length}</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nome Completo</th>
+                    <th>Matricula</th>
+                    <th>Parceiro</th>
+                    <th>Calca</th>
+                    <th>Camisa</th>
+                    <th>Calcado</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${aprovados.map((c, i) => {
+                    const mat = c.matricula || generateMatricula(c.cpf) || '---';
+                    return `<tr>
+                        <td>${i + 1}</td>
+                        <td class="nome">${c.nome || '---'}</td>
+                        <td class="matricula">${mat}</td>
+                        <td class="center" style="color:#ff9800;font-weight:600">${c.parceiro || '---'}</td>
+                        <td class="center">${c.calca || '---'}</td>
+                        <td class="center">${c.camisa || '---'}</td>
+                        <td class="center">${c.calcado || '---'}</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+        <div class="total">Total: ${aprovados.length} aluno(s) aprovado(s)</div>
+        <button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Relatorio</button>
+        <div class="footer">FARN - Forca Auxiliar de Resgate Nacional | Relatorio gerado em ${new Date().toLocaleString('pt-BR')}</div>
+    </body></html>`);
+    w.document.close();
+}
+
+/* ===== MONTE RELATORIO DE ALUNO ===== */
+
+const camposRelatorio = [
+    { key: 'nome', label: 'Nome Completo' },
+    { key: 'cpf', label: 'CPF' },
+    { key: 'matricula', label: 'Matricula' },
+    { key: 'nascimento', label: 'Data de Nascimento' },
+    { key: 'estadoCivil', label: 'Estado Civil' },
+    { key: 'nacionalidade', label: 'Nacionalidade' },
+    { key: 'naturalidade', label: 'Naturalidade' },
+    { key: 'tituloEleitor', label: 'Titulo de Eleitor' },
+    { key: 'profissao', label: 'Profissao' },
+    { key: 'mae', label: 'Mae' },
+    { key: 'pai', label: 'Pai' },
+    { key: 'email', label: 'Email' },
+    { key: 'whatsapp', label: 'WhatsApp' },
+    { key: 'endereco', label: 'Endereco' },
+    { key: 'numero', label: 'Numero' },
+    { key: 'bairro', label: 'Bairro' },
+    { key: 'cidade', label: 'Cidade' },
+    { key: 'estado', label: 'Estado' },
+    { key: 'localVotacao', label: 'Local de Votacao' },
+    { key: 'altura', label: 'Altura' },
+    { key: 'peso', label: 'Peso' },
+    { key: 'fatorRh', label: 'Fator RH' },
+    { key: 'hipertensao', label: 'Hipertensao' },
+    { key: 'diabetes', label: 'Diabetes' },
+    { key: 'deficiencia', label: 'Deficiencia' },
+    { key: 'tatuagem', label: 'Tatuagem' },
+    { key: 'cirurgia', label: 'Cirurgia' },
+    { key: 'alcool', label: 'Alcool' },
+    { key: 'medicamento', label: 'Medicamento' },
+    { key: 'cansaco', label: 'Cansaco' },
+    { key: 'calca', label: 'Calca' },
+    { key: 'camisa', label: 'Camisa' },
+    { key: 'calcado', label: 'Calcado' },
+    { key: 'turma', label: 'Turma' },
+    { key: 'parceiro', label: 'Parceiro' },
+    { key: 'status', label: 'Status' },
+    { key: 'senha', label: 'Senha' },
+    { key: 'cadastradoPor', label: 'Cadastrado por' },
+    { key: 'dataCadastro', label: 'Data Cadastro' },
+    { key: 'dataHoraCadastro', label: 'Data/Hora 1o Cadastro' }
+];
+
+function abrirModalMontarRelatorio() {
+    const grid = document.getElementById('campos-relatorio-grid');
+    if (!grid) return;
+    grid.innerHTML = camposRelatorio.map(c => `
+        <label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#1a1a2e;border-radius:6px;cursor:pointer;font-size:12px;color:#ccc;transition:background 0.2s" onmouseenter="this.style.background='#252545'" onmouseleave="this.style.background='#1a1a2e'">
+            <input type="checkbox" class="campo-relatorio-check" value="${c.key}" style="accent-color:#9c27b0;width:14px;height:14px">
+            ${c.label}
+        </label>
+    `).join('');
+    document.getElementById('modal-montar-relatorio').classList.remove('hidden');
+}
+
+function fecharModalMontarRelatorio() {
+    document.getElementById('modal-montar-relatorio').classList.add('hidden');
+}
+
+function marcarTodosCampos(marcar) {
+    document.querySelectorAll('.campo-relatorio-check').forEach(cb => { cb.checked = marcar; });
+}
+
+function getCamposSelecionados() {
+    const selected = [];
+    document.querySelectorAll('.campo-relatorio-check:checked').forEach(cb => {
+        const campo = camposRelatorio.find(c => c.key === cb.value);
+        if (campo) selected.push(campo);
+    });
+    return selected;
+}
+
+function getValorCampo(c, key) {
+    if (key === 'matricula') return c.matricula || generateMatricula(c.cpf) || '---';
+    if (key === 'cpf') return formatCPFDisplay(c.cpf) || '---';
+    if (key === 'senha') return c.status === 'Aprovado' && c.senha ? c.senha : '---';
+    return c[key] || '---';
+}
+
+function gerarRelatorioPersonalizado() {
+    const campos = getCamposSelecionados();
+    if (!campos.length) { alert('Selecione pelo menos um campo para gerar o relatorio.'); return; }
+    if (!candidatos.length) { alert('Nenhum candidato cadastrado.'); return; }
+    const statusFilter = document.getElementById('relatorio-status-filter').value;
+    fecharModalMontarRelatorio();
+    let lista = candidatos.slice();
+    if (statusFilter && statusFilter !== 'Todos') {
+        lista = lista.filter(c => c.status === statusFilter);
+    }
+    lista.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>FARN - Relatorio de Alunos</title><style>
+        @page{size:A4 landscape;margin:12mm}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial,sans-serif;color:#222;padding:16px;font-size:11px}
+        .header{text-align:center;margin-bottom:6px;border-bottom:3px solid #1a237e;padding-bottom:8px}
+        .header img{height:45px;margin-bottom:4px}
+        .header .title-line{font-size:12px;font-weight:800;color:#1a237e;text-transform:uppercase;letter-spacing:1px}
+        .header .info-line{font-size:9px;color:#666;margin-top:3px;letter-spacing:0.3px}
+        .report-title{text-align:center;font-size:14px;font-weight:800;color:#e65100;margin:8px 0;text-transform:uppercase;letter-spacing:2px;border:2px solid #e65100;padding:6px;border-radius:4px}
+        .info-bar{display:flex;justify-content:space-between;font-size:10px;color:#666;margin-bottom:8px;padding:0 4px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#1a237e;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.3px}
+        td{padding:5px 8px;border-bottom:1px solid #e0e0e0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+        tr:nth-child(even){background:#f5f7fa}
+        tr:hover{background:#e8eaf6}
+        td.nome{font-weight:600}
+        td.matricula{color:#e65100;font-weight:800;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px}
+        th:first-child{width:3%}
+        .print-btn{display:block;margin:12px auto 0;padding:10px 28px;background:#1a237e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+        .print-btn:hover{background:#283593}
+        .footer{margin-top:10px;text-align:center;font-size:9px;color:#999;border-top:1px solid #ddd;padding-top:6px}
+        .total{text-align:right;font-size:11px;font-weight:700;color:#333;margin-top:6px;padding-right:4px}
+        @media print{body{padding:0;font-size:9px}.print-btn{display:none}th{background:#1a237e !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#f5f7fa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body>
+        <div class="header">
+            <img src="logo-farn.png.png" alt="FARN">
+            <div class="title-line">FARN - BRASIL - BS.BRASIL - COMMAND BRASIL</div>
+            <div class="info-line">CNPJ: 43.327.929/0001-32 | Telefone: (81) 98403-1538</div>
+        </div>
+        <div class="report-title">Relatorio de Alunos ${statusFilter !== 'Todos' ? '- ' + statusFilter : ''}</div>
+        <div class="info-bar">
+            <span>Data: ${new Date().toLocaleDateString('pt-BR')} ${statusFilter !== 'Todos' ? '| Status: ' + statusFilter : '| Todos os Status'}</span>
+            <span>Campos: ${campos.length} | Total: ${lista.length} aluno(s)</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    ${campos.map(c => `<th>${c.label}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                ${lista.map((c, i) => {
+                    return `<tr>
+                        <td>${i + 1}</td>
+                        ${campos.map(campo => {
+                            const val = getValorCampo(c, campo.key);
+                            let cls = '';
+                            if (campo.key === 'nome') cls = ' class="nome"';
+                            else if (campo.key === 'matricula') cls = ' class="matricula"';
+                            return `<td${cls}>${val}</td>`;
+                        }).join('')}
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+        <div class="total">Total: ${lista.length} aluno(s)</div>
+        <button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Relatorio</button>
+        <div class="footer">FARN - Forca Auxiliar de Resgate Nacional | Relatorio gerado em ${new Date().toLocaleString('pt-BR')}</div>
+    </body></html>`);
+    w.document.close();
+}
+
+/* ===== PARCEIROS CRUD ===== */
+
+let editingParceiroIndex = null;
+
+function formatCNPJ(input) {
+    let v = input.value.replace(/\D/g, '');
+    if (v.length > 14) v = v.slice(0, 14);
+    if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
+    else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
+    else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
+    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,3})/, '$1.$2');
+    input.value = v;
+}
+
+function openFormParceiro() {
+    editingParceiroIndex = null;
+    document.getElementById('pf-nome').value = '';
+    document.getElementById('pf-cnpj').value = '';
+    document.getElementById('pf-responsavel').value = '';
+    document.getElementById('parceiro-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Parceiro';
+    showAdminSection('admin-form-parceiro');
+}
+
+function handleParceiroSubmit(event) {
+    event.preventDefault();
+    const data = {
+        nome: document.getElementById('pf-nome').value.trim(),
+        cnpj: document.getElementById('pf-cnpj').value.trim(),
+        responsavel: document.getElementById('pf-responsavel').value.trim()
+    };
+    if (editingParceiroIndex !== null) {
+        data.docId = parceiros[editingParceiroIndex].docId;
+        data.dataCadastro = parceiros[editingParceiroIndex].dataCadastro;
+        parceiros[editingParceiroIndex] = data;
+        editingParceiroIndex = null;
+    } else {
+        data.dataCadastro = new Date().toLocaleDateString('pt-BR');
+        parceiros.push(data);
+    }
+    backupParceiros();
+    showAdminSection('admin-parceiros');
+    renderParceirosList();
+    return false;
+}
+
+function renderParceirosList() {
+    const tbody = document.getElementById('parceiros-list');
+    const empty = document.getElementById('parceiros-empty');
+    if (!tbody) return;
+    if (!parceiros.length) {
+        tbody.innerHTML = '';
+        if (empty) empty.style.display = '';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
+    parceiros.forEach((p, i) => {
+        html += `<tr>
+            <td>${p.nome || '---'}</td>
+            <td>${p.cnpj || '---'}</td>
+            <td>${p.responsavel || '---'}</td>
+            <td>${p.dataCadastro || '---'}</td>
+            <td><div class="actions-cell">
+                <button class="btn-icon" title="Editar" onclick="editParceiro(${i})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteParceiro(${i})"><i class="fa-solid fa-trash"></i></button>
+            </div></td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    tbody.innerHTML = html;
+}
+
+function editParceiro(i) {
+    const p = parceiros[i]; if (!p) return;
+    editingParceiroIndex = i;
+    document.getElementById('pf-nome').value = p.nome || '';
+    document.getElementById('pf-cnpj').value = p.cnpj || '';
+    document.getElementById('pf-responsavel').value = p.responsavel || '';
+    document.getElementById('parceiro-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
+    showAdminSection('admin-form-parceiro');
+}
+
+async function deleteParceiro(i) {
+    const p = parceiros[i]; if (!p) return;
+    if (!confirm('Tem certeza que deseja excluir o parceiro "' + (p.nome || '') + '"?')) return;
+    if (p.docId) {
+        try { await dbFirestore.collection(FB_PARCEIROS).doc(p.docId).delete(); } catch(e) { console.error(e); }
+    }
+    parceiros.splice(i, 1);
+    backupParceiros();
+    renderParceirosList();
 }
 
 /* ===== TURMAS CRUD ===== */
@@ -1312,6 +1736,11 @@ function closeTurmaModal(e) {
     editingTurmaIndex = null;
 }
 
+function getTurmaDescricao(nome) {
+    const t = turmas.find(t => t.nome === nome);
+    return t ? (t.descricao || '') : '';
+}
+
 /* ===== POPULATE TURMA SELECT ===== */
 
 async function populateTurmaSelect() {
@@ -1325,7 +1754,38 @@ async function populateTurmaSelect() {
     filtered.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.nome;
-        opt.textContent = t.nome;
+        opt.textContent = t.nome + (t.descricao ? ' - ' + t.descricao : '');
+        select.appendChild(opt);
+    });
+    if (current) select.value = current;
+}
+
+function populateParceiroSelect() {
+    const select = document.getElementById('fc-parceiro');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">Nenhum parceiro</option>';
+    parceiros.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.nome;
+        opt.textContent = p.nome + (p.responsavel ? ' (' + p.responsavel + ')' : '');
+        select.appendChild(opt);
+    });
+    if (current) select.value = current;
+}
+
+async function populatePcfTurmaSelect() {
+    const select = document.getElementById('pcf-turma');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">Selecione a turma...</option>';
+    const isGeral = currentUserData && currentUserData.cpf === ADMIN_CPF;
+    const tv = currentUserData ? (currentUserData.turmasVinculadas || []) : [];
+    const filtered = isGeral || tv.length === 0 ? turmas : turmas.filter(t => tv.includes(t.nome));
+    filtered.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.nome;
+        opt.textContent = t.nome + (t.descricao ? ' - ' + t.descricao : '');
         select.appendChild(opt);
     });
     if (current) select.value = current;
@@ -1599,6 +2059,7 @@ function renderUsuariosList() {
                 'instrutores': '<span class="usuario-tag usuario-tag-instrutor">Instrutores</span>',
                 'formados': '<span class="usuario-tag usuario-tag-pre">Formados</span>',
                 'relatorios': '<span class="usuario-tag usuario-tag-admin">Relatorios</span>',
+                'parceiros': '<span class="usuario-tag usuario-tag-pre">Parceiros</span>',
                 'config': '<span class="usuario-tag usuario-tag-admin">Config</span>'
             };
             return labels[p] || '';
@@ -1631,6 +2092,7 @@ function openUsuarioForm(docId) {
     document.getElementById('uf-perm-instrutores').checked = false;
     document.getElementById('uf-perm-formados').checked = false;
     document.getElementById('uf-perm-relatorios').checked = false;
+    document.getElementById('uf-perm-parceiros').checked = false;
     document.getElementById('uf-perm-config').checked = false;
     const turmasListEl = document.getElementById('uf-turmas-list');
     if (turmasListEl) {
@@ -1662,6 +2124,7 @@ function openUsuarioForm(docId) {
             if (p.includes('instrutores')) document.getElementById('uf-perm-instrutores').checked = true;
             if (p.includes('formados')) document.getElementById('uf-perm-formados').checked = true;
             if (p.includes('relatorios')) document.getElementById('uf-perm-relatorios').checked = true;
+            if (p.includes('parceiros')) document.getElementById('uf-perm-parceiros').checked = true;
             if (p.includes('config')) document.getElementById('uf-perm-config').checked = true;
             const tv = u.turmasVinculadas || [];
             if (tv.length > 0 && turmasListEl) {
@@ -1695,6 +2158,7 @@ async function handleSaveUsuario(event) {
     if (document.getElementById('uf-perm-instrutores').checked) permissoes.push('instrutores');
     if (document.getElementById('uf-perm-formados').checked) permissoes.push('formados');
     if (document.getElementById('uf-perm-relatorios').checked) permissoes.push('relatorios');
+    if (document.getElementById('uf-perm-parceiros').checked) permissoes.push('parceiros');
     if (document.getElementById('uf-perm-config').checked) permissoes.push('config');
     if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
     const turmasVinculadas = [];
@@ -1840,16 +2304,27 @@ function renderFormadosList() {
     if (countAtivos) countAtivos.textContent = ativos;
     if (countPendentes) countPendentes.textContent = pendentes;
     if (badge) badge.textContent = formados.length + ' formado' + (formados.length !== 1 ? 's' : '');
-    if (!formados.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:24px">Nenhum formado cadastrado</td></tr>'; return; }
+    if (!formados.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum formado cadastrado</td></tr>'; return; }
     const search = (document.getElementById('formados-search') || {}).value || '';
     let filtered = formados.filter(f => {
         const matchTab = currentFormadosTab === 'ativos' ? (f.status === 'Ativo' || !f.status) : f.status === 'Pendente';
         const matchSearch = !search || (f.nome || '').toLowerCase().includes(search.toLowerCase()) || (f.cpf || '').includes(search.replace(/\D/g, ''));
         return matchTab && matchSearch;
     });
-    if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#888;padding:24px">Nenhum formado ${currentFormadosTab === 'ativos' ? 'ativo' : 'pendente'}</td></tr>`; return; }
+    if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum formado ${currentFormadosTab === 'ativos' ? 'ativo' : 'pendente'}</td></tr>`; return; }
     tbody.innerHTML = filtered.map((f, i) => {
-        const cursos = (f.cursos || []).join(', ') || '-';
+        let cursos = '-';
+        if (f.cursosDetalhes && f.cursosDetalhes.length) {
+            cursos = f.cursosDetalhes.map(cd => {
+                let info = cd.nome;
+                if (cd.dataFormacao) info += ' (' + cd.dataFormacao + ')';
+                if (cd.certFrente || cd.certVerso) info += ' <i class="fa-solid fa-certificate" style="color:#4caf50;font-size:9px"></i>';
+                return info;
+            }).join('<br>');
+        } else {
+            cursos = (f.cursos || []).join(', ') || '-';
+            if (f.dataFormacao) cursos += '<br><small style="color:#888">' + f.dataFormacao + '</small>';
+        }
         const sc = f.status === 'Ativo' || !f.status ? 'green' : 'pendente';
         const statusLabel = f.status || 'Pendente';
         return `<tr>
@@ -1857,7 +2332,6 @@ function renderFormadosList() {
             <td>${formatCPFDisplay(f.cpf)}</td>
             <td style="color:#f57c00;font-weight:600">${f.matricula || '-'}</td>
             <td style="font-size:11px;max-width:200px">${cursos}</td>
-            <td>${f.dataFormacao || '-'}</td>
             <td><span class="badge ${sc}">${statusLabel}</span></td>
             <td style="color:#aaa;font-size:12px">${f.cadastradoPor || '-'}</td>
             <td><div class="actions-cell">
@@ -2066,7 +2540,33 @@ function viewFormado(docId) {
     const f = formados.find(f => f.docId === docId); if (!f) return;
     document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#ff9800"></i> Detalhes do Formado';
     const photoSrc = f.photoDataUrl || null;
-    const cursos = (f.cursos || []).map(c => `<span class="usuario-tag usuario-tag-pre" style="background:rgba(255,152,0,0.15);color:#ff9800">${c}</span>`).join(' ');
+
+    let cursosHtml = '';
+    let certHtml = '';
+    if (f.cursosDetalhes && f.cursosDetalhes.length) {
+        cursosHtml = f.cursosDetalhes.map(cd => {
+            let info = '<span class="usuario-tag usuario-tag-pre" style="background:rgba(255,152,0,0.15);color:#ff9800">' + cd.nome;
+            if (cd.dataFormacao) info += ' (' + cd.dataFormacao + ')';
+            info += '</span>';
+            return info;
+        }).join(' ');
+        certHtml = f.cursosDetalhes.map(cd => {
+            let html = '<div style="margin-bottom:12px"><strong style="color:#ff9800;font-size:12px">' + cd.nome + '</strong><div style="display:flex;gap:10px;margin-top:4px">';
+            html += '<div>' + (cd.certFrente ? '<span class="detail-label">Frente</span><br><img src="' + cd.certFrente + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Frente: ---</span>') + '</div>';
+            html += '<div>' + (cd.certVerso ? '<span class="detail-label">Verso</span><br><img src="' + cd.certVerso + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Verso: ---</span>') + '</div>';
+            html += '</div></div>';
+            return html;
+        }).join('');
+    } else {
+        cursosHtml = (f.cursos || []).map(c => '<span class="usuario-tag usuario-tag-pre" style="background:rgba(255,152,0,0.15);color:#ff9800">' + c + '</span>').join(' ');
+        if (f.certFrente || f.certVerso) {
+            certHtml = '<div style="display:flex;gap:10px">' +
+                '<div>' + (f.certFrente ? '<span class="detail-label">Frente</span><br><img src="' + f.certFrente + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Frente: ---</span>') + '</div>' +
+                '<div>' + (f.certVerso ? '<span class="detail-label">Verso</span><br><img src="' + f.certVerso + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Verso: ---</span>') + '</div>' +
+                '</div>';
+        }
+    }
+
     document.getElementById('modal-body').innerHTML = `
         ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #ff9800;border-radius:8px" alt="Foto 3x4"></div>` : ''}
         <div class="detail-grid">
@@ -2092,11 +2592,8 @@ function viewFormado(docId) {
             <div class="detail-item"><span class="detail-label">Fator RH</span><span class="detail-value">${f.fatorRh||'---'}</span></div>
             <div class="detail-section-title">Formacao</div>
             <div class="detail-item"><span class="detail-label">Matricula</span><span class="detail-value" style="color:#f57c00;font-weight:700">${f.matricula||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Data Formacao</span><span class="detail-value">${f.dataFormacao||'---'}</span></div>
-            <div class="detail-item full"><span class="detail-label">Cursos</span><span class="detail-value">${cursos||'---'}</span></div>
-            <div class="detail-section-title">Certificado Classe 01</div>
-            <div class="detail-item">${f.certFrente ? `<span class="detail-label">Frente</span><br><img src="${f.certFrente}" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #333">` : '<span class="detail-label">Frente: ---</span>'}</div>
-            <div class="detail-item">${f.certVerso ? `<span class="detail-label">Verso</span><br><img src="${f.certVerso}" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #333">` : '<span class="detail-label">Verso: ---</span>'}</div>
+            <div class="detail-item full"><span class="detail-label">Cursos</span><span class="detail-value">${cursosHtml||'---'}</span></div>
+            ${certHtml ? '<div class="detail-section-title">Certificados</div><div class="detail-item full">' + certHtml + '</div>' : ''}
             <div class="detail-section-title">Cadastro</div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#f57c00;font-weight:600">${f.cadastradoPor||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Data Cadastro</span><span class="detail-value">${f.dataCadastro||'---'}</span></div>
@@ -2296,9 +2793,16 @@ function removeFormadoFile(id) { formadoUploadedFiles = formadoUploadedFiles.fil
 
 function exportExcelFormados() {
     if (!formados.length) { alert('Nenhum formado para exportar.'); return; }
-    let csv = 'Nome,CPF,Matricula,Cursos,Data Formacao,Cadastrado por\n';
+    let csv = 'Nome,CPF,Matricula,Cursos,Cadastrado por\n';
     formados.forEach(f => {
-        csv += `"${f.nome||''}","${formatCPFDisplay(f.cpf)}","${f.matricula||''}","${(f.cursos||[]).join('; ')}","${f.dataFormacao||''}","${f.cadastradoPor||''}"\n`;
+        let cursos = '';
+        if (f.cursosDetalhes && f.cursosDetalhes.length) {
+            cursos = f.cursosDetalhes.map(cd => cd.nome + (cd.dataFormacao ? ' (' + cd.dataFormacao + ')' : '')).join('; ');
+        } else {
+            cursos = (f.cursos || []).join('; ');
+            if (f.dataFormacao) cursos += ' (' + f.dataFormacao + ')';
+        }
+        csv += `"${f.nome||''}","${formatCPFDisplay(f.cpf)}","${f.matricula||''}","${cursos}","${f.cadastradoPor||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -2310,10 +2814,171 @@ function exportExcelFormados() {
 // ===== PRE-CADASTRO FORMADOS =====
 
 let preCadastroFormadoPhotoDataUrl = null;
+let pcfCursosData = {};
+
+function initPcfCursosListeners() {
+    document.querySelectorAll('.pcf-curso-check').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            if (this.checked) {
+                pcfCursosData[this.value] = { dataFormacao: '', certFrente: null, certVerso: null };
+            } else {
+                delete pcfCursosData[this.value];
+            }
+            renderPcfCursosDetalhes();
+        });
+    });
+}
+
+function renderPcfCursosDetalhes() {
+    var container = document.getElementById('pcf-cursos-detalhes');
+    if (!container) return;
+    var cursos = Object.keys(pcfCursosData);
+    if (!cursos.length) { container.innerHTML = ''; return; }
+    container.innerHTML = cursos.map(function(curso) {
+        var slug = curso.replace(/[^a-zA-Z0-9]/g, '-');
+        var data = pcfCursosData[curso];
+        return '<div class="pcf-curso-detalhe" data-curso="' + curso + '">' +
+            '<div class="pcf-curso-detalhe-header"><i class="fa-solid fa-graduation-cap" style="margin-right:6px"></i>' + curso + '</div>' +
+            '<div class="form-row">' +
+            '<div class="form-group"><label>Data Formacao *</label><input type="date" class="config-input pcf-curso-data" value="' + (data.dataFormacao || '') + '"></div>' +
+            '<div class="form-group"><label>Cert. Frente</label>' +
+            '<div class="upload-buttons-row">' +
+            '<button type="button" class="btn-upload-action pcf-camera-btn" data-side="frente"><i class="fa-solid fa-camera"></i> Camera</button>' +
+            '<button type="button" class="btn-upload-action pcf-import-btn" data-side="frente"><i class="fa-solid fa-file-import"></i> Importar</button>' +
+            '</div>' +
+            '<input type="file" accept="image/*" class="hidden pcf-cert-file" data-side="frente">' +
+            '<div class="cert-preview pcf-cert-preview" data-side="frente">' + (data.certFrente ? '<img src="' + data.certFrente + '">' : '<div class="cert-preview-empty">Nenhuma foto</div>') + '</div>' +
+            '</div>' +
+            '<div class="form-group"><label>Cert. Verso</label>' +
+            '<div class="upload-buttons-row">' +
+            '<button type="button" class="btn-upload-action pcf-camera-btn" data-side="verso"><i class="fa-solid fa-camera"></i> Camera</button>' +
+            '<button type="button" class="btn-upload-action pcf-import-btn" data-side="verso"><i class="fa-solid fa-file-import"></i> Importar</button>' +
+            '</div>' +
+            '<input type="file" accept="image/*" class="hidden pcf-cert-file" data-side="verso">' +
+            '<div class="cert-preview pcf-cert-preview" data-side="verso">' + (data.certVerso ? '<img src="' + data.certVerso + '">' : '<div class="cert-preview-empty">Nenhuma foto</div>') + '</div>' +
+            '</div>' +
+            '</div></div>';
+    }).join('');
+
+    container.querySelectorAll('.pcf-curso-detalhe').forEach(function(el) {
+        var curso = el.dataset.curso;
+        el.querySelector('.pcf-curso-data').addEventListener('change', function() {
+            pcfCursosData[curso].dataFormacao = this.value;
+        });
+        el.querySelectorAll('.pcf-camera-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                openPcfCertCamera(curso, this.dataset.side);
+            });
+        });
+        el.querySelectorAll('.pcf-import-btn').forEach(function(btn) {
+            var side = btn.dataset.side;
+            var fileInput = el.querySelector('.pcf-cert-file[data-side="' + side + '"]');
+            btn.addEventListener('click', function() {
+                fileInput.click();
+            });
+        });
+        el.querySelectorAll('.pcf-cert-file').forEach(function(input) {
+            input.addEventListener('change', function() {
+                handlePcfCertUpload(this, curso, this.dataset.side);
+            });
+        });
+    });
+}
+
+function openPcfCertCamera(cursoName, side) {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        var overlay = document.createElement('div');
+        overlay.id = 'camera-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+        document.body.appendChild(overlay);
+        var video = document.getElementById('camera-video');
+        var stream = null;
+        var currentFacing = 'environment';
+        function startCam(facing) {
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1200 }, height: { ideal: 900 } } });
+        }
+        startCam(currentFacing)
+        .then(function(s) { stream = s; video.srcObject = stream; })
+        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
+
+        var switchBtn = document.createElement('button');
+        switchBtn.id = 'camera-switch';
+        switchBtn.style.cssText = 'padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center';
+        switchBtn.title = 'Trocar camera';
+        switchBtn.innerHTML = '<i class="fa-solid fa-camera-rotate"></i>';
+        overlay.querySelector('div:last-child').insertBefore(switchBtn, document.getElementById('camera-capture'));
+
+        switchBtn.onclick = function() {
+            currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+            startCam(currentFacing)
+            .then(function(s) { stream = s; video.srcObject = stream; })
+            .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
+        };
+
+        document.getElementById('camera-capture').onclick = function() {
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 800;
+            canvas.height = video.videoHeight || 600;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+            canvas.toBlob(function(blob) {
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    var dataUrl = ev.target.result;
+                    pcfCursosData[cursoName][side === 'frente' ? 'certFrente' : 'certVerso'] = dataUrl;
+                    var slug = cursoName.replace(/[^a-zA-Z0-9]/g, '-');
+                    var preview = document.querySelector('.pcf-curso-detalhe[data-curso="' + cursoName + '"] .pcf-cert-preview[data-side="' + side + '"]');
+                    if (preview) preview.innerHTML = '<img src="' + dataUrl + '">';
+                };
+                reader.readAsDataURL(blob);
+            }, 'image/jpeg', 0.6);
+        };
+        document.getElementById('camera-cancel').onclick = function() {
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+        };
+    } else {
+        var slug = cursoName.replace(/[^a-zA-Z0-9]/g, '-');
+        var fileInput = document.querySelector('.pcf-curso-detalhe[data-curso="' + cursoName + '"] .pcf-cert-file[data-side="' + side + '"]');
+        if (fileInput) fileInput.click();
+    }
+}
+
+function handlePcfCertUpload(fileInput, cursoName, side) {
+    var file = fileInput.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var maxW = 800;
+            var ratio = Math.min(maxW / img.width, maxW / img.height, 1);
+            canvas.width = img.width * ratio;
+            canvas.height = img.height * ratio;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+                var reader2 = new FileReader();
+                reader2.onload = function(ev) {
+                    var dataUrl = ev.target.result;
+                    pcfCursosData[cursoName][side === 'frente' ? 'certFrente' : 'certVerso'] = dataUrl;
+                    var preview = document.querySelector('.pcf-curso-detalhe[data-curso="' + cursoName + '"] .pcf-cert-preview[data-side="' + side + '"]');
+                    if (preview) preview.innerHTML = '<img src="' + dataUrl + '">';
+                };
+                reader2.readAsDataURL(blob);
+            }, 'image/jpeg', 0.6);
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
 
 function openFormPreCadastroFormado() {
     resetFormPreCadastroFormado();
     document.getElementById('pre-cad-formado-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#ff9800;margin-right:8px"></i> Novo Pre-Cadastro';
+    populatePcfTurmaSelect();
     showAdminSection('admin-form-pre-cadastro-formado');
 }
 
@@ -2324,12 +2989,24 @@ function renderPreCadastroFormadosList() {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:32px">Nenhum pre-cadastro pendente.</td></tr>';
         return;
     }
-    tbody.innerHTML = pending.map(f => `
-        <tr>
+    tbody.innerHTML = pending.map(f => {
+        let cursosHtml = '';
+        if (f.cursosDetalhes && f.cursosDetalhes.length) {
+            cursosHtml = f.cursosDetalhes.map(cd => {
+                let info = cd.nome;
+                if (cd.dataFormacao) info += ' (' + cd.dataFormacao + ')';
+                if (cd.certFrente || cd.certVerso) info += ' <i class="fa-solid fa-certificate" style="color:#4caf50;font-size:10px"></i>';
+                return info;
+            }).join('<br>');
+        } else {
+            cursosHtml = (f.cursos||[]).join(', ');
+            if (f.dataFormacao) cursosHtml += '<br><small style="color:#888">' + f.dataFormacao + '</small>';
+        }
+        return `<tr>
             <td>${f.nome||''}</td>
             <td>${formatCPFDisplay(f.cpf)}</td>
-            <td>${(f.cursos||[]).join(', ')}</td>
-            <td>${f.dataFormacao||''}</td>
+            <td>${f.turma||'---'}</td>
+            <td style="font-size:12px">${cursosHtml}</td>
             <td>${f.cadastradoPor||''}</td>
             <td>
                 <div style="display:flex;gap:6px">
@@ -2337,8 +3014,8 @@ function renderPreCadastroFormadosList() {
                     <button class="btn-sm btn-outline btn-danger-outline" onclick="excluirPreCadastroFormado('${f.docId}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 function filterPreCadastroFormados() {
@@ -2379,19 +3056,85 @@ function removePreCadastroFormadoPhoto() {
     document.getElementById('pcf-photo-input').value = '';
 }
 
+function openPcfPhotoCamera() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const overlay = document.createElement('div');
+        overlay.id = 'camera-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+        document.body.appendChild(overlay);
+        const video = document.getElementById('camera-video');
+        let stream = null;
+        let currentFacing = 'user';
+
+        function startCamera(facing) {
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 800 }, height: { ideal: 600 } } });
+        }
+
+        startCamera(currentFacing)
+        .then(function(s) { stream = s; video.srcObject = stream; })
+        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
+
+        document.getElementById('camera-switch').onclick = function() {
+            currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+            startCamera(currentFacing)
+            .then(function(s) { stream = s; video.srcObject = stream; })
+            .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
+        };
+
+        document.getElementById('camera-capture').onclick = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300; canvas.height = 400;
+            canvas.getContext('2d').drawImage(video, 0, 0, 300, 400);
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                preCadastroFormadoPhotoDataUrl = url;
+                document.getElementById('pcf-photo-preview').src = url;
+                document.getElementById('pcf-photo-preview').classList.remove('hidden');
+                document.getElementById('pcf-photo-placeholder').style.display = 'none';
+                document.getElementById('pcf-btn-remove-photo').style.display = '';
+            }, 'image/jpeg', 0.5);
+        };
+
+        document.getElementById('camera-cancel').onclick = function() {
+            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+            document.body.removeChild(overlay);
+        };
+    } else {
+        document.getElementById('pcf-photo-input').click();
+    }
+}
+
 function resetFormPreCadastroFormado() {
     document.getElementById('form-pre-cadastro-formado').reset();
     removePreCadastroFormadoPhoto();
     document.querySelectorAll('.pcf-curso-check').forEach(cb => cb.checked = false);
+    pcfCursosData = {};
+    renderPcfCursosDetalhes();
 }
 
 async function handlePreCadastroFormadoSubmit(event) {
     event.preventDefault();
     const cpf = document.getElementById('pcf-cpf').value.replace(/\D/g, '');
-    const dataFormacao = document.getElementById('pcf-data-formacao').value;
     const cursos = [];
     document.querySelectorAll('.pcf-curso-check:checked').forEach(cb => cursos.push(cb.value));
     if (!cursos.length) { alert('Selecione pelo menos um curso.'); return false; }
+
+    const cursosDetalhes = cursos.map(function(curso) {
+        const d = pcfCursosData[curso] || {};
+        return {
+            nome: curso,
+            dataFormacao: d.dataFormacao ? new Date(d.dataFormacao + 'T12:00:00').toLocaleDateString('pt-BR') : '',
+            dataFormacaoRaw: d.dataFormacao || '',
+            certFrente: d.certFrente || null,
+            certVerso: d.certVerso || null
+        };
+    });
+
+    const primeiroCurso = cursosDetalhes[0] || {};
 
     const data = {
         nome: document.getElementById('pcf-nome').value,
@@ -2413,10 +3156,12 @@ async function handlePreCadastroFormadoSubmit(event) {
         altura: document.getElementById('pcf-altura').value,
         peso: document.getElementById('pcf-peso').value,
         fatorRh: document.getElementById('pcf-fator-rh').value,
+        turma: document.getElementById('pcf-turma').value,
         cursos: cursos,
-        dataFormacao: dataFormacao ? new Date(dataFormacao).toLocaleDateString('pt-BR') : '',
-        dataFormacaoRaw: dataFormacao,
-        matricula: generateMatricula(cpf, dataFormacao),
+        cursosDetalhes: cursosDetalhes,
+        dataFormacao: primeiroCurso.dataFormacao || '',
+        dataFormacaoRaw: primeiroCurso.dataFormacaoRaw || '',
+        matricula: generateMatricula(cpf, primeiroCurso.dataFormacaoRaw || ''),
         senha: document.getElementById('pcf-senha').value,
         status: 'Pendente',
         cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
@@ -2457,3 +3202,38 @@ async function excluirPreCadastroFormado(docId) {
         alert('Erro ao excluir: ' + e.message);
     }
 }
+
+// ===== PWA INSTALL =====
+
+let deferredPrompt = null;
+let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+let isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+});
+
+function installApp() {
+    if (isStandalone) {
+        alert('O app ja esta instalado no seu dispositivo!');
+        return;
+    }
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(choice) {
+            if (choice.outcome === 'accepted') {
+                alert('App instalado com sucesso!');
+            }
+            deferredPrompt = null;
+        });
+    } else if (isIOS) {
+        alert('Para instalar no iPhone/iPad:\n\n1. Toque no botao Compartilhar (quadrado com seta)\n2. Selecione "Adicionar a Tela Inicial"\n3. Toque em "Adicionar"\n\nO app aparecera na sua tela inicial!');
+    } else {
+        alert('Para instalar o app:\n\n1. Abra o menu do navegador (3 pontos)\n2. Selecione "Instalar app" ou "Adicionar a tela inicial"\n\nO app estara acessivel pela tela inicial!');
+    }
+}
+
+window.addEventListener('appinstalled', function() {
+    deferredPrompt = null;
+});

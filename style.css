@@ -366,6 +366,37 @@ body {
 
 .login-footer p { color: #555; font-size: 12px; }
 
+.btn-install {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #f57c00, #e65100);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(245, 124, 0, 0.3);
+}
+
+.btn-install:hover {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 124, 0, 0.4);
+}
+
+.btn-install:active {
+    transform: translateY(0);
+}
+
+.btn-install i {
+    font-size: 16px;
+}
+
 /* ===== ROLE SELECT ===== */
 .role-select-container {
     width: 100%;
@@ -3037,4 +3068,90 @@ select.config-input option {
     border-radius: 8px;
     color: #555;
     font-size: 12px;
+}
+
+/* ===== PRE-CADASTRO FORMADO - CURSOS COMPACTOS ===== */
+
+.pcf-cursos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.pcf-cursos-grid .curso-card {
+    padding: 8px 6px;
+    gap: 4px;
+}
+
+.pcf-cursos-grid .curso-card i {
+    font-size: 16px;
+}
+
+.pcf-cursos-grid .curso-card span {
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.pcf-curso-detalhe {
+    margin-top: 10px;
+    padding: 12px;
+    background: #151515;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    animation: pcfSlideDown 0.2s ease-out;
+}
+
+@keyframes pcfSlideDown {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 500px; }
+}
+
+.pcf-curso-detalhe-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #ff9800;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.pcf-curso-detalhe .form-row {
+    gap: 10px;
+    margin: 0;
+}
+
+.pcf-curso-detalhe .form-group {
+    flex: 1;
+    min-width: 120px;
+}
+
+.pcf-curso-detalhe label {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.pcf-curso-detalhe .config-input {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.pcf-curso-detalhe .upload-buttons-row {
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.pcf-curso-detalhe .btn-upload-action {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+}
+
+.pcf-curso-detalhe .cert-preview img {
+    max-height: 100px;
+}
+
+.pcf-curso-detalhe .cert-preview-empty {
+    padding: 10px;
+    font-size: 10px;
 }

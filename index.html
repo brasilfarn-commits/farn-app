@@ -113,6 +113,9 @@
                     </form>
                     <div class="login-footer">
                         <p>&copy; 2026 FARN - Todos os direitos reservados</p>
+                        <button type="button" id="btn-install-app" class="btn-install" onclick="installApp()">
+                            <i class="fa-solid fa-download"></i> Instalar App no Dispositivo
+                        </button>
                     </div>
                 </div>
             </div>
@@ -160,6 +163,10 @@
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-relatorios', this)">
                         <i class="fa-solid fa-chart-bar"></i>
                         <span>Relatorios</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-parceiros', this); renderParceirosList()">
+                        <i class="fa-solid fa-handshake"></i>
+                        <span>Parceiros</span>
                     </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-config', this)">
                         <i class="fa-solid fa-gear"></i>
@@ -225,6 +232,10 @@
                                 <i class="fa-solid fa-chart-bar"></i>
                                 <span>Relatórios</span>
                             </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-parceiros', document.querySelector('.nav-item:nth-child(8)')); renderParceirosList()">
+                                <i class="fa-solid fa-handshake"></i>
+                                <span>Parceiros</span>
+                            </div>
                             <div class="admin-home-card admin-home-card-download" onclick="showDownloadModal()">
                                 <i class="fa-solid fa-mobile-screen-button"></i>
                                 <span>Baixar App Android</span>
@@ -268,7 +279,7 @@
                             <div class="card-body">
                                 <table class="data-table">
                                     <thead>
-                                        <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Data Cadastro</th><th>Acoes</th></tr>
+                                        <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Parceiro</th><th>Data Cadastro</th><th>Acoes</th></tr>
                                     </thead>
                                     <tbody id="alunos-table-body"></tbody>
                                 </table>
@@ -329,7 +340,7 @@
                             </div>
                             <table class="data-table">
                                 <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Cursos</th><th>Data Formacao</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                    <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Cursos / Datas</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
                                 </thead>
                                 <tbody id="formados-table-body"></tbody>
                             </table>
@@ -596,7 +607,7 @@
                             </div>
                             <table class="data-table">
                                 <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Cursos</th><th>Data Formacao</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                    <tr><th>Nome</th><th>CPF</th><th>Turma</th><th>Cursos / Datas</th><th>Cadastrado por</th><th>Acoes</th></tr>
                                 </thead>
                                 <tbody id="pre-cad-formados-table-body"></tbody>
                             </table>
@@ -616,12 +627,12 @@
                         <div class="card-body">
                             <form id="form-pre-cadastro-formado" onsubmit="return handlePreCadastroFormadoSubmit(event)">
 
-                                <!-- FOTO 3x4 -->
+                                <!-- FOTO 3x4 + TURMA/PARCEIRO -->
                                 <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Foto 3x4</h3></div>
+                                    <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Foto 3x4 e Turma</h3></div>
                                     <div class="form-section-body">
                                         <div class="form-row">
-                                            <div class="form-group">
+                                            <div class="form-group" style="max-width:220px">
                                                 <label>Foto 3x4</label>
                                                 <div class="photo-upload-area" id="pcf-photo-area">
                                                     <div class="photo-placeholder" id="pcf-photo-placeholder">
@@ -632,6 +643,9 @@
                                                     <input type="file" id="pcf-photo-input" accept="image/*" class="hidden" onchange="handlePreCadastroFormadoPhotoUpload(event)">
                                                 </div>
                                                 <div class="photo-actions">
+                                                    <button type="button" class="btn-outline" onclick="openPcfPhotoCamera()">
+                                                        <i class="fa-solid fa-camera"></i> Camera
+                                                    </button>
                                                     <button type="button" class="btn-outline" onclick="document.getElementById('pcf-photo-input').click()">
                                                         <i class="fa-solid fa-upload"></i> Importar Foto
                                                     </button>
@@ -639,6 +653,12 @@
                                                         <i class="fa-solid fa-trash"></i> Remover
                                                     </button>
                                                 </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Turma *</label>
+                                                <select id="pcf-turma" class="config-input" required style="height:46px">
+                                                    <option value="">Selecione a turma...</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -736,27 +756,18 @@
                                     <div class="form-section-body">
                                         <div class="form-group">
                                             <label>Selecione os cursos concluidos *</label>
-                                            <div class="cursos-grid" id="pcf-cursos-grid">
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 01"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil Classe 01</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 02"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil Classe 02</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 03"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil Classe 03</span></div></label>
+                                            <div class="cursos-grid pcf-cursos-grid" id="pcf-cursos-grid">
+                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 01"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil 01</span></div></label>
+                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 02"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil 02</span></div></label>
+                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 03"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil 03</span></div></label>
                                                 <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="APH"><div class="curso-card"><i class="fa-solid fa-kit-medical"></i><span>APH</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Prevencao e Combate a Incendio"><div class="curso-card"><i class="fa-solid fa-fire-extinguisher"></i><span>Prev. e Comb. a Incendio</span></div></label>
+                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Prevencao e Combate a Incendio"><div class="curso-card"><i class="fa-solid fa-fire-extinguisher"></i><span>Prev. Comb. Incendio</span></div></label>
                                                 <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Resgate Terrestre"><div class="curso-card"><i class="fa-solid fa-truck-medical"></i><span>Resgate Terrestre</span></div></label>
                                                 <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Resgate Aquatico"><div class="curso-card"><i class="fa-solid fa-water"></i><span>Resgate Aquatico</span></div></label>
                                                 <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Resgate em Altura"><div class="curso-card"><i class="fa-solid fa-mountain"></i><span>Resgate em Altura</span></div></label>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <!-- DATA FORMACAO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-calendar"></i><h3>Data de Formacao</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Data Formacao Classe 01 *</label><input type="date" id="pcf-data-formacao" class="config-input" required></div>
-                                        </div>
+                                        <div id="pcf-cursos-detalhes"></div>
                                     </div>
                                 </div>
 
@@ -787,7 +798,106 @@
                 </div>
 
                 <div id="admin-relatorios" class="admin-section">
-                    <div class="card full-width"><div class="card-header"><h3><i class="fa-solid fa-chart-bar" style="color:#9c27b0;margin-right:8px"></i> Relatórios</h3></div><div class="card-body"><p style="color:#888;text-align:center;padding:40px">Pagina em desenvolvimento...</p></div></div>
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-bar" style="color:#9c27b0;margin-right:8px"></i> Relatorios</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="config-grid">
+                                <div class="config-card" onclick="relatorioUniforme()" style="padding:16px;max-width:220px">
+                                    <i class="fa-solid fa-shirt" style="font-size:20px"></i>
+                                    <span style="font-size:13px">Medidas de Uniforme</span>
+                                    <small>Nome, matricula, calca, camisa e calcado</small>
+                                </div>
+                                <div class="config-card" onclick="abrirModalMontarRelatorio()" style="padding:16px;max-width:220px">
+                                    <i class="fa-solid fa-file-circle-plus" style="font-size:20px"></i>
+                                    <span style="font-size:13px">Monte Relatorio de Aluno</span>
+                                    <small>Selecione os campos que deseja no relatorio</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- MODAL MONTAR RELATORIO -->
+                <div id="modal-montar-relatorio" class="modal-overlay hidden" onclick="if(event.target===this)fecharModalMontarRelatorio()">
+                    <div class="modal-content" style="max-width:700px;max-height:85vh;overflow-y:auto">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-file-circle-plus" style="color:#9c27b0;margin-right:8px"></i> Montar Relatorio de Aluno</h3>
+                            <button class="modal-close" onclick="fecharModalMontarRelatorio()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="color:#aaa;margin-bottom:12px;font-size:13px">Selecione os campos que deseja incluir no relatorio:</p>
+                            <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+                                <div style="display:flex;align-items:center;gap:6px">
+                                    <label style="color:#ccc;font-size:12px;font-weight:600"><i class="fa-solid fa-filter" style="color:#9c27b0;margin-right:4px"></i>Status:</label>
+                                    <select id="relatorio-status-filter" class="config-input" style="padding:6px 10px;font-size:12px;min-width:160px">
+                                        <option value="Todos">Todos os Status</option>
+                                        <option value="Aprovado" selected>Aprovado</option>
+                                        <option value="Pendente">Pendente</option>
+                                        <option value="Rejeitado">Rejeitado</option>
+                                        <option value="Segunda Chamada">Segunda Chamada</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn-outline btn-sm" onclick="marcarTodosCampos(true)" style="font-size:11px"><i class="fa-solid fa-check-double"></i> Marcar Todos</button>
+                                <button type="button" class="btn-outline btn-sm" onclick="marcarTodosCampos(false)" style="font-size:11px"><i class="fa-solid fa-xmark"></i> Desmarcar Todos</button>
+                            </div>
+                            <div id="campos-relatorio-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+                            <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+                                <button type="button" class="btn-outline" onclick="fecharModalMontarRelatorio()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                <button type="button" class="btn-primary" onclick="gerarRelatorioPersonalizado()"><i class="fa-solid fa-file-lines"></i> Gerar Relatorio</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PARCEIROS LIST -->
+                <div id="admin-parceiros" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Parceiros</h3>
+                            <div class="header-actions">
+                                <button class="btn-primary" onclick="openFormParceiro()">
+                                    <i class="fa-solid fa-plus"></i> Novo Parceiro
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="parceiros-empty" class="empty-state" style="display:none"><i class="fa-solid fa-handshake"></i><p>Nenhum parceiro cadastrado</p></div>
+                            <div id="parceiros-list" class="table-responsive"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- FORM PARCEIRO -->
+                <div id="admin-form-parceiro" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3 id="parceiro-form-title"><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Parceiro</h3>
+                            <button class="btn-outline" onclick="showAdminSection('admin-parceiros')">
+                                <i class="fa-solid fa-arrow-left"></i> Voltar
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <form id="form-parceiro" onsubmit="return handleParceiroSubmit(event)">
+                                <div class="form-grid">
+                                    <div class="form-group full">
+                                        <label>Nome do Parceiro *</label>
+                                        <input type="text" id="pf-nome" class="config-input" required placeholder="Nome da empresa ou organizacao">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>CNPJ</label>
+                                        <input type="text" id="pf-cnpj" class="config-input" maxlength="18" placeholder="00.000.000/0000-00 (opcional)" oninput="formatCNPJ(this)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Responsavel *</label>
+                                        <input type="text" id="pf-responsavel" class="config-input" required placeholder="Nome do responsavel">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-parceiros')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 <div id="admin-config" class="admin-section">
                     <div class="card full-width">
@@ -905,6 +1015,14 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
+                                            <input type="checkbox" id="uf-perm-parceiros" value="parceiros">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-handshake"></i>
+                                                <span>Parceiros</span>
+                                                <small>Gerenciar parceiros</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
                                             <input type="checkbox" id="uf-perm-config" value="config">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-gear"></i>
@@ -967,7 +1085,7 @@
                             </div>
                             <table class="data-table" id="pre-table">
                                 <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Turma</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                    <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Turma</th><th>Parceiro</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
                                 </thead>
                                 <tbody id="pre-table-body"></tbody>
                             </table>
@@ -1024,6 +1142,12 @@
                                                     <label>Turma *</label>
                                                     <select id="fc-turma" class="config-input" required style="height:46px">
                                                         <option value="">Selecione a turma...</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label>Parceiro</label>
+                                                    <select id="fc-parceiro" class="config-input" style="height:46px">
+                                                        <option value="">Nenhum parceiro</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -1213,6 +1337,7 @@
                                 <div class="form-submit-bar">
                                     <button type="button" class="btn-outline" onclick="resetFormCandidato()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
                                     <button type="button" class="btn-outline" onclick="showAdminSection('admin-pre-inscricao')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                    <button type="button" class="btn-outline btn-atualizar" id="btn-atualizar-cadastro" style="display:none;border-color:#4caf50;color:#4caf50" onclick="toggleAtualizarCadastro()"><i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro</button>
                                     <button type="submit" class="btn-primary btn-lg"><i class="fa-solid fa-check"></i> Salvar Pre-Cadastro</button>
                                 </div>
                             </form>
