@@ -1117,47 +1117,9 @@
 
                                 <!-- FOTO 3x4 E TURMA -->
                                 <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Foto 3x4 e Turma</h3></div>
+                                    <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Turma</h3></div>
                                     <div class="form-section-body">
                                         <div class="form-row">
-                                            <div class="form-group">
-                                                <label>Foto 3x4</label>
-                                                <div class="photo-upload-area" id="photo-area">
-                                                    <div class="photo-placeholder" id="photo-placeholder">
-                                                        <i class="fa-solid fa-camera"></i>
-                                                        <p>Clique para importar foto 3x4</p>
-                                                        <span>ou arraste um arquivo aqui</span>
-                                                    </div>
-                                                    <img id="photo-preview" class="photo-preview hidden" alt="Preview">
-                                                    <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
-                                                </div>
-                                                <div class="photo-actions">
-                                                    <button type="button" class="btn-outline" onclick="document.getElementById('photo-input').click()">
-                                                        <i class="fa-solid fa-upload"></i> Importar Foto
-                                                    </button>
-                                                    <button type="button" class="btn-outline" onclick="openCamera()">
-                                                        <i class="fa-solid fa-camera"></i> Tirar Foto
-                                                    </button>
-                                                    <button type="button" class="btn-outline btn-danger-outline" onclick="removePhoto()" id="btn-remove-photo" style="display:none">
-                                                        <i class="fa-solid fa-trash"></i> Remover
-                                                    </button>
-                                                </div>
-                                                <div id="fc-foto3x4-local-box" style="display:none;margin-top:12px;padding:12px;background:rgba(102,187,106,0.08);border:1px solid rgba(102,187,106,0.25);border-radius:8px">
-                                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                                                        <i class="fa-solid fa-shield-halved" style="color:#66bb6a;font-size:12px"></i>
-                                                        <span style="color:#66bb6a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Foto 3x4 do Portal (Local)</span>
-                                                    </div>
-                                                    <div style="display:flex;align-items:center;gap:12px">
-                                                        <img id="fc-foto3x4-local-img" src="" alt="Foto 3x4 Local" style="width:60px;height:80px;object-fit:cover;border-radius:6px;border:1px solid rgba(102,187,106,0.3);display:none">
-                                                        <div style="flex:1">
-                                                            <p id="fc-foto3x4-local-msg" style="color:#6a8ab0;font-size:11px;margin:0">Nenhuma foto capturada no portal.</p>
-                                                            <button type="button" class="btn-outline" id="btn-fc-foto3x4-importar" onclick="fcImportFoto3x4Local()" style="display:none;margin-top:6px;padding:4px 10px;font-size:10px">
-                                                                <i class="fa-solid fa-download"></i> Importar para Foto
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
                                             <div class="form-group" style="flex:1;display:flex;flex-direction:column;gap:12px">
                                                 <div id="fc-matricula-wrapper" style="display:none">
                                                     <label>Matricula</label>
@@ -1186,7 +1148,7 @@
                                     <div class="form-section-body">
                                         <div class="form-group full"><label>Nome Completo *</label><input type="text" id="fc-nome" class="config-input" required></div>
                                         <div class="form-row-3">
-                                            <div class="form-group"><label>CPF *</label><input type="text" id="fc-cpf" class="config-input" maxlength="14" required oninput="formatCPF(this);fcCheckFoto3x4Local()"></div>
+                                            <div class="form-group"><label>CPF *</label><input type="text" id="fc-cpf" class="config-input" maxlength="14" required oninput="formatCPF(this)"></div>
                                             <div class="form-group"><label>Data de Nascimento *</label><input type="date" id="fc-nascimento" class="config-input" required></div>
                                             <div class="form-group"><label>Estado Civil *</label>
                                                 <select id="fc-estado-civil" class="config-input" required>

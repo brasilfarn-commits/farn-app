@@ -1137,7 +1137,6 @@ async function editCandidato(index) {
     document.getElementById('fc-nome').value = c.nome || '';
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
-    setTimeout(function() { fcCheckFoto3x4Local(); }, 100);
     document.getElementById('fc-nascimento').value = c.nascimento || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
     document.getElementById('fc-nacionalidade').value = c.nacionalidade || '';
@@ -1169,15 +1168,6 @@ async function editCandidato(index) {
     document.getElementById('fc-calcado').value = c.calcado || '';
     document.getElementById('fc-turma').value = c.turma || '';
     document.getElementById('fc-parceiro').value = c.parceiro || '';
-    const photoSrc = localStorage.getItem('farn_photo_' + c.cpf) || c.photoDataUrl || null;
-    if (photoSrc) {
-        document.getElementById('photo-preview').src = photoSrc;
-        document.getElementById('photo-preview').classList.remove('hidden');
-        document.getElementById('photo-placeholder').style.display = 'none';
-        document.getElementById('btn-remove-photo').style.display = '';
-    } else {
-        removePhoto();
-    }
     const senhaWrapper = document.getElementById('senha-field-wrapper');
     if (c.status === 'Aprovado') {
         senhaWrapper.style.display = '';
@@ -1216,7 +1206,6 @@ function resetFormCandidato() {
     if (md) md.textContent = '';
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
-    removePhoto();
     uploadedFiles = [];
     renderFilesList();
 }
@@ -1258,16 +1247,6 @@ async function handleCandidatoSubmit(event) {
     data.dataHoraCadastro = editingIndex !== null ? candidatos[editingIndex].dataHoraCadastro : new Date().toLocaleString('pt-BR');
     if (editingIndex !== null && candidatos[editingIndex].atualizarCadastro) {
         data.atualizarCadastro = true;
-    }
-
-    const photoPreview = document.getElementById('photo-preview');
-    if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
-        try { localStorage.setItem('farn_photo_' + data.cpf, photoPreview.src); } catch(e) {}
-        data.hasPhoto = true;
-        data.photoDataUrl = photoPreview.src;
-    } else if (editingIndex !== null && candidatos[editingIndex].hasPhoto) {
-        data.hasPhoto = true;
-        if (candidatos[editingIndex].photoDataUrl) data.photoDataUrl = candidatos[editingIndex].photoDataUrl;
     }
 
     if (editingIndex !== null) {
