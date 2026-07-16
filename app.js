@@ -49,7 +49,6 @@ function showFirebaseStatus(ok) {
 
 function candidatoToDoc(c) {
     const copy = Object.assign({}, c);
-    delete copy.photoDataUrl;
     return copy;
 }
 
@@ -806,12 +805,21 @@ async function portalFoto3x4Enviar() {
             photoDataUrl: dataUrl,
             hasPhoto: true
         }, { merge: true });
+        try {
+            await dbFirestore.collection('formados').doc(currentAluno.cpf).set({
+                photoDataUrl: dataUrl
+            }, { merge: true });
+        } catch(e) {}
         currentAluno.photoDataUrl = dataUrl;
         currentAluno.hasPhoto = true;
         var idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
         if (idx !== -1) {
             candidatos[idx].photoDataUrl = dataUrl;
             candidatos[idx].hasPhoto = true;
+        }
+        var fIdx = formados.findIndex(function(f) { return f.cpf === currentAluno.cpf; });
+        if (fIdx !== -1) {
+            formados[fIdx].photoDataUrl = dataUrl;
         }
         portalFoto3x4Msg('Foto enviada com sucesso para o cadastro!', 'success');
         portalLoadSidebarFoto();
