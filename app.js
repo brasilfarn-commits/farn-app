@@ -890,7 +890,7 @@ function fcCheckFoto3x4Local() {
         return;
     }
     var fullCpf = cpf;
-    var dataUrl = localStorage.getItem('foto3x4_' + fullCpf);
+    var dataUrl = localStorage.getItem('foto3x4_' + fullCpf) || localStorage.getItem('farn_photo_' + fullCpf);
     var box = document.getElementById('fc-foto3x4-local-box');
     var img = document.getElementById('fc-foto3x4-local-img');
     var msg = document.getElementById('fc-foto3x4-local-msg');
@@ -913,7 +913,7 @@ function fcCheckFoto3x4Local() {
 
 function fcImportFoto3x4Local() {
     var cpf = document.getElementById('fc-cpf').value.replace(/\D/g, '');
-    var dataUrl = localStorage.getItem('foto3x4_' + cpf);
+    var dataUrl = localStorage.getItem('foto3x4_' + cpf) || localStorage.getItem('farn_photo_' + cpf);
     if (!dataUrl) return;
     var preview = document.getElementById('photo-preview');
     var placeholder = document.getElementById('photo-placeholder');
