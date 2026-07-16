@@ -1172,26 +1172,14 @@ async function editCandidato(index) {
     document.getElementById('fc-calcado').value = c.calcado || '';
     document.getElementById('fc-turma').value = c.turma || '';
     document.getElementById('fc-parceiro').value = c.parceiro || '';
-    if (c.hasPhoto) {
-        const saved = localStorage.getItem('farn_photo_' + c.cpf);
-        if (saved) {
-            document.getElementById('photo-preview').src = saved;
-            document.getElementById('photo-preview').classList.remove('hidden');
-            document.getElementById('photo-placeholder').style.display = 'none';
-            document.getElementById('btn-remove-photo').style.display = '';
-        } else {
-            removePhoto();
-        }
+    const photoSrc = localStorage.getItem('farn_photo_' + c.cpf) || c.photoDataUrl || null;
+    if (photoSrc) {
+        document.getElementById('photo-preview').src = photoSrc;
+        document.getElementById('photo-preview').classList.remove('hidden');
+        document.getElementById('photo-placeholder').style.display = 'none';
+        document.getElementById('btn-remove-photo').style.display = '';
     } else {
-        const portalPhoto = localStorage.getItem('farn_photo_' + c.cpf);
-        if (portalPhoto) {
-            document.getElementById('photo-preview').src = portalPhoto;
-            document.getElementById('photo-preview').classList.remove('hidden');
-            document.getElementById('photo-placeholder').style.display = 'none';
-            document.getElementById('btn-remove-photo').style.display = '';
-        } else {
-            removePhoto();
-        }
+        removePhoto();
     }
     const senhaWrapper = document.getElementById('senha-field-wrapper');
     if (c.status === 'Aprovado') {
@@ -1279,8 +1267,10 @@ async function handleCandidatoSubmit(event) {
     if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
         try { localStorage.setItem('farn_photo_' + data.cpf, photoPreview.src); } catch(e) {}
         data.hasPhoto = true;
+        data.photoDataUrl = photoPreview.src;
     } else if (editingIndex !== null && candidatos[editingIndex].hasPhoto) {
         data.hasPhoto = true;
+        if (candidatos[editingIndex].photoDataUrl) data.photoDataUrl = candidatos[editingIndex].photoDataUrl;
     }
 
     if (editingIndex !== null) {
@@ -1335,7 +1325,7 @@ function viewCandidato(i) {
     const c = candidatos[i]; if (!c) return;
     const mat = c.matricula || generateMatricula(c.cpf);
     document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#1e88e5"></i> Detalhes do Candidato';
-    const photoSrc = c.hasPhoto ? localStorage.getItem('farn_photo_' + c.cpf) : null;
+    const photoSrc = localStorage.getItem('farn_photo_' + c.cpf) || c.photoDataUrl || null;
     document.getElementById('modal-body').innerHTML = `
         ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #1e88e5;border-radius:8px" alt="Foto 3x4"></div>` : ''}
         <div class="detail-grid">
@@ -1426,7 +1416,7 @@ async function confirmDelete() {
 function printCandidato(i) {
     const c = candidatos[i]; if (!c) return;
     const mat = c.matricula || generateMatricula(c.cpf);
-    const photoSrc = c.hasPhoto ? localStorage.getItem('farn_photo_' + c.cpf) : null;
+    const photoSrc = localStorage.getItem('farn_photo_' + c.cpf) || c.photoDataUrl || null;
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - ${c.nome}</title><style>
         body{font-family:Arial,sans-serif;padding:40px;color:#222}h1{color:#1a237e;font-size:20px}h2{font-size:16px;margin:20px 0 10px;border-bottom:2px solid #1a237e;padding-bottom:6px}
