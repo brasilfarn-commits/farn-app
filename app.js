@@ -3342,7 +3342,6 @@ function openPcfPhotoCamera() {
                 };
                 pcfCamReader.readAsDataURL(blob);
             }, 'image/jpeg', 0.5);
-            }, 'image/jpeg', 0.5);
         };
 
         document.getElementById('camera-cancel').onclick = function() {
