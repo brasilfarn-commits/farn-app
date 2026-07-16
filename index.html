@@ -1375,62 +1375,81 @@
                     <button class="btn-glass" onclick="logoutPortal()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
                 </div>
             </div>
-            <div class="portal-body">
-                <div class="portal-welcome">
-                    <div class="portal-welcome-banner">
-                        <div class="portal-welcome-logo">
-                            <img src="logo-farn.png.png" alt="FARN">
-                        </div>
-                        <div class="portal-welcome-text">
-                            <p id="portal-aluno-matricula" class="portal-matricula-badge"></p>
-                            <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-aluno-nome"></span></h1>
-                            <p class="portal-sub">Acompanhe seu desempenho e materiais de estudo</p>
-                        </div>
-                        <div class="portal-welcome-decoration">
-                            <div class="deco-circle deco-1"></div>
-                            <div class="deco-circle deco-2"></div>
-                            <div class="deco-circle deco-3"></div>
-                        </div>
+            <div class="portal-layout">
+                <aside class="portal-sidebar">
+                    <div class="portal-sidebar-user">
+                        <div class="portal-sidebar-avatar"><i class="fa-solid fa-user"></i></div>
+                        <p id="portal-aluno-matricula" class="portal-matricula-badge"></p>
+                        <h2 id="portal-aluno-nome" class="portal-sidebar-name"></h2>
                     </div>
-                </div>
-                <div class="portal-menu">
-                    <div class="portal-menu-card glass-card card-apostilas">
-                        <div class="portal-card-icon"><i class="fa-solid fa-book-open"></i></div>
-                        <h3>Apostilas</h3>
-                        <div class="portal-apostila-list">
-                            <a href="APOST/AP%20OU%20E%20CT.pdf" download class="portal-apostila-link green">
-                                <i class="fa-solid fa-file-pdf"></i>
-                                <span>Ordem Unida e Comunicacao</span>
-                                <i class="fa-solid fa-download apostila-dl-icon"></i>
+                    <nav class="portal-sidebar-nav">
+                        <a class="portal-nav-item active" onclick="showPortalSection('noticias')">
+                            <i class="fa-solid fa-newspaper"></i><span>Noticias</span>
+                        </a>
+                        <a class="portal-nav-item" onclick="showPortalSection('apostilas')">
+                            <i class="fa-solid fa-book-open"></i><span>Apostilas</span>
+                        </a>
+                        <a class="portal-nav-item" onclick="showPortalSection('notas')">
+                            <i class="fa-solid fa-chart-line"></i><span>Notas</span>
+                        </a>
+                        <a class="portal-nav-item" onclick="openPortalAlunoDados()">
+                            <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
+                        </a>
+                    </nav>
+                    <div class="portal-sidebar-footer">
+                        <img src="logo-farn.png.png" alt="FARN" class="portal-sidebar-logo">
+                        <span>FARN - Brasil</span>
+                    </div>
+                </aside>
+                <main class="portal-main">
+                    <section id="portal-section-noticias" class="portal-section active">
+                        <div class="portal-section-header">
+                            <i class="fa-solid fa-newspaper"></i>
+                            <h2>Noticias da FARN</h2>
+                        </div>
+                        <div class="portal-noticias-center" id="portal-noticias-list">
+                            <div class="portal-noticia-empty">
+                                <i class="fa-solid fa-megaphone"></i>
+                                <p>Nenhuma noticia disponivel.</p>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="portal-section-apostilas" class="portal-section">
+                        <div class="portal-section-header">
+                            <i class="fa-solid fa-book-open"></i>
+                            <h2>Apostilas</h2>
+                        </div>
+                        <div class="portal-apostilas-grid">
+                            <a href="APOST/AP%20OU%20E%20CT.pdf" download class="portal-apostila-card green">
+                                <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                                <div class="apostila-card-info">
+                                    <h4>Ordem Unida e Comunicacao</h4>
+                                    <p>Material de estudo OU e CT</p>
+                                </div>
+                                <i class="fa-solid fa-download apostila-card-dl"></i>
                             </a>
-                            <a href="APOST/Legisla%C3%A7%C3%A3o.pdf" download class="portal-apostila-link blue">
-                                <i class="fa-solid fa-file-pdf"></i>
-                                <span>Leis e Normas</span>
-                                <i class="fa-solid fa-download apostila-dl-icon"></i>
+                            <a href="APOST/Legisla%C3%A7%C3%A3o.pdf" download class="portal-apostila-card blue">
+                                <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                                <div class="apostila-card-info">
+                                    <h4>Leis e Normas</h4>
+                                    <p>Legislacao e normas aplicaveis</p>
+                                </div>
+                                <i class="fa-solid fa-download apostila-card-dl"></i>
                             </a>
                         </div>
-                    </div>
-                    <div class="portal-menu-card glass-card card-notas">
-                        <div class="portal-card-icon"><i class="fa-solid fa-chart-line"></i></div>
-                        <h3>Notas</h3>
-                        <p>Suas notas serao exibidas aqui</p>
-                        <span class="portal-badge">Em breve</span>
-                    </div>
-                    <div class="portal-menu-card glass-card card-noticias portal-card-noticias">
-                        <div class="portal-card-icon"><i class="fa-solid fa-newspaper"></i></div>
-                        <h3>Noticias da FARN</h3>
-                        <div class="portal-noticias-list" id="portal-noticias-list">
-                            <p style="color:#666;font-size:12px;text-align:center;padding:12px">Nenhuma noticia disponivel.</p>
+                    </section>
+                    <section id="portal-section-notas" class="portal-section">
+                        <div class="portal-section-header">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <h2>Notas</h2>
                         </div>
-                    </div>
-                </div>
-                <div class="portal-footer">
-                    <img src="logo-farn.png.png" alt="FARN" class="portal-footer-logo">
-                    <span>FARN - Brasil</span>
-                </div>
-            </div>
-        </div>
-    </div>
+                        <div class="portal-notas-empty">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <p>Suas notas serao exibidas aqui</p>
+                            <span class="portal-badge">Em breve</span>
+                        </div>
+                    </section>
+                </main>
             </div>
         </div>
     </div>

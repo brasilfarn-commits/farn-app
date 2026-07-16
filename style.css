@@ -2514,139 +2514,211 @@ select.config-input option {
 }
 .portal-photo-cam-btn:hover { background: rgba(76,175,80,0.9); color: #fff; }
 
-.portal-greeting {
-    font-size: 26px;
-    font-weight: 700;
-    color: #fff;
-    margin: 0 0 6px;
-    background: linear-gradient(135deg, #fff, #ccc);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.portal-sub {
-    font-size: 13px;
-    color: #888;
-    margin: 0;
-    font-weight: 400;
-}
-
-.portal-footer {
+.portal-layout {
+    flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px;
-    color: #444;
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-.portal-footer-logo {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    opacity: 0.4;
-    border-radius: 4px;
-}
-
-.portal-menu {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.portal-menu-card {
-    border-radius: 20px;
-    padding: 28px 24px;
-    width: 260px;
-    text-align: center;
-    transition: all 0.3s;
-    position: relative;
     overflow: hidden;
 }
 
-.glass-card {
-    background: rgba(13,27,42,0.5);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-}
-
-.glass-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, var(--card-accent, #f57c00), transparent);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.glass-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
-    border-color: rgba(245,124,0,0.3);
-}
-
-.glass-card:hover::before {
-    opacity: 1;
-}
-
-.card-apostilas { --card-accent: #4caf50; }
-.card-notas { --card-accent: #ff9800; }
-.card-noticias { --card-accent: #2196f3; }
-
-.portal-card-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
+.portal-sidebar {
+    width: 220px;
+    background: rgba(10,15,26,0.95);
+    border-right: 1px solid rgba(245,124,0,0.15);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-    font-size: 24px;
-    transition: transform 0.3s;
+    flex-direction: column;
+    flex-shrink: 0;
 }
 
-.portal-menu-card:hover .portal-card-icon {
-    transform: scale(1.1);
+.portal-sidebar-user {
+    padding: 24px 16px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
-.card-apostilas .portal-card-icon {
-    background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(76,175,80,0.05));
-    color: #4caf50;
-    border: 1px solid rgba(76,175,80,0.3);
+.portal-sidebar-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(245,124,0,0.25), rgba(245,124,0,0.08));
+    border: 2px solid rgba(245,124,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 8px;
+    font-size: 20px; color: #f57c00;
 }
 
-.card-notas .portal-card-icon {
-    background: linear-gradient(135deg, rgba(255,152,0,0.2), rgba(255,152,0,0.05));
-    color: #ff9800;
-    border: 1px solid rgba(255,152,0,0.3);
+.portal-sidebar-name {
+    font-size: 13px; font-weight: 700; color: #fff;
+    margin: 0; line-height: 1.3;
 }
 
-.card-noticias .portal-card-icon {
-    background: linear-gradient(135deg, rgba(33,150,243,0.2), rgba(33,150,243,0.05));
-    color: #2196f3;
-    border: 1px solid rgba(33,150,243,0.3);
+.portal-matricula-badge {
+    display: inline-block;
+    background: rgba(245,124,0,0.15);
+    border: 1px solid rgba(245,124,0,0.3);
+    color: #f57c00;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 8px; border-radius: 12px;
+    margin: 6px 0 2px;
 }
 
-.portal-menu-card h3 {
-    font-size: 17px;
-    font-weight: 700;
-    color: #fff;
-    margin: 0 0 8px;
+.portal-sidebar-nav {
+    flex: 1;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
-.portal-menu-card p {
-    font-size: 12px;
+.portal-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
     color: #888;
-    margin: 0 0 16px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.portal-nav-item:hover {
+    background: rgba(255,255,255,0.05);
+    color: #ccc;
+}
+
+.portal-nav-item.active {
+    background: rgba(245,124,0,0.12);
+    color: #f57c00;
+    font-weight: 600;
+}
+
+.portal-nav-item i { width: 18px; text-align: center; font-size: 14px; }
+
+.portal-sidebar-footer {
+    padding: 12px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    color: #444; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+}
+
+.portal-sidebar-logo {
+    width: 16px; height: 16px;
+    object-fit: contain; opacity: 0.5; border-radius: 4px;
+}
+
+.portal-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245,124,0,0.3) transparent;
+}
+
+.portal-main::-webkit-scrollbar { width: 6px; }
+.portal-main::-webkit-scrollbar-track { background: transparent; }
+.portal-main::-webkit-scrollbar-thumb { background: rgba(245,124,0,0.3); border-radius: 3px; }
+
+.portal-section { display: none; }
+.portal-section.active { display: block; }
+
+.portal-section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+}
+
+.portal-section-header i { font-size: 20px; color: #f57c00; }
+
+.portal-section-header h2 {
+    font-size: 20px; font-weight: 700; color: #fff; margin: 0;
+}
+
+.portal-noticias-center { max-width: 700px; }
+
+.portal-noticia-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.portal-noticia-empty i {
+    font-size: 48px; color: #333;
+    margin-bottom: 16px; display: block;
+}
+
+.portal-noticia-empty p { font-size: 14px; color: #666; }
+
+.portal-apostilas-grid {
+    display: flex; flex-direction: column; gap: 12px;
+    max-width: 500px;
+}
+
+.portal-apostila-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    text-decoration: none;
+    transition: all 0.25s;
+}
+
+.portal-apostila-card.green {
+    background: rgba(76,175,80,0.08);
+    border: 1px solid rgba(76,175,80,0.2);
+    color: #4caf50;
+}
+
+.portal-apostila-card.green:hover {
+    background: rgba(76,175,80,0.15);
+    border-color: rgba(76,175,80,0.4);
+    transform: translateX(4px);
+}
+
+.portal-apostila-card.blue {
+    background: rgba(33,150,243,0.08);
+    border: 1px solid rgba(33,150,243,0.2);
+    color: #2196f3;
+}
+
+.portal-apostila-card.blue:hover {
+    background: rgba(33,150,243,0.15);
+    border-color: rgba(33,150,243,0.4);
+    transform: translateX(4px);
+}
+
+.apostila-card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+}
+
+.portal-apostila-card.green .apostila-card-icon { background: rgba(76,175,80,0.15); }
+.portal-apostila-card.blue .apostila-card-icon { background: rgba(33,150,243,0.15); }
+
+.apostila-card-info { flex: 1; }
+.apostila-card-info h4 { font-size: 14px; font-weight: 700; margin: 0 0 2px; color: inherit; }
+.apostila-card-info p { font-size: 11px; margin: 0; opacity: 0.7; }
+.apostila-card-dl { font-size: 14px; opacity: 0.5; }
+
+.portal-notas-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.portal-notas-empty i {
+    font-size: 48px; color: #333;
+    margin-bottom: 16px; display: block;
+}
+
+.portal-notas-empty p { font-size: 14px; color: #666; margin: 0 0 12px; }
+
+.portal-badge {
+    display: inline-block;
+    background: rgba(245,124,0,0.15);
+    color: #f57c00;
+    font-size: 10px; font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 #screen-portal-formado .portal-container {

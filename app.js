@@ -533,6 +533,7 @@ async function handleLogin(event) {
         document.getElementById('portal-aluno-nome').textContent = primeiroNome;
         document.getElementById('portal-aluno-matricula').textContent = 'Matricula: ' + (aluno.matricula || '---');
         setAlunoOnline(currentAluno.cpf);
+        showPortalSection('noticias');
     } else if (selectedLoginRole === 'formado') {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
             currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
@@ -717,6 +718,21 @@ function logoutPortal() {
 
 let portalAlunoFotoDataUrl = null;
 let portalAlunoSaveTimeout = null;
+
+function showPortalSection(section) {
+    document.querySelectorAll('.portal-section').forEach(function(s) { s.classList.remove('active'); });
+    document.querySelectorAll('.portal-nav-item').forEach(function(n) { n.classList.remove('active'); });
+    var sec = document.getElementById('portal-section-' + section);
+    if (sec) sec.classList.add('active');
+    var navItems = document.querySelectorAll('.portal-nav-item');
+    navItems.forEach(function(n) {
+        if ((section === 'noticias' && n.textContent.trim() === 'Noticias') ||
+            (section === 'apostilas' && n.textContent.trim() === 'Apostilas') ||
+            (section === 'notas' && n.textContent.trim() === 'Notas')) {
+            n.classList.add('active');
+        }
+    });
+}
 
 function openPortalAlunoDados() {
     if (!currentAluno) return;
