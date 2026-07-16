@@ -909,20 +909,24 @@ function fcAdminFoto3x4Load(c) {
     var img = document.getElementById('fc-admin-foto3x4-img');
     var video = document.getElementById('fc-admin-foto3x4-video');
     var placeholder = document.getElementById('fc-admin-foto3x4-placeholder');
+    var btnSave = document.getElementById('fc-admin-btn-salvar');
     var dataUrl = localStorage.getItem('farn_photo_' + c.cpf) || localStorage.getItem('foto3x4_' + c.cpf) || c.photoDataUrl || null;
     if (dataUrl) {
         img.src = dataUrl;
         img.style.display = 'block';
         video.style.display = 'none';
         placeholder.style.display = 'none';
+        if (btnSave) btnSave.style.display = '';
         document.getElementById('fc-admin-btn-nova').style.display = '';
         document.getElementById('fc-admin-btn-apagar').style.display = '';
         document.getElementById('fc-admin-btn-camera').style.display = 'none';
         document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+        setTimeout(function() { fcAdminFoto3x4SalvarDevice(); }, 500);
     } else {
         img.style.display = 'none';
         video.style.display = 'none';
         placeholder.style.display = 'flex';
+        if (btnSave) btnSave.style.display = 'none';
         document.getElementById('fc-admin-btn-nova').style.display = 'none';
         document.getElementById('fc-admin-btn-apagar').style.display = 'none';
         document.getElementById('fc-admin-btn-camera').style.display = '';
@@ -944,6 +948,8 @@ function fcAdminFoto3x4Reset() {
     if (ph) ph.style.display = 'flex';
     var msg = document.getElementById('fc-admin-foto3x4-msg');
     if (msg) msg.style.display = 'none';
+    var btnSave = document.getElementById('fc-admin-btn-salvar');
+    if (btnSave) btnSave.style.display = 'none';
 }
 
 function fcAdminFoto3x4Iniciar() {
@@ -988,6 +994,7 @@ function fcAdminFoto3x4Capturar() {
     document.getElementById('fc-admin-btn-capturar').style.display = 'none';
     document.getElementById('fc-admin-btn-nova').style.display = '';
     document.getElementById('fc-admin-btn-apagar').style.display = '';
+    document.getElementById('fc-admin-btn-salvar').style.display = '';
     fcAdminFoto3x4Save(dataUrl);
 }
 
@@ -1003,6 +1010,7 @@ function fcAdminFoto3x4Importar(event) {
         placeholder.style.display = 'none';
         document.getElementById('fc-admin-btn-nova').style.display = '';
         document.getElementById('fc-admin-btn-apagar').style.display = '';
+        document.getElementById('fc-admin-btn-salvar').style.display = '';
         document.getElementById('fc-admin-btn-camera').style.display = 'none';
         fcAdminFoto3x4Save(e.target.result);
     };
@@ -1013,6 +1021,7 @@ function fcAdminFoto3x4Nova() {
     fcAdminFoto3x4Reset();
     document.getElementById('fc-admin-btn-camera').style.display = '';
     document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+    document.getElementById('fc-admin-btn-salvar').style.display = 'none';
 }
 
 function fcAdminFoto3x4Apagar() {
@@ -1023,6 +1032,7 @@ function fcAdminFoto3x4Apagar() {
     placeholder.style.display = 'flex';
     document.getElementById('fc-admin-btn-nova').style.display = 'none';
     document.getElementById('fc-admin-btn-apagar').style.display = 'none';
+    document.getElementById('fc-admin-btn-salvar').style.display = 'none';
     document.getElementById('fc-admin-btn-camera').style.display = '';
     if (editingIndex !== null && candidatos[editingIndex]) {
         candidatos[editingIndex].photoDataUrl = null;
@@ -1051,6 +1061,17 @@ function fcAdminFoto3x4Msg(text, type) {
     el.style.color = type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#ff9800';
     el.style.background = type === 'success' ? 'rgba(76,175,80,0.1)' : type === 'error' ? 'rgba(244,67,54,0.1)' : 'rgba(255,152,0,0.1)';
     if (text) setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+
+function fcAdminFoto3x4SalvarDevice() {
+    var img = document.getElementById('fc-admin-foto3x4-img');
+    if (!img || !img.src || img.style.display === 'none') return;
+    var link = document.createElement('a');
+    var nome = editingIndex !== null && candidatos[editingIndex] ? (candidatos[editingIndex].nome || 'foto') : 'foto';
+    link.download = 'foto3x4_' + nome.replace(/\s+/g, '_') + '.png';
+    link.href = img.src;
+    link.click();
+    fcAdminFoto3x4Msg('Foto salva no dispositivo!', 'success');
 }
 
 function fcCheckFoto3x4Local() {
