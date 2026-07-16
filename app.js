@@ -760,10 +760,14 @@ function portalFoto3x4Capturar() {
     var video = document.getElementById('portal-foto3x4-video');
     var canvas = document.getElementById('portal-foto3x4-canvas');
     var img = document.getElementById('portal-foto3x4-img');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    var maxW = 640, maxH = 800;
+    var w = video.videoWidth, h = video.videoHeight;
+    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+    if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+    canvas.width = w;
+    canvas.height = h;
     var ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, w, h);
     var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     img.src = dataUrl;
     img.style.display = 'block';
@@ -800,27 +804,28 @@ async function portalFoto3x4Enviar() {
     portalFoto3x4Msg('Enviando foto...', 'info');
     document.getElementById('btn-foto3x4-enviar').disabled = true;
     try {
-        localStorage.setItem('foto3x4_' + currentAluno.cpf, dataUrl);
-        localStorage.setItem('farn_photo_' + currentAluno.cpf, dataUrl);
-        currentAluno.photoDataUrl = dataUrl;
+        var compressed = await compressPhoto(dataUrl, 640, 800, 0.7);
+        try { localStorage.setItem('foto3x4_' + currentAluno.cpf, compressed); } catch(e) {}
+        try { localStorage.setItem('farn_photo_' + currentAluno.cpf, compressed); } catch(e) {}
+        currentAluno.photoDataUrl = compressed;
         currentAluno.hasPhoto = true;
         var idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
         if (idx !== -1) {
-            candidatos[idx].photoDataUrl = dataUrl;
+            candidatos[idx].photoDataUrl = compressed;
             candidatos[idx].hasPhoto = true;
             var docId = candidatos[idx].id ? String(candidatos[idx].id) : null;
             if (docId) {
-                await dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true });
+                await dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: compressed, hasPhoto: true }, { merge: true });
             }
         }
         await backupCandidatos();
         try {
             var fIdx = formados.findIndex(function(f) { return f.cpf === currentAluno.cpf; });
             if (fIdx !== -1) {
-                formados[fIdx].photoDataUrl = dataUrl;
+                formados[fIdx].photoDataUrl = compressed;
             }
             await dbFirestore.collection('formados').doc(currentAluno.cpf).set({
-                photoDataUrl: dataUrl
+                photoDataUrl: compressed
             }, { merge: true });
         } catch(e) {}
         portalFoto3x4Msg('Foto enviada com sucesso para o cadastro!', 'success');
@@ -831,6 +836,24 @@ async function portalFoto3x4Enviar() {
         portalFoto3x4Msg('Erro ao enviar: ' + e.message, 'error');
         document.getElementById('btn-foto3x4-enviar').disabled = false;
     }
+}
+
+function compressPhoto(dataUrl, maxW, maxH, quality) {
+    return new Promise(function(resolve) {
+        var imgEl = new Image();
+        imgEl.onload = function() {
+            var w = imgEl.width, h = imgEl.height;
+            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        imgEl.onerror = function() { resolve(dataUrl); };
+        imgEl.src = dataUrl;
+    });
 }
 
 function portalFoto3x4Nova() {
