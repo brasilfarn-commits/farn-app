@@ -82,10 +82,10 @@
                     <form id="login-form" onsubmit="return handleLogin(event)">
                         <input type="hidden" id="selected-role" value="admin">
                         <div class="input-group">
-                            <label for="cpf">CPF</label>
+                            <label for="cpf">CPF ou Matricula</label>
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-id-card"></i>
-                                <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required oninput="formatCPF(this)">
+                                <input type="text" id="cpf" placeholder="000.000.000-00 ou ACD00000" maxlength="15" required>
                             </div>
                         </div>
                         <div class="input-group">
@@ -114,8 +114,9 @@
                     <div class="login-footer">
                         <p>&copy; 2026 FARN - Todos os direitos reservados</p>
                         <button type="button" id="btn-install-app" class="btn-install" onclick="installApp()">
-                            <i class="fa-solid fa-download"></i> Instalar App no Dispositivo
+                            <i class="fa-solid fa-mobile-screen-button"></i> Instalar Aplicativo
                         </button>
+                        <p class="install-hint">Disponivel para Android e iOS</p>
                     </div>
                 </div>
             </div>
@@ -569,7 +570,10 @@
                                             <div id="ff-senha-field-wrapper" class="form-group"><label>Senha de Acesso *</label>
                                                 <div class="input-wrapper">
                                                     <i class="fa-solid fa-lock"></i>
-                                                    <input type="password" id="ff-senha" class="config-input" style="padding-left:44px" minlength="6">
+                                                    <input type="password" id="ff-senha" class="config-input" style="padding-left:44px;padding-right:44px" minlength="6">
+                                                    <button type="button" class="toggle-password" onclick="toggleSenhaFormado()">
+                                                        <i class="fa-solid fa-eye" id="eye-icon-formado"></i>
+                                                    </button>
                                                 </div>
                                                 <span class="field-hint">Minimo 6 caracteres. Sera usada para acessar a pagina do formado.</span>
                                             </div>
@@ -779,7 +783,10 @@
                                             <div class="form-group"><label>Senha de Acesso *</label>
                                                 <div class="input-wrapper">
                                                     <i class="fa-solid fa-lock"></i>
-                                                    <input type="password" id="pcf-senha" class="config-input" style="padding-left:44px" minlength="6">
+                                                    <input type="password" id="pcf-senha" class="config-input" style="padding-left:44px;padding-right:44px" minlength="6">
+                                                    <button type="button" class="toggle-password" onclick="toggleSenhaPreCadastro()">
+                                                        <i class="fa-solid fa-eye" id="eye-icon-pcf"></i>
+                                                    </button>
                                                 </div>
                                                 <span class="field-hint">Minimo 6 caracteres. Sera usada para acessar a pagina do formado.</span>
                                             </div>
@@ -1326,7 +1333,10 @@
                                              <div id="senha-field-wrapper" class="form-group"><label>Senha de Acesso *</label>
                                                 <div class="input-wrapper">
                                                     <i class="fa-solid fa-lock"></i>
-                                                    <input type="password" id="fc-senha" class="config-input" style="padding-left:44px" minlength="6">
+                                                    <input type="password" id="fc-senha" class="config-input" style="padding-left:44px;padding-right:44px" minlength="6">
+                                                    <button type="button" class="toggle-password" onclick="toggleSenhaCadastro()">
+                                                        <i class="fa-solid fa-eye" id="eye-icon-cadastro"></i>
+                                                    </button>
                                                 </div>
                                                 <span class="field-hint">Minimo 6 caracteres. Sera usada para acessar a pagina do aluno.</span>
                                             </div>
@@ -1355,12 +1365,14 @@
             <div class="portal-header">
                 <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
                 <span class="portal-header-title">Portal do Aluno</span>
+                <button class="btn-outline btn-sm" onclick="openPortalAlunoDados()" title="Meus Dados"><i class="fa-solid fa-user-pen"></i></button>
                 <button class="btn-outline" onclick="logoutPortal()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
             </div>
             <div class="portal-body">
                 <div class="portal-welcome">
-                    <div class="portal-photo-box">
+                    <div class="portal-photo-box" style="position:relative">
                         <img id="portal-photo" src="" alt="Foto 3x4" class="portal-photo">
+                        <button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>
                     </div>
                     <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-aluno-nome"></span></h1>
                     <p class="portal-sub">Acompanhe seu desempenho e materiais de estudo</p>
@@ -1369,8 +1381,8 @@
                     <div class="portal-menu-card">
                         <i class="fa-solid fa-book-open"></i>
                         <h3>Apostila</h3>
-                        <p>Material de estudo disponivel em breve</p>
-                        <span class="portal-badge">Em construcao</span>
+                        <p style="font-size:12px;margin-bottom:10px">Ordem Unida e Comunicacao</p>
+                        <a href="APOST/AP%20OU%20E%20CT.pdf" download class="btn-outline" style="font-size:11px;padding:6px 12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px"><i class="fa-solid fa-download"></i> Baixar PDF</a>
                     </div>
                     <div class="portal-menu-card">
                         <i class="fa-solid fa-chart-line"></i>
@@ -1382,24 +1394,42 @@
                         <i class="fa-solid fa-newspaper"></i>
                         <h3>Noticias da FARN</h3>
                         <div class="portal-noticias-list" id="portal-noticias-list">
-                            <div class="portal-noticia-item">
-                                <span class="portal-noticia-data">10/07/2026</span>
-                                <p>Matriculas abertas para o proximo semestre!</p>
-                            </div>
-                            <div class="portal-noticia-item">
-                                <span class="portal-noticia-data">05/07/2026</span>
-                                <p>Exercicio fisico e saude: palestra no dia 15/07.</p>
-                            </div>
-                            <div class="portal-noticia-item">
-                                <span class="portal-noticia-data">01/07/2026</span>
-                                <p>Resultados do 1o semestre disponiveis no portal.</p>
-                            </div>
-                            <div class="portal-noticia-item">
-                                <span class="portal-noticia-data">25/06/2026</span>
-                                <p>Reuniao com instrutores no dia 28/06 as 19h.</p>
-                            </div>
+                            <p style="color:#666;font-size:12px;text-align:center;padding:12px">Nenhuma noticia disponivel.</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DADOS DO ALUNO PORTAL -->
+    <div id="modal-portal-aluno-dados" class="modal-overlay hidden" onclick="if(event.target===this)closePortalAlunoDados()">
+        <div class="modal-content" style="max-width:500px">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-pen" style="color:#4caf50;margin-right:8px"></i> Meus Dados</h3>
+                <button class="modal-close" onclick="closePortalAlunoDados()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align:center;margin-bottom:16px">
+                    <div class="portal-photo-box" style="width:120px;height:160px;margin:0 auto;cursor:pointer;border:2px dashed #4caf50;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden" onclick="document.getElementById('portal-aluno-foto-input').click()">
+                        <img id="portal-aluno-foto-preview" src="" alt="Foto" style="width:100%;height:100%;object-fit:cover;display:none">
+                        <i id="portal-aluno-foto-placeholder" class="fa-solid fa-camera" style="font-size:28px;color:#4caf50"></i>
+                    </div>
+                    <input type="file" id="portal-aluno-foto-input" accept="image/*" class="hidden" onchange="handlePortalAlunoFotoUpload(event)">
+                    <p style="color:#888;font-size:11px;margin-top:6px">Toque na foto para alterar</p>
+                </div>
+                <div class="form-group" style="margin-bottom:12px">
+                    <label style="color:#aaa;font-size:12px">Email</label>
+                    <input type="email" id="portal-aluno-email" class="config-input" placeholder="seu@email.com">
+                </div>
+                <div class="form-group" style="margin-bottom:16px">
+                    <label style="color:#aaa;font-size:12px">WhatsApp / Telefone</label>
+                    <input type="tel" id="portal-aluno-whatsapp" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="formatPhone(this)">
+                </div>
+                <div id="portal-aluno-dados-msg" style="display:none;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;text-align:center"></div>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button type="button" class="btn-outline" onclick="closePortalAlunoDados()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                    <button type="button" class="btn-primary" onclick="savePortalAlunoDados()"><i class="fa-solid fa-check"></i> Salvar</button>
                 </div>
             </div>
         </div>

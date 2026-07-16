@@ -438,6 +438,27 @@ function togglePassword() {
     else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
 }
 
+function toggleSenhaCadastro() {
+    const input = document.getElementById('fc-senha');
+    const icon = document.getElementById('eye-icon-cadastro');
+    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+}
+
+function toggleSenhaFormado() {
+    const input = document.getElementById('ff-senha');
+    const icon = document.getElementById('eye-icon-formado');
+    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+}
+
+function toggleSenhaPreCadastro() {
+    const input = document.getElementById('pcf-senha');
+    const icon = document.getElementById('eye-icon-pcf');
+    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+}
+
 function selectLoginRole(btn) {
     document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
@@ -449,7 +470,8 @@ function selectLoginRole(btn) {
 
 async function handleLogin(event) {
     event.preventDefault();
-    const cpf = document.getElementById('cpf').value.replace(/\D/g, '');
+    const rawInput = document.getElementById('cpf').value.trim();
+    const cpf = rawInput.replace(/\D/g, '');
     const password = document.getElementById('password').value;
     const errorEl = document.getElementById('login-error');
     const roleErrorEl = document.getElementById('login-role-error');
@@ -477,9 +499,25 @@ async function handleLogin(event) {
         enterAdminPanel();
         saveLoginState();
     } else if (selectedLoginRole === 'aluno') {
-        const aluno = candidatos.find(c => c.cpf === cpf && c.senha === password && c.status === 'Aprovado');
+        if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
+            currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+            currentAluno = { nome: 'Administrador Geral', cpf: ADMIN_CPF, photoDataUrl: null };
+            document.getElementById('screen-login').classList.remove('active');
+            document.getElementById('screen-portal').classList.add('active');
+            document.getElementById('portal-aluno-nome').textContent = 'Administrador';
+            const portalPhotoBox = document.querySelector('.portal-photo-box');
+            portalPhotoBox.innerHTML = '<i class="fa-solid fa-user-shield" style="font-size:56px;color:#f57c00"></i>';
+            saveLastLogin(cpf);
+            saveLoginState();
+            return false;
+        }
+        const aluno = candidatos.find(c => {
+            const matchCpf = c.cpf === cpf;
+            const matchMatricula = c.matricula && c.matricula.toUpperCase() === rawInput.toUpperCase();
+            return (matchCpf || matchMatricula) && c.senha === password && c.status === 'Aprovado';
+        });
         if (!aluno) {
-            errorEl.querySelector('span').textContent = 'CPF ou senha invalidos, ou aluno nao aprovado';
+            errorEl.querySelector('span').textContent = 'CPF, matricula ou senha invalidos, ou aluno nao aprovado';
             errorEl.classList.remove('hidden');
             document.getElementById('password').value = '';
             return false;
@@ -489,16 +527,38 @@ async function handleLogin(event) {
         document.getElementById('screen-portal').classList.add('active');
         const primeiroNome = (aluno.nome || '').split(' ')[0];
         document.getElementById('portal-aluno-nome').textContent = primeiroNome;
-        const portalPhotoBox = document.querySelector('.portal-photo-box');
+        const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
         if (aluno.photoDataUrl) {
-            portalPhotoBox.innerHTML = `<img src="${aluno.photoDataUrl}" alt="Foto 3x4" class="portal-photo">`;
+            portalPhotoBox.innerHTML = `<img id="portal-photo" src="${aluno.photoDataUrl}" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>`;
         } else {
-            portalPhotoBox.innerHTML = '<i class="fa-solid fa-user" style="font-size:56px;color:#444"></i>';
+            portalPhotoBox.innerHTML = '<i class="fa-solid fa-user" style="font-size:56px;color:#444"></i><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
         }
     } else if (selectedLoginRole === 'formado') {
-        const formado = formados.find(f => f.cpf === cpf && f.senha === password && (f.status === 'Ativo' || !f.status));
+        if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
+            currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+            currentFormado = { nome: 'Administrador Geral', cpf: ADMIN_CPF, photoDataUrl: null, matricula: 'ADMIN', cursos: [] };
+            document.getElementById('screen-login').classList.remove('active');
+            document.getElementById('screen-portal-formado').classList.add('active');
+            document.getElementById('portal-formado-nome').textContent = 'Administrador';
+            document.getElementById('portal-formado-nome-top').textContent = 'Administrador';
+            document.getElementById('portal-formado-matricula').textContent = 'ADMIN';
+            document.getElementById('portal-formado-matricula-side').textContent = 'ADMIN';
+            document.getElementById('portal-formado-cursos-count').textContent = '0';
+            const photoBox = document.querySelector('#screen-portal-formado .portal-photo-box');
+            photoBox.innerHTML = '<i class="fa-solid fa-user-shield" style="font-size:56px;color:#f57c00"></i>';
+            document.getElementById('portal-formado-cursos-list').innerHTML = '<p class="formado-empty">Acesso administrativo.</p>';
+            document.getElementById('portal-formado-certs').innerHTML = '<p class="formado-empty">Acesso administrativo.</p>';
+            saveLastLogin(cpf);
+            saveLoginState();
+            return false;
+        }
+        const formado = formados.find(f => {
+            const matchCpf = f.cpf === cpf;
+            const matchMatricula = f.matricula && f.matricula.toUpperCase() === rawInput.toUpperCase();
+            return (matchCpf || matchMatricula) && f.senha === password && (f.status === 'Ativo' || !f.status);
+        });
         if (!formado) {
-            errorEl.querySelector('span').textContent = 'CPF ou senha invalidos, ou formado nao ativo';
+            errorEl.querySelector('span').textContent = 'CPF, matricula ou senha invalidos, ou formado nao ativo';
             errorEl.classList.remove('hidden');
             document.getElementById('password').value = '';
             return false;
@@ -611,6 +671,94 @@ function logoutPortal() {
     selectedLoginRole = 'admin';
     document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
     document.querySelector('.login-role-btn[data-role="admin"]').classList.add('selected');
+}
+
+let portalAlunoFotoDataUrl = null;
+
+function openPortalAlunoDados() {
+    if (!currentAluno) return;
+    document.getElementById('portal-aluno-email').value = currentAluno.email || '';
+    document.getElementById('portal-aluno-whatsapp').value = currentAluno.whatsapp || '';
+    portalAlunoFotoDataUrl = null;
+    const preview = document.getElementById('portal-aluno-foto-preview');
+    const placeholder = document.getElementById('portal-aluno-foto-placeholder');
+    if (currentAluno.photoDataUrl) {
+        preview.src = currentAluno.photoDataUrl;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        preview.src = '';
+        preview.style.display = 'none';
+        placeholder.style.display = '';
+    }
+    document.getElementById('portal-aluno-dados-msg').style.display = 'none';
+    document.getElementById('modal-portal-aluno-dados').classList.remove('hidden');
+}
+
+function closePortalAlunoDados() {
+    document.getElementById('modal-portal-aluno-dados').classList.add('hidden');
+}
+
+function handlePortalAlunoFotoUpload(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300; canvas.height = 400;
+            canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                portalAlunoFotoDataUrl = url;
+                document.getElementById('portal-aluno-foto-preview').src = url;
+                document.getElementById('portal-aluno-foto-preview').style.display = 'block';
+                document.getElementById('portal-aluno-foto-placeholder').style.display = 'none';
+            }, 'image/jpeg', 0.5);
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function savePortalAlunoDados() {
+    if (!currentAluno) return;
+    const email = document.getElementById('portal-aluno-email').value.trim();
+    const whatsapp = document.getElementById('portal-aluno-whatsapp').value.trim();
+    const msgEl = document.getElementById('portal-aluno-dados-msg');
+
+    const updateData = { email: email, whatsapp: whatsapp };
+    if (portalAlunoFotoDataUrl) {
+        updateData.photoDataUrl = portalAlunoFotoDataUrl;
+        try { localStorage.setItem('farn_photo_' + currentAluno.cpf, portalAlunoFotoDataUrl); } catch(e) {}
+    }
+
+    try {
+        await dbFirestore.collection('candidatos').doc(currentAluno.cpf).set(updateData, { merge: true });
+        currentAluno.email = email;
+        currentAluno.whatsapp = whatsapp;
+        if (portalAlunoFotoDataUrl) currentAluno.photoDataUrl = portalAlunoFotoDataUrl;
+        const idx = candidatos.findIndex(c => c.cpf === currentAluno.cpf);
+        if (idx !== -1) {
+            candidatos[idx].email = email;
+            candidatos[idx].whatsapp = whatsapp;
+            if (portalAlunoFotoDataUrl) candidatos[idx].photoDataUrl = portalAlunoFotoDataUrl;
+        }
+        if (currentAluno.photoDataUrl) {
+            const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
+            portalPhotoBox.innerHTML = '<img id="portal-photo" src="' + currentAluno.photoDataUrl + '" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
+        }
+        msgEl.textContent = 'Dados atualizados com sucesso!';
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(76,175,80,0.15)';
+        msgEl.style.color = '#4caf50';
+        setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+    } catch(e) {
+        msgEl.textContent = 'Erro ao salvar: ' + e.message;
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(244,67,54,0.15)';
+        msgEl.style.color = '#f44336';
+    }
 }
 
 function logoutPortalFormado() {
@@ -1960,6 +2108,64 @@ function openBrowserCamera() {
     };
 }
 
+function openPortalPhotoCamera() {
+    if (!currentAluno) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById('portal-aluno-foto-input').click();
+        return;
+    }
+    const overlay = document.createElement('div');
+    overlay.id = 'camera-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+    document.body.appendChild(overlay);
+
+    const video = document.getElementById('camera-video');
+    let stream = null;
+    let currentFacing = 'user';
+
+    function startCamera(facing) {
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } } });
+    }
+
+    startCamera(currentFacing)
+    .then(function(s) { stream = s; video.srcObject = stream; })
+    .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
+
+    document.getElementById('camera-switch').onclick = function() {
+        currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+        startCamera(currentFacing)
+        .then(function(s) { stream = s; video.srcObject = stream; })
+        .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
+    };
+
+    document.getElementById('camera-capture').onclick = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 300; canvas.height = 400;
+        canvas.getContext('2d').drawImage(video, 0, 0, 300, 400);
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        document.body.removeChild(overlay);
+        canvas.toBlob(function(blob) {
+            const url = URL.createObjectURL(blob);
+            dbFirestore.collection('candidatos').doc(currentAluno.cpf).set({ photoDataUrl: url }, { merge: true })
+            .then(function() {
+                currentAluno.photoDataUrl = url;
+                const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
+                if (idx !== -1) candidatos[idx].photoDataUrl = url;
+                try { localStorage.setItem('farn_photo_' + currentAluno.cpf, url); } catch(e) {}
+                const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
+                portalPhotoBox.innerHTML = '<img id="portal-photo" src="' + url + '" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
+            });
+        }, 'image/jpeg', 0.4);
+    };
+
+    document.getElementById('camera-cancel').onclick = function() {
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        document.body.removeChild(overlay);
+    };
+}
+
 function openDocCamera() {
     saveFormState();
     saveLoginState();
@@ -3205,9 +3411,10 @@ async function excluirPreCadastroFormado(docId) {
 
 // ===== PWA INSTALL =====
 
-let deferredPrompt = null;
-let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-let isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+var deferredPrompt = null;
+var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+var isAndroid = /Android/.test(navigator.userAgent);
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
 window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
@@ -3216,22 +3423,68 @@ window.addEventListener('beforeinstallprompt', function(e) {
 
 function installApp() {
     if (isStandalone) {
-        alert('O app ja esta instalado no seu dispositivo!');
+        alert('O aplicativo ja esta instalado no seu dispositivo.');
         return;
     }
+
     if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(function(choice) {
-            if (choice.outcome === 'accepted') {
-                alert('App instalado com sucesso!');
-            }
             deferredPrompt = null;
         });
-    } else if (isIOS) {
-        alert('Para instalar no iPhone/iPad:\n\n1. Toque no botao Compartilhar (quadrado com seta)\n2. Selecione "Adicionar a Tela Inicial"\n3. Toque em "Adicionar"\n\nO app aparecera na sua tela inicial!');
-    } else {
-        alert('Para instalar o app:\n\n1. Abra o menu do navegador (3 pontos)\n2. Selecione "Instalar app" ou "Adicionar a tela inicial"\n\nO app estara acessivel pela tela inicial!');
+        return;
     }
+
+    if (isIOS) {
+        showIOSInstallGuide();
+        return;
+    }
+
+    showInstallGuide();
+}
+
+function showIOSInstallGuide() {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = '<div style="background:#1a1a2e;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#fff;text-align:center">' +
+        '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#f57c00"></i></div>' +
+        '<h3 style="margin:0 0 8px;font-size:18px;color:#fff">Instalar FARN no iPhone</h3>' +
+        '<p style="color:#aaa;font-size:13px;margin:0 0 20px">Siga os passos abaixo para adicionar o aplicativo a tela inicial:</p>' +
+        '<div style="text-align:left;background:#12121e;border-radius:10px;padding:16px;margin-bottom:20px">' +
+        '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
+        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque no botao <strong style="color:#fff">Compartilhar</strong> <i class="fa-solid fa-arrow-up-from-bracket" style="color:#f57c00;font-size:12px"></i> na barra inferior do Safari</span></div>' +
+        '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
+        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Role para baixo e selecione <strong style="color:#fff">Adicionar a Tela de Inicio</strong></span></div>' +
+        '<div style="display:flex;gap:10px;align-items:flex-start">' +
+        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque em <strong style="color:#fff">Adicionar</strong> no canto superior direito</span></div></div>' +
+        '<button onclick="this.closest(\'div[style]\').parentElement.remove()" style="background:#f57c00;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Entendi</button></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+function showInstallGuide() {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = '<div style="background:#1a1a2e;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#fff;text-align:center">' +
+        '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#f57c00"></i></div>' +
+        '<h3 style="margin:0 0 8px;font-size:18px;color:#fff">Instalar FARN</h3>' +
+        '<p style="color:#aaa;font-size:13px;margin:0 0 20px">Adicione o aplicativo a tela inicial do seu dispositivo:</p>' +
+        '<div style="text-align:left;background:#12121e;border-radius:10px;padding:16px;margin-bottom:20px">' +
+        '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
+        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque no menu <strong style="color:#fff"> tres pontos </strong> <i class="fa-solid fa-ellipsis-vertical" style="color:#f57c00;font-size:12px"></i> no canto superior direito</span></div>' +
+        '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
+        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Selecione <strong style="color:#fff">Instalar aplicativo</strong> ou <strong style="color:#fff">Adicionar a tela inicial</strong></span></div>' +
+        '<div style="display:flex;gap:10px;align-items:flex-start">' +
+        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Confirme tocando em <strong style="color:#fff">Instalar</strong></span></div></div>' +
+        '<button onclick="this.closest(\'div[style]\').parentElement.remove()" style="background:#f57c00;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Entendi</button></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
 
 window.addEventListener('appinstalled', function() {
