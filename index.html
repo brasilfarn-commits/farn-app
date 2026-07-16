@@ -1363,24 +1363,38 @@
     <div id="screen-portal" class="screen">
         <div class="portal-container">
             <div class="portal-header">
-                <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
-                <span class="portal-header-title">Portal do Aluno</span>
-                <button class="btn-outline btn-sm" onclick="openPortalAlunoDados()" title="Meus Dados"><i class="fa-solid fa-user-pen"></i></button>
-                <button class="btn-outline" onclick="logoutPortal()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+                <div class="portal-header-left">
+                    <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
+                    <div class="portal-header-brand">
+                        <span class="portal-header-title">Portal do Aluno</span>
+                        <span class="portal-header-sub">FARN - Forca Auxiliar de Resgate Nacional</span>
+                    </div>
+                </div>
+                <div class="portal-header-right">
+                    <button class="btn-glass btn-sm" onclick="openPortalAlunoDados()" title="Meus Dados"><i class="fa-solid fa-user-pen"></i></button>
+                    <button class="btn-glass" onclick="logoutPortal()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+                </div>
             </div>
             <div class="portal-body">
                 <div class="portal-welcome">
                     <div class="portal-welcome-banner">
-                        <div class="portal-welcome-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="portal-welcome-logo">
+                            <img src="logo-farn.png.png" alt="FARN">
+                        </div>
                         <div class="portal-welcome-text">
                             <p id="portal-aluno-matricula" class="portal-matricula-badge"></p>
                             <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-aluno-nome"></span></h1>
                             <p class="portal-sub">Acompanhe seu desempenho e materiais de estudo</p>
                         </div>
+                        <div class="portal-welcome-decoration">
+                            <div class="deco-circle deco-1"></div>
+                            <div class="deco-circle deco-2"></div>
+                            <div class="deco-circle deco-3"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="portal-menu">
-                    <div class="portal-menu-card card-apostilas">
+                    <div class="portal-menu-card glass-card card-apostilas">
                         <div class="portal-card-icon"><i class="fa-solid fa-book-open"></i></div>
                         <h3>Apostilas</h3>
                         <div class="portal-apostila-list">
@@ -1396,13 +1410,13 @@
                             </a>
                         </div>
                     </div>
-                    <div class="portal-menu-card card-notas">
+                    <div class="portal-menu-card glass-card card-notas">
                         <div class="portal-card-icon"><i class="fa-solid fa-chart-line"></i></div>
                         <h3>Notas</h3>
                         <p>Suas notas serao exibidas aqui</p>
                         <span class="portal-badge">Em breve</span>
                     </div>
-                    <div class="portal-menu-card card-noticias portal-card-noticias">
+                    <div class="portal-menu-card glass-card card-noticias portal-card-noticias">
                         <div class="portal-card-icon"><i class="fa-solid fa-newspaper"></i></div>
                         <h3>Noticias da FARN</h3>
                         <div class="portal-noticias-list" id="portal-noticias-list">
@@ -1410,6 +1424,13 @@
                         </div>
                     </div>
                 </div>
+                <div class="portal-footer">
+                    <img src="logo-farn.png.png" alt="FARN" class="portal-footer-logo">
+                    <span>FARN - Brasil</span>
+                </div>
+            </div>
+        </div>
+    </div>
             </div>
         </div>
     </div>
