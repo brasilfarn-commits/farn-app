@@ -534,6 +534,7 @@ async function handleLogin(event) {
         document.getElementById('portal-aluno-matricula').textContent = 'Matricula: ' + (aluno.matricula || '---');
         setAlunoOnline(currentAluno.cpf);
         showPortalSection('noticias');
+        portalLoadSidebarFoto();
     } else if (selectedLoginRole === 'formado') {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
             currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
@@ -789,6 +790,7 @@ function portalFoto3x4Salvar() {
         document.getElementById('btn-foto3x4-salvar').style.display = 'none';
         document.getElementById('btn-foto3x4-apagar').style.display = '';
         portalFoto3x4Msg('Foto salva localmente neste dispositivo!', 'success');
+        portalLoadSidebarFoto();
     } catch (e) {
         portalFoto3x4Msg('Erro ao salvar: ' + e.message, 'error');
     }
@@ -815,6 +817,7 @@ function portalFoto3x4Apagar() {
     localStorage.removeItem('foto3x4_' + currentAluno.cpf);
     portalFoto3x4Nova();
     portalFoto3x4Msg('Foto apagada.', 'success');
+    portalLoadSidebarFoto();
 }
 
 function portalFoto3x4LoadLocal() {
@@ -850,6 +853,62 @@ function portalFoto3x4Msg(msg, type) {
     el.style.display = 'block';
     el.textContent = msg;
     el.className = 'portal-foto3x4-msg ' + (type || '');
+}
+
+function portalLoadSidebarFoto() {
+    if (!currentAluno || !currentAluno.cpf) return;
+    var dataUrl = localStorage.getItem('foto3x4_' + currentAluno.cpf);
+    var img = document.getElementById('portal-sidebar-foto');
+    var icon = document.getElementById('portal-sidebar-foto-icon');
+    if (dataUrl) {
+        img.src = dataUrl;
+        img.style.display = 'block';
+        icon.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        icon.style.display = '';
+    }
+}
+
+function fcCheckFoto3x4Local() {
+    var cpf = document.getElementById('fc-cpf').value.replace(/\D/g, '');
+    if (cpf.length < 11) {
+        document.getElementById('fc-foto3x4-local-box').style.display = 'none';
+        return;
+    }
+    var fullCpf = cpf;
+    var dataUrl = localStorage.getItem('foto3x4_' + fullCpf);
+    var box = document.getElementById('fc-foto3x4-local-box');
+    var img = document.getElementById('fc-foto3x4-local-img');
+    var msg = document.getElementById('fc-foto3x4-local-msg');
+    var btn = document.getElementById('btn-fc-foto3x4-importar');
+    if (dataUrl) {
+        box.style.display = 'block';
+        img.src = dataUrl;
+        img.style.display = 'block';
+        msg.textContent = 'Foto capturada no portal deste dispositivo.';
+        msg.style.color = '#66bb6a';
+        btn.style.display = '';
+    } else {
+        box.style.display = 'block';
+        img.style.display = 'none';
+        msg.textContent = 'Nenhuma foto capturada no portal.';
+        msg.style.color = '#6a8ab0';
+        btn.style.display = 'none';
+    }
+}
+
+function fcImportFoto3x4Local() {
+    var cpf = document.getElementById('fc-cpf').value.replace(/\D/g, '');
+    var dataUrl = localStorage.getItem('foto3x4_' + cpf);
+    if (!dataUrl) return;
+    var preview = document.getElementById('photo-preview');
+    var placeholder = document.getElementById('photo-placeholder');
+    preview.src = dataUrl;
+    preview.classList.remove('hidden');
+    placeholder.style.display = 'none';
+    document.getElementById('btn-remove-photo').style.display = '';
+    currentPhotoDataUrl = dataUrl;
 }
 
 let portalAlunoFotoDataUrl = null;
@@ -1024,6 +1083,7 @@ async function editCandidato(index) {
     document.getElementById('fc-nome').value = c.nome || '';
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
+    fcCheckFoto3x4Local();
     document.getElementById('fc-nascimento').value = c.nascimento || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
     document.getElementById('fc-nacionalidade').value = c.nacionalidade || '';
