@@ -49,6 +49,7 @@ function showFirebaseStatus(ok) {
 
 function candidatoToDoc(c) {
     const copy = Object.assign({}, c);
+    delete copy.photoDataUrl;
     return copy;
 }
 
@@ -59,7 +60,7 @@ function backupCandidatos() {
     batch.set(ref.doc('_index'), { count: candidatos.length, timestamp: Date.now() });
     candidatos.forEach((c, i) => {
         const id = c.id ? String(c.id) : String(i);
-        batch.set(ref.doc(id), candidatoToDoc(c));
+        batch.set(ref.doc(id), candidatoToDoc(c), { merge: true });
     });
     batch.commit().catch(e => console.error('Erro ao salvar candidatos:', e));
 }
@@ -763,7 +764,7 @@ function portalFoto3x4Capturar() {
     canvas.height = video.videoHeight;
     var ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
-    var dataUrl = canvas.toDataURL('image/png');
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     img.src = dataUrl;
     img.style.display = 'block';
     portalFoto3x4StopCamera();
@@ -807,16 +808,20 @@ async function portalFoto3x4Enviar() {
         if (idx !== -1) {
             candidatos[idx].photoDataUrl = dataUrl;
             candidatos[idx].hasPhoto = true;
+            var docId = candidatos[idx].id ? String(candidatos[idx].id) : null;
+            if (docId) {
+                await dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true });
+            }
         }
         await backupCandidatos();
         try {
             var fIdx = formados.findIndex(function(f) { return f.cpf === currentAluno.cpf; });
             if (fIdx !== -1) {
                 formados[fIdx].photoDataUrl = dataUrl;
-                await dbFirestore.collection('formados').doc(currentAluno.cpf).set({
-                    photoDataUrl: dataUrl
-                }, { merge: true });
             }
+            await dbFirestore.collection('formados').doc(currentAluno.cpf).set({
+                photoDataUrl: dataUrl
+            }, { merge: true });
         } catch(e) {}
         portalFoto3x4Msg('Foto enviada com sucesso para o cadastro!', 'success');
         portalLoadSidebarFoto();
@@ -911,26 +916,44 @@ function fcAdminFoto3x4Load(c) {
     var placeholder = document.getElementById('fc-admin-foto3x4-placeholder');
     var btnSave = document.getElementById('fc-admin-btn-salvar');
     var dataUrl = localStorage.getItem('farn_photo_' + c.cpf) || localStorage.getItem('foto3x4_' + c.cpf) || c.photoDataUrl || null;
+    function applyPhoto(photo) {
+        if (photo) {
+            img.src = photo;
+            img.style.display = 'block';
+            video.style.display = 'none';
+            placeholder.style.display = 'none';
+            if (btnSave) btnSave.style.display = '';
+            document.getElementById('fc-admin-btn-nova').style.display = '';
+            document.getElementById('fc-admin-btn-apagar').style.display = '';
+            document.getElementById('fc-admin-btn-camera').style.display = 'none';
+            document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+            setTimeout(function() { fcAdminFoto3x4SalvarDevice(); }, 500);
+        } else {
+            img.style.display = 'none';
+            video.style.display = 'none';
+            placeholder.style.display = 'flex';
+            if (btnSave) btnSave.style.display = 'none';
+            document.getElementById('fc-admin-btn-nova').style.display = 'none';
+            document.getElementById('fc-admin-btn-apagar').style.display = 'none';
+            document.getElementById('fc-admin-btn-camera').style.display = '';
+            document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+        }
+    }
     if (dataUrl) {
-        img.src = dataUrl;
-        img.style.display = 'block';
-        video.style.display = 'none';
-        placeholder.style.display = 'none';
-        if (btnSave) btnSave.style.display = '';
-        document.getElementById('fc-admin-btn-nova').style.display = '';
-        document.getElementById('fc-admin-btn-apagar').style.display = '';
-        document.getElementById('fc-admin-btn-camera').style.display = 'none';
-        document.getElementById('fc-admin-btn-capturar').style.display = 'none';
-        setTimeout(function() { fcAdminFoto3x4SalvarDevice(); }, 500);
+        applyPhoto(dataUrl);
+    } else if (c.id) {
+        dbFirestore.collection('candidatos').doc(String(c.id)).get().then(function(doc) {
+            if (doc.exists && doc.data().photoDataUrl) {
+                applyPhoto(doc.data().photoDataUrl);
+                c.photoDataUrl = doc.data().photoDataUrl;
+                var idx = candidatos.findIndex(function(x) { return x.cpf === c.cpf; });
+                if (idx !== -1) candidatos[idx].photoDataUrl = doc.data().photoDataUrl;
+            } else {
+                applyPhoto(null);
+            }
+        }).catch(function() { applyPhoto(null); });
     } else {
-        img.style.display = 'none';
-        video.style.display = 'none';
-        placeholder.style.display = 'flex';
-        if (btnSave) btnSave.style.display = 'none';
-        document.getElementById('fc-admin-btn-nova').style.display = 'none';
-        document.getElementById('fc-admin-btn-apagar').style.display = 'none';
-        document.getElementById('fc-admin-btn-camera').style.display = '';
-        document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+        applyPhoto(null);
     }
     document.getElementById('fc-admin-foto3x4-msg').style.display = 'none';
 }
@@ -1040,6 +1063,10 @@ function fcAdminFoto3x4Apagar() {
         try { localStorage.removeItem('farn_photo_' + candidatos[editingIndex].cpf); } catch(e) {}
         try { localStorage.removeItem('foto3x4_' + candidatos[editingIndex].cpf); } catch(e) {}
         backupCandidatos();
+        var docId = candidatos[editingIndex].id ? String(candidatos[editingIndex].id) : null;
+        if (docId) {
+            dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: null, hasPhoto: false }, { merge: true }).catch(function() {});
+        }
     }
 }
 
@@ -1050,6 +1077,10 @@ function fcAdminFoto3x4Save(dataUrl) {
     try { localStorage.setItem('farn_photo_' + candidatos[editingIndex].cpf, dataUrl); } catch(e) {}
     try { localStorage.setItem('foto3x4_' + candidatos[editingIndex].cpf, dataUrl); } catch(e) {}
     backupCandidatos();
+    var docId = candidatos[editingIndex].id ? String(candidatos[editingIndex].id) : null;
+    if (docId) {
+        dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true }).catch(function() {});
+    }
     fcAdminFoto3x4Msg('Foto salva no cadastro!', 'success');
 }
 
@@ -1234,6 +1265,9 @@ async function portalAlunoAutoSave(silent) {
             if (portalAlunoFotoDataUrl) candidatos[idx].photoDataUrl = portalAlunoFotoDataUrl;
         }
         await backupCandidatos();
+        if (portalAlunoFotoDataUrl && idx !== -1 && candidatos[idx].id) {
+            await dbFirestore.collection('candidatos').doc(String(candidatos[idx].id)).set({ photoDataUrl: portalAlunoFotoDataUrl }, { merge: true });
+        }
         if (!silent) {
             msgEl.textContent = 'Salvo automaticamente';
             msgEl.style.display = 'block';
@@ -2636,10 +2670,13 @@ function openPortalPhotoCamera() {
             const reader = new FileReader();
             reader.onloadend = function() {
                 const dataUrl = reader.result;
-                dbFirestore.collection('candidatos').doc(currentAluno.cpf).set({ photoDataUrl: dataUrl }, { merge: true })
-                .then(function() {
+                const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
+                const docId = (idx !== -1 && candidatos[idx].id) ? String(candidatos[idx].id) : null;
+                const savePromise = docId
+                    ? dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: dataUrl }, { merge: true })
+                    : Promise.resolve();
+                savePromise.then(function() {
                     currentAluno.photoDataUrl = dataUrl;
-                    const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
                     if (idx !== -1) candidatos[idx].photoDataUrl = dataUrl;
                     try { localStorage.setItem('farn_photo_' + currentAluno.cpf, dataUrl); } catch(e) {}
                 });
