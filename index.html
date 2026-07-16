@@ -1362,11 +1362,6 @@
     <!-- PORTAL DO ALUNO -->
     <div id="screen-portal" class="screen">
         <div class="portal-container">
-            <div class="portal-bg-shapes">
-                <div class="portal-shape shape-1"></div>
-                <div class="portal-shape shape-2"></div>
-                <div class="portal-shape shape-3"></div>
-            </div>
             <div class="portal-header">
                 <div class="portal-header-left">
                     <div class="portal-logo-wrap">
@@ -1374,12 +1369,15 @@
                     </div>
                     <div class="portal-header-brand">
                         <span class="portal-header-title">Portal do Aluno</span>
-                        <span class="portal-header-sub">FARN - Forca Auxiliar de Resgate Nacional</span>
+                        <span class="portal-header-sub">Curso de Formacao de Bombeiro Profissional Civil</span>
                     </div>
                 </div>
                 <div class="portal-header-right">
-                    <button class="btn-glass btn-sm" onclick="openPortalAlunoDados()" title="Meus Dados"><i class="fa-solid fa-user-pen"></i></button>
-                    <button class="btn-glass btn-logout" onclick="logoutPortal()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+                    <div class="portal-header-stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <button class="btn-portal btn-sm" onclick="openPortalAlunoDados()" title="Meus Dados"><i class="fa-solid fa-user-pen"></i></button>
+                    <button class="btn-portal btn-portal-out" onclick="logoutPortal()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
                 </div>
             </div>
             <div class="portal-layout">
@@ -1409,6 +1407,10 @@
                             <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
                         </a>
                     </nav>
+                    <div class="portal-sidebar-motto">
+                        <div class="portal-motto-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+                        <span>Vidas em Primeiro Lugar</span>
+                    </div>
                     <div class="portal-sidebar-footer">
                         <img src="logo-farn.png.png" alt="FARN" class="portal-sidebar-logo">
                         <span>FARN - Brasil</span>
@@ -1424,38 +1426,33 @@
                             </div>
                         </div>
                         <div class="portal-noticias-center" id="portal-noticias-list">
-                            <div class="portal-welcome-hero">
-                                <div class="portal-hero-glow"></div>
+                            <div class="portal-hero-card">
+                                <div class="portal-hero-badge">BOMBEIRO CIVIL</div>
                                 <img src="logo-farn.png.png" alt="FARN" class="portal-hero-logo">
-                                <h3>Bem-vindo ao Portal da FARN</h3>
-                                <p>Acesse suas apostilas, acompanhe suas notas e fique por dentro das noticias</p>
-                                <div class="portal-hero-stats">
-                                    <div class="portal-hero-stat">
-                                        <i class="fa-solid fa-book-open"></i>
-                                        <span>3 Apostilas</span>
-                                    </div>
-                                    <div class="portal-hero-stat">
-                                        <i class="fa-solid fa-newspaper"></i>
-                                        <span>Noticias</span>
-                                    </div>
-                                    <div class="portal-hero-stat">
-                                        <i class="fa-solid fa-chart-line"></i>
-                                        <span>Notas</span>
-                                    </div>
+                                <h3>Curso de Formacao de<br>Bombeiro Profissional Civil</h3>
+                                <p class="portal-hero-tagline">Preparacao, Tecnica e Coragem<br>para Salvar Vidas!</p>
+                                <div class="portal-hero-divider"></div>
+                                <div class="portal-hero-disciplinas">
+                                    <div class="portal-disciplina"><i class="fa-solid fa-kit-medical"></i><span>APH</span></div>
+                                    <div class="portal-disciplina"><i class="fa-solid fa-hand-holding-heart"></i><span>RCP</span></div>
+                                    <div class="portal-disciplina"><i class="fa-solid fa-bolt"></i><span>DEA</span></div>
+                                    <div class="portal-disciplina"><i class="fa-solid fa-bandage"></i><span>Trauma</span></div>
+                                    <div class="portal-disciplina"><i class="fa-solid fa-truck-medical"></i><span>Emergencias</span></div>
+                                    <div class="portal-disciplina"><i class="fa-solid fa-fire"></i><span>Resgate</span></div>
                                 </div>
                             </div>
                         </div>
                     </section>
                     <section id="portal-section-apostilas" class="portal-section">
                         <div class="portal-section-header">
-                            <div class="portal-section-icon-wrap green"><i class="fa-solid fa-book-open"></i></div>
+                            <div class="portal-section-icon-wrap gold"><i class="fa-solid fa-book-open"></i></div>
                             <div>
                                 <h2>Apostilas</h2>
                                 <p class="portal-section-sub">Material de estudo para download</p>
                             </div>
                         </div>
                         <div class="portal-apostilas-grid">
-                            <a href="APOST/AP%20OU%20E%20CT.pdf" download class="portal-apostila-card green">
+                            <a href="APOST/AP%20OU%20E%20CT.pdf" download class="portal-apostila-card gold">
                                 <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
                                 <div class="apostila-card-info">
                                     <h4>Ordem Unida e Comunicacao</h4>
@@ -1471,7 +1468,7 @@
                                 </div>
                                 <div class="apostila-card-action"><i class="fa-solid fa-download"></i></div>
                             </a>
-                            <a href="APOST/GER%20ANL.pdf" download class="portal-apostila-card orange">
+                            <a href="APOST/GER%20ANL.pdf" download class="portal-apostila-card red">
                                 <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
                                 <div class="apostila-card-info">
                                     <h4>Gerenciamento de Crise com Analise de Risco</h4>
@@ -1483,7 +1480,7 @@
                     </section>
                     <section id="portal-section-notas" class="portal-section">
                         <div class="portal-section-header">
-                            <div class="portal-section-icon-wrap orange"><i class="fa-solid fa-chart-line"></i></div>
+                            <div class="portal-section-icon-wrap red"><i class="fa-solid fa-chart-line"></i></div>
                             <div>
                                 <h2>Notas</h2>
                                 <p class="portal-section-sub">Acompanhe seu desempenho</p>
