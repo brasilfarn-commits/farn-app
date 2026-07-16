@@ -797,44 +797,34 @@ async function portalFoto3x4Enviar() {
     }
     var img = document.getElementById('portal-foto3x4-img');
     var dataUrl = img.src;
-    if (!dataUrl) {
+    if (!dataUrl || dataUrl === '' || dataUrl === 'about:blank') {
         portalFoto3x4Msg('Nenhuma foto para enviar.', 'error');
         return;
     }
     portalFoto3x4Msg('Enviando foto...', 'info');
-    document.getElementById('btn-foto3x4-enviar').disabled = true;
-    try {
-        var compressed = await compressPhoto(dataUrl, 640, 800, 0.7);
-        try { localStorage.setItem('foto3x4_' + currentAluno.cpf, compressed); } catch(e) {}
-        try { localStorage.setItem('farn_photo_' + currentAluno.cpf, compressed); } catch(e) {}
-        currentAluno.photoDataUrl = compressed;
-        currentAluno.hasPhoto = true;
-        var idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
-        if (idx !== -1) {
-            candidatos[idx].photoDataUrl = compressed;
-            candidatos[idx].hasPhoto = true;
-            var docId = candidatos[idx].id ? String(candidatos[idx].id) : null;
-            if (docId) {
-                await dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: compressed, hasPhoto: true }, { merge: true });
-            }
-        }
-        await backupCandidatos();
-        try {
-            var fIdx = formados.findIndex(function(f) { return f.cpf === currentAluno.cpf; });
-            if (fIdx !== -1) {
-                formados[fIdx].photoDataUrl = compressed;
-            }
-            await dbFirestore.collection('formados').doc(currentAluno.cpf).set({
-                photoDataUrl: compressed
-            }, { merge: true });
-        } catch(e) {}
-        portalFoto3x4Msg('Foto enviada com sucesso para o cadastro!', 'success');
-        portalLoadSidebarFoto();
-        document.getElementById('btn-foto3x4-enviar').style.display = 'none';
-        document.getElementById('btn-foto3x4-enviar').disabled = false;
-    } catch (e) {
-        portalFoto3x4Msg('Erro ao enviar: ' + e.message, 'error');
-        document.getElementById('btn-foto3x4-enviar').disabled = false;
+    var btn = document.getElementById('btn-foto3x4-enviar');
+    btn.disabled = true;
+    var cpf = currentAluno.cpf;
+    try { localStorage.setItem('foto3x4_' + cpf, dataUrl); } catch(e) {}
+    try { localStorage.setItem('farn_photo_' + cpf, dataUrl); } catch(e) {}
+    currentAluno.photoDataUrl = dataUrl;
+    currentAluno.hasPhoto = true;
+    var idx = candidatos.findIndex(function(c) { return c.cpf === cpf; });
+    if (idx !== -1) {
+        candidatos[idx].photoDataUrl = dataUrl;
+        candidatos[idx].hasPhoto = true;
+    }
+    portalFoto3x4Msg('Foto salva no dispositivo!', 'success');
+    portalLoadSidebarFoto();
+    btn.style.display = 'none';
+    btn.disabled = false;
+    var docId = (idx !== -1 && candidatos[idx].id) ? String(candidatos[idx].id) : null;
+    if (docId) {
+        dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true })
+        .then(function() { portalFoto3x4Msg('Foto salva no dispositivo e enviada ao servidor!', 'success'); })
+        .catch(function(e) { portalFoto3x4Msg('Foto salva no dispositivo. Erro ao enviar: ' + e.message, 'info'); });
+    } else {
+        portalFoto3x4Msg('Foto salva no dispositivo.', 'info');
     }
 }
 
