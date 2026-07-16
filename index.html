@@ -1370,27 +1370,40 @@
             </div>
             <div class="portal-body">
                 <div class="portal-welcome">
-                    <p id="portal-aluno-matricula" style="color:#f57c00;font-size:13px;font-weight:700;letter-spacing:1px;margin:0 0 16px;text-align:center"></p>
-                    <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-aluno-nome"></span></h1>
-                    <p class="portal-sub">Acompanhe seu desempenho e materiais de estudo</p>
-                </div>
-                <div class="portal-menu">
-                    <div class="portal-menu-card">
-                        <i class="fa-solid fa-book-open"></i>
-                        <h3>Apostilas</h3>
-                        <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
-                            <a href="APOST/AP%20OU%20E%20CT.pdf" download style="font-size:10px;padding:5px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:6px;color:#4caf50;width:fit-content"><i class="fa-solid fa-download" style="font-size:9px"></i> Ordem Unida e Comunicacao</a>
-                            <a href="APOST/Legisla%C3%A7%C3%A3o.pdf" download style="font-size:10px;padding:5px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;background:rgba(33,150,243,0.15);border:1px solid rgba(33,150,243,0.3);border-radius:6px;color:#2196f3;width:fit-content"><i class="fa-solid fa-download" style="font-size:9px"></i> Leis e Normas</a>
+                    <div class="portal-welcome-banner">
+                        <div class="portal-welcome-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="portal-welcome-text">
+                            <p id="portal-aluno-matricula" class="portal-matricula-badge"></p>
+                            <h1 class="portal-greeting">Bem-vindo(a), <span id="portal-aluno-nome"></span></h1>
+                            <p class="portal-sub">Acompanhe seu desempenho e materiais de estudo</p>
                         </div>
                     </div>
-                    <div class="portal-menu-card">
-                        <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div class="portal-menu">
+                    <div class="portal-menu-card card-apostilas">
+                        <div class="portal-card-icon"><i class="fa-solid fa-book-open"></i></div>
+                        <h3>Apostilas</h3>
+                        <div class="portal-apostila-list">
+                            <a href="APOST/AP%20OU%20E%20CT.pdf" download class="portal-apostila-link green">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>Ordem Unida e Comunicacao</span>
+                                <i class="fa-solid fa-download apostila-dl-icon"></i>
+                            </a>
+                            <a href="APOST/Legisla%C3%A7%C3%A3o.pdf" download class="portal-apostila-link blue">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>Leis e Normas</span>
+                                <i class="fa-solid fa-download apostila-dl-icon"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="portal-menu-card card-notas">
+                        <div class="portal-card-icon"><i class="fa-solid fa-chart-line"></i></div>
                         <h3>Notas</h3>
                         <p>Suas notas serao exibidas aqui</p>
-                        <span class="portal-badge">Em construcao</span>
+                        <span class="portal-badge">Em breve</span>
                     </div>
-                    <div class="portal-menu-card portal-card-noticias">
-                        <i class="fa-solid fa-newspaper"></i>
+                    <div class="portal-menu-card card-noticias portal-card-noticias">
+                        <div class="portal-card-icon"><i class="fa-solid fa-newspaper"></i></div>
                         <h3>Noticias da FARN</h3>
                         <div class="portal-noticias-list" id="portal-noticias-list">
                             <p style="color:#666;font-size:12px;text-align:center;padding:12px">Nenhuma noticia disponivel.</p>

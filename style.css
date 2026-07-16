@@ -2310,6 +2310,51 @@ select.config-input option {
 
 .portal-welcome {
     text-align: center;
+    width: 100%;
+}
+
+.portal-welcome-banner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: linear-gradient(135deg, #0d2137 0%, #1a3a5c 50%, #0d2137 100%);
+    border: 1px solid rgba(245,124,0,0.3);
+    border-radius: 16px;
+    padding: 24px 32px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.portal-welcome-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f57c00, #ff9800);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(245,124,0,0.4);
+}
+
+.portal-welcome-text {
+    text-align: left;
+}
+
+.portal-matricula-badge {
+    display: inline-block;
+    background: rgba(245,124,0,0.2);
+    border: 1px solid rgba(245,124,0,0.4);
+    color: #f57c00;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin: 0 0 6px;
 }
 
 .portal-photo-box {
@@ -2376,37 +2421,83 @@ select.config-input option {
 }
 
 .portal-menu-card {
-    background: #181818;
-    border: 1px solid #2a2a2a;
+    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid #2a2a4a;
     border-radius: 16px;
-    padding: 32px;
-    width: 240px;
+    padding: 28px 24px;
+    width: 260px;
     text-align: center;
     transition: all 0.3s;
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.portal-menu-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #f57c00, transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .portal-menu-card:hover {
     border-color: #f57c00;
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(245,124,0,0.15);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(245,124,0,0.2);
 }
 
-.portal-menu-card i {
-    font-size: 40px;
-    color: #f57c00;
-    margin-bottom: 16px;
+.portal-menu-card:hover::before {
+    opacity: 1;
+}
+
+.portal-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+    transition: transform 0.3s;
+}
+
+.portal-menu-card:hover .portal-card-icon {
+    transform: scale(1.1);
+}
+
+.card-apostilas .portal-card-icon {
+    background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(76,175,80,0.05));
+    color: #4caf50;
+    border: 1px solid rgba(76,175,80,0.3);
+}
+
+.card-notas .portal-card-icon {
+    background: linear-gradient(135deg, rgba(255,152,0,0.2), rgba(255,152,0,0.05));
+    color: #ff9800;
+    border: 1px solid rgba(255,152,0,0.3);
+}
+
+.card-noticias .portal-card-icon {
+    background: linear-gradient(135deg, rgba(33,150,243,0.2), rgba(33,150,243,0.05));
+    color: #2196f3;
+    border: 1px solid rgba(33,150,243,0.3);
 }
 
 .portal-menu-card h3 {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     color: #fff;
     margin: 0 0 8px;
 }
 
 .portal-menu-card p {
-    font-size: 13px;
+    font-size: 12px;
     color: #888;
     margin: 0 0 16px;
 }
@@ -2735,6 +2826,63 @@ select.config-input option {
     border-radius: 20px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.portal-apostila-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.portal-apostila-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.portal-apostila-link.green {
+    background: rgba(76,175,80,0.1);
+    border: 1px solid rgba(76,175,80,0.25);
+    color: #4caf50;
+}
+
+.portal-apostila-link.green:hover {
+    background: rgba(76,175,80,0.2);
+    border-color: rgba(76,175,80,0.5);
+    transform: translateX(3px);
+}
+
+.portal-apostila-link.blue {
+    background: rgba(33,150,243,0.1);
+    border: 1px solid rgba(33,150,243,0.25);
+    color: #2196f3;
+}
+
+.portal-apostila-link.blue:hover {
+    background: rgba(33,150,243,0.2);
+    border-color: rgba(33,150,243,0.5);
+    transform: translateX(3px);
+}
+
+.portal-apostila-link i:first-child {
+    font-size: 16px;
+}
+
+.portal-apostila-link span {
+    flex: 1;
+}
+
+.apostila-dl-icon {
+    font-size: 10px;
+    opacity: 0.6;
 }
 
 .portal-card-noticias {
