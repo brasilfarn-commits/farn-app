@@ -1403,6 +1403,9 @@
                         <a class="portal-nav-item" onclick="showPortalSection('notas')">
                             <i class="fa-solid fa-chart-line"></i><span>Notas</span>
                         </a>
+                        <a class="portal-nav-item" onclick="showPortalSection('foto3x4')">
+                            <i class="fa-solid fa-camera"></i><span>Foto 3x4</span>
+                        </a>
                         <a class="portal-nav-item" onclick="openPortalAlunoDados()">
                             <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
                         </a>
@@ -1502,6 +1505,50 @@
                             <h3>Notas em breve</h3>
                             <p>Suas notas serao exibidas aqui</p>
                             <div class="portal-notas-badge">Em breve</div>
+                        </div>
+                    </section>
+                    <section id="portal-section-foto3x4" class="portal-section">
+                        <div class="portal-section-header">
+                            <div class="portal-section-icon-wrap gold"><i class="fa-solid fa-camera"></i></div>
+                            <div>
+                                <h2>Foto 3x4</h2>
+                                <p class="portal-section-sub">Capture sua foto para documents</p>
+                            </div>
+                        </div>
+                        <div class="portal-foto3x4-container">
+                            <div class="portal-foto3x4-card">
+                                <div class="portal-foto3x4-preview-area">
+                                    <video id="portal-foto3x4-video" autoplay playsinline style="display:none;width:100%;border-radius:12px"></video>
+                                    <canvas id="portal-foto3x4-canvas" style="display:none"></canvas>
+                                    <img id="portal-foto3x4-img" src="" alt="Foto 3x4" style="display:none;width:100%;border-radius:12px;object-fit:cover">
+                                    <div id="portal-foto3x4-placeholder" class="portal-foto3x4-placeholder">
+                                        <i class="fa-solid fa-camera-retro"></i>
+                                        <p>Sua foto 3x4 aparecera aqui</p>
+                                    </div>
+                                </div>
+                                <div class="portal-foto3x4-info">
+                                    <div class="portal-foto3x4-badge"><i class="fa-solid fa-shield-halved"></i> Armazenamento Local</div>
+                                    <p>Sua foto e salva apenas neste dispositivo e <strong>nao e enviada</strong> para a internet.</p>
+                                </div>
+                                <div class="portal-foto3x4-actions">
+                                    <button id="btn-foto3x4-iniciar" class="portal-foto3x4-btn primary" onclick="portalFoto3x4Iniciar()">
+                                        <i class="fa-solid fa-video"></i> Iniciar Camera
+                                    </button>
+                                    <button id="btn-foto3x4-capturar" class="portal-foto3x4-btn success" onclick="portalFoto3x4Capturar()" style="display:none">
+                                        <i class="fa-solid fa-circle"></i> Capturar Foto
+                                    </button>
+                                    <button id="btn-foto3x4-salvar" class="portal-foto3x4-btn gold" onclick="portalFoto3x4Salvar()" style="display:none">
+                                        <i class="fa-solid fa-download"></i> Salvar Local
+                                    </button>
+                                    <button id="btn-foto3x4-nova" class="portal-foto3x4-btn outline" onclick="portalFoto3x4Nova()" style="display:none">
+                                        <i class="fa-solid fa-rotate-right"></i> Nova Foto
+                                    </button>
+                                    <button id="btn-foto3x4-apagar" class="portal-foto3x4-btn danger" onclick="portalFoto3x4Apagar()" style="display:none">
+                                        <i class="fa-solid fa-trash"></i> Apagar
+                                    </button>
+                                </div>
+                                <div id="portal-foto3x4-msg" class="portal-foto3x4-msg" style="display:none"></div>
+                            </div>
                         </div>
                     </section>
                 </main>

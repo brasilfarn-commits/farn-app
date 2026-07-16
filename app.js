@@ -704,6 +704,7 @@ window.addEventListener('beforeunload', function() {
 });
 
 function logoutPortal() {
+    portalFoto3x4StopCamera();
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -714,6 +715,141 @@ function logoutPortal() {
     selectedLoginRole = 'admin';
     document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
     document.querySelector('.login-role-btn[data-role="admin"]').classList.add('selected');
+}
+
+let portalFoto3x4Stream = null;
+
+function portalFoto3x4Iniciar() {
+    var video = document.getElementById('portal-foto3x4-video');
+    var placeholder = document.getElementById('portal-foto3x4-placeholder');
+    var img = document.getElementById('portal-foto3x4-img');
+    img.style.display = 'none';
+    placeholder.style.display = 'none';
+    video.style.display = 'block';
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } })
+        .then(function(stream) {
+            portalFoto3x4Stream = stream;
+            video.srcObject = stream;
+            document.getElementById('btn-foto3x4-iniciar').style.display = 'none';
+            document.getElementById('btn-foto3x4-capturar').style.display = '';
+            document.getElementById('btn-foto3x4-nova').style.display = 'none';
+            document.getElementById('btn-foto3x4-salvar').style.display = 'none';
+            document.getElementById('btn-foto3x4-apagar').style.display = 'none';
+            portalFoto3x4Msg('', '');
+        }).catch(function(err) {
+            portalFoto3x4Msg('Erro ao acessar camera: ' + err.message, 'error');
+        });
+    } else {
+        portalFoto3x4Msg('Camera nao disponivel neste navegador.', 'error');
+    }
+}
+
+function portalFoto3x4StopCamera() {
+    var video = document.getElementById('portal-foto3x4-video');
+    if (portalFoto3x4Stream) {
+        portalFoto3x4Stream.getTracks().forEach(function(t) { t.stop(); });
+        portalFoto3x4Stream = null;
+    }
+    video.srcObject = null;
+    video.style.display = 'none';
+}
+
+function portalFoto3x4Capturar() {
+    var video = document.getElementById('portal-foto3x4-video');
+    var canvas = document.getElementById('portal-foto3x4-canvas');
+    var img = document.getElementById('portal-foto3x4-img');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    var dataUrl = canvas.toDataURL('image/png');
+    img.src = dataUrl;
+    img.style.display = 'block';
+    portalFoto3x4StopCamera();
+    document.getElementById('btn-foto3x4-capturar').style.display = 'none';
+    document.getElementById('btn-foto3x4-salvar').style.display = '';
+    document.getElementById('btn-foto3x4-nova').style.display = '';
+    portalFoto3x4Msg('Foto capturada! Clique em "Salvar Local" para armazenar.', 'success');
+}
+
+function portalFoto3x4Salvar() {
+    if (!currentAluno || !currentAluno.cpf) {
+        portalFoto3x4Msg('Erro: aluno nao identificado.', 'error');
+        return;
+    }
+    var img = document.getElementById('portal-foto3x4-img');
+    var dataUrl = img.src;
+    if (!dataUrl) {
+        portalFoto3x4Msg('Nenhuma foto para salvar.', 'error');
+        return;
+    }
+    try {
+        localStorage.setItem('foto3x4_' + currentAluno.cpf, dataUrl);
+        document.getElementById('btn-foto3x4-salvar').style.display = 'none';
+        document.getElementById('btn-foto3x4-apagar').style.display = '';
+        portalFoto3x4Msg('Foto salva localmente neste dispositivo!', 'success');
+    } catch (e) {
+        portalFoto3x4Msg('Erro ao salvar: ' + e.message, 'error');
+    }
+}
+
+function portalFoto3x4Nova() {
+    portalFoto3x4StopCamera();
+    var img = document.getElementById('portal-foto3x4-img');
+    var placeholder = document.getElementById('portal-foto3x4-placeholder');
+    img.style.display = 'none';
+    img.src = '';
+    placeholder.style.display = '';
+    document.getElementById('btn-foto3x4-iniciar').style.display = '';
+    document.getElementById('btn-foto3x4-capturar').style.display = 'none';
+    document.getElementById('btn-foto3x4-salvar').style.display = 'none';
+    document.getElementById('btn-foto3x4-nova').style.display = 'none';
+    document.getElementById('btn-foto3x4-apagar').style.display = 'none';
+    portalFoto3x4Msg('', '');
+}
+
+function portalFoto3x4Apagar() {
+    if (!currentAluno || !currentAluno.cpf) return;
+    if (!confirm('Apagar sua foto 3x4 deste dispositivo?')) return;
+    localStorage.removeItem('foto3x4_' + currentAluno.cpf);
+    portalFoto3x4Nova();
+    portalFoto3x4Msg('Foto apagada.', 'success');
+}
+
+function portalFoto3x4LoadLocal() {
+    if (!currentAluno || !currentAluno.cpf) return;
+    var dataUrl = localStorage.getItem('foto3x4_' + currentAluno.cpf);
+    var img = document.getElementById('portal-foto3x4-img');
+    var placeholder = document.getElementById('portal-foto3x4-placeholder');
+    if (dataUrl) {
+        img.src = dataUrl;
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+        document.getElementById('btn-foto3x4-iniciar').style.display = 'none';
+        document.getElementById('btn-foto3x4-capturar').style.display = 'none';
+        document.getElementById('btn-foto3x4-salvar').style.display = 'none';
+        document.getElementById('btn-foto3x4-nova').style.display = '';
+        document.getElementById('btn-foto3x4-apagar').style.display = '';
+        portalFoto3x4Msg('Foto salva localmente neste dispositivo.', 'info');
+    } else {
+        img.style.display = 'none';
+        placeholder.style.display = '';
+        document.getElementById('btn-foto3x4-iniciar').style.display = '';
+        document.getElementById('btn-foto3x4-capturar').style.display = 'none';
+        document.getElementById('btn-foto3x4-salvar').style.display = 'none';
+        document.getElementById('btn-foto3x4-nova').style.display = 'none';
+        document.getElementById('btn-foto3x4-apagar').style.display = 'none';
+        portalFoto3x4Msg('', '');
+    }
+}
+
+function portalFoto3x4Msg(msg, type) {
+    var el = document.getElementById('portal-foto3x4-msg');
+    if (!msg) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.textContent = msg;
+    el.className = 'portal-foto3x4-msg ' + (type || '');
 }
 
 let portalAlunoFotoDataUrl = null;
@@ -728,10 +864,12 @@ function showPortalSection(section) {
     navItems.forEach(function(n) {
         if ((section === 'noticias' && n.textContent.trim() === 'Noticias') ||
             (section === 'apostilas' && n.textContent.trim() === 'Apostilas') ||
-            (section === 'notas' && n.textContent.trim() === 'Notas')) {
+            (section === 'notas' && n.textContent.trim() === 'Notas') ||
+            (section === 'foto3x4' && n.textContent.trim() === 'Foto 3x4')) {
             n.classList.add('active');
         }
     });
+    if (section === 'foto3x4') portalFoto3x4LoadLocal();
 }
 
 function openPortalAlunoDados() {
