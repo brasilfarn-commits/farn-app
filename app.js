@@ -818,14 +818,14 @@ async function portalFoto3x4Enviar() {
     portalLoadSidebarFoto();
     btn.style.display = 'none';
     btn.disabled = false;
-    var docId = (idx !== -1 && candidatos[idx].id) ? String(candidatos[idx].id) : null;
-    if (docId) {
-        dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true })
-        .then(function() { portalFoto3x4Msg('Foto salva no dispositivo e enviada ao servidor!', 'success'); })
-        .catch(function(e) { portalFoto3x4Msg('Foto salva no dispositivo. Erro ao enviar: ' + e.message, 'info'); });
-    } else {
-        portalFoto3x4Msg('Foto salva no dispositivo.', 'info');
-    }
+    compressPhoto(dataUrl, 640, 800, 0.7).then(function(compressed) {
+        var docId = (idx !== -1 && candidatos[idx].id) ? String(candidatos[idx].id) : null;
+        if (docId) {
+            dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: compressed, hasPhoto: true }, { merge: true })
+            .then(function() { portalFoto3x4Msg('Foto enviada ao servidor com sucesso!', 'success'); })
+            .catch(function(e) { portalFoto3x4Msg('Foto salva no dispositivo. Erro ao enviar: ' + e.message, 'info'); });
+        }
+    });
 }
 
 function compressPhoto(dataUrl, maxW, maxH, quality) {
