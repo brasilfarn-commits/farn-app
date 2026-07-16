@@ -771,6 +771,7 @@ function portalFoto3x4Capturar() {
     if (currentAluno && currentAluno.cpf) {
         try {
             localStorage.setItem('foto3x4_' + currentAluno.cpf, dataUrl);
+            localStorage.setItem('farn_photo_' + currentAluno.cpf, dataUrl);
             portalFoto3x4Msg('Foto capturada e salva localmente!', 'success');
             portalLoadSidebarFoto();
         } catch (e) {
@@ -826,6 +827,7 @@ function portalFoto3x4Apagar() {
     if (!currentAluno || !currentAluno.cpf) return;
     if (!confirm('Apagar sua foto 3x4 deste dispositivo?')) return;
     localStorage.removeItem('foto3x4_' + currentAluno.cpf);
+    localStorage.removeItem('farn_photo_' + currentAluno.cpf);
     portalFoto3x4Nova();
     portalFoto3x4Msg('Foto apagada.', 'success');
     portalLoadSidebarFoto();
@@ -1150,7 +1152,15 @@ async function editCandidato(index) {
             removePhoto();
         }
     } else {
-        removePhoto();
+        const portalPhoto = localStorage.getItem('farn_photo_' + c.cpf);
+        if (portalPhoto) {
+            document.getElementById('photo-preview').src = portalPhoto;
+            document.getElementById('photo-preview').classList.remove('hidden');
+            document.getElementById('photo-placeholder').style.display = 'none';
+            document.getElementById('btn-remove-photo').style.display = '';
+        } else {
+            removePhoto();
+        }
     }
     const senhaWrapper = document.getElementById('senha-field-wrapper');
     if (c.status === 'Aprovado') {
