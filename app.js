@@ -903,6 +903,156 @@ function portalLoadSidebarFoto() {
     }
 }
 
+var adminFoto3x4Stream = null;
+
+function fcAdminFoto3x4Load(c) {
+    var img = document.getElementById('fc-admin-foto3x4-img');
+    var video = document.getElementById('fc-admin-foto3x4-video');
+    var placeholder = document.getElementById('fc-admin-foto3x4-placeholder');
+    var dataUrl = localStorage.getItem('farn_photo_' + c.cpf) || localStorage.getItem('foto3x4_' + c.cpf) || c.photoDataUrl || null;
+    if (dataUrl) {
+        img.src = dataUrl;
+        img.style.display = 'block';
+        video.style.display = 'none';
+        placeholder.style.display = 'none';
+        document.getElementById('fc-admin-btn-nova').style.display = '';
+        document.getElementById('fc-admin-btn-apagar').style.display = '';
+        document.getElementById('fc-admin-btn-camera').style.display = 'none';
+        document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        video.style.display = 'none';
+        placeholder.style.display = 'flex';
+        document.getElementById('fc-admin-btn-nova').style.display = 'none';
+        document.getElementById('fc-admin-btn-apagar').style.display = 'none';
+        document.getElementById('fc-admin-btn-camera').style.display = '';
+        document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+    }
+    document.getElementById('fc-admin-foto3x4-msg').style.display = 'none';
+}
+
+function fcAdminFoto3x4Reset() {
+    if (adminFoto3x4Stream) {
+        adminFoto3x4Stream.getTracks().forEach(function(t) { t.stop(); });
+        adminFoto3x4Stream = null;
+    }
+    var video = document.getElementById('fc-admin-foto3x4-video');
+    if (video) { video.srcObject = null; video.style.display = 'none'; }
+    var img = document.getElementById('fc-admin-foto3x4-img');
+    if (img) { img.style.display = 'none'; img.src = ''; }
+    var ph = document.getElementById('fc-admin-foto3x4-placeholder');
+    if (ph) ph.style.display = 'flex';
+    var msg = document.getElementById('fc-admin-foto3x4-msg');
+    if (msg) msg.style.display = 'none';
+}
+
+function fcAdminFoto3x4Iniciar() {
+    var video = document.getElementById('fc-admin-foto3x4-video');
+    var placeholder = document.getElementById('fc-admin-foto3x4-placeholder');
+    var img = document.getElementById('fc-admin-foto3x4-img');
+    img.style.display = 'none';
+    placeholder.style.display = 'none';
+    video.style.display = 'block';
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } })
+        .then(function(stream) {
+            adminFoto3x4Stream = stream;
+            video.srcObject = stream;
+            document.getElementById('fc-admin-btn-camera').style.display = 'none';
+            document.getElementById('fc-admin-btn-capturar').style.display = '';
+            document.getElementById('fc-admin-btn-nova').style.display = 'none';
+            document.getElementById('fc-admin-btn-apagar').style.display = 'none';
+        }).catch(function(err) {
+            fcAdminFoto3x4Msg('Erro ao acessar camera: ' + err.message, 'error');
+        });
+    } else {
+        fcAdminFoto3x4Msg('Camera nao disponivel.', 'error');
+    }
+}
+
+function fcAdminFoto3x4Capturar() {
+    var video = document.getElementById('fc-admin-foto3x4-video');
+    var canvas = document.getElementById('fc-admin-foto3x4-canvas');
+    var img = document.getElementById('fc-admin-foto3x4-img');
+    var placeholder = document.getElementById('fc-admin-foto3x4-placeholder');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    var dataUrl = canvas.toDataURL('image/png');
+    img.src = dataUrl;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    if (adminFoto3x4Stream) { adminFoto3x4Stream.getTracks().forEach(function(t) { t.stop(); }); adminFoto3x4Stream = null; }
+    video.srcObject = null;
+    video.style.display = 'none';
+    document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+    document.getElementById('fc-admin-btn-nova').style.display = '';
+    document.getElementById('fc-admin-btn-apagar').style.display = '';
+    fcAdminFoto3x4Save(dataUrl);
+}
+
+function fcAdminFoto3x4Importar(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var imgEl = document.getElementById('fc-admin-foto3x4-img');
+        var placeholder = document.getElementById('fc-admin-foto3x4-placeholder');
+        imgEl.src = e.target.result;
+        imgEl.style.display = 'block';
+        placeholder.style.display = 'none';
+        document.getElementById('fc-admin-btn-nova').style.display = '';
+        document.getElementById('fc-admin-btn-apagar').style.display = '';
+        document.getElementById('fc-admin-btn-camera').style.display = 'none';
+        fcAdminFoto3x4Save(e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function fcAdminFoto3x4Nova() {
+    fcAdminFoto3x4Reset();
+    document.getElementById('fc-admin-btn-camera').style.display = '';
+    document.getElementById('fc-admin-btn-capturar').style.display = 'none';
+}
+
+function fcAdminFoto3x4Apagar() {
+    var img = document.getElementById('fc-admin-foto3x4-img');
+    var placeholder = document.getElementById('fc-admin-foto3x4-placeholder');
+    img.style.display = 'none';
+    img.src = '';
+    placeholder.style.display = 'flex';
+    document.getElementById('fc-admin-btn-nova').style.display = 'none';
+    document.getElementById('fc-admin-btn-apagar').style.display = 'none';
+    document.getElementById('fc-admin-btn-camera').style.display = '';
+    if (editingIndex !== null && candidatos[editingIndex]) {
+        candidatos[editingIndex].photoDataUrl = null;
+        candidatos[editingIndex].hasPhoto = false;
+        try { localStorage.removeItem('farn_photo_' + candidatos[editingIndex].cpf); } catch(e) {}
+        try { localStorage.removeItem('foto3x4_' + candidatos[editingIndex].cpf); } catch(e) {}
+        backupCandidatos();
+    }
+}
+
+function fcAdminFoto3x4Save(dataUrl) {
+    if (editingIndex === null || !candidatos[editingIndex]) return;
+    candidatos[editingIndex].photoDataUrl = dataUrl;
+    candidatos[editingIndex].hasPhoto = true;
+    try { localStorage.setItem('farn_photo_' + candidatos[editingIndex].cpf, dataUrl); } catch(e) {}
+    try { localStorage.setItem('foto3x4_' + candidatos[editingIndex].cpf, dataUrl); } catch(e) {}
+    backupCandidatos();
+    fcAdminFoto3x4Msg('Foto salva no cadastro!', 'success');
+}
+
+function fcAdminFoto3x4Msg(text, type) {
+    var el = document.getElementById('fc-admin-foto3x4-msg');
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = text ? 'block' : 'none';
+    el.style.color = type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#ff9800';
+    el.style.background = type === 'success' ? 'rgba(76,175,80,0.1)' : type === 'error' ? 'rgba(244,67,54,0.1)' : 'rgba(255,152,0,0.1)';
+    if (text) setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+
 function fcCheckFoto3x4Local() {
     var cpfInput = document.getElementById('fc-cpf');
     if (!cpfInput) return;
@@ -1169,14 +1319,20 @@ async function editCandidato(index) {
     document.getElementById('fc-turma').value = c.turma || '';
     document.getElementById('fc-parceiro').value = c.parceiro || '';
     const senhaWrapper = document.getElementById('senha-field-wrapper');
+    const fcFotoSection = document.getElementById('fc-foto3x4-section');
     if (c.status === 'Aprovado') {
         senhaWrapper.style.display = '';
         document.getElementById('fc-senha').value = c.senha || (c.cpf ? c.cpf.substring(0, 6) : '');
         document.getElementById('fc-senha').required = true;
+        if (fcFotoSection) {
+            fcFotoSection.style.display = '';
+            fcAdminFoto3x4Load(c);
+        }
     } else {
         senhaWrapper.style.display = 'none';
         document.getElementById('fc-senha').value = '';
         document.getElementById('fc-senha').required = false;
+        if (fcFotoSection) fcFotoSection.style.display = 'none';
     }
     document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#f57c00;margin-right:8px"></i> Editar - ' + c.nome;
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
@@ -1206,6 +1362,8 @@ function resetFormCandidato() {
     if (md) md.textContent = '';
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
+    var fcFotoSection = document.getElementById('fc-foto3x4-section');
+    if (fcFotoSection) { fcFotoSection.style.display = 'none'; fcAdminFoto3x4Reset(); }
     uploadedFiles = [];
     renderFilesList();
 }

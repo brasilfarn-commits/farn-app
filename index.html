@@ -1115,7 +1115,46 @@
                         <div class="card-body">
                             <form id="form-candidato" onsubmit="return handleCandidatoSubmit(event)">
 
-                                <!-- FOTO 3x4 E TURMA -->
+                                <!-- FOTO 3x4 (APENAS APROVADOS) -->
+                                <div class="form-section-card" id="fc-foto3x4-section" style="display:none">
+                                    <div class="form-section-title"><i class="fa-solid fa-camera"></i><h3>Foto 3x4</h3></div>
+                                    <div class="form-section-body">
+                                        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+                                            <div style="flex:0 0 160px">
+                                                <div id="fc-admin-foto3x4-preview" style="width:160px;height:200px;border-radius:8px;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;border:2px solid #333">
+                                                    <img id="fc-admin-foto3x4-img" src="" alt="Foto 3x4" style="display:none;width:100%;height:100%;object-fit:cover">
+                                                    <video id="fc-admin-foto3x4-video" autoplay playsinline style="display:none;width:100%;height:100%;object-fit:cover"></video>
+                                                    <canvas id="fc-admin-foto3x4-canvas" style="display:none"></canvas>
+                                                    <div id="fc-admin-foto3x4-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;color:#555">
+                                                        <i class="fa-solid fa-camera-retro" style="font-size:32px;margin-bottom:8px"></i>
+                                                        <span style="font-size:11px">Sem foto</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:200px">
+                                                <button type="button" class="btn-outline" id="fc-admin-btn-camera" onclick="fcAdminFoto3x4Iniciar()">
+                                                    <i class="fa-solid fa-video"></i> Iniciar Camera
+                                                </button>
+                                                <button type="button" class="btn-outline" id="fc-admin-btn-capturar" onclick="fcAdminFoto3x4Capturar()" style="display:none">
+                                                    <i class="fa-solid fa-circle"></i> Capturar Foto
+                                                </button>
+                                                <button type="button" class="btn-outline" onclick="document.getElementById('fc-admin-foto3x4-input').click()">
+                                                    <i class="fa-solid fa-upload"></i> Importar Foto
+                                                </button>
+                                                <input type="file" id="fc-admin-foto3x4-input" accept="image/*" class="hidden" onchange="fcAdminFoto3x4Importar(event)">
+                                                <button type="button" class="btn-outline" id="fc-admin-btn-nova" onclick="fcAdminFoto3x4Nova()" style="display:none">
+                                                    <i class="fa-solid fa-rotate-right"></i> Nova Foto
+                                                </button>
+                                                <button type="button" class="btn-outline btn-danger-outline" id="fc-admin-btn-apagar" onclick="fcAdminFoto3x4Apagar()" style="display:none">
+                                                    <i class="fa-solid fa-trash"></i> Apagar
+                                                </button>
+                                                <div id="fc-admin-foto3x4-msg" style="display:none;padding:6px 10px;border-radius:6px;font-size:11px;text-align:center;margin-top:4px"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TURMA -->
                                 <div class="form-section-card">
                                     <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Turma</h3></div>
                                     <div class="form-section-body">
