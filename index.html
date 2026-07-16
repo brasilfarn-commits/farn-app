@@ -197,6 +197,9 @@
                             <div class="user-avatar"><i class="fa-solid fa-user-shield"></i></div>
                             <span id="topbar-user-name">Administrador</span>
                         </div>
+                        <button class="btn-portal btn-portal-out" onclick="handleLogout()" style="margin-left:8px">
+                            <i class="fa-solid fa-right-from-bracket"></i> Sair
+                        </button>
                     </div>
                 </div>
 
@@ -1593,10 +1596,6 @@
                 <i class="fa-solid fa-user-pen"></i>
                 <span>Dados</span>
             </button>
-            <button class="portal-mobile-nav-item" onclick="logoutPortal()">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair</span>
-            </button>
         </nav>
     </div>
 
@@ -1637,9 +1636,13 @@
     <div id="screen-portal-formado" class="screen">
         <div class="portal-container">
             <div class="portal-header">
-                <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
-                <span class="portal-header-title">Portal do Formado</span>
-                <button class="btn-outline" onclick="logoutPortalFormado()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+                <div class="portal-header-left">
+                    <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
+                    <span class="portal-header-title">Portal do Formado</span>
+                </div>
+                <div class="portal-header-right">
+                    <button class="btn-portal btn-portal-out" onclick="logoutPortalFormado()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+                </div>
             </div>
             <div class="portal-body">
                 <div class="portal-sidebar formado-sidebar">
