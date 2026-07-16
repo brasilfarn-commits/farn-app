@@ -532,12 +532,6 @@ async function handleLogin(event) {
         const primeiroNome = (aluno.nome || '').split(' ')[0];
         document.getElementById('portal-aluno-nome').textContent = primeiroNome;
         document.getElementById('portal-aluno-matricula').textContent = 'Matricula: ' + (aluno.matricula || '---');
-        const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
-        if (aluno.photoDataUrl) {
-            portalPhotoBox.innerHTML = `<img id="portal-photo" src="${aluno.photoDataUrl}" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>`;
-        } else {
-            portalPhotoBox.innerHTML = '<i class="fa-solid fa-user" style="font-size:56px;color:#444"></i><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
-        }
         setAlunoOnline(currentAluno.cpf);
     } else if (selectedLoginRole === 'formado') {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
@@ -801,10 +795,6 @@ async function portalAlunoAutoSave(silent) {
             candidatos[idx].email = email;
             candidatos[idx].whatsapp = whatsapp;
             if (portalAlunoFotoDataUrl) candidatos[idx].photoDataUrl = portalAlunoFotoDataUrl;
-        }
-        if (currentAluno.photoDataUrl) {
-            const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
-            portalPhotoBox.innerHTML = '<img id="portal-photo" src="' + currentAluno.photoDataUrl + '" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
         }
         if (!silent) {
             msgEl.textContent = 'Salvo automaticamente';
@@ -2228,8 +2218,6 @@ function openPortalPhotoCamera() {
                     const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
                     if (idx !== -1) candidatos[idx].photoDataUrl = dataUrl;
                     try { localStorage.setItem('farn_photo_' + currentAluno.cpf, dataUrl); } catch(e) {}
-                    const portalPhotoBox = document.querySelector('#screen-portal .portal-photo-box');
-                    portalPhotoBox.innerHTML = '<img id="portal-photo" src="' + dataUrl + '" alt="Foto 3x4" class="portal-photo"><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
                 });
             };
             reader.readAsDataURL(blob);
