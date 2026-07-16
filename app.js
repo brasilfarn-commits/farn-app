@@ -768,10 +768,21 @@ function portalFoto3x4Capturar() {
     img.src = dataUrl;
     img.style.display = 'block';
     portalFoto3x4StopCamera();
+    if (currentAluno && currentAluno.cpf) {
+        try {
+            localStorage.setItem('foto3x4_' + currentAluno.cpf, dataUrl);
+            portalFoto3x4Msg('Foto capturada e salva localmente!', 'success');
+            portalLoadSidebarFoto();
+        } catch (e) {
+            portalFoto3x4Msg('Foto capturada, erro ao salvar: ' + e.message, 'error');
+        }
+    } else {
+        portalFoto3x4Msg('Foto capturada. Aluno nao identificado.', 'error');
+    }
     document.getElementById('btn-foto3x4-capturar').style.display = 'none';
-    document.getElementById('btn-foto3x4-salvar').style.display = '';
+    document.getElementById('btn-foto3x4-salvar').style.display = 'none';
     document.getElementById('btn-foto3x4-nova').style.display = '';
-    portalFoto3x4Msg('Foto capturada! Clique em "Salvar Local" para armazenar.', 'success');
+    document.getElementById('btn-foto3x4-apagar').style.display = '';
 }
 
 function portalFoto3x4Salvar() {
