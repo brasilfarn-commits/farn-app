@@ -3963,3 +3963,498 @@ select.config-input option {
     0%, 100% { box-shadow: 0 0 4px rgba(76,175,80,0.5); }
     50% { box-shadow: 0 0 10px rgba(76,175,80,0.9); }
 }
+
+/* ===== RESPONSIVO COMPLETO - MOBILE VERTICAL ===== */
+
+/* Login Responsivo */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+    .login-left {
+        display: none;
+    }
+    .login-right {
+        width: 100%;
+        min-height: 100vh;
+    }
+    .login-form-container {
+        padding: 24px 20px;
+        max-width: 100%;
+    }
+    .login-logo {
+        width: 80px;
+        height: 80px;
+    }
+    .login-title {
+        font-size: 20px;
+    }
+    .login-role-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    .login-role-btn {
+        padding: 10px 6px;
+    }
+    .login-role-btn i {
+        font-size: 18px;
+    }
+    .login-role-btn span {
+        font-size: 10px;
+    }
+    .config-input {
+        font-size: 16px;
+        padding: 14px 12px;
+    }
+    .btn-primary {
+        padding: 14px;
+        font-size: 14px;
+    }
+}
+
+/* Admin Responsivo */
+@media (max-width: 768px) {
+    .admin-section {
+        padding: 16px 12px;
+    }
+    .admin-home-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .admin-home-title {
+        font-size: 20px;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .stat-card {
+        padding: 12px;
+    }
+    .stat-card h3 {
+        font-size: 24px;
+    }
+    .stat-card p {
+        font-size: 11px;
+    }
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .card-header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    .form-row-3 {
+        grid-template-columns: 1fr;
+    }
+    .form-row-4 {
+        grid-template-columns: 1fr;
+    }
+    .form-group label {
+        font-size: 11px;
+    }
+    .config-input {
+        font-size: 16px;
+        padding: 12px 10px;
+    }
+    .form-submit-bar {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .form-submit-bar button {
+        width: 100%;
+        justify-content: center;
+    }
+    .alunos-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .alunos-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .alunos-tab {
+        min-width: 100px;
+        padding: 10px 12px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    .alunos-search {
+        flex-direction: column;
+    }
+    .alunos-search input {
+        width: 100%;
+    }
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    .modal-content {
+        width: 95%;
+        max-height: 90vh;
+        margin: 10px auto;
+    }
+    .modal-header {
+        padding: 12px 16px;
+    }
+    .modal-body {
+        padding: 16px;
+    }
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .btn-outline {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+    .btn-primary {
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+    .btn-danger-outline {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .section-header-actions {
+        width: 100%;
+    }
+    .photo-upload-area {
+        width: 120px;
+        height: 160px;
+    }
+    .photo-actions {
+        flex-direction: column;
+    }
+    .photo-actions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-home-grid {
+        grid-template-columns: 1fr;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .login-role-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Portal do Aluno Responsivo */
+@media (max-width: 768px) {
+    .portal-container {
+        height: auto;
+        min-height: 100vh;
+    }
+    .portal-header {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+    }
+    .portal-header-left {
+        gap: 8px;
+    }
+    .portal-logo-wrap {
+        width: 32px;
+        height: 32px;
+    }
+    .portal-header-title {
+        font-size: 12px;
+    }
+    .portal-header-sub {
+        font-size: 7px;
+    }
+    .portal-header-stars {
+        display: none;
+    }
+    .btn-portal {
+        padding: 6px 10px;
+        font-size: 10px;
+    }
+    .portal-layout {
+        flex-direction: column;
+    }
+    .portal-sidebar {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100vh;
+        z-index: 1000;
+        background: rgba(255,255,255,0.98);
+    }
+    .portal-sidebar.mobile-open {
+        display: flex;
+    }
+    .portal-sidebar-user {
+        padding: 20px 16px 16px;
+    }
+    .portal-avatar-ring {
+        width: 60px;
+        height: 60px;
+    }
+    .portal-sidebar-nav {
+        padding: 8px;
+    }
+    .portal-nav-item {
+        padding: 14px 16px;
+        font-size: 14px;
+    }
+    .portal-main {
+        padding: 16px 12px;
+        padding-bottom: 80px;
+    }
+    .portal-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .portal-section-icon-wrap {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    .portal-section-header h2 {
+        font-size: 16px;
+    }
+    .portal-hero-card {
+        padding: 24px 16px;
+    }
+    .portal-hero-logo {
+        width: 70px;
+        height: 70px;
+    }
+    .portal-hero-card h3 {
+        font-size: 16px;
+    }
+    .portal-hero-tagline {
+        font-size: 12px;
+    }
+    .portal-hero-disciplinas {
+        gap: 8px;
+    }
+    .portal-disciplina {
+        padding: 8px 10px;
+        min-width: 60px;
+    }
+    .portal-disciplina i {
+        font-size: 16px;
+    }
+    .portal-disciplina span {
+        font-size: 8px;
+    }
+    .portal-apostilas-grid {
+        gap: 8px;
+    }
+    .portal-apostila-card {
+        padding: 12px 14px;
+    }
+    .portal-apostila-card h4 {
+        font-size: 12px;
+    }
+    .portal-apostila-card p {
+        font-size: 10px;
+    }
+    .portal-foto3x4-card {
+        padding: 16px;
+    }
+    .portal-foto3x4-preview-area {
+        aspect-ratio: 3/4;
+        max-height: 280px;
+    }
+    .portal-foto3x4-btn {
+        padding: 10px 14px;
+        font-size: 11px;
+    }
+    .portal-notas-empty {
+        padding: 40px 16px;
+    }
+    .portal-notas-icon-wrap {
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
+    }
+    .portal-mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(249,168,37,0.2);
+        padding: 8px 0;
+        z-index: 100;
+        justify-content: space-around;
+    }
+    .portal-mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 6px 12px;
+        color: #999;
+        font-size: 9px;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+        background: none;
+    }
+    .portal-mobile-nav-item i {
+        font-size: 16px;
+    }
+    .portal-mobile-nav-item.active {
+        color: #f57c00;
+    }
+    .portal-mobile-nav-item span {
+        font-weight: 600;
+    }
+    .portal-mobile-menu-btn {
+        display: block;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 1001;
+        background: rgba(249,168,37,0.9);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .portal-mobile-close-btn {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        margin-top: auto;
+        background: rgba(198,40,40,0.1);
+        border: 1px solid rgba(198,40,40,0.2);
+        border-radius: 8px;
+        color: #ef5350;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+    }
+}
+
+@media (min-width: 769px) {
+    .portal-mobile-nav {
+        display: none;
+    }
+    .portal-mobile-menu-btn {
+        display: none;
+    }
+    .portal-mobile-close-btn {
+        display: none;
+    }
+}
+
+/* Portal do Formado Responsivo */
+@media (max-width: 768px) {
+    #screen-portal-formado .portal-container {
+        height: auto;
+        min-height: 100vh;
+    }
+    #screen-portal-formado .portal-header {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    #screen-portal-formado .portal-header-title {
+        font-size: 14px;
+    }
+    #screen-portal-formado .portal-body {
+        flex-direction: column;
+    }
+    #screen-portal-formado .portal-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+    #screen-portal-formado .portal-sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 8px;
+        gap: 4px;
+    }
+    #screen-portal-formado .portal-sidebar-link {
+        white-space: nowrap;
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+    #screen-portal-formado .portal-main {
+        padding: 16px 12px;
+    }
+    .formado-stats-row {
+        flex-direction: column;
+    }
+    .formado-main-row {
+        flex-direction: column;
+    }
+    .formado-right-panel {
+        width: 100%;
+        min-width: 100%;
+        border-left: none;
+        border-top: 1px solid #ddd;
+    }
+    .formado-photo-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    .formado-photo-card .formado-photo-box {
+        margin: 0 auto;
+    }
+}
+
+/* Tables Responsivas */
+@media (max-width: 768px) {
+    table {
+        font-size: 11px;
+    }
+    th {
+        padding: 8px 6px;
+        font-size: 10px;
+    }
+    td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
+
+/* Print Responsivo */
+@media print {
+    .portal-mobile-nav,
+    .portal-mobile-menu-btn,
+    .portal-sidebar,
+    .portal-header-right,
+    .btn-portal {
+        display: none !important;
+    }
+    .portal-main {
+        padding: 0;
+    }
+    .portal-container {
+        height: auto;
+    }
+}

@@ -917,6 +917,7 @@ let portalAlunoSaveTimeout = null;
 function showPortalSection(section) {
     document.querySelectorAll('.portal-section').forEach(function(s) { s.classList.remove('active'); });
     document.querySelectorAll('.portal-nav-item').forEach(function(n) { n.classList.remove('active'); });
+    document.querySelectorAll('.portal-mobile-nav-item').forEach(function(n) { n.classList.remove('active'); });
     var sec = document.getElementById('portal-section-' + section);
     if (sec) sec.classList.add('active');
     var navItems = document.querySelectorAll('.portal-nav-item');
@@ -925,6 +926,18 @@ function showPortalSection(section) {
             (section === 'apostilas' && n.textContent.trim() === 'Apostilas') ||
             (section === 'notas' && n.textContent.trim() === 'Notas') ||
             (section === 'foto3x4' && n.textContent.trim() === 'Foto 3x4')) {
+            n.classList.add('active');
+        }
+    });
+    var mobileNavItems = document.querySelectorAll('.portal-mobile-nav-item');
+    mobileNavItems.forEach(function(n) {
+        var span = n.querySelector('span');
+        if (!span) return;
+        var text = span.textContent.trim().toLowerCase();
+        if ((section === 'noticias' && text === 'noticias') ||
+            (section === 'apostilas' && text === 'apostilas') ||
+            (section === 'notas' && text === 'notas') ||
+            (section === 'foto3x4' && text === 'foto')) {
             n.classList.add('active');
         }
     });
