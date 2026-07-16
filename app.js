@@ -801,15 +801,6 @@ async function portalFoto3x4Enviar() {
     try {
         localStorage.setItem('foto3x4_' + currentAluno.cpf, dataUrl);
         localStorage.setItem('farn_photo_' + currentAluno.cpf, dataUrl);
-        await dbFirestore.collection('candidatos').doc(currentAluno.cpf).set({
-            photoDataUrl: dataUrl,
-            hasPhoto: true
-        }, { merge: true });
-        try {
-            await dbFirestore.collection('formados').doc(currentAluno.cpf).set({
-                photoDataUrl: dataUrl
-            }, { merge: true });
-        } catch(e) {}
         currentAluno.photoDataUrl = dataUrl;
         currentAluno.hasPhoto = true;
         var idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
@@ -817,10 +808,16 @@ async function portalFoto3x4Enviar() {
             candidatos[idx].photoDataUrl = dataUrl;
             candidatos[idx].hasPhoto = true;
         }
-        var fIdx = formados.findIndex(function(f) { return f.cpf === currentAluno.cpf; });
-        if (fIdx !== -1) {
-            formados[fIdx].photoDataUrl = dataUrl;
-        }
+        await backupCandidatos();
+        try {
+            var fIdx = formados.findIndex(function(f) { return f.cpf === currentAluno.cpf; });
+            if (fIdx !== -1) {
+                formados[fIdx].photoDataUrl = dataUrl;
+                await dbFirestore.collection('formados').doc(currentAluno.cpf).set({
+                    photoDataUrl: dataUrl
+                }, { merge: true });
+            }
+        } catch(e) {}
         portalFoto3x4Msg('Foto enviada com sucesso para o cadastro!', 'success');
         portalLoadSidebarFoto();
         document.getElementById('btn-foto3x4-enviar').style.display = 'none';
@@ -1056,7 +1053,6 @@ async function portalAlunoAutoSave(silent) {
         try { localStorage.setItem('farn_photo_' + currentAluno.cpf, portalAlunoFotoDataUrl); } catch(e) {}
     }
     try {
-        await dbFirestore.collection('candidatos').doc(currentAluno.cpf).set(updateData, { merge: true });
         currentAluno.email = email;
         currentAluno.whatsapp = whatsapp;
         if (portalAlunoFotoDataUrl) currentAluno.photoDataUrl = portalAlunoFotoDataUrl;
@@ -1066,6 +1062,7 @@ async function portalAlunoAutoSave(silent) {
             candidatos[idx].whatsapp = whatsapp;
             if (portalAlunoFotoDataUrl) candidatos[idx].photoDataUrl = portalAlunoFotoDataUrl;
         }
+        await backupCandidatos();
         if (!silent) {
             msgEl.textContent = 'Salvo automaticamente';
             msgEl.style.display = 'block';
