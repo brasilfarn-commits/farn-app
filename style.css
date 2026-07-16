@@ -3222,3 +3222,20 @@ select.config-input option {
     padding: 10px;
     font-size: 10px;
 }
+
+.online-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    margin-left: 4px;
+    vertical-align: middle;
+    box-shadow: 0 0 6px rgba(76,175,80,0.7);
+    animation: pulseOnline 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseOnline {
+    0%, 100% { box-shadow: 0 0 4px rgba(76,175,80,0.5); }
+    50% { box-shadow: 0 0 10px rgba(76,175,80,0.9); }
+}

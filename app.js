@@ -14,6 +14,9 @@ let usuarios = [];
 let formados = [];
 let currentUserData = null;
 let parceiros = [];
+let onlineCpfs = new Set();
+let onlineHeartbeat = null;
+let onlineUnsubscribe = null;
 
 /* ===== FIREBASE SINCRONIZACAO (Firestore) ===== */
 
@@ -344,6 +347,7 @@ async function initApp() {
     migrateLocalStorage();
     await migrateIndexedDB();
     await initFirebaseListeners();
+    startOnlineListener();
     backupUsuarios();
     backupFormados();
     backupParceiros();
@@ -534,6 +538,7 @@ async function handleLogin(event) {
         } else {
             portalPhotoBox.innerHTML = '<i class="fa-solid fa-user" style="font-size:56px;color:#444"></i><button class="portal-photo-cam-btn" onclick="openPortalPhotoCamera()" title="Tirar foto"><i class="fa-solid fa-camera"></i></button>';
         }
+        setAlunoOnline(currentAluno.cpf);
     } else if (selectedLoginRole === 'formado') {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
             currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
@@ -662,12 +667,54 @@ function handleLogout() {
     clearLoginState();
 }
 
+/* ===== ONLINE TRACKING ===== */
+function setAlunoOnline(cpf) {
+    if (!cpf || !dbFirestore) return;
+    dbFirestore.collection('onlineAlunos').doc(cpf).set({ online: true, ts: Date.now() }, { merge: true });
+    if (onlineHeartbeat) clearInterval(onlineHeartbeat);
+    onlineHeartbeat = setInterval(function() {
+        if (currentAluno && currentAluno.cpf) {
+            dbFirestore.collection('onlineAlunos').doc(currentAluno.cpf).set({ online: true, ts: Date.now() }, { merge: true }).catch(function() {});
+        }
+    }, 30000);
+}
+
+function setAlunoOffline(cpf) {
+    if (!cpf || !dbFirestore) return;
+    dbFirestore.collection('onlineAlunos').doc(cpf).delete().catch(function() {});
+    if (onlineHeartbeat) { clearInterval(onlineHeartbeat); onlineHeartbeat = null; }
+}
+
+function startOnlineListener() {
+    if (onlineUnsubscribe) return;
+    onlineUnsubscribe = dbFirestore.collection('onlineAlunos').onSnapshot(function(snap) {
+        onlineCpfs.clear();
+        var now = Date.now();
+        snap.forEach(function(doc) {
+            var d = doc.data();
+            if (d.online && (now - (d.ts || 0)) < 90000) {
+                onlineCpfs.add(doc.id);
+            }
+        });
+        if (typeof renderAlunosList === 'function') renderAlunosList();
+    });
+}
+
+function stopOnlineListener() {
+    if (onlineUnsubscribe) { onlineUnsubscribe(); onlineUnsubscribe = null; }
+}
+
+window.addEventListener('beforeunload', function() {
+    if (currentAluno && currentAluno.cpf) setAlunoOffline(currentAluno.cpf);
+});
+
 function logoutPortal() {
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
     document.getElementById('password').value = '';
     document.getElementById('login-error').classList.add('hidden');
+    if (currentAluno && currentAluno.cpf) setAlunoOffline(currentAluno.cpf);
     currentAluno = null;
     selectedLoginRole = 'admin';
     document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
@@ -1396,8 +1443,10 @@ function renderAlunosList() {
         const otherStatuses = allStatuses.filter(s => s.value !== c.status);
         const mat = c.matricula || generateMatricula(c.cpf);
         const nomeStyle = c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '';
+        const isOnline = onlineCpfs.has(c.cpf);
+        const onlineDot = isOnline ? ' <span class="online-dot" title="Online"></span>' : '';
         return `<tr>
-            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>
