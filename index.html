@@ -1619,6 +1619,17 @@
                                 </div>
                                 <div id="wa-contacts-list" class="wa-contacts-list"></div>
                             </div>
+                            <!-- EMOJI PICKER (hidden by default) -->
+                            <div id="wa-emoji-picker" class="wa-emoji-picker" style="display:none"></div>
+                            <!-- PHOTO PREVIEW (hidden by default) -->
+                            <div id="wa-photo-preview" class="wa-photo-preview" style="display:none">
+                                <img id="wa-photo-preview-img" src="">
+                                <div class="wa-photo-preview-info">
+                                    <span class="wa-photo-preview-label"><i class="fa-solid fa-image"></i> Foto capturada</span>
+                                    <label class="wa-viewonce-toggle"><input type="checkbox" id="wa-viewonce-check"> <i class="fa-solid fa-eye-slash"></i> Visualizar 1 vez</label>
+                                </div>
+                                <button class="wa-photo-preview-remove" onclick="portalChatRemovePhoto()"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
                             <!-- MESSAGES -->
                             <div id="portal-chat-messages" class="wa-messages">
                                 <div class="wa-empty">
@@ -1628,11 +1639,26 @@
                             </div>
                             <!-- INPUT -->
                             <div class="wa-input-area">
-                                <button class="wa-icon-btn" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
+                                <button class="wa-icon-btn" title="Emoji" onclick="portalChatToggleEmoji()"><i class="fa-regular fa-face-smile"></i></button>
+                                <button class="wa-icon-btn" title="Camera" onclick="portalChatOpenCamera()"><i class="fa-solid fa-camera"></i></button>
                                 <input type="text" id="portal-chat-input" class="wa-input" placeholder="Mensagem" maxlength="500" onkeydown="if(event.key==='Enter')portalChatSend()">
                                 <button id="portal-chat-send-btn" class="wa-send-btn" onclick="portalChatSend()">
                                     <i class="fa-solid fa-microphone"></i>
                                 </button>
+                            </div>
+                            <!-- EDIT BAR (hidden by default) -->
+                            <div id="wa-edit-bar" class="wa-edit-bar" style="display:none">
+                                <div class="wa-edit-bar-info">
+                                    <i class="fa-solid fa-pencil"></i>
+                                    <span id="wa-edit-bar-text">Editando mensagem</span>
+                                </div>
+                                <button class="wa-edit-bar-close" onclick="portalChatCancelEdit()"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <!-- CONTEXT MENU (hidden by default) -->
+                            <div id="wa-context-menu" class="wa-context-menu" style="display:none">
+                                <button onclick="portalChatCtxAction('edit')"><i class="fa-solid fa-pencil"></i> Editar</button>
+                                <button onclick="portalChatCtxAction('delete')"><i class="fa-solid fa-trash"></i> Apagar</button>
+                                <button onclick="portalChatCtxAction('close')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                             </div>
                         </div>
                     </section>
