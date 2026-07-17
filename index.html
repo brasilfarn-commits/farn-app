@@ -1431,6 +1431,9 @@
                         <a class="portal-nav-item" onclick="showPortalSection('foto3x4')">
                             <i class="fa-solid fa-camera"></i><span>Foto 3x4</span>
                         </a>
+                        <a class="portal-nav-item" onclick="showPortalSection('chat')">
+                            <i class="fa-solid fa-comments"></i><span>Chat Turma</span>
+                        </a>
                         <a class="portal-nav-item" onclick="openPortalAlunoDados()">
                             <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
                         </a>
@@ -1576,6 +1579,29 @@
                             </div>
                         </div>
                     </section>
+                    <section id="portal-section-chat" class="portal-section">
+                        <div class="portal-chat-wrap">
+                            <div class="portal-chat-header">
+                                <i class="fa-solid fa-comments" style="color:#f57f17;font-size:20px"></i>
+                                <div style="flex:1;margin-left:10px">
+                                    <div style="font-weight:700;color:#fff;font-size:15px">Chat da Turma</div>
+                                    <div id="portal-chat-online-count" style="font-size:11px;color:#aaa">Conectados: ...</div>
+                                </div>
+                            </div>
+                            <div id="portal-chat-messages" class="portal-chat-messages">
+                                <div class="portal-chat-empty">
+                                    <i class="fa-solid fa-comments" style="font-size:36px;color:#555;margin-bottom:10px;display:block"></i>
+                                    <span style="color:#777">Nenhuma mensagem ainda. Seja o primeiro!</span>
+                                </div>
+                            </div>
+                            <div class="portal-chat-input-area">
+                                <input type="text" id="portal-chat-input" class="portal-chat-input" placeholder="Digite sua mensagem..." maxlength="500" onkeydown="if(event.key==='Enter')portalChatSend()">
+                                <button class="portal-chat-send-btn" onclick="portalChatSend()">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
                 </main>
             </div>
         </div>
@@ -1595,6 +1621,10 @@
             <button class="portal-mobile-nav-item" onclick="showPortalSection('foto3x4')">
                 <i class="fa-solid fa-camera"></i>
                 <span>Foto</span>
+            </button>
+            <button class="portal-mobile-nav-item" onclick="showPortalSection('chat')">
+                <i class="fa-solid fa-comments"></i>
+                <span>Chat</span>
             </button>
             <button class="portal-mobile-nav-item" onclick="openPortalAlunoDados()">
                 <i class="fa-solid fa-user-pen"></i>

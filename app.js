@@ -735,6 +735,7 @@ window.addEventListener('beforeunload', function() {
 
 function logoutPortal() {
     portalFoto3x4StopCamera();
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; }
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -936,6 +937,69 @@ function portalLoadSidebarFoto() {
             img.style.display = 'none';
             icon.style.display = '';
         }
+    });
+}
+
+var chatUnsub = null;
+var chatLoaded = false;
+
+function portalChatInit() {
+    if (!currentAluno || !currentAluno.cpf) return;
+    if (chatUnsub) return;
+    chatLoaded = true;
+    var container = document.getElementById('portal-chat-messages');
+    container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-spinner fa-spin" style="font-size:28px;color:#888;display:block;margin-bottom:8px"></i><span style="color:#777">Carregando mensagens...</span></div>';
+    chatUnsub = dbFirestore.collection('chatSala')
+        .orderBy('hora')
+        .onSnapshot(function(snap) {
+            var msgs = [];
+            snap.forEach(function(doc) { msgs.push(doc.data()); });
+            document.getElementById('portal-chat-online-count').textContent = 'Mensagens: ' + msgs.length;
+            if (msgs.length === 0) {
+                container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-comments" style="font-size:36px;color:#555;margin-bottom:10px;display:block"></i><span style="color:#777">Nenhuma mensagem ainda. Seja o primeiro!</span></div>';
+                return;
+            }
+            container.innerHTML = '';
+            var lastDate = '';
+            msgs.forEach(function(m) {
+                var dt = m.hora && m.hora.seconds ? new Date(m.hora.seconds * 1000) : new Date();
+                var dateStr = dt.toLocaleDateString('pt-BR');
+                if (dateStr !== lastDate) {
+                    lastDate = dateStr;
+                    var divider = document.createElement('div');
+                    divider.className = 'portal-chat-date-divider';
+                    divider.innerHTML = '<span>' + dateStr + '</span>';
+                    container.appendChild(divider);
+                }
+                var isMe = m.cpf === currentAluno.cpf;
+                var bubble = document.createElement('div');
+                bubble.className = 'portal-chat-bubble' + (isMe ? ' me' : ' other');
+                var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                bubble.innerHTML =
+                    (isMe ? '' : '<div class="portal-chat-sender">' + (m.remetente || 'Aluno') + '</div>') +
+                    '<div class="portal-chat-text">' + (m.texto || '') + '</div>' +
+                    '<div class="portal-chat-time">' + time + '</div>';
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }, function() {
+            container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-triangle-exclamation" style="font-size:28px;color:#e53935;display:block;margin-bottom:8px"></i><span style="color:#e53935">Erro ao carregar mensagens.</span></div>';
+        });
+}
+
+function portalChatSend() {
+    if (!currentAluno) return;
+    var input = document.getElementById('portal-chat-input');
+    var texto = input.value.trim();
+    if (!texto) return;
+    input.value = '';
+    dbFirestore.collection('chatSala').add({
+        texto: texto,
+        remetente: currentAluno.nome || currentAluno.cpf || 'Aluno',
+        cpf: currentAluno.cpf,
+        hora: new Date()
+    }).catch(function(err) {
+        alert('Erro ao enviar mensagem: ' + err.message);
     });
 }
 
@@ -1177,7 +1241,8 @@ function showPortalSection(section) {
         if ((section === 'noticias' && n.textContent.trim() === 'Noticias') ||
             (section === 'apostilas' && n.textContent.trim() === 'Apostilas') ||
             (section === 'notas' && n.textContent.trim() === 'Notas') ||
-            (section === 'foto3x4' && n.textContent.trim() === 'Foto 3x4')) {
+            (section === 'foto3x4' && n.textContent.trim() === 'Foto 3x4') ||
+            (section === 'chat' && n.textContent.trim() === 'Chat Turma')) {
             n.classList.add('active');
         }
     });
@@ -1189,11 +1254,13 @@ function showPortalSection(section) {
         if ((section === 'noticias' && text === 'noticias') ||
             (section === 'apostilas' && text === 'apostilas') ||
             (section === 'notas' && text === 'notas') ||
-            (section === 'foto3x4' && text === 'foto')) {
+            (section === 'foto3x4' && text === 'foto') ||
+            (section === 'chat' && text === 'chat')) {
             n.classList.add('active');
         }
     });
     if (section === 'foto3x4') portalFoto3x4LoadLocal();
+    if (section === 'chat') portalChatInit();
 }
 
 function openPortalAlunoDados() {
