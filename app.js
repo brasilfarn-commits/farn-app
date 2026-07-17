@@ -736,7 +736,7 @@ window.addEventListener('beforeunload', function() {
 
 function logoutPortal() {
     portalFoto3x4StopCamera();
-    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; }
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; }
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -943,65 +943,206 @@ function portalLoadSidebarFoto() {
 
 var chatUnsub = null;
 var chatLoaded = false;
+var chatMode = 'turma';
+var chatPrivateTarget = null;
 
 function portalChatInit() {
     if (!currentAluno || !currentAluno.cpf) return;
-    if (chatUnsub) return;
-    chatLoaded = true;
+    if (!chatLoaded) {
+        chatLoaded = true;
+        portalChatLoadContacts();
+    }
+    portalChatListen();
+}
+
+function portalChatListen() {
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
     var container = document.getElementById('portal-chat-messages');
     container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-spinner fa-spin"></i></div><p>Carregando mensagens...</p></div>';
-    chatUnsub = dbFirestore.collection('chatSala')
-        .orderBy('hora')
-        .onSnapshot(function(snap) {
-            var msgs = [];
-            snap.forEach(function(doc) { msgs.push(doc.data()); });
-            var count = msgs.length;
-            var statusEl = document.getElementById('portal-chat-online-count');
-            if (statusEl) statusEl.textContent = count > 0 ? count + ' participantes' : 'online';
-            if (msgs.length === 0) {
-                container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-lock"></i></div><p>Mensagens sao criptografadas de ponta a ponta. Ninguem fora desta conversa pode ler.</p></div>';
-                return;
-            }
-            var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 60;
-            container.innerHTML = '';
-            var lastDate = '';
-            msgs.forEach(function(m) {
-                var dt = m.hora && m.hora.seconds ? new Date(m.hora.seconds * 1000) : new Date();
-                var dateStr = dt.toLocaleDateString('pt-BR');
-                if (dateStr !== lastDate) {
-                    lastDate = dateStr;
-                    var divider = document.createElement('div');
-                    divider.className = 'wa-date-divider';
-                    divider.innerHTML = '<span>' + dateStr + '</span>';
-                    container.appendChild(divider);
-                }
-                var isMe = m.cpf === currentAluno.cpf;
-                var wrap = document.createElement('div');
-                wrap.className = 'wa-bubble-wrap' + (isMe ? ' me' : ' other');
-                var senderHtml = '';
-                if (!isMe) {
-                    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
-                    var hash = 0;
-                    var name = m.remetente || 'Aluno';
-                    for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
-                    var cor = cores[Math.abs(hash) % cores.length];
-                    senderHtml = '<div class="wa-sender-name" style="color:' + cor + '">' + name + '</div>';
-                }
-                var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                var checksHtml = isMe
-                    ? '<span class="wa-checks"><i class="fa-solid fa-check-double"></i></span>'
-                    : '';
-                wrap.innerHTML = senderHtml +
-                    '<div class="wa-bubble">' +
-                        '<span class="wa-text">' + (m.texto || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>' +
-                        '<span class="wa-meta"><span class="wa-time">' + time + '</span>' + checksHtml + '</span>' +
-                    '</div>';
-                container.appendChild(wrap);
+
+    if (chatMode === 'turma') {
+        chatUnsub = dbFirestore.collection('chatSala')
+            .orderBy('hora')
+            .onSnapshot(function(snap) {
+                var msgs = [];
+                snap.forEach(function(doc) { msgs.push(doc.data()); });
+                var statusEl = document.getElementById('portal-chat-online-count');
+                if (statusEl) statusEl.textContent = msgs.length > 0 ? msgs.length + ' participantes' : 'online';
+                portalChatRender(msgs, false);
+            }, function() {
+                container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar mensagens.</p></div>';
             });
-            if (wasAtBottom) container.scrollTop = container.scrollHeight;
-        }, function() {
-            container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar mensagens. Verifique sua conexao.</p></div>';
-        });
+    } else if (chatMode === 'privado' && chatPrivateTarget) {
+        var cpfs = [currentAluno.cpf, chatPrivateTarget.cpf].sort();
+        var chatId = cpfs.join('_');
+        chatUnsub = dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs')
+            .orderBy('hora')
+            .onSnapshot(function(snap) {
+                var msgs = [];
+                snap.forEach(function(doc) { msgs.push(doc.data()); });
+                var statusEl = document.getElementById('wa-private-status');
+                if (statusEl) statusEl.textContent = msgs.length > 0 ? msgs.length + ' mensagens' : 'online';
+                portalChatRender(msgs, false);
+            }, function() {
+                container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar mensagens.</p></div>';
+            });
+    }
+}
+
+function portalChatRender(msgs) {
+    var container = document.getElementById('portal-chat-messages');
+    if (msgs.length === 0) {
+        var emptyMsg = chatMode === 'turma'
+            ? 'Mensagens sao criptografadas de ponta a ponta.'
+            : 'Nenhuma mensagem ainda. Comece a conversar!';
+        var emptyIcon = chatMode === 'turma' ? 'fa-lock' : 'fa-comment-dots';
+        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid ' + emptyIcon + '"></i></div><p>' + emptyMsg + '</p></div>';
+        return;
+    }
+    var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 60;
+    container.innerHTML = '';
+    var lastDate = '';
+    var showSender = chatMode === 'turma';
+    msgs.forEach(function(m) {
+        var dt = m.hora && m.hora.seconds ? new Date(m.hora.seconds * 1000) : new Date();
+        var dateStr = dt.toLocaleDateString('pt-BR');
+        if (dateStr !== lastDate) {
+            lastDate = dateStr;
+            var divider = document.createElement('div');
+            divider.className = 'wa-date-divider';
+            divider.innerHTML = '<span>' + dateStr + '</span>';
+            container.appendChild(divider);
+        }
+        var isMe = m.cpf === currentAluno.cpf;
+        var wrap = document.createElement('div');
+        wrap.className = 'wa-bubble-wrap' + (isMe ? ' me' : ' other');
+        var senderHtml = '';
+        if (showSender && !isMe) {
+            var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
+            var hash = 0;
+            var name = m.remetente || 'Aluno';
+            for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
+            var cor = cores[Math.abs(hash) % cores.length];
+            senderHtml = '<div class="wa-sender-name" style="color:' + cor + '">' + name + '</div>';
+        }
+        var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        var checksHtml = isMe
+            ? '<span class="wa-checks"><i class="fa-solid fa-check-double"></i></span>'
+            : '';
+        wrap.innerHTML = senderHtml +
+            '<div class="wa-bubble">' +
+                '<span class="wa-text">' + (m.texto || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>' +
+                '<span class="wa-meta"><span class="wa-time">' + time + '</span>' + checksHtml + '</span>' +
+            '</div>';
+        container.appendChild(wrap);
+    });
+    if (wasAtBottom) container.scrollTop = container.scrollHeight;
+}
+
+function portalChatSwitchMode(mode) {
+    chatMode = mode;
+    document.querySelectorAll('.wa-type-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.wa-type-btn').forEach(function(b) {
+        if ((mode === 'turma' && b.textContent.includes('Turma')) || (mode === 'privado' && b.textContent.includes('Privado'))) b.classList.add('active');
+    });
+    var headerGroup = document.getElementById('wa-header-group');
+    var headerPrivate = document.getElementById('wa-header-private');
+    var contactsPanel = document.getElementById('wa-contacts-panel');
+    var messagesEl = document.getElementById('portal-chat-messages');
+    var inputArea = document.querySelector('.wa-input-area');
+
+    if (mode === 'turma') {
+        chatPrivateTarget = null;
+        headerGroup.style.display = '';
+        headerPrivate.style.display = 'none';
+        contactsPanel.style.display = 'none';
+        messagesEl.style.display = '';
+        inputArea.style.display = '';
+        portalChatListen();
+    } else {
+        headerGroup.style.display = 'none';
+        contactsPanel.style.display = '';
+        messagesEl.style.display = 'none';
+        inputArea.style.display = 'none';
+        headerPrivate.style.display = 'none';
+        portalChatLoadContacts();
+    }
+}
+
+function portalChatLoadContacts() {
+    if (!currentAluno) return;
+    var list = document.getElementById('wa-contacts-list');
+    var approved = candidatos.filter(function(c) {
+        return c.cpf !== currentAluno.cpf && (c.status === 'aprovado' || c.status === 'Aprovado');
+    });
+    approved.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+    if (approved.length === 0) {
+        list.innerHTML = '<div class="wa-contacts-empty"><i class="fa-solid fa-user-slash"></i><p>Nenhum aluno aprovado encontrado.</p></div>';
+        return;
+    }
+    list.innerHTML = '';
+    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf','#c04060','#2e7d32','#6a1b9a'];
+    approved.forEach(function(c) {
+        var nome = c.nome || 'Aluno';
+        var hash = 0;
+        for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
+        var cor = cores[Math.abs(hash) % cores.length];
+        var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
+        var mat = c.matricula || '';
+        var item = document.createElement('div');
+        item.className = 'wa-contact-item';
+        item.setAttribute('data-nome', nome.toLowerCase());
+        item.innerHTML =
+            '<div class="wa-contact-avatar" style="background:' + cor + '">' + initials + '</div>' +
+            '<div class="wa-contact-info">' +
+                '<div class="wa-contact-name">' + nome + '</div>' +
+                '<div class="wa-contact-mat">' + mat + '</div>' +
+            '</div>';
+        item.onclick = function() { portalChatOpenPrivate(c); };
+        list.appendChild(item);
+    });
+}
+
+function portalChatFilterContacts() {
+    var search = document.getElementById('wa-contacts-search').value.toLowerCase();
+    var items = document.querySelectorAll('.wa-contact-item');
+    items.forEach(function(item) {
+        var nome = item.getAttribute('data-nome') || '';
+        item.style.display = nome.includes(search) ? '' : 'none';
+    });
+}
+
+function portalChatOpenPrivate(candidato) {
+    chatPrivateTarget = candidato;
+    var headerGroup = document.getElementById('wa-header-group');
+    var headerPrivate = document.getElementById('wa-header-private');
+    var contactsPanel = document.getElementById('wa-contacts-panel');
+    var messagesEl = document.getElementById('portal-chat-messages');
+    var inputArea = document.querySelector('.wa-input-area');
+
+    headerGroup.style.display = 'none';
+    contactsPanel.style.display = 'none';
+    headerPrivate.style.display = '';
+    messagesEl.style.display = '';
+    inputArea.style.display = '';
+
+    var nome = candidato.nome || 'Aluno';
+    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
+    var hash = 0;
+    for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
+    var cor = cores[Math.abs(hash) % cores.length];
+    var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
+
+    document.getElementById('wa-private-avatar').style.background = cor;
+    document.getElementById('wa-private-avatar').innerHTML = initials;
+    document.getElementById('wa-private-name').textContent = nome;
+    document.getElementById('wa-private-status').textContent = 'online';
+
+    portalChatListen();
+}
+
+function portalChatBackToContacts() {
+    portalChatSwitchMode('privado');
 }
 
 var portalChatInput = null;
@@ -1029,14 +1170,25 @@ function portalChatSend() {
     input.value = '';
     var icon = input.parentElement.querySelector('.wa-send-btn i');
     if (icon) { icon.className = 'fa-solid fa-microphone'; input.parentElement.querySelector('.wa-send-btn').classList.remove('active'); }
-    dbFirestore.collection('chatSala').add({
+
+    var msg = {
         texto: texto,
         remetente: currentAluno.nome || currentAluno.cpf || 'Aluno',
         cpf: currentAluno.cpf,
         hora: new Date()
-    }).catch(function(err) {
-        alert('Erro ao enviar mensagem: ' + err.message);
-    });
+    };
+
+    if (chatMode === 'turma') {
+        dbFirestore.collection('chatSala').add(msg).catch(function(err) {
+            alert('Erro ao enviar mensagem: ' + err.message);
+        });
+    } else if (chatMode === 'privado' && chatPrivateTarget) {
+        var cpfs = [currentAluno.cpf, chatPrivateTarget.cpf].sort();
+        var chatId = cpfs.join('_');
+        dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').add(msg).catch(function(err) {
+            alert('Erro ao enviar mensagem: ' + err.message);
+        });
+    }
 }
 
 var adminFoto3x4Stream = null;

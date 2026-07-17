@@ -1581,7 +1581,17 @@
                     </section>
                     <section id="portal-section-chat" class="portal-section">
                         <div class="wa-chat-wrap">
-                            <div class="wa-header">
+                            <!-- TYPE SELECTOR -->
+                            <div id="wa-type-selector" class="wa-type-selector">
+                                <button class="wa-type-btn active" onclick="portalChatSwitchMode('turma')">
+                                    <i class="fa-solid fa-users"></i> Turma
+                                </button>
+                                <button class="wa-type-btn" onclick="portalChatSwitchMode('privado')">
+                                    <i class="fa-solid fa-lock"></i> Privado
+                                </button>
+                            </div>
+                            <!-- HEADER: GROUP -->
+                            <div id="wa-header-group" class="wa-header">
                                 <div class="wa-header-left">
                                     <div class="wa-avatar"><i class="fa-solid fa-users"></i></div>
                                     <div class="wa-header-info">
@@ -1590,15 +1600,35 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- HEADER: PRIVATE (hidden by default) -->
+                            <div id="wa-header-private" class="wa-header" style="display:none">
+                                <div class="wa-header-left">
+                                    <button class="wa-back-btn" onclick="portalChatBackToContacts()"><i class="fa-solid fa-arrow-left"></i></button>
+                                    <div id="wa-private-avatar" class="wa-avatar"><i class="fa-solid fa-user"></i></div>
+                                    <div class="wa-header-info">
+                                        <div id="wa-private-name" class="wa-header-name">...</div>
+                                        <div id="wa-private-status" class="wa-header-status">...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- CONTACTS PANEL (hidden by default) -->
+                            <div id="wa-contacts-panel" class="wa-contacts-panel" style="display:none">
+                                <div class="wa-contacts-search-wrap">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="wa-contacts-search" class="wa-contacts-search" placeholder="Buscar aluno..." oninput="portalChatFilterContacts()">
+                                </div>
+                                <div id="wa-contacts-list" class="wa-contacts-list"></div>
+                            </div>
+                            <!-- MESSAGES -->
                             <div id="portal-chat-messages" class="wa-messages">
                                 <div class="wa-empty">
                                     <div class="wa-empty-icon"><i class="fa-solid fa-lock"></i></div>
                                     <p>Mensagens sao criptografadas de ponta a ponta. Ninguem fora desta conversa pode ler.</p>
                                 </div>
                             </div>
+                            <!-- INPUT -->
                             <div class="wa-input-area">
                                 <button class="wa-icon-btn" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
-                                <button class="wa-icon-btn" title="Anexar"><i class="fa-solid fa-paperclip"></i></button>
                                 <input type="text" id="portal-chat-input" class="wa-input" placeholder="Mensagem" maxlength="500" onkeydown="if(event.key==='Enter')portalChatSend()">
                                 <button id="portal-chat-send-btn" class="wa-send-btn" onclick="portalChatSend()">
                                     <i class="fa-solid fa-microphone"></i>
