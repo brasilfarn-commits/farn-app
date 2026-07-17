@@ -1630,6 +1630,21 @@
                                 </div>
                                 <button class="wa-photo-preview-remove" onclick="portalChatRemovePhoto()"><i class="fa-solid fa-xmark"></i></button>
                             </div>
+                            <!-- RECORDING BAR (hidden by default) -->
+                            <div id="wa-recording-bar" class="wa-recording-bar" style="display:none">
+                                <div class="wa-rec-dot"></div>
+                                <span id="wa-rec-timer" class="wa-rec-timer">00:00</span>
+                                <span class="wa-rec-label">Gravando audio...</span>
+                                <div class="wa-rec-waves">
+                                    <span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <button class="wa-rec-stop" onclick="portalChatStopRecording()">
+                                    <i class="fa-solid fa-stop"></i> Enviar
+                                </button>
+                                <button class="wa-rec-cancel" onclick="portalChatCancelRecording()">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
                             <!-- MESSAGES -->
                             <div id="portal-chat-messages" class="wa-messages">
                                 <div class="wa-empty">
@@ -1642,8 +1657,11 @@
                                 <button class="wa-icon-btn" title="Emoji" onclick="portalChatToggleEmoji()"><i class="fa-regular fa-face-smile"></i></button>
                                 <button class="wa-icon-btn" title="Camera" onclick="portalChatOpenCamera()"><i class="fa-solid fa-camera"></i></button>
                                 <input type="text" id="portal-chat-input" class="wa-input" placeholder="Mensagem" maxlength="500" onkeydown="if(event.key==='Enter')portalChatSend()">
-                                <button id="portal-chat-send-btn" class="wa-send-btn" onclick="portalChatSend()">
+                                <button id="portal-chat-mic-btn" class="wa-send-btn" onclick="portalChatToggleRecording()" title="Segurar para gravar audio">
                                     <i class="fa-solid fa-microphone"></i>
+                                </button>
+                                <button id="portal-chat-send-btn" class="wa-send-btn" style="display:none" onclick="portalChatSend()">
+                                    <i class="fa-solid fa-paper-plane"></i>
                                 </button>
                             </div>
                             <!-- EDIT BAR (hidden by default) -->

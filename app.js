@@ -735,7 +735,7 @@ window.addEventListener('beforeunload', function() {
 
 function logoutPortal() {
     portalFoto3x4StopCamera();
-    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; }
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } }
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -967,6 +967,7 @@ function portalChatInit() {
         portalChatLoadContacts();
         portalChatSetupInput();
         portalChatSetupContextMenu();
+        portalChatStartExpireChecker();
     }
     portalChatListen();
 }
@@ -1073,6 +1074,27 @@ function portalChatRender(msgs) {
                 bodyHtml += '<div class="wa-viewonce-badge"><i class="fa-solid fa-eye-slash"></i> 1 vez</div>';
             }
         }
+        if (m.audioDataUrl) {
+            var criadoEm = m.hora && m.hora.seconds ? m.hora.seconds * 1000 : Date.now();
+            var expirado = (Date.now() - criadoEm) > 300000;
+            if (expirado) {
+                bodyHtml += '<div class="wa-audio-expired"><i class="fa-solid fa-clock-rotate-left"></i> Audio expirado</div>';
+            } else {
+                var aId = m.audioId || ('au_' + Math.random());
+                var dur = m.audioDuracao || 0;
+                var waveCount = Math.max(12, Math.min(30, Math.floor(dur * 1.5)));
+                bodyHtml += '<div class="wa-audio-bubble" data-audioid="' + aId + '" data-criado="' + criadoEm + '">' +
+                    '<audio id="audio_' + aId + '" src="' + m.audioDataUrl + '" preload="auto"></audio>' +
+                    '<div class="wa-audio-player">' +
+                        '<button class="wa-audio-play" onclick="portalChatPlayAudio(\'' + aId + '\', this)"><i class="fa-solid fa-play"></i></button>' +
+                        '<div class="wa-audio-track">' +
+                            '<div class="wa-audio-wave">' + portalChatGenWaveform(waveCount) + '</div>' +
+                            '<div class="wa-audio-time">' + portalChatFormatTime(dur) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+        }
         if (m.texto) {
             bodyHtml += '<span class="wa-text">' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
         }
@@ -1090,6 +1112,11 @@ function portalChatSwitchMode(mode) {
     chatMode = mode;
     portalChatCancelEdit();
     portalChatRemovePhoto();
+    if (chatRecording) portalChatCancelRecording();
+    var micBtn = document.getElementById('portal-chat-mic-btn');
+    var sendBtn = document.getElementById('portal-chat-send-btn');
+    if (micBtn) { micBtn.style.display = ''; }
+    if (sendBtn) { sendBtn.style.display = 'none'; }
     document.querySelectorAll('.wa-type-btn').forEach(function(b) { b.classList.remove('active'); });
     document.querySelectorAll('.wa-type-btn').forEach(function(b) {
         if ((mode === 'turma' && b.textContent.includes('Turma')) || (mode === 'privado' && b.textContent.includes('Privado'))) b.classList.add('active');
@@ -1199,16 +1226,16 @@ function portalChatBackToContacts() {
 var portalChatInput = null;
 function portalChatSetupInput() {
     portalChatInput = document.getElementById('portal-chat-input');
-    var btn = document.getElementById('portal-chat-send-btn');
-    if (!portalChatInput || !btn) return;
+    var micBtn = document.getElementById('portal-chat-mic-btn');
+    var sendBtn = document.getElementById('portal-chat-send-btn');
+    if (!portalChatInput || !micBtn || !sendBtn) return;
     portalChatInput.addEventListener('input', function() {
-        var icon = btn.querySelector('i');
         if (portalChatInput.value.trim() || chatPendingPhoto) {
-            icon.className = 'fa-solid fa-paper-plane';
-            btn.classList.add('active');
+            micBtn.style.display = 'none';
+            sendBtn.style.display = '';
         } else {
-            icon.className = 'fa-solid fa-microphone';
-            btn.classList.remove('active');
+            micBtn.style.display = '';
+            sendBtn.style.display = 'none';
         }
     });
 }
@@ -1231,8 +1258,10 @@ function portalChatSend() {
 
     if (!texto && !chatPendingPhoto) return;
     input.value = '';
-    var icon = document.querySelector('.wa-send-btn i');
-    if (icon) { icon.className = 'fa-solid fa-microphone'; document.querySelector('.wa-send-btn').classList.remove('active'); }
+    var micBtn = document.getElementById('portal-chat-mic-btn');
+    var sendBtn = document.getElementById('portal-chat-send-btn');
+    if (micBtn) { micBtn.style.display = ''; }
+    if (sendBtn) { sendBtn.style.display = 'none'; }
 
     var msg = {
         texto: texto || '',
@@ -1396,10 +1425,10 @@ function portalChatOpenCamera() {
                 var previewImg = document.getElementById('wa-photo-preview-img');
                 previewImg.src = chatPendingPhoto;
                 preview.style.display = '';
-                var btn = document.getElementById('portal-chat-send-btn');
-                var icon = btn.querySelector('i');
-                icon.className = 'fa-solid fa-paper-plane';
-                btn.classList.add('active');
+                var micBtn = document.getElementById('portal-chat-mic-btn');
+                var sendBtn = document.getElementById('portal-chat-send-btn');
+                if (micBtn) micBtn.style.display = 'none';
+                if (sendBtn) sendBtn.style.display = '';
             };
             reader.readAsDataURL(blob);
         }, 'image/jpeg', 0.3);
@@ -1418,11 +1447,11 @@ function portalChatRemovePhoto() {
     var check = document.getElementById('wa-viewonce-check');
     if (check) check.checked = false;
     var input = document.getElementById('portal-chat-input');
-    var btn = document.getElementById('portal-chat-send-btn');
-    if (input && btn && !input.value.trim()) {
-        var icon = btn.querySelector('i');
-        icon.className = 'fa-solid fa-microphone';
-        btn.classList.remove('active');
+    var micBtn = document.getElementById('portal-chat-mic-btn');
+    var sendBtn = document.getElementById('portal-chat-send-btn');
+    if (input && micBtn && sendBtn && !input.value.trim()) {
+        micBtn.style.display = '';
+        sendBtn.style.display = 'none';
     }
 }
 
@@ -1435,6 +1464,237 @@ function portalChatExpandPhoto(src) {
     overlay.appendChild(img);
     overlay.onclick = function() { document.body.removeChild(overlay); };
     document.body.appendChild(overlay);
+}
+
+var chatRecording = false;
+var chatMediaRecorder = null;
+var chatAudioChunks = [];
+var chatRecStream = null;
+var chatRecTimer = null;
+var chatRecSeconds = 0;
+var chatRecMaxSeconds = 30;
+var chatAudioIdCounter = 0;
+var chatActiveAudio = null;
+var chatExpireInterval = null;
+
+function portalChatToggleRecording() {
+    if (chatRecording) {
+        portalChatStopRecording();
+    } else {
+        portalChatStartRecording();
+    }
+}
+
+function portalChatStartRecording() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Microfone nao disponivel neste dispositivo.');
+        return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(stream) {
+        chatRecStream = stream;
+        chatAudioChunks = [];
+        var options = { mimeType: 'audio/webm;codecs=opus' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'audio/webm' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options = {};
+            }
+        }
+        chatMediaRecorder = new MediaRecorder(stream, options);
+        chatMediaRecorder.ondataavailable = function(e) {
+            if (e.data && e.data.size > 0) chatAudioChunks.push(e.data);
+        };
+        chatMediaRecorder.onstop = function() { stream.getTracks().forEach(function(t) { t.stop(); }); };
+        chatMediaRecorder.start(500);
+
+        chatRecording = true;
+        chatRecSeconds = 0;
+
+        var recBar = document.getElementById('wa-recording-bar');
+        var recTimer = document.getElementById('wa-rec-timer');
+        recBar.style.display = '';
+        recTimer.textContent = '00:00';
+
+        var inputArea = document.querySelector('.wa-input-area');
+        inputArea.style.display = 'none';
+
+        var emojiPicker = document.getElementById('wa-emoji-picker');
+        if (emojiPicker) emojiPicker.style.display = 'none';
+
+        chatRecTimer = setInterval(function() {
+            chatRecSeconds++;
+            var m = Math.floor(chatRecSeconds / 60);
+            var s = chatRecSeconds % 60;
+            recTimer.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+            if (chatRecSeconds >= chatRecMaxSeconds) {
+                portalChatStopRecording();
+            }
+        }, 1000);
+    })
+    .catch(function(err) {
+        alert('Nao foi possivel acessar o microfone: ' + err.message);
+    });
+}
+
+function portalChatStopRecording() {
+    if (!chatRecording || !chatMediaRecorder) return;
+    chatRecording = false;
+    clearInterval(chatRecTimer);
+    chatRecTimer = null;
+
+    document.getElementById('wa-recording-bar').style.display = 'none';
+    document.querySelector('.wa-input-area').style.display = '';
+
+    chatMediaRecorder.onstop = function() {
+        if (chatRecStream) chatRecStream.getTracks().forEach(function(t) { t.stop(); });
+        if (chatAudioChunks.length === 0) return;
+        var blob = new Blob(chatAudioChunks, { type: chatMediaRecorder.mimeType || 'audio/webm' });
+        chatAudioChunks = [];
+        portalChatSendAudio(blob);
+    };
+    chatMediaRecorder.stop();
+}
+
+function portalChatCancelRecording() {
+    if (!chatRecording || !chatMediaRecorder) return;
+    chatRecording = false;
+    clearInterval(chatRecTimer);
+    chatRecTimer = null;
+    chatAudioChunks = [];
+
+    document.getElementById('wa-recording-bar').style.display = 'none';
+    document.querySelector('.wa-input-area').style.display = '';
+
+    chatMediaRecorder.onstop = function() {
+        if (chatRecStream) chatRecStream.getTracks().forEach(function(t) { t.stop(); });
+    };
+    chatMediaRecorder.stop();
+}
+
+function portalChatSendAudio(blob) {
+    if (!currentAluno || !blob) return;
+    var reader = new FileReader();
+    reader.onloadend = function() {
+        var dataUrl = reader.result;
+        if (!dataUrl) return;
+        var byteLength = Math.ceil((dataUrl.length - 'data:audio/webm;base64,'.length) * 3 / 4);
+        if (byteLength > 900000) {
+            alert('Audio muito grande. Tente gravar por menos tempo.');
+            return;
+        }
+        var msg = {
+            audioDataUrl: dataUrl,
+            audioDuracao: chatRecSeconds,
+            audioId: 'au_' + (++chatAudioIdCounter) + '_' + Date.now(),
+            remetente: currentAluno.nome || currentAluno.cpf || 'Aluno',
+            cpf: currentAluno.cpf,
+            hora: new Date()
+        };
+        if (chatMode === 'turma') {
+            dbFirestore.collection('chatSala').add(msg).catch(function(e) { alert('Erro ao enviar audio: ' + e.message); });
+        } else if (chatMode === 'privado' && chatPrivateTarget) {
+            var cpfs = [currentAluno.cpf, chatPrivateTarget.cpf].sort();
+            dbFirestore.collection('chatPrivado').doc(cpfs.join('_')).collection('msgs').add(msg).catch(function(e) { alert('Erro ao enviar audio: ' + e.message); });
+        }
+    };
+    reader.readAsDataURL(blob);
+}
+
+function portalChatPlayAudio(audioId, btn) {
+    var audio = document.getElementById('audio_' + audioId);
+    if (!audio) return;
+    if (chatActiveAudio && chatActiveAudio !== audio) {
+        chatActiveAudio.pause();
+        chatActiveAudio.currentTime = 0;
+        var prevBtn = chatActiveAudio.parentElement ? chatActiveAudio.parentElement.querySelector('.wa-audio-play') : null;
+        if (prevBtn) { prevBtn.classList.remove('playing'); prevBtn.innerHTML = '<i class="fa-solid fa-play"></i>'; }
+    }
+    if (audio.paused) {
+        audio.play();
+        chatActiveAudio = audio;
+        btn.classList.add('playing');
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    } else {
+        audio.pause();
+        btn.classList.remove('playing');
+        btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    }
+    audio.onended = function() {
+        btn.classList.remove('playing');
+        btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        chatActiveAudio = null;
+        var waveBars = btn.closest('.wa-audio-player').querySelectorAll('.wa-audio-wave span');
+        waveBars.forEach(function(b) { b.classList.remove('active'); });
+    };
+    var waveBars = btn.closest('.wa-audio-player').querySelectorAll('.wa-audio-wave span');
+    if (!audio.paused) {
+        audio.ontimeupdate = function() {
+            var pct = audio.duration ? audio.currentTime / audio.duration : 0;
+            var activeCount = Math.floor(pct * waveBars.length);
+            waveBars.forEach(function(b, i) {
+                b.classList.toggle('active', i <= activeCount);
+            });
+        };
+    }
+}
+
+function portalChatFormatTime(sec) {
+    sec = Math.floor(sec || 0);
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function portalChatGenWaveform(count) {
+    var bars = '';
+    for (var i = 0; i < count; i++) {
+        var h = 4 + Math.floor(Math.random() * 18);
+        bars += '<span style="height:' + h + 'px"></span>';
+    }
+    return bars;
+}
+
+function portalChatCheckExpired() {
+    var now = Date.now();
+    var expiredIds = [];
+    var allBubbles = document.querySelectorAll('.wa-bubble[data-audioid]');
+    allBubbles.forEach(function(bubble) {
+        var audioId = bubble.getAttribute('data-audioid');
+        var criadoEm = parseInt(bubble.getAttribute('data-criado') || '0', 10);
+        if (criadoEm && (now - criadoEm) > 300000) {
+            var wrap = bubble.closest('.wa-bubble-wrap');
+            if (wrap) {
+                var inner = wrap.querySelector('.wa-audio-bubble') || bubble;
+                inner.innerHTML = '<div class="wa-audio-expired"><i class="fa-solid fa-clock-rotate-left"></i> Audio expirado</div>';
+                bubble.removeAttribute('data-audioid');
+            }
+            expiredIds.push(audioId);
+        }
+    });
+    if (expiredIds.length > 0) {
+        portalChatDeleteExpiredFromFirestore(expiredIds);
+    }
+}
+
+function portalChatDeleteExpiredFromFirestore(ids) {
+    if (!ids || ids.length === 0) return;
+    var col;
+    if (chatMode === 'turma') {
+        col = dbFirestore.collection('chatSala');
+    } else if (chatMode === 'privado' && chatPrivateTarget) {
+        col = dbFirestore.collection('chatPrivado').doc([currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_')).collection('msgs');
+    } else return;
+    ids.forEach(function(aid) {
+        col.where('audioId', '==', aid).get().then(function(snap) {
+            snap.forEach(function(doc) { doc.ref.delete().catch(function() {}); });
+        }).catch(function() {});
+    });
+}
+
+function portalChatStartExpireChecker() {
+    if (chatExpireInterval) return;
+    chatExpireInterval = setInterval(portalChatCheckExpired, 15000);
 }
 
 function portalChatOpenViewOnce(el, vid) {
