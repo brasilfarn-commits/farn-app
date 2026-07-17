@@ -1580,24 +1580,28 @@
                         </div>
                     </section>
                     <section id="portal-section-chat" class="portal-section">
-                        <div class="portal-chat-wrap">
-                            <div class="portal-chat-header">
-                                <i class="fa-solid fa-comments" style="color:#f57f17;font-size:20px"></i>
-                                <div style="flex:1;margin-left:10px">
-                                    <div style="font-weight:700;color:#fff;font-size:15px">Chat da Turma</div>
-                                    <div id="portal-chat-online-count" style="font-size:11px;color:#aaa">Conectados: ...</div>
+                        <div class="wa-chat-wrap">
+                            <div class="wa-header">
+                                <div class="wa-header-left">
+                                    <div class="wa-avatar"><i class="fa-solid fa-users"></i></div>
+                                    <div class="wa-header-info">
+                                        <div class="wa-header-name">Chat da Turma</div>
+                                        <div id="portal-chat-online-count" class="wa-header-status">online</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div id="portal-chat-messages" class="portal-chat-messages">
-                                <div class="portal-chat-empty">
-                                    <i class="fa-solid fa-comments" style="font-size:36px;color:#555;margin-bottom:10px;display:block"></i>
-                                    <span style="color:#777">Nenhuma mensagem ainda. Seja o primeiro!</span>
+                            <div id="portal-chat-messages" class="wa-messages">
+                                <div class="wa-empty">
+                                    <div class="wa-empty-icon"><i class="fa-solid fa-lock"></i></div>
+                                    <p>Mensagens sao criptografadas de ponta a ponta. Ninguem fora desta conversa pode ler.</p>
                                 </div>
                             </div>
-                            <div class="portal-chat-input-area">
-                                <input type="text" id="portal-chat-input" class="portal-chat-input" placeholder="Digite sua mensagem..." maxlength="500" onkeydown="if(event.key==='Enter')portalChatSend()">
-                                <button class="portal-chat-send-btn" onclick="portalChatSend()">
-                                    <i class="fa-solid fa-paper-plane"></i>
+                            <div class="wa-input-area">
+                                <button class="wa-icon-btn" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
+                                <button class="wa-icon-btn" title="Anexar"><i class="fa-solid fa-paperclip"></i></button>
+                                <input type="text" id="portal-chat-input" class="wa-input" placeholder="Mensagem" maxlength="500" onkeydown="if(event.key==='Enter')portalChatSend()">
+                                <button id="portal-chat-send-btn" class="wa-send-btn" onclick="portalChatSend()">
+                                    <i class="fa-solid fa-microphone"></i>
                                 </button>
                             </div>
                         </div>

@@ -381,6 +381,7 @@ async function initApp() {
     backupFormados();
     backupParceiros();
     initPcfCursosListeners();
+    portalChatSetupInput();
     candidatos.forEach(c => { c.cadastradoPor = 'OZIEL'; });
     candidatos.forEach(c => { if (!c.dataHoraCadastro && c.dataCadastro) c.dataHoraCadastro = c.dataCadastro + ' 00:00'; });
     backupCandidatos();
@@ -948,17 +949,20 @@ function portalChatInit() {
     if (chatUnsub) return;
     chatLoaded = true;
     var container = document.getElementById('portal-chat-messages');
-    container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-spinner fa-spin" style="font-size:28px;color:#888;display:block;margin-bottom:8px"></i><span style="color:#777">Carregando mensagens...</span></div>';
+    container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-spinner fa-spin"></i></div><p>Carregando mensagens...</p></div>';
     chatUnsub = dbFirestore.collection('chatSala')
         .orderBy('hora')
         .onSnapshot(function(snap) {
             var msgs = [];
             snap.forEach(function(doc) { msgs.push(doc.data()); });
-            document.getElementById('portal-chat-online-count').textContent = 'Mensagens: ' + msgs.length;
+            var count = msgs.length;
+            var statusEl = document.getElementById('portal-chat-online-count');
+            if (statusEl) statusEl.textContent = count > 0 ? count + ' participantes' : 'online';
             if (msgs.length === 0) {
-                container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-comments" style="font-size:36px;color:#555;margin-bottom:10px;display:block"></i><span style="color:#777">Nenhuma mensagem ainda. Seja o primeiro!</span></div>';
+                container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-lock"></i></div><p>Mensagens sao criptografadas de ponta a ponta. Ninguem fora desta conversa pode ler.</p></div>';
                 return;
             }
+            var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 60;
             container.innerHTML = '';
             var lastDate = '';
             msgs.forEach(function(m) {
@@ -967,24 +971,54 @@ function portalChatInit() {
                 if (dateStr !== lastDate) {
                     lastDate = dateStr;
                     var divider = document.createElement('div');
-                    divider.className = 'portal-chat-date-divider';
+                    divider.className = 'wa-date-divider';
                     divider.innerHTML = '<span>' + dateStr + '</span>';
                     container.appendChild(divider);
                 }
                 var isMe = m.cpf === currentAluno.cpf;
-                var bubble = document.createElement('div');
-                bubble.className = 'portal-chat-bubble' + (isMe ? ' me' : ' other');
+                var wrap = document.createElement('div');
+                wrap.className = 'wa-bubble-wrap' + (isMe ? ' me' : ' other');
+                var senderHtml = '';
+                if (!isMe) {
+                    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
+                    var hash = 0;
+                    var name = m.remetente || 'Aluno';
+                    for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
+                    var cor = cores[Math.abs(hash) % cores.length];
+                    senderHtml = '<div class="wa-sender-name" style="color:' + cor + '">' + name + '</div>';
+                }
                 var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                bubble.innerHTML =
-                    (isMe ? '' : '<div class="portal-chat-sender">' + (m.remetente || 'Aluno') + '</div>') +
-                    '<div class="portal-chat-text">' + (m.texto || '') + '</div>' +
-                    '<div class="portal-chat-time">' + time + '</div>';
-                container.appendChild(bubble);
+                var checksHtml = isMe
+                    ? '<span class="wa-checks"><i class="fa-solid fa-check-double"></i></span>'
+                    : '';
+                wrap.innerHTML = senderHtml +
+                    '<div class="wa-bubble">' +
+                        '<span class="wa-text">' + (m.texto || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>' +
+                        '<span class="wa-meta"><span class="wa-time">' + time + '</span>' + checksHtml + '</span>' +
+                    '</div>';
+                container.appendChild(wrap);
             });
-            container.scrollTop = container.scrollHeight;
+            if (wasAtBottom) container.scrollTop = container.scrollHeight;
         }, function() {
-            container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-triangle-exclamation" style="font-size:28px;color:#e53935;display:block;margin-bottom:8px"></i><span style="color:#e53935">Erro ao carregar mensagens.</span></div>';
+            container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar mensagens. Verifique sua conexao.</p></div>';
         });
+}
+
+var portalChatInput = null;
+function portalChatSetupInput() {
+    portalChatInput = document.getElementById('portal-chat-input');
+    var btn = document.getElementById('portal-chat-send-btn');
+    if (!portalChatInput || !btn) return;
+    portalChatInput.addEventListener('input', function() {
+        var icon = btn.querySelector('i');
+        if (portalChatInput.value.trim()) {
+            icon.className = 'fa-solid fa-paper-plane';
+            btn.classList.add('active');
+        } else {
+            icon.className = 'fa-solid fa-microphone';
+            btn.classList.remove('active');
+        }
+    });
 }
 
 function portalChatSend() {
@@ -993,6 +1027,8 @@ function portalChatSend() {
     var texto = input.value.trim();
     if (!texto) return;
     input.value = '';
+    var icon = input.parentElement.querySelector('.wa-send-btn i');
+    if (icon) { icon.className = 'fa-solid fa-microphone'; input.parentElement.querySelector('.wa-send-btn').classList.remove('active'); }
     dbFirestore.collection('chatSala').add({
         texto: texto,
         remetente: currentAluno.nome || currentAluno.cpf || 'Aluno',
