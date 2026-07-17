@@ -1599,20 +1599,40 @@
                                         <div id="portal-chat-online-count" class="wa-header-status">online</div>
                                     </div>
                                 </div>
+                                <button class="wa-header-action" title="Apagar todas as mensagens" onclick="portalChatDeleteAll()"><i class="fa-solid fa-trash"></i></button>
                             </div>
-                            <!-- HEADER: PRIVATE (hidden by default) -->
+                            <!-- HEADER: PRIVATE CHAT (hidden by default) -->
                             <div id="wa-header-private" class="wa-header" style="display:none">
                                 <div class="wa-header-left">
-                                    <button class="wa-back-btn" onclick="portalChatBackToContacts()"><i class="fa-solid fa-arrow-left"></i></button>
+                                    <button class="wa-back-btn" onclick="portalChatBackToList()"><i class="fa-solid fa-arrow-left"></i></button>
                                     <div id="wa-private-avatar" class="wa-avatar"><i class="fa-solid fa-user"></i></div>
                                     <div class="wa-header-info">
                                         <div id="wa-private-name" class="wa-header-name">...</div>
                                         <div id="wa-private-status" class="wa-header-status">...</div>
                                     </div>
                                 </div>
+                                <button class="wa-header-action" title="Apagar conversa" onclick="portalChatDeleteAll()"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                            <!-- CONVERSATIONS LIST (private tab default) -->
+                            <div id="wa-conversations-panel" class="wa-conversations-panel" style="display:none">
+                                <div class="wa-conversations-header">
+                                    <div class="wa-conversations-title">Conversas</div>
+                                    <div class="wa-conversations-search-wrap">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                        <input type="text" id="wa-conversations-search" class="wa-contacts-search" placeholder="Buscar conversa..." oninput="portalChatFilterConversations()">
+                                    </div>
+                                </div>
+                                <div id="wa-conversations-list" class="wa-conversations-list">
+                                    <div class="wa-contacts-empty"><i class="fa-solid fa-comments"></i><p>Nenhuma conversa ainda.</p></div>
+                                </div>
+                                <button class="wa-fab" title="Nova conversa" onclick="portalChatGoToContacts()"><i class="fa-solid fa-comment-plus"></i></button>
                             </div>
                             <!-- CONTACTS PANEL (hidden by default) -->
                             <div id="wa-contacts-panel" class="wa-contacts-panel" style="display:none">
+                                <div class="wa-contacts-panel-header">
+                                    <button class="wa-back-btn" onclick="portalChatBackToConversations()"><i class="fa-solid fa-arrow-left"></i></button>
+                                    <div class="wa-contacts-panel-title">Novo contato</div>
+                                </div>
                                 <div class="wa-contacts-search-wrap">
                                     <i class="fa-solid fa-magnifying-glass"></i>
                                     <input type="text" id="wa-contacts-search" class="wa-contacts-search" placeholder="Buscar aluno..." oninput="portalChatFilterContacts()">

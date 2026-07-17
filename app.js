@@ -735,7 +735,7 @@ window.addEventListener('beforeunload', function() {
 
 function logoutPortal() {
     portalFoto3x4StopCamera();
-    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } }
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; chatConversations = {}; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } }
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -945,6 +945,7 @@ var chatLoaded = false;
 var chatMode = 'turma';
 var chatPrivateTarget = null;
 var chatPendingPhoto = null;
+var chatConversations = {};
 var chatEditingMsg = null;
 var chatCtxMsg = null;
 var chatViewOnceTimers = {};
@@ -1124,26 +1125,28 @@ function portalChatSwitchMode(mode) {
     var headerGroup = document.getElementById('wa-header-group');
     var headerPrivate = document.getElementById('wa-header-private');
     var contactsPanel = document.getElementById('wa-contacts-panel');
+    var convPanel = document.getElementById('wa-conversations-panel');
     var messagesEl = document.getElementById('portal-chat-messages');
     var inputArea = document.querySelector('.wa-input-area');
     var emojiPicker = document.getElementById('wa-emoji-picker');
     if (emojiPicker) emojiPicker.style.display = 'none';
 
+    headerGroup.style.display = 'none';
+    headerPrivate.style.display = 'none';
+    contactsPanel.style.display = 'none';
+    convPanel.style.display = 'none';
+    messagesEl.style.display = 'none';
+    inputArea.style.display = 'none';
+
     if (mode === 'turma') {
         chatPrivateTarget = null;
         headerGroup.style.display = '';
-        headerPrivate.style.display = 'none';
-        contactsPanel.style.display = 'none';
         messagesEl.style.display = '';
         inputArea.style.display = '';
         portalChatListen();
-    } else {
-        headerGroup.style.display = 'none';
-        contactsPanel.style.display = '';
-        messagesEl.style.display = 'none';
-        inputArea.style.display = 'none';
-        headerPrivate.style.display = 'none';
-        portalChatLoadContacts();
+    } else if (mode === 'privado' && !chatPrivateTarget) {
+        convPanel.style.display = '';
+        portalChatLoadConversations();
     }
 }
 
@@ -1195,11 +1198,13 @@ function portalChatOpenPrivate(candidato) {
     var headerGroup = document.getElementById('wa-header-group');
     var headerPrivate = document.getElementById('wa-header-private');
     var contactsPanel = document.getElementById('wa-contacts-panel');
+    var convPanel = document.getElementById('wa-conversations-panel');
     var messagesEl = document.getElementById('portal-chat-messages');
     var inputArea = document.querySelector('.wa-input-area');
 
     headerGroup.style.display = 'none';
     contactsPanel.style.display = 'none';
+    convPanel.style.display = 'none';
     headerPrivate.style.display = '';
     messagesEl.style.display = '';
     inputArea.style.display = '';
@@ -1219,8 +1224,140 @@ function portalChatOpenPrivate(candidato) {
     portalChatListen();
 }
 
-function portalChatBackToContacts() {
+function portalChatBackToList() {
+    chatPrivateTarget = null;
     portalChatSwitchMode('privado');
+}
+
+function portalChatBackToConversations() {
+    document.getElementById('wa-contacts-panel').style.display = 'none';
+    document.getElementById('wa-conversations-panel').style.display = '';
+    portalChatLoadConversations();
+}
+
+function portalChatGoToContacts() {
+    document.getElementById('wa-conversations-panel').style.display = 'none';
+    document.getElementById('wa-contacts-panel').style.display = '';
+    portalChatLoadContacts();
+}
+
+function portalChatLoadConversations() {
+    if (!currentAluno) return;
+    var list = document.getElementById('wa-conversations-list');
+    var approved = candidatos.filter(function(c) {
+        return c.cpf !== currentAluno.cpf && (c.status === 'aprovado' || c.status === 'Aprovado');
+    });
+    if (approved.length === 0) {
+        list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-user-slash"></i><p>Nenhum aluno aprovado encontrado.</p></div>';
+        return;
+    }
+    var convIds = approved.map(function(c) {
+        return [currentAluno.cpf, c.cpf].sort().join('_');
+    });
+    var loaded = 0;
+    var total = convIds.length;
+    convIds.forEach(function(chatId, idx) {
+        var c = approved[idx];
+        if (!c) return;
+        var ref = dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').orderBy('hora', 'desc').limit(1);
+        ref.get().then(function(snap) {
+            var nome = c.nome || 'Aluno';
+            var hash = 0;
+            for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
+            var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
+            var cor = cores[Math.abs(hash) % cores.length];
+            var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
+            var lastMsg = null;
+            snap.forEach(function(doc) { lastMsg = doc.data(); });
+            chatConversations[c.cpf] = {
+                cpf: c.cpf, nome: nome, cor: cor, initials: initials,
+                matricula: c.matricula || '',
+                lastMsg: lastMsg ? (lastMsg.texto || (lastMsg.audioDataUrl ? 'Audio' : lastMsg.fotoDataUrl ? 'Foto' : '')) : '',
+                lastTime: lastMsg && lastMsg.hora && lastMsg.hora.seconds ? lastMsg.hora.seconds : 0,
+                isMe: lastMsg ? lastMsg.cpf === currentAluno.cpf : false
+            };
+            loaded++;
+            if (loaded >= total) portalChatRenderConversations();
+        }).catch(function() {
+            loaded++;
+            if (loaded >= total) portalChatRenderConversations();
+        });
+    });
+    list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando conversas...</p></div>';
+}
+
+function portalChatRenderConversations() {
+    var list = document.getElementById('wa-conversations-list');
+    var convArray = Object.values(chatConversations);
+    convArray.sort(function(a, b) { return (b.lastTime || 0) - (a.lastTime || 0); });
+    var withMsgs = convArray.filter(function(c) { return c.lastMsg; });
+    var noMsgs = convArray.filter(function(c) { return !c.lastMsg; });
+    var sorted = withMsgs.concat(noMsgs);
+    if (sorted.length === 0) {
+        list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-comments"></i><p>Nenhuma conversa ainda.</p></div>';
+        return;
+    }
+    list.innerHTML = '';
+    sorted.forEach(function(c) {
+        var timeStr = '';
+        if (c.lastTime) {
+            var d = new Date(c.lastTime * 1000);
+            var now = new Date();
+            if (d.toDateString() === now.toDateString()) {
+                timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            } else {
+                timeStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            }
+        }
+        var prefix = c.isMe ? 'Voce: ' : '';
+        var lastText = c.lastMsg ? prefix + c.lastMsg : 'Toque para conversar';
+        var item = document.createElement('div');
+        item.className = 'wa-conv-item';
+        item.setAttribute('data-nome', (c.nome || '').toLowerCase());
+        item.innerHTML =
+            '<div class="wa-conv-avatar" style="background:' + c.cor + '">' + c.initials + '</div>' +
+            '<div class="wa-conv-info">' +
+                '<div class="wa-conv-top"><span class="wa-conv-name">' + c.nome + '</span><span class="wa-conv-time">' + timeStr + '</span></div>' +
+                '<div class="wa-conv-bottom"><span class="wa-conv-last">' + lastText + '</span></div>' +
+            '</div>';
+        item.onclick = function() {
+            var fullCand = candidatos.find(function(x) { return x.cpf === c.cpf; });
+            if (fullCand) portalChatOpenPrivate(fullCand);
+        };
+        list.appendChild(item);
+    });
+}
+
+function portalChatFilterConversations() {
+    var search = document.getElementById('wa-conversations-search').value.toLowerCase();
+    var items = document.querySelectorAll('.wa-conv-item');
+    items.forEach(function(item) {
+        var nome = item.getAttribute('data-nome') || '';
+        item.style.display = nome.includes(search) ? '' : 'none';
+    });
+}
+
+function portalChatDeleteAll() {
+    if (!confirm('Apagar todas as mensagens desta conversa? Esta acao nao pode ser desfeita.')) return;
+    if (chatMode === 'turma') {
+        dbFirestore.collection('chatSala').get().then(function(snap) {
+            var batch = dbFirestore.batch();
+            snap.forEach(function(doc) { batch.delete(doc.ref); });
+            return batch.commit();
+        }).then(function() {
+            alert('Todas as mensagens do grupo foram apagadas.');
+        }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
+    } else if (chatMode === 'privado' && chatPrivateTarget) {
+        var chatId = [currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_');
+        dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').get().then(function(snap) {
+            var batch = dbFirestore.batch();
+            snap.forEach(function(doc) { batch.delete(doc.ref); });
+            return batch.commit();
+        }).then(function() {
+            delete chatConversations[chatPrivateTarget.cpf];
+            alert('Conversa apagada.');
+        }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
+    }
 }
 
 var portalChatInput = null;
