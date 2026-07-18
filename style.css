@@ -5917,3 +5917,29 @@ select.config-input option {
         font-size: 12px;
     }
 }
+
+#apt-qr-reader video {
+    width: 100% !important;
+    border-radius: 8px;
+}
+#apt-qr-reader img[alt="Info icon"] {
+    display: none;
+}
+#apt-qr-reader__scan_region {
+    min-height: 300px;
+}
+#apt-qr-reader__dashboard {
+    padding: 8px !important;
+}
+#apt-qr-reader__dashboard button {
+    background: #f57f17 !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+}
+#apt-qr-reader__dashboard span, #apt-qr-reader__dashboard a {
+    color: #aaa !important;
+}

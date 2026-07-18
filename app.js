@@ -13,7 +13,7 @@ let currentFormado = null;
 let usuarios = [];
 let formados = [];
 let currentUserData = null;
-let parceiros = [];
+let projetos = [];
 let onlineCpfs = new Set();
 let onlineHeartbeat = null;
 let onlineUnsubscribe = null;
@@ -24,7 +24,9 @@ const FB_CANDIDATOS = 'candidatos';
 const FB_TURMAS = 'turmas';
 const FB_USUARIOS = 'usuarios';
 const FB_FORMADOS = 'formados';
-const FB_PARCEIROS = 'parceiros';
+const FB_PROJETOS = 'parceiros';
+const FB_DISCIPLINAS = 'disciplinas';
+const FB_AULAS = 'aulas';
 let firebaseReady = false;
 let firebaseError = false;
 
@@ -134,18 +136,44 @@ function backupFormados() {
     batch.commit().catch(e => console.error('Erro ao salvar formados:', e));
 }
 
-function backupParceiros() {
+function backupProjetos() {
     if (!firebaseReady && !firebaseError) return;
     const batch = dbFirestore.batch();
-    const ref = dbFirestore.collection(FB_PARCEIROS);
-    batch.set(ref.doc('_index'), { count: parceiros.length, timestamp: Date.now() });
-    parceiros.forEach((p, i) => {
+    const ref = dbFirestore.collection(FB_PROJETOS);
+    batch.set(ref.doc('_index'), { count: projetos.length, timestamp: Date.now() });
+    projetos.forEach((p, i) => {
         const id = p.docId ? String(p.docId) : String(i);
         const copy = Object.assign({}, p);
         delete copy.docId;
         batch.set(ref.doc(id), copy);
     });
-    batch.commit().catch(e => console.error('Erro ao salvar parceiros:', e));
+    batch.commit().catch(e => console.error('Erro ao salvar projetos:', e));
+}
+
+function backupDisciplinas() {
+    if (!firebaseReady && !firebaseError) return;
+    const batch = dbFirestore.batch();
+    const ref = dbFirestore.collection(FB_DISCIPLINAS);
+    batch.set(ref.doc('_index'), { count: disciplinas.length, timestamp: Date.now() });
+    disciplinas.forEach((d) => {
+        const id = d.id ? String(d.id) : String(Date.now() + Math.random());
+        const copy = Object.assign({}, d);
+        batch.set(ref.doc(id), copy, { merge: true });
+    });
+    batch.commit().catch(e => console.error('Erro ao salvar disciplinas:', e));
+}
+
+function backupAulas() {
+    if (!firebaseReady && !firebaseError) return;
+    const batch = dbFirestore.batch();
+    const ref = dbFirestore.collection(FB_AULAS);
+    batch.set(ref.doc('_index'), { count: aulas.length, timestamp: Date.now() });
+    aulas.forEach((a) => {
+        const id = a.id ? String(a.id) : String(Date.now() + Math.random());
+        const copy = Object.assign({}, a);
+        batch.set(ref.doc(id), copy, { merge: true });
+    });
+    batch.commit().catch(e => console.error('Erro ao salvar aulas:', e));
 }
 
 async function syncAllDatabases() {
@@ -163,18 +191,24 @@ async function syncAllDatabases() {
         backupTurmas();
         backupUsuarios();
         backupFormados();
-        backupParceiros();
+        backupProjetos();
+        backupDisciplinas();
+        backupAulas();
         await dbFirestore.collection(FB_CANDIDATOS).get();
         await dbFirestore.collection(FB_TURMAS).get();
         await dbFirestore.collection(FB_USUARIOS).get();
         await dbFirestore.collection(FB_FORMADOS).get();
-        await dbFirestore.collection(FB_PARCEIROS).get();
+        await dbFirestore.collection(FB_PROJETOS).get();
+        await dbFirestore.collection(FB_DISCIPLINAS).get();
+        await dbFirestore.collection(FB_AULAS).get();
         renderList();
         renderTurmasList();
         populateTurmaSelect();
         if (typeof renderUsuariosList === 'function') renderUsuariosList();
         if (typeof renderFormadosList === 'function') renderFormadosList();
-        if (typeof renderParceirosList === 'function') renderParceirosList();
+        if (typeof renderProjetosList === 'function') renderProjetosList();
+        if (typeof disciplinaRenderList === 'function') disciplinaRenderList();
+        if (typeof renderAulasList === 'function') renderAulasList();
         if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Sincronizado!';
         setTimeout(() => {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos'; }
@@ -189,9 +223,10 @@ async function syncAllDatabases() {
 function initFirebaseListeners() {
     return new Promise((resolve) => {
         let loaded = 0;
+        const totalListeners = 7;
         const checkReady = () => {
             loaded++;
-            if (loaded >= 5) {
+            if (loaded >= totalListeners) {
                 firebaseReady = true;
                 showFirebaseStatus(true);
                 resolve();
@@ -277,7 +312,7 @@ function initFirebaseListeners() {
             checkReady();
         });
 
-        dbFirestore.collection(FB_PARCEIROS).onSnapshot((snap) => {
+        dbFirestore.collection(FB_PROJETOS).onSnapshot((snap) => {
             const result = [];
             snap.forEach(doc => {
                 if (doc.id !== '_index') {
@@ -286,11 +321,45 @@ function initFirebaseListeners() {
                     result.push(data);
                 }
             });
-            parceiros = result;
-            if (firebaseReady && typeof renderParceirosList === 'function') renderParceirosList();
+            projetos = result;
+            if (firebaseReady && typeof renderProjetosList === 'function') renderProjetosList();
             checkReady();
         }, (error) => {
-            console.error('Erro Firestore parceiros:', error);
+            console.error('Erro Firestore projetos:', error);
+            checkReady();
+        });
+
+        dbFirestore.collection(FB_DISCIPLINAS).onSnapshot((snap) => {
+            const result = [];
+            snap.forEach(doc => {
+                if (doc.id !== '_index') {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    result.push(data);
+                }
+            });
+            disciplinas = result;
+            if (firebaseReady && typeof disciplinaRenderList === 'function') disciplinaRenderList();
+            checkReady();
+        }, (error) => {
+            console.error('Erro Firestore disciplinas:', error);
+            checkReady();
+        });
+
+        dbFirestore.collection(FB_AULAS).onSnapshot((snap) => {
+            const result = [];
+            snap.forEach(doc => {
+                if (doc.id !== '_index') {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    result.push(data);
+                }
+            });
+            aulas = result;
+            if (firebaseReady && typeof renderAulasList === 'function') renderAulasList();
+            checkReady();
+        }, (error) => {
+            console.error('Erro Firestore aulas:', error);
             checkReady();
         });
 
@@ -380,7 +449,7 @@ async function initApp() {
     startOnlineListener();
     backupUsuarios();
     backupFormados();
-    backupParceiros();
+    backupProjetos();
     initPcfCursosListeners();
     candidatos.forEach(c => { c.cadastradoPor = 'OZIEL'; });
     candidatos.forEach(c => { if (!c.dataHoraCadastro && c.dataCadastro) c.dataHoraCadastro = c.dataCadastro + ' 00:00'; });
@@ -692,8 +761,8 @@ function applyUserPermissions() {
         'admin-pre-cadastro-formados': p.includes('formados') || isGeral,
         'admin-form-pre-cadastro-formado': p.includes('formados') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
-        'admin-parceiros': p.includes('parceiros') || isGeral,
-        'admin-form-parceiro': p.includes('parceiros') || isGeral,
+        'admin-projetos': p.includes('projetos') || isGeral,
+        'admin-form-projeto': p.includes('projetos') || isGeral,
         'admin-config': p.includes('config') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
@@ -2147,7 +2216,7 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-pre-cadastro-formados': 'Pre-Cadastro Formados', 'admin-form-pre-cadastro-formado': 'Novo Pre-Cadastro Formado', 'admin-relatorios': 'Relatorios', 'admin-parceiros': 'Parceiros', 'admin-form-parceiro': editingParceiroIndex !== null ? 'Editar Parceiro' : 'Novo Parceiro', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-pre-cadastro-formados': 'Pre-Cadastro Formados', 'admin-form-pre-cadastro-formado': 'Novo Pre-Cadastro Formado', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     if (sectionId === 'admin-turmas') {
         renderTurmasList();
@@ -2157,13 +2226,13 @@ function showAdminSection(sectionId, navEl) {
 
 /* ===== FORM CANDIDATO ===== */
 
-const formFields = ['fc-turma','fc-parceiro','fc-nome','fc-cpf','fc-nascimento','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+const formFields = ['fc-turma','fc-projeto','fc-nome','fc-cpf','fc-nascimento','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
 async function openFormCandidato() {
     editingIndex = null;
     resetFormCandidato();
     await populateTurmaSelect();
-    populateParceiroSelect();
+    populateProjetoSelect();
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) btnAtualizar.style.display = 'none';
     document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#f57c00;margin-right:8px"></i> Novo Pre-Cadastro';
@@ -2174,7 +2243,7 @@ async function editCandidato(index) {
     const c = candidatos[index]; if (!c) return;
     editingIndex = index;
     await populateTurmaSelect();
-    populateParceiroSelect();
+    populateProjetoSelect();
     document.getElementById('fc-nome').value = c.nome || '';
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
@@ -2208,7 +2277,7 @@ async function editCandidato(index) {
     document.getElementById('fc-camisa').value = c.camisa || '';
     document.getElementById('fc-calcado').value = c.calcado || '';
     document.getElementById('fc-turma').value = c.turma || '';
-    document.getElementById('fc-parceiro').value = c.parceiro || '';
+    document.getElementById('fc-projeto').value = c.projeto || '';
     // Atualizar matricula e QR code
     const mat = c.matricula || generateMatricula(c.cpf);
     const wrapper = document.getElementById('fc-matricula-wrapper');
@@ -2348,7 +2417,7 @@ function renderList() {
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td>${c.nascimento || '-'}</td>
             <td>${c.turma || '-'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</td>
-            <td style="color:#ff9800;font-weight:600">${c.parceiro || '-'}</td>
+            <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
             <td><span class="badge ${sc}">${c.status}</span></td>
             <td style="color:#aaa;font-size:12px">${c.cadastradoPor || '-'}</td>
             <td><div class="actions-cell">
@@ -2409,7 +2478,7 @@ function viewCandidato(i) {
             <div class="detail-section-title">Turma e Acesso</div>
             ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#f57c00;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mat)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff"></div></div>` : ''}
             <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</span></div>
-            <div class="detail-item"><span class="detail-label">Parceiro</span><span class="detail-value" style="color:#ff9800;font-weight:600">${c.parceiro||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Projeto</span><span class="detail-value" style="color:#ff9800;font-weight:600">${c.projeto||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastro</span><span class="detail-value">${c.dataCadastro}</span></div>
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
@@ -2499,7 +2568,7 @@ function printCandidato(i) {
         <div class="row"><div class="col"><div class="label">Calca</div><div class="val">${c.calca||'---'}</div></div><div class="col"><div class="label">Camisa</div><div class="val">${c.camisa||'---'}</div></div><div class="col"><div class="label">Calcado</div><div class="val">${c.calcado||'---'}</div></div></div>
         <h2>Turma</h2>
         ${mat ? `<div class="row"><div class="col"><div class="label">Matricula</div><div class="val" style="color:#e65100;font-size:18px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</div></div></div>` : ''}
-        <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}${c.turma ? '<br><small style="color:#666;font-size:6px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</div></div><div class="col"><div class="label">Parceiro</div><div class="val" style="color:#e65100;font-weight:700">${c.parceiro||'---'}</div></div></div>
+        <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}${c.turma ? '<br><small style="color:#666;font-size:6px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</div></div><div class="col"><div class="label">Projeto</div><div class="val" style="color:#e65100;font-weight:700">${c.projeto||'---'}</div></div></div>
         ${c.status === 'Aprovado' && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
         ${c.dataHoraCadastro ? `<div class="row"><div class="col"><div class="label">Data/Hora 1o Cadastro</div><div class="val" style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro}</div></div></div>` : ''}
         <script>window.onload=function(){window.print();}<\/script></body></html>`);
@@ -2691,9 +2760,9 @@ async function importExcelFile(event) {
 
 function exportExcel() {
     if (!candidatos.length) { alert('Nenhum candidato para exportar.'); return; }
-    let csv = 'Nome,CPF,Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Parceiro,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
+    let csv = 'Nome,CPF,Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     candidatos.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.parceiro||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pre_inscritos_farn.csv'; a.click();
@@ -2764,7 +2833,7 @@ function renderAlunosList() {
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>
-            <td style="color:#ff9800;font-weight:600">${c.parceiro || '-'}</td>
+            <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
             <td>${c.dataCadastro || '-'}${c.dataHoraCadastro ? '<br><small style="color:#4caf50;font-size:9px">' + c.dataHoraCadastro + '</small>' : ''}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
@@ -2832,9 +2901,9 @@ function exportExcelAlunos() {
     const statusFilter = STATUS_MAP[currentAlunosTab];
     const filtered = candidatos.filter(c => c.status === statusFilter);
     if (!filtered.length) { alert('Nenhum aluno para exportar nesta aba.'); return; }
-    let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Parceiro,Status,Data Cadastro,Data/Hora 1o Cadastro\n';
+    let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Projeto,Status,Data Cadastro,Data/Hora 1o Cadastro\n';
     filtered.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.matricula || generateMatricula(c.cpf) || ''}","${c.nascimento||''}","${c.turma||''}","${c.parceiro||''}","${c.status}","${c.dataCadastro||''}","${c.dataHoraCadastro||''}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.matricula || generateMatricula(c.cpf) || ''}","${c.nascimento||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.dataCadastro||''}","${c.dataHoraCadastro||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `alunos_${statusFilter.toLowerCase().replace(/\s/g,'_')}_farn.csv`; a.click();
@@ -2851,8 +2920,8 @@ function printTableAlunos() {
         td{padding:8px 12px;border-bottom:1px solid #ddd;font-size:13px}tr:nth-child(even){background:#f5f5f5}
         @media print{body{padding:20px}}</style></head><body>
         <h1>FARN - Alunos (${statusFilter})</h1><p class="sub">Impressao: ${new Date().toLocaleDateString('pt-BR')}</p>
-        <table><thead><tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Parceiro</th><th>Data Cadastro</th><th>Data/Hora 1o Cadastro</th></tr></thead><tbody>
-        ${filtered.map(c => `<tr><td>${c.nome}</td><td>${formatCPFDisplay(c.cpf)}</td><td style="color:#e65100;font-weight:800;font-family:'Courier New',monospace">${c.matricula || generateMatricula(c.cpf) || '-'}</td><td>${c.turma||'-'}</td><td style="color:#e65100;font-weight:600">${c.parceiro||'-'}</td><td>${c.dataCadastro||'-'}</td><td style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro||'-'}</td></tr>`).join('')}
+        <table><thead><tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Projeto</th><th>Data Cadastro</th><th>Data/Hora 1o Cadastro</th></tr></thead><tbody>
+        ${filtered.map(c => `<tr><td>${c.nome}</td><td>${formatCPFDisplay(c.cpf)}</td><td style="color:#e65100;font-weight:800;font-family:'Courier New',monospace">${c.matricula || generateMatricula(c.cpf) || '-'}</td><td>${c.turma||'-'}</td><td style="color:#e65100;font-weight:600">${c.projeto||'-'}</td><td>${c.dataCadastro||'-'}</td><td style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro||'-'}</td></tr>`).join('')}
         </tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
     w.document.close();
 }
@@ -2909,7 +2978,7 @@ function relatorioUniforme() {
                     <th>#</th>
                     <th>Nome Completo</th>
                     <th>Matricula</th>
-                    <th>Parceiro</th>
+                    <th>Projeto</th>
                     <th>Calca</th>
                     <th>Camisa</th>
                     <th>Calcado</th>
@@ -2922,7 +2991,7 @@ function relatorioUniforme() {
                         <td>${i + 1}</td>
                         <td class="nome">${c.nome || '---'}</td>
                         <td class="matricula">${mat}</td>
-                        <td class="center" style="color:#ff9800;font-weight:600">${c.parceiro || '---'}</td>
+                        <td class="center" style="color:#ff9800;font-weight:600">${c.projeto || '---'}</td>
                         <td class="center">${c.calca || '---'}</td>
                         <td class="center">${c.camisa || '---'}</td>
                         <td class="center">${c.calcado || '---'}</td>
@@ -2974,7 +3043,7 @@ const camposRelatorio = [
     { key: 'camisa', label: 'Camisa' },
     { key: 'calcado', label: 'Calcado' },
     { key: 'turma', label: 'Turma' },
-    { key: 'parceiro', label: 'Parceiro' },
+    { key: 'projeto', label: 'Projeto' },
     { key: 'status', label: 'Status' },
     { key: 'senha', label: 'Senha' },
     { key: 'cadastradoPor', label: 'Cadastrado por' },
@@ -3093,9 +3162,9 @@ function gerarRelatorioPersonalizado() {
     w.document.close();
 }
 
-/* ===== PARCEIROS CRUD ===== */
+/* ===== PROJETOS CRUD ===== */
 
-let editingParceiroIndex = null;
+let editingProjetoIndex = null;
 
 function formatCNPJ(input) {
     let v = input.value.replace(/\D/g, '');
@@ -3107,57 +3176,57 @@ function formatCNPJ(input) {
     input.value = v;
 }
 
-function openFormParceiro() {
-    editingParceiroIndex = null;
+function openFormProjeto() {
+    editingProjetoIndex = null;
     document.getElementById('pf-nome').value = '';
     document.getElementById('pf-cnpj').value = '';
     document.getElementById('pf-responsavel').value = '';
-    document.getElementById('parceiro-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Parceiro';
-    showAdminSection('admin-form-parceiro');
+    document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Projeto';
+    showAdminSection('admin-form-projeto');
 }
 
-function handleParceiroSubmit(event) {
+function handleProjetoSubmit(event) {
     event.preventDefault();
     const data = {
         nome: document.getElementById('pf-nome').value.trim(),
         cnpj: document.getElementById('pf-cnpj').value.trim(),
         responsavel: document.getElementById('pf-responsavel').value.trim()
     };
-    if (editingParceiroIndex !== null) {
-        data.docId = parceiros[editingParceiroIndex].docId;
-        data.dataCadastro = parceiros[editingParceiroIndex].dataCadastro;
-        parceiros[editingParceiroIndex] = data;
-        editingParceiroIndex = null;
+    if (editingProjetoIndex !== null) {
+        data.docId = projetos[editingProjetoIndex].docId;
+        data.dataCadastro = projetos[editingProjetoIndex].dataCadastro;
+        projetos[editingProjetoIndex] = data;
+        editingProjetoIndex = null;
     } else {
         data.dataCadastro = new Date().toLocaleDateString('pt-BR');
-        parceiros.push(data);
+        projetos.push(data);
     }
-    backupParceiros();
-    showAdminSection('admin-parceiros');
-    renderParceirosList();
+    backupProjetos();
+    showAdminSection('admin-projetos');
+    renderProjetosList();
     return false;
 }
 
-function renderParceirosList() {
-    const tbody = document.getElementById('parceiros-list');
-    const empty = document.getElementById('parceiros-empty');
+function renderProjetosList() {
+    const tbody = document.getElementById('projetos-list');
+    const empty = document.getElementById('projetos-empty');
     if (!tbody) return;
-    if (!parceiros.length) {
+    if (!projetos.length) {
         tbody.innerHTML = '';
         if (empty) empty.style.display = '';
         return;
     }
     if (empty) empty.style.display = 'none';
     let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
-    parceiros.forEach((p, i) => {
+    projetos.forEach((p, i) => {
         html += `<tr>
             <td>${p.nome || '---'}</td>
             <td>${p.cnpj || '---'}</td>
             <td>${p.responsavel || '---'}</td>
             <td>${p.dataCadastro || '---'}</td>
             <td><div class="actions-cell">
-                <button class="btn-icon" title="Editar" onclick="editParceiro(${i})"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteParceiro(${i})"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn-icon" title="Editar" onclick="editProjeto(${i})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteProjeto(${i})"><i class="fa-solid fa-trash"></i></button>
             </div></td>
         </tr>`;
     });
@@ -3165,25 +3234,25 @@ function renderParceirosList() {
     tbody.innerHTML = html;
 }
 
-function editParceiro(i) {
-    const p = parceiros[i]; if (!p) return;
-    editingParceiroIndex = i;
+function editProjeto(i) {
+    const p = projetos[i]; if (!p) return;
+    editingProjetoIndex = i;
     document.getElementById('pf-nome').value = p.nome || '';
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
-    document.getElementById('parceiro-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
-    showAdminSection('admin-form-parceiro');
+    document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
+    showAdminSection('admin-form-projeto');
 }
 
-async function deleteParceiro(i) {
-    const p = parceiros[i]; if (!p) return;
-    if (!confirm('Tem certeza que deseja excluir o parceiro "' + (p.nome || '') + '"?')) return;
+async function deleteProjeto(i) {
+    const p = projetos[i]; if (!p) return;
+    if (!confirm('Tem certeza que deseja excluir o projeto "' + (p.nome || '') + '"?')) return;
     if (p.docId) {
-        try { await dbFirestore.collection(FB_PARCEIROS).doc(p.docId).delete(); } catch(e) { console.error(e); }
+        try { await dbFirestore.collection(FB_PROJETOS).doc(p.docId).delete(); } catch(e) { console.error(e); }
     }
-    parceiros.splice(i, 1);
-    backupParceiros();
-    renderParceirosList();
+    projetos.splice(i, 1);
+    backupProjetos();
+    renderProjetosList();
 }
 
 /* ===== TURMAS CRUD ===== */
@@ -3288,12 +3357,12 @@ async function populateTurmaSelect() {
     if (current) select.value = current;
 }
 
-function populateParceiroSelect() {
-    const select = document.getElementById('fc-parceiro');
+function populateProjetoSelect() {
+    const select = document.getElementById('fc-projeto');
     if (!select) return;
     const current = select.value;
-    select.innerHTML = '<option value="">Nenhum parceiro</option>';
-    parceiros.forEach(p => {
+    select.innerHTML = '<option value="">Nenhum projeto</option>';
+    projetos.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.nome;
         opt.textContent = p.nome + (p.responsavel ? ' (' + p.responsavel + ')' : '');
@@ -3673,7 +3742,7 @@ function renderUsuariosList() {
                 'instrutores': '<span class="usuario-tag usuario-tag-instrutor">Instrutores</span>',
                 'formados': '<span class="usuario-tag usuario-tag-pre">Formados</span>',
                 'relatorios': '<span class="usuario-tag usuario-tag-admin">Relatorios</span>',
-                'parceiros': '<span class="usuario-tag usuario-tag-pre">Parceiros</span>',
+                'projetos': '<span class="usuario-tag usuario-tag-pre">Projetos</span>',
                 'config': '<span class="usuario-tag usuario-tag-admin">Config</span>'
             };
             return labels[p] || '';
@@ -3706,7 +3775,7 @@ function openUsuarioForm(docId) {
     document.getElementById('uf-perm-instrutores').checked = false;
     document.getElementById('uf-perm-formados').checked = false;
     document.getElementById('uf-perm-relatorios').checked = false;
-    document.getElementById('uf-perm-parceiros').checked = false;
+    document.getElementById('uf-perm-projetos').checked = false;
     document.getElementById('uf-perm-config').checked = false;
     const turmasListEl = document.getElementById('uf-turmas-list');
     if (turmasListEl) {
@@ -3738,7 +3807,7 @@ function openUsuarioForm(docId) {
             if (p.includes('instrutores')) document.getElementById('uf-perm-instrutores').checked = true;
             if (p.includes('formados')) document.getElementById('uf-perm-formados').checked = true;
             if (p.includes('relatorios')) document.getElementById('uf-perm-relatorios').checked = true;
-            if (p.includes('parceiros')) document.getElementById('uf-perm-parceiros').checked = true;
+            if (p.includes('projetos')) document.getElementById('uf-perm-projetos').checked = true;
             if (p.includes('config')) document.getElementById('uf-perm-config').checked = true;
             const tv = u.turmasVinculadas || [];
             if (tv.length > 0 && turmasListEl) {
@@ -3772,7 +3841,7 @@ async function handleSaveUsuario(event) {
     if (document.getElementById('uf-perm-instrutores').checked) permissoes.push('instrutores');
     if (document.getElementById('uf-perm-formados').checked) permissoes.push('formados');
     if (document.getElementById('uf-perm-relatorios').checked) permissoes.push('relatorios');
-    if (document.getElementById('uf-perm-parceiros').checked) permissoes.push('parceiros');
+    if (document.getElementById('uf-perm-projetos').checked) permissoes.push('projetos');
     if (document.getElementById('uf-perm-config').checked) permissoes.push('config');
     if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
     const turmasVinculadas = [];
@@ -5171,7 +5240,8 @@ let aptPresencas = {};
 let aptAlunosNaTurma = [];
 
 function apontamentoInicializar() {
-    console.log('Apontamento inicializado');
+    apontamentoPopularFiltroTurma();
+    apontamentoFiltrar();
 }
 
 async function apontamentoAbrirModal() {
@@ -5251,17 +5321,37 @@ function apontamentoIniciarScanner() {
     if (!aptAlunosNaTurma.length) { alert('Nenhum aluno encontrado para esta turma'); return; }
     document.getElementById('apt-scanner-area').style.display = 'block';
     document.getElementById('apt-scan-btn-area').style.display = 'none';
+    if (aptScanner) {
+        try { aptScanner.stop().then(() => aptScanner.clear()); } catch(e) {}
+        aptScanner = null;
+    }
     aptScanner = new Html5Qrcode('apt-qr-reader');
     aptScanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+        { fps: 10, qrbox: function(viewfinderWidth, viewfinderHeight) {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.floor(minEdge * 0.7);
+            return { width: size, height: size };
+        }, disableFlip: false, aspectRatio: 1.0 },
         apontamentoOnQrSuccess,
         function() {}
     ).catch(function(err) {
-        console.error('Erro ao iniciar câmera:', err);
-        alert('Não foi possível acessar a câmera: ' + err);
-        document.getElementById('apt-scanner-area').style.display = 'none';
-        document.getElementById('apt-scan-btn-area').style.display = 'block';
+        console.error('Erro ao iniciar câmera (environment):', err);
+        aptScanner.start(
+            { facingMode: 'user' },
+            { fps: 10, qrbox: function(viewfinderWidth, viewfinderHeight) {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                const size = Math.floor(minEdge * 0.7);
+                return { width: size, height: size };
+            }, disableFlip: false, aspectRatio: 1.0 },
+            apontamentoOnQrSuccess,
+            function() {}
+        ).catch(function(err2) {
+            console.error('Erro ao iniciar câmera (user):', err2);
+            alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.\n\nDetalhes: ' + err2);
+            document.getElementById('apt-scanner-area').style.display = 'none';
+            document.getElementById('apt-scan-btn-area').style.display = 'block';
+        });
     });
 }
 
@@ -5373,10 +5463,145 @@ async function apontamentoSalvar() {
         apontamentoPararScanner();
         document.getElementById('modal-apontamento-overlay').classList.add('hidden');
         alert('Apontamento salvo com sucesso!');
+        apontamentoFiltrar();
     } catch (e) {
         console.error('Erro ao salvar apontamento:', e);
         alert('Erro ao salvar: ' + e.message);
     }
+}
+
+// ===== HISTÓRICO DE APONTAMENTOS =====
+let aptHistoricoCache = [];
+
+async function apontamentoCarregarHistorico() {
+    try {
+        const snap = await dbFirestore.collection('apontamentos').orderBy('criadoEm', 'desc').limit(200).get();
+        aptHistoricoCache = [];
+        snap.forEach(doc => {
+            aptHistoricoCache.push({ docId: doc.id, ...doc.data() });
+        });
+    } catch (e) {
+        console.error('Erro ao carregar histórico:', e);
+    }
+}
+
+function apontamentoPopularFiltroTurma() {
+    const sel = document.getElementById('apt-filtro-turma');
+    if (!sel) return;
+    const opcoesAtuais = Array.from(sel.options).map(o => o.value);
+    turmas.forEach(t => {
+        if (!opcoesAtuais.includes(t.nome)) {
+            sel.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
+        }
+    });
+}
+
+function apontamentoLimparFiltros() {
+    document.getElementById('apt-filtro-turma').value = '';
+    document.getElementById('apt-filtro-data-inicio').value = '';
+    document.getElementById('apt-filtro-data-fim').value = '';
+    document.getElementById('apt-filtro-matricula').value = '';
+    apontamentoFiltrar();
+}
+
+async function apontamentoFiltrar() {
+    await apontamentoCarregarHistorico();
+    const turmaFiltro = document.getElementById('apt-filtro-turma').value;
+    const dataInicio = document.getElementById('apt-filtro-data-inicio').value;
+    const dataFim = document.getElementById('apt-filtro-data-fim').value;
+    const matriculaBusca = document.getElementById('apt-filtro-matricula').value.trim().toLowerCase();
+    let registros = aptHistoricoCache;
+    if (turmaFiltro) {
+        registros = registros.filter(r => r.turma === turmaFiltro);
+    }
+    if (dataInicio) {
+        registros = registros.filter(r => (r.dataAula || r.criadoEm || '').substring(0, 10) >= dataInicio);
+    }
+    if (dataFim) {
+        registros = registros.filter(r => (r.dataAula || r.criadoEm || '').substring(0, 10) <= dataFim);
+    }
+    if (matriculaBusca) {
+        registros = registros.filter(r => {
+            if (!r.alunos) return false;
+            return r.alunos.some(a => (a.matricula || '').toLowerCase().includes(matriculaBusca) || (a.nome || '').toLowerCase().includes(matriculaBusca));
+        });
+    }
+    apontamentoRenderHistorico(registros);
+}
+
+function apontamentoRenderHistorico(registros) {
+    const empty = document.getElementById('apontamento-historico-empty');
+    const lista = document.getElementById('apontamento-historico-lista');
+    const resumo = document.getElementById('apt-resumo');
+    if (!lista) return;
+    if (!registros.length) {
+        empty.style.display = 'block';
+        lista.style.display = 'none';
+        resumo.style.display = 'none';
+        return;
+    }
+    empty.style.display = 'none';
+    lista.style.display = 'block';
+    resumo.style.display = 'flex';
+    let totalPresentes = 0, totalFaltas = 0, totalJustificadas = 0;
+    registros.forEach(r => {
+        (r.alunos || []).forEach(a => {
+            if (a.status === 'Presente') totalPresentes++;
+            else if (a.status === 'Falta') totalFaltas++;
+            else if (a.status === 'Justificada') totalJustificadas++;
+        });
+    });
+    document.getElementById('apt-resumo-registros').textContent = registros.length;
+    document.getElementById('apt-resumo-presentes').textContent = totalPresentes;
+    document.getElementById('apt-resumo-faltas').textContent = totalFaltas;
+    document.getElementById('apt-resumo-justificadas').textContent = totalJustificadas;
+    lista.innerHTML = registros.map(r => {
+        const dataFmt = r.dataAula ? new Date(r.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+        const horaFmt = r.horaAula || '-';
+        const criadoEmFmt = r.criadoEm ? new Date(r.criadoEm).toLocaleString('pt-BR') : '-';
+        const alunos = r.alunos || [];
+        const presCount = alunos.filter(a => a.status === 'Presente').length;
+        const faltaCount = alunos.filter(a => a.status === 'Falta').length;
+        const justCount = alunos.filter(a => a.status === 'Justificada').length;
+        const rows = alunos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map(a => {
+            const stColor = a.status === 'Presente' ? '#4caf50' : a.status === 'Falta' ? '#f44336' : a.status === 'Justificada' ? '#ff9800' : '#666';
+            const stIcon = a.status === 'Presente' ? 'fa-check' : a.status === 'Falta' ? 'fa-xmark' : a.status === 'Justificada' ? 'fa-circle-info' : 'fa-question';
+            return '<tr style="border-bottom:1px solid #222">' +
+                '<td style="padding:8px;font-size:13px;font-weight:600;color:#ccc">' + (a.matricula || '-') + '</td>' +
+                '<td style="padding:8px;font-size:13px;color:#ccc">' + (a.nome || '-') + '</td>' +
+                '<td style="padding:8px;text-align:center"><span style="color:' + stColor + ';font-weight:700;font-size:13px"><i class="fa-solid ' + stIcon + '" style="margin-right:4px"></i>' + (a.status || '-') + '</span></td>' +
+                '<td style="padding:8px;font-size:12px;color:#888">' + (a.obs || '-') + '</td>' +
+            '</tr>';
+        }).join('');
+        return '<div style="background:#1a1a2e;border:1px solid #2a2a3a;border-radius:10px;margin-bottom:16px;overflow:hidden">' +
+            '<div style="padding:12px 16px;background:#151525;border-bottom:1px solid #2a2a3a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">' +
+                '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+                    '<span style="background:rgba(245,127,23,0.2);color:#f57f17;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700">' + (r.turma || '-') + '</span>' +
+                    '<span style="color:#ccc;font-size:13px"><i class="fa-solid fa-book" style="color:#f57f17;margin-right:4px"></i>' + (r.disciplina || '-') + '</span>' +
+                    '<span style="color:#aaa;font-size:12px"><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + dataFmt + ' ' + horaFmt + '</span>' +
+                    '<span style="color:#666;font-size:11px">Aula: ' + (r.aula || '-') + '</span>' +
+                '</div>' +
+                '<div style="display:flex;gap:8px;font-size:12px">' +
+                    '<span style="color:#4caf50;font-weight:700">' + presCount + ' P</span>' +
+                    '<span style="color:#f44336;font-weight:700">' + faltaCount + ' F</span>' +
+                    '<span style="color:#ff9800;font-weight:700">' + justCount + ' J</span>' +
+                    '<span style="color:#666">/ ' + alunos.length + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div style="overflow-x:auto">' +
+                '<table style="width:100%;border-collapse:collapse">' +
+                    '<thead><tr>' +
+                        '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;width:100px">Matrícula</th>' +
+                        '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px">Nome</th>' +
+                        '<th style="text-align:center;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;width:140px">Status</th>' +
+                        '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px">Observação</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+            '</div>' +
+            '<div style="padding:8px 16px;font-size:10px;color:#555;border-top:1px solid #2a2a3a">Registrado por: ' + (r.criadoPor || '-') + ' em ' + criadoEmFmt + '</div>' +
+        '</div>';
+    }).join('');
 }
 
 window.addEventListener('appinstalled', function() {

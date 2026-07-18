@@ -172,9 +172,9 @@
                         <i class="fa-solid fa-chart-bar"></i>
                         <span>Relatorios</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-parceiros', this); renderParceirosList()">
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-projetos', this); renderProjetosList()">
                         <i class="fa-solid fa-handshake"></i>
-                        <span>Parceiros</span>
+                        <span>Projetos</span>
                     </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-config', this)">
                         <i class="fa-solid fa-gear"></i>
@@ -247,9 +247,9 @@
                                 <i class="fa-solid fa-chart-bar"></i>
                                 <span>Relatórios</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-parceiros', document.querySelector('.nav-item:nth-child(8)')); renderParceirosList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item:nth-child(8)')); renderProjetosList()">
                                 <i class="fa-solid fa-handshake"></i>
-                                <span>Parceiros</span>
+                                <span>Projetos</span>
                             </div>
                             <div class="admin-home-card admin-home-card-download" onclick="showDownloadModal()">
                                 <i class="fa-solid fa-mobile-screen-button"></i>
@@ -294,7 +294,7 @@
                             <div class="card-body">
                                 <table class="data-table">
                                     <thead>
-                                        <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Parceiro</th><th>Data Cadastro</th><th>Acoes</th></tr>
+                                        <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Projeto</th><th>Data Cadastro</th><th>Acoes</th></tr>
                                     </thead>
                                     <tbody id="alunos-table-body"></tbody>
                                 </table>
@@ -968,36 +968,36 @@
                     </div>
                 </div>
                 <!-- PARCEIROS LIST -->
-                <div id="admin-parceiros" class="admin-section">
+                <div id="admin-projetos" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Parceiros</h3>
+                            <h3><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Projetos</h3>
                             <div class="header-actions">
-                                <button class="btn-primary" onclick="openFormParceiro()">
-                                    <i class="fa-solid fa-plus"></i> Novo Parceiro
+                                <button class="btn-primary" onclick="openFormProjeto()">
+                                    <i class="fa-solid fa-plus"></i> Novo Projeto
                                 </button>
                             </div>
                         </div>
                         <div class="card-body">
-                            <div id="parceiros-empty" class="empty-state" style="display:none"><i class="fa-solid fa-handshake"></i><p>Nenhum parceiro cadastrado</p></div>
-                            <div id="parceiros-list" class="table-responsive"></div>
+                            <div id="projetos-empty" class="empty-state" style="display:none"><i class="fa-solid fa-handshake"></i><p>Nenhum projeto cadastrado</p></div>
+                            <div id="projetos-list" class="table-responsive"></div>
                         </div>
                     </div>
                 </div>
                 <!-- FORM PARCEIRO -->
-                <div id="admin-form-parceiro" class="admin-section">
+                <div id="admin-form-projeto" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3 id="parceiro-form-title"><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Parceiro</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-parceiros')">
+                            <h3 id="projeto-form-title"><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Projeto</h3>
+                            <button class="btn-outline" onclick="showAdminSection('admin-projetos')">
                                 <i class="fa-solid fa-arrow-left"></i> Voltar
                             </button>
                         </div>
                         <div class="card-body">
-                            <form id="form-parceiro" onsubmit="return handleParceiroSubmit(event)">
+                            <form id="form-projeto" onsubmit="return handleProjetoSubmit(event)">
                                 <div class="form-grid">
                                     <div class="form-group full">
-                                        <label>Nome do Parceiro *</label>
+                                        <label>Nome do Projeto *</label>
                                         <input type="text" id="pf-nome" class="config-input" required placeholder="Nome da empresa ou organizacao">
                                     </div>
                                     <div class="form-group">
@@ -1010,7 +1010,7 @@
                                     </div>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-parceiros')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-projetos')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                                     <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
                                 </div>
                             </form>
@@ -1052,10 +1052,57 @@
                             </div>
                         </div>
                         <div class="card-body">
+                            <!-- Filtros -->
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#1e1e1e;border-radius:10px;border:1px solid #2a2a2a">
+                                <div class="form-group" style="flex:1;min-width:160px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma</label>
+                                    <select id="apt-filtro-turma" class="config-input" style="width:100%">
+                                        <option value="">Todas</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex:1;min-width:140px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Início</label>
+                                    <input type="date" id="apt-filtro-data-inicio" class="config-input" style="width:100%">
+                                </div>
+                                <div class="form-group" style="flex:1;min-width:140px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Fim</label>
+                                    <input type="date" id="apt-filtro-data-fim" class="config-input" style="width:100%">
+                                </div>
+                                <div class="form-group" style="flex:1;min-width:160px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Matrícula / Nome</label>
+                                    <input type="text" id="apt-filtro-matricula" class="config-input" style="width:100%" placeholder="Buscar...">
+                                </div>
+                                <button class="btn-primary" onclick="apontamentoFiltrar()" style="white-space:nowrap;margin:0">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                                </button>
+                                <button class="btn-outline" onclick="apontamentoLimparFiltros()" style="white-space:nowrap;margin:0">
+                                    <i class="fa-solid fa-eraser"></i> Limpar
+                                </button>
+                            </div>
+                            <!-- Resumo -->
+                            <div id="apt-resumo" style="display:none;display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+                                <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-registros" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
+                                    <div style="font-size:11px;color:#aaa">Registros</div>
+                                </div>
+                                <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-presentes" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
+                                    <div style="font-size:11px;color:#aaa">Presentes</div>
+                                </div>
+                                <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-faltas" style="font-size:22px;font-weight:800;color:#f44336">0</div>
+                                    <div style="font-size:11px;color:#aaa">Faltas</div>
+                                </div>
+                                <div style="background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-justificadas" style="font-size:22px;font-weight:800;color:#ff9800">0</div>
+                                    <div style="font-size:11px;color:#aaa">Justificadas</div>
+                                </div>
+                            </div>
+                            <!-- Lista -->
                             <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#888">
                                 <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#ddd;margin-bottom:16px"></i>
                                 <h3 style="color:#aaa;margin-bottom:8px">Nenhum apontamento registrado</h3>
-                                <p style="color:#888">Clique em "Apontar Aluno" para iniciar</p>
+                                <p style="color:#888">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
                             </div>
                             <div id="apontamento-historico-lista" style="display:none"></div>
                         </div>
@@ -1153,11 +1200,11 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-parceiros" value="parceiros">
+                                            <input type="checkbox" id="uf-perm-projetos" value="projetos">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-handshake"></i>
-                                                <span>Parceiros</span>
-                                                <small>Gerenciar parceiros</small>
+                                                <span>Projetos</span>
+                                                <small>Gerenciar projetos</small>
                                             </div>
                                         </label>
                                         <label class="permissao-item">
@@ -1223,7 +1270,7 @@
                             </div>
                             <table class="data-table" id="pre-table">
                                 <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Turma</th><th>Parceiro</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                    <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
                                 </thead>
                                 <tbody id="pre-table-body"></tbody>
                             </table>
@@ -1305,9 +1352,9 @@
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label>Parceiro</label>
-                                                    <select id="fc-parceiro" class="config-input" style="height:46px">
-                                                        <option value="">Nenhum parceiro</option>
+                                                    <label>Projeto</label>
+                                                    <select id="fc-projeto" class="config-input" style="height:46px">
+                                                        <option value="">Nenhum projeto</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -2194,7 +2241,7 @@
                 </div>
                 <!-- Scanner QR Code -->
                 <div id="apt-scanner-area" style="display:none;margin-bottom:16px;border:2px solid #f57f17;border-radius:12px;overflow:hidden;position:relative">
-                    <div id="apt-qr-reader" style="width:100%;height:280px"></div>
+                    <div id="apt-qr-reader" style="width:100%;min-height:300px;max-height:400px"></div>
                     <div style="position:absolute;top:8px;right:8px;z-index:10">
                         <button class="btn-primary btn-sm" onclick="apontamentoPararScanner()" style="background:#f44336">
                             <i class="fa-solid fa-stop"></i> Parar
