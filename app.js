@@ -203,6 +203,7 @@ function initFirebaseListeners() {
             snap.forEach(doc => {
                 if (doc.id !== '_index') {
                     const data = doc.data();
+                    if (data.cpf) data.cpf = data.cpf.replace(/\D/g, '');
                     data.id = parseInt(doc.id) || doc.id;
                     result.push(data);
                 }
@@ -411,6 +412,23 @@ async function initApp() {
                 cpfInput.value = v;
             }
         }
+        // Carregar credenciais salvas (Lembrar-me)
+        const creds = loadCredentials();
+        if (creds.cpf) {
+            const cpfInput = document.getElementById('cpf');
+            if (cpfInput) {
+                let v = creds.cpf;
+                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                cpfInput.value = v;
+            }
+            const pwdInput = document.getElementById('password');
+            if (pwdInput && creds.pwd) {
+                pwdInput.value = creds.pwd;
+                document.getElementById('remember-me').checked = true;
+            }
+        }
     }
 }
 
@@ -437,14 +455,20 @@ function generateMatricula(cpf) {
 function updateMatricula(cpfFormatted) {
     const wrapper = document.getElementById('fc-matricula-wrapper');
     const display = document.getElementById('fc-matricula-display');
+    const qr = document.getElementById('fc-matricula-qr');
     if (!wrapper || !display) return;
     const mat = generateMatricula(cpfFormatted);
     if (mat) {
         display.textContent = mat;
         wrapper.style.display = '';
+        if (qr) {
+            qr.src = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
+            qr.style.display = 'block';
+        }
     } else {
         wrapper.style.display = 'none';
         display.textContent = '';
+        if (qr) qr.style.display = 'none';
     }
 }
 
@@ -516,6 +540,7 @@ async function handleLogin(event) {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
             currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
             saveLastLogin(cpf);
+            if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
             enterAdminPanel();
             saveLoginState();
             return false;
@@ -529,6 +554,7 @@ async function handleLogin(event) {
         }
         currentUserData = user;
         saveLastLogin(cpf);
+        if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
         enterAdminPanel();
         saveLoginState();
     } else if (selectedLoginRole === 'aluno') {
@@ -541,6 +567,7 @@ async function handleLogin(event) {
             const portalPhotoBox = document.querySelector('.portal-photo-box');
             portalPhotoBox.innerHTML = '<i class="fa-solid fa-user-shield" style="font-size:56px;color:#f57c00"></i>';
             saveLastLogin(cpf);
+            if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
             saveLoginState();
             return false;
         }
@@ -556,14 +583,22 @@ async function handleLogin(event) {
             return false;
         }
         currentAluno = aluno;
+        if (currentAluno && currentAluno.cpf) currentAluno.cpf = currentAluno.cpf.replace(/\D/g, '');
         document.getElementById('screen-login').classList.remove('active');
         document.getElementById('screen-portal').classList.add('active');
         const primeiroNome = (aluno.nome || '').split(' ')[0];
         document.getElementById('portal-aluno-nome').textContent = primeiroNome;
-        document.getElementById('portal-aluno-matricula').textContent = 'Matricula: ' + (aluno.matricula || '---');
+        const mat = aluno.matricula || '---';
+        document.getElementById('portal-aluno-matricula').textContent = 'Matricula: ' + mat;
+        if (mat !== '---') {
+            const qrEl = document.getElementById('portal-aluno-qr');
+            qrEl.src = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
+            qrEl.style.display = 'block';
+        }
         setAlunoOnline(currentAluno.cpf);
         showPortalSection('noticias');
         portalLoadSidebarFoto();
+        if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
     } else if (selectedLoginRole === 'formado') {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
             currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
@@ -580,6 +615,7 @@ async function handleLogin(event) {
             document.getElementById('portal-formado-cursos-list').innerHTML = '<p class="formado-empty">Acesso administrativo.</p>';
             document.getElementById('portal-formado-certs').innerHTML = '<p class="formado-empty">Acesso administrativo.</p>';
             saveLastLogin(cpf);
+            if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
             saveLoginState();
             return false;
         }
@@ -599,6 +635,7 @@ async function handleLogin(event) {
         document.getElementById('screen-portal-formado').classList.add('active');
         const primeiroNome = (formado.nome || '').split(' ')[0];
         document.getElementById('portal-formado-nome').textContent = primeiroNome;
+        if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
         document.getElementById('portal-formado-nome-top').textContent = primeiroNome;
         document.getElementById('portal-formado-matricula').textContent = formado.matricula || '---';
         document.getElementById('portal-formado-matricula-side').textContent = formado.matricula || '---';
@@ -735,7 +772,7 @@ window.addEventListener('beforeunload', function() {
 
 function logoutPortal() {
     portalFoto3x4StopCamera();
-    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; chatConversations = {}; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } }
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; chatConversations = {}; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; } }
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -938,17 +975,21 @@ function portalLoadSidebarFoto() {
             icon.style.display = '';
         }
     });
+    // Atualizar turma na sidebar
+    var turmaEl = document.getElementById('portal-aluno-turma');
+    if (turmaEl && currentAluno.turma) {
+        turmaEl.innerHTML = '<i class="fa-solid fa-users"></i> ' + currentAluno.turma;
+    }
 }
 
 var chatUnsub = null;
 var chatLoaded = false;
-var chatMode = 'turma';
+var chatView = 'main';
 var chatPrivateTarget = null;
 var chatPendingPhoto = null;
 var chatConversations = {};
 var chatEditingMsg = null;
 var chatCtxMsg = null;
-var chatViewOnceTimers = {};
 
 var waEmojis = {
     'Frequentes': ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','🤷','🙄','😏','🤦','💪','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','🤮','💀','👀','🫡','🤝'],
@@ -965,62 +1006,123 @@ function portalChatInit() {
     if (!currentAluno || !currentAluno.cpf) return;
     if (!chatLoaded) {
         chatLoaded = true;
-        portalChatLoadContacts();
         portalChatSetupInput();
         portalChatSetupContextMenu();
         portalChatStartExpireChecker();
     }
+    portalChatShowMain();
+}
+
+function portalChatShowMain() {
+    chatView = 'main';
+    chatPrivateTarget = null;
+    portalChatCancelEdit();
+    portalChatRemovePhoto();
+    if (chatRecording) portalChatCancelRecording();
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+    document.getElementById('wa-main-header').style.display = '';
+    document.getElementById('wa-conversations-panel').style.display = '';
+    document.getElementById('wa-chat-view').style.display = 'none';
+    document.getElementById('wa-contacts-panel').style.display = 'none';
+    document.getElementById('wa-emoji-picker').style.display = 'none';
+    var micBtn = document.getElementById('portal-chat-mic-btn');
+    var sendBtn = document.getElementById('portal-chat-send-btn');
+    if (micBtn) micBtn.style.display = '';
+    if (sendBtn) sendBtn.style.display = 'none';
+    portalChatLoadAllConversations();
+    if (chatConvRefreshInterval) clearInterval(chatConvRefreshInterval);
+    chatConvRefreshInterval = setInterval(function() {
+        if (chatView === 'main') portalChatLoadAllConversations();
+    }, 20000);
+}
+
+function portalChatOpenGroup() {
+    chatView = 'turma';
+    chatPrivateTarget = null;
+    if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; }
+    document.getElementById('wa-main-header').style.display = 'none';
+    document.getElementById('wa-conversations-panel').style.display = 'none';
+    document.getElementById('wa-contacts-panel').style.display = 'none';
+    var chatViewEl = document.getElementById('wa-chat-view');
+    chatViewEl.style.display = 'flex';
+    document.getElementById('wa-chat-avatar').style.background = '#cfe9da';
+    document.getElementById('wa-chat-avatar').innerHTML = '<i class="fa-solid fa-users" style="color:#008069"></i>';
+    document.getElementById('wa-chat-name').textContent = 'Chat da Turma';
+    document.getElementById('wa-chat-status').textContent = 'online';
     portalChatListen();
+}
+
+function portalChatOpenPrivate(candidato) {
+    chatView = 'privado';
+    chatPrivateTarget = candidato;
+    if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; }
+    document.getElementById('wa-main-header').style.display = 'none';
+    document.getElementById('wa-conversations-panel').style.display = 'none';
+    document.getElementById('wa-contacts-panel').style.display = 'none';
+    var chatViewEl = document.getElementById('wa-chat-view');
+    chatViewEl.style.display = 'flex';
+    var nome = candidato.nome || 'Aluno';
+    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
+    var hash = 0;
+    for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
+    var cor = cores[Math.abs(hash) % cores.length];
+    var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
+    document.getElementById('wa-chat-avatar').style.background = cor;
+    document.getElementById('wa-chat-avatar').innerHTML = initials;
+    document.getElementById('wa-chat-name').textContent = nome;
+    document.getElementById('wa-chat-status').textContent = 'online';
+    portalChatListen();
+}
+
+function portalChatGoToContacts() {
+    if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; }
+    document.getElementById('wa-conversations-panel').style.display = 'none';
+    document.getElementById('wa-contacts-panel').style.display = '';
+    portalChatLoadContacts();
+}
+
+function portalChatBackToMain() {
+    portalChatShowMain();
+}
+
+function portalChatGetCurrentCol() {
+    if (chatView === 'turma') return dbFirestore.collection('chatSala');
+    if (chatView === 'privado' && chatPrivateTarget) {
+        var chatId = [currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_');
+        return dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs');
+    }
+    return null;
 }
 
 function portalChatListen() {
     if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+    var col = portalChatGetCurrentCol();
+    if (!col) return;
     var container = document.getElementById('portal-chat-messages');
-    container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-spinner fa-spin"></i></div><p>Carregando mensagens...</p></div>';
-
-    if (chatMode === 'turma') {
-        chatUnsub = dbFirestore.collection('chatSala')
-            .orderBy('hora')
-            .onSnapshot(function(snap) {
-                var msgs = [];
-                snap.forEach(function(doc) { msgs.push(Object.assign({ _id: doc.id }, doc.data())); });
-                var statusEl = document.getElementById('portal-chat-online-count');
-                if (statusEl) statusEl.textContent = msgs.length > 0 ? msgs.length + ' participantes' : 'online';
-                portalChatRender(msgs);
-            }, function() {
-                container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar mensagens.</p></div>';
-            });
-    } else if (chatMode === 'privado' && chatPrivateTarget) {
-        var cpfs = [currentAluno.cpf, chatPrivateTarget.cpf].sort();
-        var chatId = cpfs.join('_');
-        chatUnsub = dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs')
-            .orderBy('hora')
-            .onSnapshot(function(snap) {
-                var msgs = [];
-                snap.forEach(function(doc) { msgs.push(Object.assign({ _id: doc.id }, doc.data())); });
-                var statusEl = document.getElementById('wa-private-status');
-                if (statusEl) statusEl.textContent = msgs.length > 0 ? msgs.length + ' mensagens' : 'online';
-                portalChatRender(msgs);
-            }, function() {
-                container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar mensagens.</p></div>';
-            });
-    }
+    container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-spinner fa-spin"></i></div><p>Carregando...</p></div>';
+    chatUnsub = col.orderBy('hora').onSnapshot(function(snap) {
+        var msgs = [];
+        snap.forEach(function(doc) { msgs.push(Object.assign({ _id: doc.id }, doc.data())); });
+        var statusEl = document.getElementById('wa-chat-status');
+        if (statusEl && chatView === 'turma') statusEl.textContent = msgs.length > 0 ? msgs.length + ' participantes' : 'online';
+        if (statusEl && chatView === 'privado') statusEl.textContent = msgs.length > 0 ? msgs.length + ' mensagens' : 'online';
+        portalChatRender(msgs);
+    }, function() {
+        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar.</p></div>';
+    });
 }
 
 function portalChatRender(msgs) {
     var container = document.getElementById('portal-chat-messages');
     if (msgs.length === 0) {
-        var emptyMsg = chatMode === 'turma'
-            ? 'Mensagens sao criptografadas de ponta a ponta.'
-            : 'Nenhuma mensagem ainda. Comece a conversar!';
-        var emptyIcon = chatMode === 'turma' ? 'fa-lock' : 'fa-comment-dots';
-        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid ' + emptyIcon + '"></i></div><p>' + emptyMsg + '</p></div>';
+        var emptyMsg = chatView === 'turma' ? 'Nenhuma mensagem no grupo.' : 'Nenhuma mensagem ainda. Comece a conversar!';
+        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-comment-dots"></i></div><p>' + emptyMsg + '</p></div>';
         return;
     }
     var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 60;
     container.innerHTML = '';
     var lastDate = '';
-    var showSender = chatMode === 'turma';
+    var showSender = chatView === 'turma';
     msgs.forEach(function(m) {
         var dt = m.hora && m.hora.seconds ? new Date(m.hora.seconds * 1000) : new Date();
         var dateStr = dt.toLocaleDateString('pt-BR');
@@ -1034,7 +1136,8 @@ function portalChatRender(msgs) {
         var isMe = m.cpf === currentAluno.cpf;
         var wrap = document.createElement('div');
         wrap.className = 'wa-bubble-wrap' + (isMe ? ' me' : ' other');
-        if (m.excluido) {
+        var isDeletedForMe = Array.isArray(m.deletedFor) && m.deletedFor.includes(currentAluno.cpf);
+        if (m.excluido || isDeletedForMe) {
             var senderHtml2 = '';
             if (showSender && !isMe) {
                 var cores2 = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
@@ -1071,9 +1174,7 @@ function portalChatRender(msgs) {
             } else {
                 bodyHtml = '<div class="wa-photo-bubble"><img src="' + m.fotoDataUrl + '" onclick="portalChatExpandPhoto(this.src)"></div>';
             }
-            if (m.viewOnce) {
-                bodyHtml += '<div class="wa-viewonce-badge"><i class="fa-solid fa-eye-slash"></i> 1 vez</div>';
-            }
+            if (m.viewOnce) bodyHtml += '<div class="wa-viewonce-badge"><i class="fa-solid fa-eye-slash"></i> 1 vez</div>';
         }
         if (m.audioDataUrl) {
             var criadoEm = m.hora && m.hora.seconds ? m.hora.seconds * 1000 : Date.now();
@@ -1086,67 +1187,134 @@ function portalChatRender(msgs) {
                 var waveCount = Math.max(12, Math.min(30, Math.floor(dur * 1.5)));
                 bodyHtml += '<div class="wa-audio-bubble" data-audioid="' + aId + '" data-criado="' + criadoEm + '">' +
                     '<audio id="audio_' + aId + '" src="' + m.audioDataUrl + '" preload="auto"></audio>' +
-                    '<div class="wa-audio-player">' +
-                        '<button class="wa-audio-play" onclick="portalChatPlayAudio(\'' + aId + '\', this)"><i class="fa-solid fa-play"></i></button>' +
-                        '<div class="wa-audio-track">' +
-                            '<div class="wa-audio-wave">' + portalChatGenWaveform(waveCount) + '</div>' +
-                            '<div class="wa-audio-time">' + portalChatFormatTime(dur) + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
+                    '<div class="wa-audio-player"><button class="wa-audio-play" onclick="portalChatPlayAudio(\'' + aId + '\', this)"><i class="fa-solid fa-play"></i></button>' +
+                    '<div class="wa-audio-track"><div class="wa-audio-wave">' + portalChatGenWaveform(waveCount) + '</div><div class="wa-audio-time">' + portalChatFormatTime(dur) + '</div></div></div></div>';
             }
         }
-        if (m.texto) {
-            bodyHtml += '<span class="wa-text">' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-        }
-        wrap.innerHTML = senderHtml +
-            '<div class="wa-bubble" data-msgid="' + (m._id || '') + '" data-cpf="' + (m.cpf || '') + '" data-texto="' + (m.texto || '').replace(/"/g, '&quot;') + '">' +
-                bodyHtml +
-                '<span class="wa-meta"><span class="wa-time">' + time + '</span>' + editedHtml + checksHtml + '</span>' +
-            '</div>';
+        if (m.texto) bodyHtml += '<span class="wa-text">' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+        wrap.innerHTML = senderHtml + '<div class="wa-bubble" data-msgid="' + (m._id || '') + '" data-cpf="' + (m.cpf || '') + '" data-texto="' + (m.texto || '').replace(/"/g, '&quot;') + '">' + bodyHtml + '<span class="wa-meta"><span class="wa-time">' + time + '</span>' + editedHtml + checksHtml + '</span></div>';
         container.appendChild(wrap);
     });
     if (wasAtBottom) container.scrollTop = container.scrollHeight;
 }
 
-function portalChatSwitchMode(mode) {
-    chatMode = mode;
-    portalChatCancelEdit();
-    portalChatRemovePhoto();
-    if (chatRecording) portalChatCancelRecording();
-    var micBtn = document.getElementById('portal-chat-mic-btn');
-    var sendBtn = document.getElementById('portal-chat-send-btn');
-    if (micBtn) { micBtn.style.display = ''; }
-    if (sendBtn) { sendBtn.style.display = 'none'; }
-    document.querySelectorAll('.wa-type-btn').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelectorAll('.wa-type-btn').forEach(function(b) {
-        if ((mode === 'turma' && b.textContent.includes('Turma')) || (mode === 'privado' && b.textContent.includes('Privado'))) b.classList.add('active');
+function portalChatLoadAllConversations() {
+    if (!currentAluno) return;
+    var list = document.getElementById('wa-conversations-list');
+    list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
+    dbFirestore.collection('chatSala').orderBy('hora', 'desc').limit(1).get().then(function(snap) {
+        var lastGroup = null;
+        snap.forEach(function(doc) { lastGroup = doc.data(); });
+        if (lastGroup) {
+            chatConversations['_group'] = {
+                cpf: '_group', nome: 'Chat da Turma', cor: '#008069', initials: 'CT',
+                lastMsg: lastGroup.texto || (lastGroup.audioDataUrl ? 'Audio' : lastGroup.fotoDataUrl ? 'Foto' : ''),
+                lastTime: lastGroup.hora && lastGroup.hora.seconds ? lastGroup.hora.seconds : 0,
+                isMe: lastGroup.cpf === currentAluno.cpf,
+                isGroup: true
+            };
+        } else {
+            delete chatConversations['_group'];
+        }
+    }).catch(function() {
+        delete chatConversations['_group'];
+    }).then(function() {
+        var myCpf = (currentAluno.cpf || '').replace(/\D/g, '');
+        var approved = candidatos.filter(function(c) {
+            var candCpf = (c.cpf || '').replace(/\D/g, '');
+            return candCpf !== myCpf && (c.status === 'aprovado' || c.status === 'Aprovado');
+        });
+        if (currentAluno.cpf !== ADMIN_CPF) {
+            approved.push({ cpf: ADMIN_CPF, nome: 'Administrador Geral', matricula: 'ADMIN' });
+        }
+        if (approved.length === 0) { portalChatRenderConversations(); return; }
+        var loaded = 0;
+        var total = approved.length;
+        approved.forEach(function(c) {
+            var chatId = [currentAluno.cpf, c.cpf].sort().join('_');
+            dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').orderBy('hora', 'desc').limit(1).get().then(function(snap2) {
+                var nome = c.nome || 'Aluno';
+                var hash = 0;
+                for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
+                var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
+                var cor = cores[Math.abs(hash) % cores.length];
+                var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
+                var lastMsg = null;
+                snap2.forEach(function(doc) { lastMsg = doc.data(); });
+                chatConversations[c.cpf] = {
+                    cpf: c.cpf, nome: nome, cor: cor, initials: initials,
+                    matricula: c.matricula || '',
+                    lastMsg: lastMsg ? (lastMsg.texto || (lastMsg.audioDataUrl ? 'Audio' : lastMsg.fotoDataUrl ? 'Foto' : '')) : '',
+                    lastTime: lastMsg && lastMsg.hora && lastMsg.hora.seconds ? lastMsg.hora.seconds : 0,
+                    isMe: lastMsg ? lastMsg.cpf === currentAluno.cpf : false
+                };
+                loaded++;
+                if (loaded >= total) portalChatRenderConversations();
+            }).catch(function() {
+                var nome2 = c.nome || 'Aluno';
+                var hash2 = 0;
+                for (var j = 0; j < nome2.length; j++) hash2 = ((hash2 << 5) - hash2) + nome2.charCodeAt(j);
+                var cor2 = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'][Math.abs(hash2) % 7];
+                chatConversations[c.cpf] = {
+                    cpf: c.cpf, nome: nome2, cor: cor2, initials: nome2.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase(),
+                    lastMsg: '', lastTime: 0
+                };
+                loaded++;
+                if (loaded >= total) portalChatRenderConversations();
+            });
+        });
     });
-    var headerGroup = document.getElementById('wa-header-group');
-    var headerPrivate = document.getElementById('wa-header-private');
-    var contactsPanel = document.getElementById('wa-contacts-panel');
-    var convPanel = document.getElementById('wa-conversations-panel');
-    var messagesEl = document.getElementById('portal-chat-messages');
-    var inputArea = document.querySelector('.wa-input-area');
-    var emojiPicker = document.getElementById('wa-emoji-picker');
-    if (emojiPicker) emojiPicker.style.display = 'none';
+}
 
-    headerGroup.style.display = 'none';
-    headerPrivate.style.display = 'none';
-    contactsPanel.style.display = 'none';
-    convPanel.style.display = 'none';
-    messagesEl.style.display = 'none';
-    inputArea.style.display = 'none';
-
-    if (mode === 'turma') {
-        chatPrivateTarget = null;
-        headerGroup.style.display = '';
-        messagesEl.style.display = '';
-        inputArea.style.display = '';
-        portalChatListen();
-    } else if (mode === 'privado' && !chatPrivateTarget) {
-        convPanel.style.display = '';
-        portalChatLoadConversations();
+function portalChatRenderConversations() {
+    var list = document.getElementById('wa-conversations-list');
+    var group = chatConversations['_group'];
+    var myCpf2 = (currentAluno.cpf || '').replace(/\D/g, '');
+    var privates = Object.values(chatConversations).filter(function(c) {
+        return c.cpf !== '_group' && c.lastMsg && (c.cpf || '').replace(/\D/g, '') !== myCpf2;
+    });
+    privates.sort(function(a, b) { return (b.lastTime || 0) - (a.lastTime || 0); });
+    var sorted = privates;
+    list.innerHTML = '';
+    if (group) {
+        var gTimeStr = '';
+        if (group.lastTime) {
+            var gd = new Date(group.lastTime * 1000);
+            var now = new Date();
+            gTimeStr = gd.toDateString() === now.toDateString() ? gd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : gd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+        var gBadgeHtml = (!group.isMe && group.lastMsg) ? '<span class="wa-conv-badge">1</span>' : '';
+        var gItem = document.createElement('div');
+        gItem.className = 'wa-conv-item';
+        gItem.innerHTML = '<div class="wa-conv-avatar" style="background:#d9fdd3"><i class="fa-solid fa-users" style="color:#008069;font-size:18px"></i></div><div class="wa-conv-info"><div class="wa-conv-top"><span class="wa-conv-name">Chat da Turma</span><span class="wa-conv-time">' + gTimeStr + '</span></div><div class="wa-conv-bottom"><span class="wa-conv-last">' + (group.lastMsg || 'Nenhuma mensagem') + '</span>' + gBadgeHtml + '</div></div>';
+        gItem.onclick = function() { portalChatOpenGroup(); };
+        list.appendChild(gItem);
+    }
+    sorted.forEach(function(c) {
+        var timeStr = '';
+        if (c.lastTime) {
+            var d = new Date(c.lastTime * 1000);
+            var now2 = new Date();
+            timeStr = d.toDateString() === now2.toDateString() ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+        var prefix = c.isMe ? 'Voce: ' : '';
+        var lastText = c.lastMsg ? prefix + c.lastMsg : 'Toque para conversar';
+        var badgeHtml = (!c.isMe && c.lastMsg) ? '<span class="wa-conv-badge">1</span>' : '';
+        var item = document.createElement('div');
+        item.className = 'wa-conv-item';
+        item.setAttribute('data-nome', (c.nome || '').toLowerCase());
+        item.innerHTML = '<div class="wa-conv-avatar" style="background:' + c.cor + '">' + c.initials + '</div><div class="wa-conv-info"><div class="wa-conv-top"><span class="wa-conv-name">' + c.nome + '</span><span class="wa-conv-time">' + timeStr + '</span></div><div class="wa-conv-bottom"><span class="wa-conv-last">' + lastText + '</span>' + badgeHtml + '</div></div>';
+        item.onclick = function() {
+            var fullCand = candidatos.find(function(x) { return x.cpf === c.cpf; });
+            if (!fullCand && c.cpf === ADMIN_CPF) {
+                fullCand = { cpf: ADMIN_CPF, nome: 'Administrador Geral', matricula: 'ADMIN' };
+            }
+            if (fullCand) portalChatOpenPrivate(fullCand);
+        };
+        list.appendChild(item);
+    });
+    if (list.children.length === 0) {
+        list.innerHTML = '<div class="wa-conv-empty"><div class="wa-conv-empty-icon"><i class="fa-solid fa-comment-dots"></i></div><p>Selecione um contato para iniciar uma conversa</p></div>';
     }
 }
 
@@ -1156,11 +1324,11 @@ function portalChatLoadContacts() {
     var approved = candidatos.filter(function(c) {
         return c.cpf !== currentAluno.cpf && (c.status === 'aprovado' || c.status === 'Aprovado');
     });
-    approved.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
-    if (approved.length === 0) {
-        list.innerHTML = '<div class="wa-contacts-empty"><i class="fa-solid fa-user-slash"></i><p>Nenhum aluno aprovado encontrado.</p></div>';
-        return;
+    if (currentAluno.cpf !== ADMIN_CPF) {
+        approved.unshift({ cpf: ADMIN_CPF, nome: 'Administrador Geral', matricula: 'ADMIN' });
     }
+    approved.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+    if (approved.length === 0) { list.innerHTML = '<div class="wa-contacts-empty"><i class="fa-solid fa-user-slash"></i><p>Nenhum aluno aprovado.</p></div>'; return; }
     list.innerHTML = '';
     var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf','#c04060','#2e7d32','#6a1b9a'];
     approved.forEach(function(c) {
@@ -1169,195 +1337,35 @@ function portalChatLoadContacts() {
         for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
         var cor = cores[Math.abs(hash) % cores.length];
         var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
-        var mat = c.matricula || '';
         var item = document.createElement('div');
         item.className = 'wa-contact-item';
         item.setAttribute('data-nome', nome.toLowerCase());
-        item.innerHTML =
-            '<div class="wa-contact-avatar" style="background:' + cor + '">' + initials + '</div>' +
-            '<div class="wa-contact-info">' +
-                '<div class="wa-contact-name">' + nome + '</div>' +
-                '<div class="wa-contact-mat">' + mat + '</div>' +
-            '</div>';
-        item.onclick = function() { portalChatOpenPrivate(c); };
+        item.innerHTML = '<div class="wa-contact-avatar" style="background:' + cor + '">' + initials + '</div><div class="wa-contact-info"><div class="wa-contact-name">' + nome + '</div><div class="wa-contact-mat">' + (c.matricula || '') + '</div></div>';
+        item.onclick = function() { document.getElementById('wa-contacts-panel').style.display = 'none'; portalChatOpenPrivate(c); };
         list.appendChild(item);
     });
 }
 
 function portalChatFilterContacts() {
     var search = document.getElementById('wa-contacts-search').value.toLowerCase();
-    var items = document.querySelectorAll('.wa-contact-item');
-    items.forEach(function(item) {
-        var nome = item.getAttribute('data-nome') || '';
-        item.style.display = nome.includes(search) ? '' : 'none';
-    });
-}
-
-function portalChatOpenPrivate(candidato) {
-    chatPrivateTarget = candidato;
-    var headerGroup = document.getElementById('wa-header-group');
-    var headerPrivate = document.getElementById('wa-header-private');
-    var contactsPanel = document.getElementById('wa-contacts-panel');
-    var convPanel = document.getElementById('wa-conversations-panel');
-    var messagesEl = document.getElementById('portal-chat-messages');
-    var inputArea = document.querySelector('.wa-input-area');
-
-    headerGroup.style.display = 'none';
-    contactsPanel.style.display = 'none';
-    convPanel.style.display = 'none';
-    headerPrivate.style.display = '';
-    messagesEl.style.display = '';
-    inputArea.style.display = '';
-
-    var nome = candidato.nome || 'Aluno';
-    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
-    var hash = 0;
-    for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
-    var cor = cores[Math.abs(hash) % cores.length];
-    var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
-
-    document.getElementById('wa-private-avatar').style.background = cor;
-    document.getElementById('wa-private-avatar').innerHTML = initials;
-    document.getElementById('wa-private-name').textContent = nome;
-    document.getElementById('wa-private-status').textContent = 'online';
-
-    portalChatListen();
-}
-
-function portalChatBackToList() {
-    chatPrivateTarget = null;
-    portalChatSwitchMode('privado');
-}
-
-function portalChatBackToConversations() {
-    document.getElementById('wa-contacts-panel').style.display = 'none';
-    document.getElementById('wa-conversations-panel').style.display = '';
-    portalChatLoadConversations();
-}
-
-function portalChatGoToContacts() {
-    document.getElementById('wa-conversations-panel').style.display = 'none';
-    document.getElementById('wa-contacts-panel').style.display = '';
-    portalChatLoadContacts();
-}
-
-function portalChatLoadConversations() {
-    if (!currentAluno) return;
-    var list = document.getElementById('wa-conversations-list');
-    var approved = candidatos.filter(function(c) {
-        return c.cpf !== currentAluno.cpf && (c.status === 'aprovado' || c.status === 'Aprovado');
-    });
-    if (approved.length === 0) {
-        list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-user-slash"></i><p>Nenhum aluno aprovado encontrado.</p></div>';
-        return;
-    }
-    var convIds = approved.map(function(c) {
-        return [currentAluno.cpf, c.cpf].sort().join('_');
-    });
-    var loaded = 0;
-    var total = convIds.length;
-    convIds.forEach(function(chatId, idx) {
-        var c = approved[idx];
-        if (!c) return;
-        var ref = dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').orderBy('hora', 'desc').limit(1);
-        ref.get().then(function(snap) {
-            var nome = c.nome || 'Aluno';
-            var hash = 0;
-            for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
-            var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
-            var cor = cores[Math.abs(hash) % cores.length];
-            var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
-            var lastMsg = null;
-            snap.forEach(function(doc) { lastMsg = doc.data(); });
-            chatConversations[c.cpf] = {
-                cpf: c.cpf, nome: nome, cor: cor, initials: initials,
-                matricula: c.matricula || '',
-                lastMsg: lastMsg ? (lastMsg.texto || (lastMsg.audioDataUrl ? 'Audio' : lastMsg.fotoDataUrl ? 'Foto' : '')) : '',
-                lastTime: lastMsg && lastMsg.hora && lastMsg.hora.seconds ? lastMsg.hora.seconds : 0,
-                isMe: lastMsg ? lastMsg.cpf === currentAluno.cpf : false
-            };
-            loaded++;
-            if (loaded >= total) portalChatRenderConversations();
-        }).catch(function() {
-            loaded++;
-            if (loaded >= total) portalChatRenderConversations();
-        });
-    });
-    list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando conversas...</p></div>';
-}
-
-function portalChatRenderConversations() {
-    var list = document.getElementById('wa-conversations-list');
-    var convArray = Object.values(chatConversations);
-    convArray.sort(function(a, b) { return (b.lastTime || 0) - (a.lastTime || 0); });
-    var withMsgs = convArray.filter(function(c) { return c.lastMsg; });
-    var noMsgs = convArray.filter(function(c) { return !c.lastMsg; });
-    var sorted = withMsgs.concat(noMsgs);
-    if (sorted.length === 0) {
-        list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-comments"></i><p>Nenhuma conversa ainda.</p></div>';
-        return;
-    }
-    list.innerHTML = '';
-    sorted.forEach(function(c) {
-        var timeStr = '';
-        if (c.lastTime) {
-            var d = new Date(c.lastTime * 1000);
-            var now = new Date();
-            if (d.toDateString() === now.toDateString()) {
-                timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            } else {
-                timeStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            }
-        }
-        var prefix = c.isMe ? 'Voce: ' : '';
-        var lastText = c.lastMsg ? prefix + c.lastMsg : 'Toque para conversar';
-        var item = document.createElement('div');
-        item.className = 'wa-conv-item';
-        item.setAttribute('data-nome', (c.nome || '').toLowerCase());
-        item.innerHTML =
-            '<div class="wa-conv-avatar" style="background:' + c.cor + '">' + c.initials + '</div>' +
-            '<div class="wa-conv-info">' +
-                '<div class="wa-conv-top"><span class="wa-conv-name">' + c.nome + '</span><span class="wa-conv-time">' + timeStr + '</span></div>' +
-                '<div class="wa-conv-bottom"><span class="wa-conv-last">' + lastText + '</span></div>' +
-            '</div>';
-        item.onclick = function() {
-            var fullCand = candidatos.find(function(x) { return x.cpf === c.cpf; });
-            if (fullCand) portalChatOpenPrivate(fullCand);
-        };
-        list.appendChild(item);
-    });
-}
-
-function portalChatFilterConversations() {
-    var search = document.getElementById('wa-conversations-search').value.toLowerCase();
-    var items = document.querySelectorAll('.wa-conv-item');
-    items.forEach(function(item) {
-        var nome = item.getAttribute('data-nome') || '';
-        item.style.display = nome.includes(search) ? '' : 'none';
+    document.querySelectorAll('.wa-contact-item').forEach(function(item) {
+        item.style.display = (item.getAttribute('data-nome') || '').includes(search) ? '' : 'none';
     });
 }
 
 function portalChatDeleteAll() {
-    if (!confirm('Apagar todas as mensagens desta conversa? Esta acao nao pode ser desfeita.')) return;
-    if (chatMode === 'turma') {
-        dbFirestore.collection('chatSala').get().then(function(snap) {
-            var batch = dbFirestore.batch();
-            snap.forEach(function(doc) { batch.delete(doc.ref); });
-            return batch.commit();
-        }).then(function() {
-            alert('Todas as mensagens do grupo foram apagadas.');
-        }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
-    } else if (chatMode === 'privado' && chatPrivateTarget) {
-        var chatId = [currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_');
-        dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').get().then(function(snap) {
-            var batch = dbFirestore.batch();
-            snap.forEach(function(doc) { batch.delete(doc.ref); });
-            return batch.commit();
-        }).then(function() {
-            delete chatConversations[chatPrivateTarget.cpf];
-            alert('Conversa apagada.');
-        }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
-    }
+    var label = chatView === 'turma' ? 'todas as mensagens do grupo' : 'esta conversa';
+    if (!confirm('Apagar ' + label + '? Esta acao nao pode ser desfeita.')) return;
+    var col = portalChatGetCurrentCol();
+    if (!col) return;
+    col.get().then(function(snap) {
+        var batch = dbFirestore.batch();
+        snap.forEach(function(doc) { batch.delete(doc.ref); });
+        return batch.commit();
+    }).then(function() {
+        if (chatView === 'privado' && chatPrivateTarget) delete chatConversations[chatPrivateTarget.cpf];
+        alert('Conversa apagada.');
+    }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
 }
 
 var portalChatInput = null;
@@ -1381,13 +1389,12 @@ function portalChatSend() {
     if (!currentAluno) return;
     var input = document.getElementById('portal-chat-input');
     var texto = input.value.trim();
+    var col = portalChatGetCurrentCol();
+    if (!col) return;
 
     if (chatEditingMsg) {
         if (!texto) return;
-        var ref = chatMode === 'turma'
-            ? dbFirestore.collection('chatSala').doc(chatEditingMsg._id)
-            : dbFirestore.collection('chatPrivado').doc([currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_')).collection('msgs').doc(chatEditingMsg._id);
-        ref.update({ texto: texto, editado: true }).then(function() {
+        col.doc(chatEditingMsg._id).update({ texto: texto, editado: true }).then(function() {
             portalChatCancelEdit();
         }).catch(function(e) { alert('Erro ao editar: ' + e.message); });
         return;
@@ -1397,8 +1404,8 @@ function portalChatSend() {
     input.value = '';
     var micBtn = document.getElementById('portal-chat-mic-btn');
     var sendBtn = document.getElementById('portal-chat-send-btn');
-    if (micBtn) { micBtn.style.display = ''; }
-    if (sendBtn) { sendBtn.style.display = 'none'; }
+    if (micBtn) micBtn.style.display = '';
+    if (sendBtn) sendBtn.style.display = 'none';
 
     var msg = {
         texto: texto || '',
@@ -1406,24 +1413,12 @@ function portalChatSend() {
         cpf: currentAluno.cpf,
         hora: new Date()
     };
-
     if (chatPendingPhoto) {
         msg.fotoDataUrl = chatPendingPhoto;
         msg.viewOnce = document.getElementById('wa-viewonce-check') ? document.getElementById('wa-viewonce-check').checked : false;
         portalChatRemovePhoto();
     }
-
-    if (chatMode === 'turma') {
-        dbFirestore.collection('chatSala').add(msg).catch(function(err) {
-            alert('Erro ao enviar mensagem: ' + err.message);
-        });
-    } else if (chatMode === 'privado' && chatPrivateTarget) {
-        var cpfs = [currentAluno.cpf, chatPrivateTarget.cpf].sort();
-        var chatId = cpfs.join('_');
-        dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').add(msg).catch(function(err) {
-            alert('Erro ao enviar mensagem: ' + err.message);
-        });
-    }
+    col.add(msg).catch(function(err) { alert('Erro ao enviar: ' + err.message); });
 }
 
 function portalChatSetupContextMenu() {
@@ -1459,6 +1454,8 @@ function portalChatCloseContextMenu() {
 function portalChatCtxAction(action) {
     portalChatCloseContextMenu();
     if (!portalChatCtxMsg) return;
+    var col = portalChatGetCurrentCol();
+    if (!col) return;
     if (action === 'edit') {
         chatEditingMsg = portalChatCtxMsg;
         var editBar = document.getElementById('wa-edit-bar');
@@ -1468,16 +1465,18 @@ function portalChatCtxAction(action) {
         var input = document.getElementById('portal-chat-input');
         input.value = portalChatCtxMsg.texto || '';
         input.focus();
-        var btn = document.getElementById('portal-chat-send-btn');
-        var icon = btn.querySelector('i');
-        icon.className = 'fa-solid fa-paper-plane';
-        btn.classList.add('active');
-    } else if (action === 'delete') {
-        if (!confirm('Apagar esta mensagem?')) return;
-        var ref = chatMode === 'turma'
-            ? dbFirestore.collection('chatSala').doc(portalChatCtxMsg._id)
-            : dbFirestore.collection('chatPrivado').doc([currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_')).collection('msgs').doc(portalChatCtxMsg._id);
-        ref.update({ excluido: true, texto: '', fotoDataUrl: null }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
+        var micBtn = document.getElementById('portal-chat-mic-btn');
+        var sendBtn = document.getElementById('portal-chat-send-btn');
+        if (micBtn) micBtn.style.display = 'none';
+        if (sendBtn) sendBtn.style.display = '';
+    } else if (action === 'deleteForMe') {
+        if (!confirm('Apagar esta mensagem apenas para voce?')) return;
+        col.doc(portalChatCtxMsg._id).update({
+            deletedFor: firebase.firestore.FieldValue.arrayUnion(currentAluno.cpf)
+        }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
+    } else if (action === 'deleteForAll') {
+        if (!confirm('Apagar esta mensagem para todos?')) return;
+        col.doc(portalChatCtxMsg._id).delete().catch(function(e) { alert('Erro ao apagar: ' + e.message); });
     }
     portalChatCtxMsg = null;
 }
@@ -1520,34 +1519,23 @@ function portalChatInsertEmoji(em) {
 }
 
 function portalChatOpenCamera() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Camera nao disponivel neste dispositivo.');
-        return;
-    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { alert('Camera nao disponivel.'); return; }
     var overlay = document.createElement('div');
-    overlay.id = 'chat-camera-overlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-    overlay.innerHTML = '<video id="chat-camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="chat-camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="chat-camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#008069;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="chat-camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+    overlay.innerHTML = '<video id="chat-camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="chat-camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-camera-rotate"></i></button><button id="chat-camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#008069;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="chat-camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
     document.body.appendChild(overlay);
-
     var video = document.getElementById('chat-camera-video');
     var stream = null;
     var currentFacing = 'user';
-
     function startCam(facing) {
         if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
         return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 320 }, height: { ideal: 240 } } });
     }
-
-    startCam(currentFacing).then(function(s) { stream = s; video.srcObject = stream; })
-    .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
-
+    startCam(currentFacing).then(function(s) { stream = s; video.srcObject = stream; }).catch(function(err) { document.body.removeChild(overlay); alert('Camera: ' + err.message); });
     document.getElementById('chat-camera-switch').onclick = function() {
         currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-        startCam(currentFacing).then(function(s) { stream = s; video.srcObject = stream; })
-        .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; });
+        startCam(currentFacing).then(function(s) { stream = s; video.srcObject = stream; }).catch(function() { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; });
     };
-
     document.getElementById('chat-camera-capture').onclick = function() {
         var canvas = document.createElement('canvas');
         canvas.width = 320; canvas.height = 240;
@@ -1558,10 +1546,8 @@ function portalChatOpenCamera() {
             var reader = new FileReader();
             reader.onloadend = function() {
                 chatPendingPhoto = reader.result;
-                var preview = document.getElementById('wa-photo-preview');
-                var previewImg = document.getElementById('wa-photo-preview-img');
-                previewImg.src = chatPendingPhoto;
-                preview.style.display = '';
+                document.getElementById('wa-photo-preview-img').src = chatPendingPhoto;
+                document.getElementById('wa-photo-preview').style.display = '';
                 var micBtn = document.getElementById('portal-chat-mic-btn');
                 var sendBtn = document.getElementById('portal-chat-send-btn');
                 if (micBtn) micBtn.style.display = 'none';
@@ -1570,7 +1556,6 @@ function portalChatOpenCamera() {
             reader.readAsDataURL(blob);
         }, 'image/jpeg', 0.3);
     };
-
     document.getElementById('chat-camera-cancel').onclick = function() {
         if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
         document.body.removeChild(overlay);
@@ -1586,10 +1571,7 @@ function portalChatRemovePhoto() {
     var input = document.getElementById('portal-chat-input');
     var micBtn = document.getElementById('portal-chat-mic-btn');
     var sendBtn = document.getElementById('portal-chat-send-btn');
-    if (input && micBtn && sendBtn && !input.value.trim()) {
-        micBtn.style.display = '';
-        sendBtn.style.display = 'none';
-    }
+    if (input && micBtn && sendBtn && !input.value.trim()) { micBtn.style.display = ''; sendBtn.style.display = 'none'; }
 }
 
 function portalChatExpandPhoto(src) {
@@ -1613,82 +1595,47 @@ var chatRecMaxSeconds = 30;
 var chatAudioIdCounter = 0;
 var chatActiveAudio = null;
 var chatExpireInterval = null;
+var chatConvRefreshInterval = null;
 
-function portalChatToggleRecording() {
-    if (chatRecording) {
-        portalChatStopRecording();
-    } else {
-        portalChatStartRecording();
-    }
-}
+function portalChatToggleRecording() { chatRecording ? portalChatStopRecording() : portalChatStartRecording(); }
 
 function portalChatStartRecording() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Microfone nao disponivel neste dispositivo.');
-        return;
-    }
-    navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(function(stream) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { alert('Microfone nao disponivel.'); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
         chatRecStream = stream;
         chatAudioChunks = [];
-        var options = { mimeType: 'audio/webm;codecs=opus' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options = { mimeType: 'audio/webm' };
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options = {};
-            }
-        }
+        var options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? { mimeType: 'audio/webm;codecs=opus' } : (MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {});
         chatMediaRecorder = new MediaRecorder(stream, options);
-        chatMediaRecorder.ondataavailable = function(e) {
-            if (e.data && e.data.size > 0) chatAudioChunks.push(e.data);
-        };
+        chatMediaRecorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) chatAudioChunks.push(e.data); };
         chatMediaRecorder.onstop = function() { stream.getTracks().forEach(function(t) { t.stop(); }); };
         chatMediaRecorder.start(500);
-
         chatRecording = true;
         chatRecSeconds = 0;
-
-        var recBar = document.getElementById('wa-recording-bar');
-        var recTimer = document.getElementById('wa-rec-timer');
-        recBar.style.display = '';
-        recTimer.textContent = '00:00';
-
-        var inputArea = document.querySelector('.wa-input-area');
-        inputArea.style.display = 'none';
-
-        var emojiPicker = document.getElementById('wa-emoji-picker');
-        if (emojiPicker) emojiPicker.style.display = 'none';
-
+        document.getElementById('wa-recording-bar').style.display = '';
+        document.getElementById('wa-rec-timer').textContent = '00:00';
+        document.querySelector('.wa-input-area').style.display = 'none';
+        document.getElementById('wa-emoji-picker').style.display = 'none';
         chatRecTimer = setInterval(function() {
             chatRecSeconds++;
             var m = Math.floor(chatRecSeconds / 60);
             var s = chatRecSeconds % 60;
-            recTimer.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-            if (chatRecSeconds >= chatRecMaxSeconds) {
-                portalChatStopRecording();
-            }
+            document.getElementById('wa-rec-timer').textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+            if (chatRecSeconds >= chatRecMaxSeconds) portalChatStopRecording();
         }, 1000);
-    })
-    .catch(function(err) {
-        alert('Nao foi possivel acessar o microfone: ' + err.message);
-    });
+    }).catch(function(err) { alert('Microfone: ' + err.message); });
 }
 
 function portalChatStopRecording() {
     if (!chatRecording || !chatMediaRecorder) return;
     chatRecording = false;
     clearInterval(chatRecTimer);
-    chatRecTimer = null;
-
     document.getElementById('wa-recording-bar').style.display = 'none';
     document.querySelector('.wa-input-area').style.display = '';
-
     chatMediaRecorder.onstop = function() {
         if (chatRecStream) chatRecStream.getTracks().forEach(function(t) { t.stop(); });
         if (chatAudioChunks.length === 0) return;
-        var blob = new Blob(chatAudioChunks, { type: chatMediaRecorder.mimeType || 'audio/webm' });
+        portalChatSendAudio(new Blob(chatAudioChunks, { type: chatMediaRecorder.mimeType || 'audio/webm' }));
         chatAudioChunks = [];
-        portalChatSendAudio(blob);
     };
     chatMediaRecorder.stop();
 }
@@ -1697,15 +1644,10 @@ function portalChatCancelRecording() {
     if (!chatRecording || !chatMediaRecorder) return;
     chatRecording = false;
     clearInterval(chatRecTimer);
-    chatRecTimer = null;
     chatAudioChunks = [];
-
     document.getElementById('wa-recording-bar').style.display = 'none';
     document.querySelector('.wa-input-area').style.display = '';
-
-    chatMediaRecorder.onstop = function() {
-        if (chatRecStream) chatRecStream.getTracks().forEach(function(t) { t.stop(); });
-    };
+    chatMediaRecorder.onstop = function() { if (chatRecStream) chatRecStream.getTracks().forEach(function(t) { t.stop(); }); };
     chatMediaRecorder.stop();
 }
 
@@ -1715,25 +1657,15 @@ function portalChatSendAudio(blob) {
     reader.onloadend = function() {
         var dataUrl = reader.result;
         if (!dataUrl) return;
-        var byteLength = Math.ceil((dataUrl.length - 'data:audio/webm;base64,'.length) * 3 / 4);
-        if (byteLength > 900000) {
-            alert('Audio muito grande. Tente gravar por menos tempo.');
-            return;
-        }
-        var msg = {
-            audioDataUrl: dataUrl,
-            audioDuracao: chatRecSeconds,
+        var byteLen = Math.ceil((dataUrl.length - 'data:audio/webm;base64,'.length) * 3 / 4);
+        if (byteLen > 900000) { alert('Audio muito grande.'); return; }
+        var col = portalChatGetCurrentCol();
+        if (!col) return;
+        col.add({
+            audioDataUrl: dataUrl, audioDuracao: chatRecSeconds,
             audioId: 'au_' + (++chatAudioIdCounter) + '_' + Date.now(),
-            remetente: currentAluno.nome || currentAluno.cpf || 'Aluno',
-            cpf: currentAluno.cpf,
-            hora: new Date()
-        };
-        if (chatMode === 'turma') {
-            dbFirestore.collection('chatSala').add(msg).catch(function(e) { alert('Erro ao enviar audio: ' + e.message); });
-        } else if (chatMode === 'privado' && chatPrivateTarget) {
-            var cpfs = [currentAluno.cpf, chatPrivateTarget.cpf].sort();
-            dbFirestore.collection('chatPrivado').doc(cpfs.join('_')).collection('msgs').add(msg).catch(function(e) { alert('Erro ao enviar audio: ' + e.message); });
-        }
+            remetente: currentAluno.nome || 'Aluno', cpf: currentAluno.cpf, hora: new Date()
+        }).catch(function(e) { alert('Erro audio: ' + e.message); });
     };
     reader.readAsDataURL(blob);
 }
@@ -1742,36 +1674,28 @@ function portalChatPlayAudio(audioId, btn) {
     var audio = document.getElementById('audio_' + audioId);
     if (!audio) return;
     if (chatActiveAudio && chatActiveAudio !== audio) {
-        chatActiveAudio.pause();
-        chatActiveAudio.currentTime = 0;
+        chatActiveAudio.pause(); chatActiveAudio.currentTime = 0;
         var prevBtn = chatActiveAudio.parentElement ? chatActiveAudio.parentElement.querySelector('.wa-audio-play') : null;
         if (prevBtn) { prevBtn.classList.remove('playing'); prevBtn.innerHTML = '<i class="fa-solid fa-play"></i>'; }
     }
     if (audio.paused) {
-        audio.play();
-        chatActiveAudio = audio;
-        btn.classList.add('playing');
-        btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        audio.play(); chatActiveAudio = audio;
+        btn.classList.add('playing'); btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
     } else {
         audio.pause();
-        btn.classList.remove('playing');
-        btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        btn.classList.remove('playing'); btn.innerHTML = '<i class="fa-solid fa-play"></i>';
     }
     audio.onended = function() {
-        btn.classList.remove('playing');
-        btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        btn.classList.remove('playing'); btn.innerHTML = '<i class="fa-solid fa-play"></i>';
         chatActiveAudio = null;
-        var waveBars = btn.closest('.wa-audio-player').querySelectorAll('.wa-audio-wave span');
-        waveBars.forEach(function(b) { b.classList.remove('active'); });
+        btn.closest('.wa-audio-player').querySelectorAll('.wa-audio-wave span').forEach(function(b) { b.classList.remove('active'); });
     };
     var waveBars = btn.closest('.wa-audio-player').querySelectorAll('.wa-audio-wave span');
     if (!audio.paused) {
         audio.ontimeupdate = function() {
             var pct = audio.duration ? audio.currentTime / audio.duration : 0;
             var activeCount = Math.floor(pct * waveBars.length);
-            waveBars.forEach(function(b, i) {
-                b.classList.toggle('active', i <= activeCount);
-            });
+            waveBars.forEach(function(b, i) { b.classList.toggle('active', i <= activeCount); });
         };
     }
 }
@@ -1785,18 +1709,14 @@ function portalChatFormatTime(sec) {
 
 function portalChatGenWaveform(count) {
     var bars = '';
-    for (var i = 0; i < count; i++) {
-        var h = 4 + Math.floor(Math.random() * 18);
-        bars += '<span style="height:' + h + 'px"></span>';
-    }
+    for (var i = 0; i < count; i++) bars += '<span style="height:' + (4 + Math.floor(Math.random() * 18)) + 'px"></span>';
     return bars;
 }
 
 function portalChatCheckExpired() {
     var now = Date.now();
     var expiredIds = [];
-    var allBubbles = document.querySelectorAll('.wa-bubble[data-audioid]');
-    allBubbles.forEach(function(bubble) {
+    document.querySelectorAll('.wa-bubble[data-audioid]').forEach(function(bubble) {
         var audioId = bubble.getAttribute('data-audioid');
         var criadoEm = parseInt(bubble.getAttribute('data-criado') || '0', 10);
         if (criadoEm && (now - criadoEm) > 300000) {
@@ -1809,19 +1729,13 @@ function portalChatCheckExpired() {
             expiredIds.push(audioId);
         }
     });
-    if (expiredIds.length > 0) {
-        portalChatDeleteExpiredFromFirestore(expiredIds);
-    }
+    if (expiredIds.length > 0) portalChatDeleteExpiredFromFirestore(expiredIds);
 }
 
 function portalChatDeleteExpiredFromFirestore(ids) {
-    if (!ids || ids.length === 0) return;
-    var col;
-    if (chatMode === 'turma') {
-        col = dbFirestore.collection('chatSala');
-    } else if (chatMode === 'privado' && chatPrivateTarget) {
-        col = dbFirestore.collection('chatPrivado').doc([currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_')).collection('msgs');
-    } else return;
+    if (!ids.length) return;
+    var col = portalChatGetCurrentCol();
+    if (!col) return;
     ids.forEach(function(aid) {
         col.where('audioId', '==', aid).get().then(function(snap) {
             snap.forEach(function(doc) { doc.ref.delete().catch(function() {}); });
@@ -1846,8 +1760,6 @@ function portalChatOpenViewOnce(el, vid) {
     imgEl.outerHTML = '<div class="wa-photo-viewonce opened"><i class="fa-solid fa-eye-slash"></i><span>Visualizado</span></div>';
     if (badge) badge.remove();
 }
-
-function portalChatViewOnceCountdown() {}
 
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.wa-emoji-picker') && !e.target.closest('.wa-icon-btn')) {
@@ -2237,6 +2149,10 @@ function showAdminSection(sectionId, navEl) {
     if (navEl) navEl.classList.add('active');
     const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-pre-cadastro-formados': 'Pre-Cadastro Formados', 'admin-form-pre-cadastro-formado': 'Novo Pre-Cadastro Formado', 'admin-relatorios': 'Relatorios', 'admin-parceiros': 'Parceiros', 'admin-form-parceiro': editingParceiroIndex !== null ? 'Editar Parceiro' : 'Novo Parceiro', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
+    if (sectionId === 'admin-turmas') {
+        renderTurmasList();
+        carregarDisciplinas().then(() => carregarAulas()).then(() => disciplinaRenderList());
+    }
 }
 
 /* ===== FORM CANDIDATO ===== */
@@ -2293,6 +2209,19 @@ async function editCandidato(index) {
     document.getElementById('fc-calcado').value = c.calcado || '';
     document.getElementById('fc-turma').value = c.turma || '';
     document.getElementById('fc-parceiro').value = c.parceiro || '';
+    // Atualizar matricula e QR code
+    const mat = c.matricula || generateMatricula(c.cpf);
+    const wrapper = document.getElementById('fc-matricula-wrapper');
+    const display = document.getElementById('fc-matricula-display');
+    const qr = document.getElementById('fc-matricula-qr');
+    if (wrapper && display) {
+        display.textContent = mat;
+        wrapper.style.display = '';
+        if (qr) {
+            qr.src = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
+            qr.style.display = 'block';
+        }
+    }
     const senhaWrapper = document.getElementById('senha-field-wrapper');
     const fcFotoSection = document.getElementById('fc-foto3x4-section');
     if (c.status === 'Aprovado') {
@@ -2333,8 +2262,10 @@ function resetFormCandidato() {
     document.getElementById('fc-senha').required = false;
     const mw = document.getElementById('fc-matricula-wrapper');
     const md = document.getElementById('fc-matricula-display');
+    const mq = document.getElementById('fc-matricula-qr');
     if (mw) mw.style.display = 'none';
     if (md) md.textContent = '';
+    if (mq) { mq.src = ''; mq.style.display = 'none'; }
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
     var fcFotoSection = document.getElementById('fc-foto3x4-section');
@@ -2476,7 +2407,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Camisa</span><span class="detail-value">${c.camisa||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Calcado</span><span class="detail-value">${c.calcado||'---'}</span></div>
             <div class="detail-section-title">Turma e Acesso</div>
-            ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><span class="detail-value" style="color:#f57c00;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span></div>` : ''}
+            ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#f57c00;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mat)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff"></div></div>` : ''}
             <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">Parceiro</span><span class="detail-value" style="color:#ff9800;font-weight:600">${c.parceiro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
@@ -2500,23 +2431,34 @@ async function confirmDelete() {
     if (window._pendingDeleteFormado) {
         try {
             await dbFirestore.collection(FB_FORMADOS).doc(window._pendingDeleteFormado).delete();
+            const idx = formados.findIndex(f => f.docId === window._pendingDeleteFormado);
+            if (idx !== -1) formados.splice(idx, 1);
+            renderFormadosList();
         } catch(e) { alert('Erro ao excluir: ' + e.message); }
         window._pendingDeleteFormado = null;
         closeConfirmModal();
         return;
     }
     if (pendingDeleteTurmaIndex !== null) {
-        if (pendingDeleteTurmaIndex !== null) {
-            turmas.splice(pendingDeleteTurmaIndex, 1);
-            backupTurmas();
-            renderTurmasList();
-            await populateTurmaSelect();
+        const removedTurma = turmas[pendingDeleteTurmaIndex];
+        turmas.splice(pendingDeleteTurmaIndex, 1);
+        if (removedTurma && removedTurma.id) {
+            try { await dbFirestore.collection(FB_TURMAS).doc(String(removedTurma.id)).delete(); } catch(e) { alert('Erro ao excluir turma: ' + e.message); }
         }
+        backupTurmas();
+        renderTurmasList();
+        await populateTurmaSelect();
     } else if (pendingDeleteIndex !== null) {
-        const removed = candidatos[pendingDeleteIndex];
-        candidatos.splice(pendingDeleteIndex, 1);
-        if (removed && removed.cpf) {
-            try { await dbFirestore.collection(FB_CANDIDATOS).doc(removed.cpf).delete(); } catch(e) {}
+        var idx = pendingDeleteIndex;
+        var removed = candidatos[idx];
+        candidatos.splice(idx, 1);
+        if (removed && removed.id) {
+            var docId = String(removed.id);
+            try {
+                await dbFirestore.collection(FB_CANDIDATOS).doc(docId).delete();
+            } catch(e) {
+                alert('Erro Firestore: ' + e.message);
+            }
         }
         backupCandidatos();
         renderList();
@@ -3442,6 +3384,33 @@ function getLastLogin() {
     try { return localStorage.getItem('farn_last_cpf') || ''; } catch(e) { return ''; }
 }
 
+function saveCredentials(cpf, password) {
+    try {
+        localStorage.setItem('farn_remember_cpf', cpf);
+        localStorage.setItem('farn_remember_pwd', btoa(password));
+        localStorage.setItem('farn_remember_me', 'true');
+    } catch(e) {}
+}
+
+function loadCredentials() {
+    try {
+        if (localStorage.getItem('farn_remember_me') === 'true') {
+            const cpf = localStorage.getItem('farn_remember_cpf') || '';
+            const pwd = localStorage.getItem('farn_remember_pwd') || '';
+            return { cpf, pwd: pwd ? atob(pwd) : '' };
+        }
+    } catch(e) {}
+    return { cpf: '', pwd: '' };
+}
+
+function clearCredentials() {
+    try {
+        localStorage.removeItem('farn_remember_cpf');
+        localStorage.removeItem('farn_remember_pwd');
+        localStorage.removeItem('farn_remember_me');
+    } catch(e) {}
+}
+
 function handlePhotoUpload(event) {
     const file = event.target.files[0]; if (!file) return;
     if (file.size > 3 * 1024 * 1024) {
@@ -3837,6 +3806,9 @@ async function deleteUsuario(docId) {
     if (!confirm('Excluir este usuario permanentemente?')) return;
     try {
         await dbFirestore.collection(FB_USUARIOS).doc(docId).delete();
+        const idx = usuarios.findIndex(u => u.docId === docId);
+        if (idx !== -1) usuarios.splice(idx, 1);
+        renderUsuariosList();
     } catch(e) {
         alert('Erro ao excluir: ' + e.message);
     }
@@ -4006,7 +3978,7 @@ async function formadoParaAluno(docId) {
     try {
         const candidatoData = {
             nome: f.nome || '',
-            cpf: f.cpf || '',
+            cpf: (f.cpf || '').replace(/\D/g, ''),
             nascimento: f.nascimento || '',
             estadoCivil: f.estadoCivil || '',
             nacionalidade: f.nacionalidade || '',
@@ -4167,20 +4139,6 @@ async function deleteFormado(docId) {
     window._pendingDeleteFormado = docId;
 }
 
-const origConfirmDelete = typeof confirmDelete === 'function' ? confirmDelete : null;
-
-async function confirmDeleteFormados() {
-    if (window._pendingDeleteFormado) {
-        try {
-            await dbFirestore.collection(FB_FORMADOS).doc(window._pendingDeleteFormado).delete();
-        } catch(e) { alert('Erro ao excluir: ' + e.message); }
-        window._pendingDeleteFormado = null;
-        closeConfirmModal();
-        return;
-    }
-    if (origConfirmDelete) origConfirmDelete();
-}
-
 function viewFormado(docId) {
     const f = formados.find(f => f.docId === docId); if (!f) return;
     document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#ff9800"></i> Detalhes do Formado';
@@ -4236,7 +4194,7 @@ function viewFormado(docId) {
             <div class="detail-item"><span class="detail-label">Peso</span><span class="detail-value">${f.peso||'---'} kg</span></div>
             <div class="detail-item"><span class="detail-label">Fator RH</span><span class="detail-value">${f.fatorRh||'---'}</span></div>
             <div class="detail-section-title">Formacao</div>
-            <div class="detail-item"><span class="detail-label">Matricula</span><span class="detail-value" style="color:#f57c00;font-weight:700">${f.matricula||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#f57c00;font-weight:700">${f.matricula||'---'}</span>${f.matricula ? `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(f.matricula)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff">` : ''}</div></div>
             <div class="detail-item full"><span class="detail-label">Cursos</span><span class="detail-value">${cursosHtml||'---'}</span></div>
             ${certHtml ? '<div class="detail-section-title">Certificados</div><div class="detail-item full">' + certHtml + '</div>' : ''}
             <div class="detail-section-title">Cadastro</div>
@@ -4936,6 +4894,489 @@ function showInstallGuide() {
         '<button onclick="this.closest(\'div[style]\').parentElement.remove()" style="background:#f57c00;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Entendi</button></div>';
     document.body.appendChild(overlay);
     overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+// ===== CADASTRO DE DISCIPLINAS E AULAS =====
+let disciplinas = [];
+let aulas = [];
+let currentDisciplinaId = null;
+let editingAulaId = null;
+
+function switchTurmasTab(tab, btn) {
+    document.querySelectorAll('#admin-turmas .alunos-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('#admin-turmas .tab-content').forEach(c => c.classList.remove('active'));
+    const target = document.getElementById('turmas-tab-' + tab);
+    if (target) target.classList.add('active');
+    if (tab === 'disciplinas') {
+        disciplinaRenderList();
+    } else {
+        renderTurmasList();
+    }
+}
+
+function disciplinaLimparForm() {
+    document.getElementById('disciplina-nome').value = '';
+    document.getElementById('disciplina-codigo').value = '';
+    document.getElementById('disciplina-carga').value = '';
+    document.getElementById('disciplina-descricao').value = '';
+    currentDisciplinaId = null;
+}
+
+async function disciplinaSalvar() {
+    const nome = document.getElementById('disciplina-nome').value.trim();
+    if (!nome) { alert('Informe o nome da disciplina'); return; }
+    const dados = {
+        nome: nome,
+        codigo: document.getElementById('disciplina-codigo').value.trim(),
+        cargaHoraria: document.getElementById('disciplina-carga').value.trim(),
+        descricao: document.getElementById('disciplina-descricao').value.trim(),
+        atualizadoEm: new Date().toISOString()
+    };
+    try {
+        if (currentDisciplinaId) {
+            await dbFirestore.collection('disciplinas').doc(currentDisciplinaId).update(dados);
+            const idx = disciplinas.findIndex(d => d.id === currentDisciplinaId);
+            if (idx !== -1) Object.assign(disciplinas[idx], dados);
+            alert('Disciplina atualizada com sucesso!');
+        } else {
+            dados.criadoEm = new Date().toISOString();
+            const ref = await dbFirestore.collection('disciplinas').add(dados);
+            dados.id = ref.id;
+            disciplinas.push(dados);
+            alert('Disciplina cadastrada com sucesso!');
+        }
+        disciplinaLimparForm();
+        disciplinaRenderList();
+    } catch (e) {
+        console.error('Erro ao salvar disciplina:', e);
+        alert('Erro ao salvar disciplina: ' + e.message);
+    }
+}
+
+function disciplinaRenderList() {
+    const tbody = document.getElementById('disciplinas-table-body');
+    const empty = document.getElementById('disciplinas-empty');
+    const lista = document.getElementById('disciplinas-lista');
+    if (!tbody) return;
+    if (!disciplinas.length) {
+        if (empty) empty.style.display = 'block';
+        if (lista) lista.style.display = 'none';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    if (lista) lista.style.display = 'block';
+    tbody.innerHTML = disciplinas.map((d, i) => {
+        const aulasCount = aulas.filter(a => a.disciplinaId === d.id).length;
+        return `<tr>
+            <td style="font-weight:600">${d.nome}</td>
+            <td>${d.codigo || '-'}</td>
+            <td>${d.cargaHoraria ? d.cargaHoraria + 'h' : '-'}</td>
+            <td>${d.descricao || '-'}</td>
+            <td><span class="badge blue">${aulasCount} aula(s)</span></td>
+            <td><div class="actions-cell">
+                <button class="btn-icon" title="Gerenciar Aulas" onclick="disciplinaGerenciarAulas('${d.id}')"><i class="fa-solid fa-calendar-days"></i></button>
+                <button class="btn-icon" title="Editar" onclick="disciplinaEditar('${d.id}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="disciplinaExcluir('${d.id}')"><i class="fa-solid fa-trash"></i></button>
+            </div></td>
+        </tr>`;
+    }).join('');
+}
+
+function disciplinaEditar(id) {
+    const d = disciplinas.find(d => d.id === id);
+    if (!d) return;
+    currentDisciplinaId = id;
+    document.getElementById('disciplina-nome').value = d.nome || '';
+    document.getElementById('disciplina-codigo').value = d.codigo || '';
+    document.getElementById('disciplina-carga').value = d.cargaHoraria || '';
+    document.getElementById('disciplina-descricao').value = d.descricao || '';
+}
+
+async function disciplinaExcluir(id) {
+    if (!confirm('Excluir esta disciplina e todas as suas aulas?')) return;
+    try {
+        await dbFirestore.collection('disciplinas').doc(id).delete();
+        disciplinas = disciplinas.filter(d => d.id !== id);
+        aulas = aulas.filter(a => a.disciplinaId !== id);
+        disciplinaRenderList();
+        alert('Disciplina excluída com sucesso!');
+    } catch (e) {
+        console.error('Erro ao excluir disciplina:', e);
+        alert('Erro ao excluir disciplina: ' + e.message);
+    }
+}
+
+function disciplinaGerenciarAulas(disciplinaId) {
+    currentDisciplinaId = disciplinaId;
+    const d = disciplinas.find(d => d.id === disciplinaId);
+    if (!d) return;
+    document.querySelectorAll('#admin-turmas .alunos-tab').forEach(b => b.classList.remove('active'));
+    const tabBtn = document.querySelector('#admin-turmas .alunos-tab[data-tab="disciplinas"]');
+    if (tabBtn) tabBtn.classList.add('active');
+    document.querySelectorAll('#admin-turmas .tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('turmas-tab-disciplinas').classList.add('active');
+    renderAulasList();
+}
+
+function renderAulasList() {
+    const tbody = document.getElementById('aulas-table-body');
+    const empty = document.getElementById('aulas-empty');
+    const lista = document.getElementById('aulas-lista');
+    if (!tbody) return;
+    const filtered = aulas.filter(a => a.disciplinaId === currentDisciplinaId);
+    if (!filtered.length) {
+        if (empty) empty.style.display = 'block';
+        if (lista) lista.style.display = 'none';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    if (lista) lista.style.display = 'block';
+    tbody.innerHTML = filtered.sort((a, b) => (a.data || '').localeCompare(b.data || '') || (a.hora || '').localeCompare(b.hora || '')).map((a, i) => {
+        const dataFormatada = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+        return `<tr>
+            <td style="text-align:center;font-weight:700;color:#888">${i + 1}</td>
+            <td style="font-weight:600">${a.nome || '-'}</td>
+            <td><span class="badge green">${a.turma || '-'}</span></td>
+            <td>${dataFormatada}</td>
+            <td>${a.hora || '-'}</td>
+            <td><div class="actions-cell">
+                <button class="btn-icon" title="Editar" onclick="aulaEditar('${a.id}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="aulaExcluir('${a.id}')"><i class="fa-solid fa-trash"></i></button>
+            </div></td>
+        </tr>`;
+    }).join('');
+}
+
+function aulaPopulateTurmaCheckboxes(selectedArr) {
+    const container = document.getElementById('aula-turmas-checks');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!turmas.length) {
+        container.innerHTML = '<span style="color:#666;font-size:13px">Nenhuma turma cadastrada</span>';
+        return;
+    }
+    turmas.forEach(t => {
+        const checked = selectedArr && selectedArr.includes(t.nome) ? 'checked' : '';
+        container.innerHTML += '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:13px;color:#ccc;white-space:nowrap"><input type="checkbox" value="' + t.nome + '" class="aula-turma-check" ' + checked + '> ' + t.nome + '</label>';
+    });
+}
+
+function aulaGetSelectedTurmas() {
+    return Array.from(document.querySelectorAll('.aula-turma-check:checked')).map(cb => cb.value);
+}
+
+function aulaAbrirModalNova() {
+    if (!currentDisciplinaId) { alert('Selecione uma disciplina primeiro'); return; }
+    editingAulaId = null;
+    document.getElementById('aula-id').value = '';
+    document.getElementById('aula-disciplina-id').value = currentDisciplinaId;
+    document.getElementById('aula-nome').value = '';
+    aulaPopulateTurmaCheckboxes([]);
+    document.getElementById('aula-data').value = '';
+    document.getElementById('aula-hora').value = '';
+    document.getElementById('aula-obs').value = '';
+    document.getElementById('aula-form-title').innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Nova Aula';
+    document.getElementById('modal-aula-overlay').classList.remove('hidden');
+}
+
+function aulaEditar(aulaId) {
+    const a = aulas.find(a => a.id === aulaId);
+    if (!a) return;
+    editingAulaId = aulaId;
+    document.getElementById('aula-id').value = aulaId;
+    document.getElementById('aula-disciplina-id').value = a.disciplinaId;
+    document.getElementById('aula-nome').value = a.nome || '';
+    const turmasArr = Array.isArray(a.turmas) ? a.turmas : (a.turma ? [a.turma] : []);
+    aulaPopulateTurmaCheckboxes(turmasArr);
+    document.getElementById('aula-data').value = a.data || '';
+    document.getElementById('aula-hora').value = a.hora || '';
+    document.getElementById('aula-obs').value = a.observacoes || '';
+    document.getElementById('aula-form-title').innerHTML = '<i class="fa-solid fa-pen" style="color:#4caf50;margin-right:8px"></i> Editar Aula';
+    document.getElementById('modal-aula-overlay').classList.remove('hidden');
+}
+
+async function handleAulaSubmit(e) {
+    e.preventDefault();
+    const nome = document.getElementById('aula-nome').value.trim();
+    const data = document.getElementById('aula-data').value;
+    const hora = document.getElementById('aula-hora').value;
+    const turmasSelecionadas = aulaGetSelectedTurmas();
+    if (!nome || !data || !hora || !turmasSelecionadas.length) { alert('Preencha nome, ao menos uma turma, data e hora da aula'); return; }
+    const dados = {
+        disciplinaId: currentDisciplinaId,
+        nome: nome,
+        turmas: turmasSelecionadas,
+        turma: turmasSelecionadas.join(', '),
+        data: data,
+        hora: hora,
+        observacoes: document.getElementById('aula-obs').value.trim(),
+        atualizadoEm: new Date().toISOString()
+    };
+    try {
+        if (editingAulaId) {
+            await dbFirestore.collection('aulas').doc(editingAulaId).update(dados);
+            const idx = aulas.findIndex(a => a.id === editingAulaId);
+            if (idx !== -1) Object.assign(aulas[idx], dados);
+        } else {
+            dados.criadoEm = new Date().toISOString();
+            const ref = await dbFirestore.collection('aulas').add(dados);
+            dados.id = ref.id;
+            aulas.push(dados);
+        }
+        closeAulaModal();
+        renderAulasList();
+    } catch (e) {
+        console.error('Erro ao salvar aula:', e);
+        alert('Erro ao salvar aula: ' + e.message);
+    }
+}
+
+async function aulaExcluir(aulaId) {
+    if (!confirm('Excluir esta aula?')) return;
+    try {
+        await dbFirestore.collection('aulas').doc(aulaId).delete();
+        aulas = aulas.filter(a => a.id !== aulaId);
+        renderAulasList();
+    } catch (e) {
+        console.error('Erro ao excluir aula:', e);
+        alert('Erro ao excluir aula: ' + e.message);
+    }
+}
+
+function closeAulaModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('modal-aula-overlay').classList.add('hidden');
+}
+
+async function carregarDisciplinas() {
+    try {
+        const snap = await dbFirestore.collection('disciplinas').get();
+        disciplinas = [];
+        snap.forEach(doc => { disciplinas.push({ id: doc.id, ...doc.data() }); });
+    } catch (e) { console.warn('Erro ao carregar disciplinas:', e); }
+}
+
+async function carregarAulas() {
+    try {
+        const snap = await dbFirestore.collection('aulas').get();
+        aulas = [];
+        snap.forEach(doc => { aulas.push({ id: doc.id, ...doc.data() }); });
+    } catch (e) { console.warn('Erro ao carregar aulas:', e); }
+}
+
+// ===== APONTAMENTO DE PRESENÇA =====
+let aptScanner = null;
+let aptPresencas = {};
+let aptAlunosNaTurma = [];
+
+function apontamentoInicializar() {
+    console.log('Apontamento inicializado');
+}
+
+async function apontamentoAbrirModal() {
+    aptPresencas = {};
+    document.getElementById('apt-turma').innerHTML = '<option value="">Carregando...</option>';
+    document.getElementById('apt-disciplina').innerHTML = '<option value="">Selecione...</option>';
+    document.getElementById('apt-aula').innerHTML = '<option value="">Selecione...</option>';
+    document.getElementById('apt-presenca-area').style.display = 'none';
+    document.getElementById('apt-scanner-area').style.display = 'none';
+    document.getElementById('apt-scan-btn-area').style.display = 'block';
+    const btnScan = document.getElementById('apt-btn-scan');
+    if (btnScan) btnScan.disabled = true;
+    await carregarDisciplinas();
+    await carregarAulas();
+    const selTurma = document.getElementById('apt-turma');
+    selTurma.innerHTML = '<option value="">Selecione a turma</option>';
+    turmas.forEach(t => {
+        selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
+    });
+    const selDisc = document.getElementById('apt-disciplina');
+    selDisc.innerHTML = '<option value="">Selecione a disciplina</option>';
+    disciplinas.forEach(d => {
+        selDisc.innerHTML += '<option value="' + d.id + '">' + d.nome + '</option>';
+    });
+    document.getElementById('modal-apontamento-overlay').classList.remove('hidden');
+}
+
+function apontamentoFecharModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    apontamentoPararScanner();
+    document.getElementById('modal-apontamento-overlay').classList.add('hidden');
+}
+
+function apontamentoOnTurmaChange() {
+    document.getElementById('apt-aula').innerHTML = '<option value="">Selecione...</option>';
+    document.getElementById('apt-presenca-area').style.display = 'none';
+    const turma = document.getElementById('apt-turma').value;
+    if (!turma) return;
+    apontamentoAtualizarAulas();
+}
+
+function apontamentoOnDisciplinaChange() {
+    document.getElementById('apt-presenca-area').style.display = 'none';
+    apontamentoAtualizarAulas();
+}
+
+function apontamentoAtualizarAulas() {
+    const turma = document.getElementById('apt-turma').value;
+    const disciplinaId = document.getElementById('apt-disciplina').value;
+    const selAula = document.getElementById('apt-aula');
+    selAula.innerHTML = '<option value="">Selecione...</option>';
+    if (!turma || !disciplinaId) return;
+    const filtradas = aulas.filter(a => a.disciplinaId === disciplinaId && Array.isArray(a.turmas) && a.turmas.includes(turma));
+    filtradas.forEach(a => {
+        const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+        selAula.innerHTML += '<option value="' + a.id + '">' + a.nome + ' (' + dataFmt + ' ' + (a.hora || '') + ')</option>';
+    });
+}
+
+function apontamentoOnAulaChange() {
+    const aulaId = document.getElementById('apt-aula').value;
+    const btnScan = document.getElementById('apt-btn-scan');
+    document.getElementById('apt-presenca-area').style.display = 'none';
+    if (!aulaId) { btnScan.disabled = true; return; }
+    btnScan.disabled = false;
+    const turma = document.getElementById('apt-turma').value;
+    aptAlunosNaTurma = candidatos.filter(c => c.turma === turma);
+    aptPresencas = {};
+    aptAlunosNaTurma.forEach(c => {
+        aptPresencas[c.cpf] = { matricula: c.matricula || '', nome: c.nome || '', cpf: c.cpf || '', status: '', obs: '' };
+    });
+}
+
+function apontamentoIniciarScanner() {
+    const turma = document.getElementById('apt-turma').value;
+    if (!turma) { alert('Selecione a turma primeiro'); return; }
+    if (!aptAlunosNaTurma.length) { alert('Nenhum aluno encontrado para esta turma'); return; }
+    document.getElementById('apt-scanner-area').style.display = 'block';
+    document.getElementById('apt-scan-btn-area').style.display = 'none';
+    aptScanner = new Html5Qrcode('apt-qr-reader');
+    aptScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+        apontamentoOnQrSuccess,
+        function() {}
+    ).catch(function(err) {
+        console.error('Erro ao iniciar câmera:', err);
+        alert('Não foi possível acessar a câmera: ' + err);
+        document.getElementById('apt-scanner-area').style.display = 'none';
+        document.getElementById('apt-scan-btn-area').style.display = 'block';
+    });
+}
+
+function apontamentoPararScanner() {
+    if (aptScanner) {
+        try { aptScanner.stop().then(() => aptScanner.clear()); } catch(e) {}
+        aptScanner = null;
+    }
+    document.getElementById('apt-scanner-area').style.display = 'none';
+    document.getElementById('apt-scan-btn-area').style.display = 'block';
+}
+
+function apontamentoOnQrSuccess(decodedText) {
+    const matricula = decodedText.trim().toUpperCase();
+    let encontrado = null;
+    for (const cpf in aptPresencas) {
+        if (aptPresencas[cpf].matricula.toUpperCase() === matricula) {
+            encontrado = aptPresencas[cpf];
+            break;
+        }
+    }
+    if (!encontrado) {
+        encontrado = aptAlunosNaTurma.find(c => (c.matricula || '').toUpperCase() === matricula);
+        if (encontrado) {
+            aptPresencas[encontrado.cpf] = { matricula: encontrado.matricula || '', nome: encontrado.nome || '', cpf: encontrado.cpf || '', status: 'Presente', obs: '' };
+        } else {
+            alert('Aluno com matrícula ' + matricula + ' não encontrado nesta turma');
+            return;
+        }
+    }
+    if (!encontrado.status || encontrado.status === 'Falta' || encontrado.status === 'Justificada') {
+        encontrado.status = 'Presente';
+    }
+    apontamentoRenderLista();
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#4caf50;color:#fff;padding:12px 20px;border-radius:8px;z-index:99999;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+    toast.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px"></i> ' + (encontrado.nome || matricula) + ' — Presente';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+}
+
+function apontamentoRenderLista() {
+    const area = document.getElementById('apt-presenca-area');
+    const lista = document.getElementById('apt-presenca-lista');
+    const count = document.getElementById('apt-presenca-count');
+    area.style.display = 'block';
+    const todos = Object.values(aptPresencas);
+    const presentes = todos.filter(p => p.status === 'Presente').length;
+    const faltas = todos.filter(p => p.status === 'Falta').length;
+    const justificadas = todos.filter(p => p.status === 'Justificada').length;
+    count.textContent = presentes + ' presente(s) / ' + faltas + ' falta(s) / ' + justificadas + ' justificada(s) / ' + todos.length + ' total';
+    lista.innerHTML = '<div class="data-table" style="width:100%"><table style="width:100%;border-collapse:collapse"><thead><tr>' +
+        '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Matrícula</th>' +
+        '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Nome</th>' +
+        '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px;width:260px">Status</th>' +
+        '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Observação</th>' +
+        '</tr></thead><tbody>' +
+        todos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map(p => {
+            const statusClass = p.status === 'Presente' ? 'green' : p.status === 'Falta' ? 'red' : p.status === 'Justificada' ? 'orange' : 'gray';
+            return '<tr style="border-bottom:1px solid #222">' +
+                '<td style="padding:8px;font-size:13px;color:#ccc;font-weight:600">' + (p.matricula || '-') + '</td>' +
+                '<td style="padding:8px;font-size:13px;color:#ccc">' + (p.nome || '-') + '</td>' +
+                '<td style="padding:8px;text-align:center">' +
+                    '<div style="display:flex;gap:4px;justify-content:center">' +
+                        '<button onclick="apontamentoSetStatus(\'' + p.cpf + '\',\'Presente\')" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (p.status === 'Presente' ? '#4caf50' : '#333') + ';background:' + (p.status === 'Presente' ? 'rgba(76,175,80,0.2)' : 'transparent') + ';color:' + (p.status === 'Presente' ? '#4caf50' : '#888') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-check"></i> P</button>' +
+                        '<button onclick="apontamentoSetStatus(\'' + p.cpf + '\',\'Falta\')" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (p.status === 'Falta' ? '#f44336' : '#333') + ';background:' + (p.status === 'Falta' ? 'rgba(244,67,54,0.2)' : 'transparent') + ';color:' + (p.status === 'Falta' ? '#f44336' : '#888') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-xmark"></i> F</button>' +
+                        '<button onclick="apontamentoSetStatus(\'' + p.cpf + '\',\'Justificada\')" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (p.status === 'Justificada' ? '#ff9800' : '#333') + ';background:' + (p.status === 'Justificada' ? 'rgba(255,152,0,0.2)' : 'transparent') + ';color:' + (p.status === 'Justificada' ? '#ff9800' : '#888') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-circle-info"></i> J</button>' +
+                    '</div></td>' +
+                '<td style="padding:8px"><input type="text" class="config-input" style="font-size:12px;padding:6px 8px" placeholder="Observação..." value="' + (p.obs || '').replace(/"/g, '&quot;') + '" onchange="apontamentoSetObs(\'' + p.cpf + '\', this.value)"></td>' +
+            '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+}
+
+function apontamentoSetStatus(cpf, status) {
+    if (aptPresencas[cpf]) {
+        aptPresencas[cpf].status = aptPresencas[cpf].status === status ? '' : status;
+        apontamentoRenderLista();
+    }
+}
+
+function apontamentoSetObs(cpf, obs) {
+    if (aptPresencas[cpf]) aptPresencas[cpf].obs = obs;
+}
+
+async function apontamentoSalvar() {
+    const turma = document.getElementById('apt-turma').value;
+    const disciplinaId = document.getElementById('apt-disciplina').value;
+    const aulaId = document.getElementById('apt-aula').value;
+    if (!turma || !disciplinaId || !aulaId) { alert('Selecione turma, disciplina e aula'); return; }
+    const todos = Object.values(aptPresencas);
+    if (!todos.length) { alert('Nenhum aluno na lista'); return; }
+    const aulaSelecionada = aulas.find(a => a.id === aulaId);
+    const disciplinaSelecionada = disciplinas.find(d => d.id === disciplinaId);
+    const dados = {
+        turma: turma,
+        disciplina: disciplinaSelecionada ? disciplinaSelecionada.nome : '',
+        disciplinaId: disciplinaId,
+        aula: aulaSelecionada ? aulaSelecionada.nome : '',
+        aulaId: aulaId,
+        dataAula: aulaSelecionada ? aulaSelecionada.data : '',
+        horaAula: aulaSelecionada ? aulaSelecionada.hora : '',
+        alunos: todos,
+        criadoEm: new Date().toISOString(),
+        criadoPor: currentUserData ? currentUserData.nome || '' : ''
+    };
+    try {
+        await dbFirestore.collection('apontamentos').add(dados);
+        apontamentoPararScanner();
+        document.getElementById('modal-apontamento-overlay').classList.add('hidden');
+        alert('Apontamento salvo com sucesso!');
+    } catch (e) {
+        console.error('Erro ao salvar apontamento:', e);
+        alert('Erro ao salvar: ' + e.message);
+    }
 }
 
 window.addEventListener('appinstalled', function() {
