@@ -6,12 +6,8 @@ let candidatos = [];
 let turmas = [];
 let uploadedFiles = [];
 let pendingDeleteIndex = null;
-let pendingDeleteTurmaIndex = null;
-let editingTurmaIndex = null;
 let currentAluno = null;
-let currentFormado = null;
 let usuarios = [];
-let formados = [];
 let currentUserData = null;
 let projetos = [];
 let onlineCpfs = new Set();
@@ -23,7 +19,6 @@ let onlineUnsubscribe = null;
 const FB_CANDIDATOS = 'candidatos';
 const FB_TURMAS = 'turmas';
 const FB_USUARIOS = 'usuarios';
-const FB_FORMADOS = 'formados';
 const FB_PROJETOS = 'parceiros';
 const FB_DISCIPLINAS = 'disciplinas';
 const FB_AULAS = 'aulas';
@@ -96,16 +91,34 @@ function backupCandidatos() {
     batch.commit().catch(e => console.error('Erro ao salvar candidatos:', e));
 }
 
-function backupTurmas() {
+async function backupTurmas() {
     if (!firebaseReady && !firebaseError) return;
-    const batch = dbFirestore.batch();
-    const ref = dbFirestore.collection(FB_TURMAS);
-    batch.set(ref.doc('_index'), { count: turmas.length, timestamp: Date.now() });
-    turmas.forEach((t, i) => {
-        const id = t.id ? String(t.id) : String(i);
-        batch.set(ref.doc(id), t);
-    });
-    batch.commit().catch(e => console.error('Erro ao salvar turmas:', e));
+    try {
+        const ref = dbFirestore.collection(FB_TURMAS);
+        const snap = await ref.get();
+        const existingIds = new Set();
+        snap.forEach(doc => {
+            if (doc.id !== '_index') existingIds.add(doc.id);
+        });
+        const currentIds = new Set();
+        const batch = dbFirestore.batch();
+        batch.set(ref.doc('_index'), { count: turmas.length, timestamp: Date.now() });
+        turmas.forEach((t) => {
+            let id = t.id ? String(t.id) : null;
+            if (!id) {
+                id = String(Date.now()) + '_' + String(Math.random()).slice(2, 8);
+                t.id = parseInt(id) || id;
+            }
+            currentIds.add(id);
+            batch.set(ref.doc(id), t);
+        });
+        existingIds.forEach(docId => {
+            if (!currentIds.has(docId)) {
+                batch.delete(ref.doc(docId));
+            }
+        });
+        await batch.commit();
+    } catch(e) { console.error('Erro ao salvar turmas:', e); }
 }
 
 function backupUsuarios() {
@@ -120,20 +133,6 @@ function backupUsuarios() {
         batch.set(ref.doc(id), copy);
     });
     batch.commit().catch(e => console.error('Erro ao salvar usuarios:', e));
-}
-
-function backupFormados() {
-    if (!firebaseReady && !firebaseError) return;
-    const batch = dbFirestore.batch();
-    const ref = dbFirestore.collection(FB_FORMADOS);
-    batch.set(ref.doc('_index'), { count: formados.length, timestamp: Date.now() });
-    formados.forEach((f, i) => {
-        const id = f.docId ? String(f.docId) : (f.cpf ? String(f.cpf) : String(i));
-        const copy = Object.assign({}, f);
-        delete copy.docId;
-        batch.set(ref.doc(id), copy);
-    });
-    batch.commit().catch(e => console.error('Erro ao salvar formados:', e));
 }
 
 function backupProjetos() {
@@ -190,25 +189,27 @@ async function syncAllDatabases() {
         backupCandidatos();
         backupTurmas();
         backupUsuarios();
-        backupFormados();
         backupProjetos();
         backupDisciplinas();
         backupAulas();
         await dbFirestore.collection(FB_CANDIDATOS).get();
         await dbFirestore.collection(FB_TURMAS).get();
         await dbFirestore.collection(FB_USUARIOS).get();
-        await dbFirestore.collection(FB_FORMADOS).get();
         await dbFirestore.collection(FB_PROJETOS).get();
         await dbFirestore.collection(FB_DISCIPLINAS).get();
         await dbFirestore.collection(FB_AULAS).get();
         renderList();
-        renderTurmasList();
         populateTurmaSelect();
+        populateProjetoSelect();
+        const fcProjeto = document.getElementById('fc-projeto');
+        if (fcProjeto && fcProjeto.value) {
+            fcProjetoOnTurmaChange();
+        }
         if (typeof renderUsuariosList === 'function') renderUsuariosList();
-        if (typeof renderFormadosList === 'function') renderFormadosList();
         if (typeof renderProjetosList === 'function') renderProjetosList();
         if (typeof disciplinaRenderList === 'function') disciplinaRenderList();
         if (typeof renderAulasList === 'function') renderAulasList();
+        if (typeof alunosInicializar === 'function') alunosInicializar();
         if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Sincronizado!';
         setTimeout(() => {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos'; }
@@ -223,7 +224,7 @@ async function syncAllDatabases() {
 function initFirebaseListeners() {
     return new Promise((resolve) => {
         let loaded = 0;
-        const totalListeners = 7;
+        const totalListeners = 6;
         const checkReady = () => {
             loaded++;
             if (loaded >= totalListeners) {
@@ -267,8 +268,20 @@ function initFirebaseListeners() {
             });
             turmas = result;
             if (firebaseReady) {
-                renderTurmasList();
                 populateTurmaSelect();
+                populateProjetoSelect();
+                const fcProjeto = document.getElementById('fc-projeto');
+                if (fcProjeto && fcProjeto.value) {
+                    fcProjetoOnTurmaChange();
+                }
+                if (typeof alunosOnSelecaoProjetoChange === 'function') {
+                    const alSelProj = document.getElementById('alunos-selecao-projeto');
+                    if (alSelProj && alSelProj.value) alunosOnSelecaoProjetoChange();
+                }
+                if (typeof preOnSelecaoProjetoChange === 'function') {
+                    const preSelProj = document.getElementById('pre-selecao-projeto');
+                    if (preSelProj && preSelProj.value) preOnSelecaoProjetoChange();
+                }
             }
             checkReady();
         }, (error) => {
@@ -295,23 +308,6 @@ function initFirebaseListeners() {
             checkReady();
         });
 
-        dbFirestore.collection(FB_FORMADOS).onSnapshot((snap) => {
-            const result = [];
-            snap.forEach(doc => {
-                if (doc.id !== '_index') {
-                    const data = doc.data();
-                    data.docId = doc.id;
-                    result.push(data);
-                }
-            });
-            formados = result;
-            if (firebaseReady && typeof renderFormadosList === 'function') renderFormadosList();
-            checkReady();
-        }, (error) => {
-            console.error('Erro Firestore formados:', error);
-            checkReady();
-        });
-
         dbFirestore.collection(FB_PROJETOS).onSnapshot((snap) => {
             const result = [];
             snap.forEach(doc => {
@@ -322,7 +318,17 @@ function initFirebaseListeners() {
                 }
             });
             projetos = result;
-            if (firebaseReady && typeof renderProjetosList === 'function') renderProjetosList();
+            if (firebaseReady) {
+                if (typeof renderProjetosList === 'function') renderProjetosList();
+                populateProjetoSelect();
+                populateTurmaSelect();
+                const fcProjeto = document.getElementById('fc-projeto');
+                if (fcProjeto && fcProjeto.value) {
+                    fcProjetoOnTurmaChange();
+                }
+                if (typeof alunosInicializar === 'function') alunosInicializar();
+                if (typeof preInicializar === 'function') preInicializar();
+            }
             checkReady();
         }, (error) => {
             console.error('Erro Firestore projetos:', error);
@@ -448,9 +454,7 @@ async function initApp() {
     await initFirebaseListeners();
     startOnlineListener();
     backupUsuarios();
-    backupFormados();
     backupProjetos();
-    initPcfCursosListeners();
     candidatos.forEach(c => { c.cadastradoPor = 'OZIEL'; });
     candidatos.forEach(c => { if (!c.dataHoraCadastro && c.dataCadastro) c.dataHoraCadastro = c.dataCadastro + ' 00:00'; });
     backupCandidatos();
@@ -463,11 +467,12 @@ async function initApp() {
         const firstVisible = document.querySelector('#screen-admin .sidebar-nav .nav-item:not([style*="display: none"])');
         if (firstVisible) firstVisible.click();
         await populateTurmaSelect();
+        populateProjetoSelect();
         renderList();
-        renderTurmasList();
         if (restoreFormState()) {
             showAdminSection('admin-form-candidato', document.querySelector('.nav-item:nth-child(2)'));
             await populateTurmaSelect();
+            populateProjetoSelect();
         }
     } else {
         const lastCpf = getLastLogin();
@@ -571,20 +576,6 @@ function toggleSenhaCadastro() {
     else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
 }
 
-function toggleSenhaFormado() {
-    const input = document.getElementById('ff-senha');
-    const icon = document.getElementById('eye-icon-formado');
-    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
-    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
-}
-
-function toggleSenhaPreCadastro() {
-    const input = document.getElementById('pcf-senha');
-    const icon = document.getElementById('eye-icon-pcf');
-    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
-    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
-}
-
 function selectLoginRole(btn) {
     document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
@@ -668,69 +659,6 @@ async function handleLogin(event) {
         showPortalSection('noticias');
         portalLoadSidebarFoto();
         if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
-    } else if (selectedLoginRole === 'formado') {
-        if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
-            currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
-            currentFormado = { nome: 'Administrador Geral', cpf: ADMIN_CPF, photoDataUrl: null, matricula: 'ADMIN', cursos: [] };
-            document.getElementById('screen-login').classList.remove('active');
-            document.getElementById('screen-portal-formado').classList.add('active');
-            document.getElementById('portal-formado-nome').textContent = 'Administrador';
-            document.getElementById('portal-formado-nome-top').textContent = 'Administrador';
-            document.getElementById('portal-formado-matricula').textContent = 'ADMIN';
-            document.getElementById('portal-formado-matricula-side').textContent = 'ADMIN';
-            document.getElementById('portal-formado-cursos-count').textContent = '0';
-            const photoBox = document.querySelector('#screen-portal-formado .portal-photo-box');
-            photoBox.innerHTML = '<i class="fa-solid fa-user-shield" style="font-size:56px;color:#f57c00"></i>';
-            document.getElementById('portal-formado-cursos-list').innerHTML = '<p class="formado-empty">Acesso administrativo.</p>';
-            document.getElementById('portal-formado-certs').innerHTML = '<p class="formado-empty">Acesso administrativo.</p>';
-            saveLastLogin(cpf);
-            if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
-            saveLoginState();
-            return false;
-        }
-        const formado = formados.find(f => {
-            const matchCpf = f.cpf === cpf;
-            const matchMatricula = f.matricula && f.matricula.toUpperCase() === rawInput.toUpperCase();
-            return (matchCpf || matchMatricula) && f.senha === password && (f.status === 'Ativo' || !f.status);
-        });
-        if (!formado) {
-            errorEl.querySelector('span').textContent = 'CPF, matricula ou senha invalidos, ou formado nao ativo';
-            errorEl.classList.remove('hidden');
-            document.getElementById('password').value = '';
-            return false;
-        }
-        currentFormado = formado;
-        document.getElementById('screen-login').classList.remove('active');
-        document.getElementById('screen-portal-formado').classList.add('active');
-        const primeiroNome = (formado.nome || '').split(' ')[0];
-        document.getElementById('portal-formado-nome').textContent = primeiroNome;
-        if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
-        document.getElementById('portal-formado-nome-top').textContent = primeiroNome;
-        document.getElementById('portal-formado-matricula').textContent = formado.matricula || '---';
-        document.getElementById('portal-formado-matricula-side').textContent = formado.matricula || '---';
-        document.getElementById('portal-formado-cursos-count').textContent = (formado.cursos && formado.cursos.length) ? formado.cursos.length : 0;
-        const photoBox = document.querySelector('#screen-portal-formado .portal-photo-box');
-        if (formado.photoDataUrl) {
-            photoBox.innerHTML = `<img src="${formado.photoDataUrl}" alt="Foto 3x4" class="portal-photo">`;
-        } else {
-            photoBox.innerHTML = '<i class="fa-solid fa-user" style="font-size:56px;color:#444"></i>';
-        }
-        const cursosList = document.getElementById('portal-formado-cursos-list');
-        if (formado.cursos && formado.cursos.length) {
-            cursosList.innerHTML = formado.cursos.map(c => `<span style="display:inline-block;padding:4px 8px;background:#fff3e0;border-radius:6px;font-size:11px;color:#e65100;border:1px solid #ffcc80;margin:3px 2px"><i class="fa-solid fa-check" style="margin-right:4px;font-size:9px"></i>${c}</span>`).join('');
-        } else {
-            cursosList.innerHTML = '<p class="formado-empty">Nenhum curso registrado ainda.</p>';
-        }
-        const certsDiv = document.getElementById('portal-formado-certs');
-        if (formado.certFrente || formado.certVerso) {
-            let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">';
-            if (formado.certFrente) html += `<div><small style="color:#666">Frente</small><br><img src="${formado.certFrente}" style="max-width:150px;border-radius:8px;border:1px solid #ddd;margin-top:4px">`;
-            if (formado.certVerso) html += `</div><div><small style="color:#666">Verso</small><br><img src="${formado.certVerso}" style="max-width:150px;border-radius:8px;border:1px solid #ddd;margin-top:4px">`;
-            html += '</div>';
-            certsDiv.innerHTML = html;
-        } else {
-            certsDiv.innerHTML = '<p class="formado-empty">Nenhum certificado anexado ainda.</p>';
-        }
     }
     return false;
 }
@@ -743,8 +671,8 @@ function enterAdminPanel() {
     const firstVisible = document.querySelector('#screen-admin .sidebar-nav .nav-item:not([style*="display: none"])');
     if (firstVisible) firstVisible.click();
     populateTurmaSelect();
+    populateProjetoSelect();
     renderList();
-    renderTurmasList();
 }
 
 function applyUserPermissions() {
@@ -754,12 +682,8 @@ function applyUserPermissions() {
     const navItems = {
         'admin-pre-inscricao': p.includes('pre-inscricao') || isGeral,
         'admin-alunos': p.includes('alunos') || isGeral,
-        'admin-turmas': p.includes('turmas') || isGeral,
+        'admin-disciplinas': p.includes('turmas') || isGeral,
         'admin-instrutores': p.includes('instrutores') || isGeral,
-        'admin-formados': p.includes('formados') || isGeral,
-        'admin-form-formado': p.includes('formados') || isGeral,
-        'admin-pre-cadastro-formados': p.includes('formados') || isGeral,
-        'admin-form-pre-cadastro-formado': p.includes('formados') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
         'admin-projetos': p.includes('projetos') || isGeral,
         'admin-form-projeto': p.includes('projetos') || isGeral,
@@ -2188,18 +2112,6 @@ async function portalAlunoAutoSave(silent) {
 
 function savePortalAlunoDados() { portalAlunoAutoSave(false); }
 
-function logoutPortalFormado() {
-    document.getElementById('screen-portal-formado').classList.remove('active');
-    document.getElementById('screen-login').classList.add('active');
-    document.getElementById('cpf').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('login-error').classList.add('hidden');
-    currentFormado = null;
-    selectedLoginRole = 'admin';
-    document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
-    document.querySelector('.login-role-btn[data-role="admin"]').classList.add('selected');
-}
-
 function showDownloadModal() {
     document.getElementById('modal-download-overlay').classList.remove('hidden');
 }
@@ -2216,17 +2128,16 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-turmas': 'Turmas', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-form-formado': editingFormadoDocId ? 'Editar Formado' : 'Novo Formado', 'admin-pre-cadastro-formados': 'Pre-Cadastro Formados', 'admin-form-pre-cadastro-formado': 'Novo Pre-Cadastro Formado', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
-    if (sectionId === 'admin-turmas') {
-        renderTurmasList();
+    if (sectionId === 'admin-disciplinas') {
         carregarDisciplinas().then(() => carregarAulas()).then(() => disciplinaRenderList());
     }
 }
 
 /* ===== FORM CANDIDATO ===== */
 
-const formFields = ['fc-turma','fc-projeto','fc-nome','fc-cpf','fc-nascimento','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
 async function openFormCandidato() {
     editingIndex = null;
@@ -2276,8 +2187,13 @@ async function editCandidato(index) {
     document.getElementById('fc-calca').value = c.calca || '';
     document.getElementById('fc-camisa').value = c.camisa || '';
     document.getElementById('fc-calcado').value = c.calcado || '';
-    document.getElementById('fc-turma').value = c.turma || '';
+    // Setar projeto e turma
     document.getElementById('fc-projeto').value = c.projeto || '';
+    fcProjetoOnTurmaChange();
+    document.getElementById('fc-turma').value = c.turma || '';
+    const tipoPessoa = c.tipoPessoa || 'A';
+    const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"][value="' + tipoPessoa + '"]');
+    if (tipoRadio) tipoRadio.checked = true;
     // Atualizar matricula e QR code
     const mat = c.matricula || generateMatricula(c.cpf);
     const wrapper = document.getElementById('fc-matricula-wrapper');
@@ -2292,20 +2208,14 @@ async function editCandidato(index) {
         }
     }
     const senhaWrapper = document.getElementById('senha-field-wrapper');
-    const fcFotoSection = document.getElementById('fc-foto3x4-section');
     if (c.status === 'Aprovado') {
         senhaWrapper.style.display = '';
         document.getElementById('fc-senha').value = c.senha || (c.cpf ? c.cpf.substring(0, 6) : '');
         document.getElementById('fc-senha').required = true;
-        if (fcFotoSection) {
-            fcFotoSection.style.display = '';
-            fcAdminFoto3x4Load(c);
-        }
     } else {
         senhaWrapper.style.display = 'none';
         document.getElementById('fc-senha').value = '';
         document.getElementById('fc-senha').required = false;
-        if (fcFotoSection) fcFotoSection.style.display = 'none';
     }
     document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#f57c00;margin-right:8px"></i> Editar - ' + c.nome;
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
@@ -2337,8 +2247,6 @@ function resetFormCandidato() {
     if (mq) { mq.src = ''; mq.style.display = 'none'; }
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
-    var fcFotoSection = document.getElementById('fc-foto3x4-section');
-    if (fcFotoSection) { fcFotoSection.style.display = 'none'; fcAdminFoto3x4Reset(); }
     uploadedFiles = [];
     renderFilesList();
 }
@@ -2374,6 +2282,8 @@ async function handleCandidatoSubmit(event) {
         if (id === 'fc-cpf') data[key] = el.value.replace(/\D/g, '');
         else data[key] = el.value;
     });
+    const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
+    data.tipoPessoa = tipoRadio ? tipoRadio.value : 'A';
     data.matricula = generateMatricula(data.cpf);
     data.status = editingIndex !== null ? candidatos[editingIndex].status : 'Pendente';
     data.dataCadastro = editingIndex !== null ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
@@ -2400,16 +2310,57 @@ async function handleCandidatoSubmit(event) {
     return false;
 }
 
+/* ===== PRE-INSCRICAO - FILTRO POR PROJETO/TURMA ===== */
+
+function preInicializar() {
+    const selProj = document.getElementById('pre-selecao-projeto');
+    if (!selProj) return;
+    selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
+    projetos.forEach(p => {
+        selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
+    });
+    const conteudo = document.getElementById('pre-conteudo');
+    if (conteudo) conteudo.style.display = 'none';
+}
+
+function preOnSelecaoProjetoChange() {
+    const projetoNome = document.getElementById('pre-selecao-projeto').value;
+    const selTurma = document.getElementById('pre-selecao-turma');
+    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
+        turmasDoProjeto.forEach(t => {
+            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    }
+    preOnSelecaoChange();
+}
+
+function preOnSelecaoChange() {
+    const projeto = document.getElementById('pre-selecao-projeto').value;
+    const turma = document.getElementById('pre-selecao-turma').value;
+    const conteudo = document.getElementById('pre-conteudo');
+    if (projeto && turma) {
+        conteudo.style.display = '';
+        renderList();
+    } else {
+        conteudo.style.display = 'none';
+    }
+}
+
 /* ===== LISTA ===== */
 
 function renderList() {
     const tbody = document.getElementById('pre-table-body');
     const badge = document.getElementById('pre-count-badge');
     if (!tbody) return;
-    const p = candidatos.filter(c => c.status === 'Pendente').length;
+    const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
+    const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
+    const p = filtrados.filter(c => c.status === 'Pendente').length;
     if (badge) badge.textContent = p + ' pendente' + (p !== 1 ? 's' : '');
-    if (!candidatos.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum candidato cadastrado</td></tr>'; return; }
-    tbody.innerHTML = candidatos.map((c, i) => {
+    if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
+    tbody.innerHTML = filtrados.map((c) => {
+        const i = candidatos.indexOf(c);
         const sc = c.status === 'Aprovado' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
         const nomeStyle = c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '';
         return `<tr>
@@ -2479,6 +2430,7 @@ function viewCandidato(i) {
             ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#f57c00;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mat)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff"></div></div>` : ''}
             <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">Projeto</span><span class="detail-value" style="color:#ff9800;font-weight:600">${c.projeto||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value" style="color:${(c.tipoPessoa||'A')==='F'?'#ff9800':'#2196f3'};font-weight:700">${(c.tipoPessoa||'A')==='F'?'Formado (A)':'Academico (A)'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastro</span><span class="detail-value">${c.dataCadastro}</span></div>
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
@@ -2491,33 +2443,12 @@ function viewCandidato(i) {
 
 function deleteCandidato(i) {
     pendingDeleteIndex = i;
-    pendingDeleteTurmaIndex = null;
     document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o candidato <strong>${candidatos[i].nome}</strong>?`;
     document.getElementById('modal-confirm-overlay').classList.remove('hidden');
 }
 
 async function confirmDelete() {
-    if (window._pendingDeleteFormado) {
-        try {
-            await dbFirestore.collection(FB_FORMADOS).doc(window._pendingDeleteFormado).delete();
-            const idx = formados.findIndex(f => f.docId === window._pendingDeleteFormado);
-            if (idx !== -1) formados.splice(idx, 1);
-            renderFormadosList();
-        } catch(e) { alert('Erro ao excluir: ' + e.message); }
-        window._pendingDeleteFormado = null;
-        closeConfirmModal();
-        return;
-    }
-    if (pendingDeleteTurmaIndex !== null) {
-        const removedTurma = turmas[pendingDeleteTurmaIndex];
-        turmas.splice(pendingDeleteTurmaIndex, 1);
-        if (removedTurma && removedTurma.id) {
-            try { await dbFirestore.collection(FB_TURMAS).doc(String(removedTurma.id)).delete(); } catch(e) { alert('Erro ao excluir turma: ' + e.message); }
-        }
-        backupTurmas();
-        renderTurmasList();
-        await populateTurmaSelect();
-    } else if (pendingDeleteIndex !== null) {
+    if (pendingDeleteIndex !== null) {
         var idx = pendingDeleteIndex;
         var removed = candidatos[idx];
         candidatos.splice(idx, 1);
@@ -2759,9 +2690,11 @@ async function importExcelFile(event) {
 }
 
 function exportExcel() {
-    if (!candidatos.length) { alert('Nenhum candidato para exportar.'); return; }
+    const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
+    const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
+    if (!filtrados.length) { alert('Nenhum candidato para exportar nesta turma.'); return; }
     let csv = 'Nome,CPF,Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
-    candidatos.forEach(c => {
+    filtrados.forEach(c => {
         csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -2788,6 +2721,42 @@ const STATUS_MAP = {
     'segunda-chamada': 'Segunda Chamada'
 };
 
+function alunosInicializar() {
+    const selProj = document.getElementById('alunos-selecao-projeto');
+    if (!selProj) return;
+    selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
+    projetos.forEach(p => {
+        selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
+    });
+    const conteudo = document.getElementById('alunos-conteudo');
+    if (conteudo) conteudo.style.display = 'none';
+}
+
+function alunosOnSelecaoProjetoChange() {
+    const projetoNome = document.getElementById('alunos-selecao-projeto').value;
+    const selTurma = document.getElementById('alunos-selecao-turma');
+    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
+        turmasDoProjeto.forEach(t => {
+            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    }
+    alunosOnSelecaoChange();
+}
+
+function alunosOnSelecaoChange() {
+    const projeto = document.getElementById('alunos-selecao-projeto').value;
+    const turma = document.getElementById('alunos-selecao-turma').value;
+    const conteudo = document.getElementById('alunos-conteudo');
+    if (projeto && turma) {
+        conteudo.style.display = '';
+        renderAlunosList();
+    } else {
+        conteudo.style.display = 'none';
+    }
+}
+
 function switchAlunosTab(tab, btn) {
     currentAlunosTab = tab;
     document.querySelectorAll('.alunos-tab').forEach(t => t.classList.remove('active'));
@@ -2797,18 +2766,31 @@ function switchAlunosTab(tab, btn) {
 
 function renderAlunosList() {
     const tbody = document.getElementById('alunos-table-body');
+    const thead = document.querySelector('#admin-alunos .data-table thead tr');
     if (!tbody) return;
 
+    const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => c.status === statusFilter);
+    const filtered = candidatos.filter(c => c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
+    const isAprovados = currentAlunosTab === 'aprovados';
 
-    document.getElementById('tab-count-aprovados').textContent = candidatos.filter(c => c.status === 'Aprovado').length;
-    document.getElementById('tab-count-pendentes').textContent = candidatos.filter(c => c.status === 'Pendente').length;
-    document.getElementById('tab-count-reprovados').textContent = candidatos.filter(c => c.status === 'Rejeitado').length;
-    document.getElementById('tab-count-segunda-chamada').textContent = candidatos.filter(c => c.status === 'Segunda Chamada').length;
+    const allByTurma = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
+    document.getElementById('tab-count-aprovados').textContent = allByTurma.filter(c => c.status === 'Aprovado').length;
+    document.getElementById('tab-count-pendentes').textContent = allByTurma.filter(c => c.status === 'Pendente').length;
+    document.getElementById('tab-count-reprovados').textContent = allByTurma.filter(c => c.status === 'Rejeitado').length;
+    document.getElementById('tab-count-segunda-chamada').textContent = allByTurma.filter(c => c.status === 'Segunda Chamada').length;
+
+    if (thead) {
+        if (isAprovados) {
+            thead.innerHTML = '<th>Nome</th><th>Matricula</th><th>Projeto</th><th>Acoes</th>';
+        } else {
+            thead.innerHTML = '<th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Projeto</th><th>Data Cadastro</th><th>Acoes</th>';
+        }
+    }
 
     if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum aluno na aba "${statusFilter}"</td></tr>`;
+        const cols = isAprovados ? 4 : 7;
+        tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#888;padding:24px">Nenhum aluno na aba "${statusFilter}"</td></tr>`;
         return;
     }
 
@@ -2828,20 +2810,13 @@ function renderAlunosList() {
         const nomeStyle = c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '';
         const isOnline = onlineCpfs.has(c.cpf);
         const onlineDot = isOnline ? ' <span class="online-dot" title="Online"></span>' : '';
-        return `<tr>
-            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
-            <td>${formatCPFDisplay(c.cpf)}</td>
-            <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
-            <td>${c.turma || '-'}</td>
-            <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
-            <td>${c.dataCadastro || '-'}${c.dataHoraCadastro ? '<br><small style="color:#4caf50;font-size:9px">' + c.dataHoraCadastro + '</small>' : ''}</td>
-            <td><div class="actions-cell">
+
+        const actionsHtml = `<div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
                 ${c.status === 'Aprovado' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
-                <button class="btn-icon btn-move-formado" title="Mover para Formados" onclick="openMoveFormadoModal(${i})" style="background:rgba(255,152,0,0.15);color:#ff9800;border:1px solid rgba(255,152,0,0.3)"><i class="fa-solid fa-award"></i></button>
                 <div class="status-dropdown">
                     <button class="btn-icon btn-status" title="Alterar Status" onclick="toggleStatusDropdown(event, ${i})"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
                     <div class="status-dropdown-menu hidden" id="status-dd-${i}">
@@ -2854,7 +2829,25 @@ function renderAlunosList() {
                         `).join('')}
                     </div>
                 </div>
-            </div></td>
+            </div>`;
+
+        if (isAprovados) {
+            return `<tr>
+                <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+                <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
+                <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
+                <td>${actionsHtml}</td>
+            </tr>`;
+        }
+
+        return `<tr>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+            <td>${formatCPFDisplay(c.cpf)}</td>
+            <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
+            <td>${c.turma || '-'}</td>
+            <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
+            <td>${c.dataCadastro || '-'}${c.dataHoraCadastro ? '<br><small style="color:#4caf50;font-size:9px">' + c.dataHoraCadastro + '</small>' : ''}</td>
+            <td>${actionsHtml}</td>
         </tr>`;
     }).join('');
 }
@@ -2884,7 +2877,6 @@ async function changeStatus(i, newStatus) {
 
 function deleteCandidatoAlunos(i) {
     pendingDeleteIndex = i;
-    pendingDeleteTurmaIndex = null;
     document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o aluno <strong>${candidatos[i].nome}</strong>?`;
     document.getElementById('modal-confirm-overlay').classList.remove('hidden');
 }
@@ -2898,8 +2890,9 @@ function filterAlunos() {
 }
 
 function exportExcelAlunos() {
+    const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => c.status === statusFilter);
+    const filtered = candidatos.filter(c => c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
     if (!filtered.length) { alert('Nenhum aluno para exportar nesta aba.'); return; }
     let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Projeto,Status,Data Cadastro,Data/Hora 1o Cadastro\n';
     filtered.forEach(c => {
@@ -2910,8 +2903,9 @@ function exportExcelAlunos() {
 }
 
 function printTableAlunos() {
+    const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => c.status === statusFilter);
+    const filtered = candidatos.filter(c => c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
     if (!filtered.length) { alert('Nenhum aluno para imprimir nesta aba.'); return; }
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - Alunos - ${statusFilter}</title><style>
@@ -3165,6 +3159,7 @@ function gerarRelatorioPersonalizado() {
 /* ===== PROJETOS CRUD ===== */
 
 let editingProjetoIndex = null;
+let projetoTurmasTemp = [];
 
 function formatCNPJ(input) {
     let v = input.value.replace(/\D/g, '');
@@ -3176,34 +3171,139 @@ function formatCNPJ(input) {
     input.value = v;
 }
 
+function projetoRenderTurmas() {
+    const lista = document.getElementById('pf-turmas-lista');
+    const empty = document.getElementById('pf-turmas-empty');
+    if (!lista) return;
+    lista.querySelectorAll('.pf-turma-item').forEach(el => el.remove());
+    if (!projetoTurmasTemp.length) {
+        if (empty) empty.style.display = 'block';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    projetoTurmasTemp.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.className = 'pf-turma-item';
+        div.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid #222;transition:background 0.2s';
+        div.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;gap:2px">' +
+            '<span style="color:#fff;font-size:13px;font-weight:600"><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:8px"></i>' + t.nome + '</span>' +
+            (t.descricao ? '<span style="color:#888;font-size:12px;margin-left:24px">' + t.descricao + '</span>' : '') +
+            '</div>' +
+            '<button type="button" class="btn-icon" title="Editar" onclick="projetoEditarTurma(' + i + ')"><i class="fa-solid fa-pen"></i></button>' +
+            '<button type="button" class="btn-icon btn-danger-icon" title="Remover" onclick="projetoRemoverTurma(' + i + ')"><i class="fa-solid fa-trash"></i></button>';
+        div.addEventListener('mouseenter', function() { this.style.background = '#1a1a2e'; });
+        div.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
+        lista.appendChild(div);
+    });
+}
+
+function projetoAdicionarTurma() {
+    const nomeEl = document.getElementById('pf-turma-nome');
+    const descEl = document.getElementById('pf-turma-desc');
+    const nome = nomeEl.value.trim();
+    if (!nome) { nomeEl.focus(); nomeEl.style.borderColor = '#f44336'; setTimeout(function() { nomeEl.style.borderColor = ''; }, 2000); return; }
+    var duplicada = projetoTurmasTemp.find(function(t) { return t.nome.toLowerCase() === nome.toLowerCase(); });
+    if (duplicada) { alert('Ja existe uma turma com esse nome neste projeto.'); return; }
+    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim() });
+    nomeEl.value = '';
+    descEl.value = '';
+    nomeEl.focus();
+    projetoRenderTurmas();
+}
+
+function projetoEditarTurma(i) {
+    var t = projetoTurmasTemp[i];
+    if (!t) return;
+    document.getElementById('pf-turma-nome').value = t.nome;
+    document.getElementById('pf-turma-desc').value = t.descricao || '';
+    editingProjetoTurmaIdx = i;
+    document.getElementById('pf-turma-btn-add').style.display = 'none';
+    document.getElementById('pf-turma-btn-salvar').style.display = '';
+    document.getElementById('pf-turma-btn-cancelar').style.display = '';
+    document.getElementById('pf-turma-nome').focus();
+}
+
+function projetoSalvarTurma() {
+    var nomeEl = document.getElementById('pf-turma-nome');
+    var descEl = document.getElementById('pf-turma-desc');
+    var nome = nomeEl.value.trim();
+    if (!nome) { nomeEl.focus(); nomeEl.style.borderColor = '#f44336'; setTimeout(function() { nomeEl.style.borderColor = ''; }, 2000); return; }
+    var duplicada = projetoTurmasTemp.find(function(t, idx) { return idx !== editingProjetoTurmaIdx && t.nome.toLowerCase() === nome.toLowerCase(); });
+    if (duplicada) { alert('Ja existe outra turma com esse nome neste projeto.'); return; }
+    projetoTurmasTemp[editingProjetoTurmaIdx].nome = nome;
+    projetoTurmasTemp[editingProjetoTurmaIdx].descricao = descEl.value.trim();
+    projetoCancelarEdicaoTurma();
+    projetoRenderTurmas();
+}
+
+function projetoCancelarEdicaoTurma() {
+    editingProjetoTurmaIdx = null;
+    document.getElementById('pf-turma-nome').value = '';
+    document.getElementById('pf-turma-desc').value = '';
+    document.getElementById('pf-turma-btn-add').style.display = '';
+    document.getElementById('pf-turma-btn-salvar').style.display = 'none';
+    document.getElementById('pf-turma-btn-cancelar').style.display = 'none';
+}
+
+function projetoRemoverTurma(i) {
+    if (!confirm('Remover a turma "' + projetoTurmasTemp[i].nome + '"?')) return;
+    projetoTurmasTemp.splice(i, 1);
+    if (editingProjetoTurmaIdx === i) projetoCancelarEdicaoTurma();
+    projetoRenderTurmas();
+}
+
 function openFormProjeto() {
     editingProjetoIndex = null;
+    projetoTurmasTemp = [];
+    projetoCancelarEdicaoTurma();
     document.getElementById('pf-nome').value = '';
     document.getElementById('pf-cnpj').value = '';
     document.getElementById('pf-responsavel').value = '';
+    projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Projeto';
     showAdminSection('admin-form-projeto');
 }
 
-function handleProjetoSubmit(event) {
+async function handleProjetoSubmit(event) {
     event.preventDefault();
-    const data = {
-        nome: document.getElementById('pf-nome').value.trim(),
-        cnpj: document.getElementById('pf-cnpj').value.trim(),
-        responsavel: document.getElementById('pf-responsavel').value.trim()
-    };
-    if (editingProjetoIndex !== null) {
-        data.docId = projetos[editingProjetoIndex].docId;
-        data.dataCadastro = projetos[editingProjetoIndex].dataCadastro;
-        projetos[editingProjetoIndex] = data;
-        editingProjetoIndex = null;
-    } else {
-        data.dataCadastro = new Date().toLocaleDateString('pt-BR');
-        projetos.push(data);
+    const nome = document.getElementById('pf-nome').value.trim();
+    const cnpj = document.getElementById('pf-cnpj').value.trim();
+    const responsavel = document.getElementById('pf-responsavel').value.trim();
+    if (!nome) { alert('Nome do projeto e obrigatorio.'); return false; }
+    const data = { nome, cnpj, responsavel, turmas: projetoTurmasTemp.map(t => t.nome) };
+    try {
+        if (editingProjetoIndex !== null) {
+            const old = projetos[editingProjetoIndex];
+            data.docId = old.docId;
+            data.dataCadastro = old.dataCadastro;
+            projetos[editingProjetoIndex] = data;
+            if (data.docId) {
+                await dbFirestore.collection(FB_PROJETOS).doc(String(data.docId)).set(data, { merge: true });
+            }
+            turmas = turmas.filter(t => t.projeto !== old.nome);
+            editingProjetoIndex = null;
+        } else {
+            data.dataCadastro = new Date().toLocaleDateString('pt-BR');
+            const ref = await dbFirestore.collection(FB_PROJETOS).add(data);
+            data.docId = ref.id;
+            projetos.push(data);
+        }
+        for (const t of projetoTurmasTemp) {
+            const existe = turmas.find(tx => tx.nome === t.nome && tx.projeto === nome);
+            if (!existe) {
+                const novaTurma = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome };
+                turmas.push(novaTurma);
+            }
+        }
+        await backupTurmas();
+        populateProjetoSelect();
+        populateTurmaSelect();
+        showAdminSection('admin-projetos');
+        renderProjetosList();
+    } catch (e) {
+        console.error('Erro ao salvar projeto:', e);
+        alert('Erro ao salvar projeto: ' + e.message);
     }
-    backupProjetos();
-    showAdminSection('admin-projetos');
-    renderProjetosList();
     return false;
 }
 
@@ -3237,101 +3337,32 @@ function renderProjetosList() {
 function editProjeto(i) {
     const p = projetos[i]; if (!p) return;
     editingProjetoIndex = i;
+    projetoCancelarEdicaoTurma();
     document.getElementById('pf-nome').value = p.nome || '';
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
+    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '' }));
+    projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
     showAdminSection('admin-form-projeto');
 }
 
 async function deleteProjeto(i) {
     const p = projetos[i]; if (!p) return;
-    if (!confirm('Tem certeza que deseja excluir o projeto "' + (p.nome || '') + '"?')) return;
+    if (!confirm('Tem certeza que deseja excluir o projeto "' + (p.nome || '') + '"? Isso tambem excluirá as turmas vinculadas."')) return;
     if (p.docId) {
         try { await dbFirestore.collection(FB_PROJETOS).doc(p.docId).delete(); } catch(e) { console.error(e); }
     }
+    turmas = turmas.filter(t => t.projeto !== p.nome);
+    await backupTurmas();
     projetos.splice(i, 1);
     backupProjetos();
     renderProjetosList();
+    populateProjetoSelect();
+    populateTurmaSelect();
 }
 
 /* ===== TURMAS CRUD ===== */
-
-function renderTurmasList() {
-    const tbody = document.getElementById('turmas-table-body');
-    const badge = document.getElementById('turmas-count-badge');
-    if (!tbody) return;
-    const isGeral = currentUserData && currentUserData.cpf === ADMIN_CPF;
-    const tv = currentUserData ? (currentUserData.turmasVinculadas || []) : [];
-    const filteredTurmas = isGeral || tv.length === 0 ? turmas : turmas.filter(t => tv.includes(t.nome));
-    if (badge) badge.textContent = filteredTurmas.length + ' turma' + (filteredTurmas.length !== 1 ? 's' : '');
-    if (!filteredTurmas.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;padding:24px">Nenhuma turma acessivel</td></tr>'; return; }
-    tbody.innerHTML = filteredTurmas.map((t, i) => {
-        const candidatosNaTurma = candidatos.filter(c => c.turma === t.nome).length;
-        return `<tr>
-            <td>${t.nome}</td>
-            <td>${t.descricao || '-'}</td>
-            <td><span class="badge green">${candidatosNaTurma} aluno(s)</span></td>
-            <td><div class="actions-cell">
-                <button class="btn-icon" title="Editar" onclick="editTurma(${i})"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteTurma(${i})"><i class="fa-solid fa-trash"></i></button>
-            </div></td>
-        </tr>`;
-    }).join('');
-}
-
-function openFormTurma() {
-    editingTurmaIndex = null;
-    document.getElementById('turma-nome').value = '';
-    document.getElementById('turma-descricao').value = '';
-    document.getElementById('turma-form-title').innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Nova Turma';
-    document.getElementById('modal-turma-overlay').classList.remove('hidden');
-}
-
-function editTurma(i) {
-    const t = turmas[i]; if (!t) return;
-    editingTurmaIndex = i;
-    document.getElementById('turma-nome').value = t.nome || '';
-    document.getElementById('turma-descricao').value = t.descricao || '';
-    document.getElementById('turma-form-title').innerHTML = '<i class="fa-solid fa-pen" style="color:#4caf50;margin-right:8px"></i> Editar Turma';
-    document.getElementById('modal-turma-overlay').classList.remove('hidden');
-}
-
-function deleteTurma(i) {
-    pendingDeleteTurmaIndex = i;
-    pendingDeleteIndex = null;
-    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir a turma <strong>${turmas[i].nome}</strong>?`;
-    document.getElementById('modal-confirm-overlay').classList.remove('hidden');
-}
-
-async function handleTurmaSubmit(event) {
-    event.preventDefault();
-    const nome = document.getElementById('turma-nome').value.trim();
-    const descricao = document.getElementById('turma-descricao').value.trim();
-    if (!nome) { alert('Nome da turma e obrigatorio.'); return false; }
-
-    if (editingTurmaIndex !== null) {
-        const turma = turmas[editingTurmaIndex];
-        turma.nome = nome;
-        turma.descricao = descricao;
-        editingTurmaIndex = null;
-    } else {
-        const nova = { id: Date.now(), nome, descricao };
-        turmas.push(nova);
-    }
-
-    backupTurmas();
-    document.getElementById('modal-turma-overlay').classList.add('hidden');
-    renderTurmasList();
-    await populateTurmaSelect();
-    return false;
-}
-
-function closeTurmaModal(e) {
-    if (e && e.target !== e.currentTarget) return;
-    document.getElementById('modal-turma-overlay').classList.add('hidden');
-    editingTurmaIndex = null;
-}
 
 function getTurmaDescricao(nome) {
     const t = turmas.find(t => t.nome === nome);
@@ -3345,13 +3376,10 @@ async function populateTurmaSelect() {
     if (!select) return;
     const current = select.value;
     select.innerHTML = '<option value="">Selecione a turma...</option>';
-    const isGeral = currentUserData && currentUserData.cpf === ADMIN_CPF;
-    const tv = currentUserData ? (currentUserData.turmasVinculadas || []) : [];
-    const filtered = isGeral || tv.length === 0 ? turmas : turmas.filter(t => tv.includes(t.nome));
-    filtered.forEach(t => {
+    turmas.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.nome;
-        opt.textContent = t.nome + (t.descricao ? ' - ' + t.descricao : '');
+        opt.textContent = t.nome + (t.projeto ? ' (' + t.projeto + ')' : '') + (t.descricao ? ' - ' + t.descricao : '');
         select.appendChild(opt);
     });
     if (current) select.value = current;
@@ -3361,13 +3389,45 @@ function populateProjetoSelect() {
     const select = document.getElementById('fc-projeto');
     if (!select) return;
     const current = select.value;
-    select.innerHTML = '<option value="">Nenhum projeto</option>';
+    select.innerHTML = '<option value="">Selecione o projeto...</option>';
     projetos.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.nome;
-        opt.textContent = p.nome + (p.responsavel ? ' (' + p.responsavel + ')' : '');
+        opt.textContent = p.nome + (p.responsavel ? ' - ' + p.responsavel : '');
         select.appendChild(opt);
     });
+    if (current) select.value = current;
+}
+
+function fcProjetoOnTurmaChange() {
+    const projetoNome = document.getElementById('fc-projeto').value;
+    const select = document.getElementById('fc-turma');
+    const infoDiv = document.getElementById('fc-turma-info');
+    const infoText = document.getElementById('fc-turma-info-text');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
+        turmasDoProjeto.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.nome;
+            opt.textContent = t.nome + (t.descricao ? ' - ' + t.descricao : '');
+            select.appendChild(opt);
+        });
+        if (infoDiv && infoText) {
+            infoDiv.style.display = 'block';
+            infoText.textContent = turmasDoProjeto.length + ' turma(s) vinculada(s) ao projeto "' + projetoNome + '"';
+        }
+    } else {
+        turmas.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.nome;
+            opt.textContent = t.nome + (t.projeto ? ' (' + t.projeto + ')' : '') + (t.descricao ? ' - ' + t.descricao : '');
+            select.appendChild(opt);
+        });
+        if (infoDiv) infoDiv.style.display = 'none';
+    }
     if (current) select.value = current;
 }
 
@@ -3393,7 +3453,7 @@ async function populatePcfTurmaSelect() {
 function openModal() { document.getElementById('modal-overlay').classList.remove('hidden'); }
 function closeModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('modal-overlay').classList.add('hidden'); }
 function printModal() { window.print(); }
-function closeConfirmModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('modal-confirm-overlay').classList.add('hidden'); pendingDeleteIndex = null; pendingDeleteTurmaIndex = null; }
+function closeConfirmModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('modal-confirm-overlay').classList.add('hidden'); pendingDeleteIndex = null; }
 
 /* ===== FOTO E ANEXOS ===== */
 
@@ -3740,7 +3800,6 @@ function renderUsuariosList() {
                 'alunos': '<span class="usuario-tag usuario-tag-pre">Alunos</span>',
                 'turmas': '<span class="usuario-tag usuario-tag-instrutor">Turmas</span>',
                 'instrutores': '<span class="usuario-tag usuario-tag-instrutor">Instrutores</span>',
-                'formados': '<span class="usuario-tag usuario-tag-pre">Formados</span>',
                 'relatorios': '<span class="usuario-tag usuario-tag-admin">Relatorios</span>',
                 'projetos': '<span class="usuario-tag usuario-tag-pre">Projetos</span>',
                 'config': '<span class="usuario-tag usuario-tag-admin">Config</span>'
@@ -3773,7 +3832,6 @@ function openUsuarioForm(docId) {
     document.getElementById('uf-perm-alunos').checked = false;
     document.getElementById('uf-perm-turmas').checked = false;
     document.getElementById('uf-perm-instrutores').checked = false;
-    document.getElementById('uf-perm-formados').checked = false;
     document.getElementById('uf-perm-relatorios').checked = false;
     document.getElementById('uf-perm-projetos').checked = false;
     document.getElementById('uf-perm-config').checked = false;
@@ -3805,7 +3863,6 @@ function openUsuarioForm(docId) {
             if (p.includes('alunos')) document.getElementById('uf-perm-alunos').checked = true;
             if (p.includes('turmas')) document.getElementById('uf-perm-turmas').checked = true;
             if (p.includes('instrutores')) document.getElementById('uf-perm-instrutores').checked = true;
-            if (p.includes('formados')) document.getElementById('uf-perm-formados').checked = true;
             if (p.includes('relatorios')) document.getElementById('uf-perm-relatorios').checked = true;
             if (p.includes('projetos')) document.getElementById('uf-perm-projetos').checked = true;
             if (p.includes('config')) document.getElementById('uf-perm-config').checked = true;
@@ -3839,7 +3896,6 @@ async function handleSaveUsuario(event) {
     if (document.getElementById('uf-perm-alunos').checked) permissoes.push('alunos');
     if (document.getElementById('uf-perm-turmas').checked) permissoes.push('turmas');
     if (document.getElementById('uf-perm-instrutores').checked) permissoes.push('instrutores');
-    if (document.getElementById('uf-perm-formados').checked) permissoes.push('formados');
     if (document.getElementById('uf-perm-relatorios').checked) permissoes.push('relatorios');
     if (document.getElementById('uf-perm-projetos').checked) permissoes.push('projetos');
     if (document.getElementById('uf-perm-config').checked) permissoes.push('config');
@@ -3888,1003 +3944,6 @@ function toggleUsuarioSenha() {
     const icon = document.getElementById('uf-eye-icon');
     if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
     else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
-}
-
-/* ===== GERENCIAR FORMADOS ===== */
-
-let editingFormadoDocId = null;
-let formadoUploadedFiles = [];
-let formadoCertFrente = null;
-let formadoCertVerso = null;
-let currentFormadosTab = 'ativos';
-let pendingMoveFormadoIndex = null;
-
-/* ===== MOVER ALUNO PARA FORMADOS ===== */
-
-function openMoveFormadoModal(idx) {
-    pendingMoveFormadoIndex = idx;
-    const c = candidatos[idx];
-    if (!c) return;
-    document.getElementById('move-formado-text').innerHTML = `Deseja mover o aluno <strong>${c.nome}</strong> (CPF: ${formatCPFDisplay(c.cpf)}) para a pagina de <strong>Formados</strong>?`;
-    document.getElementById('move-formado-senha').value = '';
-    document.getElementById('move-formado-error').classList.add('hidden');
-    document.getElementById('modal-move-formado-overlay').classList.remove('hidden');
-}
-
-function closeMoveFormadoModal(e) {
-    if (e && e.target !== e.currentTarget) return;
-    document.getElementById('modal-move-formado-overlay').classList.add('hidden');
-    pendingMoveFormadoIndex = null;
-}
-
-async function confirmMoveToFormado() {
-    const senha = document.getElementById('move-formado-senha').value;
-    const errorEl = document.getElementById('move-formado-error');
-    errorEl.classList.add('hidden');
-    if (senha !== ADMIN_SENHA) {
-        errorEl.classList.remove('hidden');
-        return;
-    }
-    const c = candidatos[pendingMoveFormadoIndex];
-    if (!c) { closeMoveFormadoModal(); return; }
-    const data = {
-        nome: c.nome || '',
-        cpf: c.cpf || '',
-        nascimento: c.nascimento || '',
-        estadoCivil: c.estadoCivil || '',
-        nacionalidade: c.nacionalidade || '',
-        naturalidade: c.naturalidade || '',
-        profissao: c.profissao || '',
-        mae: c.mae || '',
-        pai: c.pai || '',
-        email: c.email || '',
-        whatsapp: c.whatsapp || '',
-        endereco: c.endereco || '',
-        numero: c.numero || '',
-        bairro: c.bairro || '',
-        cidade: c.cidade || '',
-        estado: c.estado || '',
-        altura: c.altura || '',
-        peso: c.peso || '',
-        fatorRh: c.fatorRh || '',
-        photoDataUrl: c.photoDataUrl || null,
-        hasPhoto: c.hasPhoto || false,
-        cursos: [],
-        matricula: '',
-        dataFormacao: '',
-        dataFormacaoRaw: '',
-        certFrente: null,
-        certVerso: null,
-        status: 'Pendente',
-        cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
-        dataCadastro: new Date().toLocaleDateString('pt-BR'),
-        movedFromAlunos: true
-    };
-    try {
-        const docId = c.cpf;
-        await dbFirestore.collection(FB_FORMADOS).doc(docId).set(data);
-        closeMoveFormadoModal();
-        openFormFormado(docId);
-    } catch(e) {
-        alert('Erro ao mover para formados: ' + e.message);
-    }
-}
-
-const formadoFields = ['ff-nome','ff-cpf','ff-nascimento','ff-estado-civil','ff-nacionalidade','ff-naturalidade','ff-profissao','ff-mae','ff-pai','ff-email','ff-whatsapp','ff-endereco','ff-numero','ff-bairro','ff-cidade','ff-estado','ff-altura','ff-peso','ff-fator-rh','ff-data-formacao','ff-matricula'];
-
-function switchFormadosTab(tab, btn) {
-    currentFormadosTab = tab;
-    document.querySelectorAll('#admin-formados .alunos-tab').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    renderFormadosList();
-}
-
-function renderFormadosList() {
-    const tbody = document.getElementById('formados-table-body');
-    const badge = document.getElementById('formados-count-badge');
-    if (!tbody) return;
-    const ativos = formados.filter(f => f.status === 'Ativo' || !f.status).length;
-    const pendentes = formados.filter(f => f.status === 'Pendente').length;
-    const countAtivos = document.getElementById('tab-count-formados-ativos');
-    const countPendentes = document.getElementById('tab-count-formados-pendentes');
-    if (countAtivos) countAtivos.textContent = ativos;
-    if (countPendentes) countPendentes.textContent = pendentes;
-    if (badge) badge.textContent = formados.length + ' formado' + (formados.length !== 1 ? 's' : '');
-    if (!formados.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum formado cadastrado</td></tr>'; return; }
-    const search = (document.getElementById('formados-search') || {}).value || '';
-    let filtered = formados.filter(f => {
-        const matchTab = currentFormadosTab === 'ativos' ? (f.status === 'Ativo' || !f.status) : f.status === 'Pendente';
-        const matchSearch = !search || (f.nome || '').toLowerCase().includes(search.toLowerCase()) || (f.cpf || '').includes(search.replace(/\D/g, ''));
-        return matchTab && matchSearch;
-    });
-    if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:24px">Nenhum formado ${currentFormadosTab === 'ativos' ? 'ativo' : 'pendente'}</td></tr>`; return; }
-    tbody.innerHTML = filtered.map((f, i) => {
-        let cursos = '-';
-        if (f.cursosDetalhes && f.cursosDetalhes.length) {
-            cursos = f.cursosDetalhes.map(cd => {
-                let info = cd.nome;
-                if (cd.dataFormacao) info += ' (' + cd.dataFormacao + ')';
-                if (cd.certFrente || cd.certVerso) info += ' <i class="fa-solid fa-certificate" style="color:#4caf50;font-size:9px"></i>';
-                return info;
-            }).join('<br>');
-        } else {
-            cursos = (f.cursos || []).join(', ') || '-';
-            if (f.dataFormacao) cursos += '<br><small style="color:#888">' + f.dataFormacao + '</small>';
-        }
-        const sc = f.status === 'Ativo' || !f.status ? 'green' : 'pendente';
-        const statusLabel = f.status || 'Pendente';
-        return `<tr>
-            <td>${f.nome || ''}</td>
-            <td>${formatCPFDisplay(f.cpf)}</td>
-            <td style="color:#f57c00;font-weight:600">${f.matricula || '-'}</td>
-            <td style="font-size:11px;max-width:200px">${cursos}</td>
-            <td><span class="badge ${sc}">${statusLabel}</span></td>
-            <td style="color:#aaa;font-size:12px">${f.cadastradoPor || '-'}</td>
-            <td><div class="actions-cell">
-                <button class="btn-icon btn-info" title="Visualizar" onclick="viewFormado('${f.docId}')"><i class="fa-solid fa-eye"></i></button>
-                <button class="btn-icon" title="Editar" onclick="editFormado('${f.docId}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-icon btn-success" title="${f.status === 'Ativo' || !f.status ? 'Manter Ativo' : 'Ativar'}" onclick="changeFormadoStatus('${f.docId}', 'Ativo')"><i class="fa-solid fa-check"></i></button>
-                <button class="btn-icon btn-warning" title="Marcar Pendente" onclick="changeFormadoStatus('${f.docId}', 'Pendente')"><i class="fa-solid fa-clock"></i></button>
-                <button class="btn-icon btn-info" title="Voltar para Aluno" onclick="formadoParaAluno('${f.docId}')"><i class="fa-solid fa-user-graduate"></i></button>
-                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteFormado('${f.docId}')"><i class="fa-solid fa-trash"></i></button>
-            </div></td>
-        </tr>`;
-    }).join('');
-}
-
-function filterFormados() { renderFormadosList(); }
-
-async function changeFormadoStatus(docId, newStatus) {
-    try {
-        await dbFirestore.collection(FB_FORMADOS).doc(docId).set({ status: newStatus }, { merge: true });
-    } catch(e) { alert('Erro ao alterar status: ' + e.message); }
-}
-
-async function formadoParaAluno(docId) {
-    const f = formados.find(x => x.docId === docId);
-    if (!f) return;
-    if (!confirm(`Deseja mover "${f.nome}" de volta para Aluno(a) aprovado(a)?`)) return;
-    try {
-        const candidatoData = {
-            nome: f.nome || '',
-            cpf: (f.cpf || '').replace(/\D/g, ''),
-            nascimento: f.nascimento || '',
-            estadoCivil: f.estadoCivil || '',
-            nacionalidade: f.nacionalidade || '',
-            naturalidade: f.naturalidade || '',
-            profissao: f.profissao || '',
-            mae: f.mae || '',
-            pai: f.pai || '',
-            email: f.email || '',
-            whatsapp: f.whatsapp || '',
-            endereco: f.endereco || '',
-            numero: f.numero || '',
-            bairro: f.bairro || '',
-            cidade: f.cidade || '',
-            estado: f.estado || '',
-            photoDataUrl: f.photoDataUrl || null,
-            status: 'Aprovado',
-            dataAprovacao: new Date().toLocaleDateString('pt-BR'),
-            cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido'
-        };
-        await dbFirestore.collection(FB_CANDIDATOS).doc(f.cpf).set(candidatoData);
-        await dbFirestore.collection(FB_FORMADOS).doc(docId).delete();
-        renderFormadosList();
-    } catch(e) {
-        alert('Erro ao mover para aluno: ' + e.message);
-    }
-}
-
-function generateMatricula(cpf, dataFormacao) {
-    let year = new Date().getFullYear();
-    if (dataFormacao) {
-        const d = new Date(dataFormacao);
-        if (!isNaN(d)) year = d.getFullYear();
-    }
-    const last5 = (cpf || '').replace(/\D/g, '').slice(-5);
-    return String(year).slice(-4) + last5;
-}
-
-function openFormFormado(docId) {
-    editingFormadoDocId = docId || null;
-    formadoUploadedFiles = [];
-    formadoCertFrente = null;
-    formadoCertVerso = null;
-    const form = document.getElementById('form-formado');
-    form.reset();
-    document.getElementById('formado-photo-preview').classList.add('hidden');
-    document.getElementById('formado-photo-placeholder').style.display = '';
-    document.getElementById('formado-btn-remove-photo').style.display = 'none';
-    document.querySelectorAll('.ff-curso-check').forEach(cb => cb.checked = false);
-    document.getElementById('ff-cert-frente-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
-    document.getElementById('ff-cert-verso-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
-    document.getElementById('ff-files-list').innerHTML = '';
-    if (docId) {
-        const f = formados.find(f => f.docId === docId);
-        if (f) {
-            document.getElementById('formado-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#ff9800;margin-right:8px"></i> Editar Formado';
-            document.getElementById('ff-nome').value = f.nome || '';
-            document.getElementById('ff-cpf').value = f.cpf || '';
-            document.getElementById('ff-nascimento').value = f.nascimento || '';
-            document.getElementById('ff-estado-civil').value = f.estadoCivil || '';
-            document.getElementById('ff-nacionalidade').value = f.nacionalidade || '';
-            document.getElementById('ff-naturalidade').value = f.naturalidade || '';
-            document.getElementById('ff-profissao').value = f.profissao || '';
-            document.getElementById('ff-mae').value = f.mae || '';
-            document.getElementById('ff-pai').value = f.pai || '';
-            document.getElementById('ff-email').value = f.email || '';
-            document.getElementById('ff-whatsapp').value = f.whatsapp || '';
-            document.getElementById('ff-endereco').value = f.endereco || '';
-            document.getElementById('ff-numero').value = f.numero || '';
-            document.getElementById('ff-bairro').value = f.bairro || '';
-            document.getElementById('ff-cidade').value = f.cidade || '';
-            document.getElementById('ff-estado').value = f.estado || '';
-            document.getElementById('ff-altura').value = f.altura || '';
-            document.getElementById('ff-peso').value = f.peso || '';
-            document.getElementById('ff-fator-rh').value = f.fatorRh || '';
-            document.getElementById('ff-matricula').value = f.matricula || '';
-            document.getElementById('ff-senha').value = f.senha || '';
-            document.getElementById('ff-data-formacao').value = f.dataFormacaoRaw || '';
-            (f.cursos || []).forEach(c => {
-                const cb = document.querySelector(`.ff-curso-check[value="${c}"]`);
-                if (cb) cb.checked = true;
-            });
-            if (f.photoDataUrl) {
-                document.getElementById('formado-photo-preview').src = f.photoDataUrl;
-                document.getElementById('formado-photo-preview').classList.remove('hidden');
-                document.getElementById('formado-photo-placeholder').style.display = 'none';
-                document.getElementById('formado-btn-remove-photo').style.display = '';
-            }
-            if (f.certFrente) {
-                document.getElementById('ff-cert-frente-preview').innerHTML = `<img src="${f.certFrente}">`;
-                formadoCertFrente = f.certFrente;
-            }
-            if (f.certVerso) {
-                document.getElementById('ff-cert-verso-preview').innerHTML = `<img src="${f.certVerso}">`;
-                formadoCertVerso = f.certVerso;
-            }
-        }
-    } else {
-        document.getElementById('formado-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#ff9800;margin-right:8px"></i> Novo Formado';
-        document.getElementById('ff-cert-frente-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
-        document.getElementById('ff-cert-verso-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
-    }
-    showAdminSection('admin-form-formado');
-}
-
-function editFormado(docId) { openFormFormado(docId); }
-
-async function handleFormadoSubmit(event) {
-    event.preventDefault();
-    const cpf = document.getElementById('ff-cpf').value.replace(/\D/g, '');
-    if (cpf.length !== 11) { alert('CPF invalido.'); return false; }
-    const cursos = [];
-    document.querySelectorAll('.ff-curso-check:checked').forEach(cb => cursos.push(cb.value));
-    if (cursos.length === 0) { alert('Selecione pelo menos um curso de formacao.'); return false; }
-    const data = {};
-    formadoFields.forEach(id => {
-        const key = id.replace('ff-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (id === 'ff-cpf') data[key] = el.value.replace(/\D/g, '');
-        else data[key] = el.value;
-    });
-    data.cursos = cursos;
-    data.dataFormacao = document.getElementById('ff-data-formacao').value ? new Date(document.getElementById('ff-data-formacao').value).toLocaleDateString('pt-BR') : '';
-    data.dataFormacaoRaw = document.getElementById('ff-data-formacao').value;
-    data.matricula = document.getElementById('ff-matricula').value || generateMatricula(cpf, document.getElementById('ff-data-formacao').value);
-    const ffSenha = document.getElementById('ff-senha').value;
-    if (ffSenha) data.senha = ffSenha;
-    const photoPreview = document.getElementById('formado-photo-preview');
-    if (photoPreview && !photoPreview.classList.contains('hidden') && photoPreview.src) {
-        data.photoDataUrl = photoPreview.src;
-    }
-    if (formadoCertFrente) data.certFrente = formadoCertFrente;
-    if (formadoCertVerso) data.certVerso = formadoCertVerso;
-    data.cadastradoPor = currentUserData ? currentUserData.nome : 'Desconhecido';
-    data.status = editingFormadoDocId ? (formados.find(f => f.docId === editingFormadoDocId) || {}).status || 'Pendente' : 'Pendente';
-    data.dataCadastro = editingFormadoDocId ? (formados.find(f => f.docId === editingFormadoDocId) || {}).dataCadastro || new Date().toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
-    try {
-        if (editingFormadoDocId) {
-            await dbFirestore.collection(FB_FORMADOS).doc(editingFormadoDocId).set(data, { merge: true });
-        } else {
-            const docId = cpf;
-            await dbFirestore.collection(FB_FORMADOS).doc(docId).set(data);
-        }
-        editingFormadoDocId = null;
-        showAdminSection('admin-formados');
-    } catch(e) {
-        alert('Erro ao salvar formado: ' + e.message);
-    }
-    return false;
-}
-
-async function deleteFormado(docId) {
-    const f = formados.find(f => f.docId === docId);
-    if (!f) return;
-    pendingDeleteIndex = null;
-    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o formado <strong>${f.nome}</strong>?`;
-    document.getElementById('modal-confirm-overlay').classList.remove('hidden');
-    window._pendingDeleteFormado = docId;
-}
-
-function viewFormado(docId) {
-    const f = formados.find(f => f.docId === docId); if (!f) return;
-    document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#ff9800"></i> Detalhes do Formado';
-    const photoSrc = f.photoDataUrl || null;
-
-    let cursosHtml = '';
-    let certHtml = '';
-    if (f.cursosDetalhes && f.cursosDetalhes.length) {
-        cursosHtml = f.cursosDetalhes.map(cd => {
-            let info = '<span class="usuario-tag usuario-tag-pre" style="background:rgba(255,152,0,0.15);color:#ff9800">' + cd.nome;
-            if (cd.dataFormacao) info += ' (' + cd.dataFormacao + ')';
-            info += '</span>';
-            return info;
-        }).join(' ');
-        certHtml = f.cursosDetalhes.map(cd => {
-            let html = '<div style="margin-bottom:12px"><strong style="color:#ff9800;font-size:12px">' + cd.nome + '</strong><div style="display:flex;gap:10px;margin-top:4px">';
-            html += '<div>' + (cd.certFrente ? '<span class="detail-label">Frente</span><br><img src="' + cd.certFrente + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Frente: ---</span>') + '</div>';
-            html += '<div>' + (cd.certVerso ? '<span class="detail-label">Verso</span><br><img src="' + cd.certVerso + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Verso: ---</span>') + '</div>';
-            html += '</div></div>';
-            return html;
-        }).join('');
-    } else {
-        cursosHtml = (f.cursos || []).map(c => '<span class="usuario-tag usuario-tag-pre" style="background:rgba(255,152,0,0.15);color:#ff9800">' + c + '</span>').join(' ');
-        if (f.certFrente || f.certVerso) {
-            certHtml = '<div style="display:flex;gap:10px">' +
-                '<div>' + (f.certFrente ? '<span class="detail-label">Frente</span><br><img src="' + f.certFrente + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Frente: ---</span>') + '</div>' +
-                '<div>' + (f.certVerso ? '<span class="detail-label">Verso</span><br><img src="' + f.certVerso + '" style="max-width:150px;max-height:120px;border-radius:8px;border:1px solid #333">' : '<span class="detail-label">Verso: ---</span>') + '</div>' +
-                '</div>';
-        }
-    }
-
-    document.getElementById('modal-body').innerHTML = `
-        ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #ff9800;border-radius:8px" alt="Foto 3x4"></div>` : ''}
-        <div class="detail-grid">
-            <div class="detail-section-title">Dados Pessoais</div>
-            <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value">${f.nome}</span></div>
-            <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(f.cpf)}</span></div>
-            <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${f.nascimento||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Estado Civil</span><span class="detail-value">${f.estadoCivil||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Nacionalidade</span><span class="detail-value">${f.nacionalidade||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Naturalidade</span><span class="detail-value">${f.naturalidade||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Mae</span><span class="detail-value">${f.mae||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Pai</span><span class="detail-value">${f.pai||'---'}</span></div>
-            <div class="detail-section-title">Contato</div>
-            <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value">${f.email||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">WhatsApp</span><span class="detail-value">${f.whatsapp||'---'}</span></div>
-            <div class="detail-section-title">Endereco</div>
-            <div class="detail-item full"><span class="detail-label">Endereco</span><span class="detail-value">${f.endereco||'---'}, ${f.numero||''}</span></div>
-            <div class="detail-item"><span class="detail-label">Bairro</span><span class="detail-value">${f.bairro||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Cidade/UF</span><span class="detail-value">${f.cidade||'---'} - ${f.estado||'---'}</span></div>
-            <div class="detail-section-title">Dados Fisicos</div>
-            <div class="detail-item"><span class="detail-label">Altura</span><span class="detail-value">${f.altura||'---'} cm</span></div>
-            <div class="detail-item"><span class="detail-label">Peso</span><span class="detail-value">${f.peso||'---'} kg</span></div>
-            <div class="detail-item"><span class="detail-label">Fator RH</span><span class="detail-value">${f.fatorRh||'---'}</span></div>
-            <div class="detail-section-title">Formacao</div>
-            <div class="detail-item"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#f57c00;font-weight:700">${f.matricula||'---'}</span>${f.matricula ? `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(f.matricula)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff">` : ''}</div></div>
-            <div class="detail-item full"><span class="detail-label">Cursos</span><span class="detail-value">${cursosHtml||'---'}</span></div>
-            ${certHtml ? '<div class="detail-section-title">Certificados</div><div class="detail-item full">' + certHtml + '</div>' : ''}
-            <div class="detail-section-title">Cadastro</div>
-            <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#f57c00;font-weight:600">${f.cadastradoPor||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Data Cadastro</span><span class="detail-value">${f.dataCadastro||'---'}</span></div>
-        </div>`;
-    openModal();
-}
-
-function resetFormFormado() {
-    document.getElementById('form-formado').reset();
-    document.getElementById('formado-photo-preview').classList.add('hidden');
-    document.getElementById('formado-photo-placeholder').style.display = '';
-    document.getElementById('formado-btn-remove-photo').style.display = 'none';
-    document.querySelectorAll('.ff-curso-check').forEach(cb => cb.checked = false);
-    document.getElementById('ff-cert-frente-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
-    document.getElementById('ff-cert-verso-preview').innerHTML = '<div class="cert-preview-empty">Nenhuma foto</div>';
-    document.getElementById('ff-files-list').innerHTML = '';
-    document.getElementById('ff-senha').value = '';
-    formadoCertFrente = null;
-    formadoCertVerso = null;
-    formadoUploadedFiles = [];
-}
-
-function handleFormadoPhotoUpload(event) {
-    const file = event.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 300; canvas.height = 400;
-            canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
-            canvas.toBlob(function(blob) {
-                const fUpReader = new FileReader();
-                fUpReader.onloadend = function() {
-                    document.getElementById('formado-photo-preview').src = fUpReader.result;
-                    document.getElementById('formado-photo-preview').classList.remove('hidden');
-                    document.getElementById('formado-photo-placeholder').style.display = 'none';
-                    document.getElementById('formado-btn-remove-photo').style.display = '';
-                };
-                fUpReader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.5);
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function removeFormadoPhoto() {
-    document.getElementById('formado-photo-preview').classList.add('hidden');
-    document.getElementById('formado-photo-preview').src = '';
-    document.getElementById('formado-photo-placeholder').style.display = '';
-    document.getElementById('formado-btn-remove-photo').style.display = 'none';
-    document.getElementById('formado-photo-input').value = '';
-}
-
-function openFormadoCamera() {
-    saveFormState();
-    saveLoginState();
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const overlay = document.createElement('div');
-        overlay.id = 'camera-overlay';
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
-        document.body.appendChild(overlay);
-        const video = document.getElementById('camera-video');
-        let stream = null;
-        let currentFacing = 'user';
-
-        function startCamera(facing) {
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 800 }, height: { ideal: 600 } } });
-        }
-
-        startCamera(currentFacing)
-        .then(function(s) { stream = s; video.srcObject = stream; })
-        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
-
-        document.getElementById('camera-switch').onclick = function() {
-            currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-            startCamera(currentFacing)
-            .then(function(s) { stream = s; video.srcObject = stream; })
-            .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
-        };
-
-        document.getElementById('camera-capture').onclick = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 300; canvas.height = 400;
-            canvas.getContext('2d').drawImage(video, 0, 0, 300, 400);
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-            canvas.toBlob(function(blob) {
-                const fReader = new FileReader();
-                fReader.onloadend = function() {
-                    document.getElementById('formado-photo-preview').src = fReader.result;
-                    document.getElementById('formado-photo-preview').classList.remove('hidden');
-                    document.getElementById('formado-photo-placeholder').style.display = 'none';
-                    document.getElementById('formado-btn-remove-photo').style.display = '';
-                };
-                fReader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.5);
-        };
-        document.getElementById('camera-cancel').onclick = function() {
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-        };
-    } else {
-        document.getElementById('formado-photo-input').click();
-    }
-}
-
-function handleCertUpload(event, side) {
-    const file = event.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const maxW = 800;
-            const ratio = Math.min(maxW / img.width, maxW / img.height, 1);
-            canvas.width = img.width * ratio;
-            canvas.height = img.height * ratio;
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(function(blob) {
-                const reader2 = new FileReader();
-                reader2.onload = function(ev) {
-                    const dataUrl = ev.target.result;
-                    if (side === 'frente') {
-                        formadoCertFrente = dataUrl;
-                        document.getElementById('ff-cert-frente-preview').innerHTML = `<img src="${dataUrl}">`;
-                    } else {
-                        formadoCertVerso = dataUrl;
-                        document.getElementById('ff-cert-verso-preview').innerHTML = `<img src="${dataUrl}">`;
-                    }
-                };
-                reader2.readAsDataURL(blob);
-            }, 'image/jpeg', 0.6);
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function openCertCamera(side) {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const overlay = document.createElement('div');
-        overlay.id = 'camera-overlay';
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
-        document.body.appendChild(overlay);
-        const video = document.getElementById('camera-video');
-        let stream = null;
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1200 }, height: { ideal: 900 } } })
-        .then(function(s) { stream = s; video.srcObject = stream; })
-        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
-        document.getElementById('camera-capture').onclick = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth || 800;
-            canvas.height = video.videoHeight || 600;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-            canvas.toBlob(function(blob) {
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    const dataUrl = ev.target.result;
-                    if (side === 'frente') {
-                        formadoCertFrente = dataUrl;
-                        document.getElementById('ff-cert-frente-preview').innerHTML = `<img src="${dataUrl}">`;
-                    } else {
-                        formadoCertVerso = dataUrl;
-                        document.getElementById('ff-cert-verso-preview').innerHTML = `<img src="${dataUrl}">`;
-                    }
-                };
-                reader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.6);
-        };
-        document.getElementById('camera-cancel').onclick = function() {
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-        };
-    } else {
-        document.getElementById(side === 'frente' ? 'ff-cert-frente-input' : 'ff-cert-verso-input').click();
-    }
-}
-
-function handleFormadoFilesUpload(event) { Array.from(event.target.files).forEach(f => addFormadoFile(f)); }
-
-function addFormadoFile(file) {
-    if (formadoUploadedFiles.length >= 5) { alert('Maximo de 5 arquivos.'); return; }
-    formadoUploadedFiles.push({ id: Date.now() + Math.random(), file });
-    renderFormadoFilesList();
-}
-
-function renderFormadoFilesList() {
-    const list = document.getElementById('ff-files-list'); if (!list) return;
-    list.innerHTML = formadoUploadedFiles.map(f => {
-        const icon = f.file.name.endsWith('.pdf') ? 'fa-file-pdf' : f.file.name.match(/\.(jpg|jpeg|png)$/i) ? 'fa-file-image' : 'fa-file';
-        return `<div class="file-item"><i class="fa-solid ${icon}" style="color:#f57c00"></i><span class="file-name">${f.file.name}</span><span class="file-size">${(f.file.size/1024).toFixed(1)}KB</span><button type="button" class="btn-icon btn-danger-icon" onclick="removeFormadoFile(${f.id})"><i class="fa-solid fa-trash"></i></button></div>`;
-    }).join('');
-}
-
-function removeFormadoFile(id) { formadoUploadedFiles = formadoUploadedFiles.filter(f => f.id !== id); renderFormadoFilesList(); }
-
-function exportExcelFormados() {
-    if (!formados.length) { alert('Nenhum formado para exportar.'); return; }
-    let csv = 'Nome,CPF,Matricula,Cursos,Cadastrado por\n';
-    formados.forEach(f => {
-        let cursos = '';
-        if (f.cursosDetalhes && f.cursosDetalhes.length) {
-            cursos = f.cursosDetalhes.map(cd => cd.nome + (cd.dataFormacao ? ' (' + cd.dataFormacao + ')' : '')).join('; ');
-        } else {
-            cursos = (f.cursos || []).join('; ');
-            if (f.dataFormacao) cursos += ' (' + f.dataFormacao + ')';
-        }
-        csv += `"${f.nome||''}","${formatCPFDisplay(f.cpf)}","${f.matricula||''}","${cursos}","${f.cadastradoPor||''}"\n`;
-    });
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'formados_' + new Date().toISOString().slice(0,10) + '.csv';
-    link.click();
-}
-
-// ===== PRE-CADASTRO FORMADOS =====
-
-let preCadastroFormadoPhotoDataUrl = null;
-let pcfCursosData = {};
-
-function initPcfCursosListeners() {
-    document.querySelectorAll('.pcf-curso-check').forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            if (this.checked) {
-                pcfCursosData[this.value] = { dataFormacao: '', certFrente: null, certVerso: null };
-            } else {
-                delete pcfCursosData[this.value];
-            }
-            renderPcfCursosDetalhes();
-        });
-    });
-}
-
-function renderPcfCursosDetalhes() {
-    var container = document.getElementById('pcf-cursos-detalhes');
-    if (!container) return;
-    var cursos = Object.keys(pcfCursosData);
-    if (!cursos.length) { container.innerHTML = ''; return; }
-    container.innerHTML = cursos.map(function(curso) {
-        var slug = curso.replace(/[^a-zA-Z0-9]/g, '-');
-        var data = pcfCursosData[curso];
-        return '<div class="pcf-curso-detalhe" data-curso="' + curso + '">' +
-            '<div class="pcf-curso-detalhe-header"><i class="fa-solid fa-graduation-cap" style="margin-right:6px"></i>' + curso + '</div>' +
-            '<div class="form-row">' +
-            '<div class="form-group"><label>Data Formacao *</label><input type="date" class="config-input pcf-curso-data" value="' + (data.dataFormacao || '') + '"></div>' +
-            '<div class="form-group"><label>Cert. Frente</label>' +
-            '<div class="upload-buttons-row">' +
-            '<button type="button" class="btn-upload-action pcf-camera-btn" data-side="frente"><i class="fa-solid fa-camera"></i> Camera</button>' +
-            '<button type="button" class="btn-upload-action pcf-import-btn" data-side="frente"><i class="fa-solid fa-file-import"></i> Importar</button>' +
-            '</div>' +
-            '<input type="file" accept="image/*" class="hidden pcf-cert-file" data-side="frente">' +
-            '<div class="cert-preview pcf-cert-preview" data-side="frente">' + (data.certFrente ? '<img src="' + data.certFrente + '">' : '<div class="cert-preview-empty">Nenhuma foto</div>') + '</div>' +
-            '</div>' +
-            '<div class="form-group"><label>Cert. Verso</label>' +
-            '<div class="upload-buttons-row">' +
-            '<button type="button" class="btn-upload-action pcf-camera-btn" data-side="verso"><i class="fa-solid fa-camera"></i> Camera</button>' +
-            '<button type="button" class="btn-upload-action pcf-import-btn" data-side="verso"><i class="fa-solid fa-file-import"></i> Importar</button>' +
-            '</div>' +
-            '<input type="file" accept="image/*" class="hidden pcf-cert-file" data-side="verso">' +
-            '<div class="cert-preview pcf-cert-preview" data-side="verso">' + (data.certVerso ? '<img src="' + data.certVerso + '">' : '<div class="cert-preview-empty">Nenhuma foto</div>') + '</div>' +
-            '</div>' +
-            '</div></div>';
-    }).join('');
-
-    container.querySelectorAll('.pcf-curso-detalhe').forEach(function(el) {
-        var curso = el.dataset.curso;
-        el.querySelector('.pcf-curso-data').addEventListener('change', function() {
-            pcfCursosData[curso].dataFormacao = this.value;
-        });
-        el.querySelectorAll('.pcf-camera-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                openPcfCertCamera(curso, this.dataset.side);
-            });
-        });
-        el.querySelectorAll('.pcf-import-btn').forEach(function(btn) {
-            var side = btn.dataset.side;
-            var fileInput = el.querySelector('.pcf-cert-file[data-side="' + side + '"]');
-            btn.addEventListener('click', function() {
-                fileInput.click();
-            });
-        });
-        el.querySelectorAll('.pcf-cert-file').forEach(function(input) {
-            input.addEventListener('change', function() {
-                handlePcfCertUpload(this, curso, this.dataset.side);
-            });
-        });
-    });
-}
-
-function openPcfCertCamera(cursoName, side) {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        var overlay = document.createElement('div');
-        overlay.id = 'camera-overlay';
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
-        document.body.appendChild(overlay);
-        var video = document.getElementById('camera-video');
-        var stream = null;
-        var currentFacing = 'environment';
-        function startCam(facing) {
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1200 }, height: { ideal: 900 } } });
-        }
-        startCam(currentFacing)
-        .then(function(s) { stream = s; video.srcObject = stream; })
-        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
-
-        var switchBtn = document.createElement('button');
-        switchBtn.id = 'camera-switch';
-        switchBtn.style.cssText = 'padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center';
-        switchBtn.title = 'Trocar camera';
-        switchBtn.innerHTML = '<i class="fa-solid fa-camera-rotate"></i>';
-        overlay.querySelector('div:last-child').insertBefore(switchBtn, document.getElementById('camera-capture'));
-
-        switchBtn.onclick = function() {
-            currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-            startCam(currentFacing)
-            .then(function(s) { stream = s; video.srcObject = stream; })
-            .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
-        };
-
-        document.getElementById('camera-capture').onclick = function() {
-            var canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth || 800;
-            canvas.height = video.videoHeight || 600;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-            canvas.toBlob(function(blob) {
-                var reader = new FileReader();
-                reader.onload = function(ev) {
-                    var dataUrl = ev.target.result;
-                    pcfCursosData[cursoName][side === 'frente' ? 'certFrente' : 'certVerso'] = dataUrl;
-                    var slug = cursoName.replace(/[^a-zA-Z0-9]/g, '-');
-                    var preview = document.querySelector('.pcf-curso-detalhe[data-curso="' + cursoName + '"] .pcf-cert-preview[data-side="' + side + '"]');
-                    if (preview) preview.innerHTML = '<img src="' + dataUrl + '">';
-                };
-                reader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.6);
-        };
-        document.getElementById('camera-cancel').onclick = function() {
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-        };
-    } else {
-        var slug = cursoName.replace(/[^a-zA-Z0-9]/g, '-');
-        var fileInput = document.querySelector('.pcf-curso-detalhe[data-curso="' + cursoName + '"] .pcf-cert-file[data-side="' + side + '"]');
-        if (fileInput) fileInput.click();
-    }
-}
-
-function handlePcfCertUpload(fileInput, cursoName, side) {
-    var file = fileInput.files[0]; if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        var img = new Image();
-        img.onload = function() {
-            var canvas = document.createElement('canvas');
-            var maxW = 800;
-            var ratio = Math.min(maxW / img.width, maxW / img.height, 1);
-            canvas.width = img.width * ratio;
-            canvas.height = img.height * ratio;
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(function(blob) {
-                var reader2 = new FileReader();
-                reader2.onload = function(ev) {
-                    var dataUrl = ev.target.result;
-                    pcfCursosData[cursoName][side === 'frente' ? 'certFrente' : 'certVerso'] = dataUrl;
-                    var preview = document.querySelector('.pcf-curso-detalhe[data-curso="' + cursoName + '"] .pcf-cert-preview[data-side="' + side + '"]');
-                    if (preview) preview.innerHTML = '<img src="' + dataUrl + '">';
-                };
-                reader2.readAsDataURL(blob);
-            }, 'image/jpeg', 0.6);
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function openFormPreCadastroFormado() {
-    resetFormPreCadastroFormado();
-    document.getElementById('pre-cad-formado-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#ff9800;margin-right:8px"></i> Novo Pre-Cadastro';
-    populatePcfTurmaSelect();
-    showAdminSection('admin-form-pre-cadastro-formado');
-}
-
-function renderPreCadastroFormadosList() {
-    const pending = formados.filter(f => !f.status || f.status === 'Pendente');
-    const tbody = document.getElementById('pre-cad-formados-table-body');
-    if (!pending.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:32px">Nenhum pre-cadastro pendente.</td></tr>';
-        return;
-    }
-    tbody.innerHTML = pending.map(f => {
-        let cursosHtml = '';
-        if (f.cursosDetalhes && f.cursosDetalhes.length) {
-            cursosHtml = f.cursosDetalhes.map(cd => {
-                let info = cd.nome;
-                if (cd.dataFormacao) info += ' (' + cd.dataFormacao + ')';
-                if (cd.certFrente || cd.certVerso) info += ' <i class="fa-solid fa-certificate" style="color:#4caf50;font-size:10px"></i>';
-                return info;
-            }).join('<br>');
-        } else {
-            cursosHtml = (f.cursos||[]).join(', ');
-            if (f.dataFormacao) cursosHtml += '<br><small style="color:#888">' + f.dataFormacao + '</small>';
-        }
-        return `<tr>
-            <td>${f.nome||''}</td>
-            <td>${formatCPFDisplay(f.cpf)}</td>
-            <td>${f.turma||'---'}</td>
-            <td style="font-size:12px">${cursosHtml}</td>
-            <td>${f.cadastradoPor||''}</td>
-            <td>
-                <div style="display:flex;gap:6px">
-                    <button class="btn-sm btn-outline" onclick="aprovarPreCadastroFormado('${f.docId}')" title="Aprovar"><i class="fa-solid fa-check"></i></button>
-                    <button class="btn-sm btn-outline btn-danger-outline" onclick="excluirPreCadastroFormado('${f.docId}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </td>
-        </tr>`;
-    }).join('');
-}
-
-function filterPreCadastroFormados() {
-    const q = (document.getElementById('pre-cad-formados-search').value || '').toLowerCase();
-    const rows = document.querySelectorAll('#pre-cad-formados-table-body tr');
-    rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
-}
-
-function handlePreCadastroFormadoPhotoUpload(event) {
-    const file = event.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 300; canvas.height = 400;
-            canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
-            canvas.toBlob(function(blob) {
-                const pcfReader = new FileReader();
-                pcfReader.onloadend = function() {
-                    preCadastroFormadoPhotoDataUrl = pcfReader.result;
-                    document.getElementById('pcf-photo-preview').src = pcfReader.result;
-                    document.getElementById('pcf-photo-preview').classList.remove('hidden');
-                    document.getElementById('pcf-photo-placeholder').style.display = 'none';
-                    document.getElementById('pcf-btn-remove-photo').style.display = '';
-                };
-                pcfReader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.5);
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function removePreCadastroFormadoPhoto() {
-    preCadastroFormadoPhotoDataUrl = null;
-    document.getElementById('pcf-photo-preview').classList.add('hidden');
-    document.getElementById('pcf-photo-preview').src = '';
-    document.getElementById('pcf-photo-placeholder').style.display = '';
-    document.getElementById('pcf-btn-remove-photo').style.display = 'none';
-    document.getElementById('pcf-photo-input').value = '';
-}
-
-function openPcfPhotoCamera() {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const overlay = document.createElement('div');
-        overlay.id = 'camera-overlay';
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-        overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
-        document.body.appendChild(overlay);
-        const video = document.getElementById('camera-video');
-        let stream = null;
-        let currentFacing = 'user';
-
-        function startCamera(facing) {
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 800 }, height: { ideal: 600 } } });
-        }
-
-        startCamera(currentFacing)
-        .then(function(s) { stream = s; video.srcObject = stream; })
-        .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
-
-        document.getElementById('camera-switch').onclick = function() {
-            currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-            startCamera(currentFacing)
-            .then(function(s) { stream = s; video.srcObject = stream; })
-            .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
-        };
-
-        document.getElementById('camera-capture').onclick = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 300; canvas.height = 400;
-            canvas.getContext('2d').drawImage(video, 0, 0, 300, 400);
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-            canvas.toBlob(function(blob) {
-                const pcfCamReader = new FileReader();
-                pcfCamReader.onloadend = function() {
-                    preCadastroFormadoPhotoDataUrl = pcfCamReader.result;
-                    document.getElementById('pcf-photo-preview').src = pcfCamReader.result;
-                    document.getElementById('pcf-photo-preview').classList.remove('hidden');
-                    document.getElementById('pcf-photo-placeholder').style.display = 'none';
-                    document.getElementById('pcf-btn-remove-photo').style.display = '';
-                };
-                pcfCamReader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.5);
-        };
-
-        document.getElementById('camera-cancel').onclick = function() {
-            if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-            document.body.removeChild(overlay);
-        };
-    } else {
-        document.getElementById('pcf-photo-input').click();
-    }
-}
-
-function resetFormPreCadastroFormado() {
-    document.getElementById('form-pre-cadastro-formado').reset();
-    removePreCadastroFormadoPhoto();
-    document.querySelectorAll('.pcf-curso-check').forEach(cb => cb.checked = false);
-    pcfCursosData = {};
-    renderPcfCursosDetalhes();
-}
-
-async function handlePreCadastroFormadoSubmit(event) {
-    event.preventDefault();
-    const cpf = document.getElementById('pcf-cpf').value.replace(/\D/g, '');
-    const cursos = [];
-    document.querySelectorAll('.pcf-curso-check:checked').forEach(cb => cursos.push(cb.value));
-    if (!cursos.length) { alert('Selecione pelo menos um curso.'); return false; }
-
-    const cursosDetalhes = cursos.map(function(curso) {
-        const d = pcfCursosData[curso] || {};
-        return {
-            nome: curso,
-            dataFormacao: d.dataFormacao ? new Date(d.dataFormacao + 'T12:00:00').toLocaleDateString('pt-BR') : '',
-            dataFormacaoRaw: d.dataFormacao || '',
-            certFrente: d.certFrente || null,
-            certVerso: d.certVerso || null
-        };
-    });
-
-    const primeiroCurso = cursosDetalhes[0] || {};
-
-    const data = {
-        nome: document.getElementById('pcf-nome').value,
-        cpf: cpf,
-        nascimento: document.getElementById('pcf-nascimento').value,
-        estadoCivil: document.getElementById('pcf-estado-civil').value,
-        nacionalidade: document.getElementById('pcf-nacionalidade').value,
-        naturalidade: document.getElementById('pcf-naturalidade').value,
-        profissao: document.getElementById('pcf-profissao').value,
-        mae: document.getElementById('pcf-mae').value,
-        pai: document.getElementById('pcf-pai').value,
-        email: document.getElementById('pcf-email').value,
-        whatsapp: document.getElementById('pcf-whatsapp').value,
-        endereco: document.getElementById('pcf-endereco').value,
-        numero: document.getElementById('pcf-numero').value,
-        bairro: document.getElementById('pcf-bairro').value,
-        cidade: document.getElementById('pcf-cidade').value,
-        estado: document.getElementById('pcf-estado').value,
-        altura: document.getElementById('pcf-altura').value,
-        peso: document.getElementById('pcf-peso').value,
-        fatorRh: document.getElementById('pcf-fator-rh').value,
-        turma: document.getElementById('pcf-turma').value,
-        cursos: cursos,
-        cursosDetalhes: cursosDetalhes,
-        dataFormacao: primeiroCurso.dataFormacao || '',
-        dataFormacaoRaw: primeiroCurso.dataFormacaoRaw || '',
-        matricula: generateMatricula(cpf, primeiroCurso.dataFormacaoRaw || ''),
-        senha: document.getElementById('pcf-senha').value,
-        status: 'Pendente',
-        cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
-        dataCadastro: new Date().toLocaleDateString('pt-BR')
-    };
-
-    if (preCadastroFormadoPhotoDataUrl) {
-        data.photoDataUrl = preCadastroFormadoPhotoDataUrl;
-    }
-
-    try {
-        await dbFirestore.collection(FB_FORMADOS).doc(cpf).set(data);
-        resetFormPreCadastroFormado();
-        showAdminSection('admin-pre-cadastro-formados');
-        renderPreCadastroFormadosList();
-    } catch(e) {
-        alert('Erro ao salvar pre-cadastro: ' + e.message);
-    }
-    return false;
-}
-
-async function aprovarPreCadastroFormado(docId) {
-    try {
-        await dbFirestore.collection(FB_FORMADOS).doc(docId).set({ status: 'Ativo' }, { merge: true });
-        renderPreCadastroFormadosList();
-        renderFormadosList();
-    } catch(e) {
-        alert('Erro ao aprovar: ' + e.message);
-    }
-}
-
-async function excluirPreCadastroFormado(docId) {
-    if (!confirm('Deseja excluir este pre-cadastro?')) return;
-    try {
-        await dbFirestore.collection(FB_FORMADOS).doc(docId).delete();
-        renderPreCadastroFormadosList();
-    } catch(e) {
-        alert('Erro ao excluir: ' + e.message);
-    }
 }
 
 // ===== PWA INSTALL =====
@@ -4970,19 +4029,6 @@ let disciplinas = [];
 let aulas = [];
 let currentDisciplinaId = null;
 let editingAulaId = null;
-
-function switchTurmasTab(tab, btn) {
-    document.querySelectorAll('#admin-turmas .alunos-tab').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    document.querySelectorAll('#admin-turmas .tab-content').forEach(c => c.classList.remove('active'));
-    const target = document.getElementById('turmas-tab-' + tab);
-    if (target) target.classList.add('active');
-    if (tab === 'disciplinas') {
-        disciplinaRenderList();
-    } else {
-        renderTurmasList();
-    }
-}
 
 function disciplinaLimparForm() {
     document.getElementById('disciplina-nome').value = '';
@@ -5078,13 +4124,6 @@ async function disciplinaExcluir(id) {
 
 function disciplinaGerenciarAulas(disciplinaId) {
     currentDisciplinaId = disciplinaId;
-    const d = disciplinas.find(d => d.id === disciplinaId);
-    if (!d) return;
-    document.querySelectorAll('#admin-turmas .alunos-tab').forEach(b => b.classList.remove('active'));
-    const tabBtn = document.querySelector('#admin-turmas .alunos-tab[data-tab="disciplinas"]');
-    if (tabBtn) tabBtn.classList.add('active');
-    document.querySelectorAll('#admin-turmas .tab-content').forEach(c => c.classList.remove('active'));
-    document.getElementById('turmas-tab-disciplinas').classList.add('active');
     renderAulasList();
 }
 
@@ -5240,12 +4279,50 @@ let aptPresencas = {};
 let aptAlunosNaTurma = [];
 
 function apontamentoInicializar() {
-    apontamentoPopularFiltroTurma();
-    apontamentoFiltrar();
+    apontamentoPopularSelecaoProjeto();
+    const conteudo = document.getElementById('apt-conteudo');
+    if (conteudo) conteudo.style.display = 'none';
+}
+
+function apontamentoPopularSelecaoProjeto() {
+    const sel = document.getElementById('apt-selecao-projeto');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+    projetos.forEach(p => {
+        sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
+    });
+}
+
+function apontamentoOnSelecaoProjetoChange() {
+    const projetoNome = document.getElementById('apt-selecao-projeto').value;
+    const selTurma = document.getElementById('apt-selecao-turma');
+    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
+        turmasDoProjeto.forEach(t => {
+            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    }
+    apontamentoOnSelecaoChange();
+}
+
+function apontamentoOnSelecaoChange() {
+    const projeto = document.getElementById('apt-selecao-projeto').value;
+    const turma = document.getElementById('apt-selecao-turma').value;
+    const conteudo = document.getElementById('apt-conteudo');
+    if (projeto && turma) {
+        conteudo.style.display = '';
+        apontamentoPopularFiltroTurma();
+        apontamentoFiltrar();
+    } else {
+        conteudo.style.display = 'none';
+    }
 }
 
 async function apontamentoAbrirModal() {
     aptPresencas = {};
+    const turmaSelecionada = document.getElementById('apt-selecao-turma').value;
+    const projetoSelecionado = document.getElementById('apt-selecao-projeto').value;
     document.getElementById('apt-turma').innerHTML = '<option value="">Carregando...</option>';
     document.getElementById('apt-disciplina').innerHTML = '<option value="">Selecione...</option>';
     document.getElementById('apt-aula').innerHTML = '<option value="">Selecione...</option>';
@@ -5259,7 +4336,9 @@ async function apontamentoAbrirModal() {
     const selTurma = document.getElementById('apt-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma</option>';
     turmas.forEach(t => {
-        selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
+        if (t.projeto === projetoSelecionado) {
+            selTurma.innerHTML += '<option value="' + t.nome + '"' + (t.nome === turmaSelecionada ? ' selected' : '') + '>' + t.nome + '</option>';
+        }
     });
     const selDisc = document.getElementById('apt-disciplina');
     selDisc.innerHTML = '<option value="">Selecione a disciplina</option>';
@@ -5267,6 +4346,9 @@ async function apontamentoAbrirModal() {
         selDisc.innerHTML += '<option value="' + d.id + '">' + d.nome + '</option>';
     });
     document.getElementById('modal-apontamento-overlay').classList.remove('hidden');
+    if (turmaSelecionada) {
+        apontamentoOnTurmaChange();
+    }
 }
 
 function apontamentoFecharModal(event) {
@@ -5486,18 +4568,9 @@ async function apontamentoCarregarHistorico() {
 }
 
 function apontamentoPopularFiltroTurma() {
-    const sel = document.getElementById('apt-filtro-turma');
-    if (!sel) return;
-    const opcoesAtuais = Array.from(sel.options).map(o => o.value);
-    turmas.forEach(t => {
-        if (!opcoesAtuais.includes(t.nome)) {
-            sel.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
-        }
-    });
 }
 
 function apontamentoLimparFiltros() {
-    document.getElementById('apt-filtro-turma').value = '';
     document.getElementById('apt-filtro-data-inicio').value = '';
     document.getElementById('apt-filtro-data-fim').value = '';
     document.getElementById('apt-filtro-matricula').value = '';
@@ -5506,7 +4579,7 @@ function apontamentoLimparFiltros() {
 
 async function apontamentoFiltrar() {
     await apontamentoCarregarHistorico();
-    const turmaFiltro = document.getElementById('apt-filtro-turma').value;
+    const turmaFiltro = document.getElementById('apt-selecao-turma').value;
     const dataInicio = document.getElementById('apt-filtro-data-inicio').value;
     const dataFim = document.getElementById('apt-filtro-data-fim').value;
     const matriculaBusca = document.getElementById('apt-filtro-matricula').value.trim().toLowerCase();
@@ -5555,7 +4628,7 @@ function apontamentoRenderHistorico(registros) {
     document.getElementById('apt-resumo-presentes').textContent = totalPresentes;
     document.getElementById('apt-resumo-faltas').textContent = totalFaltas;
     document.getElementById('apt-resumo-justificadas').textContent = totalJustificadas;
-    lista.innerHTML = registros.map(r => {
+    lista.innerHTML = registros.map((r, ri) => {
         const dataFmt = r.dataAula ? new Date(r.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
         const horaFmt = r.horaAula || '-';
         const criadoEmFmt = r.criadoEm ? new Date(r.criadoEm).toLocaleString('pt-BR') : '-';
@@ -5563,45 +4636,90 @@ function apontamentoRenderHistorico(registros) {
         const presCount = alunos.filter(a => a.status === 'Presente').length;
         const faltaCount = alunos.filter(a => a.status === 'Falta').length;
         const justCount = alunos.filter(a => a.status === 'Justificada').length;
-        const rows = alunos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map(a => {
+        const rows = alunos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map((a, ai) => {
             const stColor = a.status === 'Presente' ? '#4caf50' : a.status === 'Falta' ? '#f44336' : a.status === 'Justificada' ? '#ff9800' : '#666';
             const stIcon = a.status === 'Presente' ? 'fa-check' : a.status === 'Falta' ? 'fa-xmark' : a.status === 'Justificada' ? 'fa-circle-info' : 'fa-question';
+            const recId = r.docId || '';
             return '<tr style="border-bottom:1px solid #222">' +
-                '<td style="padding:8px;font-size:13px;font-weight:600;color:#ccc">' + (a.matricula || '-') + '</td>' +
-                '<td style="padding:8px;font-size:13px;color:#ccc">' + (a.nome || '-') + '</td>' +
-                '<td style="padding:8px;text-align:center"><span style="color:' + stColor + ';font-weight:700;font-size:13px"><i class="fa-solid ' + stIcon + '" style="margin-right:4px"></i>' + (a.status || '-') + '</span></td>' +
-                '<td style="padding:8px;font-size:12px;color:#888">' + (a.obs || '-') + '</td>' +
+                '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:#f57c00;font-family:Courier New,monospace;white-space:nowrap">' + (a.matricula || '-') + '</td>' +
+                '<td style="padding:8px 12px;font-size:13px;color:#ccc">' + (a.nome || '-') + '</td>' +
+                '<td style="padding:8px 12px;text-align:center"><span style="color:' + stColor + ';font-weight:700;font-size:13px"><i class="fa-solid ' + stIcon + '" style="margin-right:4px"></i>' + (a.status || '-') + '</span></td>' +
+                '<td style="padding:8px 12px;font-size:12px;color:#888">' + (a.obs || '-') + '</td>' +
+                '<td style="padding:8px 12px;text-align:center">' +
+                    '<button class="btn-icon" style="font-size:11px;padding:4px 6px" title="Editar" onclick="apontamentoEditarAluno(\'' + recId + '\',' + ai + ')"><i class="fa-solid fa-pen"></i></button>' +
+                '</td>' +
             '</tr>';
         }).join('');
-        return '<div style="background:#1a1a2e;border:1px solid #2a2a3a;border-radius:10px;margin-bottom:16px;overflow:hidden">' +
-            '<div style="padding:12px 16px;background:#151525;border-bottom:1px solid #2a2a3a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">' +
+        const cardId = 'apt-card-' + ri;
+        return '<div class="apt-card" id="' + cardId + '" style="background:#1a1a2e;border:1px solid #2a2a3a;border-radius:10px;margin-bottom:16px;overflow:hidden">' +
+            '<div style="padding:12px 16px;background:#151525;border-bottom:1px solid #2a2a3a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none" onclick="apontamentoToggleCard(\'' + cardId + '\')">' +
                 '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+                    '<i class="fa-solid fa-chevron-down" style="color:#666;font-size:12px;transition:transform 0.2s" id="apt-arrow-' + ri + '"></i>' +
                     '<span style="background:rgba(245,127,23,0.2);color:#f57f17;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700">' + (r.turma || '-') + '</span>' +
                     '<span style="color:#ccc;font-size:13px"><i class="fa-solid fa-book" style="color:#f57f17;margin-right:4px"></i>' + (r.disciplina || '-') + '</span>' +
                     '<span style="color:#aaa;font-size:12px"><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + dataFmt + ' ' + horaFmt + '</span>' +
                     '<span style="color:#666;font-size:11px">Aula: ' + (r.aula || '-') + '</span>' +
                 '</div>' +
-                '<div style="display:flex;gap:8px;font-size:12px">' +
+                '<div style="display:flex;gap:8px;font-size:12px;align-items:center">' +
                     '<span style="color:#4caf50;font-weight:700">' + presCount + ' P</span>' +
                     '<span style="color:#f44336;font-weight:700">' + faltaCount + ' F</span>' +
                     '<span style="color:#ff9800;font-weight:700">' + justCount + ' J</span>' +
                     '<span style="color:#666">/ ' + alunos.length + '</span>' +
                 '</div>' +
             '</div>' +
-            '<div style="overflow-x:auto">' +
+            '<div class="apt-card-body" style="overflow-x:auto">' +
                 '<table style="width:100%;border-collapse:collapse">' +
                     '<thead><tr>' +
-                        '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;width:100px">Matrícula</th>' +
+                        '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;min-width:140px">Matricula</th>' +
                         '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px">Nome</th>' +
                         '<th style="text-align:center;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;width:140px">Status</th>' +
-                        '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px">Observação</th>' +
+                        '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px">Observacao</th>' +
+                        '<th style="text-align:center;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;width:60px">Acoes</th>' +
                     '</tr></thead>' +
                     '<tbody>' + rows + '</tbody>' +
                 '</table>' +
             '</div>' +
-            '<div style="padding:8px 16px;font-size:10px;color:#555;border-top:1px solid #2a2a3a">Registrado por: ' + (r.criadoPor || '-') + ' em ' + criadoEmFmt + '</div>' +
+            '<div class="apt-card-footer" style="padding:8px 16px;font-size:10px;color:#555;border-top:1px solid #2a2a3a">Registrado por: ' + (r.criadoPor || '-') + ' em ' + criadoEmFmt + '</div>' +
         '</div>';
     }).join('');
+}
+
+function apontamentoToggleCard(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const body = card.querySelector('.apt-card-body');
+    const footer = card.querySelector('.apt-card-footer');
+    const ri = cardId.replace('apt-card-', '');
+    const arrow = document.getElementById('apt-arrow-' + ri);
+    if (!body) return;
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? '' : 'none';
+    if (footer) footer.style.display = isHidden ? '' : 'none';
+    if (arrow) arrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+function apontamentoEditarAluno(recId, alunoIdx) {
+    const senha = prompt('Digite a senha do administrador para editar:');
+    if (!senha) return;
+    if (senha !== ADMIN_SENHA) { alert('Senha incorreta!'); return; }
+    const reg = aptHistoricoCache.find(r => r.docId === recId);
+    if (!reg || !reg.alunos || !reg.alunos[alunoIdx]) return;
+    const a = reg.alunos[alunoIdx];
+    const novoStatus = prompt('Status atual: ' + a.status + '\n\nDigite o novo status:\n1 = Presente\n2 = Falta\n3 = Justificada', a.status === 'Presente' ? '1' : a.status === 'Falta' ? '2' : '3');
+    if (novoStatus === null) return;
+    const statusMap = { '1': 'Presente', '2': 'Falta', '3': 'Justificada' };
+    const statusFinal = statusMap[novoStatus.trim()];
+    if (!statusFinal) { alert('Opcao invalida.'); return; }
+    const novaObs = prompt('Observacao atual: ' + (a.obs || 'Nenhuma') + '\n\nDigite a nova observacao (deixe vazio para manter):', a.obs || '');
+    if (novaObs === null) return;
+    a.status = statusFinal;
+    a.obs = novaObs.trim() || a.obs;
+    if (recId) {
+        dbFirestore.collection('apontamentos').doc(recId).update({ alunos: reg.alunos }).then(() => {
+            apontamentoFiltrar();
+            alert('Alteracao salva com sucesso!');
+        }).catch(e => { alert('Erro ao salvar: ' + e.message); });
+    }
 }
 
 window.addEventListener('appinstalled', function() {

@@ -74,10 +74,6 @@
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Portal do Aluno</span>
                             </button>
-                            <button type="button" class="login-role-btn" data-role="formado" onclick="selectLoginRole(this)">
-                                <i class="fa-solid fa-award"></i>
-                                <span>Portal do Formado</span>
-                            </button>
                         </div>
                     </div>
                     <form id="login-form" onsubmit="return handleLogin(event)">
@@ -144,29 +140,21 @@
                         <i class="fa-solid fa-house"></i>
                         <span>Inicio</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-pre-inscricao', this)">
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-pre-inscricao', this); preInicializar()">
                         <i class="fa-solid fa-file-pen"></i>
                         <span>Pre-Inscricao</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-alunos', this); renderAlunosList()">
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-alunos', this); alunosInicializar()">
                         <i class="fa-solid fa-user-graduate"></i>
                         <span>Alunos</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-turmas', this); renderTurmasList()">
-                        <i class="fa-solid fa-people-group"></i>
-                        <span>Turmas</span>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-disciplinas', this); disciplinaRenderList()">
+                        <i class="fa-solid fa-book"></i>
+                        <span>Disciplinas</span>
                     </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-instrutores', this)">
                         <i class="fa-solid fa-chalkboard-user"></i>
                         <span>Instrutores</span>
-                    </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-formados', this); renderFormadosList()">
-                        <i class="fa-solid fa-award"></i>
-                        <span>Formados</span>
-                    </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-pre-cadastro-formados', this); renderPreCadastroFormadosList()">
-                        <i class="fa-solid fa-user-clock"></i>
-                        <span>Pre-Cadastro Formados</span>
                     </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-relatorios', this)">
                         <i class="fa-solid fa-chart-bar"></i>
@@ -223,25 +211,17 @@
                         <div class="admin-home-divider"></div>
                         <p class="admin-home-desc">Sistema de Gestão Educacional</p>
                         <div class="admin-home-grid">
-                            <div class="admin-home-card" onclick="showAdminSection('admin-pre-inscricao', document.querySelector('.nav-item:nth-child(2)'))">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-pre-inscricao', document.querySelector('.nav-item:nth-child(2)')); preInicializar()">
                                 <i class="fa-solid fa-file-pen"></i>
                                 <span>Pre-Inscrição</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-alunos', document.querySelector('.nav-item:nth-child(3)')); renderAlunosList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-alunos', document.querySelector('.nav-item:nth-child(3)')); alunosInicializar()">
                                 <i class="fa-solid fa-user-graduate"></i>
                                 <span>Alunos</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-turmas', document.querySelector('.nav-item:nth-child(4)')); renderTurmasList()">
-                                <i class="fa-solid fa-people-group"></i>
-                                <span>Turmas</span>
                             </div>
                             <div class="admin-home-card" onclick="showAdminSection('admin-instrutores', document.querySelector('.nav-item:nth-child(5)'))">
                                 <i class="fa-solid fa-chalkboard-user"></i>
                                 <span>Instrutores</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-formados', document.querySelector('.nav-item:nth-child(6)')); renderFormadosList()">
-                                <i class="fa-solid fa-award"></i>
-                                <span>Formados</span>
                             </div>
                             <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item:nth-child(7)'))">
                                 <i class="fa-solid fa-chart-bar"></i>
@@ -261,158 +241,157 @@
 
                 <!-- ALUNOS -->
                 <div id="admin-alunos" class="admin-section">
-                    <div class="alunos-tabs">
-                        <button class="alunos-tab active" data-tab="aprovados" onclick="switchAlunosTab('aprovados', this)">
-                            <i class="fa-solid fa-check-circle"></i> Aprovados <span class="tab-count" id="tab-count-aprovados">0</span>
-                        </button>
-                        <button class="alunos-tab" data-tab="pendentes" onclick="switchAlunosTab('pendentes', this)">
-                            <i class="fa-solid fa-clock"></i> Pendentes <span class="tab-count" id="tab-count-pendentes">0</span>
-                        </button>
-                        <button class="alunos-tab" data-tab="reprovados" onclick="switchAlunosTab('reprovados', this)">
-                            <i class="fa-solid fa-times-circle"></i> Reprovados <span class="tab-count" id="tab-count-reprovados">0</span>
-                        </button>
-                        <button class="alunos-tab" data-tab="segunda-chamada" onclick="switchAlunosTab('segunda-chamada', this)">
-                            <i class="fa-solid fa-rotate"></i> 2a Chamada <span class="tab-count" id="tab-count-segunda-chamada">0</span>
-                        </button>
-                    </div>
-                    <div class="alunos-toolbar">
-                        <div class="input-wrapper" style="max-width:360px">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input type="text" id="alunos-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="filterAlunos()">
+                    <!-- Selecao Projeto + Turma -->
+                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #f57c00;border-radius:12px;margin-bottom:20px">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                            <i class="fa-solid fa-filter" style="color:#f57c00;font-size:16px"></i>
+                            <span style="color:#f57c00;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para visualizar os alunos</span>
                         </div>
-                        <div class="header-actions">
-                            <button class="btn-outline btn-sm" onclick="exportExcelAlunos()">
-                                <i class="fa-solid fa-file-excel"></i> Exportar
-                            </button>
-                            <button class="btn-outline btn-sm" onclick="printTableAlunos()">
-                                <i class="fa-solid fa-print"></i> Imprimir
-                            </button>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                            <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                <label style="font-size:11px;font-weight:600;color:#f57c00;margin-bottom:4px;display:block">Projeto *</label>
+                                <select id="alunos-selecao-projeto" class="config-input" style="width:100%;border-color:#f57c00" onchange="alunosOnSelecaoProjetoChange()">
+                                    <option value="">Selecione o projeto...</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                <label style="font-size:11px;font-weight:600;color:#4caf50;margin-bottom:4px;display:block">Turma *</label>
+                                <select id="alunos-selecao-turma" class="config-input" style="width:100%;border-color:#4caf50" onchange="alunosOnSelecaoChange()">
+                                    <option value="">Selecione a turma...</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div id="alunos-tab-content">
-                        <div class="card full-width">
-                            <div class="card-body">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Projeto</th><th>Data Cadastro</th><th>Acoes</th></tr>
-                                    </thead>
-                                    <tbody id="alunos-table-body"></tbody>
-                                </table>
+                    <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                    <div id="alunos-conteudo" style="display:none">
+                        <div class="alunos-tabs">
+                            <button class="alunos-tab active" data-tab="aprovados" onclick="switchAlunosTab('aprovados', this)">
+                                <i class="fa-solid fa-check-circle"></i> Aprovados <span class="tab-count" id="tab-count-aprovados">0</span>
+                            </button>
+                            <button class="alunos-tab" data-tab="pendentes" onclick="switchAlunosTab('pendentes', this)">
+                                <i class="fa-solid fa-clock"></i> Pendentes <span class="tab-count" id="tab-count-pendentes">0</span>
+                            </button>
+                            <button class="alunos-tab" data-tab="reprovados" onclick="switchAlunosTab('reprovados', this)">
+                                <i class="fa-solid fa-times-circle"></i> Reprovados <span class="tab-count" id="tab-count-reprovados">0</span>
+                            </button>
+                            <button class="alunos-tab" data-tab="segunda-chamada" onclick="switchAlunosTab('segunda-chamada', this)">
+                                <i class="fa-solid fa-rotate"></i> 2a Chamada <span class="tab-count" id="tab-count-segunda-chamada">0</span>
+                            </button>
+                        </div>
+                        <div class="alunos-toolbar">
+                            <div class="input-wrapper" style="max-width:360px">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="alunos-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="filterAlunos()">
+                            </div>
+                            <div class="header-actions">
+                                <button class="btn-outline btn-sm" onclick="exportExcelAlunos()">
+                                    <i class="fa-solid fa-file-excel"></i> Exportar
+                                </button>
+                                <button class="btn-outline btn-sm" onclick="printTableAlunos()">
+                                    <i class="fa-solid fa-print"></i> Imprimir
+                                </button>
+                            </div>
+                        </div>
+                        <div id="alunos-tab-content">
+                            <div class="card full-width">
+                                <div class="card-body">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Turma</th><th>Projeto</th><th>Data Cadastro</th><th>Acoes</th></tr>
+                                        </thead>
+                                        <tbody id="alunos-table-body"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div id="admin-turmas" class="admin-section">
+                <div id="admin-disciplinas" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:8px"></i> Turmas <span class="alunos-count" id="turmas-count-badge"></span></h3>
-                            <div class="header-actions">
-                                <button class="btn-primary" onclick="openFormTurma()">
-                                    <i class="fa-solid fa-plus"></i> Nova Turma
-                                </button>
-                            </div>
+                            <h3><i class="fa-solid fa-book" style="color:#f57f17;margin-right:8px"></i> Disciplinas e Aulas</h3>
                         </div>
-                        <div class="alunos-tabs" style="margin-top:12px">
-                            <button class="alunos-tab active" data-tab="turmas" onclick="switchTurmasTab('turmas', this)">
-                                <i class="fa-solid fa-people-group"></i> Turmas
-                            </button>
-                            <button class="alunos-tab" data-tab="disciplinas" onclick="switchTurmasTab('disciplinas', this)">
-                                <i class="fa-solid fa-book"></i> Cadastro de Disciplina
-                            </button>
-                        </div>
-                        <div id="turmas-tab-turmas" class="tab-content active">
-                            <div class="card-body">
-                                <table class="data-table" id="turmas-table">
-                                    <thead>
-                                        <tr><th>Nome da Turma</th><th>Descricao</th><th>Alunos</th><th>Acoes</th></tr>
-                                    </thead>
-                                    <tbody id="turmas-table-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div id="turmas-tab-disciplinas" class="tab-content">
-                            <div class="card-body">
-                                <div class="card" style="margin-bottom:20px;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden">
-                                    <div class="card-header" style="background:#f5f5f5;padding:12px 16px;border-bottom:1px solid #e0e0e0">
-                                        <h4 style="margin:0;color:#333"><i class="fa-solid fa-book" style="color:#f57f17;margin-right:8px"></i> Cadastro de Disciplina</h4>
+                        <div class="card-body">
+                            <div class="card" style="margin-bottom:20px;border:1px solid #333;border-radius:10px;overflow:hidden">
+                                <div class="card-header" style="background:#1a1a2e;padding:12px 16px;border-bottom:1px solid #333">
+                                    <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-book" style="color:#f57f17;margin-right:8px"></i> Cadastro de Disciplina</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Nome da Disciplina *</label>
+                                            <input type="text" id="disciplina-nome" class="config-input" placeholder="Ex: APH, RCP, Legislacao e Normas..." required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Codigo</label>
+                                            <input type="text" id="disciplina-codigo" class="config-input" placeholder="Ex: DISC001">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Carga Horaria (horas)</label>
+                                            <input type="number" id="disciplina-carga" class="config-input" min="1" placeholder="Ex: 40">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Descricao</label>
+                                            <textarea id="disciplina-descricao" class="config-input" rows="3" placeholder="Descricao da disciplina..."></textarea>
+                                        </div>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="form-grid">
-                                            <div class="form-group">
-                                                <label>Nome da Disciplina *</label>
-                                                <input type="text" id="disciplina-nome" class="config-input" placeholder="Ex: APH, RCP, Legislação e Normas..." required>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Código</label>
-                                                <input type="text" id="disciplina-codigo" class="config-input" placeholder="Ex: DISC001">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Carga Horária (horas)</label>
-                                                <input type="number" id="disciplina-carga" class="config-input" min="1" placeholder="Ex: 40">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Descrição</label>
-                                                <textarea id="disciplina-descricao" class="config-input" rows="3" placeholder="Descrição da disciplina..."></textarea>
-                                            </div>
-                                        </div>
-                                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-                                            <button class="btn-secondary" onclick="disciplinaLimparForm()"><i class="fa-solid fa-eraser"></i> Limpar</button>
-                                            <button class="btn-primary" onclick="disciplinaSalvar()"><i class="fa-solid fa-save"></i> Salvar Disciplina</button>
-                                        </div>
+                                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+                                        <button class="btn-secondary" onclick="disciplinaLimparForm()"><i class="fa-solid fa-eraser"></i> Limpar</button>
+                                        <button class="btn-primary" onclick="disciplinaSalvar()"><i class="fa-solid fa-save"></i> Salvar Disciplina</button>
                                     </div>
                                 </div>
-                                <div class="card" style="margin-bottom:20px;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden">
-                                    <div class="card-header" style="background:#f5f5f5;padding:12px 16px;border-bottom:1px solid #e0e0e0">
-                                        <h4 style="margin:0;color:#333"><i class="fa-solid fa-list" style="color:#4caf50;margin-right:8px"></i> Disciplinas Cadastradas</h4>
+                            </div>
+                            <div class="card" style="margin-bottom:20px;border:1px solid #333;border-radius:10px;overflow:hidden">
+                                <div class="card-header" style="background:#1a1a2e;padding:12px 16px;border-bottom:1px solid #333">
+                                    <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-list" style="color:#4caf50;margin-right:8px"></i> Disciplinas Cadastradas</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="disciplinas-empty" class="empty-state" style="display:none;padding:40px">
+                                        <i class="fa-solid fa-book" style="font-size:48px;color:#444;margin-bottom:12px"></i>
+                                        <p style="color:#888">Nenhuma disciplina cadastrada</p>
                                     </div>
-                                    <div class="card-body">
-                                        <div id="disciplinas-empty" class="empty-state" style="display:none;padding:40px">
-                                            <i class="fa-solid fa-book" style="font-size:48px;color:#ddd;margin-bottom:12px"></i>
-                                            <p style="color:#888">Nenhuma disciplina cadastrada</p>
-                                        </div>
-                                        <div id="disciplinas-lista" class="table-responsive" style="display:none">
-                                            <table class="data-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Nome</th>
-                                                        <th>Código</th>
-                                                        <th>Carga Horária</th>
-                                                        <th>Descrição</th>
-                                                        <th>Aulas</th>
-                                                        <th>Ações</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="disciplinas-table-body"></tbody>
-                                            </table>
-                                        </div>
+                                    <div id="disciplinas-lista" class="table-responsive" style="display:none">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nome</th>
+                                                    <th>Codigo</th>
+                                                    <th>Carga Horaria</th>
+                                                    <th>Descricao</th>
+                                                    <th>Aulas</th>
+                                                    <th>Acoes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="disciplinas-table-body"></tbody>
+                                        </table>
                                     </div>
                                 </div>
-                                <div class="card" style="border:1px solid #e0e0e0;border-radius:10px;overflow:hidden">
-                                    <div class="card-header" style="background:#f5f5f5;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center">
-                                        <h4 style="margin:0;color:#333"><i class="fa-solid fa-clock" style="color:#f57f17;margin-right:8px"></i> Aulas da Disciplina</h4>
-                                        <button class="btn-primary btn-sm" onclick="aulaAbrirModalNova()"><i class="fa-solid fa-plus"></i> Nova Aula</button>
+                            </div>
+                            <div class="card" style="border:1px solid #333;border-radius:10px;overflow:hidden">
+                                <div class="card-header" style="background:#1a1a2e;padding:12px 16px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center">
+                                    <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-clock" style="color:#f57f17;margin-right:8px"></i> Aulas da Disciplina</h4>
+                                    <button class="btn-primary btn-sm" onclick="aulaAbrirModalNova()"><i class="fa-solid fa-plus"></i> Nova Aula</button>
+                                </div>
+                                <div class="card-body">
+                                    <div id="aulas-empty" class="empty-state" style="display:none;padding:40px">
+                                        <i class="fa-solid fa-clock" style="font-size:48px;color:#444;margin-bottom:12px"></i>
+                                        <p style="color:#888">Nenhuma aula cadastrada</p>
+                                        <p style="color:#666;font-size:13px;margin-top:4px">Selecione uma disciplina e adicione aulas</p>
                                     </div>
-                                    <div class="card-body">
-                                        <div id="aulas-empty" class="empty-state" style="display:none;padding:40px">
-                                            <i class="fa-solid fa-clock" style="font-size:48px;color:#ddd;margin-bottom:12px"></i>
-                                            <p style="color:#888">Nenhuma aula cadastrada</p>
-                                            <p style="color:#aaa;font-size:13px;margin-top:4px">Selecione uma disciplina e adicione aulas</p>
-                                        </div>
-                                        <div id="aulas-lista" class="table-responsive" style="display:none">
-                                            <table class="data-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th style="width:50px">#</th>
-                                                        <th>Nome da Aula</th>
-                                                        <th style="width:160px">Turma</th>
-                                                        <th style="width:120px">Data</th>
-                                                        <th style="width:100px">Hora</th>
-                                                        <th style="width:180px">Ações</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="aulas-table-body"></tbody>
-                                            </table>
-                                        </div>
+                                    <div id="aulas-lista" class="table-responsive" style="display:none">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:50px">#</th>
+                                                    <th>Nome da Aula</th>
+                                                    <th style="width:160px">Turma</th>
+                                                    <th style="width:120px">Data</th>
+                                                    <th style="width:100px">Hora</th>
+                                                    <th style="width:180px">Acoes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="aulas-table-body"></tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -421,498 +400,6 @@
                 </div>
                 <div id="admin-instrutores" class="admin-section">
                     <div class="card full-width"><div class="card-header"><h3><i class="fa-solid fa-chalkboard-user" style="color:#f44336;margin-right:8px"></i> Instrutores</h3></div><div class="card-body"><p style="color:#888;text-align:center;padding:40px">Pagina em desenvolvimento...</p></div></div>
-                </div>
-                <div id="admin-formados" class="admin-section">
-                    <div class="alunos-tabs">
-                        <button class="alunos-tab active" data-tab="ativos" onclick="switchFormadosTab('ativos', this)">
-                            <i class="fa-solid fa-check-circle"></i> Ativos <span class="tab-count" id="tab-count-formados-ativos">0</span>
-                        </button>
-                        <button class="alunos-tab" data-tab="pendentes" onclick="switchFormadosTab('pendentes', this)">
-                            <i class="fa-solid fa-clock"></i> Pendentes <span class="tab-count" id="tab-count-formados-pendentes">0</span>
-                        </button>
-                    </div>
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-award" style="color:#ff9800;margin-right:8px"></i> Formados <span class="alunos-count" id="formados-count-badge"></span></h3>
-                            <div class="header-actions">
-                                <button class="btn-primary" onclick="openFormFormado()">
-                                    <i class="fa-solid fa-plus"></i> Novo Formado
-                                </button>
-                                <button class="btn-outline btn-sm" onclick="exportExcelFormados()">
-                                    <i class="fa-solid fa-file-excel"></i> Exportar
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="alunos-toolbar">
-                                <div class="input-wrapper" style="max-width:360px">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="formados-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="filterFormados()">
-                                </div>
-                            </div>
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Matricula</th><th>Cursos / Datas</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
-                                </thead>
-                                <tbody id="formados-table-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FORM FORMADO -->
-                <div id="admin-form-formado" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3 id="formado-form-title"><i class="fa-solid fa-user-plus" style="color:#ff9800;margin-right:8px"></i> Novo Formado</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-formados')">
-                                <i class="fa-solid fa-arrow-left"></i> Voltar
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <form id="form-formado" onsubmit="return handleFormadoSubmit(event)">
-
-                                <!-- FOTO 3x4 -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Foto 3x4</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label>Foto 3x4</label>
-                                                <div class="photo-upload-area" id="formado-photo-area">
-                                                    <div class="photo-placeholder" id="formado-photo-placeholder">
-                                                        <i class="fa-solid fa-camera"></i>
-                                                        <p>Clique para importar foto 3x4</p>
-                                                    </div>
-                                                    <img id="formado-photo-preview" class="photo-preview hidden" alt="Preview">
-                                                    <input type="file" id="formado-photo-input" accept="image/*" class="hidden" onchange="handleFormadoPhotoUpload(event)">
-                                                </div>
-                                                <div class="photo-actions">
-                                                    <button type="button" class="btn-outline" onclick="document.getElementById('formado-photo-input').click()">
-                                                        <i class="fa-solid fa-upload"></i> Importar Foto
-                                                    </button>
-                                                    <button type="button" class="btn-outline" onclick="openFormadoCamera()">
-                                                        <i class="fa-solid fa-camera"></i> Tirar Foto
-                                                    </button>
-                                                    <button type="button" class="btn-outline btn-danger-outline" onclick="removeFormadoPhoto()" id="formado-btn-remove-photo" style="display:none">
-                                                        <i class="fa-solid fa-trash"></i> Remover
-                                                    </button>
-                    </div>
-                </div>
-                <div class="formado-right-panel">
-                    <div class="formado-photo-card">
-                        <div class="portal-photo-box formado-photo-box">
-                            <img id="portal-formado-photo" src="" alt="Foto 3x4" class="portal-photo">
-                        </div>
-                        <h3 class="formado-photo-name"><span id="portal-formado-nome"></span></h3>
-                        <p class="formado-photo-sub">Formado(a) FARN</p>
-                        <p id="portal-formado-matricula-side" class="formado-photo-mat">---</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-                                <!-- DADOS PESSOAIS -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-user"></i><h3>Dados Pessoais</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-group full"><label>Nome Completo *</label><input type="text" id="ff-nome" class="config-input" required></div>
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>CPF *</label><input type="text" id="ff-cpf" class="config-input" maxlength="14" required oninput="formatCPF(this); document.getElementById('ff-matricula').value = generateMatricula(this.value, document.getElementById('ff-data-formacao').value)"></div>
-                                            <div class="form-group"><label>Data de Nascimento *</label><input type="date" id="ff-nascimento" class="config-input" required></div>
-                                            <div class="form-group"><label>Estado Civil *</label>
-                                                <select id="ff-estado-civil" class="config-input" required>
-                                                    <option value="">Selecione...</option>
-                                                    <option value="Solteiro(a)">Solteiro(a)</option>
-                                                    <option value="Casado(a)">Casado(a)</option>
-                                                    <option value="Viuvo(a)">Viuvo(a)</option>
-                                                    <option value="Divorciado(a)">Divorciado(a)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Nacionalidade *</label><input type="text" id="ff-nacionalidade" class="config-input" placeholder="Brasileira" required></div>
-                                            <div class="form-group"><label>Naturalidade *</label><input type="text" id="ff-naturalidade" class="config-input" placeholder="Cidade/Estado" required></div>
-                                            <div class="form-group"><label>Profissao</label><input type="text" id="ff-profissao" class="config-input"></div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Mae *</label><input type="text" id="ff-mae" class="config-input" required></div>
-                                            <div class="form-group"><label>Pai</label><input type="text" id="ff-pai" class="config-input"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CONTATO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-address-book"></i><h3>Contato</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Email *</label><input type="email" id="ff-email" class="config-input" required></div>
-                                            <div class="form-group"><label>WhatsApp *</label><input type="tel" id="ff-whatsapp" class="config-input" maxlength="15" required oninput="formatPhone(this)"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- ENDERECO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-location-dot"></i><h3>Endereco</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row-4">
-                                            <div class="form-group col-3"><label>Endereco *</label><input type="text" id="ff-endereco" class="config-input" required></div>
-                                            <div class="form-group col-1"><label>Numero *</label><input type="text" id="ff-numero" class="config-input" required></div>
-                                        </div>
-                                        <div class="form-row-4">
-                                            <div class="form-group"><label>Bairro *</label><input type="text" id="ff-bairro" class="config-input" required></div>
-                                            <div class="form-group"><label>Cidade *</label><input type="text" id="ff-cidade" class="config-input" required></div>
-                                            <div class="form-group"><label>Estado *</label>
-                                                <select id="ff-estado" class="config-input" required>
-                                                    <option value="">UF</option>
-                                                    <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
-                                                    <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
-                                                    <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
-                                                    <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
-                                                    <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
-                                                    <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
-                                                    <option>SP</option><option>SE</option><option>TO</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- DADOS FISICOS -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-heart-pulse"></i><h3>Dados Fisicos</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Altura (cm) *</label><input type="number" id="ff-altura" class="config-input" min="100" max="250" required></div>
-                                            <div class="form-group"><label>Peso (kg) *</label><input type="number" id="ff-peso" class="config-input" min="30" max="250" required></div>
-                                            <div class="form-group"><label>Fator RH *</label>
-                                                <select id="ff-fator-rh" class="config-input" required>
-                                                    <option value="">Selecione...</option>
-                                                    <option>O+</option><option>O-</option><option>A+</option><option>A-</option>
-                                                    <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CURSOS DE FORMACAO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-graduation-cap"></i><h3>Cursos de Formacao</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-group">
-                                            <label>Selecione os cursos concluidos *</label>
-                                            <div class="cursos-grid" id="ff-cursos-grid">
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="Bombeiro Civil Classe 01"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil Classe 01</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="Bombeiro Civil Classe 02"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil Classe 02</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="Bombeiro Civil Classe 03"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil Classe 03</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="APH"><div class="curso-card"><i class="fa-solid fa-kit-medical"></i><span>APH</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="Prevencao e Combate a Incendio"><div class="curso-card"><i class="fa-solid fa-fire-extinguisher"></i><span>Prev. e Comb. a Incendio</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="Resgate Terrestre"><div class="curso-card"><i class="fa-solid fa-truck-medical"></i><span>Resgate Terrestre</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="Resgate Aquatico"><div class="curso-card"><i class="fa-solid fa-water"></i><span>Resgate Aquatico</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="ff-curso-check" value="Resgate em Altura"><div class="curso-card"><i class="fa-solid fa-mountain"></i><span>Resgate em Altura</span></div></label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- MATRICULA E FORMACAO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-id-card"></i><h3>Matricula e Formacao</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Numero de Matricula *</label><input type="text" id="ff-matricula" class="config-input" readonly style="background:#1a1a1a;color:#f57c00;font-weight:700" placeholder="Auto-gerado"></div>
-                                            <div class="form-group"><label>Data Formacao Classe 01 *</label><input type="date" id="ff-data-formacao" class="config-input" required oninput="document.getElementById('ff-matricula').value = generateMatricula(document.getElementById('ff-cpf').value, this.value)"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CERTIFICADO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-certificate"></i><h3>Certificado de Formacao Classe 01</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label>Foto Certificado - Frente</label>
-                                                <div class="upload-buttons-row">
-                                                    <button type="button" class="btn-upload-action" onclick="openCertCamera('frente')"><i class="fa-solid fa-camera"></i> Camera</button>
-                                                    <button type="button" class="btn-upload-action" onclick="document.getElementById('ff-cert-frente-input').click()"><i class="fa-solid fa-file-import"></i> Importar</button>
-                                                </div>
-                                                <input type="file" id="ff-cert-frente-input" accept="image/*" class="hidden" onchange="handleCertUpload(event, 'frente')">
-                                                <div id="ff-cert-frente-preview" class="cert-preview"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Foto Certificado - Verso</label>
-                                                <div class="upload-buttons-row">
-                                                    <button type="button" class="btn-upload-action" onclick="openCertCamera('verso')"><i class="fa-solid fa-camera"></i> Camera</button>
-                                                    <button type="button" class="btn-upload-action" onclick="document.getElementById('ff-cert-verso-input').click()"><i class="fa-solid fa-file-import"></i> Importar</button>
-                                                </div>
-                                                <input type="file" id="ff-cert-verso-input" accept="image/*" class="hidden" onchange="handleCertUpload(event, 'verso')">
-                                                <div id="ff-cert-verso-preview" class="cert-preview"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- DOCUMENTOS ANEXOS -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-file-lines"></i><h3>Documentos (Anexos)</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-group">
-                                            <div class="upload-buttons-row">
-                                                <button type="button" class="btn-upload-action" onclick="openDocCamera()"><i class="fa-solid fa-camera"></i> Camera</button>
-                                                <button type="button" class="btn-upload-action" onclick="document.getElementById('ff-files-input').click()"><i class="fa-solid fa-file-import"></i> Importar Arquivo</button>
-                                            </div>
-                                            <input type="file" id="ff-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleFormadoFilesUpload(event)">
-                                            <input type="file" id="ff-files-input" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="hidden" onchange="handleFormadoFilesUpload(event)">
-                                            <div id="ff-files-list" class="files-list"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- SENHA DE ACESSO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-key"></i><h3>Senha de Acesso</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div id="ff-senha-field-wrapper" class="form-group"><label>Senha de Acesso *</label>
-                                                <div class="input-wrapper">
-                                                    <i class="fa-solid fa-lock"></i>
-                                                    <input type="password" id="ff-senha" class="config-input" style="padding-left:44px;padding-right:44px" minlength="6">
-                                                    <button type="button" class="toggle-password" onclick="toggleSenhaFormado()">
-                                                        <i class="fa-solid fa-eye" id="eye-icon-formado"></i>
-                                                    </button>
-                                                </div>
-                                                <span class="field-hint">Minimo 6 caracteres. Sera usada para acessar a pagina do formado.</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-submit-bar">
-                                    <button type="button" class="btn-outline" onclick="resetFormFormado()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
-                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-formados')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                                    <button type="submit" class="btn-primary btn-lg"><i class="fa-solid fa-check"></i> Salvar Formado</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PRE-CADASTRO FORMADOS -->
-                <div id="admin-pre-cadastro-formados" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-user-clock" style="color:#ff9800;margin-right:8px"></i> Pre-Cadastro de Formados</h3>
-                            <div class="header-actions">
-                                <button class="btn-primary" onclick="openFormPreCadastroFormado()">
-                                    <i class="fa-solid fa-plus"></i> Novo Pre-Cadastro
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="alunos-toolbar">
-                                <div class="input-wrapper" style="max-width:360px">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="pre-cad-formados-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="filterPreCadastroFormados()">
-                                </div>
-                            </div>
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Turma</th><th>Cursos / Datas</th><th>Cadastrado por</th><th>Acoes</th></tr>
-                                </thead>
-                                <tbody id="pre-cad-formados-table-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FORM PRE-CADASTRO FORMADO -->
-                <div id="admin-form-pre-cadastro-formado" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3 id="pre-cad-formado-form-title"><i class="fa-solid fa-user-plus" style="color:#ff9800;margin-right:8px"></i> Novo Pre-Cadastro</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-pre-cadastro-formados')">
-                                <i class="fa-solid fa-arrow-left"></i> Voltar
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <form id="form-pre-cadastro-formado" onsubmit="return handlePreCadastroFormadoSubmit(event)">
-
-                                <!-- FOTO 3x4 + TURMA/PARCEIRO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Foto 3x4 e Turma</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group" style="max-width:220px">
-                                                <label>Foto 3x4</label>
-                                                <div class="photo-upload-area" id="pcf-photo-area">
-                                                    <div class="photo-placeholder" id="pcf-photo-placeholder">
-                                                        <i class="fa-solid fa-camera"></i>
-                                                        <p>Clique para importar foto 3x4</p>
-                                                    </div>
-                                                    <img id="pcf-photo-preview" class="photo-preview hidden" alt="Preview">
-                                                    <input type="file" id="pcf-photo-input" accept="image/*" class="hidden" onchange="handlePreCadastroFormadoPhotoUpload(event)">
-                                                </div>
-                                                <div class="photo-actions">
-                                                    <button type="button" class="btn-outline" onclick="openPcfPhotoCamera()">
-                                                        <i class="fa-solid fa-camera"></i> Camera
-                                                    </button>
-                                                    <button type="button" class="btn-outline" onclick="document.getElementById('pcf-photo-input').click()">
-                                                        <i class="fa-solid fa-upload"></i> Importar Foto
-                                                    </button>
-                                                    <button type="button" class="btn-outline btn-danger-outline" onclick="removePreCadastroFormadoPhoto()" id="pcf-btn-remove-photo" style="display:none">
-                                                        <i class="fa-solid fa-trash"></i> Remover
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Turma *</label>
-                                                <select id="pcf-turma" class="config-input" required style="height:46px">
-                                                    <option value="">Selecione a turma...</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- DADOS PESSOAIS -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-user"></i><h3>Dados Pessoais</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-group full"><label>Nome Completo *</label><input type="text" id="pcf-nome" class="config-input" required></div>
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>CPF *</label><input type="text" id="pcf-cpf" class="config-input" maxlength="14" required oninput="formatCPF(this)"></div>
-                                            <div class="form-group"><label>Data de Nascimento *</label><input type="date" id="pcf-nascimento" class="config-input" required></div>
-                                            <div class="form-group"><label>Estado Civil *</label>
-                                                <select id="pcf-estado-civil" class="config-input" required>
-                                                    <option value="">Selecione...</option>
-                                                    <option value="Solteiro(a)">Solteiro(a)</option>
-                                                    <option value="Casado(a)">Casado(a)</option>
-                                                    <option value="Viuvo(a)">Viuvo(a)</option>
-                                                    <option value="Divorciado(a)">Divorciado(a)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Nacionalidade *</label><input type="text" id="pcf-nacionalidade" class="config-input" placeholder="Brasileira" required></div>
-                                            <div class="form-group"><label>Naturalidade *</label><input type="text" id="pcf-naturalidade" class="config-input" placeholder="Cidade/Estado" required></div>
-                                            <div class="form-group"><label>Profissao</label><input type="text" id="pcf-profissao" class="config-input"></div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Mae *</label><input type="text" id="pcf-mae" class="config-input" required></div>
-                                            <div class="form-group"><label>Pai</label><input type="text" id="pcf-pai" class="config-input"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CONTATO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-address-book"></i><h3>Contato</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Email *</label><input type="email" id="pcf-email" class="config-input" required></div>
-                                            <div class="form-group"><label>WhatsApp *</label><input type="tel" id="pcf-whatsapp" class="config-input" maxlength="15" required oninput="formatPhone(this)"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- ENDERECO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-location-dot"></i><h3>Endereco</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row-4">
-                                            <div class="form-group col-3"><label>Endereco *</label><input type="text" id="pcf-endereco" class="config-input" required></div>
-                                            <div class="form-group col-1"><label>Numero *</label><input type="text" id="pcf-numero" class="config-input" required></div>
-                                        </div>
-                                        <div class="form-row-4">
-                                            <div class="form-group"><label>Bairro *</label><input type="text" id="pcf-bairro" class="config-input" required></div>
-                                            <div class="form-group"><label>Cidade *</label><input type="text" id="pcf-cidade" class="config-input" required></div>
-                                            <div class="form-group"><label>Estado *</label>
-                                                <select id="pcf-estado" class="config-input" required>
-                                                    <option value="">UF</option>
-                                                    <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
-                                                    <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
-                                                    <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
-                                                    <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
-                                                    <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
-                                                    <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
-                                                    <option>SP</option><option>SE</option><option>TO</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- DADOS FISICOS -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-heart-pulse"></i><h3>Dados Fisicos</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Altura (cm) *</label><input type="number" id="pcf-altura" class="config-input" min="100" max="250" required></div>
-                                            <div class="form-group"><label>Peso (kg) *</label><input type="number" id="pcf-peso" class="config-input" min="30" max="250" required></div>
-                                            <div class="form-group"><label>Fator RH *</label>
-                                                <select id="pcf-fator-rh" class="config-input" required>
-                                                    <option value="">Selecione...</option>
-                                                    <option>O+</option><option>O-</option><option>A+</option><option>A-</option>
-                                                    <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CURSOS DE FORMACAO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-graduation-cap"></i><h3>Cursos de Formacao</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-group">
-                                            <label>Selecione os cursos concluidos *</label>
-                                            <div class="cursos-grid pcf-cursos-grid" id="pcf-cursos-grid">
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 01"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil 01</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 02"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil 02</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Bombeiro Civil Classe 03"><div class="curso-card"><i class="fa-solid fa-fire"></i><span>Bombeiro Civil 03</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="APH"><div class="curso-card"><i class="fa-solid fa-kit-medical"></i><span>APH</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Prevencao e Combate a Incendio"><div class="curso-card"><i class="fa-solid fa-fire-extinguisher"></i><span>Prev. Comb. Incendio</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Resgate Terrestre"><div class="curso-card"><i class="fa-solid fa-truck-medical"></i><span>Resgate Terrestre</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Resgate Aquatico"><div class="curso-card"><i class="fa-solid fa-water"></i><span>Resgate Aquatico</span></div></label>
-                                                <label class="curso-item"><input type="checkbox" class="pcf-curso-check" value="Resgate em Altura"><div class="curso-card"><i class="fa-solid fa-mountain"></i><span>Resgate em Altura</span></div></label>
-                                            </div>
-                                        </div>
-                                        <div id="pcf-cursos-detalhes"></div>
-                                    </div>
-                                </div>
-
-                                <!-- SENHA DE ACESSO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-key"></i><h3>Senha de Acesso</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Senha de Acesso *</label>
-                                                <div class="input-wrapper">
-                                                    <i class="fa-solid fa-lock"></i>
-                                                    <input type="password" id="pcf-senha" class="config-input" style="padding-left:44px;padding-right:44px" minlength="6">
-                                                    <button type="button" class="toggle-password" onclick="toggleSenhaPreCadastro()">
-                                                        <i class="fa-solid fa-eye" id="eye-icon-pcf"></i>
-                                                    </button>
-                                                </div>
-                                                <span class="field-hint">Minimo 6 caracteres. Sera usada para acessar a pagina do formado.</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-submit-bar">
-                                    <button type="button" class="btn-outline" onclick="resetFormPreCadastroFormado()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
-                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-pre-cadastro-formados')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                                    <button type="submit" class="btn-primary btn-lg"><i class="fa-solid fa-check"></i> Salvar (Pendente)</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
                 </div>
 
                 <div id="admin-relatorios" class="admin-section">
@@ -998,7 +485,7 @@
                                 <div class="form-grid">
                                     <div class="form-group full">
                                         <label>Nome do Projeto *</label>
-                                        <input type="text" id="pf-nome" class="config-input" required placeholder="Nome da empresa ou organizacao">
+                                        <input type="text" id="pf-nome" class="config-input" required placeholder="Nome do projeto">
                                     </div>
                                     <div class="form-group">
                                         <label>CNPJ</label>
@@ -1009,9 +496,48 @@
                                         <input type="text" id="pf-responsavel" class="config-input" required placeholder="Nome do responsavel">
                                     </div>
                                 </div>
-                                <div class="form-actions">
+                                <!-- TURMAS DO PROJETO -->
+                                <div style="margin-top:24px;border:1px solid #333;border-radius:10px;overflow:hidden">
+                                    <div style="padding:12px 16px;background:#1a1a2e;border-bottom:1px solid #333">
+                                        <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:8px"></i> Turmas do Projeto</h4>
+                                    </div>
+                                    <!-- Mini-formulário de turma -->
+                                    <div id="pf-turma-form" style="padding:16px;border-bottom:1px solid #222;background:#151525">
+                                        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                                            <div style="flex:2;min-width:200px">
+                                                <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Nome da Turma *</label>
+                                                <input type="text" id="pf-turma-nome" class="config-input" placeholder="Ex: Turma 1" style="width:100%">
+                                            </div>
+                                            <div style="flex:2;min-width:200px">
+                                                <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Descrição</label>
+                                                <input type="text" id="pf-turma-desc" class="config-input" placeholder="Descrição opcional" style="width:100%">
+                                            </div>
+                                            <div style="min-width:120px">
+                                                <button type="button" class="btn-primary btn-sm" id="pf-turma-btn-add" onclick="projetoAdicionarTurma()" style="width:100%;white-space:nowrap">
+                                                    <i class="fa-solid fa-plus"></i> Adicionar
+                                                </button>
+                                                <button type="button" class="btn-primary btn-sm" id="pf-turma-btn-salvar" onclick="projetoSalvarTurma()" style="width:100%;white-space:nowrap;display:none;background:#ff9800">
+                                                    <i class="fa-solid fa-check"></i> Salvar
+                                                </button>
+                                            </div>
+                                            <div style="min-width:80px">
+                                                <button type="button" class="btn-outline btn-sm" id="pf-turma-btn-cancelar" onclick="projetoCancelarEdicaoTurma()" style="width:100%;display:none">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Lista de turmas -->
+                                    <div id="pf-turmas-lista">
+                                        <div id="pf-turmas-empty" style="text-align:center;padding:24px;color:#666;font-size:13px">
+                                            <i class="fa-solid fa-people-group" style="font-size:28px;color:#444;margin-bottom:8px;display:block"></i>
+                                            Nenhuma turma adicionada
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-actions" style="margin-top:20px">
                                     <button type="button" class="btn-outline" onclick="showAdminSection('admin-projetos')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar Projeto</button>
                                 </div>
                             </form>
                         </div>
@@ -1032,7 +558,7 @@
                                 <div class="config-card" onclick="syncAllDatabases()">
                                     <i class="fa-solid fa-rotate"></i>
                                     <span>Sincronizar Bancos</span>
-                                    <small>Sincronizar candidatos, turmas, usuarios e formados com o Firestore</small>
+                                    <small>Sincronizar candidatos, turmas e usuarios com o Firestore</small>
                                     <button id="btn-sync-all" class="btn-primary" style="margin-top:12px" onclick="event.stopPropagation(); syncAllDatabases()">
                                         <i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos
                                     </button>
@@ -1044,67 +570,85 @@
                 <div id="admin-apontamento" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-clipboard-check" style="color:#f57f17;margin-right:8px"></i> Apontamento de Presença</h3>
-                            <div class="header-actions">
-                                <button class="btn-primary" onclick="apontamentoAbrirModal()">
-                                    <i class="fa-solid fa-qrcode"></i> Apontar Aluno
-                                </button>
-                            </div>
+                            <h3><i class="fa-solid fa-clipboard-check" style="color:#f57f17;margin-right:8px"></i> Apontamento de Presenca</h3>
                         </div>
                         <div class="card-body">
-                            <!-- Filtros -->
-                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#1e1e1e;border-radius:10px;border:1px solid #2a2a2a">
-                                <div class="form-group" style="flex:1;min-width:160px;margin:0">
-                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma</label>
-                                    <select id="apt-filtro-turma" class="config-input" style="width:100%">
-                                        <option value="">Todas</option>
-                                    </select>
+                            <!-- Selecao Projeto + Turma -->
+                            <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #f57c00;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                    <i class="fa-solid fa-filter" style="color:#f57c00;font-size:16px"></i>
+                                    <span style="color:#f57c00;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
                                 </div>
-                                <div class="form-group" style="flex:1;min-width:140px;margin:0">
-                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Início</label>
-                                    <input type="date" id="apt-filtro-data-inicio" class="config-input" style="width:100%">
-                                </div>
-                                <div class="form-group" style="flex:1;min-width:140px;margin:0">
-                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Fim</label>
-                                    <input type="date" id="apt-filtro-data-fim" class="config-input" style="width:100%">
-                                </div>
-                                <div class="form-group" style="flex:1;min-width:160px;margin:0">
-                                    <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Matrícula / Nome</label>
-                                    <input type="text" id="apt-filtro-matricula" class="config-input" style="width:100%" placeholder="Buscar...">
-                                </div>
-                                <button class="btn-primary" onclick="apontamentoFiltrar()" style="white-space:nowrap;margin:0">
-                                    <i class="fa-solid fa-magnifying-glass"></i> Buscar
-                                </button>
-                                <button class="btn-outline" onclick="apontamentoLimparFiltros()" style="white-space:nowrap;margin:0">
-                                    <i class="fa-solid fa-eraser"></i> Limpar
-                                </button>
-                            </div>
-                            <!-- Resumo -->
-                            <div id="apt-resumo" style="display:none;display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-                                <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                    <div id="apt-resumo-registros" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
-                                    <div style="font-size:11px;color:#aaa">Registros</div>
-                                </div>
-                                <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                    <div id="apt-resumo-presentes" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
-                                    <div style="font-size:11px;color:#aaa">Presentes</div>
-                                </div>
-                                <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                    <div id="apt-resumo-faltas" style="font-size:22px;font-weight:800;color:#f44336">0</div>
-                                    <div style="font-size:11px;color:#aaa">Faltas</div>
-                                </div>
-                                <div style="background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                    <div id="apt-resumo-justificadas" style="font-size:22px;font-weight:800;color:#ff9800">0</div>
-                                    <div style="font-size:11px;color:#aaa">Justificadas</div>
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#f57c00;margin-bottom:4px;display:block">Projeto *</label>
+                                        <select id="apt-selecao-projeto" class="config-input" style="width:100%;border-color:#f57c00" onchange="apontamentoOnSelecaoProjetoChange()">
+                                            <option value="">Selecione o projeto...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#4caf50;margin-bottom:4px;display:block">Turma *</label>
+                                        <select id="apt-selecao-turma" class="config-input" style="width:100%;border-color:#4caf50" onchange="apontamentoOnSelecaoChange()">
+                                            <option value="">Selecione a turma...</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                            <!-- Lista -->
-                            <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#888">
-                                <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#ddd;margin-bottom:16px"></i>
-                                <h3 style="color:#aaa;margin-bottom:8px">Nenhum apontamento registrado</h3>
-                                <p style="color:#888">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
+                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                            <div id="apt-conteudo" style="display:none">
+                                <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
+                                    <button class="btn-primary" onclick="apontamentoAbrirModal()">
+                                        <i class="fa-solid fa-qrcode"></i> Apontar Aluno
+                                    </button>
+                                </div>
+                                <!-- Filtros -->
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#1e1e1e;border-radius:10px;border:1px solid #2a2a2a">
+                                    <div class="form-group" style="flex:1;min-width:140px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Inicio</label>
+                                        <input type="date" id="apt-filtro-data-inicio" class="config-input" style="width:100%">
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:140px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Fim</label>
+                                        <input type="date" id="apt-filtro-data-fim" class="config-input" style="width:100%">
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:160px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Matricula / Nome</label>
+                                        <input type="text" id="apt-filtro-matricula" class="config-input" style="width:100%" placeholder="Buscar...">
+                                    </div>
+                                    <button class="btn-primary" onclick="apontamentoFiltrar()" style="white-space:nowrap;margin:0">
+                                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                                    </button>
+                                    <button class="btn-outline" onclick="apontamentoLimparFiltros()" style="white-space:nowrap;margin:0">
+                                        <i class="fa-solid fa-eraser"></i> Limpar
+                                    </button>
+                                </div>
+                                <!-- Resumo -->
+                                <div id="apt-resumo" style="display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+                                    <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                        <div id="apt-resumo-registros" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
+                                        <div style="font-size:11px;color:#aaa">Registros</div>
+                                    </div>
+                                    <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                        <div id="apt-resumo-presentes" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
+                                        <div style="font-size:11px;color:#aaa">Presentes</div>
+                                    </div>
+                                    <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                        <div id="apt-resumo-faltas" style="font-size:22px;font-weight:800;color:#f44336">0</div>
+                                        <div style="font-size:11px;color:#aaa">Faltas</div>
+                                    </div>
+                                    <div style="background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                        <div id="apt-resumo-justificadas" style="font-size:22px;font-weight:800;color:#ff9800">0</div>
+                                        <div style="font-size:11px;color:#aaa">Justificadas</div>
+                                    </div>
+                                </div>
+                                <!-- Lista -->
+                                <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#888">
+                                    <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#ddd;margin-bottom:16px"></i>
+                                    <h3 style="color:#aaa;margin-bottom:8px">Nenhum apontamento registrado</h3>
+                                    <p style="color:#888">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
+                                </div>
+                                <div id="apontamento-historico-lista" style="display:none"></div>
                             </div>
-                            <div id="apontamento-historico-lista" style="display:none"></div>
                         </div>
                     </div>
                 </div>
@@ -1184,14 +728,6 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-formados" value="formados">
-                                            <div class="permissao-card">
-                                                <i class="fa-solid fa-award"></i>
-                                                <span>Formados</span>
-                                                <small>Ver formados</small>
-                                            </div>
-                                        </label>
-                                        <label class="permissao-item">
                                             <input type="checkbox" id="uf-perm-relatorios" value="relatorios">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-chart-bar"></i>
@@ -1233,47 +769,71 @@
 
                 <!-- LISTA PRE-INSCRITOS -->
                 <div id="admin-pre-inscricao" class="admin-section active">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-file-pen" style="color:#f57c00;margin-right:8px"></i> Pre-Inscritos <span class="alunos-count" id="pre-count-badge"></span></h3>
-                            <div class="header-actions">
-                                <button class="btn-primary" onclick="openFormCandidato()">
-                                    <i class="fa-solid fa-plus"></i> Novo Pre-Cadastro
-                                </button>
-                                <button class="btn-outline btn-sm" onclick="downloadExcelTemplate()">
-                                    <i class="fa-solid fa-file-excel"></i> Gerar Planilha
-                                </button>
-                                <button class="btn-outline btn-sm" onclick="document.getElementById('import-excel-input').click()">
-                                    <i class="fa-solid fa-file-import"></i> Importar Planilha
-                                </button>
-                                <input type="file" id="import-excel-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="importExcelFile(event)">
-                                <button class="btn-outline btn-sm" onclick="exportExcel()">
-                                    <i class="fa-solid fa-download"></i> Exportar
-                                </button>
-                                <button class="btn-outline btn-sm" onclick="printTable()">
-                                    <i class="fa-solid fa-print"></i> Imprimir
-                                </button>
-                            </div>
+                    <!-- Selecao Projeto + Turma -->
+                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #f57c00;border-radius:12px;margin-bottom:20px">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                            <i class="fa-solid fa-filter" style="color:#f57c00;font-size:16px"></i>
+                            <span style="color:#f57c00;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para visualizar os pre-inscritos</span>
                         </div>
-                        <div class="card-body">
-                            <div class="users-search-bar">
-                                <div class="input-wrapper" style="max-width:360px">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="pre-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="filterList()">
-                                </div>
-                                <select id="pre-filter" class="config-input" style="max-width:180px" onchange="filterList()">
-                                    <option value="">Todos os status</option>
-                                    <option value="Pendente">Pendente</option>
-                                    <option value="Aprovado">Aprovado</option>
-                                    <option value="Rejeitado">Rejeitado</option>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                            <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                <label style="font-size:11px;font-weight:600;color:#f57c00;margin-bottom:4px;display:block">Projeto *</label>
+                                <select id="pre-selecao-projeto" class="config-input" style="width:100%;border-color:#f57c00" onchange="preOnSelecaoProjetoChange()">
+                                    <option value="">Selecione o projeto...</option>
                                 </select>
                             </div>
-                            <table class="data-table" id="pre-table">
-                                <thead>
-                                    <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
-                                </thead>
-                                <tbody id="pre-table-body"></tbody>
-                            </table>
+                            <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                <label style="font-size:11px;font-weight:600;color:#4caf50;margin-bottom:4px;display:block">Turma *</label>
+                                <select id="pre-selecao-turma" class="config-input" style="width:100%;border-color:#4caf50" onchange="preOnSelecaoChange()">
+                                    <option value="">Selecione a turma...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                    <div id="pre-conteudo" style="display:none">
+                        <div class="card full-width">
+                            <div class="card-header">
+                                <h3><i class="fa-solid fa-file-pen" style="color:#f57c00;margin-right:8px"></i> Pre-Inscritos <span class="alunos-count" id="pre-count-badge"></span></h3>
+                                <div class="header-actions">
+                                    <button class="btn-primary" onclick="openFormCandidato()">
+                                        <i class="fa-solid fa-plus"></i> Novo Pre-Cadastro
+                                    </button>
+                                    <button class="btn-outline btn-sm" onclick="downloadExcelTemplate()">
+                                        <i class="fa-solid fa-file-excel"></i> Gerar Planilha
+                                    </button>
+                                    <button class="btn-outline btn-sm" onclick="document.getElementById('import-excel-input').click()">
+                                        <i class="fa-solid fa-file-import"></i> Importar Planilha
+                                    </button>
+                                    <input type="file" id="import-excel-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="importExcelFile(event)">
+                                    <button class="btn-outline btn-sm" onclick="exportExcel()">
+                                        <i class="fa-solid fa-download"></i> Exportar
+                                    </button>
+                                    <button class="btn-outline btn-sm" onclick="printTable()">
+                                        <i class="fa-solid fa-print"></i> Imprimir
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="users-search-bar">
+                                    <div class="input-wrapper" style="max-width:360px">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                        <input type="text" id="pre-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="filterList()">
+                                    </div>
+                                    <select id="pre-filter" class="config-input" style="max-width:180px" onchange="filterList()">
+                                        <option value="">Todos os status</option>
+                                        <option value="Pendente">Pendente</option>
+                                        <option value="Aprovado">Aprovado</option>
+                                        <option value="Rejeitado">Rejeitado</option>
+                                    </select>
+                                </div>
+                                <table class="data-table" id="pre-table">
+                                    <thead>
+                                        <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                    </thead>
+                                    <tbody id="pre-table-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1290,72 +850,41 @@
                         <div class="card-body">
                             <form id="form-candidato" onsubmit="return handleCandidatoSubmit(event)">
 
-                                <!-- FOTO 3x4 (APENAS APROVADOS) -->
-                                <div class="form-section-card" id="fc-foto3x4-section" style="display:none">
-                                    <div class="form-section-title"><i class="fa-solid fa-camera"></i><h3>Foto 3x4</h3></div>
-                                    <div class="form-section-body">
-                                        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
-                                            <div style="flex:0 0 160px">
-                                                <div id="fc-admin-foto3x4-preview" style="width:160px;height:200px;border-radius:8px;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;border:2px solid #333">
-                                                    <img id="fc-admin-foto3x4-img" src="" alt="Foto 3x4" style="display:none;width:100%;height:100%;object-fit:cover">
-                                                    <video id="fc-admin-foto3x4-video" autoplay playsinline style="display:none;width:100%;height:100%;object-fit:cover"></video>
-                                                    <canvas id="fc-admin-foto3x4-canvas" style="display:none"></canvas>
-                                                    <div id="fc-admin-foto3x4-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;color:#555">
-                                                        <i class="fa-solid fa-camera-retro" style="font-size:32px;margin-bottom:8px"></i>
-                                                        <span style="font-size:11px">Sem foto</span>
-                                                    </div>
-                                                </div>
-                                                <button type="button" class="btn-outline" id="fc-admin-btn-salvar" onclick="fcAdminFoto3x4SalvarDevice()" style="display:none;margin-top:8px;width:100%">
-                                                    <i class="fa-solid fa-download"></i> Salvar Foto
-                                                </button>
-                                            </div>
-                                            <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:200px">
-                                                <button type="button" class="btn-outline" id="fc-admin-btn-camera" onclick="fcAdminFoto3x4Iniciar()">
-                                                    <i class="fa-solid fa-video"></i> Iniciar Camera
-                                                </button>
-                                                <button type="button" class="btn-outline" id="fc-admin-btn-capturar" onclick="fcAdminFoto3x4Capturar()" style="display:none">
-                                                    <i class="fa-solid fa-circle"></i> Capturar Foto
-                                                </button>
-                                                <button type="button" class="btn-outline" onclick="document.getElementById('fc-admin-foto3x4-input').click()">
-                                                    <i class="fa-solid fa-upload"></i> Importar Foto
-                                                </button>
-                                                <input type="file" id="fc-admin-foto3x4-input" accept="image/*" class="hidden" onchange="fcAdminFoto3x4Importar(event)">
-                                                <button type="button" class="btn-outline" id="fc-admin-btn-nova" onclick="fcAdminFoto3x4Nova()" style="display:none">
-                                                    <i class="fa-solid fa-rotate-right"></i> Nova Foto
-                                                </button>
-                                                <button type="button" class="btn-outline btn-danger-outline" id="fc-admin-btn-apagar" onclick="fcAdminFoto3x4Apagar()" style="display:none">
-                                                    <i class="fa-solid fa-trash"></i> Apagar
-                                                </button>
-                                                <div id="fc-admin-foto3x4-msg" style="display:none;padding:6px 10px;border-radius:6px;font-size:11px;text-align:center;margin-top:4px"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- TURMA -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-image"></i><h3>Turma</h3></div>
+                                <!-- PROJETO E TURMA (DESTAQUE) -->
+                                <div class="form-section-card" style="border:2px solid #f57c00;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)">
+                                    <div class="form-section-title"><i class="fa-solid fa-folder-open" style="color:#f57c00"></i><h3 style="color:#f57c00">Projeto & Turma</h3></div>
                                     <div class="form-section-body">
                                         <div class="form-row">
-                                            <div class="form-group" style="flex:1;display:flex;flex-direction:column;gap:12px">
-                                                <div id="fc-matricula-wrapper" style="display:none">
-                                                    <label>Matricula</label>
-                                                    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
-                                                        <div id="fc-matricula-display" style="background:#1a1a2e;border:2px solid #f57c00;border-radius:8px;padding:12px 16px;text-align:center;color:#f57c00;font-size:22px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace"></div>
-                                                        <img id="fc-matricula-qr" src="" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff;display:none;">
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <label>Turma *</label>
-                                                    <select id="fc-turma" class="config-input" required style="height:46px">
-                                                        <option value="">Selecione a turma...</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label>Projeto</label>
-                                                    <select id="fc-projeto" class="config-input" style="height:46px">
-                                                        <option value="">Nenhum projeto</option>
-                                                    </select>
+                                            <div class="form-group" style="flex:1">
+                                                <label style="color:#f57c00;font-weight:700">Projeto *</label>
+                                                <select id="fc-projeto" class="config-input" required style="height:46px;border-color:#f57c00" onchange="fcProjetoOnTurmaChange()">
+                                                    <option value="">Selecione o projeto...</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group" style="flex:1">
+                                                <label style="color:#4caf50;font-weight:700">Turma *</label>
+                                                <select id="fc-turma" class="config-input" required style="height:46px;border-color:#4caf50">
+                                                    <option value="">Selecione a turma...</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div id="fc-turma-info" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.3)">
+                                            <span style="color:#4caf50;font-size:12px;font-weight:600"><i class="fa-solid fa-info-circle"></i> <span id="fc-turma-info-text"></span></span>
+                                        </div>
+                                        <div id="fc-matricula-wrapper" style="display:none;margin-top:14px">
+                                            <label style="color:#aaa;font-size:13px;font-weight:600">Matricula</label>
+                                            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
+                                                <div id="fc-matricula-display" style="background:#1a1a2e;border:2px solid #f57c00;border-radius:8px;padding:12px 16px;text-align:center;color:#f57c00;font-size:22px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace"></div>
+                                                <img id="fc-matricula-qr" src="" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff;display:none;">
+                                                <div style="display:flex;flex-direction:column;gap:6px;margin-left:8px">
+                                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #444;border-radius:6px;background:#1a1a2e;transition:all .2s" id="fc-tipo-academico-label">
+                                                        <input type="radio" name="fc-tipo-pessoa" value="A" style="accent-color:#2196f3" checked>
+                                                        <span style="color:#2196f3;font-weight:700;font-size:13px">Academico (A)</span>
+                                                    </label>
+                                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #444;border-radius:6px;background:#1a1a2e;transition:all .2s" id="fc-tipo-formado-label">
+                                                        <input type="radio" name="fc-tipo-pessoa" value="F" style="accent-color:#ff9800">
+                                                        <span style="color:#ff9800;font-weight:700;font-size:13px">Formado (A)</span>
+                                                    </label>
                                                 </div>
                                             </div>
                                         </div>
@@ -1963,77 +1492,6 @@
     </div>
 
     <!-- PORTAL DO FORMADO -->
-    <div id="screen-portal-formado" class="screen">
-        <div class="portal-container">
-            <div class="portal-header">
-                <div class="portal-header-left">
-                    <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
-                    <span class="portal-header-title">Portal do Formado</span>
-                </div>
-                <div class="portal-header-right">
-                    <button class="btn-portal btn-portal-out" onclick="logoutPortalFormado()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
-                </div>
-            </div>
-            <div class="portal-body">
-                <div class="portal-sidebar formado-sidebar">
-                    <nav class="portal-sidebar-nav">
-                        <a class="portal-sidebar-link formado-link active"><i class="fa-solid fa-house"></i> Inicio</a>
-                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-id-card"></i> Meus Dados</a>
-                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-certificate"></i> Certificados</a>
-                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-graduation-cap"></i> Cursos</a>
-                        <a class="portal-sidebar-link formado-link"><i class="fa-solid fa-newspaper"></i> Noticias</a>
-                    </nav>
-                </div>
-                <div class="portal-main formado-main">
-                    <div class="formado-welcome-hero">
-                        <img src="logo-farn.png.png" alt="FARN" class="formado-hero-logo">
-                        <h1 class="portal-greeting formado-greeting">Bem-vindo(a), <span id="portal-formado-nome-top"></span></h1>
-                        <p class="portal-sub">Seus dados de formacao e certificados</p>
-                    </div>
-                    <div class="formado-stats-row">
-                        <div class="formado-stat-card">
-                            <i class="fa-solid fa-id-card"></i>
-                            <div>
-                                <span class="formado-stat-label">Matricula</span>
-                                <span id="portal-formado-matricula" class="formado-stat-value">---</span>
-                            </div>
-                        </div>
-                        <div class="formado-stat-card">
-                            <i class="fa-solid fa-graduation-cap"></i>
-                            <div>
-                                <span class="formado-stat-label">Cursos</span>
-                                <span id="portal-formado-cursos-count" class="formado-stat-value">0</span>
-                            </div>
-                        </div>
-                        <div class="formado-stat-card">
-                            <i class="fa-solid fa-calendar-check"></i>
-                            <div>
-                                <span class="formado-stat-label">Status</span>
-                                <span class="formado-stat-value formado-stat-ativo">Ativo</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="formado-card">
-                        <div class="formado-card-header">
-                            <i class="fa-solid fa-newspaper"></i>
-                            <h3>Noticias da FARN</h3>
-                        </div>
-                        <div class="formado-card-body">
-                            <div class="formado-noticia">
-                                <span class="formado-noticia-data">10/07/2026</span>
-                                <p>Formandos: atualize seus dados no portal.</p>
-                            </div>
-                            <div class="formado-noticia">
-                                <span class="formado-noticia-data">01/07/2026</span>
-                                <p>Novos cursos de reciclagem disponiveis.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- MODAL DETALHES -->
     <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal(event)">
         <div class="modal-content">
@@ -2061,58 +1519,6 @@
             <div class="modal-footer">
                 <button class="btn-outline" onclick="closeConfirmModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                 <button class="btn-danger" id="confirm-delete-btn" onclick="confirmDelete()"><i class="fa-solid fa-trash"></i> Excluir</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL MOVER PARA FORMADOS -->
-    <div id="modal-move-formado-overlay" class="modal-overlay hidden" onclick="closeMoveFormadoModal(event)">
-        <div class="modal-content modal-confirm">
-            <div class="confirm-header" style="color:#ff9800">
-                <i class="fa-solid fa-award"></i>
-                <h3>Mover para Formados</h3>
-            </div>
-            <div class="confirm-body" id="move-formado-text"></div>
-            <div style="margin-top:16px">
-                <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Senha do Administrador *</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="move-formado-senha" class="config-input" placeholder="Digite a senha do admin" style="padding-left:44px" onkeydown="if(event.key==='Enter')confirmMoveToFormado()">
-                </div>
-                <div id="move-formado-error" class="error-message hidden" style="margin-top:8px">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <span>Senha incorreta</span>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-outline" onclick="closeMoveFormadoModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                <button class="btn-primary" onclick="confirmMoveToFormado()" style="background:linear-gradient(135deg,#e65100,#ff9800)"><i class="fa-solid fa-arrow-right"></i> Mover para Formados</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL TURMA -->
-    <div id="modal-turma-overlay" class="modal-overlay hidden" onclick="closeTurmaModal(event)">
-        <div class="modal-content modal-confirm">
-            <div class="modal-header">
-                <h3 id="turma-form-title"><i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Nova Turma</h3>
-                <button class="modal-close" onclick="closeTurmaModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="form-turma" onsubmit="return handleTurmaSubmit(event)">
-                    <div class="form-group" style="margin-bottom:16px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:6px;display:block">Nome da Turma *</label>
-                        <input type="text" id="turma-nome" class="config-input" placeholder="Ex: Turma 1 - Bombeiro Profissional Civil" required>
-                    </div>
-                    <div class="form-group" style="margin-bottom:16px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:6px;display:block">Descricao</label>
-                        <input type="text" id="turma-descricao" class="config-input" placeholder="Descricao opcional da turma">
-                    </div>
-                    <div class="modal-footer" style="border:none;padding:0">
-                        <button type="button" class="btn-outline" onclick="closeTurmaModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                        <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
