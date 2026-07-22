@@ -658,6 +658,7 @@ async function handleLogin(event) {
         setAlunoOnline(currentAluno.cpf);
         showPortalSection('noticias');
         portalLoadSidebarFoto();
+        portalLoadGallery();
         if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
     }
     return false;
@@ -767,6 +768,7 @@ window.addEventListener('beforeunload', function() {
 
 function logoutPortal() {
     portalFoto3x4StopCamera();
+    if (portalGalleryUnsub) { portalGalleryUnsub(); portalGalleryUnsub = null; }
     if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; chatConversations = {}; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; } }
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
@@ -1074,20 +1076,20 @@ function portalChatListen() {
     var col = portalChatGetCurrentCol();
     if (!col) return;
     var container = document.getElementById('portal-chat-messages');
-    container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-spinner fa-spin"></i></div><p>Carregando...</p></div>';
+    container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
     chatUnsub = col.orderBy('hora').onSnapshot(function(snap) {
         var msgs = [];
         snap.forEach(function(doc) { msgs.push(Object.assign({ _id: doc.id }, doc.data())); });
         portalChatRender(msgs);
     }, function() {
-        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar.</p></div>';
+        container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
     });
 }
 
 function portalChatRender(msgs) {
     var container = document.getElementById('portal-chat-messages');
     if (msgs.length === 0) {
-        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-comment-dots"></i></div><p>Envie sua mensagem para a equipe FARN</p></div>';
+        container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
         return;
     }
     var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 60;
@@ -1099,21 +1101,21 @@ function portalChatRender(msgs) {
         if (dateStr !== lastDate) {
             lastDate = dateStr;
             var divider = document.createElement('div');
-            divider.className = 'wa-date-divider';
-            divider.innerHTML = '<span>' + dateStr + '</span>';
+            divider.style.cssText = 'text-align:center;margin:8px 0;font-size:11px;color:#888';
+            divider.innerHTML = '<span style="background:#1a1a2e;padding:4px 12px;border-radius:10px">' + dateStr + '</span>';
             container.appendChild(divider);
         }
         var isMe = m.remetente === 'aluno';
         var wrap = document.createElement('div');
-        wrap.className = 'wa-bubble-wrap' + (isMe ? ' me' : ' other');
+        wrap.className = 'portal-chat-bubble ' + (isMe ? 'me' : 'other');
         var senderHtml = '';
         if (!isMe) {
-            senderHtml = '<div class="wa-sender-name" style="color:#f57c00">Administracao FARN</div>';
+            senderHtml = '<div class="portal-chat-sender" style="color:#f57c00">Administracao FARN</div>';
         }
         var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         var bodyHtml = '';
-        if (m.texto) bodyHtml += '<span class="wa-text">' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-        wrap.innerHTML = senderHtml + '<div class="wa-bubble">' + bodyHtml + '<span class="wa-meta"><span class="wa-time">' + time + '</span></span></div>';
+        if (m.texto) bodyHtml += '<span>' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+        wrap.innerHTML = senderHtml + bodyHtml + '<div class="portal-chat-time">' + time + '</div>';
         container.appendChild(wrap);
     });
     if (wasAtBottom) container.scrollTop = container.scrollHeight;
@@ -1208,6 +1210,53 @@ function portalChatSend() {
             tipo: 'aluno'
         }, { merge: true });
     }).catch(function(e) { console.error('Erro ao enviar:', e); });
+}
+
+/* ===== PORTAL DIREITO - TABS ===== */
+function portalRightTab(tab, el) {
+    document.querySelectorAll('.portal-right-tab').forEach(function(t){ t.classList.remove('active'); });
+    if (el) el.classList.add('active');
+    document.getElementById('portal-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
+    document.getElementById('portal-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
+}
+
+/* ===== PORTAL GALERIA ===== */
+var portalGalleryUnsub = null;
+
+function portalLoadGallery() {
+    var grid = document.getElementById('portal-gallery-grid');
+    if (!grid) return;
+    portalGalleryUnsub = dbFirestore.collection('galeriaFormados').orderBy('data', 'desc').onSnapshot(function(snap) {
+        if (snap.empty) {
+            grid.innerHTML = '<div class="portal-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+            return;
+        }
+        grid.innerHTML = '';
+        snap.forEach(function(doc) {
+            var g = doc.data();
+            var item = document.createElement('div');
+            item.className = 'portal-gallery-item';
+            item.onclick = function() { portalOpenPhoto(g.url); };
+            var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
+            item.innerHTML = '<img src="' + g.url + '" alt="' + (g.titulo||'') + '">' +
+                '<div class="portal-gallery-date">' + (g.titulo || '') + (dateStr ? ' - ' + dateStr : '') + '</div>';
+            grid.appendChild(item);
+        });
+    }, function() {
+        grid.innerHTML = '<div class="portal-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+    });
+}
+
+function portalOpenPhoto(src) {
+    var modal = document.getElementById('portal-photo-modal');
+    if (!modal) return;
+    document.getElementById('portal-photo-modal-img').src = src;
+    modal.classList.add('active');
+}
+
+function portalClosePhoto() {
+    var modal = document.getElementById('portal-photo-modal');
+    if (modal) modal.classList.remove('active');
 }
 
 function portalChatSetupContextMenu() {

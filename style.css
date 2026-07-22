@@ -2404,7 +2404,8 @@ select.config-input option {
 
 .portal-layout {
     flex: 1;
-    display: flex;
+    display: grid;
+    grid-template-columns: 210px 1fr 320px;
     overflow: hidden;
     position: relative;
     z-index: 1;
@@ -2647,6 +2648,184 @@ select.config-input option {
 .portal-main::-webkit-scrollbar { width: 6px; }
 .portal-main::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
 .portal-main::-webkit-scrollbar-thumb { 
+    background: rgba(249,168,37,0.3);
+    border-radius: 10px;
+}
+.portal-main::-webkit-scrollbar-thumb:hover { background: rgba(249,168,37,0.5); }
+
+/* ===== PORTAL DIREITO - CHAT + GALERIA ===== */
+.portal-right {
+    background: #0d1117;
+    border-left: 1px solid rgba(255,255,255,.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.portal-right-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.portal-right-tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    transition: all .2s;
+    border-bottom: 2px solid transparent;
+}
+.portal-right-tab:hover { color: #fff; }
+.portal-right-tab.active { color: #f57c00; border-bottom-color: #f57c00; }
+.portal-right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.portal-right-content {
+    flex: 1;
+    overflow-y: auto;
+}
+.portal-chat-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.portal-chat-header h4 { font-size: 13px; font-weight: 700; color: #f57c00; }
+.portal-chat-header p { font-size: 11px; color: #666; }
+.portal-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.portal-chat-empty {
+    text-align: center;
+    padding: 40px 10px;
+    color: #555;
+    font-size: 12px;
+}
+.portal-chat-empty i { font-size: 28px; margin-bottom: 6px; display: block; }
+.portal-chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.portal-chat-bubble.me {
+    background: rgba(245,124,0,.2);
+    border: 1px solid rgba(245,124,0,.3);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+.portal-chat-bubble.other {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.08);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+.portal-chat-sender { font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+.portal-chat-time { font-size: 10px; color: #666; margin-top: 3px; text-align: right; }
+.portal-chat-input {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+.portal-chat-input input {
+    flex: 1;
+    padding: 10px 12px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+}
+.portal-chat-input input:focus { border-color: #f57c00; outline: none; }
+.portal-chat-send {
+    background: #f57c00;
+    color: #fff;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background .2s;
+}
+.portal-chat-send:hover { background: #ff9800; }
+
+/* GALERIA */
+.portal-gallery-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+}
+.portal-gallery-item {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,.08);
+}
+.portal-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .3s;
+}
+.portal-gallery-item:hover img { transform: scale(1.05); }
+.portal-gallery-item .portal-gallery-date {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,.7);
+    color: #aaa;
+    font-size: 10px;
+    padding: 4px 6px;
+    text-align: center;
+}
+.portal-gallery-empty {
+    text-align: center;
+    padding: 40px 10px;
+    color: #555;
+    font-size: 12px;
+}
+.portal-gallery-empty i { font-size: 28px; margin-bottom: 6px; display: block; }
+
+/* MODAL FOTO PORTAL */
+.portal-photo-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,.95);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.portal-photo-modal.active { display: flex; }
+.portal-photo-modal img { max-width: 90%; max-height: 85vh; border-radius: 12px; }
+.portal-photo-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255,255,255,.1);
+    border: none;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+}
     background: linear-gradient(180deg, rgba(249,168,37,0.4), rgba(245,124,23,0.3)); 
     border-radius: 3px; 
 }
@@ -5059,7 +5238,7 @@ select.config-input option {
         font-size: 10px;
     }
     .portal-layout {
-        flex-direction: column;
+        grid-template-columns: 1fr;
     }
     .portal-sidebar {
         display: none;
@@ -5073,6 +5252,9 @@ select.config-input option {
     }
     .portal-sidebar.mobile-open {
         display: flex;
+    }
+    .portal-right {
+        display: none;
     }
     .portal-sidebar-user {
         padding: 20px 16px 16px;

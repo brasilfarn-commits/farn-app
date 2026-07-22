@@ -1487,26 +1487,61 @@
                         </div>
                     </section>
                     <section id="portal-section-chat" class="portal-section">
-                        <div class="wa-chat-wrap" style="display:flex;flex-direction:column">
-                            <div id="wa-main-header" class="wa-header">
-                                <div class="wa-header-left">
-                                    <div class="wa-avatar" style="background:#d9fdd3;color:#008069"><i class="fa-solid fa-headset"></i></div>
-                                    <div class="wa-header-info">
-                                        <div class="wa-header-name">Chat com a Administracao</div>
-                                        <div class="wa-header-status">Envie suas mensagens para a equipe FARN</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="portal-chat-messages" class="wa-messages" style="flex:1;overflow-y:auto;padding:16px">
-                                <div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-comment-dots"></i></div><p>Envie sua mensagem para a equipe FARN</p></div>
-                            </div>
-                            <div class="wa-input-area">
-                                <input type="text" id="portal-chat-input" class="wa-input" placeholder="Digite sua mensagem..." maxlength="500" onkeydown="if(event.key==='Enter')portalChatSend()" style="flex:1">
-                                <button id="portal-chat-send-btn" class="wa-send-btn" onclick="portalChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                        <div class="portal-section-header">
+                            <div class="portal-section-icon-wrap"><i class="fa-solid fa-comments"></i></div>
+                            <div>
+                                <h2>Chat</h2>
+                                <p class="portal-section-sub">Acesse o chat no painel lateral</p>
                             </div>
                         </div>
                     </section>
                 </main>
+
+                <!-- PAINEL DIREITO - CHAT + GALERIA -->
+                <aside class="portal-right">
+                    <div class="portal-right-tabs">
+                        <div class="portal-right-tab active" onclick="portalRightTab('chat', this)">
+                            <i class="fa-solid fa-comments"></i> Chat
+                        </div>
+                        <div class="portal-right-tab" onclick="portalRightTab('galeria', this)">
+                            <i class="fa-solid fa-images"></i> Galeria
+                        </div>
+                    </div>
+
+                    <!-- PAINEL CHAT -->
+                    <div id="portal-right-chat" class="portal-right-panel" style="display:flex">
+                        <div class="portal-chat-header">
+                            <h4><i class="fa-solid fa-headset" style="margin-right:4px"></i> Chat com a Administracao</h4>
+                            <p>Tire duvidas e envie mensagens</p>
+                        </div>
+                        <div class="portal-chat-messages" id="portal-chat-messages">
+                            <div class="portal-chat-empty">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <p>Envie sua mensagem para a equipe FARN</p>
+                            </div>
+                        </div>
+                        <div class="portal-chat-input">
+                            <input type="text" id="portal-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')portalChatSend()">
+                            <button class="portal-chat-send" onclick="portalChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- PAINEL GALERIA -->
+                    <div id="portal-right-galeria" class="portal-right-panel" style="display:none">
+                        <div class="portal-chat-header">
+                            <h4><i class="fa-solid fa-images" style="margin-right:4px"></i> Galeria de Fotos</h4>
+                            <p>Fotos atualizadas pelo administrador</p>
+                        </div>
+                        <div class="portal-right-content">
+                            <div class="portal-gallery-grid" id="portal-gallery-grid">
+                                <div class="portal-gallery-empty">
+                                    <i class="fa-solid fa-images"></i>
+                                    <p>Nenhuma foto ainda</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
         <nav class="portal-mobile-nav">
@@ -1535,6 +1570,12 @@
                 <span>Dados</span>
             </button>
         </nav>
+    </div>
+
+    <!-- MODAL FOTO PORTAL -->
+    <div id="portal-photo-modal" class="portal-photo-modal" onclick="portalClosePhoto()">
+        <button class="portal-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
+        <img id="portal-photo-modal-img" src="">
     </div>
 
     <!-- MODAL DADOS DO ALUNO PORTAL -->
