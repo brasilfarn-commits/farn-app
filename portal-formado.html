@@ -400,7 +400,7 @@
             document.getElementById('pf-user-name').textContent = pfUser.nome || '---';
             var cpfDisp = pfUser.cpf || '';
             if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-            document.getElementById('pf-user-cpf').textContent = 'Matricula: ' + (pfUser.matricula || '---');
+            document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
 
             pfLoadNoticias();
             pfLoadDados();
