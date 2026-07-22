@@ -76,7 +76,12 @@ function recadRenderTable() {
             '<td>' + cidadeUf + '</td>' +
             '<td>' + dataEnvio + '</td>' +
             '<td><span style="background:' + statusBg + ';color:' + statusColor + ';padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">' + (r.status || 'Pendente') + '</span></td>' +
-            '<td><button class="btn-outline btn-sm" onclick="recadViewDetail(\'' + docId + '\')" title="Ver detalhes"><i class="fa-solid fa-eye"></i></button></td>' +
+            '<td style="white-space:nowrap">' +
+            '<button class="btn-outline btn-sm" onclick="recadViewDetail(\'' + docId + '\')" title="Ver detalhes"><i class="fa-solid fa-eye"></i></button> ' +
+            '<button class="btn-outline btn-sm" onclick="recadEdit(\'' + docId + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button> ' +
+            '<button class="btn-outline btn-sm" onclick="recadDelete(\'' + docId + '\')" title="Excluir" style="color:#f44336;border-color:#f44336"><i class="fa-solid fa-trash"></i></button> ' +
+            '<button class="btn-outline btn-sm" onclick="recadPrint(\'' + docId + '\')" title="Imprimir"><i class="fa-solid fa-print"></i></button>' +
+            '</td>' +
             '</tr>';
     }).join('');
 }
@@ -284,4 +289,139 @@ function recadExportExcel() {
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Recadastramentos');
     XLSX.writeFile(wb, 'recadastramento_formados.xlsx');
+}
+
+function recadEdit(docId) {
+    var r = recadData.find(function(x) { return x._docId === docId; });
+    if (!r) return;
+    recadViewDetail(docId);
+    setTimeout(function() {
+        var body = document.getElementById('rc-detalhe-body');
+        if (!body) return;
+        var html = '<div style="display:grid;gap:12px">';
+        var fields = [
+            { key: 'nome', label: 'Nome Completo', type: 'text' },
+            { key: 'cpf', label: 'CPF', type: 'text' },
+            { key: 'rg', label: 'RG', type: 'text' },
+            { key: 'nascimento', label: 'Nascimento', type: 'date' },
+            { key: 'email', label: 'Email', type: 'email' },
+            { key: 'whatsapp', label: 'WhatsApp', type: 'text' },
+            { key: 'projeto', label: 'Projeto', type: 'text' },
+            { key: 'matricula', label: 'Matricula', type: 'text' },
+            { key: 'endereco', label: 'Endereco', type: 'text' },
+            { key: 'numero', label: 'Numero', type: 'text' },
+            { key: 'bairro', label: 'Bairro', type: 'text' },
+            { key: 'cidade', label: 'Cidade', type: 'text' },
+            { key: 'estado', label: 'Estado', type: 'text' },
+            { key: 'dataCertificado', label: 'Data Certificado', type: 'date' },
+            { key: 'senha', label: 'Senha', type: 'text' }
+        ];
+        fields.forEach(function(f) {
+            html += '<div><label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">' + f.label + '</label>' +
+                '<input type="' + f.type + '" id="rc-edit-' + f.key + '" value="' + (r[f.key] || '').toString().replace(/"/g, '&quot;') + '" class="config-input" style="width:100%"></div>';
+        });
+        html += '</div>' +
+            '<div style="margin-top:16px;display:flex;gap:8px">' +
+            '<button class="btn-primary" onclick="recadSaveEdit(\'' + docId + '\')"><i class="fa-solid fa-check"></i> Salvar</button>' +
+            '<button class="btn-outline" onclick="recadViewDetail(\'' + docId + '\')"><i class="fa-solid fa-xmark"></i> Cancelar</button>' +
+            '</div>';
+        body.innerHTML = html;
+    }, 100);
+}
+
+async function recadSaveEdit(docId) {
+    var updates = {};
+    var fields = ['nome','cpf','rg','nascimento','email','whatsapp','projeto','matricula','endereco','numero','bairro','cidade','estado','dataCertificado','senha'];
+    fields.forEach(function(f) {
+        var el = document.getElementById('rc-edit-' + f);
+        if (el) updates[f] = el.value.trim();
+    });
+    try {
+        await dbFirestore.collection('recadastramentos').doc(docId).update(updates);
+        var r = recadData.find(function(x) { return x._docId === docId; });
+        if (r) Object.assign(r, updates);
+        recadRenderTable();
+        recadViewDetail(docId);
+        alert('Dados atualizados com sucesso!');
+    } catch (e) {
+        alert('Erro ao salvar: ' + e.message);
+    }
+}
+
+async function recadDelete(docId) {
+    var r = recadData.find(function(x) { return x._docId === docId; });
+    var nome = r ? r.nome : '';
+    if (!confirm('Excluir o recadastramento de "' + nome + '"?\nEsta acao nao pode ser desfeita.')) return;
+    try {
+        await dbFirestore.collection('recadastramentos').doc(docId).delete();
+        recadData = recadData.filter(function(x) { return x._docId !== docId; });
+        recadRenderTable();
+        recadUpdateCounts();
+        showAdminSection('admin-recadastramento');
+        alert('Excluido com sucesso!');
+    } catch (e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}
+
+function recadPrint(docId) {
+    var r = recadData.find(function(x) { return x._docId === docId; });
+    if (!r) return;
+    var cpf = r.cpf || '';
+    if (cpf.length === 11) cpf = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    var printHtml = '<html><head><title>Ficha de Recadastramento</title>' +
+        '<style>body{font-family:Arial,sans-serif;padding:30px;color:#333}' +
+        'h2{text-align:center;color:#f57c00;margin-bottom:4px}h3{text-align:center;font-size:13px;color:#666;margin-bottom:20px}' +
+        '.field{margin-bottom:8px}.label{font-weight:700;font-size:12px;color:#555}.val{font-size:14px}' +
+        '.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}' +
+        '.full{grid-column:1/-1}.status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700}' +
+        '.ativo{background:#e8f5e9;color:#2e7d32}.pendente{background:#fff8e1;color:#f57f17}.rejeitado{background:#ffebee;color:#c62828}' +
+        '.footer{text-align:center;margin-top:30px;font-size:11px;color:#999;border-top:1px solid #ddd;padding-top:10px}' +
+        '</style></head><body>' +
+        '<img src="logo-farn.png.png" style="width:60px;display:block;margin:0 auto 10px">' +
+        '<h2>FARN - Ficha de Recadastramento</h2>' +
+        '<h3>Forca Auxiliar de Resgate Nacional</h3>';
+    printHtml += '<div class="status ' + (r.status === 'Ativo' ? 'ativo' : r.status === 'Rejeitado' ? 'rejeitado' : 'pendente') + '">' +
+        'Status: ' + (r.status || 'Pendente') + '</div>';
+    if (r.matricula) printHtml += '<p style="font-size:16px;font-weight:700;margin-top:12px">Matricula: ' + r.matricula + '</p>';
+    printHtml += '<div class="grid" style="margin-top:16px">';
+    var pFields = [
+        { l: 'Nome Completo', v: r.nome, full: true },
+        { l: 'CPF', v: cpf },
+        { l: 'RG', v: r.rg },
+        { l: 'Nascimento', v: r.nascimento },
+        { l: 'Estado Civil', v: r.estadoCivil },
+        { l: 'Nacionalidade', v: r.nacionalidade },
+        { l: 'Naturalidade', v: r.naturalidade },
+        { l: 'Mae', v: r.mae, full: true },
+        { l: 'Pai', v: r.pai, full: true },
+        { l: 'Profissao', v: r.profissao },
+        { l: 'Titulo', v: r.titulo },
+        { l: 'Email', v: r.email, full: true },
+        { l: 'WhatsApp', v: r.whatsapp },
+        { l: 'Projeto', v: r.projeto },
+        { l: 'Matricula', v: r.matricula },
+        { l: 'Endereco', v: (r.endereco||'') + ', ' + (r.numero||'') + ' - ' + (r.bairro||'') + ' - ' + (r.cidade||'') + '/' + (r.estado||''), full: true },
+        { l: 'Altura', v: r.altura ? r.altura + ' cm' : '' },
+        { l: 'Peso', v: r.peso ? r.peso + ' kg' : '' },
+        { l: 'Fator RH', v: r.fatorRh },
+        { l: 'Hipertensao', v: r.hipertensao },
+        { l: 'Diabetes', v: r.diabetes },
+        { l: 'Deficiencia', v: r.deficiencia },
+        { l: 'Tatuagem', v: r.tatuagem },
+        { l: 'Cirurgia', v: r.cirurgia },
+        { l: 'Data Certificado', v: r.dataCertificado },
+        { l: 'Tamanho Uniforme', v: r.tamanhoUniforme }
+    ];
+    pFields.forEach(function(f) {
+        if (!f.v) return;
+        printHtml += '<div class="field' + (f.full ? ' full' : '') + '"><div class="label">' + f.l + '</div><div class="val">' + f.v + '</div></div>';
+    });
+    printHtml += '</div>';
+    printHtml += '<div class="footer">FARN - Forca Auxiliar de Resgate Nacional - BRASIL<br>Documento gerado em ' + new Date().toLocaleDateString('pt-BR') + '</div>';
+    printHtml += '</body></html>';
+    var win = window.open('', '_blank');
+    win.document.write(printHtml);
+    win.document.close();
+    win.print();
 }
