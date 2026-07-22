@@ -172,6 +172,10 @@
                         <i class="fa-solid fa-clipboard-check"></i>
                         <span>Apontamento</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-recadastramento', this); recadLoadAll()">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Recadastramento</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -234,6 +238,10 @@
                             <div class="admin-home-card admin-home-card-download" onclick="showDownloadModal()">
                                 <i class="fa-solid fa-mobile-screen-button"></i>
                                 <span>Baixar App Android</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item:nth-child(10)')); recadLoadAll()">
+                                <i class="fa-solid fa-rotate"></i>
+                                <span>Recadastramento</span>
                             </div>
                         </div>
                     </div>
@@ -1084,6 +1092,98 @@
                     </div>
                 </div>
 
+                <!-- CAMPANHA RECADASTRAMENTO -->
+                <div id="admin-recadastramento" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-rotate" style="color:#f57c00;margin-right:8px"></i> Campanha de Recadastramento de Formados</h3>
+                            <div class="header-actions">
+                                <button class="btn-outline btn-sm" onclick="recadCopyLink()" title="Copiar link para compartilhar">
+                                    <i class="fa-solid fa-link"></i> Copiar Link
+                                </button>
+                                <button class="btn-outline btn-sm" onclick="recadOpenLink()" title="Abrir pagina de recadastramento">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Pagina
+                                </button>
+                                <button class="btn-outline btn-sm" onclick="recadExportExcel()">
+                                    <i class="fa-solid fa-download"></i> Exportar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Estatisticas -->
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">
+                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(245,124,0,.3);border-radius:10px;padding:16px;text-align:center">
+                                    <div style="font-size:28px;font-weight:800;color:#f57c00" id="rc-total-count">0</div>
+                                    <div style="font-size:12px;color:#aaa">Total</div>
+                                </div>
+                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(255,193,7,.3);border-radius:10px;padding:16px;text-align:center">
+                                    <div style="font-size:28px;font-weight:800;color:#ffc107" id="rc-pendente-count">0</div>
+                                    <div style="font-size:12px;color:#aaa">Pendentes</div>
+                                </div>
+                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(76,175,80,.3);border-radius:10px;padding:16px;text-align:center">
+                                    <div style="font-size:28px;font-weight:800;color:#4caf50" id="rc-aprovado-count">0</div>
+                                    <div style="font-size:12px;color:#aaa">Aprovados</div>
+                                </div>
+                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(244,67,54,.3);border-radius:10px;padding:16px;text-align:center">
+                                    <div style="font-size:28px;font-weight:800;color:#f44336" id="rc-rejeitado-count">0</div>
+                                    <div style="font-size:12px;color:#aaa">Rejeitados</div>
+                                </div>
+                            </div>
+                            <!-- Filtros -->
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+                                <div class="input-wrapper" style="max-width:360px;flex:1">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="rc-search" placeholder="Buscar por nome, CPF ou projeto..." class="config-input" style="padding-left:44px" oninput="recadFilter()">
+                                </div>
+                                <select id="rc-filter-status" class="config-input" style="max-width:180px" onchange="recadFilter()">
+                                    <option value="">Todos os status</option>
+                                    <option value="Pendente">Pendente</option>
+                                    <option value="Aprovado">Aprovado</option>
+                                    <option value="Rejeitado">Rejeitado</option>
+                                </select>
+                                <select id="rc-filter-projeto" class="config-input" style="max-width:200px" onchange="recadFilter()">
+                                    <option value="">Todos os projetos</option>
+                                </select>
+                            </div>
+                            <!-- Tabela -->
+                            <div style="overflow-x:auto">
+                                <table class="data-table" id="rc-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>CPF</th>
+                                            <th>Projeto</th>
+                                            <th>Cidade/UF</th>
+                                            <th>Data Envio</th>
+                                            <th>Status</th>
+                                            <th>Acoes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rc-table-body"></tbody>
+                                </table>
+                            </div>
+                            <div id="rc-empty" style="display:none;text-align:center;padding:40px;color:#666">
+                                <i class="fa-solid fa-inbox" style="font-size:40px;margin-bottom:10px;display:block;color:#444"></i>
+                                <p>Nenhum recadastramento encontrado.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DETALHE RECADASTRAMENTO -->
+                <div id="admin-recad-detalhe" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-user-check" style="color:#f57c00;margin-right:8px"></i> Detalhe do Recadastramento</h3>
+                            <button class="btn-outline" onclick="showAdminSection('admin-recadastramento')">
+                                <i class="fa-solid fa-arrow-left"></i> Voltar
+                            </button>
+                        </div>
+                        <div class="card-body" id="rc-detalhe-body">
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
@@ -1679,5 +1779,6 @@
     </div>
 
     <script src="app.js"></script>
+    <script src="recad-admin.js"></script>
 </body>
 </html>

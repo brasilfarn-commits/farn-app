@@ -687,7 +687,9 @@ function applyUserPermissions() {
         'admin-relatorios': p.includes('relatorios') || isGeral,
         'admin-projetos': p.includes('projetos') || isGeral,
         'admin-form-projeto': p.includes('projetos') || isGeral,
-        'admin-config': p.includes('config') || isGeral
+        'admin-config': p.includes('config') || isGeral,
+        'admin-recadastramento': p.includes('admin') || isGeral,
+        'admin-recad-detalhe': p.includes('admin') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -2128,7 +2130,7 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     if (sectionId === 'admin-disciplinas') {
         carregarDisciplinas().then(() => carregarAulas()).then(() => disciplinaRenderList());

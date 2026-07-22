@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Recadastramento de Formados</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f57c00">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const dbFirestore = firebase.firestore();
+    </script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); min-height:100vh; color:#fff; }
+
+        .recad-welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:30px 20px; text-align:center; animation:fadeIn .8s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+        .recad-welcome img { width:140px; height:140px; border-radius:50%; border:4px solid #f57c00; margin-bottom:20px; box-shadow:0 0 30px rgba(245,124,0,.4); }
+        .recad-welcome h1 { font-size:28px; font-weight:800; color:#f57c00; margin-bottom:8px; }
+        .recad-welcome h2 { font-size:18px; font-weight:600; color:#fff; margin-bottom:16px; }
+        .recad-welcome p { font-size:14px; color:#aaa; max-width:500px; line-height:1.6; margin-bottom:24px; }
+        .recad-welcome .recad-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(245,124,0,.15); border:1px solid rgba(245,124,0,.3); border-radius:20px; padding:8px 18px; font-size:13px; color:#f57c00; font-weight:600; margin-bottom:24px; }
+        .recad-btn-start { background:linear-gradient(135deg,#f57c00,#ff9800); color:#fff; border:none; padding:16px 40px; border-radius:12px; font-size:17px; font-weight:700; cursor:pointer; transition:all .3s; box-shadow:0 4px 20px rgba(245,124,0,.4); }
+        .recad-btn-start:hover { transform:translateY(-2px); box-shadow:0 6px 30px rgba(245,124,0,.6); }
+        .recad-btn-check { background:transparent; color:#2196f3; border:2px solid rgba(33,150,243,.4); padding:14px 36px; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; transition:all .3s; margin-top:12px; }
+        .recad-btn-check:hover { background:rgba(33,150,243,.1); border-color:#2196f3; transform:translateY(-2px); }
+        .recad-footer { margin-top:30px; font-size:12px; color:#666; }
+
+        .recad-form-container { display:none; max-width:700px; margin:0 auto; padding:20px; max-height:100vh; overflow-y:auto; }
+        .recad-form-container.active { display:block; animation:fadeIn .6s ease; }
+        .recad-form-container::-webkit-scrollbar { width:8px; }
+        .recad-form-container::-webkit-scrollbar-track { background:rgba(255,255,255,.05); border-radius:10px; }
+        .recad-form-container::-webkit-scrollbar-thumb { background:#f57c00; border-radius:10px; }
+        .recad-form-container::-webkit-scrollbar-thumb:hover { background:#ff9800; }
+        .recad-form-header { text-align:center; margin-bottom:30px; padding:24px; background:linear-gradient(135deg,rgba(245,124,0,.1),rgba(255,152,0,.05)); border:1px solid rgba(245,124,0,.2); border-radius:16px; }
+        .recad-form-header img { width:80px; height:80px; border-radius:50%; border:3px solid #f57c00; margin-bottom:12px; }
+        .recad-form-header h2 { font-size:22px; color:#f57c00; margin-bottom:4px; }
+        .recad-form-header p { font-size:13px; color:#aaa; }
+
+        .recad-section { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:24px; margin-bottom:20px; }
+        .recad-section-title { display:flex; align-items:center; gap:10px; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); }
+        .recad-section-title i { font-size:18px; color:#f57c00; }
+        .recad-section-title h3 { font-size:16px; font-weight:700; color:#f57c00; }
+
+        .recad-field { margin-bottom:16px; }
+        .recad-field label { display:block; font-size:13px; font-weight:600; color:#ccc; margin-bottom:6px; }
+        .recad-field label .required { color:#f44336; }
+        .recad-field input, .recad-field select, .recad-field textarea {
+            width:100%; padding:12px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+            border-radius:10px; color:#fff; font-size:14px; font-family:'Inter',sans-serif; transition:all .3s;
+        }
+        .recad-field input:focus, .recad-field select:focus, .recad-field textarea:focus {
+            border-color:#f57c00; outline:none; box-shadow:0 0 0 3px rgba(245,124,0,.15);
+        }
+        .recad-field select option { background:#1a1a2e; color:#fff; }
+        .recad-row { display:grid; gap:16px; }
+        .recad-row-2 { grid-template-columns:1fr 1fr; }
+        .recad-row-3 { grid-template-columns:1fr 1fr 1fr; }
+
+        .recad-upload-area { border:2px dashed rgba(245,124,0,.4); border-radius:12px; padding:30px; text-align:center; cursor:pointer; transition:all .3s; position:relative; }
+        .recad-upload-area:hover { border-color:#f57c00; background:rgba(245,124,0,.05); }
+        .recad-upload-area.dragover { border-color:#f57c00; background:rgba(245,124,0,.1); }
+        .recad-upload-area i { font-size:32px; color:#f57c00; margin-bottom:8px; }
+        .recad-upload-area p { font-size:13px; color:#aaa; }
+        .recad-upload-area small { font-size:11px; color:#666; }
+        .recad-upload-area input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+        .rc-cam-btn, .rc-file-btn {
+            flex:1; padding:10px 14px; border-radius:10px; font-size:13px; font-weight:600;
+            cursor:pointer; transition:all .3s; border:2px solid; display:flex; align-items:center; justify-content:center; gap:6px;
+        }
+        .rc-cam-btn { background:rgba(244,67,54,.1); border-color:rgba(244,67,54,.4); color:#f44336; }
+        .rc-cam-btn:hover { background:rgba(244,67,54,.2); border-color:#f44336; }
+        .rc-file-btn { background:rgba(33,150,243,.1); border-color:rgba(33,150,243,.4); color:#2196f3; }
+        .rc-file-btn:hover { background:rgba(33,150,243,.2); border-color:#2196f3; }
+
+        .rc-camera-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.95); flex-direction:column; align-items:center; justify-content:center; }
+        .rc-camera-modal.active { display:flex; }
+        .rc-camera-modal video { max-width:100%; max-height:70vh; border-radius:12px; border:2px solid #f57c00; }
+        .rc-camera-modal canvas { display:none; }
+        .rc-camera-modal img { max-width:100%; max-height:70vh; border-radius:12px; border:2px solid #4caf50; }
+        .rc-camera-controls { display:flex; gap:12px; margin-top:16px; }
+        .rc-camera-controls button { padding:12px 24px; border-radius:10px; border:none; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .rc-camera-btn-capture { background:#f44336; color:#fff; }
+        .rc-camera-btn-ok { background:#4caf50; color:#fff; }
+        .rc-camera-btn-retake { background:#ffc107; color:#000; }
+        .rc-camera-btn-cancel { background:#555; color:#fff; }
+        .rc-camera-label { color:#fff; font-size:14px; font-weight:600; margin-bottom:12px; text-align:center; }
+
+        .recad-preview { display:flex; gap:12px; margin-top:12px; flex-wrap:wrap; }
+        .recad-preview-item { position:relative; width:120px; height:120px; border-radius:10px; overflow:hidden; border:2px solid rgba(245,124,0,.3); }
+        .recad-preview-item img { width:100%; height:100%; object-fit:cover; }
+        .recad-preview-item .remove-btn { position:absolute; top:4px; right:4px; background:#f44336; color:#fff; border:none; border-radius:50%; width:22px; height:22px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; }
+        .recad-preview-label { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#f57c00; font-size:10px; font-weight:600; padding:4px; text-align:center; }
+
+        .recad-btn-submit { width:100%; background:linear-gradient(135deg,#f57c00,#ff9800); color:#fff; border:none; padding:16px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; transition:all .3s; margin-top:10px; }
+        .recad-btn-submit:hover { box-shadow:0 4px 20px rgba(245,124,0,.4); }
+        .recad-btn-submit:disabled { opacity:.5; cursor:not-allowed; }
+
+        .recad-success { display:none; text-align:center; padding:60px 20px; }
+        .recad-success.active { display:block; animation:fadeIn .6s ease; }
+        .recad-success i { font-size:60px; color:#4caf50; margin-bottom:16px; }
+        .recad-success h2 { font-size:24px; color:#4caf50; margin-bottom:8px; }
+        .recad-success p { font-size:14px; color:#aaa; max-width:400px; margin:0 auto; line-height:1.6; }
+
+        .recad-msg { padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13px; font-weight:600; display:none; }
+        .recad-msg.error { display:block; background:rgba(244,67,54,.15); border:1px solid rgba(244,67,54,.3); color:#f44336; }
+        .recad-msg.success { display:block; background:rgba(76,175,80,.15); border:1px solid rgba(76,175,80,.3); color:#4caf50; }
+        .recad-msg.info { display:block; background:rgba(33,150,243,.15); border:1px solid rgba(33,150,243,.3); color:#2196f3; }
+
+        .recad-check-container { display:none; max-width:450px; margin:0 auto; padding:30px 20px; text-align:center; }
+        .recad-check-container.active { display:block; animation:fadeIn .6s ease; }
+        .recad-check-box { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:30px; margin-top:20px; }
+        .recad-check-box h3 { color:#2196f3; font-size:18px; margin-bottom:6px; }
+        .recad-check-box p { color:#888; font-size:13px; margin-bottom:20px; }
+        .recad-check-box .recad-field input { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#fff; }
+        .recad-check-box .recad-field input:focus { border-color:#2196f3; box-shadow:0 0 0 3px rgba(33,150,243,.15); }
+        .recad-check-btn { width:100%; background:linear-gradient(135deg,#2196f3,#1976d2); color:#fff; border:none; padding:14px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; transition:all .3s; }
+        .recad-check-btn:hover { box-shadow:0 4px 16px rgba(33,150,243,.4); }
+        .recad-check-btn:disabled { opacity:.5; cursor:not-allowed; }
+        .recad-check-back { display:inline-flex; align-items:center; gap:6px; color:#888; font-size:13px; cursor:pointer; margin-top:16px; transition:color .2s; }
+        .recad-check-back:hover { color:#fff; }
+
+        .recad-status-result { display:none; margin-top:20px; text-align:left; }
+        .recad-status-result.active { display:block; animation:fadeIn .5s ease; }
+        .recad-status-card { background:rgba(255,255,255,.05); border-radius:14px; padding:24px; border:1px solid rgba(255,255,255,.1); }
+        .recad-status-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+        .recad-status-icon { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
+        .recad-status-icon.pendente { background:rgba(255,193,7,.15); color:#ffc107; }
+        .recad-status-icon.aprovado { background:rgba(76,175,80,.15); color:#4caf50; }
+        .recad-status-icon.rejeitado { background:rgba(244,67,54,.15); color:#f44336; }
+        .recad-status-info h3 { font-size:16px; margin-bottom:2px; }
+        .recad-status-info p { font-size:12px; color:#888; }
+        .recad-status-detail { border-top:1px solid rgba(255,255,255,.1); padding-top:14px; }
+        .recad-status-detail-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
+        .recad-status-detail-row span:first-child { color:#888; }
+        .recad-status-detail-row span:last-child { color:#fff; font-weight:600; }
+
+        @media(max-width:600px) {
+            .recad-row-2, .recad-row-3 { grid-template-columns:1fr; }
+            .recad-welcome h1 { font-size:22px; }
+            .recad-form-header h2 { font-size:18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE BOAS-VINDAS -->
+    <div id="recad-welcome" class="recad-welcome">
+        <img src="logo-farn.png.png" alt="FARN">
+        <div class="recad-badge"><i class="fa-solid fa-fire"></i> Campanha de Recadastramento</div>
+        <h1>Recadastramento de Formados</h1>
+        <h2>FARN - Forca Auxiliar de Resgate Nacional</h2>
+        <p>
+            Prezado(a) formado(a), precisamos atualizar seus dados cadastrais para manter nosso registro atualizado.
+            Preencha o formulario abaixo com suas informacoes pessoais, dados de documentos e envie a foto do seu
+            certificado de Bombeiro (frente e verso).
+        </p>
+        <p style="font-size:13px;color:#f57c00;font-weight:600">
+            <i class="fa-solid fa-circle-info"></i> Todos os campos marcados com * sao obrigatorios.
+        </p>
+        <button class="recad-btn-start" onclick="recadShowForm()">
+            <i class="fa-solid fa-pen-to-square"></i> Iniciar Recadastramento
+        </button>
+        <button class="recad-btn-check" onclick="recadShowCheck()">
+            <i class="fa-solid fa-magnifying-glass"></i> Conferir Meu Status
+        </button>
+        <div class="recad-footer">
+            <img src="logo-farn.png.png" alt="FARN" style="width:24px;height:24px;vertical-align:middle;border-radius:50%">
+            FARN - Buenos Aires, PE
+        </div>
+    </div>
+
+    <!-- FORMULARIO -->
+    <div id="recad-form-container" class="recad-form-container">
+        <div class="recad-form-header">
+            <img src="logo-farn.png.png" alt="FARN">
+            <h2>Formulario de Recadastramento</h2>
+            <p>Preencha seus dados abaixo. Campos com * sao obrigatorios.</p>
+        </div>
+
+        <div id="recad-msg" class="recad-msg"></div>
+
+        <form id="recad-form" onsubmit="return recadSubmit(event)">
+
+            <!-- PROJETO -->
+            <div class="recad-section" style="border:2px solid #f57c00;background:linear-gradient(135deg,rgba(245,124,0,.1),rgba(255,152,0,.05))">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <h3>Projeto</h3>
+                </div>
+                <div class="recad-field">
+                    <label>Selecione seu Projeto <span class="required">*</span></label>
+                    <select id="rc-projeto" required onchange="rcOnProjetoChange()">
+                        <option value="">Carregando projetos...</option>
+                    </select>
+                </div>
+                <div id="rc-projeto-info" style="display:none;padding:12px 16px;border-radius:10px;background:rgba(245,124,0,.08);border:1px solid rgba(245,124,0,.2);margin-top:8px">
+                    <div id="rc-projeto-desc" style="font-size:13px;color:#ccc"></div>
+                    <div id="rc-projeto-turmas" style="font-size:12px;color:#888;margin-top:6px"></div>
+                </div>
+            </div>
+
+            <!-- DADOS PESSOAIS -->
+            <div class="recad-section">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-user"></i>
+                    <h3>Dados Pessoais</h3>
+                </div>
+                <div class="recad-field">
+                    <label>Nome Completo <span class="required">*</span></label>
+                    <input type="text" id="rc-nome" required>
+                </div>
+                <div class="recad-row recad-row-3">
+                    <div class="recad-field">
+                        <label>CPF <span class="required">*</span></label>
+                        <input type="text" id="rc-cpf" maxlength="14" required oninput="rcFormatCPF(this)">
+                    </div>
+                    <div class="recad-field">
+                        <label>RG <span class="required">*</span></label>
+                        <input type="text" id="rc-rg" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Data de Nascimento <span class="required">*</span></label>
+                        <input type="date" id="rc-nascimento" required>
+                    </div>
+                </div>
+                <div class="recad-row recad-row-3">
+                    <div class="recad-field">
+                        <label>Estado Civil <span class="required">*</span></label>
+                        <select id="rc-estado-civil" required>
+                            <option value="">Selecione...</option>
+                            <option value="Solteiro(a)">Solteiro(a)</option>
+                            <option value="Casado(a)">Casado(a)</option>
+                            <option value="Viuvo(a)">Viuvo(a)</option>
+                            <option value="Divorciado(a)">Divorciado(a)</option>
+                        </select>
+                    </div>
+                    <div class="recad-field">
+                        <label>Nacionalidade <span class="required">*</span></label>
+                        <input type="text" id="rc-nacionalidade" value="Brasileira" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Naturalidade <span class="required">*</span></label>
+                        <input type="text" id="rc-naturalidade" placeholder="Cidade/Estado" required>
+                    </div>
+                </div>
+                <div class="recad-row recad-row-2">
+                    <div class="recad-field">
+                        <label>Mae <span class="required">*</span></label>
+                        <input type="text" id="rc-mae" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Pai</label>
+                        <input type="text" id="rc-pai">
+                    </div>
+                </div>
+                <div class="recad-row recad-row-2">
+                    <div class="recad-field">
+                        <label>Profissao</label>
+                        <input type="text" id="rc-profissao">
+                    </div>
+                    <div class="recad-field">
+                        <label>Titulo de Eleitor</label>
+                        <input type="text" id="rc-titulo" maxlength="18">
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTATO -->
+            <div class="recad-section">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-address-book"></i>
+                    <h3>Contato</h3>
+                </div>
+                <div class="recad-row recad-row-2">
+                    <div class="recad-field">
+                        <label>Email <span class="required">*</span></label>
+                        <input type="email" id="rc-email" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>WhatsApp <span class="required">*</span></label>
+                        <input type="tel" id="rc-whatsapp" maxlength="15" required oninput="rcFormatPhone(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ENDERECO -->
+            <div class="recad-section">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <h3>Endereco</h3>
+                </div>
+                <div class="recad-row recad-row-2">
+                    <div class="recad-field">
+                        <label>Endereco <span class="required">*</span></label>
+                        <input type="text" id="rc-endereco" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Numero <span class="required">*</span></label>
+                        <input type="text" id="rc-numero" required>
+                    </div>
+                </div>
+                <div class="recad-row recad-row-3">
+                    <div class="recad-field">
+                        <label>Bairro <span class="required">*</span></label>
+                        <input type="text" id="rc-bairro" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Cidade <span class="required">*</span></label>
+                        <input type="text" id="rc-cidade" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Estado <span class="required">*</span></label>
+                        <select id="rc-estado" required>
+                            <option value="">UF</option>
+                            <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                            <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                            <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                            <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                            <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                            <option>SP</option><option>SE</option><option>TO</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DADOS FISICOS -->
+            <div class="recad-section">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                    <h3>Dados Fisicos e Saude</h3>
+                </div>
+                <div class="recad-row recad-row-3">
+                    <div class="recad-field">
+                        <label>Altura (cm) <span class="required">*</span></label>
+                        <input type="number" id="rc-altura" min="100" max="250" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Peso (kg) <span class="required">*</span></label>
+                        <input type="number" id="rc-peso" min="30" max="250" required>
+                    </div>
+                    <div class="recad-field">
+                        <label>Fator RH <span class="required">*</span></label>
+                        <select id="rc-fator-rh" required>
+                            <option value="">Selecione...</option>
+                            <option>O+</option><option>O-</option><option>A+</option><option>A-</option>
+                            <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="recad-row recad-row-3">
+                    <div class="recad-field">
+                        <label>Hipertensao?</label>
+                        <select id="rc-hipertensao"><option value="Nao">Nao</option><option value="Sim">Sim</option></select>
+                    </div>
+                    <div class="recad-field">
+                        <label>Diabetes?</label>
+                        <select id="rc-diabetes"><option value="Nao">Nao</option><option value="Sim">Sim</option></select>
+                    </div>
+                    <div class="recad-field">
+                        <label>Deficiencia Fisica?</label>
+                        <select id="rc-deficiencia"><option value="Nao">Nao</option><option value="Sim">Sim</option></select>
+                    </div>
+                </div>
+                <div class="recad-row recad-row-3">
+                    <div class="recad-field">
+                        <label>Tatuagem?</label>
+                        <select id="rc-tatuagem"><option value="Nao">Nao</option><option value="Sim">Sim</option></select>
+                    </div>
+                    <div class="recad-field">
+                        <label>Cirurgia?</label>
+                        <select id="rc-cirurgia"><option value="Nao">Nao</option><option value="Sim">Sim</option></select>
+                    </div>
+                    <div class="recad-field">
+                        <label>Bebida Alcoolica?</label>
+                        <select id="rc-alcool"><option value="Nao">Nao</option><option value="Sim">Sim</option></select>
+                    </div>
+                </div>
+                <div class="recad-row recad-row-2">
+                    <div class="recad-field">
+                        <label>Medicamento em uso?</label>
+                        <input type="text" id="rc-medicamento">
+                    </div>
+                    <div class="recad-field">
+                        <label>Cansaco frequente?</label>
+                        <select id="rc-cansaco"><option value="Nao">Nao</option><option value="Sim">Sim</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CERTIFICADO DE BOMBEIRO -->
+            <div class="recad-section">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-certificate"></i>
+                    <h3>Certificado de Bombeiro</h3>
+                </div>
+                <div class="recad-field">
+                    <label>Data de Emissao do Certificado <span class="required">*</span></label>
+                    <input type="date" id="rc-data-certificado" required>
+                </div>
+                <div class="recad-field">
+                    <label>Foto do Certificado - Frente <span class="required">*</span></label>
+                    <div style="display:flex;gap:8px;margin-bottom:8px">
+                        <button type="button" class="rc-cam-btn" onclick="rcOpenCamera('frente')">
+                            <i class="fa-solid fa-camera"></i> Camera
+                        </button>
+                        <button type="button" class="rc-file-btn" onclick="document.getElementById('rc-file-frente').click()">
+                            <i class="fa-solid fa-file-image"></i> Galeria
+                        </button>
+                        <input type="file" id="rc-file-frente" accept="image/*" class="hidden" onchange="rcHandleFile(event,'frente')">
+                    </div>
+                    <div class="recad-upload-area" id="rc-upload-frente"
+                         ondrop="rcHandleDrop(event,'frente')" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
+                         onclick="rcOpenCamera('frente')">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p>Toque para tirar foto ou arraste a imagem da <strong>frente</strong></p>
+                        <small>Apenas para conferencia de dados</small>
+                    </div>
+                    <div class="recad-preview" id="rc-preview-frente"></div>
+                </div>
+                <div class="recad-field">
+                    <label>Foto do Certificado - Verso <span class="required">*</span></label>
+                    <div style="display:flex;gap:8px;margin-bottom:8px">
+                        <button type="button" class="rc-cam-btn" onclick="rcOpenCamera('verso')">
+                            <i class="fa-solid fa-camera"></i> Camera
+                        </button>
+                        <button type="button" class="rc-file-btn" onclick="document.getElementById('rc-file-verso').click()">
+                            <i class="fa-solid fa-file-image"></i> Galeria
+                        </button>
+                        <input type="file" id="rc-file-verso" accept="image/*" class="hidden" onchange="rcHandleFile(event,'verso')">
+                    </div>
+                    <div class="recad-upload-area" id="rc-upload-verso"
+                         ondrop="rcHandleDrop(event,'verso')" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
+                         onclick="rcOpenCamera('verso')">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p>Toque para tirar foto ou arraste a imagem do <strong>verso</strong></p>
+                        <small>Apenas para conferencia de dados</small>
+                    </div>
+                    <div class="recad-preview" id="rc-preview-verso"></div>
+                </div>
+            </div>
+
+            <!-- MEDIDAS E UNIFORME -->
+            <div class="recad-section">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-shirt"></i>
+                    <h3>Medidas e Uniforme</h3>
+                </div>
+                <div class="recad-row recad-row-3">
+                    <div class="recad-field">
+                        <label>Calca</label>
+                        <select id="rc-calca">
+                            <option value="">Selecione...</option>
+                            <option value="35">35</option><option value="36">36</option><option value="37">37</option>
+                            <option value="38">38</option><option value="39">39</option><option value="40">40</option>
+                            <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                            <option value="44">44</option><option value="45">45</option><option value="46">46</option>
+                            <option value="OUT">OUT</option>
+                        </select>
+                    </div>
+                    <div class="recad-field">
+                        <label>Camisa</label>
+                        <select id="rc-camisa">
+                            <option value="">Selecione...</option>
+                            <option value="P">P</option><option value="M">M</option>
+                            <option value="G">G</option><option value="GG">GG</option>
+                        </select>
+                    </div>
+                    <div class="recad-field">
+                        <label>Calcado</label>
+                        <select id="rc-calcado">
+                            <option value="">Selecione...</option>
+                            <option value="35">35</option><option value="36">36</option><option value="37">37</option>
+                            <option value="38">38</option><option value="39">39</option><option value="40">40</option>
+                            <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                            <option value="44">44</option><option value="OUT">OUT</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SENHA -->
+            <div class="recad-section">
+                <div class="recad-section-title">
+                    <i class="fa-solid fa-lock"></i>
+                    <h3>Senha de Acesso</h3>
+                </div>
+                <div class="recad-field">
+                    <label>Crie uma Senha <span class="required">*</span></label>
+                    <input type="password" id="rc-senha" minlength="6" required placeholder="Minimo 6 caracteres">
+                    <span style="font-size:12px;color:#888;margin-top:4px;display:block"><i class="fa-solid fa-circle-info" style="color:#f57c00"></i> Crie uma senha de 6 digitos para acessar o app</span>
+                </div>
+            </div>
+
+            <button type="submit" class="recad-btn-submit" id="rc-btn-submit">
+                <i class="fa-solid fa-paper-plane"></i> Enviar Recadastramento
+            </button>
+        </form>
+    </div>
+
+    <!-- TELA DE SUCESSO -->
+    <div id="recad-success" class="recad-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <h2>Recadastramento Enviado!</h2>
+        <p>Seus dados foram enviados com sucesso. A equipe FARN ira analisar e validar seu cadastro.</p>
+        <p style="margin-top:12px;font-size:13px;color:#2196f3"><i class="fa-solid fa-magnifying-glass"></i> Voce pode conferir o status a qualquer momento pelo botao abaixo.</p>
+        <button class="recad-btn-check" onclick="recadGoToCheck()" style="margin-top:20px">
+            <i class="fa-solid fa-magnifying-glass"></i> Conferir Meu Status
+        </button>
+        <p style="margin-top:20px;font-size:13px;color:#f57c00"><i class="fa-solid fa-fire"></i> Obrigado por manter seus dados atualizados!</p>
+    </div>
+
+    <!-- TELA DE CONSULTA DE STATUS -->
+    <div id="recad-check" class="recad-check-container">
+        <img src="logo-farn.png.png" alt="FARN" style="width:80px;height:80px;border-radius:50%;border:3px solid #2196f3;margin-bottom:16px">
+        <h2 style="color:#2196f3">Conferir Status do Recadastramento</h2>
+        <p style="color:#888;font-size:13px">Informe seu CPF e a senha que voce cadastrou</p>
+
+        <div class="recad-check-box">
+            <div id="recad-check-msg" class="recad-msg"></div>
+            <div class="recad-field">
+                <label>CPF</label>
+                <input type="text" id="rc-check-cpf" maxlength="14" placeholder="000.000.000-00" oninput="rcCheckFormatCPF(this)">
+            </div>
+            <div class="recad-field">
+                <label>Senha Cadastrada</label>
+                <input type="password" id="rc-check-senha" placeholder="Sua senha">
+            </div>
+            <button class="recad-check-btn" id="rc-check-btn" onclick="rcCheckStatus()">
+                <i class="fa-solid fa-magnifying-glass"></i> Consultar
+            </button>
+            <div class="recad-check-back" onclick="recadGoToWelcome()">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao inicio
+            </div>
+        </div>
+
+        <!-- Resultado -->
+        <div id="recad-status-result" class="recad-status-result">
+            <div class="recad-status-card">
+                <div class="recad-status-header">
+                    <div class="recad-status-icon" id="rc-status-icon">
+                        <i class="fa-solid" id="rc-status-icon-i"></i>
+                    </div>
+                    <div class="recad-status-info">
+                        <h3 id="rc-status-nome"></h3>
+                        <p id="rc-status-label"></p>
+                    </div>
+                </div>
+                <div id="rc-status-aprovado-msg" style="display:none;margin-top:16px;padding:16px;background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);border-radius:10px;font-size:13px;color:#ccc;line-height:1.7">
+                </div>
+                <div class="recad-status-detail">
+                    <div class="recad-status-detail-row">
+                        <span>Projeto</span>
+                        <span id="rc-status-projeto"></span>
+                    </div>
+                    <div class="recad-status-detail-row">
+                        <span>CPF</span>
+                        <span id="rc-status-cpf"></span>
+                    </div>
+                    <div class="recad-status-detail-row">
+                        <span>Data de Envio</span>
+                        <span id="rc-status-data"></span>
+                    </div>
+                    <div class="recad-status-detail-row" id="rc-status-motivo-row" style="display:none">
+                        <span>Motivo</span>
+                        <span id="rc-status-motivo" style="color:#f44336"></span>
+                    </div>
+                </div>
+            </div>
+            <button class="recad-btn-check" onclick="rcResetCheck()" style="margin-top:16px">
+                <i class="fa-solid fa-rotate"></i> Nova Consulta
+            </button>
+        </div>
+    </div>
+
+    <script>
+    let rcFiles = { 'frente': null, 'verso': null };
+    let rcProjetos = [];
+
+    async function rcLoadProjetos() {
+        try {
+            var snap = await dbFirestore.collection('parceiros').get();
+            rcProjetos = [];
+            snap.forEach(function(doc) {
+                var d = doc.data();
+                if (d.nome) rcProjetos.push(d);
+            });
+            var sel = document.getElementById('rc-projeto');
+            sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+            rcProjetos.forEach(function(p) {
+                var opt = document.createElement('option');
+                opt.value = p.nome;
+                opt.textContent = p.nome;
+                sel.appendChild(opt);
+            });
+            if (rcProjetos.length === 0) {
+                sel.innerHTML = '<option value="">Nenhum projeto disponivel</option>';
+            }
+        } catch (e) {
+            console.error('Erro ao carregar projetos:', e);
+            document.getElementById('rc-projeto').innerHTML = '<option value="">Erro ao carregar projetos</option>';
+        }
+    }
+
+    function rcOnProjetoChange() {
+        var nome = document.getElementById('rc-projeto').value;
+        var info = document.getElementById('rc-projeto-info');
+        var descEl = document.getElementById('rc-projeto-desc');
+        var turmasEl = document.getElementById('rc-projeto-turmas');
+        if (!nome) { info.style.display = 'none'; return; }
+        var p = rcProjetos.find(function(x) { return x.nome === nome; });
+        if (p) {
+            info.style.display = 'block';
+            descEl.innerHTML = '<i class="fa-solid fa-circle-info" style="color:#f57c00;margin-right:6px"></i>' + (p.responsavel ? 'Responsavel: ' + p.responsavel : 'Projeto FARN');
+            if (p.turmas && p.turmas.length) {
+                turmasEl.innerHTML = '<i class="fa-solid fa-users" style="margin-right:4px"></i> Turmas: ' + p.turmas.join(', ');
+            } else {
+                turmasEl.innerHTML = '';
+            }
+        } else {
+            info.style.display = 'none';
+        }
+    }
+
+    rcLoadProjetos();
+
+    function rcFormatCPF(input) {
+        let v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        input.value = v;
+    }
+
+    function rcFormatPhone(input) {
+        let v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        input.value = v;
+    }
+
+    function recadShowForm() {
+        document.getElementById('recad-welcome').style.display = 'none';
+        document.getElementById('recad-form-container').classList.add('active');
+    }
+
+    function recadShowCheck() {
+        document.getElementById('recad-welcome').style.display = 'none';
+        document.getElementById('recad-check').classList.add('active');
+    }
+
+    function recadGoToCheck() {
+        document.getElementById('recad-success').classList.remove('active');
+        document.getElementById('recad-check').classList.add('active');
+    }
+
+    function recadGoToWelcome() {
+        document.getElementById('recad-check').classList.remove('active');
+        document.getElementById('recad-status-result').classList.remove('active');
+        document.getElementById('recad-welcome').style.display = '';
+        document.getElementById('rc-check-cpf').value = '';
+        document.getElementById('rc-check-senha').value = '';
+        document.getElementById('recad-check-msg').className = 'recad-msg';
+        var box = document.getElementById('recad-check').querySelector('.recad-check-box');
+        if (box) box.style.display = '';
+    }
+
+    function rcCheckFormatCPF(input) {
+        let v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        input.value = v;
+    }
+
+    async function rcCheckStatus() {
+        var cpf = document.getElementById('rc-check-cpf').value.replace(/\D/g, '');
+        var senha = document.getElementById('rc-check-senha').value;
+        var msgEl = document.getElementById('recad-check-msg');
+
+        if (!cpf || cpf.length !== 11) {
+            msgEl.textContent = 'Informe um CPF valido (11 digitos).';
+            msgEl.className = 'recad-msg error';
+            return;
+        }
+        if (!senha) {
+            msgEl.textContent = 'Informe sua senha.';
+            msgEl.className = 'recad-msg error';
+            return;
+        }
+
+        var btn = document.getElementById('rc-check-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Consultando...';
+        msgEl.className = 'recad-msg';
+
+        try {
+            var snap = await dbFirestore.collection('recadastramentos')
+                .where('cpf', '==', cpf)
+                .where('senha', '==', senha)
+                .limit(1)
+                .get();
+
+            if (snap.empty) {
+                msgEl.textContent = 'CPF ou senha nao encontrados. Verifique seus dados.';
+                msgEl.className = 'recad-msg error';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Consultar';
+                return;
+            }
+
+            var doc = snap.docs[0];
+            var r = doc.data();
+
+            document.getElementById('rc-status-nome').textContent = r.nome || '---';
+            document.getElementById('rc-status-projeto').textContent = r.projeto || '---';
+
+            var cpfDisplay = r.cpf || '';
+            if (cpfDisplay.length === 11) cpfDisplay = cpfDisplay.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('rc-status-cpf').textContent = cpfDisplay;
+
+            var dataEnvio = r.dataHoraCadastro ? new Date(r.dataHoraCadastro).toLocaleDateString('pt-BR') + ' as ' + new Date(r.dataHoraCadastro).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '---';
+            document.getElementById('rc-status-data').textContent = dataEnvio;
+
+            var icon = document.getElementById('rc-status-icon');
+            var iconI = document.getElementById('rc-status-icon-i');
+            var label = document.getElementById('rc-status-label');
+            var motivoRow = document.getElementById('rc-status-motivo-row');
+
+            icon.className = 'recad-status-icon';
+            motivoRow.style.display = 'none';
+            var aprovadoMsg = document.getElementById('rc-status-aprovado-msg');
+            aprovadoMsg.style.display = 'none';
+
+            if (r.status === 'Aprovado') {
+                icon.classList.add('aprovado');
+                iconI.className = 'fa-solid fa-check';
+                label.textContent = 'PARABENS! Seu cadastro foi APROVADO!';
+                label.style.color = '#4caf50';
+                aprovadoMsg.style.display = 'block';
+                aprovadoMsg.innerHTML = '<p style="margin:0 0 10px;color:#4caf50;font-weight:700;font-size:14px"><i class="fa-solid fa-party-horn" style="margin-right:4px"></i> PARABENS, SEU CADASTRO FOI APROVADO!</p>' +
+                    '<p style="margin:0 0 8px">Agora aguarde o prazo de ate <strong style="color:#4caf50">20 dias</strong> e voce recebera seu novo certificado em seu <strong>email cadastrado</strong>.</p>' +
+                    '<p style="margin:0 0 8px">Voce agora faz parte da <strong style="color:#f57c00">FAMILIA FARN</strong> (Forca Auxiliar de Resgate Nacional). Somos a instituicao que mais representa os profissionais de urgencia e emergencia do Brasil.</p>' +
+                    '<p style="margin:0 0 8px">Com seu <strong>CPF</strong> e <strong>senha</strong> voce tera acesso ao <strong style="color:#2196f3">Portal do Formado</strong> onde iremos sempre lhe atualizar das novidades.</p>' +
+                    '<p style="margin:0;color:#f57c00;font-weight:600"><i class="fa-solid fa-fire" style="margin-right:4px"></i> Bem-vindo a familia FARN!</p>';
+            } else if (r.status === 'Rejeitado') {
+                icon.classList.add('rejeitado');
+                iconI.className = 'fa-solid fa-xmark';
+                label.textContent = 'Seu cadastro foi REJEITADO';
+                label.style.color = '#f44336';
+                if (r.motivoRejeicao) {
+                    motivoRow.style.display = '';
+                    document.getElementById('rc-status-motivo').textContent = r.motivoRejeicao;
+                }
+            } else {
+                icon.classList.add('pendente');
+                iconI.className = 'fa-solid fa-hourglass-half';
+                label.textContent = 'Seu cadastro esta PENDENTE de analise';
+                label.style.color = '#ffc107';
+            }
+
+            document.getElementById('recad-check').querySelector('.recad-check-box').style.display = 'none';
+            document.getElementById('recad-status-result').classList.add('active');
+
+        } catch (e) {
+            console.error('Erro na consulta:', e);
+            msgEl.textContent = 'Erro ao consultar. Tente novamente.';
+            msgEl.className = 'recad-msg error';
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Consultar';
+    }
+
+    function rcResetCheck() {
+        document.getElementById('recad-status-result').classList.remove('active');
+        document.getElementById('recad-check').querySelector('.recad-check-box').style.display = '';
+        document.getElementById('rc-check-cpf').value = '';
+        document.getElementById('rc-check-senha').value = '';
+        document.getElementById('recad-check-msg').className = 'recad-msg';
+    }
+
+    function rcHandleFile(event, type) {
+        const file = event.target.files[0];
+        if (!file) return;
+        rcProcessFile(file, type);
+    }
+
+    function rcHandleDrop(event, type) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('dragover');
+        const file = event.dataTransfer.files[0];
+        if (!file) return;
+        rcProcessFile(file, type);
+    }
+
+    function rcProcessFile(file, type) {
+        if (file.size > 10 * 1024 * 1024) {
+            rcMsg('Arquivo muito grande. Maximo 10MB.', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            rcCompressImage(e.target.result, 1200, 1200, 0.75).then(function(dataUrl) {
+                rcFiles[type] = dataUrl;
+                rcRenderPreview(type);
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function rcCompressImage(dataUrl, maxW, maxH, quality) {
+        return new Promise(function(resolve) {
+            var img = new Image();
+            img.onload = function() {
+                var w = img.width, h = img.height;
+                if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+                if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = function() { resolve(dataUrl); };
+            img.src = dataUrl;
+        });
+    }
+
+    function rcRenderPreview(type) {
+        var containerId = 'rc-preview-' + type;
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        if (rcFiles[type]) {
+            var item = document.createElement('div');
+            item.className = 'recad-preview-item';
+            var labels = { 'frente': 'FRENTE', 'verso': 'VERSO' };
+            item.innerHTML = '<img src="' + rcFiles[type] + '">' +
+                '<button type="button" class="remove-btn" onclick="rcRemoveFile(\'' + type + '\')"><i class="fa-solid fa-xmark"></i></button>' +
+                '<div class="recad-preview-label">' + (labels[type] || '') + '</div>';
+            container.appendChild(item);
+        }
+    }
+
+    function rcRemoveFile(type) {
+        rcFiles[type] = null;
+        var container = document.getElementById('rc-preview-' + type);
+        if (container) container.innerHTML = '';
+    }
+
+    function rcMsg(text, type) {
+        var el = document.getElementById('recad-msg');
+        el.textContent = text;
+        el.className = 'recad-msg ' + type;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function recadSubmit(event) {
+        event.preventDefault();
+        if (!document.getElementById('rc-projeto').value) { rcMsg('Por favor, selecione seu projeto.', 'error'); return false; }
+        if (!rcFiles['frente']) { rcMsg('Por favor, envie a foto da frente do certificado.', 'error'); return false; }
+        if (!rcFiles['verso']) { rcMsg('Por favor, envie a foto do verso do certificado.', 'error'); return false; }
+
+        var btn = document.getElementById('rc-btn-submit');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+        rcMsg('Enviando seus dados...', 'info');
+
+        var data = {
+            projeto: document.getElementById('rc-projeto').value,
+            nome: document.getElementById('rc-nome').value.trim(),
+            cpf: document.getElementById('rc-cpf').value.replace(/\D/g, ''),
+            rg: document.getElementById('rc-rg').value.trim(),
+            nascimento: document.getElementById('rc-nascimento').value,
+            estadoCivil: document.getElementById('rc-estado-civil').value,
+            nacionalidade: document.getElementById('rc-nacionalidade').value.trim(),
+            naturalidade: document.getElementById('rc-naturalidade').value.trim(),
+            mae: document.getElementById('rc-mae').value.trim(),
+            pai: document.getElementById('rc-pai').value.trim(),
+            profissao: document.getElementById('rc-profissao').value.trim(),
+            titulo: document.getElementById('rc-titulo').value.trim(),
+            email: document.getElementById('rc-email').value.trim(),
+            whatsapp: document.getElementById('rc-whatsapp').value.replace(/\D/g, ''),
+            endereco: document.getElementById('rc-endereco').value.trim(),
+            numero: document.getElementById('rc-numero').value.trim(),
+            bairro: document.getElementById('rc-bairro').value.trim(),
+            cidade: document.getElementById('rc-cidade').value.trim(),
+            estado: document.getElementById('rc-estado').value,
+            altura: document.getElementById('rc-altura').value,
+            peso: document.getElementById('rc-peso').value,
+            fatorRh: document.getElementById('rc-fator-rh').value,
+            hipertensao: document.getElementById('rc-hipertensao').value,
+            diabetes: document.getElementById('rc-diabetes').value,
+            deficiencia: document.getElementById('rc-deficiencia').value,
+            tatuagem: document.getElementById('rc-tatuagem').value,
+            cirurgia: document.getElementById('rc-cirurgia').value,
+            alcool: document.getElementById('rc-alcool').value,
+            medicamento: document.getElementById('rc-medicamento').value.trim(),
+            cansaco: document.getElementById('rc-cansaco').value,
+            dataCertificado: document.getElementById('rc-data-certificado').value,
+            certificadoFrente: rcFiles['frente'],
+            certificadoVerso: rcFiles['verso'],
+            senha: document.getElementById('rc-senha').value,
+            calca: document.getElementById('rc-calca').value,
+            camisa: document.getElementById('rc-camisa').value,
+            calcado: document.getElementById('rc-calcado').value,
+            status: 'Pendente',
+            dataHoraCadastro: new Date().toISOString(),
+            origem: 'recadastramento-publico'
+        };
+
+        try {
+            await dbFirestore.collection('recadastramentos').add(data);
+            document.getElementById('recad-form-container').classList.remove('active');
+            document.getElementById('recad-success').classList.add('active');
+        } catch (err) {
+            console.error('Erro ao enviar:', err);
+            rcMsg('Erro ao enviar. Verifique sua conexao e tente novamente.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Recadastramento';
+        }
+        return false;
+    }
+
+    /* ===== CAMERA ===== */
+    var rcCameraStream = null;
+    var rcCameraType = null;
+    var rcCameraCapturedDataUrl = null;
+
+    function rcOpenCamera(type) {
+        rcCameraType = type;
+        rcCameraCapturedDataUrl = null;
+        var label = document.getElementById('rc-camera-label');
+        label.textContent = type === 'frente' ? 'Tirando foto da FRENTE do certificado' : 'Tirando foto do VERSO do certificado';
+        document.getElementById('rc-camera-video').style.display = '';
+        document.getElementById('rc-camera-preview').style.display = 'none';
+        document.getElementById('rc-camera-controls-capture').style.display = '';
+        document.getElementById('rc-camera-controls-confirm').style.display = 'none';
+        document.getElementById('rc-camera-modal').classList.add('active');
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+            }).then(function(stream) {
+                rcCameraStream = stream;
+                document.getElementById('rc-camera-video').srcObject = stream;
+            }).catch(function(err) {
+                alert('Erro ao acessar camera: ' + err.message);
+                rcCloseCamera();
+            });
+        } else {
+            alert('Camera nao disponivel neste navegador.');
+            rcCloseCamera();
+        }
+    }
+
+    function rcCapturePhoto() {
+        var video = document.getElementById('rc-camera-video');
+        var canvas = document.getElementById('rc-camera-canvas');
+        var preview = document.getElementById('rc-camera-preview');
+
+        // Qualidade baixa: max 640px de largura, JPEG 0.4
+        var maxW = 640;
+        var w = video.videoWidth;
+        var h = video.videoHeight;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+
+        // Compressao baixa para conferencia de dados
+        rcCameraCapturedDataUrl = canvas.toDataURL('image/jpeg', 0.4);
+
+        preview.src = rcCameraCapturedDataUrl;
+        preview.style.display = 'block';
+        video.style.display = 'none';
+
+        // Parar camera
+        if (rcCameraStream) {
+            rcCameraStream.getTracks().forEach(function(t) { t.stop(); });
+            rcCameraStream = null;
+        }
+
+        document.getElementById('rc-camera-controls-capture').style.display = 'none';
+        document.getElementById('rc-camera-controls-confirm').style.display = '';
+    }
+
+    function rcConfirmPhoto() {
+        if (rcCameraCapturedDataUrl && rcCameraType) {
+            rcFiles[rcCameraType] = rcCameraCapturedDataUrl;
+            rcRenderPreview(rcCameraType);
+        }
+        rcCloseCamera();
+    }
+
+    function rcRetakePhoto() {
+        rcCameraCapturedDataUrl = null;
+        document.getElementById('rc-camera-video').style.display = '';
+        document.getElementById('rc-camera-preview').style.display = 'none';
+        document.getElementById('rc-camera-controls-capture').style.display = '';
+        document.getElementById('rc-camera-controls-confirm').style.display = 'none';
+        rcOpenCamera(rcCameraType);
+    }
+
+    function rcCloseCamera() {
+        if (rcCameraStream) {
+            rcCameraStream.getTracks().forEach(function(t) { t.stop(); });
+            rcCameraStream = null;
+        }
+        document.getElementById('rc-camera-video').srcObject = null;
+        document.getElementById('rc-camera-modal').classList.remove('active');
+        rcCameraType = null;
+        rcCameraCapturedDataUrl = null;
+    }
+
+    rcLoadProjetos();
+    </script>
+
+    <!-- MODAL CAMERA -->
+    <div id="rc-camera-modal" class="rc-camera-modal">
+        <div class="rc-camera-label" id="rc-camera-label">Tirando foto da frente</div>
+        <video id="rc-camera-video" autoplay playsinline></video>
+        <canvas id="rc-camera-canvas"></canvas>
+        <img id="rc-camera-preview" style="display:none">
+        <div class="rc-camera-controls" id="rc-camera-controls-capture">
+            <button class="rc-camera-btn-capture" onclick="rcCapturePhoto()"><i class="fa-solid fa-camera"></i> Capturar</button>
+            <button class="rc-camera-btn-cancel" onclick="rcCloseCamera()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+        </div>
+        <div class="rc-camera-controls" id="rc-camera-controls-confirm" style="display:none">
+            <button class="rc-camera-btn-ok" onclick="rcConfirmPhoto()"><i class="fa-solid fa-check"></i> Usar Foto</button>
+            <button class="rc-camera-btn-retake" onclick="rcRetakePhoto()"><i class="fa-solid fa-rotate"></i> Outra Foto</button>
+        </div>
+    </div>
+</body>
+</html>
