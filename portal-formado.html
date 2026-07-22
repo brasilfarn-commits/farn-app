@@ -2,62 +2,622 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FARN - Portal do Formado</title>
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const dbFirestore = firebase.firestore();
+    </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; padding:30px 20px; }
+        body { font-family:'Inter',sans-serif; background:#111827; color:#fff; min-height:100vh; }
 
-        .container { max-width:500px; }
-        .logo { width:120px; height:120px; border-radius:50%; border:4px solid #f57c00; margin-bottom:24px; box-shadow:0 0 40px rgba(245,124,0,.3); }
-        .badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,193,7,.1); border:1px solid rgba(255,193,7,.3); border-radius:20px; padding:8px 18px; font-size:13px; color:#ffc107; font-weight:600; margin-bottom:20px; }
-        h1 { font-size:26px; font-weight:800; color:#f57c00; margin-bottom:8px; }
-        h2 { font-size:18px; font-weight:600; color:#fff; margin-bottom:20px; }
+        /* ===== LOGIN SCREEN ===== */
+        #screen-login { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+        .pf-login-box { max-width:400px; width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:36px; text-align:center; }
+        .pf-login-box img { width:100px; height:100px; border-radius:50%; border:3px solid #f57c00; margin-bottom:16px; }
+        .pf-login-box h2 { color:#f57c00; font-size:20px; margin-bottom:4px; }
+        .pf-login-box p { color:#888; font-size:13px; margin-bottom:24px; }
+        .pf-login-box .pf-field { margin-bottom:14px; text-align:left; }
+        .pf-login-box .pf-field label { display:block; font-size:12px; color:#aaa; margin-bottom:4px; font-weight:600; }
+        .pf-login-box .pf-field input { width:100%; padding:12px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:10px; color:#fff; font-size:14px; }
+        .pf-login-box .pf-field input:focus { border-color:#f57c00; outline:none; }
+        .pf-login-btn { width:100%; background:linear-gradient(135deg,#f57c00,#ff9800); color:#fff; border:none; padding:14px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:4px; }
+        .pf-login-btn:hover { box-shadow:0 4px 16px rgba(245,124,0,.4); }
+        .pf-login-btn:disabled { opacity:.5; cursor:not-allowed; }
+        .pf-login-error { color:#f44336; font-size:13px; margin-top:10px; display:none; }
+        .pf-login-footer { margin-top:16px; font-size:12px; color:#555; }
 
-        .construction { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:40px 30px; margin-top:10px; }
-        .construction-icon { font-size:60px; color:#ffc107; margin-bottom:16px; animation:pulse 2s ease-in-out infinite; }
-        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
-        .construction h3 { font-size:20px; font-weight:700; color:#ffc107; margin-bottom:10px; }
-        .construction p { font-size:14px; color:#aaa; line-height:1.7; max-width:380px; margin:0 auto; }
-        .construction .icon-row { display:flex; justify-content:center; gap:16px; margin-top:20px; }
-        .construction .icon-row i { font-size:28px; color:rgba(255,255,255,.15); }
+        /* ===== PORTAL LAYOUT ===== */
+        #screen-portal { display:none; height:100vh; }
+        #screen-portal.active { display:grid; grid-template-columns:240px 1fr 320px; }
 
-        .back { display:inline-flex; align-items:center; gap:6px; color:#888; font-size:13px; cursor:pointer; margin-top:24px; transition:color .2s; text-decoration:none; }
-        .back:hover { color:#fff; }
+        /* ===== SIDEBAR ESQUERDO ===== */
+        .pf-sidebar { background:#0d1117; border-right:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; overflow-y:auto; }
+        .pf-sidebar-header { padding:20px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08); }
+        .pf-sidebar-header img { width:60px; height:60px; border-radius:50%; border:2px solid #f57c00; margin-bottom:8px; }
+        .pf-sidebar-header h3 { font-size:14px; color:#f57c00; font-weight:700; }
+        .pf-sidebar-header p { font-size:11px; color:#888; }
 
-        .footer { margin-top:30px; font-size:12px; color:#555; }
+        .pf-sidebar-nav { flex:1; padding:12px 0; }
+        .pf-nav-item { display:flex; align-items:center; gap:10px; padding:12px 20px; color:#aaa; font-size:13px; font-weight:500; cursor:pointer; transition:all .2s; border-left:3px solid transparent; }
+        .pf-nav-item:hover { background:rgba(255,255,255,.05); color:#fff; }
+        .pf-nav-item.active { background:rgba(245,124,0,.08); color:#f57c00; border-left-color:#f57c00; font-weight:700; }
+        .pf-nav-item i { width:18px; text-align:center; font-size:14px; }
+
+        .pf-sidebar-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,.08); }
+        .pf-sidebar-footer .pf-user { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .pf-sidebar-footer .pf-user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#f57c00,#ff9800); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
+        .pf-sidebar-footer .pf-user-info { flex:1; }
+        .pf-sidebar-footer .pf-user-name { font-size:13px; font-weight:600; color:#fff; }
+        .pf-sidebar-footer .pf-user-cpf { font-size:11px; color:#666; }
+        .pf-logout-btn { width:100%; padding:8px; background:rgba(244,67,54,.1); border:1px solid rgba(244,67,54,.3); border-radius:8px; color:#f44336; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; }
+        .pf-logout-btn:hover { background:rgba(244,67,54,.2); }
+
+        /* ===== CENTRO - NOTICIAS ===== */
+        .pf-center { overflow-y:auto; padding:20px; }
+        .pf-center-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .pf-center-header i { font-size:20px; color:#f57c00; }
+        .pf-center-header h2 { font-size:18px; font-weight:700; }
+        .pf-center-header p { font-size:12px; color:#888; margin-left:auto; }
+
+        .pf-noticia-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:20px; margin-bottom:16px; transition:all .2s; }
+        .pf-noticia-card:hover { border-color:rgba(245,124,0,.3); }
+        .pf-noticia-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+        .pf-noticia-badge { background:#f57c00; color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px; }
+        .pf-noticia-date { font-size:11px; color:#666; margin-left:auto; }
+        .pf-noticia-title { font-size:15px; font-weight:700; color:#fff; margin-bottom:6px; }
+        .pf-noticia-text { font-size:13px; color:#aaa; line-height:1.6; }
+        .pf-noticia-img { width:100%; border-radius:10px; margin-top:12px; max-height:300px; object-fit:cover; }
+        .pf-noticia-empty { text-align:center; padding:60px 20px; color:#555; }
+        .pf-noticia-empty i { font-size:40px; margin-bottom:10px; display:block; }
+
+        /* ===== SECAO PADRAO ===== */
+        .pf-section { display:none; }
+        .pf-section.active { display:block; }
+        .pf-section-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .pf-section-header i { font-size:20px; color:#f57c00; }
+        .pf-section-header h2 { font-size:18px; font-weight:700; }
+
+        .pf-em-construcao { text-align:center; padding:60px 20px; }
+        .pf-em-construcao i { font-size:50px; color:#ffc107; margin-bottom:12px; }
+        .pf-em-construcao h3 { color:#ffc107; font-size:18px; margin-bottom:6px; }
+        .pf-em-construcao p { color:#888; font-size:13px; }
+
+        /* ===== LATERAL DIREITA - CHAT + GALERIA ===== */
+        .pf-right { background:#0d1117; border-left:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; overflow:hidden; }
+        .pf-right-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.08); }
+        .pf-right-tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:600; color:#888; cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; }
+        .pf-right-tab:hover { color:#fff; }
+        .pf-right-tab.active { color:#f57c00; border-bottom-color:#f57c00; }
+        .pf-right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .pf-right-content { flex:1; overflow-y:auto; }
+
+        /* CHAT */
+        .pf-chat-header { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .pf-chat-header h4 { font-size:13px; font-weight:700; color:#f57c00; }
+        .pf-chat-header p { font-size:11px; color:#666; }
+        .pf-chat-select { width:100%; padding:8px 10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#fff; font-size:12px; margin-top:8px; }
+        .pf-chat-select option { background:#1a1a2e; }
+        .pf-chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+        .pf-chat-empty { text-align:center; padding:40px 10px; color:#555; font-size:12px; }
+        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; }
+
+        .pf-chat-bubble { max-width:85%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; }
+        .pf-chat-bubble.me { background:rgba(245,124,0,.2); border:1px solid rgba(245,124,0,.3); align-self:flex-end; border-bottom-right-radius:4px; }
+        .pf-chat-bubble.other { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); align-self:flex-start; border-bottom-left-radius:4px; }
+        .pf-chat-sender { font-size:10px; font-weight:700; margin-bottom:3px; }
+        .pf-chat-time { font-size:10px; color:#666; margin-top:3px; text-align:right; }
+        .pf-chat-img { max-width:100%; border-radius:8px; margin-top:6px; cursor:pointer; }
+
+        .pf-chat-input { display:flex; gap:8px; padding:12px; border-top:1px solid rgba(255,255,255,.08); }
+        .pf-chat-input input { flex:1; padding:10px 12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#fff; font-size:13px; }
+        .pf-chat-input input:focus { border-color:#f57c00; outline:none; }
+        .pf-chat-send { background:#f57c00; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
+        .pf-chat-send:hover { background:#ff9800; }
+
+        /* GALERIA */
+        .pf-gallery-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
+        .pf-gallery-item { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; border:1px solid rgba(255,255,255,.08); }
+        .pf-gallery-item img { width:100%; height:100%; object-fit:cover; transition:transform .3s; }
+        .pf-gallery-item:hover img { transform:scale(1.05); }
+        .pf-gallery-item .pf-gallery-date { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#aaa; font-size:10px; padding:4px 6px; text-align:center; }
+        .pf-gallery-empty { text-align:center; padding:40px 10px; color:#555; font-size:12px; }
+        .pf-gallery-empty i { font-size:28px; margin-bottom:6px; display:block; }
+
+        /* MODAL FOTO */
+        .pf-photo-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.95); align-items:center; justify-content:center; padding:20px; }
+        .pf-photo-modal.active { display:flex; }
+        .pf-photo-modal img { max-width:90%; max-height:85vh; border-radius:12px; }
+        .pf-photo-modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.1); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; }
+        .pf-photo-modal-info { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#aaa; padding:8px 16px; border-radius:8px; font-size:12px; text-align:center; }
+
+        /* MOBILE */
+        @media(max-width:1024px) {
+            #screen-portal.active { grid-template-columns:1fr; grid-template-rows:1fr; }
+            .pf-sidebar { display:none; }
+            .pf-right { display:none; }
+            .pf-center { padding:16px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="logo-farn.png.png" alt="FARN" class="logo">
-        <div class="badge"><i class="fa-solid fa-fire"></i> Portal do Formado</div>
-        <h1>FARN - BRASIL</h1>
-        <h2>Forca Auxiliar de Resgate Nacional</h2>
 
-        <div class="construction">
-            <div class="construction-icon"><i class="fa-solid fa-hard-hat"></i></div>
-            <h3>Em Construcao</h3>
-            <p>Este portal esta em fase de desenvolvimento. Em breve voce tera acesso a conteudos exclusivos, atualizacoes e novidades para formados FARN.</p>
-            <div class="icon-row">
-                <i class="fa-solid fa-newspaper"></i>
-                <i class="fa-solid fa-book-open"></i>
-                <i class="fa-solid fa-certificate"></i>
-                <i class="fa-solid fa-comments"></i>
-                <i class="fa-solid fa-bell"></i>
+    <!-- LOGIN -->
+    <div id="screen-login">
+        <div class="pf-login-box">
+            <img src="logo-farn.png.png" alt="FARN">
+            <h2>Portal do Formado</h2>
+            <p>Entre com seu CPF e senha cadastrados</p>
+            <div class="pf-field">
+                <label>CPF</label>
+                <input type="text" id="pf-cpf" maxlength="14" placeholder="000.000.000-00" oninput="pfFormatCPF(this)">
+            </div>
+            <div class="pf-field">
+                <label>Senha</label>
+                <input type="password" id="pf-senha" placeholder="Sua senha">
+            </div>
+            <button class="pf-login-btn" id="pf-login-btn" onclick="pfLogin()">
+                <i class="fa-solid fa-right-to-bracket"></i> Entrar
+            </button>
+            <div class="pf-login-error" id="pf-login-error"></div>
+            <div class="pf-login-footer">
+                <a href="recadastramento.html" style="color:#f57c00;text-decoration:none;font-size:13px"><i class="fa-solid fa-pen-to-square"></i> Ainda nao se cadastrou?</a>
             </div>
         </div>
-
-        <a class="back" href="index.html">
-            <i class="fa-solid fa-arrow-left"></i> Voltar ao Login
-        </a>
-
-        <div class="footer">
-            <img src="logo-farn.png.png" alt="FARN" style="width:20px;height:20px;vertical-align:middle;border-radius:50%">
-            FARN - BRASIL
-        </div>
     </div>
+
+    <!-- PORTAL -->
+    <div id="screen-portal">
+
+        <!-- SIDEBAR ESQUERDO -->
+        <aside class="pf-sidebar">
+            <div class="pf-sidebar-header">
+                <img src="logo-farn.png.png" alt="FARN">
+                <h3>Portal do Formado</h3>
+                <p>FARN - BRASIL</p>
+            </div>
+            <nav class="pf-sidebar-nav">
+                <div class="pf-nav-item active" onclick="pfShowSection('noticias', this)">
+                    <i class="fa-solid fa-newspaper"></i><span>Noticias</span>
+                </div>
+                <div class="pf-nav-item" onclick="pfShowSection('chat', this)">
+                    <i class="fa-solid fa-comments"></i><span>Chat do Projeto</span>
+                </div>
+                <div class="pf-nav-item" onclick="pfShowSection('galeria', this)">
+                    <i class="fa-solid fa-images"></i><span>Galeria de Fotos</span>
+                </div>
+                <div class="pf-nav-item" onclick="pfShowSection('meus-dados', this)">
+                    <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
+                </div>
+                <div class="pf-nav-item" onclick="pfShowSection('certificado', this)">
+                    <i class="fa-solid fa-certificate"></i><span>Certificado</span>
+                </div>
+                <div class="pf-nav-item" onclick="pfShowSection('portal-antigo', this)">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Portal do Aluno</span>
+                </div>
+            </nav>
+            <div class="pf-sidebar-footer">
+                <div class="pf-user">
+                    <div class="pf-user-avatar" id="pf-user-avatar">--</div>
+                    <div class="pf-user-info">
+                        <div class="pf-user-name" id="pf-user-name">---</div>
+                        <div class="pf-user-cpf" id="pf-user-cpf">CPF: ---</div>
+                    </div>
+                </div>
+                <button class="pf-logout-btn" onclick="pfLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+            </div>
+        </aside>
+
+        <!-- CENTRO -->
+        <main class="pf-center">
+
+            <!-- NOTICIAS -->
+            <div id="pf-section-noticias" class="pf-section active">
+                <div class="pf-center-header">
+                    <i class="fa-solid fa-newspaper"></i>
+                    <div><h2>Noticias da FARN</h2></div>
+                    <p>Atualizado pelo administrador</p>
+                </div>
+                <div id="pf-noticias-list">
+                    <div class="pf-noticia-empty">
+                        <i class="fa-solid fa-newspaper"></i>
+                        <p>Carregando noticias...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MEUS DADOS -->
+            <div id="pf-section-meus-dados" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-user-pen"></i>
+                    <h2>Meus Dados</h2>
+                </div>
+                <div id="pf-dados-content" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+            </div>
+
+            <!-- CERTIFICADO -->
+            <div id="pf-section-certificado" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-certificate"></i>
+                    <h2>Meu Certificado</h2>
+                </div>
+                <div id="pf-cert-content"></div>
+            </div>
+
+            <!-- PORTAL ANTIGO -->
+            <div id="pf-section-portal-antigo" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <h2>Portal do Aluno</h2>
+                </div>
+                <div style="text-align:center;padding:40px">
+                    <p style="color:#aaa;font-size:14px;margin-bottom:16px">Acesse o Portal do Aluno com suas credenciais antigas</p>
+                    <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f57c00,#ff9800);color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600">
+                        <i class="fa-solid fa-right-to-bracket"></i> Ir para o Portal do Aluno
+                    </a>
+                </div>
+            </div>
+
+            <!-- CONSTRUCAO (para secoes futuras) -->
+            <div id="pf-section-construcao" class="pf-section">
+                <div class="pf-em-construcao">
+                    <i class="fa-solid fa-hard-hat"></i>
+                    <h3>Em Construcao</h3>
+                    <p>Esta funcionalidade esta sendo desenvolvida.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- LATERAL DIREITA -->
+        <aside class="pf-right">
+            <div class="pf-right-tabs">
+                <div class="pf-right-tab active" onclick="pfRightTab('chat', this)">
+                    <i class="fa-solid fa-comments"></i> Chat
+                </div>
+                <div class="pf-right-tab" onclick="pfRightTab('galeria', this)">
+                    <i class="fa-solid fa-images"></i> Galeria
+                </div>
+            </div>
+
+            <!-- PAINEL CHAT -->
+            <div id="pf-right-chat" class="pf-right-panel" style="display:flex">
+                <div class="pf-chat-header">
+                    <h4><i class="fa-solid fa-users" style="margin-right:4px"></i> Chat do Projeto</h4>
+                    <p>Converse com outros formados</p>
+                    <select class="pf-chat-select" id="pf-chat-projeto" onchange="pfChatLoadMessages()">
+                        <option value="">Selecione o projeto...</option>
+                    </select>
+                </div>
+                <div class="pf-chat-messages" id="pf-chat-messages">
+                    <div class="pf-chat-empty">
+                        <i class="fa-solid fa-comment-dots"></i>
+                        <p>Selecione um projeto para ver as mensagens</p>
+                    </div>
+                </div>
+                <div class="pf-chat-input">
+                    <input type="text" id="pf-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')pfChatSend()">
+                    <button class="pf-chat-send" onclick="pfChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+            <!-- PAINEL GALERIA -->
+            <div id="pf-right-galeria" class="pf-right-panel" style="display:none">
+                <div class="pf-chat-header">
+                    <h4><i class="fa-solid fa-images" style="margin-right:4px"></i> Galeria de Fotos</h4>
+                    <p>Fotos atualizadas pelo administrador</p>
+                </div>
+                <div class="pf-right-content">
+                    <div class="pf-gallery-grid" id="pf-gallery-grid">
+                        <div class="pf-gallery-empty">
+                            <i class="fa-solid fa-images"></i>
+                            <p>Nenhuma foto ainda</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MODAL FOTO -->
+    <div id="pf-photo-modal" class="pf-photo-modal" onclick="pfClosePhoto()">
+        <button class="pf-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
+        <img id="pf-photo-modal-img" src="">
+        <div class="pf-photo-modal-info" id="pf-photo-modal-info"></div>
+    </div>
+
+    <script>
+    /* ===== ESTADO ===== */
+    var pfUser = null;
+    var pfChatUnsub = null;
+    var pfGalleryUnsub = null;
+    var pfNoticiasUnsub = null;
+
+    /* ===== FORMATACAO ===== */
+    function pfFormatCPF(input) {
+        var v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        input.value = v;
+    }
+
+    /* ===== LOGIN ===== */
+    async function pfLogin() {
+        var cpf = document.getElementById('pf-cpf').value.replace(/\D/g, '');
+        var senha = document.getElementById('pf-senha').value;
+        var errEl = document.getElementById('pf-login-error');
+        var btn = document.getElementById('pf-login-btn');
+
+        errEl.style.display = 'none';
+        if (!cpf || cpf.length !== 11) { errEl.textContent = 'CPF invalido.'; errEl.style.display = 'block'; return; }
+        if (!senha) { errEl.textContent = 'Informe sua senha.'; errEl.style.display = 'block'; return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
+
+        try {
+            var snap = await dbFirestore.collection('recadastramentos')
+                .where('cpf', '==', cpf)
+                .where('senha', '==', senha)
+                .limit(1)
+                .get();
+
+            if (snap.empty) {
+                errEl.textContent = 'CPF ou senha invalidos.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
+            var doc = snap.docs[0];
+            pfUser = doc.data();
+            pfUser._docId = doc.id;
+
+            document.getElementById('screen-login').style.display = 'none';
+            document.getElementById('screen-portal').classList.add('active');
+
+            var initials = (pfUser.nome || 'FD').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+            document.getElementById('pf-user-avatar').textContent = initials;
+            document.getElementById('pf-user-name').textContent = pfUser.nome || '---';
+            var cpfDisp = pfUser.cpf || '';
+            if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
+
+            pfLoadProjetos();
+            pfLoadNoticias();
+            pfLoadDados();
+            pfLoadCertificado();
+            pfLoadGallery();
+
+        } catch(e) {
+            console.error('Erro login:', e);
+            errEl.textContent = 'Erro ao acessar. Tente novamente.';
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+    }
+
+    function pfLogout() {
+        if (pfChatUnsub) { pfChatUnsub(); pfChatUnsub = null; }
+        if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
+        if (pfNoticiasUnsub) { pfNoticiasUnsub(); pfNoticiasUnsub = null; }
+        document.getElementById('screen-portal').classList.remove('active');
+        document.getElementById('screen-login').style.display = 'flex';
+        document.getElementById('pf-cpf').value = '';
+        document.getElementById('pf-senha').value = '';
+        pfUser = null;
+    }
+
+    /* ===== NAVEGACAO ===== */
+    function pfShowSection(section, el) {
+        document.querySelectorAll('.pf-section').forEach(function(s){ s.classList.remove('active'); });
+        document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
+        if (el) el.classList.add('active');
+
+        if (section === 'chat' || section === 'galeria') {
+            document.getElementById('pf-section-noticias').classList.add('active');
+            if (section === 'chat') pfRightTab('chat', document.querySelector('.pf-right-tab'));
+            else pfRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
+            return;
+        }
+
+        var target = document.getElementById('pf-section-' + section);
+        if (target) target.classList.add('active');
+        else document.getElementById('pf-section-construcao').classList.add('active');
+    }
+
+    function pfRightTab(tab, el) {
+        document.querySelectorAll('.pf-right-tab').forEach(function(t){ t.classList.remove('active'); });
+        if (el) el.classList.add('active');
+        document.getElementById('pf-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
+        document.getElementById('pf-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
+    }
+
+    /* ===== PROJETOS ===== */
+    function pfLoadProjetos() {
+        if (!pfUser || !pfUser.projeto) return;
+        var sel = document.getElementById('pf-chat-projeto');
+        sel.innerHTML = '<option value="' + pfUser.projeto + '">' + pfUser.projeto + '</option>';
+    }
+
+    /* ===== NOTICIAS ===== */
+    function pfLoadNoticias() {
+        var container = document.getElementById('pf-noticias-list');
+        pfNoticiasUnsub = dbFirestore.collection('noticiasFormados').orderBy('data', 'desc').onSnapshot(function(snap) {
+            if (snap.empty) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Nenhuma noticia publicada ainda.</p></div>';
+                return;
+            }
+            container.innerHTML = '';
+            snap.forEach(function(doc) {
+                var n = doc.data();
+                var card = document.createElement('div');
+                card.className = 'pf-noticia-card';
+                var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR') : '';
+                var badgeHtml = n.destaque ? '<span class="pf-noticia-badge">DESTAQUE</span>' : '';
+                var imgHtml = n.imagem ? '<img src="' + n.imagem + '" class="pf-noticia-img" alt="Noticia">' : '';
+                card.innerHTML = '<div class="pf-noticia-header">' + badgeHtml + '<span class="pf-noticia-date">' + dateStr + '</span></div>' +
+                    '<div class="pf-noticia-title">' + (n.titulo || '') + '</div>' +
+                    '<div class="pf-noticia-text">' + (n.texto || '') + '</div>' + imgHtml;
+                container.appendChild(card);
+            });
+        }, function() {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Erro ao carregar noticias.</p></div>';
+        });
+    }
+
+    /* ===== MEUS DADOS ===== */
+    function pfLoadDados() {
+        if (!pfUser) return;
+        var el = document.getElementById('pf-dados-content');
+        var fields = [
+            { label:'Nome', val: pfUser.nome },
+            { label:'CPF', val: pfUser.cpf ? pfUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '' },
+            { label:'Projeto', val: pfUser.projeto },
+            { label:'Email', val: pfUser.email },
+            { label:'WhatsApp', val: pfUser.whatsapp },
+            { label:'Nascimento', val: pfUser.nascimento },
+            { label:'Cidade', val: (pfUser.cidade||'') + (pfUser.estado ? '/' + pfUser.estado : '') },
+            { label:'Endereco', val: (pfUser.endereco||'') + ', ' + (pfUser.numero||'') },
+            { label:'Bairro', val: pfUser.bairro },
+            { label:'Estado Civil', val: pfUser.estadoCivil },
+            { label:'Altura', val: pfUser.altura ? pfUser.altura + ' cm' : '' },
+            { label:'Peso', val: pfUser.peso ? pfUser.peso + ' kg' : '' },
+            { label:'Fator RH', val: pfUser.fatorRh },
+            { label:'Certificado', val: 'Emissao: ' + (pfUser.dataCertificado || '---') }
+        ];
+        el.innerHTML = fields.map(function(f) {
+            return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px">' +
+                '<div style="font-size:11px;color:#888;margin-bottom:4px">' + f.label + '</div>' +
+                '<div style="font-size:14px;font-weight:600;color:#fff">' + (f.val || '---') + '</div></div>';
+        }).join('');
+    }
+
+    /* ===== CERTIFICADO ===== */
+    function pfLoadCertificado() {
+        if (!pfUser) return;
+        var el = document.getElementById('pf-cert-content');
+        var html = '';
+        if (pfUser.status === 'Aprovado') {
+            html = '<div style="text-align:center;padding:20px">' +
+                '<div style="font-size:50px;color:#4caf50;margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>' +
+                '<h3 style="color:#4caf50;margin-bottom:8px">Certificado Aprovado</h3>' +
+                '<p style="color:#aaa;font-size:13px;margin-bottom:16px">Emissao: ' + (pfUser.dataCertificado || '---') + '</p>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+            if (pfUser.certificadoFrente) html += '<div><div style="font-size:12px;color:#888;margin-bottom:6px">Frente</div><img src="' + pfUser.certificadoFrente + '" style="width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.1)"></div>';
+            if (pfUser.certificadoVerso) html += '<div><div style="font-size:12px;color:#888;margin-bottom:6px">Verso</div><img src="' + pfUser.certificadoVerso + '" style="width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.1)"></div>';
+            html += '</div></div>';
+        } else {
+            html = '<div class="pf-em-construcao"><i class="fa-solid fa-hourglass-half"></i><h3>Certificado Pendente</h3><p>Seu certificado ainda esta em analise.</p></div>';
+        }
+        el.innerHTML = html;
+    }
+
+    /* ===== CHAT ===== */
+    function pfChatLoadMessages() {
+        var projeto = document.getElementById('pf-chat-projeto').value;
+        var container = document.getElementById('pf-chat-messages');
+        if (pfChatUnsub) { pfChatUnsub(); pfChatUnsub = null; }
+        if (!projeto) {
+            container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Selecione um projeto</p></div>';
+            return;
+        }
+        container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
+
+        pfChatUnsub = dbFirestore.collection('chatFormados').doc(projeto).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
+            if (snap.empty) {
+                container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Nenhuma mensagem. Envie a primeira!</p></div>';
+                return;
+            }
+            container.innerHTML = '';
+            var cores = ['#f57c00','#2196f3','#4caf50','#e91e63','#9c27b0','#00bcd4','#ff5722'];
+            snap.forEach(function(doc) {
+                var m = doc.data();
+                var isMe = m.cpf === pfUser.cpf;
+                var wrap = document.createElement('div');
+                wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
+                var hash = 0;
+                var name = m.nome || '---';
+                for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
+                var cor = cores[Math.abs(hash) % cores.length];
+                var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:' + cor + '">' + name + '</div>' : '';
+                var imgHtml = m.foto ? '<img src="' + m.foto + '" class="pf-chat-img" onclick="pfOpenPhoto(this.src)">' : '';
+                wrap.innerHTML = senderHtml + '<div>' + (m.texto || '') + '</div>' + imgHtml + '<div class="pf-chat-time">' + time + '</div>';
+                container.appendChild(wrap);
+            });
+            container.scrollTop = container.scrollHeight;
+        }, function() {
+            container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
+        });
+    }
+
+    function pfChatSend() {
+        var input = document.getElementById('pf-chat-input');
+        var texto = input.value.trim();
+        var projeto = document.getElementById('pf-chat-projeto').value;
+        if (!texto || !projeto || !pfUser) return;
+        input.value = '';
+
+        dbFirestore.collection('chatFormados').doc(projeto).collection('msgs').add({
+            texto: texto,
+            cpf: pfUser.cpf,
+            nome: pfUser.nome || 'Formado',
+            hora: firebase.firestore.FieldValue.serverTimestamp(),
+            foto: null
+        }).catch(function(e) { console.error('Erro ao enviar:', e); });
+    }
+
+    /* ===== GALERIA ===== */
+    function pfLoadGallery() {
+        var grid = document.getElementById('pf-gallery-grid');
+        pfGalleryUnsub = dbFirestore.collection('galeriaFormados').orderBy('data', 'desc').onSnapshot(function(snap) {
+            if (snap.empty) {
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+                return;
+            }
+            grid.innerHTML = '';
+            snap.forEach(function(doc) {
+                var g = doc.data();
+                var item = document.createElement('div');
+                item.className = 'pf-gallery-item';
+                item.onclick = function() { pfOpenPhoto(g.url); };
+                var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
+                item.innerHTML = '<img src="' + g.url + '" alt="' + (g.titulo||'') + '">' +
+                    '<div class="pf-gallery-date">' + (g.titulo || '') + (dateStr ? ' - ' + dateStr : '') + '</div>';
+                grid.appendChild(item);
+            });
+        }, function() {
+            grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+        });
+    }
+
+    /* ===== FOTO MODAL ===== */
+    function pfOpenPhoto(src) {
+        document.getElementById('pf-photo-modal-img').src = src;
+        document.getElementById('pf-photo-modal').classList.add('active');
+    }
+    function pfClosePhoto() {
+        document.getElementById('pf-photo-modal').classList.remove('active');
+    }
+    </script>
 </body>
 </html>
