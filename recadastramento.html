@@ -605,6 +605,7 @@
             var sel = document.getElementById('rc-projeto');
             sel.innerHTML = '<option value="">Selecione o projeto...</option>';
             rcProjetos.forEach(function(p) {
+                if ((p.nome || '').toLowerCase().includes('buenos aires')) return;
                 var opt = document.createElement('option');
                 opt.value = p.nome;
                 opt.textContent = p.nome;
