@@ -233,7 +233,7 @@ async function recadUpdateStatus(docId, newStatus) {
             if (r) {
                 var cpf = (r.cpf || '').replace(/\D/g, '');
                 var ultimos5 = cpf.slice(-5);
-                var ano = new Date().getFullYear();
+                var ano = r.dataCertificado ? new Date(r.dataCertificado).getFullYear() : new Date().getFullYear();
                 updateData.matricula = ano + ultimos5;
             }
         }
