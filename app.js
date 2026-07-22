@@ -3065,8 +3065,9 @@ async function handleProjetoSubmit(event) {
     const nome = document.getElementById('pf-nome').value.trim();
     const cnpj = document.getElementById('pf-cnpj').value.trim();
     const responsavel = document.getElementById('pf-responsavel').value.trim();
+    const statusProjeto = document.getElementById('pf-status').value;
     if (!nome) { alert('Nome do projeto e obrigatorio.'); return false; }
-    const data = { nome, cnpj, responsavel, turmas: projetoTurmasTemp.map(t => t.nome) };
+    const data = { nome, cnpj, responsavel, status: statusProjeto, turmas: projetoTurmasTemp.map(t => t.nome) };
     try {
         if (editingProjetoIndex !== null) {
             const old = projetos[editingProjetoIndex];
@@ -3113,12 +3114,16 @@ function renderProjetosList() {
         return;
     }
     if (empty) empty.style.display = 'none';
-    let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
+    let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Status</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
     projetos.forEach((p, i) => {
+        const statusColor = p.status === 'Concluido' ? '#2196f3' : '#4caf50';
+        const statusBg = p.status === 'Concluido' ? 'rgba(33,150,243,.15)' : 'rgba(76,175,80,.15)';
+        const statusLabel = p.status === 'Concluido' ? 'Concluido' : 'Em Andamento';
         html += `<tr>
             <td>${p.nome || '---'}</td>
             <td>${p.cnpj || '---'}</td>
             <td>${p.responsavel || '---'}</td>
+            <td><span style="background:${statusBg};color:${statusColor};padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">${statusLabel}</span></td>
             <td>${p.dataCadastro || '---'}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon" title="Editar" onclick="editProjeto(${i})"><i class="fa-solid fa-pen"></i></button>
@@ -3137,6 +3142,7 @@ function editProjeto(i) {
     document.getElementById('pf-nome').value = p.nome || '';
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
+    document.getElementById('pf-status').value = p.status || 'Em Andamento';
     projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '' }));
     projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
