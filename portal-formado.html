@@ -579,14 +579,17 @@
             projeto: pfUser.projeto || '',
             ultimaMsg: texto,
             ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
-            tipo: 'formado'
+            tipo: 'formado',
+            ultimaRemetente: 'aluno',
+            naoLidas: firebase.firestore.FieldValue.increment(1)
         }, { merge: true }).then(function() {
             return dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').add({
                 texto: texto,
                 remetente: 'aluno',
                 nome: pfUser.nome || 'Formado',
                 cpf: pfUser.cpf,
-                hora: firebase.firestore.FieldValue.serverTimestamp()
+                hora: firebase.firestore.FieldValue.serverTimestamp(),
+                lida: false
             });
         }).catch(function(e) { console.error('Erro ao enviar:', e); });
     }

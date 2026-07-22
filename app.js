@@ -674,6 +674,7 @@ function enterAdminPanel() {
     populateTurmaSelect();
     populateProjetoSelect();
     renderList();
+    if (typeof chatPortaisStartNotifListener === 'function') chatPortaisStartNotifListener();
 }
 
 function applyUserPermissions() {
@@ -715,6 +716,8 @@ function applyUserPermissions() {
 }
 
 function handleLogout() {
+    if (typeof chatPortaisNotifUnsub !== 'undefined' && chatPortaisNotifUnsub) { chatPortaisNotifUnsub(); chatPortaisNotifUnsub = null; }
+    if (typeof chatPortaisUnsub !== 'undefined' && chatPortaisUnsub) { chatPortaisUnsub(); chatPortaisUnsub = null; }
     document.getElementById('screen-admin').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -770,6 +773,7 @@ function logoutPortal() {
     portalFoto3x4StopCamera();
     if (portalGalleryUnsub) { portalGalleryUnsub(); portalGalleryUnsub = null; }
     if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; chatConversations = {}; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; } }
+    if (typeof chatPortaisNotifUnsub !== 'undefined' && chatPortaisNotifUnsub) { chatPortaisNotifUnsub(); chatPortaisNotifUnsub = null; }
     document.getElementById('screen-portal').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('cpf').value = '';
@@ -1197,7 +1201,8 @@ function portalChatSend() {
         remetente: 'aluno',
         nome: currentAluno.nome || 'Aluno',
         cpf: currentAluno.cpf,
-        hora: firebase.firestore.FieldValue.serverTimestamp()
+        hora: firebase.firestore.FieldValue.serverTimestamp(),
+        lida: false
     };
 
     col.add(msgData).then(function() {
@@ -1207,7 +1212,9 @@ function portalChatSend() {
             projeto: currentAluno.projeto || currentAluno.turma || '',
             ultimaMsg: texto,
             ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
-            tipo: 'aluno'
+            tipo: 'aluno',
+            ultimaRemetente: 'aluno',
+            naoLidas: firebase.firestore.FieldValue.increment(1)
         }, { merge: true });
     }).catch(function(e) { console.error('Erro ao enviar:', e); });
 }

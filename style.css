@@ -622,6 +622,27 @@ body {
 
 .nav-item i { width: 20px; text-align: center; font-size: 16px; }
 
+.chat-badge {
+    background: #f44336;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 0 5px;
+    animation: chatPulse 2s infinite;
+}
+
+@keyframes chatPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244,67,54,0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(244,67,54,0); }
+}
+
 .sidebar-footer {
     padding: 16px 12px;
     border-top: 1px solid #1a1a1a;
