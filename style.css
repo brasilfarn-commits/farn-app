@@ -2300,6 +2300,7 @@ select.config-input option {
 
 .portal-container {
     height: 100vh;
+    width: 100%;
     background: linear-gradient(145deg, #f8f9fb 0%, #f0f2f5 30%, #e8ecef 60%, #f5f6f8 100%);
     display: flex;
     flex-direction: column;
