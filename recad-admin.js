@@ -156,7 +156,7 @@ function recadViewDetail(docId) {
 
     html += detailSection('fa-folder-open', 'Projeto', [
         { label: 'Projeto', val: r.projeto },
-        { label: 'Matricula', val: r.matricula || '---' }
+        { label: 'Matricula', val: r.matricula || (r.status === 'Ativo' ? 'Gerando...' : '---') }
     ]);
 
     html += detailSection('fa-user', 'Dados Pessoais', [
@@ -226,13 +226,32 @@ async function recadUpdateStatus(docId, newStatus) {
     var msg = newStatus === 'Ativo' ? 'Ativar' : newStatus === 'Rejeitado' ? 'Rejeitar' : 'Marcar como Pendente';
     if (!confirm(msg + ' este recadastramento?')) return;
     try {
-        await dbFirestore.collection('recadastramentos').doc(docId).update({ status: newStatus });
-        var r = recadData.find(function(x) { return x._docId === docId; });
-        if (r) r.status = newStatus;
+        var updateData = { status: newStatus };
+
+        if (newStatus === 'Ativo') {
+            var r = recadData.find(function(x) { return x._docId === docId; });
+            if (r) {
+                var cpf = (r.cpf || '').replace(/\D/g, '');
+                var ultimos5 = cpf.slice(-5);
+                var anoCert = '';
+                if (r.dataCertificado) {
+                    var d = new Date(r.dataCertificado);
+                    if (!isNaN(d.getTime())) anoCert = d.getFullYear().toString();
+                }
+                if (!anoCert) anoCert = new Date().getFullYear().toString();
+                var matriculaGerada = anoCert + '.' + ultimos5;
+                updateData.matricula = matriculaGerada;
+                r.matricula = matriculaGerada;
+            }
+        }
+
+        await dbFirestore.collection('recadastramentos').doc(docId).update(updateData);
+        var r2 = recadData.find(function(x) { return x._docId === docId; });
+        if (r2) r2.status = newStatus;
         recadRenderTable();
         recadUpdateCounts();
         recadViewDetail(docId);
-        alert('Status atualizado com sucesso!');
+        alert('Status atualizado com sucesso!' + (newStatus === 'Ativo' && updateData.matricula ? '\nMatricula gerada: ' + updateData.matricula : ''));
     } catch (e) {
         console.error('Erro ao atualizar status:', e);
         alert('Erro ao atualizar status: ' + e.message);
