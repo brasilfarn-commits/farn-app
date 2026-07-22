@@ -752,13 +752,13 @@
             var aprovadoMsg = document.getElementById('rc-status-aprovado-msg');
             aprovadoMsg.style.display = 'none';
 
-            if (r.status === 'Aprovado') {
+            if (r.status === 'Ativo') {
                 icon.classList.add('aprovado');
                 iconI.className = 'fa-solid fa-check';
-                label.textContent = 'PARABENS! Seu cadastro foi APROVADO!';
+                label.textContent = 'PARABENS! Seu cadastro foi ATIVADO!';
                 label.style.color = '#4caf50';
                 aprovadoMsg.style.display = 'block';
-                aprovadoMsg.innerHTML = '<p style="margin:0 0 10px;color:#4caf50;font-weight:700;font-size:14px"><i class="fa-solid fa-party-horn" style="margin-right:4px"></i> PARABENS, SEU CADASTRO FOI APROVADO!</p>' +
+                aprovadoMsg.innerHTML = '<p style="margin:0 0 10px;color:#4caf50;font-weight:700;font-size:14px"><i class="fa-solid fa-party-horn" style="margin-right:4px"></i> PARABENS, SEU CADASTRO FOI ATIVADO!</p>' +
                     '<p style="margin:0 0 8px">Agora aguarde o prazo de ate <strong style="color:#4caf50">20 dias</strong> e voce recebera seu novo certificado em seu <strong>email cadastrado</strong>.</p>' +
                     '<p style="margin:0 0 8px">Voce agora faz parte da <strong style="color:#f57c00">FAMILIA FARN</strong> (Forca Auxiliar de Resgate Nacional). Somos a instituicao que mais representa os profissionais de urgencia e emergencia do Brasil.</p>' +
                     '<p style="margin:0 0 8px">Com seu <strong>CPF</strong> e <strong>senha</strong> voce tera acesso ao <strong style="color:#2196f3">Portal do Formado</strong> onde iremos sempre lhe atualizar das novidades.</p>' +

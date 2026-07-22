@@ -1011,24 +1011,8 @@ function portalChatInit() {
 function portalChatShowMain() {
     chatView = 'main';
     chatPrivateTarget = null;
-    portalChatCancelEdit();
-    portalChatRemovePhoto();
-    if (chatRecording) portalChatCancelRecording();
     if (chatUnsub) { chatUnsub(); chatUnsub = null; }
-    document.getElementById('wa-main-header').style.display = '';
-    document.getElementById('wa-conversations-panel').style.display = '';
-    document.getElementById('wa-chat-view').style.display = 'none';
-    document.getElementById('wa-contacts-panel').style.display = 'none';
-    document.getElementById('wa-emoji-picker').style.display = 'none';
-    var micBtn = document.getElementById('portal-chat-mic-btn');
-    var sendBtn = document.getElementById('portal-chat-send-btn');
-    if (micBtn) micBtn.style.display = '';
-    if (sendBtn) sendBtn.style.display = 'none';
-    portalChatLoadAllConversations();
-    if (chatConvRefreshInterval) clearInterval(chatConvRefreshInterval);
-    chatConvRefreshInterval = setInterval(function() {
-        if (chatView === 'main') portalChatLoadAllConversations();
-    }, 20000);
+    portalChatListen();
 }
 
 function portalChatOpenGroup() {
@@ -1081,12 +1065,8 @@ function portalChatBackToMain() {
 }
 
 function portalChatGetCurrentCol() {
-    if (chatView === 'turma') return dbFirestore.collection('chatSala');
-    if (chatView === 'privado' && chatPrivateTarget) {
-        var chatId = [currentAluno.cpf, chatPrivateTarget.cpf].sort().join('_');
-        return dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs');
-    }
-    return null;
+    if (!currentAluno || !currentAluno.cpf) return null;
+    return dbFirestore.collection('chatAdmin').doc(currentAluno.cpf).collection('msgs');
 }
 
 function portalChatListen() {
@@ -1098,9 +1078,6 @@ function portalChatListen() {
     chatUnsub = col.orderBy('hora').onSnapshot(function(snap) {
         var msgs = [];
         snap.forEach(function(doc) { msgs.push(Object.assign({ _id: doc.id }, doc.data())); });
-        var statusEl = document.getElementById('wa-chat-status');
-        if (statusEl && chatView === 'turma') statusEl.textContent = msgs.length > 0 ? msgs.length + ' participantes' : 'online';
-        if (statusEl && chatView === 'privado') statusEl.textContent = msgs.length > 0 ? msgs.length + ' mensagens' : 'online';
         portalChatRender(msgs);
     }, function() {
         container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon" style="background:#fef0f0;color:#e53935"><i class="fa-solid fa-triangle-exclamation"></i></div><p>Erro ao carregar.</p></div>';
@@ -1110,14 +1087,12 @@ function portalChatListen() {
 function portalChatRender(msgs) {
     var container = document.getElementById('portal-chat-messages');
     if (msgs.length === 0) {
-        var emptyMsg = chatView === 'turma' ? 'Nenhuma mensagem no grupo.' : 'Nenhuma mensagem ainda. Comece a conversar!';
-        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-comment-dots"></i></div><p>' + emptyMsg + '</p></div>';
+        container.innerHTML = '<div class="wa-empty"><div class="wa-empty-icon"><i class="fa-solid fa-comment-dots"></i></div><p>Envie sua mensagem para a equipe FARN</p></div>';
         return;
     }
     var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 60;
     container.innerHTML = '';
     var lastDate = '';
-    var showSender = chatView === 'turma';
     msgs.forEach(function(m) {
         var dt = m.hora && m.hora.seconds ? new Date(m.hora.seconds * 1000) : new Date();
         var dateStr = dt.toLocaleDateString('pt-BR');
@@ -1128,190 +1103,27 @@ function portalChatRender(msgs) {
             divider.innerHTML = '<span>' + dateStr + '</span>';
             container.appendChild(divider);
         }
-        var isMe = m.cpf === currentAluno.cpf;
+        var isMe = m.remetente === 'aluno';
         var wrap = document.createElement('div');
         wrap.className = 'wa-bubble-wrap' + (isMe ? ' me' : ' other');
-        var isDeletedForMe = Array.isArray(m.deletedFor) && m.deletedFor.includes(currentAluno.cpf);
-        if (m.excluido || isDeletedForMe) {
-            var senderHtml2 = '';
-            if (showSender && !isMe) {
-                var cores2 = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
-                var hash2 = 0;
-                var nm2 = m.remetente || 'Aluno';
-                for (var ii = 0; ii < nm2.length; ii++) hash2 = ((hash2 << 5) - hash2) + nm2.charCodeAt(ii);
-                senderHtml2 = '<div class="wa-sender-name" style="color:' + cores2[Math.abs(hash2) % cores2.length] + '">' + nm2 + '</div>';
-            }
-            wrap.innerHTML = senderHtml2 + '<div class="wa-bubble deleting"><div class="wa-deleted-msg"><i class="fa-solid fa-ban"></i> <em>Mensagem apagada</em></div></div>';
-            container.appendChild(wrap);
-            return;
-        }
         var senderHtml = '';
-        if (showSender && !isMe) {
-            var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
-            var hash = 0;
-            var name = m.remetente || 'Aluno';
-            for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
-            var cor = cores[Math.abs(hash) % cores.length];
-            senderHtml = '<div class="wa-sender-name" style="color:' + cor + '">' + name + '</div>';
+        if (!isMe) {
+            senderHtml = '<div class="wa-sender-name" style="color:#f57c00">Administracao FARN</div>';
         }
         var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        var checksHtml = isMe ? '<span class="wa-checks"><i class="fa-solid fa-check-double"></i></span>' : '';
-        var editedHtml = m.editado ? '<span class="wa-edited-label"> editado</span>' : '';
         var bodyHtml = '';
-        if (m.fotoDataUrl) {
-            if (m.viewOnce && !isMe) {
-                var vid = m._id || ('vo_' + Math.random());
-                if (!m._viewOnceOpened) {
-                    bodyHtml = '<div class="wa-photo-viewonce" onclick="portalChatOpenViewOnce(this, \'' + vid + '\')"><i class="fa-solid fa-eye"></i><span>Toque para ver</span></div>';
-                } else {
-                    bodyHtml = '<div class="wa-photo-viewonce opened"><i class="fa-solid fa-eye-slash"></i><span>Visualizado</span></div>';
-                }
-            } else {
-                bodyHtml = '<div class="wa-photo-bubble"><img src="' + m.fotoDataUrl + '" onclick="portalChatExpandPhoto(this.src)"></div>';
-            }
-            if (m.viewOnce) bodyHtml += '<div class="wa-viewonce-badge"><i class="fa-solid fa-eye-slash"></i> 1 vez</div>';
-        }
-        if (m.audioDataUrl) {
-            var criadoEm = m.hora && m.hora.seconds ? m.hora.seconds * 1000 : Date.now();
-            var expirado = (Date.now() - criadoEm) > 300000;
-            if (expirado) {
-                bodyHtml += '<div class="wa-audio-expired"><i class="fa-solid fa-clock-rotate-left"></i> Audio expirado</div>';
-            } else {
-                var aId = m.audioId || ('au_' + Math.random());
-                var dur = m.audioDuracao || 0;
-                var waveCount = Math.max(12, Math.min(30, Math.floor(dur * 1.5)));
-                bodyHtml += '<div class="wa-audio-bubble" data-audioid="' + aId + '" data-criado="' + criadoEm + '">' +
-                    '<audio id="audio_' + aId + '" src="' + m.audioDataUrl + '" preload="auto"></audio>' +
-                    '<div class="wa-audio-player"><button class="wa-audio-play" onclick="portalChatPlayAudio(\'' + aId + '\', this)"><i class="fa-solid fa-play"></i></button>' +
-                    '<div class="wa-audio-track"><div class="wa-audio-wave">' + portalChatGenWaveform(waveCount) + '</div><div class="wa-audio-time">' + portalChatFormatTime(dur) + '</div></div></div></div>';
-            }
-        }
         if (m.texto) bodyHtml += '<span class="wa-text">' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-        wrap.innerHTML = senderHtml + '<div class="wa-bubble" data-msgid="' + (m._id || '') + '" data-cpf="' + (m.cpf || '') + '" data-texto="' + (m.texto || '').replace(/"/g, '&quot;') + '">' + bodyHtml + '<span class="wa-meta"><span class="wa-time">' + time + '</span>' + editedHtml + checksHtml + '</span></div>';
+        wrap.innerHTML = senderHtml + '<div class="wa-bubble">' + bodyHtml + '<span class="wa-meta"><span class="wa-time">' + time + '</span></span></div>';
         container.appendChild(wrap);
     });
     if (wasAtBottom) container.scrollTop = container.scrollHeight;
 }
 
 function portalChatLoadAllConversations() {
-    if (!currentAluno) return;
-    var list = document.getElementById('wa-conversations-list');
-    list.innerHTML = '<div class="wa-conv-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
-    dbFirestore.collection('chatSala').orderBy('hora', 'desc').limit(1).get().then(function(snap) {
-        var lastGroup = null;
-        snap.forEach(function(doc) { lastGroup = doc.data(); });
-        if (lastGroup) {
-            chatConversations['_group'] = {
-                cpf: '_group', nome: 'Chat da Turma', cor: '#008069', initials: 'CT',
-                lastMsg: lastGroup.texto || (lastGroup.audioDataUrl ? 'Audio' : lastGroup.fotoDataUrl ? 'Foto' : ''),
-                lastTime: lastGroup.hora && lastGroup.hora.seconds ? lastGroup.hora.seconds : 0,
-                isMe: lastGroup.cpf === currentAluno.cpf,
-                isGroup: true
-            };
-        } else {
-            delete chatConversations['_group'];
-        }
-    }).catch(function() {
-        delete chatConversations['_group'];
-    }).then(function() {
-        var myCpf = (currentAluno.cpf || '').replace(/\D/g, '');
-        var approved = candidatos.filter(function(c) {
-            var candCpf = (c.cpf || '').replace(/\D/g, '');
-            return candCpf !== myCpf && (c.status === 'aprovado' || c.status === 'Aprovado');
-        });
-        if (currentAluno.cpf !== ADMIN_CPF) {
-            approved.push({ cpf: ADMIN_CPF, nome: 'Administrador Geral', matricula: 'ADMIN' });
-        }
-        if (approved.length === 0) { portalChatRenderConversations(); return; }
-        var loaded = 0;
-        var total = approved.length;
-        approved.forEach(function(c) {
-            var chatId = [currentAluno.cpf, c.cpf].sort().join('_');
-            dbFirestore.collection('chatPrivado').doc(chatId).collection('msgs').orderBy('hora', 'desc').limit(1).get().then(function(snap2) {
-                var nome = c.nome || 'Aluno';
-                var hash = 0;
-                for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
-                var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
-                var cor = cores[Math.abs(hash) % cores.length];
-                var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
-                var lastMsg = null;
-                snap2.forEach(function(doc) { lastMsg = doc.data(); });
-                chatConversations[c.cpf] = {
-                    cpf: c.cpf, nome: nome, cor: cor, initials: initials,
-                    matricula: c.matricula || '',
-                    lastMsg: lastMsg ? (lastMsg.texto || (lastMsg.audioDataUrl ? 'Audio' : lastMsg.fotoDataUrl ? 'Foto' : '')) : '',
-                    lastTime: lastMsg && lastMsg.hora && lastMsg.hora.seconds ? lastMsg.hora.seconds : 0,
-                    isMe: lastMsg ? lastMsg.cpf === currentAluno.cpf : false
-                };
-                loaded++;
-                if (loaded >= total) portalChatRenderConversations();
-            }).catch(function() {
-                var nome2 = c.nome || 'Aluno';
-                var hash2 = 0;
-                for (var j = 0; j < nome2.length; j++) hash2 = ((hash2 << 5) - hash2) + nome2.charCodeAt(j);
-                var cor2 = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'][Math.abs(hash2) % 7];
-                chatConversations[c.cpf] = {
-                    cpf: c.cpf, nome: nome2, cor: cor2, initials: nome2.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase(),
-                    lastMsg: '', lastTime: 0
-                };
-                loaded++;
-                if (loaded >= total) portalChatRenderConversations();
-            });
-        });
-    });
+    portalChatListen();
 }
 
-function portalChatRenderConversations() {
-    var list = document.getElementById('wa-conversations-list');
-    var group = chatConversations['_group'];
-    var myCpf2 = (currentAluno.cpf || '').replace(/\D/g, '');
-    var privates = Object.values(chatConversations).filter(function(c) {
-        return c.cpf !== '_group' && c.lastMsg && (c.cpf || '').replace(/\D/g, '') !== myCpf2;
-    });
-    privates.sort(function(a, b) { return (b.lastTime || 0) - (a.lastTime || 0); });
-    var sorted = privates;
-    list.innerHTML = '';
-    if (group) {
-        var gTimeStr = '';
-        if (group.lastTime) {
-            var gd = new Date(group.lastTime * 1000);
-            var now = new Date();
-            gTimeStr = gd.toDateString() === now.toDateString() ? gd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : gd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        }
-        var gBadgeHtml = (!group.isMe && group.lastMsg) ? '<span class="wa-conv-badge">1</span>' : '';
-        var gItem = document.createElement('div');
-        gItem.className = 'wa-conv-item';
-        gItem.innerHTML = '<div class="wa-conv-avatar" style="background:#d9fdd3"><i class="fa-solid fa-users" style="color:#008069;font-size:18px"></i></div><div class="wa-conv-info"><div class="wa-conv-top"><span class="wa-conv-name">Chat da Turma</span><span class="wa-conv-time">' + gTimeStr + '</span></div><div class="wa-conv-bottom"><span class="wa-conv-last">' + (group.lastMsg || 'Nenhuma mensagem') + '</span>' + gBadgeHtml + '</div></div>';
-        gItem.onclick = function() { portalChatOpenGroup(); };
-        list.appendChild(gItem);
-    }
-    sorted.forEach(function(c) {
-        var timeStr = '';
-        if (c.lastTime) {
-            var d = new Date(c.lastTime * 1000);
-            var now2 = new Date();
-            timeStr = d.toDateString() === now2.toDateString() ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        }
-        var prefix = c.isMe ? 'Voce: ' : '';
-        var lastText = c.lastMsg ? prefix + c.lastMsg : 'Toque para conversar';
-        var badgeHtml = (!c.isMe && c.lastMsg) ? '<span class="wa-conv-badge">1</span>' : '';
-        var item = document.createElement('div');
-        item.className = 'wa-conv-item';
-        item.setAttribute('data-nome', (c.nome || '').toLowerCase());
-        item.innerHTML = '<div class="wa-conv-avatar" style="background:' + c.cor + '">' + c.initials + '</div><div class="wa-conv-info"><div class="wa-conv-top"><span class="wa-conv-name">' + c.nome + '</span><span class="wa-conv-time">' + timeStr + '</span></div><div class="wa-conv-bottom"><span class="wa-conv-last">' + lastText + '</span>' + badgeHtml + '</div></div>';
-        item.onclick = function() {
-            var fullCand = candidatos.find(function(x) { return x.cpf === c.cpf; });
-            if (!fullCand && c.cpf === ADMIN_CPF) {
-                fullCand = { cpf: ADMIN_CPF, nome: 'Administrador Geral', matricula: 'ADMIN' };
-            }
-            if (fullCand) portalChatOpenPrivate(fullCand);
-        };
-        list.appendChild(item);
-    });
-    if (list.children.length === 0) {
-        list.innerHTML = '<div class="wa-conv-empty"><div class="wa-conv-empty-icon"><i class="fa-solid fa-comment-dots"></i></div><p>Selecione um contato para iniciar uma conversa</p></div>';
-    }
-}
+function portalChatRenderConversations() {}
 
 function portalChatLoadContacts() {
     if (!currentAluno) return;
@@ -1366,54 +1178,36 @@ function portalChatDeleteAll() {
 var portalChatInput = null;
 function portalChatSetupInput() {
     portalChatInput = document.getElementById('portal-chat-input');
-    var micBtn = document.getElementById('portal-chat-mic-btn');
-    var sendBtn = document.getElementById('portal-chat-send-btn');
-    if (!portalChatInput || !micBtn || !sendBtn) return;
-    portalChatInput.addEventListener('input', function() {
-        if (portalChatInput.value.trim() || chatPendingPhoto) {
-            micBtn.style.display = 'none';
-            sendBtn.style.display = '';
-        } else {
-            micBtn.style.display = '';
-            sendBtn.style.display = 'none';
-        }
-    });
 }
 
 function portalChatSend() {
     if (!currentAluno) return;
     var input = document.getElementById('portal-chat-input');
     var texto = input.value.trim();
+    if (!texto) return;
+    input.value = '';
+
     var col = portalChatGetCurrentCol();
     if (!col) return;
 
-    if (chatEditingMsg) {
-        if (!texto) return;
-        col.doc(chatEditingMsg._id).update({ texto: texto, editado: true }).then(function() {
-            portalChatCancelEdit();
-        }).catch(function(e) { alert('Erro ao editar: ' + e.message); });
-        return;
-    }
-
-    if (!texto && !chatPendingPhoto) return;
-    input.value = '';
-    var micBtn = document.getElementById('portal-chat-mic-btn');
-    var sendBtn = document.getElementById('portal-chat-send-btn');
-    if (micBtn) micBtn.style.display = '';
-    if (sendBtn) sendBtn.style.display = 'none';
-
-    var msg = {
-        texto: texto || '',
-        remetente: currentAluno.nome || currentAluno.cpf || 'Aluno',
+    var msgData = {
+        texto: texto,
+        remetente: 'aluno',
+        nome: currentAluno.nome || 'Aluno',
         cpf: currentAluno.cpf,
-        hora: new Date()
+        hora: firebase.firestore.FieldValue.serverTimestamp()
     };
-    if (chatPendingPhoto) {
-        msg.fotoDataUrl = chatPendingPhoto;
-        msg.viewOnce = document.getElementById('wa-viewonce-check') ? document.getElementById('wa-viewonce-check').checked : false;
-        portalChatRemovePhoto();
-    }
-    col.add(msg).catch(function(err) { alert('Erro ao enviar: ' + err.message); });
+
+    col.add(msgData).then(function() {
+        return dbFirestore.collection('chatAdmin').doc(currentAluno.cpf).set({
+            cpf: currentAluno.cpf,
+            nome: currentAluno.nome || 'Aluno',
+            projeto: currentAluno.projeto || currentAluno.turma || '',
+            ultimaMsg: texto,
+            ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
+            tipo: 'aluno'
+        }, { merge: true });
+    }).catch(function(e) { console.error('Erro ao enviar:', e); });
 }
 
 function portalChatSetupContextMenu() {
@@ -2130,7 +1924,7 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     if (sectionId === 'admin-disciplinas') {
         carregarDisciplinas().then(() => carregarAulas()).then(() => disciplinaRenderList());

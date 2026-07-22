@@ -297,16 +297,13 @@
             <!-- PAINEL CHAT -->
             <div id="pf-right-chat" class="pf-right-panel" style="display:flex">
                 <div class="pf-chat-header">
-                    <h4><i class="fa-solid fa-users" style="margin-right:4px"></i> Chat do Projeto</h4>
-                    <p>Converse com outros formados</p>
-                    <select class="pf-chat-select" id="pf-chat-projeto" onchange="pfChatLoadMessages()">
-                        <option value="">Selecione o projeto...</option>
-                    </select>
+                    <h4><i class="fa-solid fa-headset" style="margin-right:4px"></i> Chat com a Administracao</h4>
+                    <p>Tire duvidas e envie mensagens</p>
                 </div>
                 <div class="pf-chat-messages" id="pf-chat-messages">
                     <div class="pf-chat-empty">
                         <i class="fa-solid fa-comment-dots"></i>
-                        <p>Selecione um projeto para ver as mensagens</p>
+                        <p>Envie sua mensagem para a equipe FARN</p>
                     </div>
                 </div>
                 <div class="pf-chat-input">
@@ -400,11 +397,11 @@
             if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
 
-            pfLoadProjetos();
             pfLoadNoticias();
             pfLoadDados();
             pfLoadCertificado();
             pfLoadGallery();
+            pfChatLoadMessages();
 
         } catch(e) {
             console.error('Erro login:', e);
@@ -449,13 +446,6 @@
         if (el) el.classList.add('active');
         document.getElementById('pf-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
         document.getElementById('pf-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
-    }
-
-    /* ===== PROJETOS ===== */
-    function pfLoadProjetos() {
-        if (!pfUser || !pfUser.projeto) return;
-        var sel = document.getElementById('pf-chat-projeto');
-        sel.innerHTML = '<option value="' + pfUser.projeto + '">' + pfUser.projeto + '</option>';
     }
 
     /* ===== NOTICIAS ===== */
@@ -516,7 +506,7 @@
         if (!pfUser) return;
         var el = document.getElementById('pf-cert-content');
         var html = '';
-        if (pfUser.status === 'Aprovado') {
+        if (pfUser.status === 'Ativo') {
             html = '<div style="text-align:center;padding:20px">' +
                 '<div style="font-size:50px;color:#4caf50;margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>' +
                 '<h3 style="color:#4caf50;margin-bottom:8px">Certificado Aprovado</h3>' +
@@ -531,37 +521,27 @@
         el.innerHTML = html;
     }
 
-    /* ===== CHAT ===== */
+    /* ===== CHAT 1:1 COM ADMIN ===== */
     function pfChatLoadMessages() {
-        var projeto = document.getElementById('pf-chat-projeto').value;
+        if (!pfUser || !pfUser.cpf) return;
         var container = document.getElementById('pf-chat-messages');
         if (pfChatUnsub) { pfChatUnsub(); pfChatUnsub = null; }
-        if (!projeto) {
-            container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Selecione um projeto</p></div>';
-            return;
-        }
         container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
 
-        pfChatUnsub = dbFirestore.collection('chatFormados').doc(projeto).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
+        pfChatUnsub = dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
             if (snap.empty) {
-                container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Nenhuma mensagem. Envie a primeira!</p></div>';
+                container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
                 return;
             }
             container.innerHTML = '';
-            var cores = ['#f57c00','#2196f3','#4caf50','#e91e63','#9c27b0','#00bcd4','#ff5722'];
             snap.forEach(function(doc) {
                 var m = doc.data();
-                var isMe = m.cpf === pfUser.cpf;
+                var isMe = m.remetente === 'aluno';
                 var wrap = document.createElement('div');
                 wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
-                var hash = 0;
-                var name = m.nome || '---';
-                for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
-                var cor = cores[Math.abs(hash) % cores.length];
                 var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:' + cor + '">' + name + '</div>' : '';
-                var imgHtml = m.foto ? '<img src="' + m.foto + '" class="pf-chat-img" onclick="pfOpenPhoto(this.src)">' : '';
-                wrap.innerHTML = senderHtml + '<div>' + (m.texto || '') + '</div>' + imgHtml + '<div class="pf-chat-time">' + time + '</div>';
+                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#f57c00">Administracao FARN</div>' : '';
+                wrap.innerHTML = senderHtml + '<div>' + (m.texto || '') + '</div><div class="pf-chat-time">' + time + '</div>';
                 container.appendChild(wrap);
             });
             container.scrollTop = container.scrollHeight;
@@ -573,16 +553,24 @@
     function pfChatSend() {
         var input = document.getElementById('pf-chat-input');
         var texto = input.value.trim();
-        var projeto = document.getElementById('pf-chat-projeto').value;
-        if (!texto || !projeto || !pfUser) return;
+        if (!texto || !pfUser) return;
         input.value = '';
 
-        dbFirestore.collection('chatFormados').doc(projeto).collection('msgs').add({
-            texto: texto,
+        dbFirestore.collection('chatAdmin').doc(pfUser.cpf).set({
             cpf: pfUser.cpf,
             nome: pfUser.nome || 'Formado',
-            hora: firebase.firestore.FieldValue.serverTimestamp(),
-            foto: null
+            projeto: pfUser.projeto || '',
+            ultimaMsg: texto,
+            ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
+            tipo: 'formado'
+        }, { merge: true }).then(function() {
+            return dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').add({
+                texto: texto,
+                remetente: 'aluno',
+                nome: pfUser.nome || 'Formado',
+                cpf: pfUser.cpf,
+                hora: firebase.firestore.FieldValue.serverTimestamp()
+            });
         }).catch(function(e) { console.error('Erro ao enviar:', e); });
     }
 

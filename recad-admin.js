@@ -65,8 +65,8 @@ function recadRenderTable() {
         if (cpf.length === 11) cpf = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         var cidadeUf = (r.cidade || '') + (r.estado ? '/' + r.estado : '');
         var dataEnvio = r.dataHoraCadastro ? new Date(r.dataHoraCadastro).toLocaleDateString('pt-BR') : '---';
-        var statusColor = r.status === 'Aprovado' ? '#4caf50' : r.status === 'Rejeitado' ? '#f44336' : '#ffc107';
-        var statusBg = r.status === 'Aprovado' ? 'rgba(76,175,80,.15)' : r.status === 'Rejeitado' ? 'rgba(244,67,54,.15)' : 'rgba(255,193,7,.15)';
+        var statusColor = r.status === 'Ativo' ? '#4caf50' : r.status === 'Rejeitado' ? '#f44336' : '#ffc107';
+        var statusBg = r.status === 'Ativo' ? 'rgba(76,175,80,.15)' : r.status === 'Rejeitado' ? 'rgba(244,67,54,.15)' : 'rgba(255,193,7,.15)';
         var docId = r._docId;
         return '<tr>' +
             '<td style="font-weight:600">' + (r.nome || '---') + '</td>' +
@@ -104,7 +104,7 @@ function recadPopulateProjectFilter() {
 function recadUpdateCounts() {
     var total = recadData.length;
     var pendentes = recadData.filter(function(r) { return r.status === 'Pendente'; }).length;
-    var aprovados = recadData.filter(function(r) { return r.status === 'Aprovado'; }).length;
+    var aprovados = recadData.filter(function(r) { return r.status === 'Ativo'; }).length;
     var rejeitados = recadData.filter(function(r) { return r.status === 'Rejeitado'; }).length;
     var elTotal = document.getElementById('rc-total-count');
     var elPend = document.getElementById('rc-pendente-count');
@@ -122,12 +122,12 @@ function recadViewDetail(docId) {
     var cpf = r.cpf || '';
     if (cpf.length === 11) cpf = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     var dataEnvio = r.dataHoraCadastro ? new Date(r.dataHoraCadastro).toLocaleString('pt-BR') : '---';
-    var statusColor = r.status === 'Aprovado' ? '#4caf50' : r.status === 'Rejeitado' ? '#f44336' : '#ffc107';
+    var statusColor = r.status === 'Ativo' ? '#4caf50' : r.status === 'Rejeitado' ? '#f44336' : '#ffc107';
 
     var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">' +
         '<div><h2 style="color:#f57c00;margin:0">' + (r.nome || '---') + '</h2><p style="color:#888;font-size:13px;margin:4px 0 0">Enviado em: ' + dataEnvio + '</p></div>' +
         '<div style="display:flex;gap:8px">' +
-            '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Aprovado\')" style="background:#4caf50"><i class="fa-solid fa-check"></i> Aprovar</button>' +
+            '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Ativo\')" style="background:#4caf50"><i class="fa-solid fa-check"></i> Ativar</button>' +
             '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Rejeitado\')" style="background:#f44336"><i class="fa-solid fa-xmark"></i> Rejeitar</button>' +
             '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Pendente\')" style="background:#ffc107;color:#000"><i class="fa-solid fa-hourglass-half"></i> Pendente</button>' +
         '</div>' +
@@ -221,7 +221,7 @@ function recadViewDetail(docId) {
 }
 
 async function recadUpdateStatus(docId, newStatus) {
-    var msg = newStatus === 'Aprovado' ? 'Aprovar' : newStatus === 'Rejeitado' ? 'Rejeitar' : 'Marcar como Pendente';
+    var msg = newStatus === 'Ativo' ? 'Ativar' : newStatus === 'Rejeitado' ? 'Rejeitar' : 'Marcar como Pendente';
     if (!confirm(msg + ' este recadastramento?')) return;
     try {
         await dbFirestore.collection('recadastramentos').doc(docId).update({ status: newStatus });
