@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FARN - Portal do Formado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; padding:30px 20px; }
+
+        .container { max-width:500px; }
+        .logo { width:120px; height:120px; border-radius:50%; border:4px solid #f57c00; margin-bottom:24px; box-shadow:0 0 40px rgba(245,124,0,.3); }
+        .badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,193,7,.1); border:1px solid rgba(255,193,7,.3); border-radius:20px; padding:8px 18px; font-size:13px; color:#ffc107; font-weight:600; margin-bottom:20px; }
+        h1 { font-size:26px; font-weight:800; color:#f57c00; margin-bottom:8px; }
+        h2 { font-size:18px; font-weight:600; color:#fff; margin-bottom:20px; }
+
+        .construction { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:40px 30px; margin-top:10px; }
+        .construction-icon { font-size:60px; color:#ffc107; margin-bottom:16px; animation:pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        .construction h3 { font-size:20px; font-weight:700; color:#ffc107; margin-bottom:10px; }
+        .construction p { font-size:14px; color:#aaa; line-height:1.7; max-width:380px; margin:0 auto; }
+        .construction .icon-row { display:flex; justify-content:center; gap:16px; margin-top:20px; }
+        .construction .icon-row i { font-size:28px; color:rgba(255,255,255,.15); }
+
+        .back { display:inline-flex; align-items:center; gap:6px; color:#888; font-size:13px; cursor:pointer; margin-top:24px; transition:color .2s; text-decoration:none; }
+        .back:hover { color:#fff; }
+
+        .footer { margin-top:30px; font-size:12px; color:#555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="logo-farn.png.png" alt="FARN" class="logo">
+        <div class="badge"><i class="fa-solid fa-fire"></i> Portal do Formado</div>
+        <h1>FARN - BRASIL</h1>
+        <h2>Forca Auxiliar de Resgate Nacional</h2>
+
+        <div class="construction">
+            <div class="construction-icon"><i class="fa-solid fa-hard-hat"></i></div>
+            <h3>Em Construcao</h3>
+            <p>Este portal esta em fase de desenvolvimento. Em breve voce tera acesso a conteudos exclusivos, atualizacoes e novidades para formados FARN.</p>
+            <div class="icon-row">
+                <i class="fa-solid fa-newspaper"></i>
+                <i class="fa-solid fa-book-open"></i>
+                <i class="fa-solid fa-certificate"></i>
+                <i class="fa-solid fa-comments"></i>
+                <i class="fa-solid fa-bell"></i>
+            </div>
+        </div>
+
+        <a class="back" href="index.html">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Login
+        </a>
+
+        <div class="footer">
+            <img src="logo-farn.png.png" alt="FARN" style="width:20px;height:20px;vertical-align:middle;border-radius:50%">
+            FARN - BRASIL
+        </div>
+    </div>
+</body>
+</html>
