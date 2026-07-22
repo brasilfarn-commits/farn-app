@@ -169,7 +169,7 @@
         <p>
             Prezado(a) formado(a), precisamos atualizar seus dados cadastrais para manter nosso registro atualizado.
             Preencha o formulario abaixo com suas informacoes pessoais, dados de documentos e envie a foto do seu
-            certificado de Bombeiro (frente e verso).
+            certificado de Bombeiro (frente).
         </p>
         <p style="font-size:13px;color:#f57c00;font-weight:600">
             <i class="fa-solid fa-circle-info"></i> Todos os campos marcados com * sao obrigatorios.
@@ -435,26 +435,6 @@
                     </div>
                     <div class="recad-preview" id="rc-preview-frente"></div>
                 </div>
-                <div class="recad-field">
-                    <label>Foto do Certificado - Verso <span class="required">*</span></label>
-                    <div style="display:flex;gap:8px;margin-bottom:8px">
-                        <button type="button" class="rc-cam-btn" onclick="rcOpenCamera('verso')">
-                            <i class="fa-solid fa-camera"></i> Camera
-                        </button>
-                        <button type="button" class="rc-file-btn" onclick="document.getElementById('rc-file-verso').click()">
-                            <i class="fa-solid fa-file-image"></i> Galeria
-                        </button>
-                        <input type="file" id="rc-file-verso" accept="image/*" class="hidden" onchange="rcHandleFile(event,'verso')">
-                    </div>
-                    <div class="recad-upload-area" id="rc-upload-verso"
-                         ondrop="rcHandleDrop(event,'verso')" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
-                         onclick="rcOpenCamera('verso')">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <p>Toque para tirar foto ou arraste a imagem do <strong>verso</strong></p>
-                        <small>Apenas para conferencia de dados</small>
-                    </div>
-                    <div class="recad-preview" id="rc-preview-verso"></div>
-                </div>
             </div>
 
             <!-- MEDIDAS E UNIFORME -->
@@ -591,7 +571,7 @@
     </div>
 
     <script>
-    let rcFiles = { 'frente': null, 'verso': null };
+    let rcFiles = { 'frente': null };
     let rcProjetos = [];
 
     async function rcLoadProjetos() {
@@ -854,7 +834,7 @@
         if (rcFiles[type]) {
             var item = document.createElement('div');
             item.className = 'recad-preview-item';
-            var labels = { 'frente': 'FRENTE', 'verso': 'VERSO' };
+                var labels = { 'frente': 'FRENTE' };
             item.innerHTML = '<img src="' + rcFiles[type] + '">' +
                 '<button type="button" class="remove-btn" onclick="rcRemoveFile(\'' + type + '\')"><i class="fa-solid fa-xmark"></i></button>' +
                 '<div class="recad-preview-label">' + (labels[type] || '') + '</div>';
@@ -879,7 +859,6 @@
         event.preventDefault();
         if (!document.getElementById('rc-projeto').value) { rcMsg('Por favor, selecione seu projeto.', 'error'); return false; }
         if (!rcFiles['frente']) { rcMsg('Por favor, envie a foto da frente do certificado.', 'error'); return false; }
-        if (!rcFiles['verso']) { rcMsg('Por favor, envie a foto do verso do certificado.', 'error'); return false; }
 
         var btn = document.getElementById('rc-btn-submit');
         btn.disabled = true;
@@ -919,7 +898,6 @@
             cansaco: document.getElementById('rc-cansaco').value,
             dataCertificado: document.getElementById('rc-data-certificado').value,
             certificadoFrente: rcFiles['frente'],
-            certificadoVerso: rcFiles['verso'],
             senha: document.getElementById('rc-senha').value,
             calca: document.getElementById('rc-calca').value,
             camisa: document.getElementById('rc-camisa').value,
