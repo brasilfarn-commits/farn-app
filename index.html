@@ -1521,7 +1521,14 @@
                                 <p>Envie sua mensagem para a equipe FARN</p>
                             </div>
                         </div>
-                        <div class="portal-chat-input">
+                        <div class="portal-chat-edit-bar" id="portal-chat-edit-bar">
+                            <i class="fa-solid fa-pen"></i>
+                            <span id="portal-chat-edit-label">Editando mensagem...</span>
+                            <button class="portal-chat-edit-cancel" onclick="portalChatCancelEdit()">Cancelar</button>
+                        </div>
+                        <div class="portal-chat-input" style="position:relative">
+                            <button class="portal-chat-emoji-btn" onclick="portalChatToggleEmoji(event)" title="Emojis"><i class="fa-regular fa-face-smile"></i></button>
+                            <div class="portal-chat-emoji-panel" id="portal-chat-emoji-panel"></div>
                             <input type="text" id="portal-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')portalChatSend()">
                             <button class="portal-chat-send" onclick="portalChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
                         </div>

@@ -104,29 +104,46 @@
         .pf-right-tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:600; color:#888; cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; }
         .pf-right-tab:hover { color:#fff; }
         .pf-right-tab.active { color:#f57c00; border-bottom-color:#f57c00; }
-        .pf-right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .pf-right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#fff; }
         .pf-right-content { flex:1; overflow-y:auto; }
 
         /* CHAT */
-        .pf-chat-header { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .pf-chat-header { padding:14px 16px; border-bottom:1px solid #e5e7eb; background:#fff; }
         .pf-chat-header h4 { font-size:13px; font-weight:700; color:#f57c00; }
-        .pf-chat-header p { font-size:11px; color:#666; }
-        .pf-chat-select { width:100%; padding:8px 10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#fff; font-size:12px; margin-top:8px; }
-        .pf-chat-select option { background:#1a1a2e; }
-        .pf-chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
-        .pf-chat-empty { text-align:center; padding:40px 10px; color:#555; font-size:12px; }
-        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; }
+        .pf-chat-header p { font-size:11px; color:#888; }
+        .pf-chat-select { width:100%; padding:8px 10px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; color:#333; font-size:12px; margin-top:8px; }
+        .pf-chat-select option { background:#fff; }
+        .pf-chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; background:#fff; }
+        .pf-chat-empty { text-align:center; padding:40px 10px; color:#999; font-size:12px; }
+        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; color:#ccc; }
 
-        .pf-chat-bubble { max-width:85%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; }
-        .pf-chat-bubble.me { background:rgba(245,124,0,.2); border:1px solid rgba(245,124,0,.3); align-self:flex-end; border-bottom-right-radius:4px; }
-        .pf-chat-bubble.other { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); align-self:flex-start; border-bottom-left-radius:4px; }
+        .pf-chat-bubble { max-width:85%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; position:relative; }
+        .pf-chat-bubble.me { background:#f57c00; color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+        .pf-chat-bubble.other { background:#f0f0f0; color:#333; border:1px solid #e5e7eb; align-self:flex-start; border-bottom-left-radius:4px; }
         .pf-chat-sender { font-size:10px; font-weight:700; margin-bottom:3px; }
-        .pf-chat-time { font-size:10px; color:#666; margin-top:3px; text-align:right; }
+        .pf-chat-time { font-size:10px; color:rgba(255,255,255,.7); margin-top:3px; text-align:right; }
+        .pf-chat-bubble.other .pf-chat-time { color:#999; }
+        .pf-chat-edited { font-size:9px; font-style:italic; opacity:.7; margin-top:2px; }
+        .pf-chat-actions { display:flex; gap:4px; margin-top:4px; opacity:0; transition:opacity .2s; }
+        .pf-chat-bubble:hover .pf-chat-actions { opacity:1; }
+        .pf-chat-action-btn { background:rgba(255,255,255,.2); border:none; color:inherit; width:24px; height:24px; border-radius:50%; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+        .pf-chat-action-btn:hover { background:rgba(255,255,255,.35); }
+        .pf-chat-bubble.other .pf-chat-action-btn { background:#e5e7eb; color:#666; }
+        .pf-chat-bubble.other .pf-chat-action-btn:hover { background:#d1d5db; }
         .pf-chat-img { max-width:100%; border-radius:8px; margin-top:6px; cursor:pointer; }
 
-        .pf-chat-input { display:flex; gap:8px; padding:12px; border-top:1px solid rgba(255,255,255,.08); }
-        .pf-chat-input input { flex:1; padding:10px 12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#fff; font-size:13px; }
-        .pf-chat-input input:focus { border-color:#f57c00; outline:none; }
+        .pf-chat-edit-bar { display:none; padding:8px 12px; background:#fff3e0; border-top:1px solid #f57c00; font-size:12px; color:#f57c00; align-items:center; gap:8px; }
+        .pf-chat-edit-bar.active { display:flex; }
+        .pf-chat-edit-cancel { background:none; border:1px solid #f57c00; color:#f57c00; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; margin-left:auto; }
+        .pf-chat-input { display:flex; gap:8px; padding:12px; border-top:1px solid #e5e7eb; background:#fff; align-items:center; position:relative; }
+        .pf-chat-emoji-btn { background:none; border:none; color:#999; font-size:18px; cursor:pointer; padding:4px; border-radius:50%; transition:all .2s; }
+        .pf-chat-emoji-btn:hover { color:#f57c00; background:#fff3e0; }
+        .pf-chat-emoji-panel { display:none; position:absolute; bottom:100%; left:0; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; box-shadow:0 -4px 20px rgba(0,0,0,.1); width:280px; max-height:200px; overflow-y:auto; z-index:100; }
+        .pf-chat-emoji-panel.active { display:block; }
+        .pf-chat-emoji-panel span { font-size:20px; cursor:pointer; padding:4px; display:inline-block; border-radius:6px; transition:background .2s; }
+        .pf-chat-emoji-panel span:hover { background:#f0f0f0; }
+        .pf-chat-input input { flex:1; padding:10px 12px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; color:#333; font-size:13px; }
+        .pf-chat-input input:focus { border-color:#f57c00; outline:none; background:#fff; }
         .pf-chat-send { background:#f57c00; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
         .pf-chat-send:hover { background:#ff9800; }
 
@@ -293,7 +310,14 @@
                         <p>Envie sua mensagem para a equipe FARN</p>
                     </div>
                 </div>
+                <div class="pf-chat-edit-bar" id="pf-chat-edit-bar">
+                    <i class="fa-solid fa-pen"></i>
+                    <span id="pf-chat-edit-label">Editando mensagem...</span>
+                    <button class="pf-chat-edit-cancel" onclick="pfChatCancelEdit()">Cancelar</button>
+                </div>
                 <div class="pf-chat-input">
+                    <button class="pf-chat-emoji-btn" onclick="pfChatToggleEmoji(event)" title="Emojis"><i class="fa-regular fa-face-smile"></i></button>
+                    <div class="pf-chat-emoji-panel" id="pf-chat-emoji-panel"></div>
                     <input type="text" id="pf-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')pfChatSend()">
                     <button class="pf-chat-send" onclick="pfChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
@@ -407,6 +431,7 @@
             pfLoadCertificado();
             pfLoadGallery();
             pfChatLoadMessages();
+            pfChatInitEmoji();
 
         } catch(e) {
             console.error('Erro login:', e);
@@ -539,6 +564,8 @@
     }
 
     /* ===== CHAT 1:1 COM ADMIN ===== */
+    var pfChatEditTarget = null;
+
     function pfChatLoadMessages() {
         if (!pfUser || !pfUser.cpf) return;
         var container = document.getElementById('pf-chat-messages');
@@ -553,12 +580,23 @@
             container.innerHTML = '';
             snap.forEach(function(doc) {
                 var m = doc.data();
+                if (m.apagada) return;
                 var isMe = m.remetente === 'aluno';
                 var wrap = document.createElement('div');
                 wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
                 var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
                 var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#f57c00">Administracao FARN</div>' : '';
-                wrap.innerHTML = senderHtml + '<div>' + (m.texto || '') + '</div><div class="pf-chat-time">' + time + '</div>';
+                var bodyHtml = '<div>' + (m.texto || '') + '</div>';
+                if (m.editado) bodyHtml += '<div class="pf-chat-edited">( editado )</div>';
+                var actionsHtml = '';
+                if (isMe) {
+                    var safeTexto = (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    actionsHtml = '<div class="pf-chat-actions">' +
+                        '<button class="pf-chat-action-btn" onclick="pfChatEditMsg(\'' + doc.id + '\', \'' + safeTexto + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
+                        '<button class="pf-chat-action-btn" onclick="pfChatDeleteForMe(\'' + doc.id + '\')" title="Apagar para mim"><i class="fa-solid fa-trash"></i></button>' +
+                        '</div>';
+                }
+                wrap.innerHTML = senderHtml + bodyHtml + '<div class="pf-chat-time">' + time + '</div>' + actionsHtml;
                 container.appendChild(wrap);
             });
             container.scrollTop = container.scrollHeight;
@@ -567,11 +605,40 @@
         });
     }
 
+    function pfChatEditMsg(msgId, texto) {
+        pfChatEditTarget = msgId;
+        var editBar = document.getElementById('pf-chat-edit-bar');
+        var editLabel = document.getElementById('pf-chat-edit-label');
+        editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
+        editBar.classList.add('active');
+        var input = document.getElementById('pf-chat-input');
+        input.value = texto;
+        input.focus();
+    }
+
+    function pfChatCancelEdit() {
+        pfChatEditTarget = null;
+        document.getElementById('pf-chat-edit-bar').classList.remove('active');
+        document.getElementById('pf-chat-input').value = '';
+    }
+
+    function pfChatDeleteForMe(msgId) {
+        if (!confirm('Apagar esta mensagem para voce?')) return;
+        if (!pfUser) return;
+        dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').doc(msgId).set({ apagada: true }, { merge: true });
+    }
+
     function pfChatSend() {
         var input = document.getElementById('pf-chat-input');
         var texto = input.value.trim();
         if (!texto || !pfUser) return;
         input.value = '';
+
+        if (pfChatEditTarget) {
+            dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').doc(pfChatEditTarget).set({ texto: texto, editado: true }, { merge: true });
+            pfChatCancelEdit();
+            return;
+        }
 
         dbFirestore.collection('chatAdmin').doc(pfUser.cpf).set({
             cpf: pfUser.cpf,
@@ -593,6 +660,37 @@
             });
         }).catch(function(e) { console.error('Erro ao enviar:', e); });
     }
+
+    /* ===== EMOJI ===== */
+    function pfChatInitEmoji() {
+        var panel = document.getElementById('pf-chat-emoji-panel');
+        if (!panel) return;
+        var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','💀','👀','💪','🤝','🇧🇷','⚽','🎮','📱','💻','🔧','💡','🔔','📦','🔑','✈️','🚗','🏥','🎓','📚','✏️'];
+        panel.innerHTML = '';
+        emojis.forEach(function(e) {
+            var span = document.createElement('span');
+            span.textContent = e;
+            span.onclick = function() {
+                var input = document.getElementById('pf-chat-input');
+                input.value += e;
+                input.focus();
+            };
+            panel.appendChild(span);
+        });
+    }
+
+    function pfChatToggleEmoji(ev) {
+        ev.stopPropagation();
+        var panel = document.getElementById('pf-chat-emoji-panel');
+        panel.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(e) {
+        var panel = document.getElementById('pf-chat-emoji-panel');
+        if (panel && !panel.contains(e.target) && !e.target.closest('.pf-chat-emoji-btn')) {
+            panel.classList.remove('active');
+        }
+    });
 
     /* ===== GALERIA ===== */
     function pfLoadGallery() {

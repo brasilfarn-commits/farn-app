@@ -659,6 +659,7 @@ async function handleLogin(event) {
         showPortalSection('noticias');
         portalLoadSidebarFoto();
         portalLoadGallery();
+        portalChatInit();
         if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
     }
     return false;
@@ -1008,10 +1009,11 @@ function portalChatInit() {
     if (!chatLoaded) {
         chatLoaded = true;
         portalChatSetupInput();
-        portalChatSetupContextMenu();
-        portalChatStartExpireChecker();
+        portalChatInitEmoji();
+        portalChatListen();
+    } else {
+        portalChatListen();
     }
-    portalChatShowMain();
 }
 
 function portalChatShowMain() {
@@ -1100,29 +1102,65 @@ function portalChatRender(msgs) {
     container.innerHTML = '';
     var lastDate = '';
     msgs.forEach(function(m) {
+        if (m.apagada) return;
         var dt = m.hora && m.hora.seconds ? new Date(m.hora.seconds * 1000) : new Date();
         var dateStr = dt.toLocaleDateString('pt-BR');
         if (dateStr !== lastDate) {
             lastDate = dateStr;
             var divider = document.createElement('div');
-            divider.style.cssText = 'text-align:center;margin:8px 0;font-size:11px;color:#888';
-            divider.innerHTML = '<span style="background:#1a1a2e;padding:4px 12px;border-radius:10px">' + dateStr + '</span>';
+            divider.style.cssText = 'text-align:center;margin:8px 0;font-size:11px;color:#999';
+            divider.innerHTML = '<span style="background:#f3f4f6;padding:4px 12px;border-radius:10px;color:#666">' + dateStr + '</span>';
             container.appendChild(divider);
         }
         var isMe = m.remetente === 'aluno';
         var wrap = document.createElement('div');
         wrap.className = 'portal-chat-bubble ' + (isMe ? 'me' : 'other');
+        wrap.setAttribute('data-id', m._id || '');
         var senderHtml = '';
         if (!isMe) {
             senderHtml = '<div class="portal-chat-sender" style="color:#f57c00">Administracao FARN</div>';
         }
         var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         var bodyHtml = '';
-        if (m.texto) bodyHtml += '<span>' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-        wrap.innerHTML = senderHtml + bodyHtml + '<div class="portal-chat-time">' + time + '</div>';
+        if (m.texto) bodyHtml += '<span class="portal-chat-text">' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+        if (m.editado) bodyHtml += '<div class="portal-chat-edited">( editado )</div>';
+        var actionsHtml = '';
+        if (isMe) {
+            actionsHtml = '<div class="portal-chat-actions">' +
+                '<button class="portal-chat-action-btn" onclick="portalChatEditMsg(\'' + m._id + '\', \'' + (m.texto || '').replace(/'/g, "\\'") + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="portal-chat-action-btn" onclick="portalChatDeleteForMe(\'' + m._id + '\')" title="Apagar para mim"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+        }
+        wrap.innerHTML = senderHtml + bodyHtml + '<div class="portal-chat-time">' + time + '</div>' + actionsHtml;
         container.appendChild(wrap);
     });
     if (wasAtBottom) container.scrollTop = container.scrollHeight;
+}
+
+var portalChatEditTarget = null;
+
+function portalChatEditMsg(msgId, texto) {
+    portalChatEditTarget = msgId;
+    var editBar = document.getElementById('portal-chat-edit-bar');
+    var editLabel = document.getElementById('portal-chat-edit-label');
+    editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
+    editBar.classList.add('active');
+    var input = document.getElementById('portal-chat-input');
+    input.value = texto;
+    input.focus();
+}
+
+function portalChatCancelEdit() {
+    portalChatEditTarget = null;
+    document.getElementById('portal-chat-edit-bar').classList.remove('active');
+    document.getElementById('portal-chat-input').value = '';
+}
+
+function portalChatDeleteForMe(msgId) {
+    if (!confirm('Apagar esta mensagem para voce?')) return;
+    var col = portalChatGetCurrentCol();
+    if (!col || !msgId) return;
+    col.doc(msgId).set({ apagada: true }, { merge: true });
 }
 
 function portalChatLoadAllConversations() {
@@ -1130,6 +1168,37 @@ function portalChatLoadAllConversations() {
 }
 
 function portalChatRenderConversations() {}
+
+/* ===== EMOJI ===== */
+function portalChatInitEmoji() {
+    var panel = document.getElementById('portal-chat-emoji-panel');
+    if (!panel) return;
+    var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','💀','👀','💪','🤝','🇧🇷','⚽','🎮','📱','💻','🔧','💡','🔔','📦','🔑','✈️','🚗','🏥','🎓','📚','✏️'];
+    panel.innerHTML = '';
+    emojis.forEach(function(e) {
+        var span = document.createElement('span');
+        span.textContent = e;
+        span.onclick = function() {
+            var input = document.getElementById('portal-chat-input');
+            input.value += e;
+            input.focus();
+        };
+        panel.appendChild(span);
+    });
+}
+
+function portalChatToggleEmoji(ev) {
+    ev.stopPropagation();
+    var panel = document.getElementById('portal-chat-emoji-panel');
+    panel.classList.toggle('active');
+}
+
+document.addEventListener('click', function(e) {
+    var panel = document.getElementById('portal-chat-emoji-panel');
+    if (panel && !panel.contains(e.target) && !e.target.closest('.portal-chat-emoji-btn')) {
+        panel.classList.remove('active');
+    }
+});
 
 function portalChatLoadContacts() {
     if (!currentAluno) return;
@@ -1195,6 +1264,12 @@ function portalChatSend() {
 
     var col = portalChatGetCurrentCol();
     if (!col) return;
+
+    if (portalChatEditTarget) {
+        col.doc(portalChatEditTarget).set({ texto: texto, editado: true }, { merge: true });
+        portalChatCancelEdit();
+        return;
+    }
 
     var msgData = {
         texto: texto,
