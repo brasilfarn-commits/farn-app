@@ -600,7 +600,7 @@
             rcProjetos = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
-                if (d.nome) rcProjetos.push(d);
+                if (d.nome && d.nome !== 'Buenos Aires Pernambuco') rcProjetos.push(d);
             });
             var sel = document.getElementById('rc-projeto');
             sel.innerHTML = '<option value="">Selecione o projeto...</option>';
