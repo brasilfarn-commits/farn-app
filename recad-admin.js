@@ -71,6 +71,7 @@ function recadRenderTable() {
         return '<tr>' +
             '<td style="font-weight:600">' + (r.nome || '---') + '</td>' +
             '<td>' + cpf + '</td>' +
+            '<td>' + (r.matricula || '---') + '</td>' +
             '<td>' + (r.projeto || '---') + '</td>' +
             '<td>' + cidadeUf + '</td>' +
             '<td>' + dataEnvio + '</td>' +
@@ -154,7 +155,8 @@ function recadViewDetail(docId) {
     }
 
     html += detailSection('fa-folder-open', 'Projeto', [
-        { label: 'Projeto', val: r.projeto }
+        { label: 'Projeto', val: r.projeto },
+        { label: 'Matricula', val: r.matricula || '---' }
     ]);
 
     html += detailSection('fa-user', 'Dados Pessoais', [
@@ -249,6 +251,7 @@ function recadExportExcel() {
             'Nome': r.nome || '',
             'CPF': cpf,
             'Projeto': r.projeto || '',
+            'Matricula': r.matricula || '',
             'RG': r.rg || '',
             'Nascimento': r.nascimento || '',
             'Estado Civil': r.estadoCivil || '',

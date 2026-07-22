@@ -214,6 +214,10 @@
                     <div id="rc-projeto-desc" style="font-size:13px;color:#ccc"></div>
                     <div id="rc-projeto-turmas" style="font-size:12px;color:#888;margin-top:6px"></div>
                 </div>
+                <div class="recad-field">
+                    <label>Numero da Matricula (fornecido pela FARN) <span class="required">*</span></label>
+                    <input type="text" id="rc-matricula" required placeholder="Ex: 001/2025">
+                </div>
             </div>
 
             <!-- DADOS PESSOAIS -->
@@ -888,6 +892,7 @@
 
         var data = {
             projeto: document.getElementById('rc-projeto').value,
+            matricula: document.getElementById('rc-matricula').value.trim(),
             nome: document.getElementById('rc-nome').value.trim(),
             cpf: document.getElementById('rc-cpf').value.replace(/\D/g, ''),
             rg: document.getElementById('rc-rg').value.trim(),

@@ -171,6 +171,10 @@
                 <label>Senha</label>
                 <input type="password" id="pf-senha" placeholder="Sua senha">
             </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                <input type="checkbox" id="pf-lembrar" style="accent-color:#f57c00;width:16px;height:16px">
+                <label for="pf-lembrar" style="font-size:13px;color:#aaa;cursor:pointer">Lembrar usuario e senha</label>
+            </div>
             <button class="pf-login-btn" id="pf-login-btn" onclick="pfLogin()">
                 <i class="fa-solid fa-right-to-bracket"></i> Entrar
             </button>
@@ -206,9 +210,6 @@
                 </div>
                 <div class="pf-nav-item" onclick="pfShowSection('certificado', this)">
                     <i class="fa-solid fa-certificate"></i><span>Certificado</span>
-                </div>
-                <div class="pf-nav-item" onclick="pfShowSection('portal-antigo', this)">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Portal do Aluno</span>
                 </div>
             </nav>
             <div class="pf-sidebar-footer">
@@ -257,20 +258,6 @@
                     <h2>Meu Certificado</h2>
                 </div>
                 <div id="pf-cert-content"></div>
-            </div>
-
-            <!-- PORTAL ANTIGO -->
-            <div id="pf-section-portal-antigo" class="pf-section">
-                <div class="pf-section-header">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                    <h2>Portal do Aluno</h2>
-                </div>
-                <div style="text-align:center;padding:40px">
-                    <p style="color:#aaa;font-size:14px;margin-bottom:16px">Acesse o Portal do Aluno com suas credenciais antigas</p>
-                    <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f57c00,#ff9800);color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600">
-                        <i class="fa-solid fa-right-to-bracket"></i> Ir para o Portal do Aluno
-                    </a>
-                </div>
             </div>
 
             <!-- CONSTRUCAO (para secoes futuras) -->
@@ -387,6 +374,24 @@
             pfUser = doc.data();
             pfUser._docId = doc.id;
 
+            if (pfUser.status !== 'Ativo') {
+                errEl.textContent = 'Seu cadastro ainda nao foi ativado. Aguarde aprovacao da administracao.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                pfUser = null;
+                return;
+            }
+
+            /* Lembrar usuario e senha */
+            if (document.getElementById('pf-lembrar').checked) {
+                localStorage.setItem('pf_lembrar_cpf', cpf);
+                localStorage.setItem('pf_lembrar_senha', senha);
+            } else {
+                localStorage.removeItem('pf_lembrar_cpf');
+                localStorage.removeItem('pf_lembrar_senha');
+            }
+
             document.getElementById('screen-login').style.display = 'none';
             document.getElementById('screen-portal').classList.add('active');
 
@@ -410,6 +415,17 @@
         }
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+    }
+
+    function pfAutoLogin() {
+        var cpfSalvo = localStorage.getItem('pf_lembrar_cpf');
+        var senhaSalva = localStorage.getItem('pf_lembrar_senha');
+        if (cpfSalvo && senhaSalva) {
+            document.getElementById('pf-cpf').value = cpfSalvo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('pf-senha').value = senhaSalva;
+            document.getElementById('pf-lembrar').checked = true;
+            pfLogin();
+        }
     }
 
     function pfLogout() {
@@ -481,6 +497,7 @@
         var fields = [
             { label:'Nome', val: pfUser.nome },
             { label:'CPF', val: pfUser.cpf ? pfUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '' },
+            { label:'Matricula', val: pfUser.matricula || '---' },
             { label:'Projeto', val: pfUser.projeto },
             { label:'Email', val: pfUser.email },
             { label:'WhatsApp', val: pfUser.whatsapp },
@@ -606,6 +623,9 @@
     function pfClosePhoto() {
         document.getElementById('pf-photo-modal').classList.remove('active');
     }
+
+    /* Auto-login se lembrar estava marcado */
+    pfAutoLogin();
     </script>
 </body>
 </html>
