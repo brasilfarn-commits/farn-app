@@ -3116,14 +3116,16 @@ function renderProjetosList() {
     if (empty) empty.style.display = 'none';
     let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Status</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
     projetos.forEach((p, i) => {
-        const statusColor = p.status === 'Concluido' ? '#2196f3' : '#4caf50';
-        const statusBg = p.status === 'Concluido' ? 'rgba(33,150,243,.15)' : 'rgba(76,175,80,.15)';
-        const statusLabel = p.status === 'Concluido' ? 'Concluido' : 'Em Andamento';
+        const isConcluido = p.status === 'Concluido';
+        const statusColor = isConcluido ? '#2196f3' : '#4caf50';
+        const statusBg = isConcluido ? 'rgba(33,150,243,.15)' : 'rgba(76,175,80,.15)';
+        const statusLabel = isConcluido ? 'Concluido' : 'Em Andamento';
+        const nextStatus = isConcluido ? 'Em Andamento' : 'Concluido';
         html += `<tr>
             <td>${p.nome || '---'}</td>
             <td>${p.cnpj || '---'}</td>
             <td>${p.responsavel || '---'}</td>
-            <td><span style="background:${statusBg};color:${statusColor};padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">${statusLabel}</span></td>
+            <td><span onclick="projetoToggleStatus(${i})" style="background:${statusBg};color:${statusColor};padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid ${statusColor};transition:all .2s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Clique para alterar para: ${nextStatus}">${statusLabel}</span></td>
             <td>${p.dataCadastro || '---'}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon" title="Editar" onclick="editProjeto(${i})"><i class="fa-solid fa-pen"></i></button>
@@ -3133,6 +3135,19 @@ function renderProjetosList() {
     });
     html += '</tbody></table>';
     tbody.innerHTML = html;
+}
+
+async function projetoToggleStatus(i) {
+    const p = projetos[i]; if (!p) return;
+    const novoStatus = p.status === 'Concluido' ? 'Em Andamento' : 'Concluido';
+    const label = novoStatus === 'Concluido' ? 'Concluido (azul)' : 'Em Andamento (verde)';
+    if (!confirm('Alterar status do projeto "' + p.nome + '" para ' + label + '?')) return;
+    p.status = novoStatus;
+    projetos[i] = p;
+    if (p.docId) {
+        try { await dbFirestore.collection(FB_PROJETOS).doc(String(p.docId)).update({ status: novoStatus }); } catch(e) { console.error(e); }
+    }
+    renderProjetosList();
 }
 
 function editProjeto(i) {
