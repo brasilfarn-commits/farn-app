@@ -2570,7 +2570,7 @@ function alunosInicializar() {
     const selProj = document.getElementById('alunos-selecao-projeto');
     if (!selProj) return;
     selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.forEach(p => {
+    projetos.filter(p => p.status === 'Em Andamento').forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
     const conteudo = document.getElementById('alunos-conteudo');
