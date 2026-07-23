@@ -20,8 +20,6 @@ const FB_CANDIDATOS = 'candidatos';
 const FB_TURMAS = 'turmas';
 const FB_USUARIOS = 'usuarios';
 const FB_PROJETOS = 'parceiros';
-const FB_DISCIPLINAS = 'disciplinas';
-const FB_AULAS = 'aulas';
 let firebaseReady = false;
 let firebaseError = false;
 
@@ -149,32 +147,6 @@ function backupProjetos() {
     batch.commit().catch(e => console.error('Erro ao salvar projetos:', e));
 }
 
-function backupDisciplinas() {
-    if (!firebaseReady && !firebaseError) return;
-    const batch = dbFirestore.batch();
-    const ref = dbFirestore.collection(FB_DISCIPLINAS);
-    batch.set(ref.doc('_index'), { count: disciplinas.length, timestamp: Date.now() });
-    disciplinas.forEach((d) => {
-        const id = d.id ? String(d.id) : String(Date.now() + Math.random());
-        const copy = Object.assign({}, d);
-        batch.set(ref.doc(id), copy, { merge: true });
-    });
-    batch.commit().catch(e => console.error('Erro ao salvar disciplinas:', e));
-}
-
-function backupAulas() {
-    if (!firebaseReady && !firebaseError) return;
-    const batch = dbFirestore.batch();
-    const ref = dbFirestore.collection(FB_AULAS);
-    batch.set(ref.doc('_index'), { count: aulas.length, timestamp: Date.now() });
-    aulas.forEach((a) => {
-        const id = a.id ? String(a.id) : String(Date.now() + Math.random());
-        const copy = Object.assign({}, a);
-        batch.set(ref.doc(id), copy, { merge: true });
-    });
-    batch.commit().catch(e => console.error('Erro ao salvar aulas:', e));
-}
-
 async function syncAllDatabases() {
     if (!firebaseReady && !firebaseError) {
         alert('Firebase nao conectado. Verifique a conexao.');
@@ -196,8 +168,6 @@ async function syncAllDatabases() {
         await dbFirestore.collection(FB_TURMAS).get();
         await dbFirestore.collection(FB_USUARIOS).get();
         await dbFirestore.collection(FB_PROJETOS).get();
-        await dbFirestore.collection(FB_DISCIPLINAS).get();
-        await dbFirestore.collection(FB_AULAS).get();
         renderList();
         populateTurmaSelect();
         populateProjetoSelect();
@@ -207,8 +177,6 @@ async function syncAllDatabases() {
         }
         if (typeof renderUsuariosList === 'function') renderUsuariosList();
         if (typeof renderProjetosList === 'function') renderProjetosList();
-        if (typeof disciplinaRenderList === 'function') disciplinaRenderList();
-        if (typeof renderAulasList === 'function') renderAulasList();
         if (typeof alunosInicializar === 'function') alunosInicializar();
         if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Sincronizado!';
         setTimeout(() => {
@@ -224,7 +192,7 @@ async function syncAllDatabases() {
 function initFirebaseListeners() {
     return new Promise((resolve) => {
         let loaded = 0;
-        const totalListeners = 6;
+        const totalListeners = 5;
         const checkReady = () => {
             loaded++;
             if (loaded >= totalListeners) {
@@ -335,7 +303,7 @@ function initFirebaseListeners() {
             checkReady();
         });
 
-        dbFirestore.collection(FB_DISCIPLINAS).onSnapshot((snap) => {
+        dbFirestore.collection('instrutores').onSnapshot((snap) => {
             const result = [];
             snap.forEach(doc => {
                 if (doc.id !== '_index') {
@@ -344,28 +312,11 @@ function initFirebaseListeners() {
                     result.push(data);
                 }
             });
-            disciplinas = result;
-            if (firebaseReady && typeof disciplinaRenderList === 'function') disciplinaRenderList();
+            instrutores = result;
+            if (firebaseReady && typeof instrutorListar === 'function') instrutorListar();
             checkReady();
         }, (error) => {
-            console.error('Erro Firestore disciplinas:', error);
-            checkReady();
-        });
-
-        dbFirestore.collection(FB_AULAS).onSnapshot((snap) => {
-            const result = [];
-            snap.forEach(doc => {
-                if (doc.id !== '_index') {
-                    const data = doc.data();
-                    data.id = doc.id;
-                    result.push(data);
-                }
-            });
-            aulas = result;
-            if (firebaseReady && typeof renderAulasList === 'function') renderAulasList();
-            checkReady();
-        }, (error) => {
-            console.error('Erro Firestore aulas:', error);
+            console.error('Erro Firestore instrutores:', error);
             checkReady();
         });
 
@@ -639,16 +590,21 @@ function applyUserPermissions() {
     const p = currentUserData.permissoes || [];
     const isGeral = currentUserData.cpf === ADMIN_CPF;
     const navItems = {
+        'admin-home': true,
         'admin-pre-inscricao': p.includes('pre-inscricao') || isGeral,
         'admin-alunos': p.includes('alunos') || isGeral,
-        'admin-disciplinas': p.includes('turmas') || isGeral,
         'admin-instrutores': p.includes('instrutores') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
         'admin-projetos': p.includes('projetos') || isGeral,
         'admin-form-projeto': p.includes('projetos') || isGeral,
         'admin-config': p.includes('config') || isGeral,
+        'admin-usuarios': p.includes('usuarios') || isGeral,
+        'admin-form-usuario': p.includes('usuarios') || isGeral,
         'admin-recadastramento': p.includes('admin') || isGeral,
-        'admin-recad-detalhe': p.includes('admin') || isGeral
+        'admin-recad-detalhe': p.includes('admin') || isGeral,
+        'admin-chat-portais': p.includes('admin') || isGeral,
+        'admin-apostilas': p.includes('admin') || isGeral,
+        'admin-apontamento': p.includes('admin') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -980,15 +936,14 @@ function closeDownloadModal(e) {
 /* ===== NAVIGACAO ADMIN ===== */
 
 function showAdminSection(sectionId, navEl) {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
     document.querySelectorAll('#screen-admin .admin-section').forEach(s => s.classList.remove('active'));
-    document.getElementById(sectionId).classList.add('active');
+    el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
-    if (sectionId === 'admin-disciplinas') {
-        carregarDisciplinas().then(() => carregarAulas()).then(() => disciplinaRenderList());
-    }
 }
 
 /* ===== FORM CANDIDATO ===== */
@@ -2848,255 +2803,6 @@ function showInstallGuide() {
     overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== CADASTRO DE DISCIPLINAS E AULAS =====
-let disciplinas = [];
-let aulas = [];
-let currentDisciplinaId = null;
-let editingAulaId = null;
-
-function disciplinaLimparForm() {
-    document.getElementById('disciplina-nome').value = '';
-    document.getElementById('disciplina-codigo').value = '';
-    document.getElementById('disciplina-carga').value = '';
-    document.getElementById('disciplina-descricao').value = '';
-    currentDisciplinaId = null;
-}
-
-async function disciplinaSalvar() {
-    const nome = document.getElementById('disciplina-nome').value.trim();
-    if (!nome) { alert('Informe o nome da disciplina'); return; }
-    const dados = {
-        nome: nome,
-        codigo: document.getElementById('disciplina-codigo').value.trim(),
-        cargaHoraria: document.getElementById('disciplina-carga').value.trim(),
-        descricao: document.getElementById('disciplina-descricao').value.trim(),
-        atualizadoEm: new Date().toISOString()
-    };
-    try {
-        if (currentDisciplinaId) {
-            await dbFirestore.collection('disciplinas').doc(currentDisciplinaId).update(dados);
-            const idx = disciplinas.findIndex(d => d.id === currentDisciplinaId);
-            if (idx !== -1) Object.assign(disciplinas[idx], dados);
-            alert('Disciplina atualizada com sucesso!');
-        } else {
-            dados.criadoEm = new Date().toISOString();
-            const ref = await dbFirestore.collection('disciplinas').add(dados);
-            dados.id = ref.id;
-            disciplinas.push(dados);
-            alert('Disciplina cadastrada com sucesso!');
-        }
-        disciplinaLimparForm();
-        disciplinaRenderList();
-    } catch (e) {
-        console.error('Erro ao salvar disciplina:', e);
-        alert('Erro ao salvar disciplina: ' + e.message);
-    }
-}
-
-function disciplinaRenderList() {
-    const tbody = document.getElementById('disciplinas-table-body');
-    const empty = document.getElementById('disciplinas-empty');
-    const lista = document.getElementById('disciplinas-lista');
-    if (!tbody) return;
-    if (!disciplinas.length) {
-        if (empty) empty.style.display = 'block';
-        if (lista) lista.style.display = 'none';
-        return;
-    }
-    if (empty) empty.style.display = 'none';
-    if (lista) lista.style.display = 'block';
-    tbody.innerHTML = disciplinas.map((d, i) => {
-        const aulasCount = aulas.filter(a => a.disciplinaId === d.id).length;
-        return `<tr>
-            <td style="font-weight:600">${d.nome}</td>
-            <td>${d.codigo || '-'}</td>
-            <td>${d.cargaHoraria ? d.cargaHoraria + 'h' : '-'}</td>
-            <td>${d.descricao || '-'}</td>
-            <td><span class="badge blue">${aulasCount} aula(s)</span></td>
-            <td><div class="actions-cell">
-                <button class="btn-icon" title="Gerenciar Aulas" onclick="disciplinaGerenciarAulas('${d.id}')"><i class="fa-solid fa-calendar-days"></i></button>
-                <button class="btn-icon" title="Editar" onclick="disciplinaEditar('${d.id}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="disciplinaExcluir('${d.id}')"><i class="fa-solid fa-trash"></i></button>
-            </div></td>
-        </tr>`;
-    }).join('');
-}
-
-function disciplinaEditar(id) {
-    const d = disciplinas.find(d => d.id === id);
-    if (!d) return;
-    currentDisciplinaId = id;
-    document.getElementById('disciplina-nome').value = d.nome || '';
-    document.getElementById('disciplina-codigo').value = d.codigo || '';
-    document.getElementById('disciplina-carga').value = d.cargaHoraria || '';
-    document.getElementById('disciplina-descricao').value = d.descricao || '';
-}
-
-async function disciplinaExcluir(id) {
-    if (!confirm('Excluir esta disciplina e todas as suas aulas?')) return;
-    try {
-        await dbFirestore.collection('disciplinas').doc(id).delete();
-        disciplinas = disciplinas.filter(d => d.id !== id);
-        aulas = aulas.filter(a => a.disciplinaId !== id);
-        disciplinaRenderList();
-        alert('Disciplina excluída com sucesso!');
-    } catch (e) {
-        console.error('Erro ao excluir disciplina:', e);
-        alert('Erro ao excluir disciplina: ' + e.message);
-    }
-}
-
-function disciplinaGerenciarAulas(disciplinaId) {
-    currentDisciplinaId = disciplinaId;
-    renderAulasList();
-}
-
-function renderAulasList() {
-    const tbody = document.getElementById('aulas-table-body');
-    const empty = document.getElementById('aulas-empty');
-    const lista = document.getElementById('aulas-lista');
-    if (!tbody) return;
-    const filtered = aulas.filter(a => a.disciplinaId === currentDisciplinaId);
-    if (!filtered.length) {
-        if (empty) empty.style.display = 'block';
-        if (lista) lista.style.display = 'none';
-        return;
-    }
-    if (empty) empty.style.display = 'none';
-    if (lista) lista.style.display = 'block';
-    tbody.innerHTML = filtered.sort((a, b) => (a.data || '').localeCompare(b.data || '') || (a.hora || '').localeCompare(b.hora || '')).map((a, i) => {
-        const dataFormatada = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-        return `<tr>
-            <td style="text-align:center;font-weight:700;color:#888">${i + 1}</td>
-            <td style="font-weight:600">${a.nome || '-'}</td>
-            <td><span class="badge green">${a.turma || '-'}</span></td>
-            <td>${dataFormatada}</td>
-            <td>${a.hora || '-'}</td>
-            <td><div class="actions-cell">
-                <button class="btn-icon" title="Editar" onclick="aulaEditar('${a.id}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-icon btn-danger-icon" title="Excluir" onclick="aulaExcluir('${a.id}')"><i class="fa-solid fa-trash"></i></button>
-            </div></td>
-        </tr>`;
-    }).join('');
-}
-
-function aulaPopulateTurmaCheckboxes(selectedArr) {
-    const container = document.getElementById('aula-turmas-checks');
-    if (!container) return;
-    container.innerHTML = '';
-    if (!turmas.length) {
-        container.innerHTML = '<span style="color:#666;font-size:13px">Nenhuma turma cadastrada</span>';
-        return;
-    }
-    turmas.forEach(t => {
-        const checked = selectedArr && selectedArr.includes(t.nome) ? 'checked' : '';
-        container.innerHTML += '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:13px;color:#ccc;white-space:nowrap"><input type="checkbox" value="' + t.nome + '" class="aula-turma-check" ' + checked + '> ' + t.nome + '</label>';
-    });
-}
-
-function aulaGetSelectedTurmas() {
-    return Array.from(document.querySelectorAll('.aula-turma-check:checked')).map(cb => cb.value);
-}
-
-function aulaAbrirModalNova() {
-    if (!currentDisciplinaId) { alert('Selecione uma disciplina primeiro'); return; }
-    editingAulaId = null;
-    document.getElementById('aula-id').value = '';
-    document.getElementById('aula-disciplina-id').value = currentDisciplinaId;
-    document.getElementById('aula-nome').value = '';
-    aulaPopulateTurmaCheckboxes([]);
-    document.getElementById('aula-data').value = '';
-    document.getElementById('aula-hora').value = '';
-    document.getElementById('aula-obs').value = '';
-    document.getElementById('aula-form-title').innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Nova Aula';
-    document.getElementById('modal-aula-overlay').classList.remove('hidden');
-}
-
-function aulaEditar(aulaId) {
-    const a = aulas.find(a => a.id === aulaId);
-    if (!a) return;
-    editingAulaId = aulaId;
-    document.getElementById('aula-id').value = aulaId;
-    document.getElementById('aula-disciplina-id').value = a.disciplinaId;
-    document.getElementById('aula-nome').value = a.nome || '';
-    const turmasArr = Array.isArray(a.turmas) ? a.turmas : (a.turma ? [a.turma] : []);
-    aulaPopulateTurmaCheckboxes(turmasArr);
-    document.getElementById('aula-data').value = a.data || '';
-    document.getElementById('aula-hora').value = a.hora || '';
-    document.getElementById('aula-obs').value = a.observacoes || '';
-    document.getElementById('aula-form-title').innerHTML = '<i class="fa-solid fa-pen" style="color:#4caf50;margin-right:8px"></i> Editar Aula';
-    document.getElementById('modal-aula-overlay').classList.remove('hidden');
-}
-
-async function handleAulaSubmit(e) {
-    e.preventDefault();
-    const nome = document.getElementById('aula-nome').value.trim();
-    const data = document.getElementById('aula-data').value;
-    const hora = document.getElementById('aula-hora').value;
-    const turmasSelecionadas = aulaGetSelectedTurmas();
-    if (!nome || !data || !hora || !turmasSelecionadas.length) { alert('Preencha nome, ao menos uma turma, data e hora da aula'); return; }
-    const dados = {
-        disciplinaId: currentDisciplinaId,
-        nome: nome,
-        turmas: turmasSelecionadas,
-        turma: turmasSelecionadas.join(', '),
-        data: data,
-        hora: hora,
-        observacoes: document.getElementById('aula-obs').value.trim(),
-        atualizadoEm: new Date().toISOString()
-    };
-    try {
-        if (editingAulaId) {
-            await dbFirestore.collection('aulas').doc(editingAulaId).update(dados);
-            const idx = aulas.findIndex(a => a.id === editingAulaId);
-            if (idx !== -1) Object.assign(aulas[idx], dados);
-        } else {
-            dados.criadoEm = new Date().toISOString();
-            const ref = await dbFirestore.collection('aulas').add(dados);
-            dados.id = ref.id;
-            aulas.push(dados);
-        }
-        closeAulaModal();
-        renderAulasList();
-    } catch (e) {
-        console.error('Erro ao salvar aula:', e);
-        alert('Erro ao salvar aula: ' + e.message);
-    }
-}
-
-async function aulaExcluir(aulaId) {
-    if (!confirm('Excluir esta aula?')) return;
-    try {
-        await dbFirestore.collection('aulas').doc(aulaId).delete();
-        aulas = aulas.filter(a => a.id !== aulaId);
-        renderAulasList();
-    } catch (e) {
-        console.error('Erro ao excluir aula:', e);
-        alert('Erro ao excluir aula: ' + e.message);
-    }
-}
-
-function closeAulaModal(event) {
-    if (event && event.target !== event.currentTarget) return;
-    document.getElementById('modal-aula-overlay').classList.add('hidden');
-}
-
-async function carregarDisciplinas() {
-    try {
-        const snap = await dbFirestore.collection('disciplinas').get();
-        disciplinas = [];
-        snap.forEach(doc => { disciplinas.push({ id: doc.id, ...doc.data() }); });
-    } catch (e) { console.warn('Erro ao carregar disciplinas:', e); }
-}
-
-async function carregarAulas() {
-    try {
-        const snap = await dbFirestore.collection('aulas').get();
-        aulas = [];
-        snap.forEach(doc => { aulas.push({ id: doc.id, ...doc.data() }); });
-    } catch (e) { console.warn('Erro ao carregar aulas:', e); }
-}
-
 // ===== APONTAMENTO DE PRESENÇA =====
 let aptScanner = null;
 let aptPresencas = {};
@@ -3155,8 +2861,6 @@ async function apontamentoAbrirModal() {
     document.getElementById('apt-scan-btn-area').style.display = 'block';
     const btnScan = document.getElementById('apt-btn-scan');
     if (btnScan) btnScan.disabled = true;
-    await carregarDisciplinas();
-    await carregarAulas();
     const selTurma = document.getElementById('apt-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma</option>';
     turmas.forEach(t => {
@@ -3166,9 +2870,6 @@ async function apontamentoAbrirModal() {
     });
     const selDisc = document.getElementById('apt-disciplina');
     selDisc.innerHTML = '<option value="">Selecione a disciplina</option>';
-    disciplinas.forEach(d => {
-        selDisc.innerHTML += '<option value="' + d.id + '">' + d.nome + '</option>';
-    });
     document.getElementById('modal-apontamento-overlay').classList.remove('hidden');
     if (turmaSelecionada) {
         apontamentoOnTurmaChange();
@@ -3195,30 +2896,14 @@ function apontamentoOnDisciplinaChange() {
 }
 
 function apontamentoAtualizarAulas() {
-    const turma = document.getElementById('apt-turma').value;
-    const disciplinaId = document.getElementById('apt-disciplina').value;
-    const selAula = document.getElementById('apt-aula');
+    var selAula = document.getElementById('apt-aula');
     selAula.innerHTML = '<option value="">Selecione...</option>';
-    if (!turma || !disciplinaId) return;
-    const filtradas = aulas.filter(a => a.disciplinaId === disciplinaId && Array.isArray(a.turmas) && a.turmas.includes(turma));
-    filtradas.forEach(a => {
-        const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-        selAula.innerHTML += '<option value="' + a.id + '">' + a.nome + ' (' + dataFmt + ' ' + (a.hora || '') + ')</option>';
-    });
 }
 
 function apontamentoOnAulaChange() {
-    const aulaId = document.getElementById('apt-aula').value;
     const btnScan = document.getElementById('apt-btn-scan');
     document.getElementById('apt-presenca-area').style.display = 'none';
-    if (!aulaId) { btnScan.disabled = true; return; }
-    btnScan.disabled = false;
-    const turma = document.getElementById('apt-turma').value;
-    aptAlunosNaTurma = candidatos.filter(c => c.turma === turma);
-    aptPresencas = {};
-    aptAlunosNaTurma.forEach(c => {
-        aptPresencas[c.cpf] = { matricula: c.matricula || '', nome: c.nome || '', cpf: c.cpf || '', status: '', obs: '' };
-    });
+    btnScan.disabled = true;
 }
 
 function apontamentoIniciarScanner() {
@@ -3347,19 +3032,15 @@ async function apontamentoSalvar() {
     const turma = document.getElementById('apt-turma').value;
     const disciplinaId = document.getElementById('apt-disciplina').value;
     const aulaId = document.getElementById('apt-aula').value;
-    if (!turma || !disciplinaId || !aulaId) { alert('Selecione turma, disciplina e aula'); return; }
+    if (!turma || !aulaId) { alert('Selecione turma e aula'); return; }
     const todos = Object.values(aptPresencas);
     if (!todos.length) { alert('Nenhum aluno na lista'); return; }
-    const aulaSelecionada = aulas.find(a => a.id === aulaId);
-    const disciplinaSelecionada = disciplinas.find(d => d.id === disciplinaId);
+    const selAula = document.getElementById('apt-aula');
+    const aulaNome = selAula.options[selAula.selectedIndex] ? selAula.options[selAula.selectedIndex].text : '';
     const dados = {
         turma: turma,
-        disciplina: disciplinaSelecionada ? disciplinaSelecionada.nome : '',
-        disciplinaId: disciplinaId,
-        aula: aulaSelecionada ? aulaSelecionada.nome : '',
+        aula: aulaNome,
         aulaId: aulaId,
-        dataAula: aulaSelecionada ? aulaSelecionada.data : '',
-        horaAula: aulaSelecionada ? aulaSelecionada.hora : '',
         alunos: todos,
         criadoEm: new Date().toISOString(),
         criadoPor: currentUserData ? currentUserData.nome || '' : ''
@@ -3724,5 +3405,210 @@ async function apostDelete(docId) {
         apostilasLoadList();
     } catch(e) {
         alert('Erro ao excluir: ' + e.message);
+    }
+}
+
+/* ===== INSTRUTORES ===== */
+let instrutores = [];
+let editingInstrutorId = null;
+
+function mascaraCPF(el) {
+    var v = el.value.replace(/\D/g, '').substring(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    el.value = v;
+}
+
+function mascaraFone(el) {
+    var v = el.value.replace(/\D/g, '').substring(0, 11);
+    if (v.length > 6) v = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
+    else if (v.length > 2) v = '(' + v.substring(0, 2) + ') ' + v.substring(2);
+    else if (v.length > 0) v = '(' + v;
+    el.value = v;
+}
+
+function instrutorAbrirModal(id) {
+    editingInstrutorId = id || null;
+    instrutorLimparForm();
+    var titleEl = document.getElementById('instrutor-form-title');
+    if (id) {
+        var inst = instrutores.find(i => i.id === id);
+        if (!inst) return;
+        titleEl.innerHTML = '<i class="fa-solid fa-pen" style="color:#ff9800;margin-right:8px"></i> Editar Instrutor';
+        document.getElementById('intr-id').value = inst.id;
+        document.getElementById('intr-nome').value = inst.nome || '';
+        document.getElementById('intr-guerra').value = inst.guerra || '';
+        document.getElementById('intr-cpf').value = inst.cpf || '';
+        document.getElementById('intr-matricula').value = inst.matricula || '';
+        document.getElementById('intr-fone').value = inst.fone || '';
+        document.getElementById('intr-email').value = inst.email || '';
+        instrutorPopulateDisciplinas(inst.disciplinas || []);
+    } else {
+        titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Instrutor';
+        instrutorPopulateDisciplinas([]);
+    }
+    document.getElementById('modal-instrutor-overlay').classList.remove('hidden');
+}
+
+function instrutorFecharModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('modal-instrutor-overlay').classList.add('hidden');
+}
+
+function instrutorLimparForm() {
+    document.getElementById('intr-id').value = '';
+    document.getElementById('intr-nome').value = '';
+    document.getElementById('intr-guerra').value = '';
+    document.getElementById('intr-cpf').value = '';
+    document.getElementById('intr-matricula').value = '';
+    document.getElementById('intr-fone').value = '';
+    document.getElementById('intr-email').value = '';
+    instrutorPopulateDisciplinas([]);
+}
+
+function instrutorPopulateDisciplinas(selectedArr) {
+    var container = document.getElementById('intr-disciplinas-checks');
+    if (!container) return;
+    container.innerHTML = '';
+    var allDisc = ['APH', 'Legislacao e Normas', 'Gerencia Analitica', 'AP OU E CT'];
+    if (!allDisc.length) {
+        container.innerHTML = '<span style="color:#666;font-size:13px">Nenhuma disciplina disponivel</span>';
+        return;
+    }
+    allDisc.forEach(function(d) {
+        var checked = selectedArr.indexOf(d) !== -1 ? 'checked' : '';
+        container.innerHTML += '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:13px;color:#ccc;white-space:nowrap"><input type="checkbox" value="' + d + '" class="intr-disc-check" ' + checked + '> ' + d + '</label>';
+    });
+}
+
+function instrutorGetSelectedDisciplinas() {
+    return Array.from(document.querySelectorAll('.intr-disc-check:checked')).map(function(cb) { return cb.value; });
+}
+
+async function instrutorSalvar(e) {
+    e.preventDefault();
+    var nome = document.getElementById('intr-nome').value.trim();
+    var guerra = document.getElementById('intr-guerra').value.trim();
+    var cpf = document.getElementById('intr-cpf').value.trim();
+    if (!nome || !guerra || !cpf) { alert('Preencha Nome Completo, Nome de Guerra e CPF'); return; }
+    var dados = {
+        nome: nome,
+        guerra: guerra,
+        cpf: cpf,
+        matricula: document.getElementById('intr-matricula').value.trim(),
+        fone: document.getElementById('intr-fone').value.trim(),
+        email: document.getElementById('intr-email').value.trim(),
+        disciplinas: instrutorGetSelectedDisciplinas(),
+        atualizadoEm: new Date().toISOString()
+    };
+    try {
+        if (editingInstrutorId) {
+            await dbFirestore.collection('instrutores').doc(editingInstrutorId).update(dados);
+            var idx = instrutores.findIndex(i => i.id === editingInstrutorId);
+            if (idx !== -1) Object.assign(instrutores[idx], dados);
+            alert('Instrutor atualizado com sucesso!');
+        } else {
+            var dup = instrutores.find(i => i.cpf === cpf);
+            if (dup) { alert('Ja existe instrutor com este CPF'); return; }
+            dados.criadoEm = new Date().toISOString();
+            var ref = await dbFirestore.collection('instrutores').add(dados);
+            dados.id = ref.id;
+            instrutores.push(dados);
+            alert('Instrutor cadastrado com sucesso!');
+        }
+        instrutorFecharModal();
+        instrutorListar();
+    } catch (e) {
+        console.error('Erro ao salvar instrutor:', e);
+        alert('Erro ao salvar instrutor: ' + e.message);
+    }
+}
+
+function instrutorListar() {
+    var tbody = document.getElementById('instrutores-table-body');
+    var empty = document.getElementById('instrutores-empty');
+    var lista = document.getElementById('instrutores-lista');
+    if (!tbody) return;
+    if (!instrutores.length) {
+        if (empty) empty.style.display = 'block';
+        if (lista) lista.style.display = 'none';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    if (lista) lista.style.display = 'block';
+    tbody.innerHTML = instrutores.map(function(i) {
+        var cpfFmt = i.cpf ? i.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-';
+        var discHtml = (i.disciplinas || []).map(function(d) { return '<span class="badge blue" style="font-size:10px;margin:1px">' + d + '</span>'; }).join(' ');
+        return '<tr>' +
+            '<td style="font-weight:600">' + (i.nome || '-') + '</td>' +
+            '<td>' + (i.guerra || '-') + '</td>' +
+            '<td>' + cpfFmt + '</td>' +
+            '<td>' + (i.matricula || '-') + '</td>' +
+            '<td>' + (discHtml || '-') + '</td>' +
+            '<td>' + (i.fone || '-') + '</td>' +
+            '<td>' + (i.email || '-') + '</td>' +
+            '<td><div class="actions-cell">' +
+                '<button class="btn-icon" title="Editar" onclick="instrutorAbrirModal(\'' + i.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="instrutorExcluir(\'' + i.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                '<button class="btn-icon" title="Imprimir" onclick="instrutorImprimir(\'' + i.id + '\')" style="color:#4caf50"><i class="fa-solid fa-print"></i></button>' +
+            '</div></td></tr>';
+    }).join('');
+}
+
+async function instrutorExcluir(id) {
+    if (!confirm('Excluir este instrutor?')) return;
+    try {
+        await dbFirestore.collection('instrutores').doc(id).delete();
+        instrutores = instrutores.filter(i => i.id !== id);
+        instrutorListar();
+    } catch (e) {
+        console.error('Erro ao excluir instrutor:', e);
+        alert('Erro ao excluir instrutor: ' + e.message);
+    }
+}
+
+function instrutorImprimir(id) {
+    var i = instrutores.find(x => x.id === id);
+    if (!i) return;
+    var cpfFmt = i.cpf ? i.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-';
+    var discHtml = (i.disciplinas || []).join(', ') || '-';
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Instrutor - ' + (i.nome || '') + '</title><style>' +
+        'body{font-family:Arial,sans-serif;padding:40px;color:#333}' +
+        'h2{color:#1a237e;border-bottom:2px solid #1a237e;padding-bottom:8px}' +
+        '.field{margin:10px 0;display:flex;gap:8px}' +
+        '.label{font-weight:700;min-width:140px;color:#555}' +
+        '.val{color:#111}' +
+        '.disc-tag{display:inline-block;background:#e3f2fd;color:#1565c0;padding:3px 10px;border-radius:4px;margin:2px;font-size:13px}' +
+        '@media print{body{padding:20px}}' +
+        '</style></head><body>' +
+        '<h2><i class="fa-solid fa-chalkboard-user"></i> Ficha do Instrutor</h2>' +
+        '<div class="field"><span class="label">Nome Completo:</span><span class="val">' + (i.nome || '-') + '</span></div>' +
+        '<div class="field"><span class="label">Nome de Guerra:</span><span class="val">' + (i.guerra || '-') + '</span></div>' +
+        '<div class="field"><span class="label">CPF:</span><span class="val">' + cpfFmt + '</span></div>' +
+        '<div class="field"><span class="label">Matricula:</span><span class="val">' + (i.matricula || '-') + '</span></div>' +
+        '<div class="field"><span class="label">Fone:</span><span class="val">' + (i.fone || '-') + '</span></div>' +
+        '<div class="field"><span class="label">Email:</span><span class="val">' + (i.email || '-') + '</span></div>' +
+        '<div class="field"><span class="label">Disciplinas:</span><span class="val">' + ((i.disciplinas || []).map(function(d){ return '<span class="disc-tag">' + d + '</span>'; }).join(' ') || '-') + '</span></div>' +
+        '<script>window.onload=function(){window.print();}<\/script></body></html>';
+    var win = window.open('', '_blank', 'width=800,height=600');
+    win.document.write(html);
+    win.document.close();
+}
+
+async function instrutoresInicializar() {
+    if (instrutores.length) {
+        instrutorListar();
+        return;
+    }
+    try {
+        var snap = await dbFirestore.collection('instrutores').get();
+        instrutores = [];
+        snap.forEach(function(doc) {
+            var data = doc.data();
+            data.id = doc.id;
+            instrutores.push(data);
+        });
+        instrutorListar();
+    } catch (e) {
+        console.error('Erro ao carregar instrutores:', e);
     }
 }

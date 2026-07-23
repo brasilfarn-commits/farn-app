@@ -150,11 +150,7 @@
                         <i class="fa-solid fa-user-graduate"></i>
                         <span>Alunos</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-disciplinas', this); disciplinaRenderList()">
-                        <i class="fa-solid fa-book"></i>
-                        <span>Disciplinas</span>
-                    </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-instrutores', this)">
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-instrutores', this); instrutoresInicializar()">
                         <i class="fa-solid fa-chalkboard-user"></i>
                         <span>Instrutores</span>
                     </a>
@@ -234,15 +230,15 @@
                                 <i class="fa-solid fa-user-graduate"></i>
                                 <span>Alunos</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-instrutores', document.querySelector('.nav-item:nth-child(5)'))">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-instrutores', document.querySelector('.nav-item:nth-child(4)')); instrutoresInicializar()">
                                 <i class="fa-solid fa-chalkboard-user"></i>
                                 <span>Instrutores</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item:nth-child(7)'))">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item:nth-child(5)'))">
                                 <i class="fa-solid fa-chart-bar"></i>
                                 <span>Relatórios</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item:nth-child(8)')); renderProjetosList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item:nth-child(6)')); renderProjetosList()">
                                 <i class="fa-solid fa-handshake"></i>
                                 <span>Projetos</span>
                             </div>
@@ -250,7 +246,7 @@
                                 <i class="fa-solid fa-mobile-screen-button"></i>
                                 <span>Baixar App Android</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item:nth-child(10)')); recadLoadAll()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item:nth-child(9)')); recadLoadAll()">
                                 <i class="fa-solid fa-rotate"></i>
                                 <span>Recadastramento</span>
                             </div>
@@ -333,100 +329,36 @@
                         </div>
                     </div>
                 </div>
-                <div id="admin-disciplinas" class="admin-section">
+                <div id="admin-instrutores" class="admin-section">
                     <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-book" style="color:#f57f17;margin-right:8px"></i> Disciplinas e Aulas</h3>
+                        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                            <h3><i class="fa-solid fa-chalkboard-user" style="color:#f44336;margin-right:8px"></i> Instrutores</h3>
+                            <button class="btn-primary" onclick="instrutorAbrirModal()"><i class="fa-solid fa-plus"></i> Novo Instrutor</button>
                         </div>
                         <div class="card-body">
-                            <div class="card" style="margin-bottom:20px;border:1px solid #333;border-radius:10px;overflow:hidden">
-                                <div class="card-header" style="background:#1a1a2e;padding:12px 16px;border-bottom:1px solid #333">
-                                    <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-book" style="color:#f57f17;margin-right:8px"></i> Cadastro de Disciplina</h4>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label>Nome da Disciplina *</label>
-                                            <input type="text" id="disciplina-nome" class="config-input" placeholder="Ex: APH, RCP, Legislacao e Normas..." required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Codigo</label>
-                                            <input type="text" id="disciplina-codigo" class="config-input" placeholder="Ex: DISC001">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Carga Horaria (horas)</label>
-                                            <input type="number" id="disciplina-carga" class="config-input" min="1" placeholder="Ex: 40">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Descricao</label>
-                                            <textarea id="disciplina-descricao" class="config-input" rows="3" placeholder="Descricao da disciplina..."></textarea>
-                                        </div>
-                                    </div>
-                                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-                                        <button class="btn-secondary" onclick="disciplinaLimparForm()"><i class="fa-solid fa-eraser"></i> Limpar</button>
-                                        <button class="btn-primary" onclick="disciplinaSalvar()"><i class="fa-solid fa-save"></i> Salvar Disciplina</button>
-                                    </div>
-                                </div>
+                            <div id="instrutores-empty" class="empty-state" style="display:none;padding:40px">
+                                <i class="fa-solid fa-chalkboard-user" style="font-size:48px;color:#444;margin-bottom:12px"></i>
+                                <p style="color:#888">Nenhum instrutor cadastrado</p>
                             </div>
-                            <div class="card" style="margin-bottom:20px;border:1px solid #333;border-radius:10px;overflow:hidden">
-                                <div class="card-header" style="background:#1a1a2e;padding:12px 16px;border-bottom:1px solid #333">
-                                    <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-list" style="color:#4caf50;margin-right:8px"></i> Disciplinas Cadastradas</h4>
-                                </div>
-                                <div class="card-body">
-                                    <div id="disciplinas-empty" class="empty-state" style="display:none;padding:40px">
-                                        <i class="fa-solid fa-book" style="font-size:48px;color:#444;margin-bottom:12px"></i>
-                                        <p style="color:#888">Nenhuma disciplina cadastrada</p>
-                                    </div>
-                                    <div id="disciplinas-lista" class="table-responsive" style="display:none">
-                                        <table class="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Nome</th>
-                                                    <th>Codigo</th>
-                                                    <th>Carga Horaria</th>
-                                                    <th>Descricao</th>
-                                                    <th>Aulas</th>
-                                                    <th>Acoes</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="disciplinas-table-body"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card" style="border:1px solid #333;border-radius:10px;overflow:hidden">
-                                <div class="card-header" style="background:#1a1a2e;padding:12px 16px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center">
-                                    <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-clock" style="color:#f57f17;margin-right:8px"></i> Aulas da Disciplina</h4>
-                                    <button class="btn-primary btn-sm" onclick="aulaAbrirModalNova()"><i class="fa-solid fa-plus"></i> Nova Aula</button>
-                                </div>
-                                <div class="card-body">
-                                    <div id="aulas-empty" class="empty-state" style="display:none;padding:40px">
-                                        <i class="fa-solid fa-clock" style="font-size:48px;color:#444;margin-bottom:12px"></i>
-                                        <p style="color:#888">Nenhuma aula cadastrada</p>
-                                        <p style="color:#666;font-size:13px;margin-top:4px">Selecione uma disciplina e adicione aulas</p>
-                                    </div>
-                                    <div id="aulas-lista" class="table-responsive" style="display:none">
-                                        <table class="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th style="width:50px">#</th>
-                                                    <th>Nome da Aula</th>
-                                                    <th style="width:160px">Turma</th>
-                                                    <th style="width:120px">Data</th>
-                                                    <th style="width:100px">Hora</th>
-                                                    <th style="width:180px">Acoes</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="aulas-table-body"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                            <div id="instrutores-lista" class="table-responsive" style="display:none">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>Nome Guerra</th>
+                                            <th>CPF</th>
+                                            <th>Matricula</th>
+                                            <th>Disciplinas</th>
+                                            <th>Fone</th>
+                                            <th>Email</th>
+                                            <th>Acoes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="instrutores-table-body"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div id="admin-instrutores" class="admin-section">
-                    <div class="card full-width"><div class="card-header"><h3><i class="fa-solid fa-chalkboard-user" style="color:#f44336;margin-right:8px"></i> Instrutores</h3></div><div class="card-body"><p style="color:#888;text-align:center;padding:40px">Pagina em desenvolvimento...</p></div></div>
                 </div>
 
                 <div id="admin-relatorios" class="admin-section">
@@ -1361,6 +1293,59 @@
         </div>
     </div>
 
+    <!-- MODAL INSTRUTOR -->
+    <div id="modal-instrutor-overlay" class="modal-overlay hidden" onclick="instrutorFecharModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:600px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3 id="instrutor-form-title"><i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Instrutor</h3>
+                <button class="modal-close" onclick="instrutorFecharModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-instrutor" onsubmit="return instrutorSalvar(event)">
+                    <input type="hidden" id="intr-id">
+                    <div class="form-group" style="margin-bottom:14px">
+                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Nome Completo *</label>
+                        <input type="text" id="intr-nome" class="config-input" placeholder="Nome completo" required>
+                    </div>
+                    <div class="form-row" style="display:flex;gap:14px;margin-bottom:14px">
+                        <div class="form-group" style="flex:1">
+                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Nome de Guerra *</label>
+                            <input type="text" id="intr-guerra" class="config-input" placeholder="Nome de guerra" required>
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">CPF *</label>
+                            <input type="text" id="intr-cpf" class="config-input" placeholder="000.000.000-00" maxlength="14" required oninput="mascaraCPF(this)">
+                        </div>
+                    </div>
+                    <div class="form-row" style="display:flex;gap:14px;margin-bottom:14px">
+                        <div class="form-group" style="flex:1">
+                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Matricula</label>
+                            <input type="text" id="intr-matricula" class="config-input" placeholder="Numero da matricula">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Fone</label>
+                            <input type="text" id="intr-fone" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="mascaraFone(this)">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px">
+                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Email</label>
+                        <input type="email" id="intr-email" class="config-input" placeholder="email@exemplo.com">
+                    </div>
+                    <div class="form-group" style="margin-bottom:18px">
+                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Disciplinas</label>
+                        <div id="intr-disciplinas-checks" class="config-input" style="min-height:42px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                            <span style="color:#666;font-size:13px">Nenhuma disciplina disponivel</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end">
+                        <button type="button" class="btn-secondary" onclick="instrutorLimparForm()"><i class="fa-solid fa-eraser"></i> Limpar</button>
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL CONFIRMACAO -->
     <div id="modal-confirm-overlay" class="modal-overlay hidden" onclick="closeConfirmModal(event)">
         <div class="modal-content modal-confirm">
@@ -1422,50 +1407,6 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-outline" onclick="closeDownloadModal()"><i class="fa-solid fa-xmark"></i> Fechar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL AULA -->
-    <div id="modal-aula-overlay" class="modal-overlay hidden" onclick="closeAulaModal(event)">
-        <div class="modal-content modal-confirm">
-            <div class="modal-header">
-                <h3 id="aula-form-title"><i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Nova Aula</h3>
-                <button class="modal-close" onclick="closeAulaModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="form-aula" onsubmit="return handleAulaSubmit(event)">
-                    <input type="hidden" id="aula-id">
-                    <input type="hidden" id="aula-disciplina-id">
-                    <div class="form-group" style="margin-bottom:16px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:6px;display:block">Turmas *</label>
-                        <div id="aula-turmas-checks" class="config-input" style="min-height:42px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-                            <span style="color:#666;font-size:13px">Carregando turmas...</span>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin-bottom:16px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:6px;display:block">Nome da Aula *</label>
-                        <input type="text" id="aula-nome" class="config-input" placeholder="Ex: Introdução ao Bombeiro Civil" required>
-                    </div>
-                    <div class="form-row" style="gap:16px;margin-bottom:16px">
-                        <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:6px;display:block">Data *</label>
-                            <input type="date" id="aula-data" class="config-input" required>
-                        </div>
-                        <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:6px;display:block">Hora *</label>
-                            <input type="time" id="aula-hora" class="config-input" required>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin-bottom:16px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:6px;display:block">Observações</label>
-                        <textarea id="aula-obs" class="config-input" rows="3" placeholder="Observações opcionais"></textarea>
-                    </div>
-                    <div class="modal-footer" style="border:none;padding:0">
-                        <button type="button" class="btn-outline" onclick="closeAulaModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                        <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

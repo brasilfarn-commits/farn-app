@@ -97,6 +97,14 @@
         .pf-section-header i { font-size:20px; color:#f57c00; }
         .pf-section-header h2 { font-size:18px; font-weight:700; }
 
+        /* Dados */
+        .pf-dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+        .pf-dados-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px}
+        .pf-dados-editable{cursor:pointer;transition:.2s;border-color:rgba(245,124,0,.15)}
+        .pf-dados-editable:hover{background:rgba(245,124,0,.06);border-color:rgba(245,124,0,.3)}
+        .pf-dados-label{font-size:11px;color:#8b949e;margin-bottom:4px;display:flex;align-items:center}
+        .pf-dados-val{font-size:14px;font-weight:600;color:#e6edf3;word-break:break-word}
+
         .pf-em-construcao { text-align:center; padding:60px 20px; }
         .pf-em-construcao i { font-size:50px; color:#ffc107; margin-bottom:12px; }
         .pf-em-construcao h3 { color:#ffc107; font-size:18px; margin-bottom:6px; }
@@ -284,7 +292,7 @@
                     <i class="fa-solid fa-user-pen"></i>
                     <h2>Meus Dados</h2>
                 </div>
-                <div id="pf-dados-content" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+                <div class="pf-dados-grid" id="pf-dados-content"></div>
             </div>
 
             <!-- CERTIFICADO -->
@@ -403,6 +411,21 @@
         <button class="pf-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
         <img id="pf-photo-modal-img" src="">
         <div class="pf-photo-modal-info" id="pf-photo-modal-info"></div>
+    </div>
+
+    <!-- MODAL EDITAR DADOS -->
+    <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)pfCloseEditModal()">
+        <div style="background:#161b22;border:1px solid rgba(245,124,0,.3);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 id="pf-edit-title" style="margin:0;font-size:16px;color:#f57c00"></h3>
+                <button onclick="pfCloseEditModal()" style="background:none;border:none;color:#8b949e;font-size:18px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="pf-edit-body"></div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button onclick="pfCloseEditModal()" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#8b949e;font-size:13px;cursor:pointer">Cancelar</button>
+                <button onclick="pfConfirmEdit()" style="flex:1;padding:10px;background:linear-gradient(135deg,#f57c00,#e65100);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -578,28 +601,130 @@
     function pfLoadDados() {
         if (!pfUser) return;
         var el = document.getElementById('pf-dados-content');
-        var fields = [
-            { label:'Nome', val: pfUser.nome },
-            { label:'CPF', val: pfUser.cpf ? pfUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '' },
-            { label:'Matricula', val: pfUser.matricula || '---' },
-            { label:'Projeto', val: pfUser.projeto },
-            { label:'Email', val: pfUser.email },
-            { label:'WhatsApp', val: pfUser.whatsapp },
-            { label:'Nascimento', val: pfUser.nascimento },
-            { label:'Cidade', val: (pfUser.cidade||'') + (pfUser.estado ? '/' + pfUser.estado : '') },
-            { label:'Endereco', val: (pfUser.endereco||'') + ', ' + (pfUser.numero||'') },
-            { label:'Bairro', val: pfUser.bairro },
-            { label:'Estado Civil', val: pfUser.estadoCivil },
-            { label:'Altura', val: pfUser.altura ? pfUser.altura + ' cm' : '' },
-            { label:'Peso', val: pfUser.peso ? pfUser.peso + ' kg' : '' },
-            { label:'Fator RH', val: pfUser.fatorRh },
-            { label:'Certificado', val: 'Emissao: ' + (pfUser.dataCertificado || '---') }
-        ];
-        el.innerHTML = fields.map(function(f) {
-            return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px">' +
-                '<div style="font-size:11px;color:#888;margin-bottom:4px">' + f.label + '</div>' +
-                '<div style="font-size:14px;font-weight:600;color:#fff">' + (f.val || '---') + '</div></div>';
-        }).join('');
+        var endComp = [pfUser.endereco, pfUser.numero].filter(Boolean).join(', ');
+        endComp = [endComp, pfUser.bairro].filter(Boolean).join(' - ');
+        endComp = [endComp, [pfUser.cidade, pfUser.estado].filter(Boolean).join('/')].filter(Boolean).join(' - ');
+
+        el.innerHTML =
+            '<div class="pf-dados-card"><div class="pf-dados-label">Nome Completo</div><div class="pf-dados-val">' + (pfUser.nome || '---') + '</div></div>' +
+            '<div class="pf-dados-card"><div class="pf-dados-label">CPF</div><div class="pf-dados-val">' + (pfUser.cpf ? pfUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '---') + '</div></div>' +
+            '<div class="pf-dados-card"><div class="pf-dados-label">Matricula</div><div class="pf-dados-val">' + (pfUser.matricula || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'email\')"><div class="pf-dados-label">Email <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-email">' + (pfUser.email || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'whatsapp\')"><div class="pf-dados-label">WhatsApp <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-whatsapp">' + (pfUser.whatsapp || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'endereco\')" style="grid-column:1/-1"><div class="pf-dados-label">Endereco Completo <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-endereco">' + (endComp || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'senha\')" style="grid-column:1/-1"><div class="pf-dados-label">Senha de Acesso <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-senha">******</div></div>';
+    }
+
+    function pfEditCampo(campo) {
+        var modal = document.getElementById('pf-edit-modal');
+        var title = document.getElementById('pf-edit-title');
+        var body = document.getElementById('pf-edit-body');
+        var atual = '';
+
+        if (campo === 'email') {
+            title.textContent = 'Editar Email';
+            atual = pfUser.email || '';
+            body.innerHTML = '<label>Email</label><input type="email" id="pf-edit-valor" value="' + atual + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+        } else if (campo === 'whatsapp') {
+            title.textContent = 'Editar WhatsApp';
+            atual = pfUser.whatsapp || '';
+            body.innerHTML = '<label>WhatsApp</label><input type="text" id="pf-edit-valor" value="' + atual + '" oninput="pfFormatPhone(this)" maxlength="15" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+        } else if (campo === 'endereco') {
+            title.textContent = 'Editar Endereco';
+            body.innerHTML =
+                '<label>Endereco (Rua/Av)</label><input type="text" id="pf-edit-endereco" value="' + (pfUser.endereco || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+                '<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px">' +
+                    '<div><label>Numero</label><input type="text" id="pf-edit-numero" value="' + (pfUser.numero || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label>Bairro</label><input type="text" id="pf-edit-bairro" value="' + (pfUser.bairro || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:10px">' +
+                    '<div><label>Cidade</label><input type="text" id="pf-edit-cidade" value="' + (pfUser.cidade || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label>Estado</label><input type="text" id="pf-edit-estado" value="' + (pfUser.estado || '') + '" maxlength="2" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                '</div>';
+        } else if (campo === 'senha') {
+            title.textContent = 'Alterar Senha';
+            body.innerHTML =
+                '<label>Nova Senha</label><input type="password" id="pf-edit-valor" placeholder="Minimo 4 caracteres" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+                '<label style="margin-top:10px;display:block">Confirmar Senha</label><input type="password" id="pf-edit-valor2" placeholder="Repita a senha" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+        }
+
+        body.innerHTML += '<label style="margin-top:14px;display:block;font-size:12px;color:#8b949e">Confirme com sua senha atual</label>' +
+            '<input type="password" id="pf-edit-senha" placeholder="Senha atual" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+            '<div id="pf-edit-error" style="display:none;color:#f85149;font-size:12px;margin-top:8px"></div>';
+
+        modal.style.display = 'flex';
+        modal._campo = campo;
+    }
+
+    function pfCloseEditModal() {
+        document.getElementById('pf-edit-modal').style.display = 'none';
+    }
+
+    function pfFormatPhone(input) {
+        var v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        else if (v.length > 0) v = v.replace(/(\d{0,2})/, '($1');
+        input.value = v;
+    }
+
+    async function pfConfirmEdit() {
+        var modal = document.getElementById('pf-edit-modal');
+        var campo = modal._campo;
+        var senhaInput = document.getElementById('pf-edit-senha');
+        var errorEl = document.getElementById('pf-edit-error');
+        var senha = senhaInput.value;
+
+        errorEl.style.display = 'none';
+        if (!senha) { errorEl.textContent = 'Informe sua senha atual.'; errorEl.style.display = 'block'; return; }
+
+        /* Verifica senha */
+        var cpf = (pfUser.cpf || '').replace(/\D/g, '');
+        try {
+            var snap = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
+            if (snap.empty || snap.docs[0].data().senha !== senha) {
+                errorEl.textContent = 'Senha incorreta.';
+                errorEl.style.display = 'block';
+                return;
+            }
+        } catch(e) {
+            errorEl.textContent = 'Erro ao verificar senha.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        var dados = {};
+        if (campo === 'email') {
+            var val = document.getElementById('pf-edit-valor').value.trim();
+            if (!val) { errorEl.textContent = 'Informe o email.'; errorEl.style.display = 'block'; return; }
+            dados.email = val;
+        } else if (campo === 'whatsapp') {
+            var val = document.getElementById('pf-edit-valor').value.trim();
+            dados.whatsapp = val;
+        } else if (campo === 'endereco') {
+            dados.endereco = document.getElementById('pf-edit-endereco').value.trim();
+            dados.numero = document.getElementById('pf-edit-numero').value.trim();
+            dados.bairro = document.getElementById('pf-edit-bairro').value.trim();
+            dados.cidade = document.getElementById('pf-edit-cidade').value.trim();
+            dados.estado = document.getElementById('pf-edit-estado').value.trim().toUpperCase();
+        } else if (campo === 'senha') {
+            var nova = document.getElementById('pf-edit-valor').value;
+            var conf = document.getElementById('pf-edit-valor2').value;
+            if (!nova || nova.length < 4) { errorEl.textContent = 'A senha deve ter no minimo 4 caracteres.'; errorEl.style.display = 'block'; return; }
+            if (nova !== conf) { errorEl.textContent = 'As senhas nao conferem.'; errorEl.style.display = 'block'; return; }
+            dados.senha = nova;
+        }
+
+        try {
+            await dbFirestore.collection('recadastramentos').doc(pfUser._docId).update(dados);
+            Object.assign(pfUser, dados);
+            pfLoadDados();
+            pfCloseEditModal();
+        } catch(e) {
+            errorEl.textContent = 'Erro ao salvar: ' + e.message;
+            errorEl.style.display = 'block';
+        }
     }
 
     /* ===== CERTIFICADO ===== */
@@ -611,11 +736,9 @@
             html = '<div style="text-align:center;padding:20px">' +
                 '<div style="font-size:50px;color:#4caf50;margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>' +
                 '<h3 style="color:#4caf50;margin-bottom:8px">Certificado Aprovado</h3>' +
-                '<p style="color:#aaa;font-size:13px;margin-bottom:16px">Emissao: ' + (pfUser.dataCertificado || '---') + '</p>' +
-                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-            if (pfUser.certificadoFrente) html += '<div><div style="font-size:12px;color:#888;margin-bottom:6px">Frente</div><img src="' + pfUser.certificadoFrente + '" style="width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.1)"></div>';
-            if (pfUser.certificadoVerso) html += '<div><div style="font-size:12px;color:#888;margin-bottom:6px">Verso</div><img src="' + pfUser.certificadoVerso + '" style="width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.1)"></div>';
-            html += '</div></div>';
+                '<p style="color:#aaa;font-size:13px;margin-bottom:16px">Emissao: ' + (pfUser.dataCertificado || '---') + '</p>';
+            if (pfUser.certificadoFrente) html += '<div style="max-width:400px;margin:0 auto"><img src="' + pfUser.certificadoFrente + '" style="width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.1)"></div>';
+            html += '</div>';
         } else {
             html = '<div class="pf-em-construcao"><i class="fa-solid fa-hourglass-half"></i><h3>Certificado Pendente</h3><p>Seu certificado ainda esta em analise.</p></div>';
         }

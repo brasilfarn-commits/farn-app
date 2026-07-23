@@ -194,7 +194,7 @@
     <div id="screen-login">
         <div class="pf-login-card">
             <div class="pf-login-logo">
-                <img src="https://firebasestorage.googleapis.com/v0/b/farn-app.appspot.com/o/imagens%2Flogo.png?alt=media&token=44c3b831-75a7-4649-b377-72c6c439b59f" alt="FARN">
+                <img src="logo-farn.png.png" alt="FARN">
                 <h1>Portal do Aluno</h1>
                 <p>Acesse sua conta</p>
             </div>
@@ -224,7 +224,7 @@
         <!-- TOP BAR -->
         <div class="pf-topbar">
             <div class="pf-topbar-left">
-                <img class="pf-topbar-logo" src="https://firebasestorage.googleapis.com/v0/b/farn-app.appspot.com/o/imagens%2Flogo.png?alt=media&token=44c3b831-75a7-4649-b377-72c6c439b59f" alt="FARN">
+                <img class="pf-topbar-logo" src="logo-farn.png.png" alt="FARN">
                 <span class="pf-topbar-title">Portal do Aluno</span>
             </div>
             <div class="pf-topbar-right">
@@ -390,6 +390,7 @@
     var paChatUnsub=null;
     var paGalleryUnsub=null;
     var paNoticiasUnsub=null;
+    var paDisciplinas=[];
 
     /* ===== FORMATACAO ===== */
     function paFormatCPF(input) {
@@ -904,6 +905,61 @@
             });
         }, function() {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar apostilas.</p></div>';
+        });
+    }
+
+    /* ===== AULAS ===== */
+    async function paLoadDisciplinas() {
+        try {
+            var snap = await dbFirestore.collection('disciplinas').get();
+            paDisciplinas = [];
+            snap.forEach(function(doc) { paDisciplinas.push({ id: doc.id, nome: doc.data().nome }); });
+        } catch(e) { paDisciplinas = []; }
+    }
+
+    function paLoadAulas() {
+        if (!paUser) return;
+        var container = document.getElementById('pf-aulas-list');
+        var myTurma = (paUser.turma || '').trim();
+
+        dbFirestore.collection('aulas').onSnapshot(function(snap) {
+            var items = [];
+            snap.forEach(function(doc) {
+                var a = doc.data();
+                a._id = doc.id;
+                if (a.visivel === false) return;
+                items.push(a);
+            });
+            if (items.length === 0) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula disponivel no momento.</p></div>';
+                return;
+            }
+            items.sort(function(x, y) {
+                var dx = x.data ? new Date(x.data).getTime() : 0;
+                var dy = y.data ? new Date(y.data).getTime() : 0;
+                return dy - dx;
+            });
+            container.innerHTML = '';
+            items.forEach(function(a) {
+                if (a.turma && myTurma && a.turma !== myTurma) return;
+                var dateStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
+                var card = document.createElement('div');
+                card.className = 'pf-apostila-card';
+                card.style.cursor = 'default';
+                card.innerHTML = '<div class="pf-apostila-icon" style="background:rgba(33,136,255,.12)"><i class="fa-solid fa-chalkboard-user" style="color:#2188ff"></i></div>' +
+                    '<div class="pf-apostila-info">' +
+                        '<div class="pf-apostila-titulo">' + (a.nome || 'Aula') + '</div>' +
+                        '<div class="pf-apostila-desc">' + (a.observacoes || '') + '</div>' +
+                        '<div class="pf-apostila-meta">' +
+                            (dateStr ? '<span><i class="fa-solid fa-calendar-days" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
+                            turmaHtml +
+                        '</div>' +
+                    '</div>';
+                container.appendChild(card);
+            });
+        }, function() {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
         });
     }
 
