@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostico - Aulas</title>
+    <style>
+        body { background: #0d1117; color: #e6edf3; font-family: monospace; padding: 20px; font-size: 13px; }
+        h2 { color: #f57f17; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin: 10px 0; }
+        .ok { color: #4caf50; } .warn { color: #f57f17; } .err { color: #f44336; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #30363d; }
+        th { color: #f57f17; }
+    </style>
+</head>
+<body>
+    <h2>Diagnostico: Aulas no Firestore</h2>
+    <div id="results">Carregando...</div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        firebase.initializeApp({
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "1093375527738",
+            appId: "1:1093375527738:web:7320e1d794364c9ad12035"
+        });
+        var db = firebase.firestore();
+
+        async function run() {
+            var html = '';
+
+            // AULAS
+            var aulasSnap = await db.collection('aulas').get();
+            html += '<div class="card"><b>AULAS:</b> ' + aulasSnap.size + ' documento(s)</div>';
+            if (aulasSnap.size > 0) {
+                html += '<table><tr><th>Nome</th><th>Turma (string)</th><th>Turmas (array)</th><th>visivel</th><th>disciplinaId</th><th>ID Firestore</th></tr>';
+                aulasSnap.forEach(function(doc) {
+                    var d = doc.data();
+                    var vis = d.visivel;
+                    var visClass = vis === true ? 'ok' : (vis === false ? 'err' : 'warn');
+                    var visLabel = vis === true ? 'true' : (vis === false ? 'false' : 'UNDEFINED');
+                    html += '<tr><td>' + (d.nome||'-') + '</td><td>' + (d.turma||'-') + '</td><td>' + JSON.stringify(d.turmas||[]) + '</td><td class="' + visClass + '">' + visLabel + '</td><td>' + (d.disciplinaId||'-') + '</td><td>' + doc.id + '</td></tr>';
+                });
+                html += '</table>';
+            }
+
+            // CANDIDATOS (primeiros 5)
+            var candSnap = await db.collection('candidatos').limit(5).get();
+            html += '<div class="card"><b>CANDIDATOS (primeiros 5):</b> ' + candSnap.size + ' docs</div>';
+            html += '<table><tr><th>Nome</th><th>CPF</th><th>Turma</th><th>Projeto</th><th>Ativo</th></tr>';
+            candSnap.forEach(function(doc) {
+                var d = doc.data();
+                html += '<tr><td>' + (d.nome||'-') + '</td><td>' + (d.cpf||'-') + '</td><td class="ok">' + (d.turma||'VAZIO') + '</td><td>' + (d.projeto||'-') + '</td><td>' + d.ativo + '</td></tr>';
+            });
+            html += '</table>';
+
+            // TURMAS
+            var turmasSnap = await db.collection('turmas').get();
+            html += '<div class="card"><b>TURMAS:</b> ' + turmasSnap.size + ' documento(s)</div>';
+            html += '<table><tr><th>Nome</th><th>ID</th></tr>';
+            turmasSnap.forEach(function(doc) {
+                var d = doc.data();
+                html += '<tr><td class="ok">' + (d.nome||'-') + '</td><td>' + doc.id + '</td></tr>';
+            });
+            html += '</table>';
+
+            // DISCIPLINAS
+            var discSnap = await db.collection('disciplinas').get();
+            html += '<div class="card"><b>DISCIPLINAS:</b> ' + discSnap.size + ' documento(s)</div>';
+            html += '<table><tr><th>Nome</th><th>ID</th></tr>';
+            discSnap.forEach(function(doc) {
+                var d = doc.data();
+                html += '<tr><td>' + (d.nome||'-') + '</td><td>' + doc.id + '</td></tr>';
+            });
+            html += '</table>';
+
+            document.getElementById('results').innerHTML = html;
+        }
+        run().catch(function(e) { document.getElementById('results').innerHTML = '<div class="card err">ERRO: ' + e.message + '</div>'; });
+    </script>
+</body>
+</html>
