@@ -3586,6 +3586,229 @@ async function discDelete(docId) {
     }
 }
 
+/* ===== AULAS ===== */
+let aulaEditingId = null;
+
+async function aulaLoadDisciplinas() {
+    var sel = document.getElementById('aula-disciplina');
+    if (!sel) return;
+    try {
+        var snap = await dbFirestore.collection('disciplinas').orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione a disciplina...</option>';
+        snap.forEach(function(doc) {
+            var d = doc.data();
+            sel.innerHTML += '<option value="' + d.nome + '" data-projeto="' + (d.projeto || '') + '" data-turma="' + (d.turma || '') + '" data-instrutor="' + (d.instrutor || '') + '">' + d.nome + ' (' + (d.projeto || '') + ')</option>';
+        });
+    } catch(e) {
+        sel.innerHTML = '<option value="">Erro ao carregar disciplinas</option>';
+    }
+}
+
+function aulaOnDisciplinaChange() {
+    var sel = document.getElementById('aula-disciplina');
+    var opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    var projeto = opt.getAttribute('data-projeto') || '';
+    var turma = opt.getAttribute('data-turma') || '';
+    var instrutor = opt.getAttribute('data-instrutor') || '';
+    if (projeto) document.getElementById('aula-projeto').value = projeto;
+    if (turma) {
+        aulaOnProjetoChange();
+        setTimeout(function() { document.getElementById('aula-turma').value = turma; }, 100);
+    }
+    if (instrutor) document.getElementById('aula-instrutor').value = instrutor;
+}
+
+async function aulaLoadProjetos() {
+    var sel = document.getElementById('aula-projeto');
+    if (!sel) return;
+    try {
+        var snap = await dbFirestore.collection('parceiros').orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+        snap.forEach(function(doc) {
+            var p = doc.data();
+            sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+        });
+    } catch(e) {
+        sel.innerHTML = '<option value="">Erro ao carregar projetos</option>';
+    }
+}
+
+function aulaLoadTurmas() {
+    var sel = document.getElementById('aula-turma');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Todas as turmas</option>';
+    turmas.forEach(function(t) {
+        sel.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+    });
+}
+
+async function aulaLoadInstrutores() {
+    var sel = document.getElementById('aula-instrutor');
+    if (!sel) return;
+    try {
+        var snap = await dbFirestore.collection('instrutores').orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione o instrutor...</option>';
+        snap.forEach(function(doc) {
+            var i = doc.data();
+            sel.innerHTML += '<option value="' + i.nome + '">' + i.nome + (i.guerra ? ' (' + i.guerra + ')' : '') + '</option>';
+        });
+    } catch(e) {
+        sel.innerHTML = '<option value="">Erro ao carregar instrutores</option>';
+    }
+}
+
+function aulaOnProjetoChange() {
+    var projetoNome = document.getElementById('aula-projeto').value;
+    var selTurma = document.getElementById('aula-turma');
+    selTurma.innerHTML = '<option value="">Todas as turmas</option>';
+    if (projetoNome) {
+        var turmasDoProjeto = turmas.filter(function(t) { return t.projeto === projetoNome; });
+        turmasDoProjeto.forEach(function(t) {
+            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    }
+}
+
+function aulaShowMsg(msg, type) {
+    var el = document.getElementById('aula-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.background = type === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+    el.style.color = type === 'ok' ? '#4caf50' : '#f44336';
+    el.textContent = msg;
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+async function aulaSave() {
+    var disciplina = document.getElementById('aula-disciplina').value;
+    var projeto = document.getElementById('aula-projeto').value;
+    var turma = document.getElementById('aula-turma').value.trim();
+    var instrutor = document.getElementById('aula-instrutor').value.trim();
+    var data = document.getElementById('aula-data').value;
+    var horario = document.getElementById('aula-horario').value.trim();
+    var conteudo = document.getElementById('aula-conteudo').value.trim();
+    var btn = document.getElementById('aula-save-btn');
+
+    if (!disciplina) { aulaShowMsg('Selecione a disciplina.', 'err'); return; }
+    if (!projeto) { aulaShowMsg('Selecione o projeto.', 'err'); return; }
+    if (!data) { aulaShowMsg('Informe a data da aula.', 'err'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+
+    try {
+        var dados = {
+            disciplina: disciplina,
+            projeto: projeto,
+            turma: turma,
+            instrutor: instrutor,
+            data: data,
+            horario: horario,
+            conteudo: conteudo
+        };
+
+        if (aulaEditingId) {
+            await dbFirestore.collection('aulas').doc(aulaEditingId).update(dados);
+            aulaShowMsg('Aula atualizada com sucesso!', 'ok');
+            aulaEditingId = null;
+            document.getElementById('aula-save-btn').innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Aula';
+        } else {
+            dados.criadoEm = new Date().toISOString();
+            await dbFirestore.collection('aulas').add(dados);
+            aulaShowMsg('Aula cadastrada com sucesso!', 'ok');
+        }
+
+        document.getElementById('aula-disciplina').value = '';
+        document.getElementById('aula-projeto').value = '';
+        document.getElementById('aula-turma').innerHTML = '<option value="">Todas as turmas</option>';
+        document.getElementById('aula-instrutor').value = '';
+        document.getElementById('aula-data').value = '';
+        document.getElementById('aula-horario').value = '';
+        document.getElementById('aula-conteudo').value = '';
+        aulaLoadList();
+    } catch(e) {
+        console.error('Erro ao salvar aula:', e);
+        aulaShowMsg('Erro: ' + e.message, 'err');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Aula';
+}
+
+async function aulaLoadList() {
+    var container = document.getElementById('aula-list');
+    if (!container) return;
+    aulaLoadDisciplinas();
+    aulaLoadProjetos();
+    aulaLoadTurmas();
+    aulaLoadInstrutores();
+    try {
+        var snap = await dbFirestore.collection('aulas').orderBy('data', 'desc').get();
+        if (snap.empty) {
+            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-chalkboard" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma aula cadastrada.</p></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(function(doc) {
+            var a = doc.data();
+            var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+            var turmaHtml = a.turma ? '<span style="background:rgba(245,124,0,.15);color:#f57c00;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
+            var instrutorHtml = a.instrutor ? '<span style="background:rgba(33,136,255,.15);color:#2188ff;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(33,136,255,.15);border-radius:10px;margin-bottom:8px';
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(33,136,255,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-chalkboard" style="color:#2188ff;font-size:18px"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                    '<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                    '<div style="font-size:11px;color:#888;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
+                        '<span>' + (a.projeto || '') + '</span>' + turmaHtml + instrutorHtml + (dateStr ? '<span><i class="fa-solid fa-calendar-day" style="margin-right:2px"></i>' + dateStr + '</span>' : '') + (a.horario ? '<span><i class="fa-solid fa-clock" style="margin-right:2px"></i>' + a.horario + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                    '<button onclick="aulaEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.3);color:#ff9800;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(255,152,0,.35)\'" onmouseout="this.style.background=\'rgba(255,152,0,.15)\'"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="aulaDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(244,67,54,.35)\'" onmouseout="this.style.background=\'rgba(244,67,54,.15)\'"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(card);
+        });
+    } catch(e) {
+        console.error('Erro ao listar aulas:', e);
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar aulas.</div>';
+    }
+}
+
+async function aulaEdit(docId) {
+    try {
+        var doc = await dbFirestore.collection('aulas').doc(docId).get();
+        if (!doc.exists) { alert('Aula nao encontrada.'); return; }
+        var a = doc.data();
+        aulaEditingId = docId;
+        document.getElementById('aula-disciplina').value = a.disciplina || '';
+        document.getElementById('aula-projeto').value = a.projeto || '';
+        aulaOnProjetoChange();
+        setTimeout(function() {
+            document.getElementById('aula-turma').value = a.turma || '';
+            document.getElementById('aula-instrutor').value = a.instrutor || '';
+        }, 100);
+        document.getElementById('aula-data').value = a.data || '';
+        document.getElementById('aula-horario').value = a.horario || '';
+        document.getElementById('aula-conteudo').value = a.conteudo || '';
+        var btn = document.getElementById('aula-save-btn');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Aula';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(e) {
+        alert('Erro ao carregar aula: ' + e.message);
+    }
+}
+
+async function aulaDelete(docId) {
+    if (!confirm('Excluir esta aula?')) return;
+    try {
+        await dbFirestore.collection('aulas').doc(docId).delete();
+        aulaLoadList();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}
+
 /* ===== INSTRUTORES ===== */
 let instrutores = [];
 let editingInstrutorId = null;

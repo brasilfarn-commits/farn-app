@@ -351,10 +351,9 @@
                 <!-- AULAS -->
                 <div class="pf-section" id="pf-section-aulas">
                     <h3 style="font-size:16px;color:#2188ff;margin-bottom:14px"><i class="fa-solid fa-chalkboard"></i> Aulas</h3>
-                    <div class="pf-em-construcao">
-                        <i class="fa-solid fa-wrench"></i>
-                        <h3>Em construcao</h3>
-                        <p>Esta secao estara disponivel em breve.</p>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as aulas do seu projeto e turma.</p>
+                    <div id="pf-aula-list">
+                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
                 </div>
 
@@ -520,6 +519,7 @@
             paLoadDados();
             paLoadGallery();
             paLoadApostilas();
+            paLoadAulas();
             paChatLoadMessages();
             paChatInitEmoji();
 
@@ -924,17 +924,11 @@
     }
 
     /* ===== AULAS ===== */
-    async function paLoadDisciplinas() {
-        try {
-            var snap = await dbFirestore.collection('disciplinas').get();
-            paDisciplinas = [];
-            snap.forEach(function(doc) { paDisciplinas.push({ id: doc.id, nome: doc.data().nome }); });
-        } catch(e) { paDisciplinas = []; }
-    }
-
     function paLoadAulas() {
         if (!paUser) return;
-        var container = document.getElementById('pf-aulas-list');
+        var container = document.getElementById('pf-aula-list');
+        if (!container) return;
+        var myProjeto = (paUser.projeto || '').trim();
         var myTurma = (paUser.turma || '').trim();
 
         dbFirestore.collection('aulas').onSnapshot(function(snap) {
@@ -942,7 +936,6 @@
             snap.forEach(function(doc) {
                 var a = doc.data();
                 a._id = doc.id;
-                if (a.visivel === false) return;
                 items.push(a);
             });
             if (items.length === 0) {
@@ -955,24 +948,31 @@
                 return dy - dx;
             });
             container.innerHTML = '';
+            var count = 0;
             items.forEach(function(a) {
+                if (a.projeto && myProjeto && a.projeto !== myProjeto) return;
                 if (a.turma && myTurma && a.turma !== myTurma) return;
-                var dateStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                count++;
+                var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
                 var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
+                var instrutorHtml = a.instrutor ? '<span class="pf-apostila-badge" style="background:rgba(33,136,255,.15);color:#2188ff"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
                 var card = document.createElement('div');
                 card.className = 'pf-apostila-card';
                 card.style.cursor = 'default';
                 card.innerHTML = '<div class="pf-apostila-icon" style="background:rgba(33,136,255,.12)"><i class="fa-solid fa-chalkboard-user" style="color:#2188ff"></i></div>' +
                     '<div class="pf-apostila-info">' +
-                        '<div class="pf-apostila-titulo">' + (a.nome || 'Aula') + '</div>' +
-                        '<div class="pf-apostila-desc">' + (a.observacoes || '') + '</div>' +
+                        '<div class="pf-apostila-titulo">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                        '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +
                         '<div class="pf-apostila-meta">' +
                             (dateStr ? '<span><i class="fa-solid fa-calendar-days" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
-                            turmaHtml +
+                            turmaHtml + instrutorHtml +
                         '</div>' +
                     '</div>';
                 container.appendChild(card);
             });
+            if (count === 0) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula para o seu projeto e turma.</p></div>';
+            }
         }, function() {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
         });

@@ -183,7 +183,7 @@
                         <i class="fa-solid fa-book-open"></i>
                         <span>Apostilas</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-disciplinas', this); discLoadList()">
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-disciplinas', this); discLoadList(); aulaLoadList()">
                         <i class="fa-solid fa-graduation-cap"></i>
                         <span>Disciplinas</span>
                     </a>
@@ -262,7 +262,7 @@
                                 <i class="fa-solid fa-book-open"></i>
                                 <span>Apostilas</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item:nth-child(13)')); discLoadList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item:nth-child(13)')); discLoadList(); aulaLoadList()">>
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Disciplinas</span>
                             </div>
@@ -1298,6 +1298,58 @@
                             <h3><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;margin-right:8px"></i> Disciplinas Cadastradas</h3>
                         </div>
                         <div id="disc-list" style="padding:16px">
+                            <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                        </div>
+                    </div>
+
+                    <!-- AULAS -->
+                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #2188ff;border-radius:12px;margin-bottom:20px;margin-top:20px">
+                        <h3 style="margin:0 0 14px;color:#2188ff"><i class="fa-solid fa-chalkboard" style="margin-right:8px"></i> Nova Aula</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Disciplina *</label>
+                                <select id="aula-disciplina" class="config-input" onchange="aulaOnDisciplinaChange()"><option value="">Selecione a disciplina...</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Projeto *</label>
+                                <select id="aula-projeto" class="config-input" onchange="aulaOnProjetoChange()"><option value="">Selecione o projeto...</option></select>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma</label>
+                                <select id="aula-turma" class="config-input"><option value="">Todas as turmas</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Instrutor</label>
+                                <select id="aula-instrutor" class="config-input"><option value="">Selecione o instrutor...</option></select>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data da Aula *</label>
+                                <input type="date" id="aula-data" class="config-input">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Horario</label>
+                                <input type="text" id="aula-horario" class="config-input" placeholder="Ex: 14:00 as 17:00">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px">
+                            <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Conteudo / Assunto</label>
+                            <input type="text" id="aula-conteudo" class="config-input" placeholder="Breve descricao do conteudo da aula">
+                        </div>
+                        <button class="btn-primary" id="aula-save-btn" onclick="aulaSave()" style="height:42px">
+                            <i class="fa-solid fa-check"></i> Cadastrar Aula
+                        </button>
+                        <div id="aula-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas Cadastradas</h3>
+                        </div>
+                        <div id="aula-list" style="padding:16px">
                             <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
                         </div>
                     </div>
