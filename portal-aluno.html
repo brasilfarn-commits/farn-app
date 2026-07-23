@@ -225,13 +225,13 @@
         @media(max-width:768px){
             .pf-sidebar{display:none}
             .pf-mobile-nav{display:block}
-            .pf-noticias-layout{grid-template-columns:1fr}
-            .pf-right-panel{display:none}
-            .pf-topbar-title{display:none}
-            .pf-user-info{display:none}
-            .pf-content{padding:16px 16px 80px}
+            .pf-noticias-layout{grid-template-columns:1fr;height:auto}
+            .pf-right-panel{display:flex;flex-direction:column;height:calc(100vh - 120px);position:fixed;top:60px;left:0;right:0;bottom:56px;border-radius:0;z-index:50;border:none;border-top:1px solid rgba(245,124,0,.08);background:rgba(10,14,20,.98)}
+            .pf-content{padding:16px 16px 70px}
             .pf-stats-row{grid-template-columns:1fr}
             .pf-topbar{padding:0 14px}
+            .pf-chat-input-area{padding-bottom:14px}
+            .pf-chat-messages{flex:1;overflow-y:auto}
         }
     </style>
 </head>
