@@ -668,10 +668,13 @@
         if (el) el.classList.add('active');
         var newsCol = document.querySelector('.pf-noticias-col');
         if (newsCol) newsCol.classList.remove('hidden-mobile');
+        var mobNav = document.querySelector('.pf-mobile-nav');
+        if (mobNav) mobNav.style.display = '';
 
         if (section === 'chat' || section === 'galeria') {
             document.getElementById('pf-section-noticias').classList.add('active');
             if (newsCol) newsCol.classList.add('hidden-mobile');
+            if (mobNav) mobNav.style.display = 'none';
             if (section === 'chat') { paRightTab('chat', document.querySelector('.pf-right-tab')); paChatMarkRead(); }
             else paRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
             return;
