@@ -206,6 +206,14 @@
 
         @keyframes chatIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
+        /* Notification Badge */
+        .pf-nav-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:20px;height:20px;background:linear-gradient(135deg,#f44336,#d32f2f);color:#fff;font-size:10px;font-weight:700;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;animation:badgePulse 2s infinite;box-shadow:0 0 8px rgba(244,67,54,.4)}
+        .pf-nav-badge.hidden{display:none}
+        .pf-mobile-nav-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:linear-gradient(135deg,#f44336,#d32f2f);color:#fff;font-size:9px;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;animation:badgePulse 2s infinite;box-shadow:0 0 6px rgba(244,67,54,.4)}
+        .pf-mobile-nav-badge.hidden{display:none}
+        @keyframes badgePulse{0%,100%{transform:translateY(-50%) scale(1)}50%{transform:translateY(-50%) scale(1.1)}}
+        @keyframes badgePulseMobile{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+
         /* Mobile Bottom Nav */
         .pf-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(16,20,28,.98);border-top:1px solid rgba(245,124,0,.1);padding:6px 0;z-index:100;backdrop-filter:blur(16px)}
         .pf-mobile-nav-items{display:flex;justify-content:space-around}
@@ -267,6 +275,10 @@
                 <span class="pf-topbar-title">Portal do Aluno</span>
             </div>
             <div class="pf-topbar-right">
+                <div style="position:relative;cursor:pointer" onclick="paShowSection('chat', document.querySelector('.pf-nav-item:nth-child(4)'))" title="Chat">
+                    <i class="fa-solid fa-bell" style="font-size:18px;color:#f57c00"></i>
+                    <span id="pf-topbar-chat-badge" class="pf-mobile-nav-badge hidden" style="position:absolute;top:-6px;right:-8px">0</span>
+                </div>
                 <div class="pf-user-info">
                     <div class="pf-user-name" id="pf-user-name">---</div>
                     <div class="pf-user-matricula" id="pf-user-matricula"></div>
@@ -284,7 +296,7 @@
                 <div class="pf-nav-item active" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i> Inicio</div>
                 <div class="pf-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i> Noticias</div>
                 <div class="pf-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
-                <div class="pf-nav-item" onclick="paShowSection('chat',this)"><i class="fa-solid fa-comments"></i> Chat</div>
+                <div class="pf-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i> Chat<span id="pf-chat-badge" class="pf-nav-badge hidden">0</span></div>
                 <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
                 <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
                 <div class="pf-nav-divider"></div>
@@ -431,7 +443,7 @@
             <div class="pf-mobile-nav-item active" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i><span>Inicio</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i><span>Noticias</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i><span>Galeria</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('chat',this)"><i class="fa-solid fa-comments"></i><span>Chat</span></div>
+            <div class="pf-mobile-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i><span>Chat</span><span id="pf-chat-mobile-badge" class="pf-mobile-nav-badge hidden">0</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i><span>Apostilas</span></div>
         </div>
@@ -655,7 +667,7 @@
 
         if (section === 'chat' || section === 'galeria') {
             document.getElementById('pf-section-noticias').classList.add('active');
-            if (section === 'chat') paRightTab('chat', document.querySelector('.pf-right-tab'));
+            if (section === 'chat') { paRightTab('chat', document.querySelector('.pf-right-tab')); paChatMarkRead(); }
             else paRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
             return;
         }
@@ -844,16 +856,50 @@
 
     /* ===== CHAT 1:1 COM ADMIN ===== */
     var paChatEditTarget = null;
+    var paChatUnreadCount = 0;
+    var paChatLastRead = 0;
+
+    function paChatUpdateBadge(count) {
+        paChatUnreadCount = count;
+        var badge = document.getElementById('pf-chat-badge');
+        var mBadge = document.getElementById('pf-chat-mobile-badge');
+        var tBadge = document.getElementById('pf-topbar-chat-badge');
+        if (count > 0) {
+            if (badge) { badge.textContent = count; badge.classList.remove('hidden'); }
+            if (mBadge) { mBadge.textContent = count; mBadge.classList.remove('hidden'); }
+            if (tBadge) { tBadge.textContent = count; tBadge.classList.remove('hidden'); }
+            document.title = '(' + count + ') Portal do Aluno - FARN';
+        } else {
+            if (badge) badge.classList.add('hidden');
+            if (mBadge) mBadge.classList.add('hidden');
+            if (tBadge) tBadge.classList.add('hidden');
+            document.title = 'Portal do Aluno - FARN';
+        }
+    }
+
+    function paChatMarkRead() {
+        paChatLastRead = Date.now();
+        try { localStorage.setItem('pa_chat_read_' + (paUser ? paUser.cpf : ''), paChatLastRead); } catch(e) {}
+        paChatUpdateBadge(0);
+    }
 
     function paChatLoadMessages() {
         if (!paUser || !paUser.cpf) return;
         var container = document.getElementById('pf-chat-messages');
         if (paChatUnsub) { paChatUnsub(); paChatUnsub = null; }
+
+        try {
+            var stored = localStorage.getItem('pa_chat_read_' + paUser.cpf);
+            paChatLastRead = stored ? parseInt(stored) : Date.now();
+        } catch(e) { paChatLastRead = Date.now(); }
+
         container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
 
         paChatUnsub = dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
+            var unread = 0;
             if (snap.empty) {
                 container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
+                paChatUpdateBadge(0);
                 return;
             }
             container.innerHTML = '';
@@ -861,10 +907,14 @@
                 var m = doc.data();
                 if (m.apagada) return;
                 var isMe = m.remetente === 'aluno';
+                if (!isMe) {
+                    var msgTime = m.hora ? (m.hora.seconds ? m.hora.seconds * 1000 : new Date(m.hora).getTime()) : 0;
+                    if (msgTime > paChatLastRead) unread++;
+                }
                 var wrap = document.createElement('div');
                 wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
                 var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#228b22">Administracao FARN</div>' : '';
+                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#f57c00"><i class="fa-solid fa-shield-halved" style="margin-right:3px"></i>Administracao FARN</div>' : '';
                 var bodyHtml = '<div>' + (m.texto || '') + '</div>';
                 if (m.editado) bodyHtml += '<div class="pf-chat-edited">( editado )</div>';
                 var actionsHtml = '';
@@ -878,6 +928,7 @@
                 wrap.innerHTML = senderHtml + bodyHtml + '<div class="pf-chat-time">' + time + '</div>' + actionsHtml;
                 container.appendChild(wrap);
             });
+            paChatUpdateBadge(unread);
             container.scrollTop = container.scrollHeight;
         }, function() {
             container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
