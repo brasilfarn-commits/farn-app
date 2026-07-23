@@ -162,8 +162,6 @@ async function syncAllDatabases() {
         backupTurmas();
         backupUsuarios();
         backupProjetos();
-        backupDisciplinas();
-        backupAulas();
         await dbFirestore.collection(FB_CANDIDATOS).get();
         await dbFirestore.collection(FB_TURMAS).get();
         await dbFirestore.collection(FB_USUARIOS).get();
