@@ -34,7 +34,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        const dbFirestore = firebase.firestore();
+        var dbFirestore = firebase.firestore();
     </script>
     <script>
         if ('serviceWorker' in navigator) {
@@ -68,12 +68,16 @@
                         <div class="login-role-grid">
                             <button type="button" class="login-role-btn selected" data-role="admin" onclick="selectLoginRole(this)">
                                 <i class="fa-solid fa-user-shield"></i>
-                                <span>Acesse aqui<br><small>Adm, Usuario, Instrutor</small></span>
+                                <span>Acesse aqui</span>
                             </button>
-                            <button type="button" class="login-role-btn" data-role="aluno" onclick="selectLoginRole(this)">
+                            <a href="portal-formado.html" class="login-role-btn" style="text-decoration:none">
                                 <i class="fa-solid fa-graduation-cap"></i>
+                                <span>Portal do Formado</span>
+                            </a>
+                            <a href="portal-aluno.html" class="login-role-btn" style="text-decoration:none">
+                                <i class="fa-solid fa-user-graduate"></i>
                                 <span>Portal do Aluno</span>
-                            </button>
+                            </a>
                         </div>
                     </div>
                     <form id="login-form" onsubmit="return handleLogin(event)">
@@ -116,13 +120,8 @@
                     </form>
                     <div class="login-footer">
                         <p>&copy; 2026 FARN - Todos os direitos reservados</p>
-                        <button type="button" class="btn-install" onclick="window.open('portal-formado.html','_blank')" style="background:linear-gradient(135deg,#f57c00,#ff9800);margin-top:8px">
-                            <i class="fa-solid fa-user-graduate"></i> Portal do Formado
-                        </button>
-                        <button type="button" id="btn-install-app" class="btn-install" onclick="installApp()">
-                            <i class="fa-solid fa-mobile-screen-button"></i> Instalar Aplicativo
-                        </button>
-                        <p class="install-hint">Disponivel para Android e iOS</p>
+
+
                     </div>
                 </div>
             </div>
@@ -183,6 +182,10 @@
                         <i class="fa-solid fa-comments"></i>
                         <span>Chat dos Portais</span>
                         <span id="chat-p-badge" class="chat-badge" style="display:none"></span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-apostilas', this); apostilasLoadList()">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Apostilas</span>
                     </a>
                 </nav>
                 <div class="sidebar-footer">
@@ -254,6 +257,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-chat-portais', document.querySelector('.nav-item:nth-child(11)')); chatPortaisLoad()">
                                 <i class="fa-solid fa-comments"></i>
                                 <span>Chat dos Portais</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-apostilas', document.querySelector('.nav-item:nth-child(12)')); apostilasLoadList()">
+                                <i class="fa-solid fa-book-open"></i>
+                                <span>Apostilas</span>
                             </div>
                         </div>
                     </div>
@@ -1210,22 +1217,42 @@
                         <div class="card-header" style="padding:16px 20px;border-bottom:1px solid #2a2a3a;flex-shrink:0">
                             <h3><i class="fa-solid fa-comments" style="color:#f57c00;margin-right:8px"></i> Chat dos Portais</h3>
                             <div style="display:flex;gap:8px;align-items:center">
+                                <button onclick="chatPortaisToggleContacts()" id="chat-p-contacts-btn" title="Contatos por Projeto" style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:#4caf50;height:36px;padding:0 12px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.background='rgba(76,175,80,.35)'" onmouseout="this.style.background='rgba(76,175,80,.15)'"><i class="fa-solid fa-address-book"></i> Contatos</button>
                                 <input type="text" id="chat-p-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="max-width:220px" oninput="chatPortaisFilter()">
                             </div>
                         </div>
                         <div style="display:flex;flex:1;overflow:hidden">
                             <!-- LISTA DE CONVERSAS -->
                             <div id="chat-p-list" style="width:320px;border-right:1px solid #2a2a3a;overflow-y:auto;flex-shrink:0"></div>
+
+                            <!-- PAINEL DE CONTATOS POR PROJETO -->
+                            <div id="chat-p-contacts-panel" style="display:none;width:320px;border-right:1px solid #2a2a3a;overflow-y:auto;flex-shrink:0;background:#0d1117">
+                                <div style="padding:14px 16px;border-bottom:1px solid #2a2a3a;display:flex;align-items:center;justify-content:space-between">
+                                    <span style="font-weight:700;font-size:14px;color:#f57c00"><i class="fa-solid fa-address-book" style="margin-right:6px"></i> Contatos por Projeto</span>
+                                    <button onclick="chatPortaisToggleContacts()" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div id="chat-p-contacts-list" style="padding:8px">
+                                    <div style="text-align:center;color:#666;padding:20px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                                </div>
+                            </div>
+
                             <!-- AREA DO CHAT -->
                             <div style="flex:1;display:flex;flex-direction:column">
                                 <div id="chat-p-header" style="padding:12px 20px;border-bottom:1px solid #2a2a3a;display:none;flex-shrink:0">
                                     <div style="display:flex;align-items:center;gap:12px">
                                         <div id="chat-p-user-avatar" style="width:40px;height:40px;border-radius:50%;background:#f57c00;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0"></div>
-                                        <div>
+                                        <div style="flex:1">
                                             <div id="chat-p-user-name" style="font-weight:700;font-size:15px"></div>
                                             <div id="chat-p-user-info" style="font-size:12px;color:#aaa"></div>
                                         </div>
+                                        <div style="display:flex;gap:6px;flex-shrink:0">
+                                            <button onclick="chatPortaisClearAll()" title="Limpar tela para todos (apaga tudo)" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background='rgba(244,67,54,.35)'" onmouseout="this.style.background='rgba(244,67,54,.15)'"><i class="fa-solid fa-trash-can"></i></button>
+                                            <button onclick="chatPortaisToggleEmoji()" title="Emoji" id="chat-p-emoji-btn" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#ccc;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background='rgba(249,168,37,.25)'" onmouseout="this.style.background='rgba(255,255,255,.08)'"><i class="fa-solid fa-face-smile"></i></button>
+                                        </div>
                                     </div>
+                                </div>
+                                <div id="chat-p-emoji-panel" style="display:none;padding:8px 16px;border-bottom:1px solid #2a2a3a;background:#0d1117;flex-shrink:0">
+                                    <div id="chat-p-emoji-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:160px;overflow-y:auto"></div>
                                 </div>
                                 <div id="chat-p-messages" style="flex:1;overflow-y:auto;padding:16px 20px">
                                     <div style="text-align:center;color:#666;padding:60px 20px">
@@ -1244,462 +1271,78 @@
                     </div>
                 </div>
 
+                <!-- APOSTILAS -->
+                <div id="admin-apostilas" class="admin-section">
+                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #f57c00;border-radius:12px;margin-bottom:20px">
+                        <h3 style="margin:0 0 14px;color:#f57c00"><i class="fa-solid fa-book-open" style="margin-right:8px"></i> Nova Apostila</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Titulo *</label>
+                                <input type="text" id="apost-titulo" class="config-input" placeholder="Ex: Comunicacao Tecnica e Ordem Unida">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Projeto *</label>
+                                <select id="apost-projeto" class="config-input" onchange="apostOnProjetoChange()"><option value="">Carregando...</option></select>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Descricao</label>
+                                <input type="text" id="apost-desc" class="config-input" placeholder="Breve descricao (opcional)">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma (vazio = todas)</label>
+                                <select id="apost-turma" class="config-input"><option value="">Todas as turmas</option></select>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Arquivo PDF *</label>
+                                <select id="apost-file" class="config-input">
+                                    <option value="">Selecione o PDF...</option>
+                                    <option value="APOST/AP OU E CT.pdf">AP OU E CT.pdf - Comunicacao Tecnica e Ordem Unida</option>
+                                    <option value="APOST/APH.pdf">APH.pdf</option>
+                                    <option value="APOST/GER ANL.pdf">GER ANL.pdf</option>
+                                    <option value="APOST/Legisla%C3%A7%C3%A3o.pdf">Legislacao.pdf</option>
+                                </select>
+                            </div>
+                            <button class="btn-primary" id="apost-upload-btn" onclick="apostSave()" style="height:42px">
+                                <i class="fa-solid fa-check"></i> Cadastrar
+                            </button>
+                        </div>
+                        <div id="apost-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-book-open" style="color:#f57c00;margin-right:8px"></i> Apostilas Cadastradas</h3>
+                        </div>
+                        <div id="apost-list" style="padding:16px">
+                            <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
 
-    <!-- PORTAL DO ALUNO -->
-    <div id="screen-portal" class="screen">
-        <div class="portal-container">
-            <div class="portal-header">
-                <div class="portal-header-left">
-                    <div class="portal-logo-wrap">
-                        <img src="logo-farn.png.png" alt="FARN" class="portal-logo">
-                    </div>
-                    <div class="portal-header-brand">
-                        <span class="portal-header-title">Portal do Aluno</span>
-                        <span class="portal-header-sub">Curso de Formacao de Bombeiro Profissional Civil</span>
-                    </div>
-                </div>
-                <div class="portal-header-right">
-                    <div class="portal-header-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                    </div>
-                    <button class="btn-portal btn-sm" onclick="openPortalAlunoDados()" title="Meus Dados"><i class="fa-solid fa-user-pen"></i></button>
-                    <button class="btn-portal btn-portal-out" onclick="logoutPortal()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
-                </div>
-            </div>
-            <div class="portal-layout">
-                <aside class="portal-sidebar">
-                    <div class="portal-sidebar-user">
-                        <div class="portal-avatar-ring">
-                            <div class="portal-sidebar-avatar" id="portal-sidebar-avatar">
-                                <img id="portal-sidebar-foto" src="" alt="Foto 3x4" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%">
-                                <i id="portal-sidebar-foto-icon" class="fa-solid fa-user"></i>
-                            </div>
-                        </div>
-                        <h2 id="portal-aluno-nome" class="portal-sidebar-name"></h2>
-                        <p id="portal-aluno-turma" class="portal-aluno-turma"></p>
-                        <div class="portal-matricula-qr">
-                            <p id="portal-aluno-matricula" class="portal-matricula-badge"></p>
-                            <img id="portal-aluno-qr" src="" alt="QR Code Matricula" class="portal-qr-code" style="display:none;">
-                        </div>
-                        <div class="portal-sidebar-status">
-                            <span class="portal-status-dot"></span>
-                            <span>Online</span>
-                        </div>
-                    </div>
-                    <nav class="portal-sidebar-nav">
-                        <a class="portal-nav-item active" onclick="showPortalSection('noticias')">
-                            <i class="fa-solid fa-newspaper"></i><span>Noticias</span>
-                        </a>
-                        <a class="portal-nav-item" onclick="showPortalSection('apostilas')">
-                            <i class="fa-solid fa-book-open"></i><span>Apostilas</span>
-                        </a>
-                        <a class="portal-nav-item" onclick="showPortalSection('notas')">
-                            <i class="fa-solid fa-chart-line"></i><span>Notas</span>
-                        </a>
-                        <a class="portal-nav-item" onclick="showPortalSection('foto3x4')">
-                            <i class="fa-solid fa-camera"></i><span>Foto 3x4</span>
-                        </a>
-                        <a class="portal-nav-item" onclick="showPortalSection('chat')">
-                            <i class="fa-solid fa-comments"></i><span>Chat Turma</span>
-                        </a>
-                        <a class="portal-nav-item" onclick="openPortalAlunoDados()">
-                            <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
-                        </a>
-                    </nav>
-                    <div class="portal-sidebar-motto">
-                        <div class="portal-motto-icon"><i class="fa-solid fa-heart-pulse"></i></div>
-                        <span>Vidas em Primeiro Lugar</span>
-                    </div>
-                    <div class="portal-sidebar-footer">
-                        <img src="logo-farn.png.png" alt="FARN" class="portal-sidebar-logo">
-                        <span>FARN - Brasil</span>
-                    </div>
-                </aside>
-                <main class="portal-main">
-                    <section id="portal-section-noticias" class="portal-section active">
-                        <div class="portal-section-header">
-                            <div class="portal-section-icon-wrap"><i class="fa-solid fa-newspaper"></i></div>
-                            <div>
-                                <h2>Noticias da FARN</h2>
-                                <p class="portal-section-sub">Fique por dentro das atualizacoes</p>
-                            </div>
-                        </div>
-                        <div class="portal-noticias-center" id="portal-noticias-list">
-                            <div class="portal-noticia-destaque">
-                                <div class="noticia-header">
-                                    <span class="noticia-badge">NOVO</span>
-                                    <div class="noticia-local"><i class="fa-solid fa-location-dot"></i> Buenos Aires - PE</div>
-                                </div>
-                                <img src="logo-farn.png.png" alt="FARN" class="noticia-logo">
-                                <h2 class="noticia-titulo">Curso de Bombeiro Profissional Civil</h2>
-                                <p class="noticia-subtitulo">Municipio de Buenos Aires - PE</p>
-                                <div class="noticia-etapas">
-                                    <div class="etapa concluida">
-                                        <div class="etapa-icon ok"><i class="fa-solid fa-check"></i></div>
-                                        <div class="etapa-info">
-                                            <span class="etapa-nome">Pre-Inscricao</span>
-                                            <span class="etapa-status ok">OK</span>
-                                        </div>
-                                    </div>
-                                    <div class="etapa concluida">
-                                        <div class="etapa-icon ok"><i class="fa-solid fa-check"></i></div>
-                                        <div class="etapa-info">
-                                            <span class="etapa-nome">Entrevista</span>
-                                            <span class="etapa-status ok">OK</span>
-                                        </div>
-                                    </div>
-                                    <div class="etapa pendente">
-                                        <div class="etapa-icon pendente"><i class="fa-solid fa-hourglass-half"></i></div>
-                                        <div class="etapa-info">
-                                            <span class="etapa-nome">Integracao</span>
-                                            <span class="etapa-status pendente-txt">PENDENTE</span>
-                                            <span class="etapa-aviso">Fique atento a data e hora</span>
-                                        </div>
-                                    </div>
-                                    <div class="etapa pendente">
-                                        <div class="etapa-icon pendente"><i class="fa-solid fa-hourglass-half"></i></div>
-                                        <div class="etapa-info">
-                                            <span class="etapa-nome">Primeira Aula</span>
-                                            <span class="etapa-status pendente-txt">PENDENTE</span>
-                                            <span class="etapa-aula">Comunicacao e Ordem Unida</span>
-                                        </div>
-                                    </div>
-                                    <div class="etapa pendente">
-                                        <div class="etapa-icon pendente"><i class="fa-solid fa-hourglass-half"></i></div>
-                                        <div class="etapa-info">
-                                            <span class="etapa-nome">Segunda Aula</span>
-                                            <span class="etapa-status pendente-txt">PENDENTE</span>
-                                            <span class="etapa-aula">Legislacao e Normas</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="noticia-footer">
-                                    <i class="fa-solid fa-fire"></i> FARN - Forca Auxiliar de Resgate Nacional
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                    <section id="portal-section-apostilas" class="portal-section">
-                        <div class="portal-section-header">
-                            <div class="portal-section-icon-wrap gold"><i class="fa-solid fa-book-open"></i></div>
-                            <div>
-                                <h2>Apostilas</h2>
-                                <p class="portal-section-sub">Material de estudo para download</p>
-                            </div>
-                        </div>
-                        <div class="portal-apostilas-grid">
-                            <a href="APOST/AP%20OU%20E%20CT.pdf" download class="portal-apostila-card gold">
-                                <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                                <div class="apostila-card-info">
-                                    <h4>Ordem Unida e Comunicacao</h4>
-                                    <p>Material de estudo OU e CT</p>
-                                </div>
-                                <div class="apostila-card-action"><i class="fa-solid fa-download"></i></div>
-                            </a>
-                            <a href="APOST/Legisla%C3%A7%C3%A3o.pdf" download class="portal-apostila-card blue">
-                                <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                                <div class="apostila-card-info">
-                                    <h4>Leis e Normas</h4>
-                                    <p>Legislacao e normas aplicaveis</p>
-                                </div>
-                                <div class="apostila-card-action"><i class="fa-solid fa-download"></i></div>
-                            </a>
-                            <a href="APOST/GER%20ANL.pdf" download class="portal-apostila-card red">
-                                <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                                <div class="apostila-card-info">
-                                    <h4>Gerenciamento de Crise com Analise de Risco</h4>
-                                    <p>Gestao e analise de riscos</p>
-                                </div>
-                                <div class="apostila-card-action"><i class="fa-solid fa-download"></i></div>
-                            </a>
-                            <a href="APOST/APH.pdf" download class="portal-apostila-card red">
-                                <div class="apostila-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                                <div class="apostila-card-info">
-                                    <h4>Atendimento Pre-Hospitalar</h4>
-                                    <p>APH - Material de estudo</p>
-                                </div>
-                                <div class="apostila-card-action"><i class="fa-solid fa-download"></i></div>
-                            </a>
-                        </div>
-                    </section>
-                    <section id="portal-section-notas" class="portal-section">
-                        <div class="portal-section-header">
-                            <div class="portal-section-icon-wrap red"><i class="fa-solid fa-chart-line"></i></div>
-                            <div>
-                                <h2>Notas e Desempenho</h2>
-                                <p class="portal-section-sub">Acompanhe seu progresso nas disciplinas</p>
-                            </div>
-                        </div>
-                        <div id="portal-notas-content">
-                            <div class="portal-notas-grid">
-                                <div class="portal-notas-card">
-                                    <div class="portal-notas-card-header">
-                                        <i class="fa-solid fa-shield-halved" style="color:#f57c00"></i>
-                                        <h4>Ordem Unida</h4>
-                                    </div>
-                                    <div class="portal-notas-card-value">--</div>
-                                    <div class="portal-notas-card-status">Aguardando lancamento</div>
-                                    <div class="portal-notas-card-bar"><div class="portal-notas-card-bar-fill" style="width:0%"></div></div>
-                                </div>
-                                <div class="portal-notas-card">
-                                    <div class="portal-notas-card-header">
-                                        <i class="fa-solid fa-gavel" style="color:#2196f3"></i>
-                                        <h4>Legislacao</h4>
-                                    </div>
-                                    <div class="portal-notas-card-value">--</div>
-                                    <div class="portal-notas-card-status">Aguardando lancamento</div>
-                                    <div class="portal-notas-card-bar"><div class="portal-notas-card-bar-fill" style="width:0%"></div></div>
-                                </div>
-                                <div class="portal-notas-card">
-                                    <div class="portal-notas-card-header">
-                                        <i class="fa-solid fa-triangle-exclamation" style="color:#ff9800"></i>
-                                        <h4>Gerenciamento de Crise</h4>
-                                    </div>
-                                    <div class="portal-notas-card-value">--</div>
-                                    <div class="portal-notas-card-status">Aguardando lancamento</div>
-                                    <div class="portal-notas-card-bar"><div class="portal-notas-card-bar-fill" style="width:0%"></div></div>
-                                </div>
-                                <div class="portal-notas-card">
-                                    <div class="portal-notas-card-header">
-                                        <i class="fa-solid fa-kit-medical" style="color:#e53935"></i>
-                                        <h4>APH - Atendimento Pre-Hospitalar</h4>
-                                    </div>
-                                    <div class="portal-notas-card-value">--</div>
-                                    <div class="portal-notas-card-status">Aguardando lancamento</div>
-                                    <div class="portal-notas-card-bar"><div class="portal-notas-card-bar-fill" style="width:0%"></div></div>
-                                </div>
-                                <div class="portal-notas-card">
-                                    <div class="portal-notas-card-header">
-                                        <i class="fa-solid fa-helmet-safety" style="color:#4caf50"></i>
-                                        <h4>Formacao Geral</h4>
-                                    </div>
-                                    <div class="portal-notas-card-value">--</div>
-                                    <div class="portal-notas-card-status">Aguardando lancamento</div>
-                                    <div class="portal-notas-card-bar"><div class="portal-notas-card-bar-fill" style="width:0%"></div></div>
-                                </div>
-                                <div class="portal-notas-card">
-                                    <div class="portal-notas-card-header">
-                                        <i class="fa-solid fa-dumbbell" style="color:#9c27b0"></i>
-                                        <h4>Preparo Fisico</h4>
-                                    </div>
-                                    <div class="portal-notas-card-value">--</div>
-                                    <div class="portal-notas-card-status">Aguardando lancamento</div>
-                                    <div class="portal-notas-card-bar"><div class="portal-notas-card-bar-fill" style="width:0%"></div></div>
-                                </div>
-                            </div>
-                            <div class="portal-notas-legend">
-                                <div class="portal-notas-legend-item"><span class="portal-notas-dot" style="background:#4caf50"></span> Aprovado (acima de 7)</div>
-                                <div class="portal-notas-legend-item"><span class="portal-notas-dot" style="background:#ff9800"></span> Recuperacao (5 a 7)</div>
-                                <div class="portal-notas-legend-item"><span class="portal-notas-dot" style="background:#e53935"></span> Reprovado (abaixo de 5)</div>
-                                <div class="portal-notas-legend-item"><span class="portal-notas-dot" style="background:#9e9e9e"></span> Sem nota</div>
-                            </div>
-                            <div class="portal-notas-info-box">
-                                <i class="fa-solid fa-circle-info" style="color:#2196f3;margin-right:8px"></i>
-                                Suas notas serao lancadas pelo administrador durante o curso. Fique atento as atualizacoes.
-                            </div>
-                        </div>
-                    </section>
-                    <section id="portal-section-foto3x4" class="portal-section">
-                        <div class="portal-section-header">
-                            <div class="portal-section-icon-wrap gold"><i class="fa-solid fa-camera"></i></div>
-                            <div>
-                                <h2>Foto 3x4</h2>
-                                <p class="portal-section-sub">Capture sua foto para documentos</p>
-                            </div>
-                        </div>
-                        <div class="portal-foto3x4-container">
-                            <div class="portal-foto3x4-card">
-                                <div class="portal-foto3x4-preview-area">
-                                    <video id="portal-foto3x4-video" autoplay playsinline style="display:none;width:100%;border-radius:12px"></video>
-                                    <canvas id="portal-foto3x4-canvas" style="display:none"></canvas>
-                                    <img id="portal-foto3x4-img" src="" alt="Foto 3x4" style="display:none;width:100%;border-radius:12px;object-fit:cover">
-                                    <div id="portal-foto3x4-placeholder" class="portal-foto3x4-placeholder">
-                                        <i class="fa-solid fa-camera-retro"></i>
-                                        <p>Sua foto 3x4 aparecera aqui</p>
-                                    </div>
-                                </div>
-                                <div class="portal-foto3x4-info">
-                                    <div class="portal-foto3x4-badge"><i class="fa-solid fa-cloud-arrow-up"></i> Local + Nuvem</div>
-                                    <p>Foto salva neste dispositivo e <strong>enviada para o cadastro</strong> do administrador.</p>
-                                </div>
-                                <div class="portal-foto3x4-actions">
-                                    <button id="btn-foto3x4-iniciar" class="portal-foto3x4-btn primary" onclick="portalFoto3x4Iniciar()">
-                                        <i class="fa-solid fa-video"></i> Iniciar Camera
-                                    </button>
-                                    <button id="btn-foto3x4-capturar" class="portal-foto3x4-btn success" onclick="portalFoto3x4Capturar()" style="display:none">
-                                        <i class="fa-solid fa-circle"></i> Capturar Foto
-                                    </button>
-                                    <button id="btn-foto3x4-enviar" class="portal-foto3x4-btn gold" onclick="portalFoto3x4Enviar()" style="display:none">
-                                        <i class="fa-solid fa-paper-plane"></i> Enviar Foto
-                                    </button>
-                                    <button id="btn-foto3x4-nova" class="portal-foto3x4-btn outline" onclick="portalFoto3x4Nova()" style="display:none">
-                                        <i class="fa-solid fa-rotate-right"></i> Nova Foto
-                                    </button>
-                                    <button id="btn-foto3x4-apagar" class="portal-foto3x4-btn danger" onclick="portalFoto3x4Apagar()" style="display:none">
-                                        <i class="fa-solid fa-trash"></i> Apagar
-                                    </button>
-                                </div>
-                                <div id="portal-foto3x4-msg" class="portal-foto3x4-msg" style="display:none"></div>
-                            </div>
-                        </div>
-                    </section>
-                    <section id="portal-section-chat" class="portal-section">
-                        <div class="portal-section-header">
-                            <div class="portal-section-icon-wrap"><i class="fa-solid fa-comments"></i></div>
-                            <div>
-                                <h2>Chat com a Administracao</h2>
-                                <p class="portal-section-sub">Tire suas duvidas diretamente</p>
-                            </div>
-                        </div>
-                        <div class="portal-chat-section-info">
-                            <div class="portal-chat-section-card">
-                                <div class="portal-chat-section-icon"><i class="fa-solid fa-headset"></i></div>
-                                <h3>Precisa de ajuda?</h3>
-                                <p>Use o chat ao lado para enviar mensagens diretamente para a equipe administrativa da FARN. Voce pode tirar duvidas sobre o curso, materiais, notas e muito mais.</p>
-                                <div class="portal-chat-section-tips">
-                                    <div class="portal-chat-section-tip">
-                                        <i class="fa-solid fa-lightbulb" style="color:#f57c00"></i>
-                                        <span>Mantenha suas duvidas claras e objetivas</span>
-                                    </div>
-                                    <div class="portal-chat-section-tip">
-                                        <i class="fa-solid fa-clock" style="color:#2196f3"></i>
-                                        <span>Resposta em ate 24 horas uteis</span>
-                                    </div>
-                                    <div class="portal-chat-section-tip">
-                                        <i class="fa-solid fa-shield-halved" style="color:#4caf50"></i>
-                                        <span>Conversas sigilosas entre voce e a admin</span>
-                                    </div>
-                                </div>
-                                <button class="portal-chat-section-btn" onclick="document.querySelector('.portal-right-tab').click()">
-                                    <i class="fa-solid fa-comment-dots"></i> Abrir Chat
-                                </button>
-                            </div>
-                        </div>
-                    </section>
-                </main>
-
-                <!-- PAINEL DIREITO - CHAT + GALERIA -->
-                <aside class="portal-right">
-                    <div class="portal-right-tabs">
-                        <div class="portal-right-tab active" onclick="portalRightTab('chat', this)">
-                            <i class="fa-solid fa-comments"></i> Chat
-                        </div>
-                        <div class="portal-right-tab" onclick="portalRightTab('galeria', this)">
-                            <i class="fa-solid fa-images"></i> Galeria
-                        </div>
-                    </div>
-
-                    <!-- PAINEL CHAT -->
-                    <div id="portal-right-chat" class="portal-right-panel" style="display:flex">
-                        <div class="portal-chat-header">
-                            <h4><i class="fa-solid fa-headset" style="margin-right:4px"></i> Chat com a Administracao</h4>
-                            <p>Tire duvidas e envie mensagens</p>
-                        </div>
-                        <div class="portal-chat-messages" id="portal-chat-messages">
-                            <div class="portal-chat-empty">
-                                <i class="fa-solid fa-comment-dots"></i>
-                                <p>Envie sua mensagem para a equipe FARN</p>
-                            </div>
-                        </div>
-                        <div class="portal-chat-edit-bar" id="portal-chat-edit-bar">
-                            <i class="fa-solid fa-pen"></i>
-                            <span id="portal-chat-edit-label">Editando mensagem...</span>
-                            <button class="portal-chat-edit-cancel" onclick="portalChatCancelEdit()">Cancelar</button>
-                        </div>
-                        <div class="portal-chat-input" style="position:relative">
-                            <button class="portal-chat-emoji-btn" onclick="portalChatToggleEmoji(event)" title="Emojis"><i class="fa-regular fa-face-smile"></i></button>
-                            <div class="portal-chat-emoji-panel" id="portal-chat-emoji-panel"></div>
-                            <input type="text" id="portal-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')portalChatSend()">
-                            <button class="portal-chat-send" onclick="portalChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
-                        </div>
-                    </div>
-
-                    <!-- PAINEL GALERIA -->
-                    <div id="portal-right-galeria" class="portal-right-panel" style="display:none">
-                        <div class="portal-chat-header">
-                            <h4><i class="fa-solid fa-images" style="margin-right:4px"></i> Galeria de Fotos</h4>
-                            <p>Fotos atualizadas pelo administrador</p>
-                        </div>
-                        <div class="portal-right-content">
-                            <div class="portal-gallery-grid" id="portal-gallery-grid">
-                                <div class="portal-gallery-empty">
-                                    <i class="fa-solid fa-images"></i>
-                                    <p>Nenhuma foto ainda</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-            </div>
+    <!-- MODAL FOTO CERTIFICADO RECAD - GIRAR/ZOOM/SALVAR -->
+    <div id="recad-photo-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.94);align-items:center;justify-content:center;flex-direction:column;padding:20px" onclick="recadClosePhoto(event)">
+        <div style="position:absolute;top:16px;right:16px;display:flex;gap:8px;z-index:11">
+            <button onclick="event.stopPropagation();recadPhotoRotate(-90)" title="Girar esquerda" class="recad-photo-ctrl"><i class="fa-solid fa-rotate-left"></i></button>
+            <button onclick="event.stopPropagation();recadPhotoRotate(90)" title="Girar direita" class="recad-photo-ctrl"><i class="fa-solid fa-rotate-right"></i></button>
+            <button onclick="event.stopPropagation();recadPhotoZoom(0.15)" title="Zoom +" class="recad-photo-ctrl"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+            <button onclick="event.stopPropagation();recadPhotoZoom(-0.15)" title="Zoom -" class="recad-photo-ctrl"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+            <button onclick="event.stopPropagation();recadPhotoReset()" title="Resetar" class="recad-photo-ctrl"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button onclick="event.stopPropagation();recadPhotoSave()" title="Salvar posicao" class="recad-photo-ctrl save" id="recad-photo-save-btn"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+            <button onclick="recadClosePhoto()" title="Fechar" class="recad-photo-ctrl close"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <nav class="portal-mobile-nav">
-            <button class="portal-mobile-nav-item active" onclick="showPortalSection('noticias')">
-                <i class="fa-solid fa-newspaper"></i>
-                <span>Noticias</span>
-            </button>
-            <button class="portal-mobile-nav-item" onclick="showPortalSection('apostilas')">
-                <i class="fa-solid fa-book-open"></i>
-                <span>Apostilas</span>
-            </button>
-            <button class="portal-mobile-nav-item" onclick="showPortalSection('notas')">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Notas</span>
-            </button>
-            <button class="portal-mobile-nav-item" onclick="showPortalSection('foto3x4')">
-                <i class="fa-solid fa-camera"></i>
-                <span>Foto</span>
-            </button>
-            <button class="portal-mobile-nav-item" onclick="showPortalSection('chat')">
-                <i class="fa-solid fa-comments"></i>
-                <span>Chat</span>
-            </button>
-            <button class="portal-mobile-nav-item" onclick="openPortalAlunoDados()">
-                <i class="fa-solid fa-user-pen"></i>
-                <span>Dados</span>
-            </button>
-        </nav>
-    </div>
-
-    <!-- MODAL FOTO PORTAL -->
-    <div id="portal-photo-modal" class="portal-photo-modal" onclick="portalClosePhoto()">
-        <button class="portal-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
-        <img id="portal-photo-modal-img" src="">
-    </div>
-
-    <!-- MODAL DADOS DO ALUNO PORTAL -->
-    <div id="modal-portal-aluno-dados" class="modal-overlay hidden" onclick="if(event.target===this)closePortalAlunoDados()">
-        <div class="modal-content" style="max-width:500px">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-user-pen" style="color:#4caf50;margin-right:8px"></i> Meus Dados</h3>
-                <button class="modal-close" onclick="closePortalAlunoDados()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align:center;margin-bottom:16px">
-                    <div class="portal-photo-box" style="width:120px;height:160px;margin:0 auto;cursor:pointer;border:2px dashed #4caf50;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden" onclick="document.getElementById('portal-aluno-foto-input').click()">
-                        <img id="portal-aluno-foto-preview" src="" alt="Foto" style="width:100%;height:100%;object-fit:cover;display:none">
-                        <i id="portal-aluno-foto-placeholder" class="fa-solid fa-camera" style="font-size:28px;color:#4caf50"></i>
-                    </div>
-                    <input type="file" id="portal-aluno-foto-input" accept="image/*" class="hidden" onchange="handlePortalAlunoFotoUpload(event)">
-                    <p style="color:#888;font-size:11px;margin-top:6px">Toque na foto para alterar</p>
-                </div>
-                <div class="form-group" style="margin-bottom:12px">
-                    <label style="color:#aaa;font-size:12px">Email</label>
-                    <input type="email" id="portal-aluno-email" class="config-input" placeholder="seu@email.com" oninput="portalAlunoScheduleSave()">
-                </div>
-                <div class="form-group" style="margin-bottom:16px">
-                    <label style="color:#aaa;font-size:12px">WhatsApp / Telefone</label>
-                    <input type="tel" id="portal-aluno-whatsapp" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="formatPhone(this);portalAlunoScheduleSave()">
-                </div>
-                <div id="portal-aluno-dados-msg" style="display:none;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;text-align:center"></div>
-                <div style="display:flex;gap:8px;justify-content:flex-end">
-                    <button type="button" class="btn-outline" onclick="closePortalAlunoDados()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                    <button type="button" class="btn-primary" onclick="savePortalAlunoDados()"><i class="fa-solid fa-check"></i> Salvar</button>
-                </div>
-            </div>
+        <div id="recad-photo-viewport" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;width:100%;cursor:grab;position:relative" onmousedown="recadPhotoDragStart(event)" ontouchstart="recadPhotoTouchStart(event)">
+            <img id="recad-photo-modal-img" src="" style="max-width:none;max-height:none;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);transform-origin:center center;transition:transform 0.1s ease;user-select:none;-webkit-user-drag:none">
         </div>
+        <div id="recad-photo-modal-label" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#ccc;padding:8px 20px;border-radius:10px;font-size:13px;text-align:center;white-space:nowrap"></div>
+        <div id="recad-photo-zoom-indicator" style="position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#f57c00;padding:4px 14px;border-radius:8px;font-size:12px;font-weight:600;pointer-events:none;display:none">100%</div>
     </div>
 
     <!-- PORTAL DO FORMADO -->

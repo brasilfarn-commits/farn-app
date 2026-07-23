@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal do Aluno - FARN</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e6edf3;min-height:100vh;overflow:hidden}
+
+        /* ===== LOGIN ===== */
+        #screen-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0d1117 0%,#161b22 50%,#0d1117 100%);position:relative;overflow:hidden}
+        #screen-login::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(34,139,34,.12) 0%,transparent 70%);top:-200px;right:-200px;border-radius:50%}
+        #screen-login::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(34,139,34,.08) 0%,transparent 70%);bottom:-100px;left:-100px;border-radius:50%}
+        .pf-login-card{background:rgba(22,27,34,.95);border:1px solid rgba(34,139,34,.25);border-radius:20px;padding:40px;width:100%;max-width:380px;position:relative;z-index:1;backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+        .pf-login-logo{text-align:center;margin-bottom:28px}
+        .pf-login-logo img{width:80px;margin-bottom:12px;filter:drop-shadow(0 0 12px rgba(34,139,34,.3))}
+        .pf-login-logo h1{font-size:18px;color:#228b22;margin-bottom:2px}
+        .pf-login-logo p{font-size:12px;color:#8b949e}
+        .pf-login-field{margin-bottom:14px}
+        .pf-login-field label{display:block;font-size:11px;color:#8b949e;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+        .pf-login-field input{width:100%;padding:11px 14px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:10px;color:#e6edf3;font-size:14px;transition:.2s}
+        .pf-login-field input:focus{outline:none;border-color:#228b22;box-shadow:0 0 0 3px rgba(34,139,34,.15)}
+        .pf-login-field input::placeholder{color:#484f58}
+        .pf-login-remember{display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:12px;color:#8b949e}
+        .pf-login-remember input[type=checkbox]{accent-color:#228b22}
+        .pf-login-btn{width:100%;padding:12px;background:linear-gradient(135deg,#228b22,#1a6b1a);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}
+        .pf-login-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 16px rgba(34,139,34,.3)}
+        .pf-login-btn:disabled{opacity:.6;cursor:not-allowed}
+        .pf-login-error{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:#f85149;border-radius:8px;padding:10px 14px;font-size:12px;text-align:center;margin-bottom:14px;display:none}
+        .pf-login-back{display:block;text-align:center;margin-top:14px;font-size:12px;color:#8b949e;text-decoration:none;transition:.2s}
+        .pf-login-back:hover{color:#228b22}
+
+        /* ===== PORTAL ===== */
+        #screen-portal{display:none;flex-direction:column;height:100vh}
+        #screen-portal.active{display:flex}
+
+        /* Top Bar */
+        .pf-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(22,27,34,.95);border-bottom:1px solid rgba(34,139,34,.15);flex-shrink:0;backdrop-filter:blur(12px)}
+        .pf-topbar-left{display:flex;align-items:center;gap:12px}
+        .pf-topbar-logo{height:36px;border-radius:8px}
+        .pf-topbar-title{font-size:14px;font-weight:700;color:#228b22}
+        .pf-topbar-right{display:flex;align-items:center;gap:12px}
+        .pf-user-info{text-align:right}
+        .pf-user-name{font-size:13px;font-weight:600;color:#e6edf3}
+        .pf-user-matricula{font-size:11px;color:#228b22;font-weight:600}
+        .pf-user-cpf{font-size:10px;color:#8b949e}
+        .pf-user-avatar{width:38px;height:38px;background:linear-gradient(135deg,#228b22,#1a6b1a);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+        .pf-logout-btn{background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.25);color:#f85149;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:.2s}
+        .pf-logout-btn:hover{background:rgba(248,81,73,.2)}
+
+        /* Layout */
+        .pf-body{display:flex;flex:1;overflow:hidden}
+
+        /* Sidebar */
+        .pf-sidebar{width:220px;background:rgba(22,27,34,.98);border-right:1px solid rgba(34,139,34,.12);padding:16px 0;display:flex;flex-direction:column;flex-shrink:0}
+        .pf-nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;color:#8b949e;font-size:13px;transition:.15s;border-left:3px solid transparent}
+        .pf-nav-item:hover{color:#e6edf3;background:rgba(34,139,34,.06)}
+        .pf-nav-item.active{color:#228b22;background:rgba(34,139,34,.1);border-left-color:#228b22;font-weight:600}
+        .pf-nav-item i{width:18px;text-align:center;font-size:14px}
+        .pf-nav-divider{height:1px;background:rgba(34,139,34,.1);margin:10px 20px}
+
+        /* Content */
+        .pf-content{flex:1;overflow-y:auto;padding:20px 24px;scroll-behavior:smooth}
+
+        /* Sections */
+        .pf-section{display:none}
+        .pf-section.active{display:block}
+
+        /* Welcome */
+        .pf-welcome{background:linear-gradient(135deg,rgba(34,139,34,.15),rgba(34,139,34,.05));border:1px solid rgba(34,139,34,.2);border-radius:16px;padding:24px;margin-bottom:20px}
+        .pf-welcome h2{font-size:20px;color:#228b22;margin-bottom:6px}
+        .pf-welcome p{font-size:13px;color:#8b949e;line-height:1.5}
+        .pf-welcome .pf-matricula-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(34,139,34,.15);border:1px solid rgba(34,139,34,.25);border-radius:8px;padding:6px 12px;font-size:12px;color:#228b22;font-weight:600;margin-top:10px}
+
+        /* News */
+        .pf-noticia-card{background:rgba(22,27,34,.6);border:1px solid rgba(34,139,34,.1);border-radius:12px;padding:16px;margin-bottom:12px;transition:.2s}
+        .pf-noticia-card:hover{border-color:rgba(34,139,34,.25)}
+        .pf-noticia-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .pf-noticia-badge{background:rgba(34,139,34,.2);color:#228b22;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase}
+        .pf-noticia-date{font-size:11px;color:#484f58}
+        .pf-noticia-title{font-size:15px;font-weight:600;color:#e6edf3;margin-bottom:6px}
+        .pf-noticia-text{font-size:13px;color:#8b949e;line-height:1.5}
+        .pf-noticia-img{width:100%;margin-top:10px;border-radius:10px}
+        .pf-noticia-empty{text-align:center;padding:40px;color:#484f58}
+        .pf-noticia-empty i{font-size:36px;margin-bottom:12px;display:block}
+        .pf-noticia-empty p{font-size:13px}
+
+        /* Right Panel (Chat/Galeria) */
+        .pf-noticias-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;height:calc(100vh - 160px)}
+        .pf-noticias-col{overflow-y:auto;padding-right:8px}
+        .pf-right-panel{background:rgba(22,27,34,.6);border:1px solid rgba(34,139,34,.1);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;position:sticky;top:0}
+        .pf-right-tabs{display:flex;border-bottom:1px solid rgba(34,139,34,.1);flex-shrink:0}
+        .pf-right-tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:600;color:#8b949e;cursor:pointer;transition:.15s;border-bottom:2px solid transparent}
+        .pf-right-tab.active{color:#228b22;border-bottom-color:#228b22}
+        .pf-right-tab:hover{color:#e6edf3}
+        .pf-right-content{flex:1;overflow:hidden;display:none}
+        .pf-right-content.active{display:flex;flex-direction:column}
+
+        /* Chat */
+        .pf-chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+        .pf-chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#484f58}
+        .pf-chat-empty i{font-size:28px;margin-bottom:8px}
+        .pf-chat-empty p{font-size:12px}
+        .pf-chat-bubble{max-width:85%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.4;position:relative;animation:chatIn .2s}
+        .pf-chat-bubble.me{align-self:flex-end;background:rgba(34,139,34,.2);border:1px solid rgba(34,139,34,.15);border-bottom-right-radius:4px}
+        .pf-chat-bubble.other{align-self:flex-start;background:rgba(30,35,42,.9);border:1px solid rgba(255,255,255,.06);border-bottom-left-radius:4px}
+        .pf-chat-sender{font-size:10px;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+        .pf-chat-time{font-size:10px;color:#484f58;margin-top:4px;text-align:right}
+        .pf-chat-edited{font-size:10px;color:#484f58;font-style:italic;margin-top:2px}
+        .pf-chat-actions{display:flex;gap:4px;margin-top:5px;justify-content:flex-end}
+        .pf-chat-action-btn{background:none;border:none;color:#484f58;cursor:pointer;padding:3px 5px;border-radius:4px;font-size:10px;transition:.15s}
+        .pf-chat-action-btn:hover{color:#e6edf3;background:rgba(255,255,255,.06)}
+        .pf-chat-edit-bar{display:none;align-items:center;gap:8px;padding:8px 14px;background:rgba(34,139,34,.1);border-top:1px solid rgba(34,139,34,.15);font-size:11px;color:#8b949e}
+        .pf-chat-edit-bar.active{display:flex}
+        .pf-chat-edit-bar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .pf-chat-edit-bar button{background:none;border:none;color:#8b949e;cursor:pointer;font-size:13px;padding:2px 4px}
+        .pf-chat-edit-bar button:hover{color:#e6edf3}
+        .pf-chat-input-area{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid rgba(34,139,34,.1);flex-shrink:0}
+        .pf-chat-input-area input{flex:1;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.15);border-radius:8px;padding:9px 12px;color:#e6edf3;font-size:13px}
+        .pf-chat-input-area input:focus{outline:none;border-color:#228b22}
+        .pf-chat-send-btn,.pf-chat-emoji-btn{background:none;border:none;color:#228b22;font-size:16px;cursor:pointer;padding:4px;border-radius:6px;transition:.15s}
+        .pf-chat-send-btn:hover,.pf-chat-emoji-btn:hover{background:rgba(34,139,34,.1)}
+        .pf-chat-emoji-panel{display:none;flex-wrap:wrap;gap:4px;padding:8px 12px;border-top:1px solid rgba(34,139,34,.1);max-height:120px;overflow-y:auto;background:rgba(13,17,23,.5)}
+        .pf-chat-emoji-panel.active{display:flex}
+        .pf-chat-emoji-panel span{font-size:20px;cursor:pointer;padding:4px;border-radius:6px;transition:.1s}
+        .pf-chat-emoji-panel span:hover{background:rgba(34,139,34,.15);transform:scale(1.15)}
+
+        /* Galeria */
+        .pf-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:14px;overflow-y:auto}
+        .pf-gallery-item{position:relative;border-radius:10px;overflow:hidden;cursor:pointer;aspect-ratio:1;border:1px solid rgba(34,139,34,.1);transition:.2s}
+        .pf-gallery-item:hover{border-color:#228b22;transform:scale(1.02)}
+        .pf-gallery-item img{width:100%;height:100%;object-fit:cover}
+        .pf-gallery-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));padding:6px 8px;font-size:10px;color:#ccc}
+        .pf-gallery-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#484f58;padding:20px;text-align:center}
+        .pf-gallery-empty i{font-size:28px;margin-bottom:8px}
+        .pf-gallery-empty p{font-size:12px}
+
+        /* Dados */
+        .pf-dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+        .pf-dados-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px}
+        .pf-dados-editable{cursor:pointer;transition:.2s;border-color:rgba(34,139,34,.15)}
+        .pf-dados-editable:hover{background:rgba(34,139,34,.06);border-color:rgba(34,139,34,.3)}
+        .pf-dados-label{font-size:11px;color:#8b949e;margin-bottom:4px;display:flex;align-items:center}
+        .pf-dados-val{font-size:14px;font-weight:600;color:#e6edf3;word-break:break-word}
+
+        /* Construcao */
+        .pf-em-construcao{text-align:center;padding:60px 20px;color:#484f58}
+        .pf-em-construcao i{font-size:40px;margin-bottom:14px;display:block;color:rgba(34,139,34,.3)}
+        .pf-em-construcao h3{font-size:16px;color:#8b949e;margin-bottom:6px}
+        .pf-em-construcao p{font-size:13px}
+
+        /* Baixar App */
+        .pf-app-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;max-width:600px;margin:0 auto}
+        .pf-app-card{background:rgba(22,27,34,.8);border:1px solid rgba(34,139,34,.15);border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:.2s}
+        .pf-app-card:hover{border-color:#228b22;transform:translateY(-2px);box-shadow:0 6px 20px rgba(34,139,34,.15)}
+        .pf-app-card i{font-size:28px;color:#228b22;margin-bottom:10px;display:block}
+        .pf-app-card h4{font-size:13px;color:#e6edf3;margin-bottom:4px}
+        .pf-app-card p{font-size:11px;color:#8b949e}
+
+        /* Apostila */
+        .pf-apostila-card{background:rgba(22,27,34,.6);border:1px solid rgba(34,139,34,.1);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;transition:.2s;cursor:pointer}
+        .pf-apostila-card:hover{border-color:rgba(34,139,34,.25);transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,139,34,.1)}
+        .pf-apostila-icon{width:48px;height:48px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .pf-apostila-icon i{font-size:20px;color:#f85149}
+        .pf-apostila-info{flex:1;min-width:0}
+        .pf-apostila-titulo{font-size:14px;font-weight:600;color:#e6edf3;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pf-apostila-desc{font-size:12px;color:#8b949e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pf-apostila-meta{font-size:10px;color:#484f58;margin-top:4px;display:flex;gap:10px}
+        .pf-apostila-badge{background:rgba(34,139,34,.15);color:#228b22;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600}
+
+        /* Photo modal */
+        .pf-photo-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+        .pf-photo-modal.active{display:flex}
+        .pf-photo-modal img{max-width:90%;max-height:80vh;border-radius:10px;object-fit:contain}
+        .pf-photo-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;z-index:1001}
+        .pf-photo-modal-info{color:#aaa;font-size:12px;margin-top:10px}
+
+        @keyframes chatIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+        @media(max-width:768px){
+            .pf-sidebar{display:none}
+            .pf-noticias-layout{grid-template-columns:1fr}
+            .pf-right-panel{display:none}
+            .pf-topbar-title{display:none}
+            .pf-user-info{display:none}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA LOGIN -->
+    <div id="screen-login">
+        <div class="pf-login-card">
+            <div class="pf-login-logo">
+                <img src="https://firebasestorage.googleapis.com/v0/b/farn-app.appspot.com/o/imagens%2Flogo.png?alt=media&token=44c3b831-75a7-4649-b377-72c6c439b59f" alt="FARN">
+                <h1>Portal do Aluno</h1>
+                <p>Acesse sua conta</p>
+            </div>
+            <div class="pf-login-error" id="pf-login-error"></div>
+            <div class="pf-login-field">
+                <label>CPF</label>
+                <input type="text" id="pf-cpf" placeholder="000.000.000-00" maxlength="14" oninput="paFormatCPF(this)">
+            </div>
+            <div class="pf-login-field">
+                <label>Senha</label>
+                <input type="password" id="pf-senha" placeholder="Sua senha" onkeydown="if(event.key==='Enter')paLogin()">
+            </div>
+            <div class="pf-login-remember">
+                <input type="checkbox" id="pf-lembrar">
+                <label for="pf-lembrar">Lembrar minha senha</label>
+            </div>
+            <button class="pf-login-btn" id="pf-login-btn" onclick="paLogin()">
+                <i class="fa-solid fa-right-to-bracket"></i> Entrar
+            </button>
+            <a class="pf-login-back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+        </div>
+    </div>
+
+    <!-- TELA PORTAL -->
+    <div id="screen-portal">
+
+        <!-- TOP BAR -->
+        <div class="pf-topbar">
+            <div class="pf-topbar-left">
+                <img class="pf-topbar-logo" src="https://firebasestorage.googleapis.com/v0/b/farn-app.appspot.com/o/imagens%2Flogo.png?alt=media&token=44c3b831-75a7-4649-b377-72c6c439b59f" alt="FARN">
+                <span class="pf-topbar-title">Portal do Aluno</span>
+            </div>
+            <div class="pf-topbar-right">
+                <div class="pf-user-info">
+                    <div class="pf-user-name" id="pf-user-name">---</div>
+                    <div class="pf-user-matricula" id="pf-user-matricula"></div>
+                    <div class="pf-user-cpf" id="pf-user-cpf"></div>
+                </div>
+                <div class="pf-user-avatar" id="pf-user-avatar">--</div>
+                <button class="pf-logout-btn" onclick="paLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+            </div>
+        </div>
+
+        <div class="pf-body">
+
+            <!-- SIDEBAR -->
+            <div class="pf-sidebar">
+                <div class="pf-nav-item active" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i> Inicio</div>
+                <div class="pf-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i> Noticias</div>
+                <div class="pf-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
+                <div class="pf-nav-item" onclick="paShowSection('chat',this)"><i class="fa-solid fa-comments"></i> Chat</div>
+                <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
+                <div class="pf-nav-divider"></div>
+                <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
+                <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="pf-content">
+
+                <!-- INICIO -->
+                <div class="pf-section active" id="pf-section-inicio">
+                    <div class="pf-welcome">
+                        <h2>Bem-vindo(a), <span id="pf-welcome-name">Aluno</span>!</h2>
+                        <p>Este e o Portal do Aluno FARN. Acompanhe suas noticias, galeria de fotos e converse com a administracao.</p>
+                        <div class="pf-matricula-badge" id="pf-welcome-matricula" style="display:none">
+                            <i class="fa-solid fa-id-card"></i> <span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOTICIAS + CHAT/GALERIA LADO A LADO -->
+                <div class="pf-section" id="pf-section-noticias">
+                    <div class="pf-noticias-layout">
+                        <div class="pf-noticias-col">
+                            <h3 style="font-size:16px;color:#228b22;margin-bottom:14px"><i class="fa-solid fa-newspaper"></i> Noticias</h3>
+                            <div id="pf-noticias-list">
+                                <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                            </div>
+                        </div>
+                        <div class="pf-right-panel">
+                            <div class="pf-right-tabs">
+                                <div class="pf-right-tab active" onclick="paRightTab('chat',this)"><i class="fa-solid fa-comments"></i> Chat</div>
+                                <div class="pf-right-tab" onclick="paRightTab('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
+                            </div>
+                            <div class="pf-right-content active" id="pf-right-chat">
+                                <div class="pf-chat-messages" id="pf-chat-messages">
+                                    <div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                                </div>
+                                <div class="pf-chat-edit-bar" id="pf-chat-edit-bar">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    <span id="pf-chat-edit-label"></span>
+                                    <button onclick="paChatCancelEdit()"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div class="pf-chat-emoji-panel" id="pf-chat-emoji-panel"></div>
+                                <div class="pf-chat-input-area">
+                                    <button class="pf-chat-emoji-btn" onclick="paChatToggleEmoji(event)"><i class="fa-solid fa-face-smile"></i></button>
+                                    <input type="text" id="pf-chat-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')paChatSend()">
+                                    <button class="pf-chat-send-btn" onclick="paChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                            <div class="pf-right-content" id="pf-right-galeria">
+                                <div class="pf-gallery-grid" id="pf-gallery-grid">
+                                    <div class="pf-gallery-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DADOS -->
+                <div class="pf-section" id="pf-section-dados">
+                    <h3 style="font-size:16px;color:#228b22;margin-bottom:14px"><i class="fa-solid fa-user"></i> Meus Dados</h3>
+                    <div class="pf-dados-grid" id="pf-dados-content"></div>
+                </div>
+
+                <!-- BAIXAR APP -->
+                <div class="pf-section" id="pf-section-app">
+                    <h3 style="font-size:16px;color:#228b22;margin-bottom:14px"><i class="fa-solid fa-mobile-screen"></i> Baixar Aplicativo</h3>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Em breve o aplicativo Portal do Aluno FARN estara disponivel!</p>
+                    <div class="pf-app-cards">
+                        <div class="pf-app-card" onclick="paDownloadApp('android')">
+                            <i class="fa-brands fa-google-play"></i>
+                            <h4>Google Play</h4>
+                            <p>Android</p>
+                        </div>
+                        <div class="pf-app-card" onclick="paDownloadApp('ios')">
+                            <i class="fa-brands fa-app-store"></i>
+                            <h4>App Store</h4>
+                            <p>iPhone / iPad</p>
+                        </div>
+                        <div class="pf-app-card" onclick="paDownloadApp('apk')">
+                            <i class="fa-solid fa-download"></i>
+                            <h4>Download Direto</h4>
+                            <p>APK</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- APOSTILAS -->
+                <div class="pf-section" id="pf-section-apostila">
+                    <h3 style="font-size:16px;color:#228b22;margin-bottom:14px"><i class="fa-solid fa-book-open"></i> Apostilas em PDF</h3>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acesse as apostilas do seu projeto e turma.</p>
+                    <div id="pf-apostila-list">
+                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                    </div>
+                </div>
+
+                <!-- CONSTRUCAO (fallback) -->
+                <div class="pf-section" id="pf-section-construcao">
+                    <div class="pf-em-construcao">
+                        <i class="fa-solid fa-wrench"></i>
+                        <h3>Em construcao</h3>
+                        <p>Esta secao estara disponivel em breve.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FOTO -->
+    <div id="pf-photo-modal" class="pf-photo-modal" onclick="paClosePhoto()">
+        <button class="pf-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
+        <img id="pf-photo-modal-img" src="">
+        <div class="pf-photo-modal-info" id="pf-photo-modal-info"></div>
+    </div>
+
+    <!-- MODAL EDITAR DADOS -->
+    <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)paCloseEditModal()">
+        <div style="background:#161b22;border:1px solid rgba(34,139,34,.3);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 id="pf-edit-title" style="margin:0;font-size:16px;color:#228b22"></h3>
+                <button onclick="paCloseEditModal()" style="background:none;border:none;color:#8b949e;font-size:18px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="pf-edit-body"></div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button onclick="paCloseEditModal()" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#8b949e;font-size:13px;cursor:pointer">Cancelar</button>
+                <button onclick="paConfirmEdit()" style="flex:1;padding:10px;background:linear-gradient(135deg,#228b22,#1a6b1a);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+    var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
+    if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+    var dbFirestore=firebase.firestore();
+
+    /* ===== ESTADO ===== */
+    var paUser=null;
+    var paChatUnsub=null;
+    var paGalleryUnsub=null;
+    var paNoticiasUnsub=null;
+
+    /* ===== FORMATACAO ===== */
+    function paFormatCPF(input) {
+        var v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        input.value = v;
+    }
+
+    /* ===== LOGIN ===== */
+    async function paLogin() {
+        var cpf = document.getElementById('pf-cpf').value.replace(/\D/g, '');
+        var senha = document.getElementById('pf-senha').value;
+        var errEl = document.getElementById('pf-login-error');
+        var btn = document.getElementById('pf-login-btn');
+
+        errEl.style.display = 'none';
+        if (!cpf || cpf.length !== 11) { errEl.textContent = 'CPF invalido.'; errEl.style.display = 'block'; return; }
+        if (!senha) { errEl.textContent = 'Informe sua senha.'; errEl.style.display = 'block'; return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
+
+        try {
+            /* Busca no candidatos */
+            var snap = await dbFirestore.collection('candidatos')
+                .where('cpf', '==', cpf)
+                .limit(1)
+                .get();
+
+            if (snap.empty) {
+                errEl.textContent = 'CPF nao encontrado.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
+            var doc = snap.docs[0];
+            var dados = doc.data();
+
+            /* Verifica senha */
+            if (dados.senha !== senha) {
+                errEl.textContent = 'Senha incorreta.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
+            /* Verifica se esta ativo */
+            if (dados.ativo === false) {
+                errEl.textContent = 'Seu acesso ainda nao foi liberado. Aguarde aprovacao da administracao.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
+            /* Verifica se o projeto esta Em Andamento ou Ativo */
+            var projetoDoAluno = dados.projeto;
+            if (!projetoDoAluno) {
+                errEl.textContent = 'Nenhum projeto vinculado ao seu cadastro.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
+            var parceiroSnap = await dbFirestore.collection('parceiros').where('nome','==',projetoDoAluno).limit(1).get();
+            var statusProjeto = parceiroSnap.empty ? '' : parceiroSnap.docs[0].data().status;
+            if (parceiroSnap.empty || (statusProjeto !== 'Em Andamento' && statusProjeto !== 'Ativo')) {
+                errEl.textContent = 'Seu projeto nao esta disponivel no momento.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
+            paUser = dados;
+            paUser._docId = doc.id;
+
+            /* Lembrar usuario e senha */
+            if (document.getElementById('pf-lembrar').checked) {
+                localStorage.setItem('pa_lembrar_cpf', cpf);
+                localStorage.setItem('pa_lembrar_senha', senha);
+            } else {
+                localStorage.removeItem('pa_lembrar_cpf');
+                localStorage.removeItem('pa_lembrar_senha');
+            }
+
+            document.getElementById('screen-login').style.display = 'none';
+            document.getElementById('screen-portal').classList.add('active');
+            paCheckHash();
+
+            var initials = (paUser.nome || 'AL').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+            document.getElementById('pf-user-avatar').textContent = initials;
+            document.getElementById('pf-user-name').textContent = paUser.nome || '---';
+            var matEl = document.getElementById('pf-user-matricula');
+            if (matEl) matEl.textContent = paUser.matricula ? 'Mat: ' + paUser.matricula : '';
+            var cpfDisp = paUser.cpf || '';
+            if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
+
+            document.getElementById('pf-welcome-name').textContent = (paUser.nome || 'Aluno').split(' ')[0];
+            var wm = document.getElementById('pf-welcome-matricula');
+            if (wm && paUser.matricula) { wm.style.display = 'flex'; wm.querySelector('span').textContent = 'Matricula: ' + paUser.matricula; }
+
+            paLoadNoticias();
+            paLoadDados();
+            paLoadGallery();
+            paLoadApostilas();
+            paChatLoadMessages();
+            paChatInitEmoji();
+
+        } catch(e) {
+            console.error('Erro login aluno:', e);
+            errEl.textContent = 'Erro ao acessar. Tente novamente.';
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+    }
+
+    function paAutoLogin() {
+        var cpfSalvo = localStorage.getItem('pa_lembrar_cpf');
+        var senhaSalva = localStorage.getItem('pa_lembrar_senha');
+        if (cpfSalvo && senhaSalva) {
+            document.getElementById('pf-cpf').value = cpfSalvo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('pf-senha').value = senhaSalva;
+            document.getElementById('pf-lembrar').checked = true;
+            paLogin();
+        }
+    }
+
+    function paLogout() {
+        if (paChatUnsub) { paChatUnsub(); paChatUnsub = null; }
+        if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
+        if (paNoticiasUnsub) { paNoticiasUnsub(); paNoticiasUnsub = null; }
+        document.getElementById('screen-portal').classList.remove('active');
+        document.getElementById('screen-login').style.display = 'flex';
+        document.getElementById('pf-cpf').value = '';
+        document.getElementById('pf-senha').value = '';
+        paUser = null;
+    }
+
+    /* ===== NAVEGACAO ===== */
+    function paShowSection(section, el) {
+        document.querySelectorAll('.pf-section').forEach(function(s){ s.classList.remove('active'); });
+        document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
+        if (el) el.classList.add('active');
+
+        if (section === 'chat' || section === 'galeria') {
+            document.getElementById('pf-section-noticias').classList.add('active');
+            if (section === 'chat') paRightTab('chat', document.querySelector('.pf-right-tab'));
+            else paRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
+            return;
+        }
+
+        var target = document.getElementById('pf-section-' + section);
+        if (target) target.classList.add('active');
+        else document.getElementById('pf-section-construcao').classList.add('active');
+    }
+
+    function paCheckHash() {
+        var h = window.location.hash.replace('#','');
+        if (h) {
+            var navItems = document.querySelectorAll('.pf-nav-item');
+            for (var i = 0; i < navItems.length; i++) {
+                if (navItems[i].textContent.toLowerCase().indexOf(h) !== -1 || navItems[i].getAttribute('onclick').indexOf("'" + h + "'") !== -1) {
+                    paShowSection(h, navItems[i]);
+                    return;
+                }
+            }
+            paShowSection(h, null);
+        }
+    }
+
+    function paRightTab(tab, el) {
+        document.querySelectorAll('.pf-right-tab').forEach(function(t){ t.classList.remove('active'); });
+        if (el) el.classList.add('active');
+        document.getElementById('pf-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
+        document.getElementById('pf-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
+    }
+
+    /* ===== NOTICIAS ===== */
+    function paLoadNoticias() {
+        var container = document.getElementById('pf-noticias-list');
+        paNoticiasUnsub = dbFirestore.collection('noticiasAlunos').orderBy('data', 'desc').onSnapshot(function(snap) {
+            if (snap.empty) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Nenhuma noticia publicada ainda.</p></div>';
+                return;
+            }
+            container.innerHTML = '';
+            snap.forEach(function(doc) {
+                var n = doc.data();
+                var card = document.createElement('div');
+                card.className = 'pf-noticia-card';
+                var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR') : '';
+                var badgeHtml = n.destaque ? '<span class="pf-noticia-badge">DESTAQUE</span>' : '';
+                var imgHtml = n.imagem ? '<img src="' + n.imagem + '" class="pf-noticia-img" alt="Noticia">' : '';
+                card.innerHTML = '<div class="pf-noticia-header">' + badgeHtml + '<span class="pf-noticia-date">' + dateStr + '</span></div>' +
+                    '<div class="pf-noticia-title">' + (n.titulo || '') + '</div>' +
+                    '<div class="pf-noticia-text">' + (n.texto || '') + '</div>' + imgHtml;
+                container.appendChild(card);
+            });
+        }, function() {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Erro ao carregar noticias.</p></div>';
+        });
+    }
+
+    /* ===== MEUS DADOS ===== */
+    function paLoadDados() {
+        if (!paUser) return;
+        var el = document.getElementById('pf-dados-content');
+        var endComp = [paUser.endereco, paUser.numero].filter(Boolean).join(', ');
+        endComp = [endComp, paUser.bairro].filter(Boolean).join(' - ');
+        endComp = [endComp, [paUser.cidade, paUser.estado].filter(Boolean).join('/')].filter(Boolean).join(' - ');
+
+        el.innerHTML =
+            '<div class="pf-dados-card"><div class="pf-dados-label">Nome Completo</div><div class="pf-dados-val">' + (paUser.nome || '---') + '</div></div>' +
+            '<div class="pf-dados-card"><div class="pf-dados-label">CPF</div><div class="pf-dados-val">' + (paUser.cpf ? paUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '---') + '</div></div>' +
+            '<div class="pf-dados-card"><div class="pf-dados-label">Matricula</div><div class="pf-dados-val">' + (paUser.matricula || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'email\')"><div class="pf-dados-label">Email <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-email">' + (paUser.email || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'whatsapp\')"><div class="pf-dados-label">WhatsApp <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-whatsapp">' + (paUser.whatsapp || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'endereco\')" style="grid-column:1/-1"><div class="pf-dados-label">Endereco Completo <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-endereco">' + (endComp || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'senha\')" style="grid-column:1/-1"><div class="pf-dados-label">Senha de Acesso <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-senha">******</div></div>';
+    }
+
+    function paEditCampo(campo) {
+        var modal = document.getElementById('pf-edit-modal');
+        var title = document.getElementById('pf-edit-title');
+        var body = document.getElementById('pf-edit-body');
+        var atual = '';
+
+        if (campo === 'email') {
+            title.textContent = 'Editar Email';
+            atual = paUser.email || '';
+            body.innerHTML = '<label>Email</label><input type="email" id="pf-edit-valor" value="' + atual + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+        } else if (campo === 'whatsapp') {
+            title.textContent = 'Editar WhatsApp';
+            atual = paUser.whatsapp || '';
+            body.innerHTML = '<label>WhatsApp</label><input type="text" id="pf-edit-valor" value="' + atual + '" oninput="paFormatPhone(this)" maxlength="15" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+        } else if (campo === 'endereco') {
+            title.textContent = 'Editar Endereco';
+            body.innerHTML =
+                '<label>Endereco (Rua/Av)</label><input type="text" id="pf-edit-endereco" value="' + (paUser.endereco || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+                '<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px">' +
+                    '<div><label>Numero</label><input type="text" id="pf-edit-numero" value="' + (paUser.numero || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label>Bairro</label><input type="text" id="pf-edit-bairro" value="' + (paUser.bairro || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:10px">' +
+                    '<div><label>Cidade</label><input type="text" id="pf-edit-cidade" value="' + (paUser.cidade || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label>Estado</label><input type="text" id="pf-edit-estado" value="' + (paUser.estado || '') + '" maxlength="2" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                '</div>';
+        } else if (campo === 'senha') {
+            title.textContent = 'Alterar Senha';
+            body.innerHTML =
+                '<label>Nova Senha</label><input type="password" id="pf-edit-valor" placeholder="Minimo 4 caracteres" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+                '<label style="margin-top:10px;display:block">Confirmar Senha</label><input type="password" id="pf-edit-valor2" placeholder="Repita a senha" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+        }
+
+        body.innerHTML += '<label style="margin-top:14px;display:block;font-size:12px;color:#8b949e">Confirme com sua senha atual</label>' +
+            '<input type="password" id="pf-edit-senha" placeholder="Senha atual" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+            '<div id="pf-edit-error" style="display:none;color:#f85149;font-size:12px;margin-top:8px"></div>';
+
+        modal.style.display = 'flex';
+        modal._campo = campo;
+    }
+
+    function paCloseEditModal() {
+        document.getElementById('pf-edit-modal').style.display = 'none';
+    }
+
+    function paFormatPhone(input) {
+        var v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        else if (v.length > 0) v = v.replace(/(\d{0,2})/, '($1');
+        input.value = v;
+    }
+
+    async function paConfirmEdit() {
+        var modal = document.getElementById('pf-edit-modal');
+        var campo = modal._campo;
+        var senhaInput = document.getElementById('pf-edit-senha');
+        var errorEl = document.getElementById('pf-edit-error');
+        var senha = senhaInput.value;
+
+        errorEl.style.display = 'none';
+        if (!senha) { errorEl.textContent = 'Informe sua senha atual.'; errorEl.style.display = 'block'; return; }
+
+        /* Verifica senha */
+        var cpf = (paUser.cpf || '').replace(/\D/g, '');
+        try {
+            var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+            if (snap.empty || snap.docs[0].data().senha !== senha) {
+                errorEl.textContent = 'Senha incorreta.';
+                errorEl.style.display = 'block';
+                return;
+            }
+        } catch(e) {
+            errorEl.textContent = 'Erro ao verificar senha.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        var dados = {};
+        if (campo === 'email') {
+            var val = document.getElementById('pf-edit-valor').value.trim();
+            if (!val) { errorEl.textContent = 'Informe o email.'; errorEl.style.display = 'block'; return; }
+            dados.email = val;
+        } else if (campo === 'whatsapp') {
+            var val = document.getElementById('pf-edit-valor').value.trim();
+            dados.whatsapp = val;
+        } else if (campo === 'endereco') {
+            dados.endereco = document.getElementById('pf-edit-endereco').value.trim();
+            dados.numero = document.getElementById('pf-edit-numero').value.trim();
+            dados.bairro = document.getElementById('pf-edit-bairro').value.trim();
+            dados.cidade = document.getElementById('pf-edit-cidade').value.trim();
+            dados.estado = document.getElementById('pf-edit-estado').value.trim().toUpperCase();
+        } else if (campo === 'senha') {
+            var nova = document.getElementById('pf-edit-valor').value;
+            var conf = document.getElementById('pf-edit-valor2').value;
+            if (!nova || nova.length < 4) { errorEl.textContent = 'A senha deve ter no minimo 4 caracteres.'; errorEl.style.display = 'block'; return; }
+            if (nova !== conf) { errorEl.textContent = 'As senhas nao conferem.'; errorEl.style.display = 'block'; return; }
+            dados.senha = nova;
+        }
+
+        try {
+            await dbFirestore.collection('candidatos').doc(paUser._docId).update(dados);
+            Object.assign(paUser, dados);
+            paLoadDados();
+            paCloseEditModal();
+        } catch(e) {
+            errorEl.textContent = 'Erro ao salvar: ' + e.message;
+            errorEl.style.display = 'block';
+        }
+    }
+
+    /* ===== CHAT 1:1 COM ADMIN ===== */
+    var paChatEditTarget = null;
+
+    function paChatLoadMessages() {
+        if (!paUser || !paUser.cpf) return;
+        var container = document.getElementById('pf-chat-messages');
+        if (paChatUnsub) { paChatUnsub(); paChatUnsub = null; }
+        container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
+
+        paChatUnsub = dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
+            if (snap.empty) {
+                container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
+                return;
+            }
+            container.innerHTML = '';
+            snap.forEach(function(doc) {
+                var m = doc.data();
+                if (m.apagada) return;
+                var isMe = m.remetente === 'aluno';
+                var wrap = document.createElement('div');
+                wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
+                var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#228b22">Administracao FARN</div>' : '';
+                var bodyHtml = '<div>' + (m.texto || '') + '</div>';
+                if (m.editado) bodyHtml += '<div class="pf-chat-edited">( editado )</div>';
+                var actionsHtml = '';
+                if (isMe) {
+                    var safeTexto = (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    actionsHtml = '<div class="pf-chat-actions">' +
+                        '<button class="pf-chat-action-btn" onclick="paChatEditMsg(\'' + doc.id + '\', \'' + safeTexto + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
+                        '<button class="pf-chat-action-btn" onclick="paChatDeleteForMe(\'' + doc.id + '\')" title="Apagar para mim"><i class="fa-solid fa-trash"></i></button>' +
+                        '</div>';
+                }
+                wrap.innerHTML = senderHtml + bodyHtml + '<div class="pf-chat-time">' + time + '</div>' + actionsHtml;
+                container.appendChild(wrap);
+            });
+            container.scrollTop = container.scrollHeight;
+        }, function() {
+            container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
+        });
+    }
+
+    function paChatEditMsg(msgId, texto) {
+        paChatEditTarget = msgId;
+        var editBar = document.getElementById('pf-chat-edit-bar');
+        var editLabel = document.getElementById('pf-chat-edit-label');
+        editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
+        editBar.classList.add('active');
+        var input = document.getElementById('pf-chat-input');
+        input.value = texto;
+        input.focus();
+    }
+
+    function paChatCancelEdit() {
+        paChatEditTarget = null;
+        document.getElementById('pf-chat-edit-bar').classList.remove('active');
+        document.getElementById('pf-chat-input').value = '';
+    }
+
+    function paChatDeleteForMe(msgId) {
+        if (!confirm('Apagar esta mensagem para voce?')) return;
+        if (!paUser) return;
+        dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(msgId).set({ apagada: true }, { merge: true });
+    }
+
+    function paChatSend() {
+        var input = document.getElementById('pf-chat-input');
+        var texto = input.value.trim();
+        if (!texto || !paUser) return;
+        input.value = '';
+
+        if (paChatEditTarget) {
+            dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(paChatEditTarget).set({ texto: texto, editado: true }, { merge: true });
+            paChatCancelEdit();
+            return;
+        }
+
+        dbFirestore.collection('chatAdmin').doc(paUser.cpf).set({
+            cpf: paUser.cpf,
+            nome: paUser.nome || 'Aluno',
+            projeto: paUser.projeto || '',
+            turma: paUser.turma || '',
+            ultimaMsg: texto,
+            ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
+            tipo: 'aluno',
+            ultimaRemetente: 'aluno',
+            naoLidas: firebase.firestore.FieldValue.increment(1)
+        }, { merge: true }).then(function() {
+            return dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').add({
+                texto: texto,
+                remetente: 'aluno',
+                nome: paUser.nome || 'Aluno',
+                cpf: paUser.cpf,
+                hora: firebase.firestore.FieldValue.serverTimestamp(),
+                lida: false
+            });
+        }).catch(function(e) { console.error('Erro ao enviar:', e); });
+    }
+
+    /* ===== EMOJI ===== */
+    function paChatInitEmoji() {
+        var panel = document.getElementById('pf-chat-emoji-panel');
+        if (!panel) return;
+        var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','💀','👀','💪','🤝','🇧🇷','⚽','🎮','📱','💻','🔧','💡','🔔','📦','🔑','✈️','🚗','🏥','🎓','📚','✏️'];
+        panel.innerHTML = '';
+        emojis.forEach(function(e) {
+            var span = document.createElement('span');
+            span.textContent = e;
+            span.onclick = function() {
+                var input = document.getElementById('pf-chat-input');
+                input.value += e;
+                input.focus();
+            };
+            panel.appendChild(span);
+        });
+    }
+
+    function paChatToggleEmoji(ev) {
+        ev.stopPropagation();
+        var panel = document.getElementById('pf-chat-emoji-panel');
+        panel.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(e) {
+        var panel = document.getElementById('pf-chat-emoji-panel');
+        if (panel && !panel.contains(e.target) && !e.target.closest('.pf-chat-emoji-btn')) {
+            panel.classList.remove('active');
+        }
+    });
+
+    /* ===== APOSTILAS ===== */
+    function paLoadApostilas() {
+        if (!paUser) return;
+        var container = document.getElementById('pf-apostila-list');
+
+        dbFirestore.collection('apostilasAlunos').onSnapshot(function(snap) {
+            var items = [];
+            snap.forEach(function(doc) {
+                var a = doc.data();
+                a._id = doc.id;
+                if (a.visivel === false) return;
+                items.push(a);
+            });
+            if (items.length === 0) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-book-open"></i><p>Nenhuma apostila disponivel no momento.</p></div>';
+                return;
+            }
+            items.sort(function(x, y) {
+                var dx = x.data ? new Date(x.data).getTime() : 0;
+                var dy = y.data ? new Date(y.data).getTime() : 0;
+                return dy - dx;
+            });
+            container.innerHTML = '';
+            items.forEach(function(a) {
+                if (a.turma && paUser.turma && a.turma !== paUser.turma) return;
+                var card = document.createElement('div');
+                card.className = 'pf-apostila-card';
+                card.onclick = function() { window.open(a.url, '_blank'); };
+                var dateStr = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : '';
+                var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
+                var projetoHtml = a.projeto ? '<span class="pf-apostila-badge" style="background:rgba(33,136,255,.15);color:#2188ff">' + a.projeto + '</span>' : '';
+                card.innerHTML = '<div class="pf-apostila-icon"><i class="fa-solid fa-file-pdf"></i></div>' +
+                    '<div class="pf-apostila-info">' +
+                        '<div class="pf-apostila-titulo">' + (a.titulo || 'Apostila') + '</div>' +
+                        '<div class="pf-apostila-desc">' + (a.descricao || '') + '</div>' +
+                        '<div class="pf-apostila-meta">' + projetoHtml + turmaHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') + '</div>' +
+                    '</div>';
+                container.appendChild(card);
+            });
+        }, function() {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar apostilas.</p></div>';
+        });
+    }
+
+    /* ===== GALERIA ===== */
+    function paLoadGallery() {
+        var grid = document.getElementById('pf-gallery-grid');
+        paGalleryUnsub = dbFirestore.collection('galeriaAlunos').orderBy('data', 'desc').onSnapshot(function(snap) {
+            if (snap.empty) {
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+                return;
+            }
+            grid.innerHTML = '';
+            snap.forEach(function(doc) {
+                var g = doc.data();
+                var item = document.createElement('div');
+                item.className = 'pf-gallery-item';
+                item.onclick = function() { paOpenPhoto(g.url); };
+                var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
+                item.innerHTML = '<img src="' + g.url + '" alt="' + (g.titulo||'') + '">' +
+                    '<div class="pf-gallery-date">' + (g.titulo || '') + (dateStr ? ' - ' + dateStr : '') + '</div>';
+                grid.appendChild(item);
+            });
+        }, function() {
+            grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+        });
+    }
+
+    /* ===== FOTO MODAL ===== */
+    function paOpenPhoto(src) {
+        document.getElementById('pf-photo-modal-img').src = src;
+        document.getElementById('pf-photo-modal').classList.add('active');
+    }
+    function paClosePhoto() {
+        document.getElementById('pf-photo-modal').classList.remove('active');
+    }
+
+    /* ===== BAIXAR APP ===== */
+    function paDownloadApp(platform) {
+        var msg = '';
+        if (platform === 'android') {
+            msg = 'O aplicativo Portal do Aluno FARN esta em fase de desenvolvimento.\n\nEm breve estara disponivel na Google Play Store!\n\nFique atento as atualizacoes.';
+        } else if (platform === 'ios') {
+            msg = 'O aplicativo Portal do Aluno FARN esta em fase de desenvolvimento.\n\nEm breve estara disponivel na App Store!\n\nFique atento as atualizacoes.';
+        } else {
+            msg = 'O aplicativo Portal do Aluno FARN esta em fase de desenvolvimento.\n\nEm breve o download direto (APK) estara disponivel!\n\nFique atento as atualizacoes.';
+        }
+        alert(msg);
+    }
+
+    /* Auto-login se lembrar estava marcado */
+    paAutoLogin();
+    </script>
+</body>
+</html>

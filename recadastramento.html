@@ -26,7 +26,12 @@
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); min-height:100vh; color:#fff; }
+        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); min-height:100vh; color:#fff; overflow-y:auto; }
+
+        body::-webkit-scrollbar { width:8px; }
+        body::-webkit-scrollbar-track { background:rgba(255,255,255,.05); }
+        body::-webkit-scrollbar-thumb { background:#f57c00; border-radius:10px; }
+        body::-webkit-scrollbar-thumb:hover { background:#ff9800; }
 
         .recad-welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:30px 20px; text-align:center; animation:fadeIn .8s ease; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
@@ -567,6 +572,13 @@
             <button class="recad-btn-check" onclick="rcResetCheck()" style="margin-top:16px">
                 <i class="fa-solid fa-rotate"></i> Nova Consulta
             </button>
+            <div id="rc-status-portal-link" style="display:none;margin-top:14px;text-align:center">
+                <a id="rc-status-portal-btn" href="portal-formado.html" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:linear-gradient(135deg,#f57c00,#f9a825);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:15px;box-shadow:0 4px 20px rgba(245,124,0,.35);transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 28px rgba(245,124,0,.5)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 20px rgba(245,124,0,.35)'">
+                    <i class="fa-solid fa-graduation-cap"></i> Acessar Portal do Formado
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+                <p style="color:#888;font-size:11px;margin-top:8px">Acesse com seu <strong>CPF</strong> e <strong>senha</strong> definidos no cadastro</p>
+            </div>
         </div>
     </div>
 
@@ -743,11 +755,13 @@
                     '<p style="margin:0 0 8px">Voce agora faz parte da <strong style="color:#f57c00">FAMILIA FARN</strong> (Forca Auxiliar de Resgate Nacional). Somos a instituicao que mais representa os profissionais de urgencia e emergencia do Brasil.</p>' +
                     '<p style="margin:0 0 8px">Com seu <strong>CPF</strong> e <strong>senha</strong> voce tera acesso ao <strong style="color:#2196f3">Portal do Formado</strong> onde iremos sempre lhe atualizar das novidades.</p>' +
                     '<p style="margin:0;color:#f57c00;font-weight:600"><i class="fa-solid fa-fire" style="margin-right:4px"></i> Bem-vindo a familia FARN!</p>';
+                document.getElementById('rc-status-portal-link').style.display = 'block';
             } else if (r.status === 'Rejeitado') {
                 icon.classList.add('rejeitado');
                 iconI.className = 'fa-solid fa-xmark';
                 label.textContent = 'Seu cadastro foi REJEITADO';
                 label.style.color = '#f44336';
+                document.getElementById('rc-status-portal-link').style.display = 'none';
                 if (r.motivoRejeicao) {
                     motivoRow.style.display = '';
                     document.getElementById('rc-status-motivo').textContent = r.motivoRejeicao;
@@ -757,6 +771,7 @@
                 iconI.className = 'fa-solid fa-hourglass-half';
                 label.textContent = 'Seu cadastro esta PENDENTE de analise';
                 label.style.color = '#ffc107';
+                document.getElementById('rc-status-portal-link').style.display = 'none';
             }
 
             document.getElementById('recad-check').querySelector('.recad-check-box').style.display = 'none';

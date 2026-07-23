@@ -617,50 +617,6 @@ async function handleLogin(event) {
         if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
         enterAdminPanel();
         saveLoginState();
-    } else if (selectedLoginRole === 'aluno') {
-        if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
-            currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
-            currentAluno = { nome: 'Administrador Geral', cpf: ADMIN_CPF, photoDataUrl: null };
-            document.getElementById('screen-login').classList.remove('active');
-            document.getElementById('screen-portal').classList.add('active');
-            document.getElementById('portal-aluno-nome').textContent = 'Administrador';
-            const portalPhotoBox = document.querySelector('.portal-photo-box');
-            portalPhotoBox.innerHTML = '<i class="fa-solid fa-user-shield" style="font-size:56px;color:#f57c00"></i>';
-            saveLastLogin(cpf);
-            if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
-            saveLoginState();
-            return false;
-        }
-        const aluno = candidatos.find(c => {
-            const matchCpf = c.cpf === cpf;
-            const matchMatricula = c.matricula && c.matricula.toUpperCase() === rawInput.toUpperCase();
-            return (matchCpf || matchMatricula) && c.senha === password && c.status === 'Aprovado';
-        });
-        if (!aluno) {
-            errorEl.querySelector('span').textContent = 'CPF, matricula ou senha invalidos, ou aluno nao aprovado';
-            errorEl.classList.remove('hidden');
-            document.getElementById('password').value = '';
-            return false;
-        }
-        currentAluno = aluno;
-        if (currentAluno && currentAluno.cpf) currentAluno.cpf = currentAluno.cpf.replace(/\D/g, '');
-        document.getElementById('screen-login').classList.remove('active');
-        document.getElementById('screen-portal').classList.add('active');
-        const primeiroNome = (aluno.nome || '').split(' ')[0];
-        document.getElementById('portal-aluno-nome').textContent = primeiroNome;
-        const mat = aluno.matricula || '---';
-        document.getElementById('portal-aluno-matricula').textContent = 'Matricula: ' + mat;
-        if (mat !== '---') {
-            const qrEl = document.getElementById('portal-aluno-qr');
-            qrEl.src = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
-            qrEl.style.display = 'block';
-        }
-        setAlunoOnline(currentAluno.cpf);
-        showPortalSection('noticias');
-        portalLoadSidebarFoto();
-        portalLoadGallery();
-        portalChatInit();
-        if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
     }
     return false;
 }
@@ -770,112 +726,6 @@ window.addEventListener('beforeunload', function() {
     if (currentAluno && currentAluno.cpf) setAlunoOffline(currentAluno.cpf);
 });
 
-function logoutPortal() {
-    portalFoto3x4StopCamera();
-    if (portalGalleryUnsub) { portalGalleryUnsub(); portalGalleryUnsub = null; }
-    if (chatUnsub) { chatUnsub(); chatUnsub = null; chatLoaded = false; chatMode = 'turma'; chatPrivateTarget = null; chatPendingPhoto = null; chatEditingMsg = null; chatCtxMsg = null; chatConversations = {}; if (chatRecording) portalChatCancelRecording(); if (chatExpireInterval) { clearInterval(chatExpireInterval); chatExpireInterval = null; } if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; } }
-    if (typeof chatPortaisNotifUnsub !== 'undefined' && chatPortaisNotifUnsub) { chatPortaisNotifUnsub(); chatPortaisNotifUnsub = null; }
-    document.getElementById('screen-portal').classList.remove('active');
-    document.getElementById('screen-login').classList.add('active');
-    document.getElementById('cpf').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('login-error').classList.add('hidden');
-    if (currentAluno && currentAluno.cpf) setAlunoOffline(currentAluno.cpf);
-    currentAluno = null;
-    selectedLoginRole = 'admin';
-    document.querySelectorAll('.login-role-btn').forEach(b => b.classList.remove('selected'));
-    document.querySelector('.login-role-btn[data-role="admin"]').classList.add('selected');
-}
-
-let portalFoto3x4Stream = null;
-
-function portalFoto3x4Iniciar() {
-    var video = document.getElementById('portal-foto3x4-video');
-    var placeholder = document.getElementById('portal-foto3x4-placeholder');
-    var img = document.getElementById('portal-foto3x4-img');
-    img.style.display = 'none';
-    placeholder.style.display = 'none';
-    video.style.display = 'block';
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } })
-        .then(function(stream) {
-            portalFoto3x4Stream = stream;
-            video.srcObject = stream;
-            document.getElementById('btn-foto3x4-iniciar').style.display = 'none';
-            document.getElementById('btn-foto3x4-capturar').style.display = '';
-            document.getElementById('btn-foto3x4-nova').style.display = 'none';
-            document.getElementById('btn-foto3x4-enviar').style.display = 'none';
-            document.getElementById('btn-foto3x4-apagar').style.display = 'none';
-            portalFoto3x4Msg('', '');
-        }).catch(function(err) {
-            portalFoto3x4Msg('Erro ao acessar camera: ' + err.message, 'error');
-        });
-    } else {
-        portalFoto3x4Msg('Camera nao disponivel neste navegador.', 'error');
-    }
-}
-
-function portalFoto3x4StopCamera() {
-    var video = document.getElementById('portal-foto3x4-video');
-    if (portalFoto3x4Stream) {
-        portalFoto3x4Stream.getTracks().forEach(function(t) { t.stop(); });
-        portalFoto3x4Stream = null;
-    }
-    video.srcObject = null;
-    video.style.display = 'none';
-}
-
-function portalFoto3x4Capturar() {
-    var video = document.getElementById('portal-foto3x4-video');
-    var canvas = document.getElementById('portal-foto3x4-canvas');
-    var img = document.getElementById('portal-foto3x4-img');
-    var maxW = 640, maxH = 800;
-    var w = video.videoWidth, h = video.videoHeight;
-    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-    if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
-    canvas.width = w;
-    canvas.height = h;
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, w, h);
-    var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-    img.src = dataUrl;
-    img.style.display = 'block';
-    portalFoto3x4StopCamera();
-    if (currentAluno && currentAluno.cpf) {
-        setFoto(currentAluno.cpf, dataUrl);
-        portalFoto3x4Msg('Foto capturada e enviada ao servidor!', 'success');
-        portalLoadSidebarFoto();
-    } else {
-        portalFoto3x4Msg('Foto capturada. Aluno nao identificado.', 'error');
-    }
-    document.getElementById('btn-foto3x4-capturar').style.display = 'none';
-    document.getElementById('btn-foto3x4-enviar').style.display = '';
-    document.getElementById('btn-foto3x4-nova').style.display = '';
-    document.getElementById('btn-foto3x4-apagar').style.display = '';
-}
-
-async function portalFoto3x4Enviar() {
-    if (!currentAluno || !currentAluno.cpf) {
-        portalFoto3x4Msg('Erro: aluno nao identificado.', 'error');
-        return;
-    }
-    var img = document.getElementById('portal-foto3x4-img');
-    var dataUrl = img.src;
-    if (!dataUrl || dataUrl === '' || dataUrl === 'about:blank') {
-        portalFoto3x4Msg('Nenhuma foto para enviar.', 'error');
-        return;
-    }
-    portalFoto3x4Msg('Enviando foto...', 'info');
-    var btn = document.getElementById('btn-foto3x4-enviar');
-    btn.disabled = true;
-    var cpf = currentAluno.cpf;
-    setFoto(cpf, dataUrl);
-    portalFoto3x4Msg('Foto enviada com sucesso!', 'success');
-    portalLoadSidebarFoto();
-    btn.style.display = 'none';
-    btn.disabled = false;
-}
-
 function compressPhoto(dataUrl, maxW, maxH, quality) {
     return new Promise(function(resolve) {
         var imgEl = new Image();
@@ -893,800 +743,6 @@ function compressPhoto(dataUrl, maxW, maxH, quality) {
         imgEl.src = dataUrl;
     });
 }
-
-function portalFoto3x4Nova() {
-    portalFoto3x4StopCamera();
-    var img = document.getElementById('portal-foto3x4-img');
-    var placeholder = document.getElementById('portal-foto3x4-placeholder');
-    img.style.display = 'none';
-    img.src = '';
-    placeholder.style.display = '';
-    document.getElementById('btn-foto3x4-iniciar').style.display = '';
-    document.getElementById('btn-foto3x4-capturar').style.display = 'none';
-    document.getElementById('btn-foto3x4-enviar').style.display = 'none';
-    document.getElementById('btn-foto3x4-nova').style.display = 'none';
-    document.getElementById('btn-foto3x4-apagar').style.display = 'none';
-    portalFoto3x4Msg('', '');
-}
-
-function portalFoto3x4Apagar() {
-    if (!currentAluno || !currentAluno.cpf) return;
-    if (!confirm('Apagar sua foto 3x4?')) return;
-    var cpf = currentAluno.cpf;
-    try { localStorage.removeItem('foto3x4_' + cpf); } catch(e) {}
-    try { localStorage.removeItem('farn_photo_' + cpf); } catch(e) {}
-    var c = candidatos.find(function(x) { return x.cpf === cpf; });
-    if (c) { c.photoDataUrl = null; c.hasPhoto = false; }
-    currentAluno.photoDataUrl = null;
-    currentAluno.hasPhoto = false;
-    if (c && c.id) {
-        dbFirestore.collection('candidatos').doc(String(c.id)).set({ photoDataUrl: null, hasPhoto: false }, { merge: true }).catch(function() {});
-    }
-    portalFoto3x4Nova();
-    portalFoto3x4Msg('Foto apagada.', 'success');
-    portalLoadSidebarFoto();
-}
-
-function portalFoto3x4LoadLocal() {
-    if (!currentAluno || !currentAluno.cpf) return;
-    var img = document.getElementById('portal-foto3x4-img');
-    var placeholder = document.getElementById('portal-foto3x4-placeholder');
-    getFoto(currentAluno.cpf).then(function(dataUrl) {
-        if (dataUrl) {
-            img.src = dataUrl;
-            img.style.display = 'block';
-            placeholder.style.display = 'none';
-            document.getElementById('btn-foto3x4-iniciar').style.display = 'none';
-            document.getElementById('btn-foto3x4-capturar').style.display = 'none';
-            document.getElementById('btn-foto3x4-enviar').style.display = 'none';
-            document.getElementById('btn-foto3x4-nova').style.display = '';
-            document.getElementById('btn-foto3x4-apagar').style.display = '';
-            portalFoto3x4Msg('Foto carregada do servidor.', 'info');
-        } else {
-            img.style.display = 'none';
-            placeholder.style.display = '';
-            document.getElementById('btn-foto3x4-iniciar').style.display = '';
-            document.getElementById('btn-foto3x4-capturar').style.display = 'none';
-            document.getElementById('btn-foto3x4-enviar').style.display = 'none';
-            document.getElementById('btn-foto3x4-nova').style.display = 'none';
-            document.getElementById('btn-foto3x4-apagar').style.display = 'none';
-            portalFoto3x4Msg('', '');
-        }
-    });
-}
-
-function portalFoto3x4Msg(msg, type) {
-    var el = document.getElementById('portal-foto3x4-msg');
-    if (!msg) { el.style.display = 'none'; return; }
-    el.style.display = 'block';
-    el.textContent = msg;
-    el.className = 'portal-foto3x4-msg ' + (type || '');
-}
-
-function portalLoadSidebarFoto() {
-    if (!currentAluno || !currentAluno.cpf) return;
-    var img = document.getElementById('portal-sidebar-foto');
-    var icon = document.getElementById('portal-sidebar-foto-icon');
-    getFoto(currentAluno.cpf).then(function(dataUrl) {
-        if (dataUrl) {
-            img.src = dataUrl;
-            img.style.display = 'block';
-            icon.style.display = 'none';
-        } else {
-            img.style.display = 'none';
-            icon.style.display = '';
-        }
-    });
-    // Atualizar turma na sidebar
-    var turmaEl = document.getElementById('portal-aluno-turma');
-    if (turmaEl && currentAluno.turma) {
-        turmaEl.innerHTML = '<i class="fa-solid fa-users"></i> ' + currentAluno.turma;
-    }
-}
-
-var chatUnsub = null;
-var chatLoaded = false;
-var chatView = 'main';
-var chatPrivateTarget = null;
-var chatPendingPhoto = null;
-var chatConversations = {};
-var chatEditingMsg = null;
-var chatCtxMsg = null;
-
-var waEmojis = {
-    'Frequentes': ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','🤷','🙄','😏','🤦','💪','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','🤮','💀','👀','🫡','🤝'],
-    'Pessoas': ['👨','👩','🧑','👴','👵','👦','👧','👶','🦸','🧑‍🚒','👮','🧑‍🎓','🧑‍💼','🧑‍🔧','🧑‍⚕️','🧑‍🍳','🤷','🤦','👋','🤙','✌️','🤟','🤝','🫶','👏','🙌'],
-    'Animais': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🦅','🦆','🦉','🐴','🐝','🐛','🦋','🐢'],
-    'Comida': ['🍕','🍔','🍟','🌭','🍿','🧀','🥚','🍳','🥞','🧇','🥓','🍗','🍖','🥩','🍝','🍜','🍛','🍣','🍱','🍙','🍚','🍘','🍥','🥮','🍢','🍡'],
-    'Atividades': ['⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','🎯','🎮','🎲','🧩','🎭','🎨','🎬','🎤','🎧','🎵','🎶','🥁','🎸','🎹'],
-    'Objetos': ['📱','💻','⌨️','🖥️','🖨️','📷','📸','📹','🎥','📞','☎️','📺','📻','🔔','🔕','⏰','💡','🔦','🕯️','💰','💳','📦','🔑','🗝️','✂️','🔧'],
-    'Simbolos': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❣️','💕','💞','💓','💗','💖','💘','💝','⭐','🌟','💫','✨','⚡','🔥','💥','❄️','🌈'],
-    'Bandeiras': ['🇧🇷','🏳️','🏴','🏁','🚩','🎌','🏴‍☠️','🇺🇸','🇬🇧','🇫🇷','🇩🇪','🇪🇸','🇮🇹','🇯🇵','🇨🇳','🇰🇷','🇮🇳','🇲🇽','🇦🇷','🇨🇴','🇨🇱','🇵🇪','🇻🇪','🇺🇾']
-};
-
-function portalChatInit() {
-    if (!currentAluno || !currentAluno.cpf) return;
-    if (!chatLoaded) {
-        chatLoaded = true;
-        portalChatSetupInput();
-        portalChatInitEmoji();
-        portalChatListen();
-    } else {
-        portalChatListen();
-    }
-}
-
-function portalChatShowMain() {
-    chatView = 'main';
-    chatPrivateTarget = null;
-    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
-    portalChatListen();
-}
-
-function portalChatOpenGroup() {
-    chatView = 'turma';
-    chatPrivateTarget = null;
-    if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; }
-    document.getElementById('wa-main-header').style.display = 'none';
-    document.getElementById('wa-conversations-panel').style.display = 'none';
-    document.getElementById('wa-contacts-panel').style.display = 'none';
-    var chatViewEl = document.getElementById('wa-chat-view');
-    chatViewEl.style.display = 'flex';
-    document.getElementById('wa-chat-avatar').style.background = '#cfe9da';
-    document.getElementById('wa-chat-avatar').innerHTML = '<i class="fa-solid fa-users" style="color:#008069"></i>';
-    document.getElementById('wa-chat-name').textContent = 'Chat da Turma';
-    document.getElementById('wa-chat-status').textContent = 'online';
-    portalChatListen();
-}
-
-function portalChatOpenPrivate(candidato) {
-    chatView = 'privado';
-    chatPrivateTarget = candidato;
-    if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; }
-    document.getElementById('wa-main-header').style.display = 'none';
-    document.getElementById('wa-conversations-panel').style.display = 'none';
-    document.getElementById('wa-contacts-panel').style.display = 'none';
-    var chatViewEl = document.getElementById('wa-chat-view');
-    chatViewEl.style.display = 'flex';
-    var nome = candidato.nome || 'Aluno';
-    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf'];
-    var hash = 0;
-    for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
-    var cor = cores[Math.abs(hash) % cores.length];
-    var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
-    document.getElementById('wa-chat-avatar').style.background = cor;
-    document.getElementById('wa-chat-avatar').innerHTML = initials;
-    document.getElementById('wa-chat-name').textContent = nome;
-    document.getElementById('wa-chat-status').textContent = 'online';
-    portalChatListen();
-}
-
-function portalChatGoToContacts() {
-    if (chatConvRefreshInterval) { clearInterval(chatConvRefreshInterval); chatConvRefreshInterval = null; }
-    document.getElementById('wa-conversations-panel').style.display = 'none';
-    document.getElementById('wa-contacts-panel').style.display = '';
-    portalChatLoadContacts();
-}
-
-function portalChatBackToMain() {
-    portalChatShowMain();
-}
-
-function portalChatGetCurrentCol() {
-    if (!currentAluno || !currentAluno.cpf) return null;
-    return dbFirestore.collection('chatAdmin').doc(currentAluno.cpf).collection('msgs');
-}
-
-function portalChatListen() {
-    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
-    var col = portalChatGetCurrentCol();
-    if (!col) return;
-    var container = document.getElementById('portal-chat-messages');
-    container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
-    chatUnsub = col.orderBy('hora').onSnapshot(function(snap) {
-        var msgs = [];
-        snap.forEach(function(doc) { msgs.push(Object.assign({ _id: doc.id }, doc.data())); });
-        portalChatRender(msgs);
-    }, function() {
-        container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
-    });
-}
-
-function portalChatRender(msgs) {
-    var container = document.getElementById('portal-chat-messages');
-    if (msgs.length === 0) {
-        container.innerHTML = '<div class="portal-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
-        return;
-    }
-    var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 60;
-    container.innerHTML = '';
-    var lastDate = '';
-    msgs.forEach(function(m) {
-        if (m.apagada) return;
-        var dt = m.hora && m.hora.seconds ? new Date(m.hora.seconds * 1000) : new Date();
-        var dateStr = dt.toLocaleDateString('pt-BR');
-        if (dateStr !== lastDate) {
-            lastDate = dateStr;
-            var divider = document.createElement('div');
-            divider.style.cssText = 'text-align:center;margin:8px 0;font-size:11px;color:#999';
-            divider.innerHTML = '<span style="background:#f3f4f6;padding:4px 12px;border-radius:10px;color:#666">' + dateStr + '</span>';
-            container.appendChild(divider);
-        }
-        var isMe = m.remetente === 'aluno';
-        var wrap = document.createElement('div');
-        wrap.className = 'portal-chat-bubble ' + (isMe ? 'me' : 'other');
-        wrap.setAttribute('data-id', m._id || '');
-        var senderHtml = '';
-        if (!isMe) {
-            senderHtml = '<div class="portal-chat-sender" style="color:#f57c00">Administracao FARN</div>';
-        }
-        var time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        var bodyHtml = '';
-        if (m.texto) bodyHtml += '<span class="portal-chat-text">' + m.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-        if (m.editado) bodyHtml += '<div class="portal-chat-edited">( editado )</div>';
-        var actionsHtml = '';
-        if (isMe) {
-            actionsHtml = '<div class="portal-chat-actions">' +
-                '<button class="portal-chat-action-btn" onclick="portalChatEditMsg(\'' + m._id + '\', \'' + (m.texto || '').replace(/'/g, "\\'") + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
-                '<button class="portal-chat-action-btn" onclick="portalChatDeleteForMe(\'' + m._id + '\')" title="Apagar para mim"><i class="fa-solid fa-trash"></i></button>' +
-                '</div>';
-        }
-        wrap.innerHTML = senderHtml + bodyHtml + '<div class="portal-chat-time">' + time + '</div>' + actionsHtml;
-        container.appendChild(wrap);
-    });
-    if (wasAtBottom) container.scrollTop = container.scrollHeight;
-}
-
-var portalChatEditTarget = null;
-
-function portalChatEditMsg(msgId, texto) {
-    portalChatEditTarget = msgId;
-    var editBar = document.getElementById('portal-chat-edit-bar');
-    var editLabel = document.getElementById('portal-chat-edit-label');
-    editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
-    editBar.classList.add('active');
-    var input = document.getElementById('portal-chat-input');
-    input.value = texto;
-    input.focus();
-}
-
-function portalChatCancelEdit() {
-    portalChatEditTarget = null;
-    document.getElementById('portal-chat-edit-bar').classList.remove('active');
-    document.getElementById('portal-chat-input').value = '';
-}
-
-function portalChatDeleteForMe(msgId) {
-    if (!confirm('Apagar esta mensagem para voce?')) return;
-    var col = portalChatGetCurrentCol();
-    if (!col || !msgId) return;
-    col.doc(msgId).set({ apagada: true }, { merge: true });
-}
-
-function portalChatLoadAllConversations() {
-    portalChatListen();
-}
-
-function portalChatRenderConversations() {}
-
-/* ===== EMOJI ===== */
-function portalChatInitEmoji() {
-    var panel = document.getElementById('portal-chat-emoji-panel');
-    if (!panel) return;
-    var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','💀','👀','💪','🤝','🇧🇷','⚽','🎮','📱','💻','🔧','💡','🔔','📦','🔑','✈️','🚗','🏥','🎓','📚','✏️'];
-    panel.innerHTML = '';
-    emojis.forEach(function(e) {
-        var span = document.createElement('span');
-        span.textContent = e;
-        span.onclick = function() {
-            var input = document.getElementById('portal-chat-input');
-            input.value += e;
-            input.focus();
-        };
-        panel.appendChild(span);
-    });
-}
-
-function portalChatToggleEmoji(ev) {
-    ev.stopPropagation();
-    var panel = document.getElementById('portal-chat-emoji-panel');
-    panel.classList.toggle('active');
-}
-
-document.addEventListener('click', function(e) {
-    var panel = document.getElementById('portal-chat-emoji-panel');
-    if (panel && !panel.contains(e.target) && !e.target.closest('.portal-chat-emoji-btn')) {
-        panel.classList.remove('active');
-    }
-});
-
-function portalChatLoadContacts() {
-    if (!currentAluno) return;
-    var list = document.getElementById('wa-contacts-list');
-    var approved = candidatos.filter(function(c) {
-        return c.cpf !== currentAluno.cpf && (c.status === 'aprovado' || c.status === 'Aprovado');
-    });
-    if (currentAluno.cpf !== ADMIN_CPF) {
-        approved.unshift({ cpf: ADMIN_CPF, nome: 'Administrador Geral', matricula: 'ADMIN' });
-    }
-    approved.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
-    if (approved.length === 0) { list.innerHTML = '<div class="wa-contacts-empty"><i class="fa-solid fa-user-slash"></i><p>Nenhum aluno aprovado.</p></div>'; return; }
-    list.innerHTML = '';
-    var cores = ['#6b4fbb','#06a77d','#d45c2c','#d93d63','#7a6f2b','#0078a8','#9c3fbf','#c04060','#2e7d32','#6a1b9a'];
-    approved.forEach(function(c) {
-        var nome = c.nome || 'Aluno';
-        var hash = 0;
-        for (var i = 0; i < nome.length; i++) hash = ((hash << 5) - hash) + nome.charCodeAt(i);
-        var cor = cores[Math.abs(hash) % cores.length];
-        var initials = nome.split(' ').filter(Boolean).slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
-        var item = document.createElement('div');
-        item.className = 'wa-contact-item';
-        item.setAttribute('data-nome', nome.toLowerCase());
-        item.innerHTML = '<div class="wa-contact-avatar" style="background:' + cor + '">' + initials + '</div><div class="wa-contact-info"><div class="wa-contact-name">' + nome + '</div><div class="wa-contact-mat">' + (c.matricula || '') + '</div></div>';
-        item.onclick = function() { document.getElementById('wa-contacts-panel').style.display = 'none'; portalChatOpenPrivate(c); };
-        list.appendChild(item);
-    });
-}
-
-function portalChatFilterContacts() {
-    var search = document.getElementById('wa-contacts-search').value.toLowerCase();
-    document.querySelectorAll('.wa-contact-item').forEach(function(item) {
-        item.style.display = (item.getAttribute('data-nome') || '').includes(search) ? '' : 'none';
-    });
-}
-
-function portalChatDeleteAll() {
-    var label = chatView === 'turma' ? 'todas as mensagens do grupo' : 'esta conversa';
-    if (!confirm('Apagar ' + label + '? Esta acao nao pode ser desfeita.')) return;
-    var col = portalChatGetCurrentCol();
-    if (!col) return;
-    col.get().then(function(snap) {
-        var batch = dbFirestore.batch();
-        snap.forEach(function(doc) { batch.delete(doc.ref); });
-        return batch.commit();
-    }).then(function() {
-        if (chatView === 'privado' && chatPrivateTarget) delete chatConversations[chatPrivateTarget.cpf];
-        alert('Conversa apagada.');
-    }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
-}
-
-var portalChatInput = null;
-function portalChatSetupInput() {
-    portalChatInput = document.getElementById('portal-chat-input');
-}
-
-function portalChatSend() {
-    if (!currentAluno) return;
-    var input = document.getElementById('portal-chat-input');
-    var texto = input.value.trim();
-    if (!texto) return;
-    input.value = '';
-
-    var col = portalChatGetCurrentCol();
-    if (!col) return;
-
-    if (portalChatEditTarget) {
-        col.doc(portalChatEditTarget).set({ texto: texto, editado: true }, { merge: true });
-        portalChatCancelEdit();
-        return;
-    }
-
-    var msgData = {
-        texto: texto,
-        remetente: 'aluno',
-        nome: currentAluno.nome || 'Aluno',
-        cpf: currentAluno.cpf,
-        hora: firebase.firestore.FieldValue.serverTimestamp(),
-        lida: false
-    };
-
-    col.add(msgData).then(function() {
-        return dbFirestore.collection('chatAdmin').doc(currentAluno.cpf).set({
-            cpf: currentAluno.cpf,
-            nome: currentAluno.nome || 'Aluno',
-            projeto: currentAluno.projeto || currentAluno.turma || '',
-            ultimaMsg: texto,
-            ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
-            tipo: 'aluno',
-            ultimaRemetente: 'aluno',
-            naoLidas: firebase.firestore.FieldValue.increment(1)
-        }, { merge: true });
-    }).catch(function(e) { console.error('Erro ao enviar:', e); });
-}
-
-/* ===== PORTAL DIREITO - TABS ===== */
-function portalRightTab(tab, el) {
-    document.querySelectorAll('.portal-right-tab').forEach(function(t){ t.classList.remove('active'); });
-    if (el) el.classList.add('active');
-    document.getElementById('portal-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
-    document.getElementById('portal-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
-}
-
-/* ===== PORTAL GALERIA ===== */
-var portalGalleryUnsub = null;
-
-function portalLoadGallery() {
-    var grid = document.getElementById('portal-gallery-grid');
-    if (!grid) return;
-    portalGalleryUnsub = dbFirestore.collection('galeriaFormados').orderBy('data', 'desc').onSnapshot(function(snap) {
-        if (snap.empty) {
-            grid.innerHTML = '<div class="portal-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
-            return;
-        }
-        grid.innerHTML = '';
-        snap.forEach(function(doc) {
-            var g = doc.data();
-            var item = document.createElement('div');
-            item.className = 'portal-gallery-item';
-            item.onclick = function() { portalOpenPhoto(g.url); };
-            var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
-            item.innerHTML = '<img src="' + g.url + '" alt="' + (g.titulo||'') + '">' +
-                '<div class="portal-gallery-date">' + (g.titulo || '') + (dateStr ? ' - ' + dateStr : '') + '</div>';
-            grid.appendChild(item);
-        });
-    }, function() {
-        grid.innerHTML = '<div class="portal-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
-    });
-}
-
-function portalOpenPhoto(src) {
-    var modal = document.getElementById('portal-photo-modal');
-    if (!modal) return;
-    document.getElementById('portal-photo-modal-img').src = src;
-    modal.classList.add('active');
-}
-
-function portalClosePhoto() {
-    var modal = document.getElementById('portal-photo-modal');
-    if (modal) modal.classList.remove('active');
-}
-
-function portalChatSetupContextMenu() {
-    var container = document.getElementById('portal-chat-messages');
-    if (!container) return;
-    container.addEventListener('click', function(e) {
-        var bubble = e.target.closest('.wa-bubble');
-        if (!bubble) { portalChatCloseContextMenu(); return; }
-        var msgId = bubble.getAttribute('data-msgid');
-        var msgCpf = bubble.getAttribute('data-cpf');
-        var msgTexto = bubble.getAttribute('data-texto');
-        if (!msgId || msgCpf !== currentAluno.cpf) { portalChatCloseContextMenu(); return; }
-        e.preventDefault();
-        e.stopPropagation();
-        portalChatCtxMsg = { _id: msgId, cpf: msgCpf, texto: msgTexto };
-        var menu = document.getElementById('wa-context-menu');
-        var rect = bubble.getBoundingClientRect();
-        menu.style.display = 'block';
-        menu.style.left = Math.min(rect.left, window.innerWidth - 180) + 'px';
-        menu.style.top = Math.min(rect.bottom + 4, window.innerHeight - 120) + 'px';
-    });
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.wa-context-menu')) portalChatCloseContextMenu();
-    });
-}
-
-function portalChatCloseContextMenu() {
-    var menu = document.getElementById('wa-context-menu');
-    if (menu) menu.style.display = 'none';
-    portalChatCtxMsg = null;
-}
-
-function portalChatCtxAction(action) {
-    portalChatCloseContextMenu();
-    if (!portalChatCtxMsg) return;
-    var col = portalChatGetCurrentCol();
-    if (!col) return;
-    if (action === 'edit') {
-        chatEditingMsg = portalChatCtxMsg;
-        var editBar = document.getElementById('wa-edit-bar');
-        var editBarText = document.getElementById('wa-edit-bar-text');
-        editBar.style.display = '';
-        editBarText.textContent = 'Editando: ' + (portalChatCtxMsg.texto || '').substring(0, 40);
-        var input = document.getElementById('portal-chat-input');
-        input.value = portalChatCtxMsg.texto || '';
-        input.focus();
-        var micBtn = document.getElementById('portal-chat-mic-btn');
-        var sendBtn = document.getElementById('portal-chat-send-btn');
-        if (micBtn) micBtn.style.display = 'none';
-        if (sendBtn) sendBtn.style.display = '';
-    } else if (action === 'deleteForMe') {
-        if (!confirm('Apagar esta mensagem apenas para voce?')) return;
-        col.doc(portalChatCtxMsg._id).update({
-            deletedFor: firebase.firestore.FieldValue.arrayUnion(currentAluno.cpf)
-        }).catch(function(e) { alert('Erro ao apagar: ' + e.message); });
-    } else if (action === 'deleteForAll') {
-        if (!confirm('Apagar esta mensagem para todos?')) return;
-        col.doc(portalChatCtxMsg._id).delete().catch(function(e) { alert('Erro ao apagar: ' + e.message); });
-    }
-    portalChatCtxMsg = null;
-}
-
-function portalChatCancelEdit() {
-    chatEditingMsg = null;
-    var editBar = document.getElementById('wa-edit-bar');
-    if (editBar) editBar.style.display = 'none';
-    var input = document.getElementById('portal-chat-input');
-    if (input) input.value = '';
-}
-
-function portalChatToggleEmoji() {
-    var picker = document.getElementById('wa-emoji-picker');
-    if (picker.style.display === 'none' || !picker.style.display) {
-        if (!picker.innerHTML) {
-            var html = '';
-            Object.keys(waEmojis).forEach(function(cat) {
-                html += '<div class="wa-emoji-category-title">' + cat + '</div><div class="wa-emoji-grid">';
-                waEmojis[cat].forEach(function(em) {
-                    html += '<button class="wa-emoji-btn" onclick="portalChatInsertEmoji(\'' + em + '\')">' + em + '</button>';
-                });
-                html += '</div>';
-            });
-            picker.innerHTML = html;
-        }
-        picker.style.display = '';
-    } else {
-        picker.style.display = 'none';
-    }
-}
-
-function portalChatInsertEmoji(em) {
-    var input = document.getElementById('portal-chat-input');
-    var pos = input.selectionStart || input.value.length;
-    input.value = input.value.substring(0, pos) + em + input.value.substring(pos);
-    input.focus();
-    input.selectionStart = input.selectionEnd = pos + em.length;
-    input.dispatchEvent(new Event('input'));
-}
-
-function portalChatOpenCamera() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { alert('Camera nao disponivel.'); return; }
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-    overlay.innerHTML = '<video id="chat-camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="chat-camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-camera-rotate"></i></button><button id="chat-camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#008069;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="chat-camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
-    document.body.appendChild(overlay);
-    var video = document.getElementById('chat-camera-video');
-    var stream = null;
-    var currentFacing = 'user';
-    function startCam(facing) {
-        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-        return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 320 }, height: { ideal: 240 } } });
-    }
-    startCam(currentFacing).then(function(s) { stream = s; video.srcObject = stream; }).catch(function(err) { document.body.removeChild(overlay); alert('Camera: ' + err.message); });
-    document.getElementById('chat-camera-switch').onclick = function() {
-        currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-        startCam(currentFacing).then(function(s) { stream = s; video.srcObject = stream; }).catch(function() { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; });
-    };
-    document.getElementById('chat-camera-capture').onclick = function() {
-        var canvas = document.createElement('canvas');
-        canvas.width = 320; canvas.height = 240;
-        canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
-        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-        document.body.removeChild(overlay);
-        canvas.toBlob(function(blob) {
-            var reader = new FileReader();
-            reader.onloadend = function() {
-                chatPendingPhoto = reader.result;
-                document.getElementById('wa-photo-preview-img').src = chatPendingPhoto;
-                document.getElementById('wa-photo-preview').style.display = '';
-                var micBtn = document.getElementById('portal-chat-mic-btn');
-                var sendBtn = document.getElementById('portal-chat-send-btn');
-                if (micBtn) micBtn.style.display = 'none';
-                if (sendBtn) sendBtn.style.display = '';
-            };
-            reader.readAsDataURL(blob);
-        }, 'image/jpeg', 0.3);
-    };
-    document.getElementById('chat-camera-cancel').onclick = function() {
-        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-        document.body.removeChild(overlay);
-    };
-}
-
-function portalChatRemovePhoto() {
-    chatPendingPhoto = null;
-    var preview = document.getElementById('wa-photo-preview');
-    if (preview) preview.style.display = 'none';
-    var check = document.getElementById('wa-viewonce-check');
-    if (check) check.checked = false;
-    var input = document.getElementById('portal-chat-input');
-    var micBtn = document.getElementById('portal-chat-mic-btn');
-    var sendBtn = document.getElementById('portal-chat-send-btn');
-    if (input && micBtn && sendBtn && !input.value.trim()) { micBtn.style.display = ''; sendBtn.style.display = 'none'; }
-}
-
-function portalChatExpandPhoto(src) {
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:999999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
-    var img = document.createElement('img');
-    img.src = src;
-    img.style.cssText = 'max-width:95%;max-height:90%;border-radius:4px;';
-    overlay.appendChild(img);
-    overlay.onclick = function() { document.body.removeChild(overlay); };
-    document.body.appendChild(overlay);
-}
-
-var chatRecording = false;
-var chatMediaRecorder = null;
-var chatAudioChunks = [];
-var chatRecStream = null;
-var chatRecTimer = null;
-var chatRecSeconds = 0;
-var chatRecMaxSeconds = 30;
-var chatAudioIdCounter = 0;
-var chatActiveAudio = null;
-var chatExpireInterval = null;
-var chatConvRefreshInterval = null;
-
-function portalChatToggleRecording() { chatRecording ? portalChatStopRecording() : portalChatStartRecording(); }
-
-function portalChatStartRecording() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { alert('Microfone nao disponivel.'); return; }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
-        chatRecStream = stream;
-        chatAudioChunks = [];
-        var options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? { mimeType: 'audio/webm;codecs=opus' } : (MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {});
-        chatMediaRecorder = new MediaRecorder(stream, options);
-        chatMediaRecorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) chatAudioChunks.push(e.data); };
-        chatMediaRecorder.onstop = function() { stream.getTracks().forEach(function(t) { t.stop(); }); };
-        chatMediaRecorder.start(500);
-        chatRecording = true;
-        chatRecSeconds = 0;
-        document.getElementById('wa-recording-bar').style.display = '';
-        document.getElementById('wa-rec-timer').textContent = '00:00';
-        document.querySelector('.wa-input-area').style.display = 'none';
-        document.getElementById('wa-emoji-picker').style.display = 'none';
-        chatRecTimer = setInterval(function() {
-            chatRecSeconds++;
-            var m = Math.floor(chatRecSeconds / 60);
-            var s = chatRecSeconds % 60;
-            document.getElementById('wa-rec-timer').textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-            if (chatRecSeconds >= chatRecMaxSeconds) portalChatStopRecording();
-        }, 1000);
-    }).catch(function(err) { alert('Microfone: ' + err.message); });
-}
-
-function portalChatStopRecording() {
-    if (!chatRecording || !chatMediaRecorder) return;
-    chatRecording = false;
-    clearInterval(chatRecTimer);
-    document.getElementById('wa-recording-bar').style.display = 'none';
-    document.querySelector('.wa-input-area').style.display = '';
-    chatMediaRecorder.onstop = function() {
-        if (chatRecStream) chatRecStream.getTracks().forEach(function(t) { t.stop(); });
-        if (chatAudioChunks.length === 0) return;
-        portalChatSendAudio(new Blob(chatAudioChunks, { type: chatMediaRecorder.mimeType || 'audio/webm' }));
-        chatAudioChunks = [];
-    };
-    chatMediaRecorder.stop();
-}
-
-function portalChatCancelRecording() {
-    if (!chatRecording || !chatMediaRecorder) return;
-    chatRecording = false;
-    clearInterval(chatRecTimer);
-    chatAudioChunks = [];
-    document.getElementById('wa-recording-bar').style.display = 'none';
-    document.querySelector('.wa-input-area').style.display = '';
-    chatMediaRecorder.onstop = function() { if (chatRecStream) chatRecStream.getTracks().forEach(function(t) { t.stop(); }); };
-    chatMediaRecorder.stop();
-}
-
-function portalChatSendAudio(blob) {
-    if (!currentAluno || !blob) return;
-    var reader = new FileReader();
-    reader.onloadend = function() {
-        var dataUrl = reader.result;
-        if (!dataUrl) return;
-        var byteLen = Math.ceil((dataUrl.length - 'data:audio/webm;base64,'.length) * 3 / 4);
-        if (byteLen > 900000) { alert('Audio muito grande.'); return; }
-        var col = portalChatGetCurrentCol();
-        if (!col) return;
-        col.add({
-            audioDataUrl: dataUrl, audioDuracao: chatRecSeconds,
-            audioId: 'au_' + (++chatAudioIdCounter) + '_' + Date.now(),
-            remetente: currentAluno.nome || 'Aluno', cpf: currentAluno.cpf, hora: new Date()
-        }).catch(function(e) { alert('Erro audio: ' + e.message); });
-    };
-    reader.readAsDataURL(blob);
-}
-
-function portalChatPlayAudio(audioId, btn) {
-    var audio = document.getElementById('audio_' + audioId);
-    if (!audio) return;
-    if (chatActiveAudio && chatActiveAudio !== audio) {
-        chatActiveAudio.pause(); chatActiveAudio.currentTime = 0;
-        var prevBtn = chatActiveAudio.parentElement ? chatActiveAudio.parentElement.querySelector('.wa-audio-play') : null;
-        if (prevBtn) { prevBtn.classList.remove('playing'); prevBtn.innerHTML = '<i class="fa-solid fa-play"></i>'; }
-    }
-    if (audio.paused) {
-        audio.play(); chatActiveAudio = audio;
-        btn.classList.add('playing'); btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-    } else {
-        audio.pause();
-        btn.classList.remove('playing'); btn.innerHTML = '<i class="fa-solid fa-play"></i>';
-    }
-    audio.onended = function() {
-        btn.classList.remove('playing'); btn.innerHTML = '<i class="fa-solid fa-play"></i>';
-        chatActiveAudio = null;
-        btn.closest('.wa-audio-player').querySelectorAll('.wa-audio-wave span').forEach(function(b) { b.classList.remove('active'); });
-    };
-    var waveBars = btn.closest('.wa-audio-player').querySelectorAll('.wa-audio-wave span');
-    if (!audio.paused) {
-        audio.ontimeupdate = function() {
-            var pct = audio.duration ? audio.currentTime / audio.duration : 0;
-            var activeCount = Math.floor(pct * waveBars.length);
-            waveBars.forEach(function(b, i) { b.classList.toggle('active', i <= activeCount); });
-        };
-    }
-}
-
-function portalChatFormatTime(sec) {
-    sec = Math.floor(sec || 0);
-    var m = Math.floor(sec / 60);
-    var s = sec % 60;
-    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-}
-
-function portalChatGenWaveform(count) {
-    var bars = '';
-    for (var i = 0; i < count; i++) bars += '<span style="height:' + (4 + Math.floor(Math.random() * 18)) + 'px"></span>';
-    return bars;
-}
-
-function portalChatCheckExpired() {
-    var now = Date.now();
-    var expiredIds = [];
-    document.querySelectorAll('.wa-bubble[data-audioid]').forEach(function(bubble) {
-        var audioId = bubble.getAttribute('data-audioid');
-        var criadoEm = parseInt(bubble.getAttribute('data-criado') || '0', 10);
-        if (criadoEm && (now - criadoEm) > 300000) {
-            var wrap = bubble.closest('.wa-bubble-wrap');
-            if (wrap) {
-                var inner = wrap.querySelector('.wa-audio-bubble') || bubble;
-                inner.innerHTML = '<div class="wa-audio-expired"><i class="fa-solid fa-clock-rotate-left"></i> Audio expirado</div>';
-                bubble.removeAttribute('data-audioid');
-            }
-            expiredIds.push(audioId);
-        }
-    });
-    if (expiredIds.length > 0) portalChatDeleteExpiredFromFirestore(expiredIds);
-}
-
-function portalChatDeleteExpiredFromFirestore(ids) {
-    if (!ids.length) return;
-    var col = portalChatGetCurrentCol();
-    if (!col) return;
-    ids.forEach(function(aid) {
-        col.where('audioId', '==', aid).get().then(function(snap) {
-            snap.forEach(function(doc) { doc.ref.delete().catch(function() {}); });
-        }).catch(function() {});
-    });
-}
-
-function portalChatStartExpireChecker() {
-    if (chatExpireInterval) return;
-    chatExpireInterval = setInterval(portalChatCheckExpired, 15000);
-}
-
-function portalChatOpenViewOnce(el, vid) {
-    el.onclick = null;
-    var wrap = el.closest('.wa-bubble-wrap');
-    if (!wrap) return;
-    var bubble = wrap.querySelector('.wa-bubble');
-    if (!bubble) return;
-    var imgEl = bubble.querySelector('.wa-photo-viewonce');
-    if (!imgEl) return;
-    var badge = bubble.querySelector('.wa-viewonce-badge');
-    imgEl.outerHTML = '<div class="wa-photo-viewonce opened"><i class="fa-solid fa-eye-slash"></i><span>Visualizado</span></div>';
-    if (badge) badge.remove();
-}
-
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.wa-emoji-picker') && !e.target.closest('.wa-icon-btn')) {
-        var picker = document.getElementById('wa-emoji-picker');
-        if (picker) picker.style.display = 'none';
-    }
-});
 
 var adminFoto3x4Stream = null;
 
@@ -1912,133 +968,6 @@ function fcImportFoto3x4Local() {
     currentPhotoDataUrl = dataUrl;
 }
 
-let portalAlunoFotoDataUrl = null;
-let portalAlunoSaveTimeout = null;
-
-function showPortalSection(section) {
-    document.querySelectorAll('.portal-section').forEach(function(s) { s.classList.remove('active'); });
-    document.querySelectorAll('.portal-nav-item').forEach(function(n) { n.classList.remove('active'); });
-    document.querySelectorAll('.portal-mobile-nav-item').forEach(function(n) { n.classList.remove('active'); });
-    var sec = document.getElementById('portal-section-' + section);
-    if (sec) sec.classList.add('active');
-    var navItems = document.querySelectorAll('.portal-nav-item');
-    navItems.forEach(function(n) {
-        if ((section === 'noticias' && n.textContent.trim() === 'Noticias') ||
-            (section === 'apostilas' && n.textContent.trim() === 'Apostilas') ||
-            (section === 'notas' && n.textContent.trim() === 'Notas') ||
-            (section === 'foto3x4' && n.textContent.trim() === 'Foto 3x4') ||
-            (section === 'chat' && n.textContent.trim() === 'Chat Turma')) {
-            n.classList.add('active');
-        }
-    });
-    var mobileNavItems = document.querySelectorAll('.portal-mobile-nav-item');
-    mobileNavItems.forEach(function(n) {
-        var span = n.querySelector('span');
-        if (!span) return;
-        var text = span.textContent.trim().toLowerCase();
-        if ((section === 'noticias' && text === 'noticias') ||
-            (section === 'apostilas' && text === 'apostilas') ||
-            (section === 'notas' && text === 'notas') ||
-            (section === 'foto3x4' && text === 'foto') ||
-            (section === 'chat' && text === 'chat')) {
-            n.classList.add('active');
-        }
-    });
-    if (section === 'foto3x4') portalFoto3x4LoadLocal();
-    if (section === 'chat') portalChatInit();
-}
-
-function openPortalAlunoDados() {
-    if (!currentAluno) return;
-    document.getElementById('portal-aluno-email').value = currentAluno.email || '';
-    document.getElementById('portal-aluno-whatsapp').value = currentAluno.whatsapp || '';
-    portalAlunoFotoDataUrl = null;
-    const preview = document.getElementById('portal-aluno-foto-preview');
-    const placeholder = document.getElementById('portal-aluno-foto-placeholder');
-    if (currentAluno.photoDataUrl) {
-        preview.src = currentAluno.photoDataUrl;
-        preview.style.display = 'block';
-        placeholder.style.display = 'none';
-    } else {
-        preview.src = '';
-        preview.style.display = 'none';
-        placeholder.style.display = '';
-    }
-    document.getElementById('portal-aluno-dados-msg').style.display = 'none';
-    document.getElementById('modal-portal-aluno-dados').classList.remove('hidden');
-}
-
-function closePortalAlunoDados() {
-    portalAlunoAutoSave(true);
-    document.getElementById('modal-portal-aluno-dados').classList.add('hidden');
-}
-
-function handlePortalAlunoFotoUpload(event) {
-    const file = event.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 300; canvas.height = 400;
-            canvas.getContext('2d').drawImage(img, 0, 0, 300, 400);
-            canvas.toBlob(function(blob) {
-                const innerReader = new FileReader();
-                innerReader.onloadend = function() {
-                    portalAlunoFotoDataUrl = innerReader.result;
-                    document.getElementById('portal-aluno-foto-preview').src = innerReader.result;
-                    document.getElementById('portal-aluno-foto-preview').style.display = 'block';
-                    document.getElementById('portal-aluno-foto-placeholder').style.display = 'none';
-                    portalAlunoAutoSave(true);
-                };
-                innerReader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.5);
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function portalAlunoScheduleSave() {
-    if (portalAlunoSaveTimeout) clearTimeout(portalAlunoSaveTimeout);
-    portalAlunoSaveTimeout = setTimeout(function() { portalAlunoAutoSave(false); }, 800);
-}
-
-async function portalAlunoAutoSave(silent) {
-    if (!currentAluno) return;
-    if (portalAlunoSaveTimeout) { clearTimeout(portalAlunoSaveTimeout); portalAlunoSaveTimeout = null; }
-    const email = document.getElementById('portal-aluno-email').value.trim();
-    const whatsapp = document.getElementById('portal-aluno-whatsapp').value.trim();
-    const msgEl = document.getElementById('portal-aluno-dados-msg');
-    try {
-        currentAluno.email = email;
-        currentAluno.whatsapp = whatsapp;
-        const idx = candidatos.findIndex(function(c) { return c.cpf === currentAluno.cpf; });
-        if (idx !== -1) {
-            candidatos[idx].email = email;
-            candidatos[idx].whatsapp = whatsapp;
-        }
-        if (portalAlunoFotoDataUrl) setFoto(currentAluno.cpf, portalAlunoFotoDataUrl);
-        await backupCandidatos();
-        if (!silent) {
-            msgEl.textContent = 'Salvo automaticamente';
-            msgEl.style.display = 'block';
-            msgEl.style.background = 'rgba(76,175,80,0.15)';
-            msgEl.style.color = '#4caf50';
-            setTimeout(function() { msgEl.style.display = 'none'; }, 2000);
-        }
-    } catch(e) {
-        if (!silent) {
-            msgEl.textContent = 'Erro ao salvar: ' + e.message;
-            msgEl.style.display = 'block';
-            msgEl.style.background = 'rgba(244,67,54,0.15)';
-            msgEl.style.color = '#f44336';
-        }
-    }
-}
-
-function savePortalAlunoDados() { portalAlunoAutoSave(false); }
-
 function showDownloadModal() {
     document.getElementById('modal-download-overlay').classList.remove('hidden');
 }
@@ -2055,7 +984,7 @@ function showAdminSection(sectionId, navEl) {
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     if (sectionId === 'admin-disciplinas') {
         carregarDisciplinas().then(() => carregarAulas()).then(() => disciplinaRenderList());
@@ -3598,59 +2527,6 @@ function openBrowserCamera() {
     };
 }
 
-function openPortalPhotoCamera() {
-    if (!currentAluno) return;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        document.getElementById('portal-aluno-foto-input').click();
-        return;
-    }
-    const overlay = document.createElement('div');
-    overlay.id = 'camera-overlay';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
-    document.body.appendChild(overlay);
-
-    const video = document.getElementById('camera-video');
-    let stream = null;
-    let currentFacing = 'user';
-
-    function startCamera(facing) {
-        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-        return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } } });
-    }
-
-    startCamera(currentFacing)
-    .then(function(s) { stream = s; video.srcObject = stream; })
-    .catch(function(err) { document.body.removeChild(overlay); alert('Nao foi possivel acessar a camera: ' + err.message); });
-
-    document.getElementById('camera-switch').onclick = function() {
-        currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-        startCamera(currentFacing)
-        .then(function(s) { stream = s; video.srcObject = stream; })
-        .catch(function(err) { currentFacing = currentFacing === 'user' ? 'environment' : 'user'; alert('Nao foi possivel trocar a camera: ' + err.message); });
-    };
-
-    document.getElementById('camera-capture').onclick = function() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 300; canvas.height = 400;
-        canvas.getContext('2d').drawImage(video, 0, 0, 300, 400);
-        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-        document.body.removeChild(overlay);
-        canvas.toBlob(function(blob) {
-            const reader = new FileReader();
-            reader.onloadend = function() {
-                setFoto(currentAluno.cpf, reader.result);
-            };
-            reader.readAsDataURL(blob);
-        }, 'image/jpeg', 0.5);
-    };
-
-    document.getElementById('camera-cancel').onclick = function() {
-        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
-        document.body.removeChild(overlay);
-    };
-}
-
 function openDocCamera() {
     saveFormState();
     saveLoginState();
@@ -4673,3 +3549,180 @@ function apontamentoEditarAluno(recId, alunoIdx) {
 window.addEventListener('appinstalled', function() {
     deferredPrompt = null;
 });
+
+/* ===== APOSTILAS ADMIN ===== */
+var apostEditingId = null;
+
+async function apostLoadProjetos() {
+    var sel = document.getElementById('apost-projeto');
+    try {
+        var snap = await dbFirestore.collection('parceiros').orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+        snap.forEach(function(doc) {
+            var p = doc.data();
+            sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+        });
+    } catch(e) {
+        sel.innerHTML = '<option value="">Erro ao carregar projetos</option>';
+    }
+}
+
+function apostOnProjetoChange() {
+    var projetoNome = document.getElementById('apost-projeto').value;
+    var selTurma = document.getElementById('apost-turma');
+    selTurma.innerHTML = '<option value="">Todas as turmas</option>';
+    if (projetoNome) {
+        var turmasDoProjeto = turmas.filter(function(t) { return t.projeto === projetoNome; });
+        turmasDoProjeto.forEach(function(t) {
+            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    }
+}
+
+async function apostSave() {
+    var titulo = document.getElementById('apost-titulo').value.trim();
+    var projeto = document.getElementById('apost-projeto').value;
+    var desc = document.getElementById('apost-desc').value.trim();
+    var turma = document.getElementById('apost-turma').value.trim();
+    var arquivo = document.getElementById('apost-file').value;
+    var btn = document.getElementById('apost-upload-btn');
+
+    if (!titulo) { apostShowMsg('Informe o titulo.', 'err'); return; }
+    if (!projeto) { apostShowMsg('Selecione o projeto.', 'err'); return; }
+    if (!arquivo) { apostShowMsg('Selecione o arquivo PDF.', 'err'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+
+    try {
+        var dados = {
+            titulo: titulo,
+            descricao: desc,
+            projeto: projeto,
+            turma: turma,
+            url: arquivo
+        };
+
+        if (apostEditingId) {
+            await dbFirestore.collection('apostilasAlunos').doc(apostEditingId).update(dados);
+            apostShowMsg('Apostila atualizada com sucesso!', 'ok');
+            apostEditingId = null;
+            document.getElementById('apost-upload-btn').innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar';
+        } else {
+            dados.visivel = false;
+            dados.data = new Date().toISOString();
+            dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+            await dbFirestore.collection('apostilasAlunos').add(dados);
+            apostShowMsg('Apostila cadastrada com sucesso!', 'ok');
+        }
+
+        document.getElementById('apost-titulo').value = '';
+        document.getElementById('apost-desc').value = '';
+        document.getElementById('apost-turma').value = '';
+        document.getElementById('apost-file').value = '';
+        apostilasLoadList();
+    } catch(e) {
+        console.error('Erro ao salvar apostila:', e);
+        apostShowMsg('Erro: ' + e.message, 'err');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar';
+}
+
+async function apostEdit(docId) {
+    try {
+        var doc = await dbFirestore.collection('apostilasAlunos').doc(docId).get();
+        if (!doc.exists) { apostShowMsg('Apostila nao encontrada.', 'err'); return; }
+        var a = doc.data();
+        document.getElementById('apost-titulo').value = a.titulo || '';
+        document.getElementById('apost-desc').value = a.descricao || '';
+        document.getElementById('apost-file').value = a.url || '';
+        document.getElementById('apost-projeto').value = a.projeto || '';
+        apostOnProjetoChange();
+        setTimeout(function() {
+            document.getElementById('apost-turma').value = a.turma || '';
+        }, 100);
+        apostEditingId = docId;
+        document.getElementById('apost-upload-btn').innerHTML = '<i class="fa-solid fa-check"></i> Atualizar';
+        apostShowMsg('Editando: ' + (a.titulo || 'Apostila') + ' — altere os campos e clique Atualizar.', 'ok');
+        document.getElementById('apost-titulo').focus();
+    } catch(e) {
+        apostShowMsg('Erro ao carregar apostila: ' + e.message, 'err');
+    }
+}
+
+function apostShowMsg(text, type) {
+    var el = document.getElementById('apost-msg');
+    el.textContent = text;
+    el.style.display = 'block';
+    el.style.background = type === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+    el.style.border = '1px solid ' + (type === 'ok' ? 'rgba(76,175,80,.3)' : 'rgba(244,67,54,.3)');
+    el.style.color = type === 'ok' ? '#4caf50' : '#f44336';
+}
+
+async function apostilasLoadList() {
+    var container = document.getElementById('apost-list');
+    apostLoadProjetos();
+    try {
+        var snap = await dbFirestore.collection('apostilasAlunos').orderBy('data', 'desc').get();
+        if (snap.empty) {
+            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-book-open" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma apostila cadastrada.</p></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(function(doc) {
+            var a = doc.data();
+            var isVisivel = a.visivel !== false;
+            var dateStr = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : '';
+            var turmaHtml = a.turma ? '<span style="background:rgba(245,124,0,.15);color:#f57c00;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '';
+            var statusBadge = isVisivel
+                ? '<span style="background:rgba(76,175,80,.15);color:#4caf50;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Visivel</span>'
+                : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Oculto</span>';
+            var toggleColor = isVisivel ? 'rgba(33,136,255,.15)' : 'rgba(255,255,255,.06)';
+            var toggleBorder = isVisivel ? 'rgba(33,136,255,.3)' : 'rgba(255,255,255,.1)';
+            var toggleIconColor = isVisivel ? '#2188ff' : '#666';
+            var toggleOver = isVisivel ? 'rgba(33,136,255,.35)' : 'rgba(255,255,255,.12)';
+            var toggleTitle = isVisivel ? 'Ocultar do Portal do Aluno' : 'Mostrar no Portal do Aluno';
+            var toggleIcon = isVisivel ? 'fa-eye' : 'fa-eye-slash';
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border:1px solid ' + (isVisivel ? 'rgba(33,136,255,.15)' : 'rgba(255,255,255,.06)') + ';border-radius:10px;margin-bottom:8px';
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(244,67,54,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-pdf" style="color:#f44336;font-size:18px"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                    '<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.titulo || 'Apostila') + '</div>' +
+                    '<div style="font-size:11px;color:#888;display:flex;gap:8px;align-items:center;margin-top:2px">' +
+                        '<span>' + (a.projeto || '') + '</span>' + turmaHtml + statusBadge + (dateStr ? '<span>' + dateStr + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                    '<button onclick="apostToggleVisivel(\'' + doc.id + '\',' + isVisivel + ')" title="' + toggleTitle + '" style="background:' + toggleColor + ';border:1px solid ' + toggleBorder + ';color:' + toggleIconColor + ';width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'' + toggleOver + '\'" onmouseout="this.style.background=\'' + toggleColor + '\'"><i class="fa-solid ' + toggleIcon + '"></i></button>' +
+                    '<button onclick="apostEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.3);color:#ff9800;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(255,152,0,.35)\'" onmouseout="this.style.background=\'rgba(255,152,0,.15)\'"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="window.open(\'' + a.url + '\',\'_blank\')" title="Abrir PDF" style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:#4caf50;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(76,175,80,.35)\'" onmouseout="this.style.background=\'rgba(76,175,80,.15)\'"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>' +
+                    '<button onclick="apostDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(244,67,54,.35)\'" onmouseout="this.style.background=\'rgba(244,67,54,.15)\'"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(card);
+        });
+    } catch(e) {
+        console.error('Erro ao listar apostilas:', e);
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar apostilas.</div>';
+    }
+}
+
+async function apostToggleVisivel(docId, atual) {
+    var novo = !atual;
+    try {
+        await dbFirestore.collection('apostilasAlunos').doc(docId).update({ visivel: novo });
+        apostilasLoadList();
+    } catch(e) {
+        alert('Erro ao alterar visibilidade: ' + e.message);
+    }
+}
+
+async function apostDelete(docId) {
+    if (!confirm('Excluir esta apostila?')) return;
+    try {
+        await dbFirestore.collection('apostilasAlunos').doc(docId).delete();
+        apostilasLoadList();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}

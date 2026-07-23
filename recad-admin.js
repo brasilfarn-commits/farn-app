@@ -132,7 +132,8 @@ function recadViewDetail(docId) {
 
     var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">' +
         '<div><h2 style="color:#f57c00;margin:0">' + (r.nome || '---') + '</h2><p style="color:#888;font-size:13px;margin:4px 0 0">Enviado em: ' + dataEnvio + '</p></div>' +
-        '<div style="display:flex;gap:8px">' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+            '<button class="btn-primary btn-sm" onclick="recadEditInline(\'' + docId + '\')" style="background:#2196f3"><i class="fa-solid fa-pen"></i> Editar</button>' +
             '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Ativo\')" style="background:#4caf50"><i class="fa-solid fa-check"></i> Ativar</button>' +
             '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Rejeitado\')" style="background:#f44336"><i class="fa-solid fa-xmark"></i> Rejeitar</button>' +
             '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Pendente\')" style="background:#ffc107;color:#000"><i class="fa-solid fa-hourglass-half"></i> Pendente</button>' +
@@ -148,8 +149,9 @@ function recadViewDetail(docId) {
         fields.forEach(function(f) {
             var val = f.val || '---';
             if (val !== '---' && f.type === 'img') {
+                var fieldKey = f.field || 'certificadoFrente';
                 s += '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">' + f.label + '</label>' +
-                    '<img src="' + val + '" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid rgba(255,255,255,.1)"></div>';
+                    '<img src="' + val + '" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform=\'scale(1.02)\'" onmouseout="this.style.transform=\'scale(1)\'" onclick="event.stopPropagation();recadOpenPhoto(\'' + val.replace(/'/g, "\\'") + '\',\'' + f.label.replace(/'/g, "\\'") + '\',\'' + docId + '\',\'' + fieldKey + '\')"></div>';
             } else {
                 s += '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888;display:block">' + f.label + '</label>' +
                     '<span style="color:#fff;font-size:14px;font-weight:600">' + val + '</span></div>';
@@ -207,8 +209,8 @@ function recadViewDetail(docId) {
 
     html += detailSection('fa-certificate', 'Certificado', [
         { label: 'Data de Emissao', val: r.dataCertificado },
-        { label: 'Foto Frente', val: r.certificadoFrente, type: 'img' },
-        { label: 'Foto Verso', val: r.certificadoVerso, type: 'img' }
+        { label: 'Foto Frente', val: r.certificadoFrente, type: 'img', field: 'certificadoFrente' },
+        { label: 'Foto Verso', val: r.certificadoVerso, type: 'img', field: 'certificadoVerso' }
     ]);
 
     html += detailSection('fa-lock', 'Senha de Acesso', [
@@ -424,4 +426,355 @@ function recadPrint(docId) {
     win.document.write(printHtml);
     win.document.close();
     win.print();
+}
+
+/* ===== RECAD PHOTO VIEWER STATE ===== */
+var recadPhotoState = { rotation: 0, zoom: 1, dragX: 0, dragY: 0, dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pinchDist: 0 };
+var recadPhotoOriginalSrc = '';
+var recadPhotoDocId = '';
+var recadPhotoField = '';
+
+function recadOpenPhoto(src, label, docId, field) {
+    var modal = document.getElementById('recad-photo-modal');
+    var img = document.getElementById('recad-photo-modal-img');
+    var lbl = document.getElementById('recad-photo-modal-label');
+    if (!modal || !img) return;
+    recadPhotoOriginalSrc = src;
+    recadPhotoDocId = docId || '';
+    recadPhotoField = field || 'certificadoFrente';
+    recadPhotoState = { rotation: 0, zoom: 1, dragX: 0, dragY: 0, dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pinchDist: 0 };
+    img.src = src;
+    img.style.transform = 'rotate(0deg) scale(1) translate(0px, 0px)';
+    if (lbl) lbl.textContent = label || '';
+    modal.style.display = 'flex';
+    var saveBtn = document.getElementById('recad-photo-save-btn');
+    if (saveBtn) saveBtn.style.display = recadPhotoDocId ? '' : 'none';
+    recadPhotoShowZoom();
+    img.onload = function() { recadPhotoCenter(); };
+}
+
+function recadClosePhoto(e) {
+    if (e && e.target && e.target.id !== 'recad-photo-modal' && e.target.id !== 'recad-photo-viewport') return;
+    var modal = document.getElementById('recad-photo-modal');
+    if (modal) modal.style.display = 'none';
+    recadPhotoState.dragging = false;
+}
+
+function recadPhotoApply() {
+    var img = document.getElementById('recad-photo-modal-img');
+    if (!img) return;
+    img.style.transform = 'rotate(' + recadPhotoState.rotation + 'deg) scale(' + recadPhotoState.zoom + ') translate(' + recadPhotoState.dragX + 'px, ' + recadPhotoState.dragY + 'px)';
+}
+
+function recadPhotoCenter() {
+    var viewport = document.getElementById('recad-photo-viewport');
+    var img = document.getElementById('recad-photo-modal-img');
+    if (!viewport || !img) return;
+    var vw = viewport.clientWidth;
+    var vh = viewport.clientHeight;
+    var iw = img.naturalWidth;
+    var ih = img.naturalHeight;
+    var fitZoom = Math.min((vw - 40) / iw, (vh - 40) / ih, 1);
+    recadPhotoState.zoom = fitZoom;
+    recadPhotoState.dragX = 0;
+    recadPhotoState.dragY = 0;
+    recadPhotoState.rotation = 0;
+    recadPhotoApply();
+    recadPhotoShowZoom();
+}
+
+function recadPhotoRotate(deg) {
+    recadPhotoState.rotation = (recadPhotoState.rotation + deg) % 360;
+    recadPhotoApply();
+}
+
+function recadPhotoZoom(delta) {
+    var newZoom = recadPhotoState.zoom + delta;
+    newZoom = Math.max(0.1, Math.min(5, newZoom));
+    recadPhotoState.zoom = newZoom;
+    recadPhotoApply();
+    recadPhotoShowZoom();
+}
+
+function recadPhotoReset() {
+    recadPhotoCenter();
+}
+
+function recadPhotoShowZoom() {
+    var indicator = document.getElementById('recad-photo-zoom-indicator');
+    if (!indicator) return;
+    indicator.textContent = Math.round(recadPhotoState.zoom * 100) + '%';
+    indicator.style.display = '';
+    clearTimeout(recadPhotoState._zoomTimer);
+    recadPhotoState._zoomTimer = setTimeout(function() { indicator.style.display = 'none'; }, 1500);
+}
+
+/* Drag */
+function recadPhotoDragStart(e) {
+    if (e.target.closest('.recad-photo-ctrl')) return;
+    e.preventDefault();
+    recadPhotoState.dragging = true;
+    recadPhotoState.startX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+    recadPhotoState.startY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+    recadPhotoState.lastX = recadPhotoState.dragX;
+    recadPhotoState.lastY = recadPhotoState.dragY;
+    var viewport = document.getElementById('recad-photo-viewport');
+    if (viewport) viewport.classList.add('dragging');
+    document.addEventListener('mousemove', recadPhotoDragMove);
+    document.addEventListener('mouseup', recadPhotoDragEnd);
+    document.addEventListener('touchmove', recadPhotoDragMove, { passive: false });
+    document.addEventListener('touchend', recadPhotoDragEnd);
+}
+
+function recadPhotoDragMove(e) {
+    if (!recadPhotoState.dragging) return;
+    e.preventDefault();
+    var cx = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+    var cy = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+    var dx = (cx - recadPhotoState.startX) / recadPhotoState.zoom;
+    var dy = (cy - recadPhotoState.startY) / recadPhotoState.zoom;
+    recadPhotoState.dragX = recadPhotoState.lastX + dx;
+    recadPhotoState.dragY = recadPhotoState.lastY + dy;
+    recadPhotoApply();
+}
+
+function recadPhotoDragEnd() {
+    recadPhotoState.dragging = false;
+    var viewport = document.getElementById('recad-photo-viewport');
+    if (viewport) viewport.classList.remove('dragging');
+    document.removeEventListener('mousemove', recadPhotoDragMove);
+    document.removeEventListener('mouseup', recadPhotoDragEnd);
+    document.removeEventListener('touchmove', recadPhotoDragMove);
+    document.removeEventListener('touchend', recadPhotoDragEnd);
+}
+
+/* Mouse wheel zoom */
+(function() {
+    var vp = document.getElementById('recad-photo-viewport');
+    if (vp) {
+        vp.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            var delta = e.deltaY > 0 ? -0.08 : 0.08;
+            recadPhotoZoom(delta);
+        }, { passive: false });
+    }
+})();
+
+/* Pinch zoom (touch) */
+function recadPhotoTouchStart(e) {
+    if (e.touches && e.touches.length === 2) {
+        e.preventDefault();
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        recadPhotoState.pinchDist = Math.sqrt(dx * dx + dy * dy);
+        recadPhotoState._lastPinchZoom = recadPhotoState.zoom;
+        document.addEventListener('touchmove', recadPhotoPinchMove, { passive: false });
+        document.addEventListener('touchend', recadPhotoPinchEnd);
+    } else {
+        recadPhotoDragStart(e);
+    }
+}
+
+function recadPhotoPinchMove(e) {
+    if (e.touches.length !== 2) return;
+    e.preventDefault();
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var scale = dist / recadPhotoState.pinchDist;
+    recadPhotoState.zoom = Math.max(0.1, Math.min(5, recadPhotoState._lastPinchZoom * scale));
+    recadPhotoApply();
+    recadPhotoShowZoom();
+}
+
+function recadPhotoPinchEnd() {
+    document.removeEventListener('touchmove', recadPhotoPinchMove);
+    document.removeEventListener('touchend', recadPhotoPinchEnd);
+}
+
+/* Salvar foto editada no Firestore */
+async function recadPhotoSave() {
+    if (!recadPhotoDocId) return;
+    var img = document.getElementById('recad-photo-modal-img');
+    if (!img || !img.naturalWidth) { alert('Imagem nao carregada.'); return; }
+    var btn = document.getElementById('recad-photo-save-btn');
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true; }
+    try {
+        var canvas = document.createElement('canvas');
+        var iw = img.naturalWidth;
+        var ih = img.naturalHeight;
+        var rot = ((recadPhotoState.rotation % 360) + 360) % 360;
+        var isSide = rot === 90 || rot === 270;
+        canvas.width = isSide ? ih : iw;
+        canvas.height = isSide ? iw : ih;
+        var ctx = canvas.getContext('2d');
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(rot * Math.PI / 180);
+        ctx.drawImage(img, -iw / 2, -ih / 2, iw, ih);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        await dbFirestore.collection('recadastramentos').doc(recadPhotoDocId).update(recadPhotoField === 'certificadoVerso' ? { certificadoVerso: dataUrl } : { certificadoFrente: dataUrl });
+        var r = recadData.find(function(x) { return x._docId === recadPhotoDocId; });
+        if (r) {
+            if (recadPhotoField === 'certificadoVerso') r.certificadoVerso = dataUrl;
+            else r.certificadoFrente = dataUrl;
+        }
+        img.src = dataUrl;
+        recadPhotoState = { rotation: 0, zoom: 1, dragX: 0, dragY: 0, dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pinchDist: 0 };
+        recadPhotoCenter();
+        recadRenderTable();
+        if (recadPhotoDocId) recadViewDetail(recadPhotoDocId);
+        alert('Foto salva com sucesso!');
+    } catch (e) {
+        alert('Erro ao salvar foto: ' + e.message);
+    }
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar'; btn.disabled = false; }
+}
+
+function recadEditInline(docId) {
+    recadInlineEditDocId = docId;
+    var r = recadData.find(function(x) { return x._docId === docId; });
+    if (!r) return;
+    var body = document.getElementById('rc-detalhe-body');
+    if (!body) return;
+
+    var editFields = [
+        { key: 'nome', label: 'Nome Completo', type: 'text', full: true },
+        { key: 'cpf', label: 'CPF', type: 'text' },
+        { key: 'rg', label: 'RG', type: 'text' },
+        { key: 'nascimento', label: 'Nascimento', type: 'date' },
+        { key: 'estadoCivil', label: 'Estado Civil', type: 'select', options: ['','Solteiro(a)','Casado(a)','Divorciado(a)','Viuvo(a)','Uniao Estavel'] },
+        { key: 'nacionalidade', label: 'Nacionalidade', type: 'text' },
+        { key: 'naturalidade', label: 'Naturalidade', type: 'text' },
+        { key: 'mae', label: 'Mae', type: 'text', full: true },
+        { key: 'pai', label: 'Pai', type: 'text', full: true },
+        { key: 'profissao', label: 'Profissao', type: 'text' },
+        { key: 'titulo', label: 'Titulo de Eleitor', type: 'text' },
+        { key: 'email', label: 'Email', type: 'email', full: true },
+        { key: 'whatsapp', label: 'WhatsApp', type: 'text' },
+        { key: 'endereco', label: 'Endereco', type: 'text', full: true },
+        { key: 'numero', label: 'Numero', type: 'text' },
+        { key: 'bairro', label: 'Bairro', type: 'text' },
+        { key: 'cidade', label: 'Cidade', type: 'text' },
+        { key: 'estado', label: 'Estado', type: 'text' },
+        { key: 'projeto', label: 'Projeto', type: 'text', full: true },
+        { key: 'matricula', label: 'Matricula', type: 'text' },
+        { key: 'dataCertificado', label: 'Data Certificado', type: 'date' },
+        { key: 'senha', label: 'Senha', type: 'text' }
+    ];
+
+    var inputStyle = 'width:100%;padding:10px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box';
+    var selectStyle = inputStyle;
+
+    var html = '<div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">' +
+        '<h2 style="color:#f57c00;margin:0"><i class="fa-solid fa-pen" style="margin-right:8px"></i> Editando: ' + (r.nome || '---') + '</h2>' +
+        '<div style="display:flex;gap:8px">' +
+            '<button class="btn-primary btn-sm" onclick="recadSaveEditInline(\'' + docId + '\')" style="background:#4caf50"><i class="fa-solid fa-check"></i> Salvar</button>' +
+            '<button class="btn-outline btn-sm" onclick="recadViewDetail(\'' + docId + '\')"><i class="fa-solid fa-xmark"></i> Cancelar</button>' +
+        '</div></div>';
+
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+    editFields.forEach(function(f) {
+        var val = r[f.key] || '';
+        var colSpan = f.full ? 'grid-column:1/-1;' : '';
+        html += '<div style="' + colSpan + '"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">' + f.label + '</label>';
+        if (f.type === 'select') {
+            html += '<select id="rc-edit-' + f.key + '" style="' + selectStyle + '">';
+            f.options.forEach(function(o) {
+                html += '<option value="' + o + '"' + (val === o ? ' selected' : '') + '>' + (o || '-- Selecione --') + '</option>';
+            });
+            html += '</select>';
+        } else {
+            html += '<input type="' + f.type + '" id="rc-edit-' + f.key + '" value="' + val.toString().replace(/"/g, '&quot;') + '" style="' + inputStyle + '">';
+        }
+        html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div style="margin-top:20px;padding:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px">' +
+        '<label style="font-size:13px;color:#f57c00;font-weight:600;display:block;margin-bottom:10px"><i class="fa-solid fa-image" style="margin-right:6px"></i> Foto do Certificado (Frente)</label>' +
+        '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+    if (r.certificadoFrente) {
+        html += '<div style="position:relative">' +
+            '<img src="' + r.certificadoFrente + '" style="max-width:200px;max-height:140px;border-radius:8px;border:1px solid rgba(255,255,255,.15);cursor:pointer" onclick="recadOpenPhoto(\'' + r.certificadoFrente.replace(/'/g, "\\'") + '\',\'Foto do Certificado\',\'' + docId + '\',\'certificadoFrente\')" id="rc-edit-foto-preview">' +
+            '<button onclick="recadRemovePhoto()" style="position:absolute;top:-6px;right:-6px;background:#f44336;border:none;color:#fff;width:22px;height:22px;border-radius:50%;font-size:11px;cursor:pointer" title="Remover foto"><i class="fa-solid fa-xmark"></i></button>' +
+            '</div>';
+    } else {
+        html += '<div id="rc-edit-foto-preview" style="width:160px;height:100px;background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px">Sem foto</div>';
+    }
+    html += '<div><input type="file" id="rc-edit-foto-input" accept="image/*" style="display:none" onchange="recadPreviewEditPhoto(this)">' +
+        '<button class="btn-outline btn-sm" onclick="document.getElementById(\'rc-edit-foto-input\').click()"><i class="fa-solid fa-camera"></i> ' + (r.certificadoFrente ? 'Trocar Foto' : 'Adicionar Foto') + '</button></div>' +
+        '</div></div>';
+
+    html += '<div style="margin-top:12px;display:flex;gap:8px">' +
+        '<button class="btn-primary" onclick="recadSaveEditInline(\'' + docId + '\')" style="background:#4caf50"><i class="fa-solid fa-check"></i> Salvar Alteracoes</button>' +
+        '<button class="btn-outline" onclick="recadViewDetail(\'' + docId + '\')"><i class="fa-solid fa-xmark"></i> Cancelar</button>' +
+        '</div>';
+
+    body.innerHTML = html;
+}
+
+var recadEditPhotoFile = null;
+var recadEditPhotoRemoved = false;
+var recadInlineEditDocId = '';
+
+function recadPreviewEditPhoto(input) {
+    if (input.files && input.files[0]) {
+        var file = input.files[0];
+        if (file.size > 10 * 1024 * 1024) { alert('Arquivo muito grande. Maximo 10MB.'); return; }
+        recadEditPhotoFile = file;
+        recadEditPhotoRemoved = false;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var preview = document.getElementById('rc-edit-foto-preview');
+            if (preview) {
+                preview.outerHTML = '<div style="position:relative;display:inline-block"><img id="rc-edit-foto-preview" src="' + e.target.result + '" style="max-width:200px;max-height:140px;border-radius:8px;border:1px solid rgba(255,255,255,.15);cursor:pointer" onclick="recadOpenPhoto(this.src,\'Foto do Certificado\',\'' + recadInlineEditDocId + '\',\'certificadoFrente\')"><button onclick="recadRemovePhoto()" style="position:absolute;top:-6px;right:-6px;background:#f44336;border:none;color:#fff;width:22px;height:22px;border-radius:50%;font-size:11px;cursor:pointer" title="Remover foto"><i class="fa-solid fa-xmark"></i></button></div>';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function recadRemovePhoto() {
+    recadEditPhotoFile = null;
+    recadEditPhotoRemoved = true;
+    var preview = document.getElementById('rc-edit-foto-preview');
+    if (preview) {
+        var parent = preview.parentElement || preview;
+        if (parent !== preview) parent.outerHTML = '<div id="rc-edit-foto-preview" style="width:160px;height:100px;background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px">Sem foto</div>';
+        else preview.outerHTML = '<div id="rc-edit-foto-preview" style="width:160px;height:100px;background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px">Sem foto</div>';
+    }
+}
+
+async function recadSaveEditInline(docId) {
+    var updates = {};
+    var textFields = ['nome','cpf','rg','nascimento','estadoCivil','nacionalidade','naturalidade','mae','pai','profissao','titulo','email','whatsapp','endereco','numero','bairro','cidade','estado','projeto','matricula','dataCertificado','senha'];
+    textFields.forEach(function(f) {
+        var el = document.getElementById('rc-edit-' + f);
+        if (el) updates[f] = el.value.trim();
+    });
+
+    try {
+        if (recadEditPhotoRemoved) {
+            updates.certificadoFrente = '';
+        } else if (recadEditPhotoFile) {
+            var reader = new FileReader();
+            var dataUrl = await new Promise(function(resolve, reject) {
+                reader.onload = function(e) { resolve(e.target.result); };
+                reader.onerror = reject;
+                reader.readAsDataURL(recadEditPhotoFile);
+            });
+            updates.certificadoFrente = dataUrl;
+        }
+
+        await dbFirestore.collection('recadastramentos').doc(docId).update(updates);
+        var r = recadData.find(function(x) { return x._docId === docId; });
+        if (r) Object.assign(r, updates);
+        recadEditPhotoFile = null;
+        recadEditPhotoRemoved = false;
+        recadRenderTable();
+        recadViewDetail(docId);
+        alert('Dados atualizados com sucesso!');
+    } catch (e) {
+        alert('Erro ao salvar: ' + e.message);
+    }
 }
