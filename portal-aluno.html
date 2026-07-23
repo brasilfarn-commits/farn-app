@@ -119,7 +119,7 @@
         .pf-right-tab{flex:1;padding:12px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:.2s;border-bottom:2px solid transparent}
         .pf-right-tab.active{color:#f57c00;border-bottom-color:#f57c00}
         .pf-right-tab:hover{color:#e6edf3}
-        .pf-right-content{flex:1;overflow:hidden;display:none}
+        .pf-right-content{flex:1;overflow:hidden;display:none;min-height:0}
         .pf-right-content.active{display:flex;flex-direction:column}
 
         /* Chat */
@@ -227,13 +227,13 @@
             .pf-mobile-nav{display:block}
             .pf-noticias-layout{grid-template-columns:1fr;height:100%}
             .pf-noticias-col.hidden-mobile{display:none}
-            .pf-right-panel{position:relative;height:100%;border-radius:0;border:none;border-top:none;background:rgba(10,14,20,.98)}
-            .pf-content{padding:16px 16px 80px}
+            .pf-right-panel{position:relative;height:calc(100vh - 32px);border-radius:0;border:none;border-top:none;background:rgba(10,14,20,.98);overflow:hidden}
+            .pf-content{padding:16px 16px 80px;height:100vh;overflow:hidden}
             .pf-stats-row{grid-template-columns:1fr}
             .pf-topbar{padding:0 14px}
             .pf-topbar-title{display:none}
             .pf-user-info{display:none}
-            .pf-chat-input-area{padding-bottom:10px}
+            .pf-chat-messages{min-height:0}
         }
     </style>
 </head>
