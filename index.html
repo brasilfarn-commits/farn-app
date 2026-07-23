@@ -183,6 +183,10 @@
                         <i class="fa-solid fa-book-open"></i>
                         <span>Apostilas</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-disciplinas', this); discLoadList()">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <span>Disciplinas</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -257,6 +261,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-apostilas', document.querySelector('.nav-item:nth-child(12)')); apostilasLoadList()">
                                 <i class="fa-solid fa-book-open"></i>
                                 <span>Apostilas</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item:nth-child(13)')); discLoadList()">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <span>Disciplinas</span>
                             </div>
                         </div>
                     </div>
@@ -1250,6 +1258,46 @@
                             <h3><i class="fa-solid fa-book-open" style="color:#f57c00;margin-right:8px"></i> Apostilas Cadastradas</h3>
                         </div>
                         <div id="apost-list" style="padding:16px">
+                            <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DISCIPLINAS -->
+                <div id="admin-disciplinas" class="admin-section">
+                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #9c27b0;border-radius:12px;margin-bottom:20px">
+                        <h3 style="margin:0 0 14px;color:#ce93d8"><i class="fa-solid fa-graduation-cap" style="margin-right:8px"></i> Nova Disciplina</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Nome da Disciplina *</label>
+                                <input type="text" id="disc-nome" class="config-input" placeholder="Ex: AP OU E CT">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Projeto *</label>
+                                <select id="disc-projeto" class="config-input"><option value="">Selecione o projeto...</option></select>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma</label>
+                                <select id="disc-turma" class="config-input"><option value="">Todas as turmas</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Instrutor</label>
+                                <select id="disc-instrutor" class="config-input"><option value="">Selecione o instrutor...</option></select>
+                            </div>
+                        </div>
+                        <button class="btn-primary" id="disc-save-btn" onclick="discSave()" style="height:42px">
+                            <i class="fa-solid fa-check"></i> Cadastrar Disciplina
+                        </button>
+                        <div id="disc-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;margin-right:8px"></i> Disciplinas Cadastradas</h3>
+                        </div>
+                        <div id="disc-list" style="padding:16px">
                             <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
                         </div>
                     </div>
