@@ -2,74 +2,84 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Portal do Aluno - FARN</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        :root{
+            --green:#16a34a;--green-l:#22c55e;--green-d:#15803d;
+            --red:#dc2626;--red-l:#ef4444;
+            --blue:#2563eb;--blue-l:#3b82f6;
+            --yellow:#ca8a04;--yellow-l:#eab308;--yellow-xl:#facc15;
+            --white:#ffffff;--off:#f8fafc;--gray100:#f1f5f9;--gray200:#e2e8f0;--gray300:#cbd5e1;--gray400:#94a3b8;--gray500:#64748b;--gray600:#475569;--gray700:#334155;--gray800:#1e293b;--gray900:#0f172a;
+            --shadow:0 4px 24px rgba(0,0,0,.08);--shadow-lg:0 12px 40px rgba(0,0,0,.12);
+            --radius:16px;--radius-sm:12px;--radius-xs:8px;
+        }
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e14;color:#e6edf3;min-height:100vh;overflow:hidden}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray100);color:var(--gray800);min-height:100vh;overflow:hidden}
         ::-webkit-scrollbar{width:6px}
-        ::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
-        ::-webkit-scrollbar-thumb{background:rgba(245,124,0,.3);border-radius:3px}
-        ::-webkit-scrollbar-thumb:hover{background:rgba(245,124,0,.5)}
+        ::-webkit-scrollbar-track{background:var(--gray200)}
+        ::-webkit-scrollbar-thumb{background:var(--green);border-radius:3px}
+        ::-webkit-scrollbar-thumb:hover{background:var(--green-d)}
 
         /* ===== LOGIN ===== */
-        #screen-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0e14;position:relative;overflow:hidden}
-        #screen-login::before{content:'';position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(245,124,0,.08) 0%,transparent 70%);top:-300px;right:-200px;border-radius:50%}
-        #screen-login::after{content:'';position:absolute;width:500px;height:500px;background:radial-gradient(circle,rgba(34,139,34,.08) 0%,transparent 70%);bottom:-200px;left:-150px;border-radius:50%}
-        .pf-login-card{background:rgba(16,20,28,.95);border:1px solid rgba(245,124,0,.2);border-radius:24px;padding:44px 36px;width:100%;max-width:400px;position:relative;z-index:1;backdrop-filter:blur(24px);box-shadow:0 12px 48px rgba(0,0,0,.5),0 0 80px rgba(245,124,0,.05)}
+        #screen-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--green-d) 0%,var(--green) 30%,var(--blue) 60%,var(--yellow) 100%);position:relative;overflow:hidden}
+        #screen-login::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);top:-250px;right:-150px;border-radius:50%}
+        #screen-login::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%);bottom:-200px;left:-100px;border-radius:50%}
+        .pf-login-card{background:rgba(255,255,255,.97);border:none;border-radius:28px;padding:44px 36px;width:100%;max-width:400px;position:relative;z-index:1;box-shadow:0 20px 60px rgba(0,0,0,.2)}
         .pf-login-logo{text-align:center;margin-bottom:32px}
-        .pf-login-logo img{width:90px;margin-bottom:14px;filter:drop-shadow(0 0 20px rgba(245,124,0,.25))}
-        .pf-login-logo h1{font-size:20px;color:#f57c00;margin-bottom:4px;font-weight:800;letter-spacing:-.3px}
-        .pf-login-logo p{font-size:12px;color:#8b949e;letter-spacing:.5px}
+        .pf-login-logo img{width:90px;margin-bottom:14px}
+        .pf-login-logo h1{font-size:22px;color:var(--gray800);margin-bottom:4px;font-weight:800;letter-spacing:-.3px}
+        .pf-login-logo h1 span{color:var(--green)}
+        .pf-login-logo p{font-size:12px;color:var(--gray500);letter-spacing:.5px}
         .pf-login-field{margin-bottom:16px}
-        .pf-login-field label{display:block;font-size:10px;color:#8b949e;margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-        .pf-login-field input{width:100%;padding:13px 16px;background:rgba(10,14,20,.9);border:1px solid rgba(245,124,0,.15);border-radius:12px;color:#e6edf3;font-size:14px;transition:.3s}
-        .pf-login-field input:focus{outline:none;border-color:#f57c00;box-shadow:0 0 0 3px rgba(245,124,0,.1),0 4px 16px rgba(245,124,0,.08)}
-        .pf-login-field input::placeholder{color:#3a3f4b}
-        .pf-login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:12px;color:#8b949e}
-        .pf-login-remember input[type=checkbox]{accent-color:#f57c00}
-        .pf-login-btn{width:100%;padding:14px;background:linear-gradient(135deg,#f57c00,#e65100);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.3s;letter-spacing:.3px}
-        .pf-login-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,124,0,.3)}
+        .pf-login-field label{display:block;font-size:10px;color:var(--gray500);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+        .pf-login-field input{width:100%;padding:13px 16px;background:var(--gray100);border:2px solid var(--gray200);border-radius:var(--radius-sm);color:var(--gray800);font-size:14px;transition:.3s}
+        .pf-login-field input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 4px rgba(22,163,74,.1)}
+        .pf-login-field input::placeholder{color:var(--gray400)}
+        .pf-login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:12px;color:var(--gray500)}
+        .pf-login-remember input[type=checkbox]{accent-color:var(--green)}
+        .pf-login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--green),var(--green-d));border:none;border-radius:var(--radius-sm);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.3s;letter-spacing:.3px;box-shadow:0 4px 16px rgba(22,163,74,.3)}
+        .pf-login-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(22,163,74,.4)}
         .pf-login-btn:active:not(:disabled){transform:translateY(0)}
         .pf-login-btn:disabled{opacity:.5;cursor:not-allowed}
-        .pf-login-error{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:#f85149;border-radius:10px;padding:10px 14px;font-size:12px;text-align:center;margin-bottom:14px;display:none}
-        .pf-login-back{display:block;text-align:center;margin-top:16px;font-size:12px;color:#8b949e;text-decoration:none;transition:.2s}
-        .pf-login-back:hover{color:#f57c00}
+        .pf-login-error{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2);color:var(--red);border-radius:var(--radius-xs);padding:10px 14px;font-size:12px;text-align:center;margin-bottom:14px;display:none}
+        .pf-login-back{display:block;text-align:center;margin-top:16px;font-size:12px;color:var(--gray500);text-decoration:none;transition:.2s}
+        .pf-login-back:hover{color:var(--green)}
 
         /* ===== PORTAL ===== */
         #screen-portal{display:none;flex-direction:column;height:100vh}
         #screen-portal.active{display:flex}
 
         /* Top Bar */
-        .pf-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:linear-gradient(90deg,rgba(16,20,28,.98),rgba(20,24,32,.98));border-bottom:1px solid rgba(245,124,0,.12);flex-shrink:0;backdrop-filter:blur(16px)}
+        .pf-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:linear-gradient(90deg,var(--green),var(--green-d));flex-shrink:0;position:relative;z-index:95;box-shadow:0 4px 20px rgba(22,163,74,.2)}
         .pf-topbar-left{display:flex;align-items:center;gap:14px}
-        .pf-topbar-logo{height:40px;border-radius:10px;filter:drop-shadow(0 0 8px rgba(245,124,0,.15))}
-        .pf-topbar-title{font-size:15px;font-weight:700;background:linear-gradient(135deg,#f57c00,#ffb74d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.2px}
+        .pf-topbar-logo{height:40px;border-radius:10px;background:#fff;padding:4px 8px}
+        .pf-topbar-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.2px}
         .pf-topbar-right{display:flex;align-items:center;gap:14px}
         .pf-user-info{text-align:right}
-        .pf-user-name{font-size:13px;font-weight:600;color:#e6edf3}
-        .pf-user-matricula{font-size:11px;color:#f57c00;font-weight:700}
-        .pf-user-cpf{font-size:10px;color:#484f58}
-        .pf-user-avatar{width:40px;height:40px;background:linear-gradient(135deg,#f57c00,#e65100);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;box-shadow:0 4px 12px rgba(245,124,0,.2)}
-        .pf-logout-btn{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);color:#f85149;padding:7px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:.2s}
-        .pf-logout-btn:hover{background:rgba(248,81,73,.15);transform:translateY(-1px)}
+        .pf-user-name{font-size:13px;font-weight:600;color:#fff}
+        .pf-user-matricula{font-size:11px;color:var(--yellow-xl);font-weight:700}
+        .pf-user-cpf{font-size:10px;color:rgba(255,255,255,.6)}
+        .pf-user-avatar{width:40px;height:40px;background:linear-gradient(135deg,var(--yellow),var(--yellow-l));border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--gray800);font-weight:700;font-size:14px;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+        .pf-logout-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:.2s}
+        .pf-logout-btn:hover{background:rgba(220,38,38,.8);border-color:var(--red)}
 
         /* Layout */
         .pf-body{display:flex;flex:1;overflow:hidden}
 
         /* Sidebar */
-        .pf-sidebar{width:230px;background:linear-gradient(180deg,rgba(16,20,28,.99),rgba(12,15,20,.99));border-right:1px solid rgba(245,124,0,.08);padding:20px 0;display:flex;flex-direction:column;flex-shrink:0;position:relative;overflow:hidden}
-        .pf-sidebar::before{content:'';position:absolute;top:0;left:0;right:0;height:120px;background:linear-gradient(180deg,rgba(245,124,0,.06),transparent);pointer-events:none}
-        .pf-nav-item{display:flex;align-items:center;gap:12px;padding:12px 22px;cursor:pointer;color:#6b7280;font-size:13px;transition:.2s;border-left:3px solid transparent;position:relative;font-weight:500}
-        .pf-nav-item:hover{color:#d1d5db;background:rgba(245,124,0,.04)}
-        .pf-nav-item.active{color:#f57c00;background:rgba(245,124,0,.08);border-left-color:#f57c00;font-weight:700}
-        .pf-nav-item.active::after{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:linear-gradient(180deg,#f57c00,#ff9800);border-radius:0 2px 2px 0;box-shadow:0 0 8px rgba(245,124,0,.4)}
+        .pf-sidebar{width:230px;background:var(--white);border-right:1px solid var(--gray200);padding:20px 0;display:flex;flex-direction:column;flex-shrink:0;position:relative;overflow:hidden}
+        .pf-sidebar::before{content:'';position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(180deg,rgba(22,163,74,.06),transparent);pointer-events:none}
+        .pf-nav-item{display:flex;align-items:center;gap:12px;padding:12px 22px;cursor:pointer;color:var(--gray500);font-size:13px;transition:.2s;border-left:3px solid transparent;position:relative;font-weight:500}
+        .pf-nav-item:hover{color:var(--gray700);background:var(--gray100)}
+        .pf-nav-item.active{color:var(--green);background:rgba(22,163,74,.06);border-left-color:var(--green);font-weight:700}
+        .pf-nav-item.active::after{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:linear-gradient(180deg,var(--green),var(--green-l));border-radius:0 2px 2px 0;box-shadow:0 0 8px rgba(22,163,74,.3)}
         .pf-nav-item i{width:20px;text-align:center;font-size:15px}
-        .pf-nav-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(245,124,0,.15),transparent);margin:12px 22px}
+        .pf-nav-divider{height:1px;background:linear-gradient(90deg,transparent,var(--gray300),transparent);margin:12px 22px}
 
         /* Content */
-        .pf-content{flex:1;overflow-y:auto;padding:24px 28px;scroll-behavior:smooth}
+        .pf-content{flex:1;overflow-y:auto;padding:24px 28px;scroll-behavior:smooth;background:var(--gray100)}
 
         /* Sections */
         .pf-section{display:none;animation:fadeUp .3s ease}
@@ -77,163 +87,210 @@
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
         /* Welcome */
-        .pf-welcome{background:linear-gradient(135deg,rgba(245,124,0,.12),rgba(34,139,34,.06));border:1px solid rgba(245,124,0,.18);border-radius:20px;padding:32px;margin-bottom:24px;position:relative;overflow:hidden}
-        .pf-welcome::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(245,124,0,.1),transparent 70%);border-radius:50%;pointer-events:none}
-        .pf-welcome::after{content:'';position:absolute;bottom:-30px;left:-30px;width:150px;height:150px;background:radial-gradient(circle,rgba(34,139,34,.08),transparent 70%);border-radius:50%;pointer-events:none}
-        .pf-welcome h2{font-size:18px;color:#f57c00;margin-bottom:8px;font-weight:700;position:relative;z-index:1}
-        .pf-welcome h2 span{color:#fff}
-        .pf-welcome p{font-size:13px;color:#9ca3af;line-height:1.6;position:relative;z-index:1}
-        .pf-welcome p strong{color:#4caf50}
-        .pf-welcome .pf-matricula-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,124,0,.12);border:1px solid rgba(245,124,0,.25);border-radius:10px;padding:7px 14px;font-size:12px;color:#f57c00;font-weight:700;margin-top:14px}
+        .pf-welcome{background:linear-gradient(135deg,var(--green),var(--blue));border:none;border-radius:var(--radius);padding:32px;margin-bottom:24px;position:relative;overflow:hidden;color:#fff}
+        .pf-welcome::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,255,255,.15),transparent 70%);border-radius:50%;pointer-events:none}
+        .pf-welcome::after{content:'';position:absolute;bottom:-30px;left:30%;width:300px;height:100px;background:linear-gradient(90deg,rgba(234,179,8,.2),rgba(220,38,38,.15),transparent);border-radius:50%;pointer-events:none}
+        .pf-welcome h2{font-size:18px;color:#fff;margin-bottom:8px;font-weight:700;position:relative;z-index:1}
+        .pf-welcome h2 span{color:var(--yellow-xl)}
+        .pf-welcome p{font-size:13px;color:rgba(255,255,255,.85);line-height:1.6;position:relative;z-index:1}
+        .pf-welcome p strong{color:var(--yellow-xl)}
+        .pf-welcome .pf-matricula-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:7px 14px;font-size:12px;color:#fff;font-weight:700;margin-top:14px;backdrop-filter:blur(8px)}
 
         /* Quick Stats */
         .pf-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
-        .pf-stat-card{background:rgba(16,20,28,.7);border:1px solid rgba(245,124,0,.1);border-radius:16px;padding:18px;text-align:center;transition:.3s;position:relative;overflow:hidden}
-        .pf-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f57c00,#ff9800);opacity:0;transition:.3s}
-        .pf-stat-card:hover{border-color:rgba(245,124,0,.25);transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,124,0,.08)}
-        .pf-stat-card:hover::before{opacity:1}
-        .pf-stat-card i{font-size:22px;color:#f57c00;margin-bottom:8px;display:block}
-        .pf-stat-card .pf-stat-val{font-size:22px;font-weight:800;color:#fff;margin-bottom:2px}
-        .pf-stat-card .pf-stat-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+        .pf-stat-card{background:var(--white);border:none;border-radius:var(--radius);padding:18px;text-align:center;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+        .pf-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;opacity:1;transition:.3s}
+        .pf-stat-card:nth-child(1)::before{background:linear-gradient(90deg,var(--green),var(--green-l))}
+        .pf-stat-card:nth-child(2)::before{background:linear-gradient(90deg,var(--blue),var(--blue-l))}
+        .pf-stat-card:nth-child(3)::before{background:linear-gradient(90deg,var(--yellow),var(--yellow-l))}
+        .pf-stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+        .pf-stat-card:nth-child(1) i{color:var(--green)}
+        .pf-stat-card:nth-child(2) i{color:var(--blue)}
+        .pf-stat-card:nth-child(3) i{color:var(--yellow)}
+        .pf-stat-card i{font-size:22px;margin-bottom:8px;display:block}
+        .pf-stat-card .pf-stat-val{font-size:22px;font-weight:800;color:var(--gray800);margin-bottom:2px}
+        .pf-stat-card .pf-stat-label{font-size:11px;color:var(--gray500);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
 
         /* News */
-        .pf-noticia-card{background:rgba(16,20,28,.7);border:1px solid rgba(245,124,0,.08);border-radius:16px;padding:18px;margin-bottom:14px;transition:.3s;position:relative;overflow:hidden}
-        .pf-noticia-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#f57c00,transparent);opacity:0;transition:.3s}
-        .pf-noticia-card:hover{border-color:rgba(245,124,0,.2);transform:translateX(3px)}
-        .pf-noticia-card:hover::before{opacity:1}
+        .pf-noticia-card{background:var(--white);border:none;border-left:4px solid var(--green);border-radius:var(--radius-sm);padding:18px;margin-bottom:14px;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+        .pf-noticia-card:hover{transform:translateX(4px);box-shadow:var(--shadow-lg);border-left-color:var(--blue)}
         .pf-noticia-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-        .pf-noticia-badge{background:linear-gradient(135deg,rgba(245,124,0,.2),rgba(245,124,0,.1));color:#f57c00;font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;text-transform:uppercase;letter-spacing:.3px}
-        .pf-noticia-date{font-size:11px;color:#484f58}
-        .pf-noticia-title{font-size:15px;font-weight:700;color:#e6edf3;margin-bottom:6px}
-        .pf-noticia-text{font-size:13px;color:#9ca3af;line-height:1.6}
-        .pf-noticia-img{width:100%;margin-top:12px;border-radius:12px;border:1px solid rgba(255,255,255,.05)}
-        .pf-noticia-empty{text-align:center;padding:48px 20px;color:#3a3f4b}
-        .pf-noticia-empty i{font-size:40px;margin-bottom:14px;display:block;color:rgba(245,124,0,.2)}
-        .pf-noticia-empty p{font-size:13px;color:#6b7280}
+        .pf-noticia-badge{background:linear-gradient(135deg,var(--yellow),var(--yellow-l));color:var(--gray800);font-size:10px;font-weight:700;padding:4px 10px;border-radius:var(--radius-xs);text-transform:uppercase;letter-spacing:.3px}
+        .pf-noticia-date{font-size:11px;color:var(--gray400)}
+        .pf-noticia-title{font-size:15px;font-weight:700;color:var(--gray800);margin-bottom:6px}
+        .pf-noticia-text{font-size:13px;color:var(--gray500);line-height:1.6}
+        .pf-noticia-img{width:100%;margin-top:12px;border-radius:var(--radius-sm);border:1px solid var(--gray200)}
+        .pf-noticia-empty{text-align:center;padding:48px 20px;color:var(--gray300)}
+        .pf-noticia-empty i{font-size:40px;margin-bottom:14px;display:block;color:var(--gray300)}
+        .pf-noticia-empty p{font-size:13px;color:var(--gray400)}
 
         /* Right Panel (Chat/Galeria) */
         .pf-noticias-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;height:calc(100vh - 170px)}
         .pf-noticias-col{overflow-y:auto;padding-right:8px}
-        .pf-right-panel{background:rgba(16,20,28,.7);border:1px solid rgba(245,124,0,.1);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;position:sticky;top:0}
-        .pf-right-tabs{display:flex;border-bottom:1px solid rgba(245,124,0,.08);flex-shrink:0}
-        .pf-right-tab{flex:1;padding:12px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:.2s;border-bottom:2px solid transparent}
-        .pf-right-tab.active{color:#f57c00;border-bottom-color:#f57c00}
-        .pf-right-tab:hover{color:#e6edf3}
+        .pf-right-panel{background:var(--white);border:none;border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;position:sticky;top:0;box-shadow:var(--shadow)}
+        .pf-right-tabs{display:flex;border-bottom:2px solid var(--gray200);flex-shrink:0}
+        .pf-right-tab{flex:1;padding:12px;text-align:center;font-size:12px;font-weight:600;color:var(--gray400);cursor:pointer;transition:.2s;border-bottom:2px solid transparent;margin-bottom:-2px}
+        .pf-right-tab.active{color:var(--green);border-bottom-color:var(--green)}
+        .pf-right-tab:hover{color:var(--gray700)}
         .pf-right-content{flex:1;overflow:hidden;display:none;min-height:0}
         .pf-right-content.active{display:flex;flex-direction:column}
 
-        /* Chat */
-        .pf-chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
-        .pf-chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#3a3f4b}
-        .pf-chat-empty i{font-size:32px;margin-bottom:10px;color:rgba(245,124,0,.2)}
-        .pf-chat-empty p{font-size:12px;color:#6b7280}
-        .pf-chat-bubble{max-width:85%;padding:11px 14px;border-radius:14px;font-size:13px;line-height:1.4;position:relative;animation:chatIn .25s ease}
-        .pf-chat-bubble.me{align-self:flex-end;background:linear-gradient(135deg,rgba(245,124,0,.2),rgba(245,124,0,.12));border:1px solid rgba(245,124,0,.15);border-bottom-right-radius:4px}
-        .pf-chat-bubble.other{align-self:flex-start;background:rgba(22,27,34,.9);border:1px solid rgba(255,255,255,.05);border-bottom-left-radius:4px}
-        .pf-chat-sender{font-size:10px;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;color:#f57c00}
-        .pf-chat-time{font-size:10px;color:#484f58;margin-top:4px;text-align:right}
-        .pf-chat-edited{font-size:10px;color:#484f58;font-style:italic;margin-top:2px}
-        .pf-chat-actions{display:flex;gap:4px;margin-top:5px;justify-content:flex-end}
-        .pf-chat-action-btn{background:none;border:none;color:#484f58;cursor:pointer;padding:3px 5px;border-radius:4px;font-size:10px;transition:.15s}
-        .pf-chat-action-btn:hover{color:#e6edf3;background:rgba(255,255,255,.06)}
-        .pf-chat-edit-bar{display:none;align-items:center;gap:8px;padding:10px 14px;background:rgba(245,124,0,.06);border-top:1px solid rgba(245,124,0,.1);font-size:11px;color:#9ca3af}
-        .pf-chat-edit-bar.active{display:flex}
-        .pf-chat-edit-bar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .pf-chat-edit-bar button{background:none;border:none;color:#9ca3af;cursor:pointer;font-size:13px;padding:2px 4px}
-        .pf-chat-edit-bar button:hover{color:#e6edf3}
-        .pf-chat-input-area{display:flex;align-items:center;gap:8px;padding:12px 14px;border-top:1px solid rgba(245,124,0,.08);flex-shrink:0}
-        .pf-chat-input-area input{flex:1;background:rgba(10,14,20,.9);border:1px solid rgba(245,124,0,.12);border-radius:10px;padding:10px 14px;color:#e6edf3;font-size:13px;transition:.2s}
-        .pf-chat-input-area input:focus{outline:none;border-color:#f57c00;box-shadow:0 0 0 2px rgba(245,124,0,.08)}
-        .pf-chat-send-btn,.pf-chat-emoji-btn{background:none;border:none;color:#f57c00;font-size:17px;cursor:pointer;padding:5px;border-radius:8px;transition:.15s}
-        .pf-chat-send-btn:hover,.pf-chat-emoji-btn:hover{background:rgba(245,124,0,.1)}
-        .pf-chat-emoji-panel{display:none;flex-wrap:wrap;gap:4px;padding:10px 14px;border-top:1px solid rgba(245,124,0,.08);max-height:120px;overflow-y:auto;background:rgba(10,14,20,.5)}
-        .pf-chat-emoji-panel.active{display:flex}
-        .pf-chat-emoji-panel span{font-size:22px;cursor:pointer;padding:4px;border-radius:6px;transition:.15s}
-        .pf-chat-emoji-panel span:hover{background:rgba(245,124,0,.12);transform:scale(1.2)}
-
         /* Galeria */
         .pf-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px;overflow-y:auto}
-        .pf-gallery-item{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;aspect-ratio:1;border:1px solid rgba(245,124,0,.08);transition:.3s}
-        .pf-gallery-item:hover{border-color:#f57c00;transform:scale(1.03);box-shadow:0 8px 24px rgba(245,124,0,.12)}
+        .pf-gallery-item{position:relative;border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;aspect-ratio:1;border:2px solid var(--gray200);transition:.3s}
+        .pf-gallery-item:hover{border-color:var(--green);transform:scale(1.03);box-shadow:0 8px 24px rgba(22,163,74,.15)}
         .pf-gallery-item img{width:100%;height:100%;object-fit:cover}
-        .pf-gallery-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:8px 10px;font-size:10px;color:#d1d5db}
-        .pf-gallery-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#3a3f4b;padding:20px;text-align:center}
-        .pf-gallery-empty i{font-size:32px;margin-bottom:10px;color:rgba(245,124,0,.2)}
-        .pf-gallery-empty p{font-size:12px;color:#6b7280}
+        .pf-gallery-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:8px 10px;font-size:10px;color:#fff}
+        .pf-gallery-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray300);padding:20px;text-align:center}
+        .pf-gallery-empty i{font-size:32px;margin-bottom:10px;color:var(--gray300)}
+        .pf-gallery-empty p{font-size:12px;color:var(--gray400)}
 
         /* Dados */
         .pf-dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-        .pf-dados-card{background:rgba(16,20,28,.7);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:16px;transition:.2s}
-        .pf-dados-editable{cursor:pointer;transition:.3s;border-color:rgba(245,124,0,.1)}
-        .pf-dados-editable:hover{background:rgba(245,124,0,.04);border-color:rgba(245,124,0,.25);transform:translateY(-1px)}
-        .pf-dados-label{font-size:10px;color:#6b7280;margin-bottom:5px;display:flex;align-items:center;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-        .pf-dados-val{font-size:14px;font-weight:600;color:#e6edf3;word-break:break-word}
+        .pf-dados-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:16px;transition:.2s;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .pf-dados-editable{cursor:pointer;transition:.3s;border-color:var(--gray200)}
+        .pf-dados-editable:hover{border-color:var(--green);box-shadow:0 4px 16px rgba(22,163,74,.1);transform:translateY(-2px)}
+        .pf-dados-label{font-size:10px;color:var(--gray500);margin-bottom:5px;display:flex;align-items:center;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+        .pf-dados-val{font-size:14px;font-weight:600;color:var(--gray800);word-break:break-word}
 
         /* Construcao */
-        .pf-em-construcao{text-align:center;padding:60px 20px;color:#3a3f4b}
-        .pf-em-construcao i{font-size:44px;margin-bottom:16px;display:block;color:rgba(245,124,0,.15)}
-        .pf-em-construcao h3{font-size:17px;color:#9ca3af;margin-bottom:6px;font-weight:600}
-        .pf-em-construcao p{font-size:13px;color:#6b7280}
+        .pf-em-construcao{text-align:center;padding:60px 20px;color:var(--gray300)}
+        .pf-em-construcao i{font-size:44px;margin-bottom:16px;display:block;color:var(--gray300)}
+        .pf-em-construcao h3{font-size:17px;color:var(--gray500);margin-bottom:6px;font-weight:600}
+        .pf-em-construcao p{font-size:13px;color:var(--gray400)}
 
         /* Baixar App */
         .pf-app-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:600px;margin:0 auto}
-        .pf-app-card{background:rgba(16,20,28,.7);border:1px solid rgba(245,124,0,.1);border-radius:16px;padding:24px;text-align:center;cursor:pointer;transition:.3s;position:relative;overflow:hidden}
-        .pf-app-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f57c00,#ff9800);transform:scaleX(0);transition:.3s}
-        .pf-app-card:hover{border-color:rgba(245,124,0,.3);transform:translateY(-3px);box-shadow:0 12px 32px rgba(245,124,0,.1)}
+        .pf-app-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+        .pf-app-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;transform:scaleX(0);transition:.3s}
+        .pf-app-card:nth-child(1)::before{background:linear-gradient(90deg,var(--green),var(--green-l))}
+        .pf-app-card:nth-child(2)::before{background:linear-gradient(90deg,var(--blue),var(--blue-l))}
+        .pf-app-card:nth-child(3)::before{background:linear-gradient(90deg,var(--yellow),var(--yellow-l))}
+        .pf-app-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
         .pf-app-card:hover::before{transform:scaleX(1)}
-        .pf-app-card i{font-size:32px;color:#f57c00;margin-bottom:12px;display:block}
-        .pf-app-card h4{font-size:14px;color:#e6edf3;margin-bottom:4px;font-weight:600}
-        .pf-app-card p{font-size:12px;color:#6b7280}
+        .pf-app-card:nth-child(1) i{color:var(--green)}
+        .pf-app-card:nth-child(2) i{color:var(--blue)}
+        .pf-app-card:nth-child(3) i{color:var(--yellow)}
+        .pf-app-card i{font-size:32px;margin-bottom:12px;display:block}
+        .pf-app-card h4{font-size:14px;color:var(--gray800);margin-bottom:4px;font-weight:600}
+        .pf-app-card p{font-size:12px;color:var(--gray500)}
 
         /* Apostila / Aula */
-        .pf-apostila-card{background:rgba(16,20,28,.7);border:1px solid rgba(245,124,0,.08);border-radius:14px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;transition:.3s;cursor:pointer}
-        .pf-apostila-card:hover{border-color:rgba(245,124,0,.25);transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,124,0,.08)}
-        .pf-apostila-icon{width:50px;height:50px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .pf-apostila-icon i{font-size:20px;color:#f85149}
+        .pf-apostila-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;transition:.3s;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .pf-apostila-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+        .pf-apostila-icon{width:50px;height:50px;background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(220,38,38,.04));border:1px solid rgba(220,38,38,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .pf-apostila-icon i{font-size:20px;color:var(--red)}
         .pf-apostila-info{flex:1;min-width:0}
-        .pf-apostila-titulo{font-size:14px;font-weight:700;color:#e6edf3;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pf-apostila-desc{font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pf-apostila-meta{font-size:10px;color:#484f58;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
-        .pf-apostila-badge{background:rgba(245,124,0,.12);color:#f57c00;font-size:10px;padding:3px 10px;border-radius:8px;font-weight:700;letter-spacing:.2px}
+        .pf-apostila-titulo{font-size:14px;font-weight:700;color:var(--gray800);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pf-apostila-desc{font-size:12px;color:var(--gray500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pf-apostila-meta{font-size:10px;color:var(--gray400);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
+        .pf-apostila-badge{background:rgba(22,163,74,.08);color:var(--green);font-size:10px;padding:3px 10px;border-radius:var(--radius-xs);font-weight:700;letter-spacing:.2px}
 
         /* Photo modal */
-        .pf-photo-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:1000;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+        .pf-photo-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
         .pf-photo-modal.active{display:flex}
-        .pf-photo-modal img{max-width:90%;max-height:80vh;border-radius:12px;object-fit:contain}
-        .pf-photo-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;width:40px;height:40px;border-radius:12px;font-size:16px;cursor:pointer;z-index:1001;transition:.2s}
-        .pf-photo-modal-close:hover{background:rgba(255,255,255,.15)}
-        .pf-photo-modal-info{color:#9ca3af;font-size:12px;margin-top:12px}
+        .pf-photo-modal img{max-width:90%;max-height:80vh;border-radius:var(--radius);object-fit:contain}
+        .pf-photo-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:var(--radius-sm);font-size:16px;cursor:pointer;z-index:1001;transition:.2s}
+        .pf-photo-modal-close:hover{background:rgba(255,255,255,.25)}
+        .pf-photo-modal-info{color:var(--gray400);font-size:12px;margin-top:12px}
 
-        @keyframes chatIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        /* ===== CHAT WHATSAPP ===== */
+        .chat-container{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}
+        .chat-header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--green);border-bottom:1px solid rgba(0,0,0,.06);flex-shrink:0}
+        .chat-header-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .chat-header-avatar i{color:#fff;font-size:18px}
+        .chat-header-info{flex:1}
+        .chat-header-name{color:#fff;font-size:15px;font-weight:600}
+        .chat-header-status{color:rgba(255,255,255,.7);font-size:12px}
+        .chat-messages{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:4px;background:var(--gray100);min-height:0;-webkit-overflow-scrolling:touch}
+        .chat-date-sep{text-align:center;margin:12px 0 6px}
+        .chat-date-sep span{background:var(--white);border:1px solid var(--gray200);color:var(--gray500);font-size:10.5px;padding:4px 12px;border-radius:var(--radius-xs);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+        .chat-msg-wrap{display:flex;align-items:flex-end;gap:6px;max-width:85%;animation:chatSlide .2s ease}
+        .chat-msg-wrap.me{align-self:flex-end;flex-direction:row-reverse}
+        .chat-msg-wrap.other{align-self:flex-start}
+        .chat-msg-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--green-d));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .chat-msg-avatar i{color:#fff;font-size:11px}
+        .chat-msg-bubble{padding:6px 8px 4px 10px;font-size:14px;line-height:1.4;word-wrap:break-word;position:relative}
+        .chat-msg-bubble.me{background:linear-gradient(135deg,var(--green),var(--green-d));border-radius:8px 8px 2px 8px;color:#fff}
+        .chat-msg-bubble.other{background:var(--white);border-radius:8px 8px 8px 2px;color:var(--gray800);border:1px solid var(--gray200);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+        .chat-msg-bubble::after{content:'';position:absolute;bottom:0;width:12px;height:16px}
+        .chat-msg-bubble.me::after{right:-6px;background:linear-gradient(135deg,var(--green-d) 50%,transparent 50%)}
+        .chat-msg-bubble.other::after{left:-6px;background:linear-gradient(225deg,var(--white) 50%,transparent 50%)}
+        .chat-msg-text{white-space:pre-wrap}
+        .chat-msg-sender{font-size:10.5px;font-weight:700;color:var(--green);margin-bottom:2px}
+        .chat-msg-time{font-size:10px;color:rgba(255,255,255,.5);text-align:right;margin-top:1px;display:flex;align-items:center;justify-content:flex-end;gap:3px}
+        .chat-msg-wrap.other .chat-msg-time{color:var(--gray400)}
+        .chat-msg-time .check{color:rgba(255,255,255,.6);font-size:12px}
+        .chat-msg-wrap.other .chat-msg-time .check{color:var(--green)}
+        .chat-msg-edited{font-size:9px;color:rgba(255,255,255,.4);font-style:italic}
+        .chat-msg-wrap.other .chat-msg-edited{color:var(--gray400)}
+        .chat-msg-actions{display:flex;gap:2px;margin-top:3px;justify-content:flex-end}
+        .chat-msg-action{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;padding:2px 4px;border-radius:4px;font-size:10px;transition:.15s}
+        .chat-msg-action:hover{color:#fff;background:rgba(255,255,255,.1)}
+        .chat-msg-wrap.other .chat-msg-action{color:var(--gray400)}
+        .chat-msg-wrap.other .chat-msg-action:hover{color:var(--gray700);background:var(--gray100)}
+        .chat-input-area{display:flex;align-items:flex-end;gap:6px;padding:8px 10px;padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));background:var(--white);border-top:1px solid var(--gray200);flex-shrink:0}
+        .chat-input-wrap{flex:1;display:flex;align-items:flex-end;background:var(--gray100);border:1px solid var(--gray200);border-radius:10px;padding:4px 8px;min-height:42px}
+        .chat-input-wrap input{flex:1;background:transparent;border:none;color:var(--gray800);font-size:15px;padding:6px 4px;outline:none;min-width:0}
+        .chat-input-wrap input::placeholder{color:var(--gray400)}
+        .chat-emoji-btn{background:none;border:none;color:var(--gray400);font-size:22px;cursor:pointer;padding:6px;border-radius:50%;transition:.15s;flex-shrink:0}
+        .chat-emoji-btn:hover{color:var(--green)}
+        .chat-send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--green-d));border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0;box-shadow:0 4px 12px rgba(22,163,74,.3)}
+        .chat-send-btn:hover{transform:scale(1.05);box-shadow:0 6px 16px rgba(22,163,74,.4)}
+        .chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray400);padding:40px 20px;text-align:center}
+        .chat-empty i{font-size:48px;margin-bottom:16px;color:var(--green);opacity:.25}
+        .chat-empty p{font-size:14px;line-height:1.5}
+        .chat-edit-bar{display:none;align-items:center;gap:8px;padding:8px 14px;background:rgba(22,163,74,.06);border-top:1px solid rgba(22,163,74,.15);font-size:11px;color:var(--gray500);flex-shrink:0}
+        .chat-edit-bar.active{display:flex}
+        .chat-edit-bar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .chat-edit-bar button{background:none;border:none;color:var(--gray400);cursor:pointer;font-size:14px;padding:2px 4px}
+        .chat-edit-bar button:hover{color:var(--gray700)}
+        .chat-emoji-panel{display:none;flex-wrap:wrap;gap:4px;padding:10px 14px;border-top:1px solid var(--gray200);max-height:140px;overflow-y:auto;background:var(--white)}
+        .chat-emoji-panel.active{display:flex}
+        .chat-emoji-panel span{font-size:24px;cursor:pointer;padding:4px;border-radius:6px;transition:.15s}
+        .chat-emoji-panel span:hover{background:rgba(22,163,74,.08);transform:scale(1.2)}
+        @keyframes chatSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+        /* Mobile chat full screen */
+        @media(max-width:768px){
+            .chat-header{padding:10px 14px}
+            .chat-messages{padding:12px 8px}
+            .chat-input-area{padding:6px 8px}
+            .chat-msg-wrap{max-width:90%}
+        }
+        @media(max-width:480px){
+            .chat-msg-wrap{max-width:92%}
+            .chat-msg-bubble{font-size:13.5px}
+        }
 
         /* Notification Badge */
-        .pf-nav-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:20px;height:20px;background:linear-gradient(135deg,#f44336,#d32f2f);color:#fff;font-size:10px;font-weight:700;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;animation:badgePulse 2s infinite;box-shadow:0 0 8px rgba(244,67,54,.4)}
+        .pf-nav-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:20px;height:20px;background:linear-gradient(135deg,var(--red),var(--red-l));color:#fff;font-size:10px;font-weight:700;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;animation:badgePulse 2s infinite;box-shadow:0 2px 8px rgba(220,38,38,.3)}
         .pf-nav-badge.hidden{display:none}
-        .pf-mobile-nav-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:linear-gradient(135deg,#f44336,#d32f2f);color:#fff;font-size:9px;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;animation:badgePulse 2s infinite;box-shadow:0 0 6px rgba(244,67,54,.4)}
+        .pf-mobile-nav-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:linear-gradient(135deg,var(--red),var(--red-l));color:#fff;font-size:9px;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;animation:badgePulseMobile 2s infinite;box-shadow:0 2px 6px rgba(220,38,38,.3)}
         .pf-mobile-nav-badge.hidden{display:none}
         @keyframes badgePulse{0%,100%{transform:translateY(-50%) scale(1)}50%{transform:translateY(-50%) scale(1.1)}}
         @keyframes badgePulseMobile{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
         /* Mobile Bottom Nav */
-        .pf-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(16,20,28,.98);border-top:1px solid rgba(245,124,0,.1);padding:6px 0;z-index:100;backdrop-filter:blur(16px)}
+        .pf-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--gray200);padding:6px 0;z-index:100;box-shadow:0 -4px 16px rgba(0,0,0,.06)}
         .pf-mobile-nav-items{display:flex;justify-content:space-around}
-        .pf-mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 8px;color:#6b7280;font-size:9px;font-weight:600;cursor:pointer;transition:.2s;border-radius:8px}
+        .pf-mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 8px;color:var(--gray400);font-size:9px;font-weight:600;cursor:pointer;transition:.2s;border-radius:var(--radius-xs)}
         .pf-mobile-nav-item i{font-size:18px}
-        .pf-mobile-nav-item.active{color:#f57c00}
-        .pf-mobile-nav-item:active{background:rgba(245,124,0,.08)}
+        .pf-mobile-nav-item.active{color:var(--green)}
+        .pf-mobile-nav-item:active{background:rgba(22,163,74,.06)}
 
         @media(max-width:768px){
             .pf-sidebar{display:none}
             .pf-mobile-nav{display:block}
             .pf-noticias-layout{grid-template-columns:1fr;height:100%}
             .pf-noticias-col.hidden-mobile{display:none}
-            .pf-right-panel{position:relative;height:calc(100vh - 32px);border-radius:0;border:none;border-top:none;background:rgba(10,14,20,.98);overflow:hidden}
-            .pf-content{padding:16px 16px 80px;height:100vh;overflow:hidden}
+            .pf-right-panel{position:relative;height:calc(100vh - 32px);border-radius:0;border:none;border-top:none;background:var(--gray100);overflow:hidden}
+            .pf-content{padding:16px 16px 80px;overflow:hidden}
             .pf-stats-row{grid-template-columns:1fr}
             .pf-topbar{padding:0 14px}
             .pf-topbar-title{display:none}
             .pf-user-info{display:none}
-            .pf-chat-messages{min-height:0}
+            .pf-section.active#pf-section-chat{position:fixed;top:60px;left:0;right:0;bottom:0;z-index:90;background:var(--gray100)}
         }
     </style>
 </head>
@@ -277,10 +334,6 @@
                 <span class="pf-topbar-title">Portal do Aluno</span>
             </div>
             <div class="pf-topbar-right">
-                <div style="position:relative;cursor:pointer" onclick="paShowSection('chat', document.querySelector('.pf-nav-item:nth-child(4)'))" title="Chat">
-                    <i class="fa-solid fa-bell" style="font-size:18px;color:#f57c00"></i>
-                    <span id="pf-topbar-chat-badge" class="pf-mobile-nav-badge hidden" style="position:absolute;top:-6px;right:-8px">0</span>
-                </div>
                 <div class="pf-user-info">
                     <div class="pf-user-name" id="pf-user-name">---</div>
                     <div class="pf-user-matricula" id="pf-user-matricula"></div>
@@ -312,13 +365,13 @@
                 <!-- INICIO -->
                 <div class="pf-section active" id="pf-section-inicio">
                     <div class="pf-welcome">
-                        <img src="logobc.jpeg" alt="Bombeiro Civil" style="width:100px;position:absolute;top:20px;right:24px;opacity:.15;border-radius:12px;pointer-events:none">
+                        <img src="logobc.jpeg" alt="Bombeiro Civil" style="width:100px;position:absolute;top:20px;right:24px;opacity:.12;border-radius:12px;pointer-events:none;filter:brightness(0) invert(1)">
                         <h2>Parabens! Voce esta cadastrado no <span>Curso de Formacao de Bombeiro Profissional Civil</span>.</h2>
                         <p>Uma parceria da <strong>FARN - Forca Auxiliar de Resgate Nacional</strong> e a <strong>Prefeitura Municipal de Buenos Aires-PE</strong>.</p>
                         <div class="pf-matricula-badge" id="pf-welcome-matricula" style="display:none">
                             <i class="fa-solid fa-id-card"></i> <span></span>
                         </div>
-                        <p style="margin-top:14px;font-size:12px;color:#6b7280">Bem-vindo(a), <span id="pf-welcome-name" style="color:#f57c00;font-weight:700">Aluno</span>! Acompanhe suas noticias, galeria de fotos e converse com a administracao.</p>
+                        <p style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.7)">Bem-vindo(a), <span id="pf-welcome-name" style="color:var(--yellow-xl);font-weight:700">Aluno</span>! Acompanhe suas noticias, galeria de fotos e converse com a administracao.</p>
                     </div>
 
                     <div class="pf-stats-row">
@@ -344,33 +397,16 @@
                 <div class="pf-section" id="pf-section-noticias">
                     <div class="pf-noticias-layout">
                         <div class="pf-noticias-col">
-                            <h3 style="font-size:16px;color:#f57c00;margin-bottom:14px"><i class="fa-solid fa-newspaper"></i> Noticias</h3>
+                            <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-newspaper"></i> Noticias</h3>
                             <div id="pf-noticias-list">
                                 <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                             </div>
                         </div>
                         <div class="pf-right-panel">
                             <div class="pf-right-tabs">
-                                <div class="pf-right-tab active" onclick="paRightTab('chat',this)"><i class="fa-solid fa-comments"></i> Chat</div>
-                                <div class="pf-right-tab" onclick="paRightTab('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
+                                <div class="pf-right-tab active" onclick="paRightTab('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
                             </div>
-                            <div class="pf-right-content active" id="pf-right-chat">
-                                <div class="pf-chat-messages" id="pf-chat-messages">
-                                    <div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
-                                </div>
-                                <div class="pf-chat-edit-bar" id="pf-chat-edit-bar">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                    <span id="pf-chat-edit-label"></span>
-                                    <button onclick="paChatCancelEdit()"><i class="fa-solid fa-xmark"></i></button>
-                                </div>
-                                <div class="pf-chat-emoji-panel" id="pf-chat-emoji-panel"></div>
-                                <div class="pf-chat-input-area">
-                                    <button class="pf-chat-emoji-btn" onclick="paChatToggleEmoji(event)"><i class="fa-solid fa-face-smile"></i></button>
-                                    <input type="text" id="pf-chat-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')paChatSend()">
-                                    <button class="pf-chat-send-btn" onclick="paChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
-                                </div>
-                            </div>
-                            <div class="pf-right-content" id="pf-right-galeria">
+                            <div class="pf-right-content active" id="pf-right-galeria">
                                 <div class="pf-gallery-grid" id="pf-gallery-grid">
                                     <div class="pf-gallery-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                                 </div>
@@ -379,15 +415,44 @@
                     </div>
                 </div>
 
+                <!-- CHAT -->
+                <div class="pf-section" id="pf-section-chat">
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <div class="chat-header-avatar"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div class="chat-header-info">
+                                <div class="chat-header-name">Administracao FARN</div>
+                                <div class="chat-header-status">Online</div>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="chat-empty"><i class="fa-solid fa-comments"></i><p>Converse com a administracao da FARN.<br>Envie sua mensagem abaixo.</p></div>
+                        </div>
+                        <div class="chat-edit-bar" id="chat-edit-bar">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span id="chat-edit-label"></span>
+                            <button onclick="chatCancelEdit()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="chat-emoji-panel" id="chat-emoji-panel"></div>
+                        <div class="chat-input-area">
+                            <button class="chat-emoji-btn" onclick="chatToggleEmoji(event)"><i class="fa-solid fa-face-smile"></i></button>
+                            <div class="chat-input-wrap">
+                                <input type="text" id="chat-input" placeholder="Mensagem" onkeydown="if(event.key==='Enter')chatSend()">
+                            </div>
+                            <button class="chat-send-btn" onclick="chatSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- DADOS -->
                 <div class="pf-section" id="pf-section-dados">
-                    <h3 style="font-size:16px;color:#f57c00;margin-bottom:14px"><i class="fa-solid fa-user"></i> Meus Dados</h3>
+                    <h3 style="font-size:16px;color:var(--blue);margin-bottom:14px"><i class="fa-solid fa-user"></i> Meus Dados</h3>
                     <div class="pf-dados-grid" id="pf-dados-content"></div>
                 </div>
 
                 <!-- BAIXAR APP -->
                 <div class="pf-section" id="pf-section-app">
-                    <h3 style="font-size:16px;color:#f57c00;margin-bottom:14px"><i class="fa-solid fa-mobile-screen"></i> Baixar Aplicativo</h3>
+                    <h3 style="font-size:16px;color:var(--yellow);margin-bottom:14px"><i class="fa-solid fa-mobile-screen"></i> Baixar Aplicativo</h3>
                     <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Em breve o aplicativo Portal do Aluno FARN estara disponivel!</p>
                     <div class="pf-app-cards">
                         <div class="pf-app-card" onclick="paDownloadApp('android')">
@@ -410,7 +475,7 @@
 
                 <!-- APOSTILAS -->
                 <div class="pf-section" id="pf-section-apostila">
-                    <h3 style="font-size:16px;color:#f57c00;margin-bottom:14px"><i class="fa-solid fa-book-open"></i> Apostilas em PDF</h3>
+                    <h3 style="font-size:16px;color:var(--red);margin-bottom:14px"><i class="fa-solid fa-book-open"></i> Apostilas em PDF</h3>
                     <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acesse as apostilas do seu projeto e turma.</p>
                     <div id="pf-apostila-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
@@ -419,7 +484,7 @@
 
                 <!-- AULAS -->
                 <div class="pf-section" id="pf-section-aulas">
-                    <h3 style="font-size:16px;color:#f57c00;margin-bottom:14px"><i class="fa-solid fa-chalkboard"></i> Aulas</h3>
+                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-chalkboard"></i> Aulas</h3>
                     <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as aulas do seu projeto e turma.</p>
                     <div id="pf-aula-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
@@ -459,16 +524,16 @@
     </div>
 
     <!-- MODAL EDITAR DADOS -->
-    <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)paCloseEditModal()">
-        <div style="background:#161b22;border:1px solid rgba(34,139,34,.3);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+        <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)paCloseEditModal()">
+        <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                <h3 id="pf-edit-title" style="margin:0;font-size:16px;color:#228b22"></h3>
-                <button onclick="paCloseEditModal()" style="background:none;border:none;color:#8b949e;font-size:18px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+                <h3 id="pf-edit-title" style="margin:0;font-size:16px;color:var(--green)"></h3>
+                <button onclick="paCloseEditModal()" style="background:none;border:none;color:var(--gray400);font-size:18px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="pf-edit-body"></div>
             <div style="display:flex;gap:10px;margin-top:16px">
-                <button onclick="paCloseEditModal()" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#8b949e;font-size:13px;cursor:pointer">Cancelar</button>
-                <button onclick="paConfirmEdit()" style="flex:1;padding:10px;background:linear-gradient(135deg,#228b22,#1a6b1a);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
+                <button onclick="paCloseEditModal()" style="flex:1;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray500);font-size:13px;cursor:pointer">Cancelar</button>
+                <button onclick="paConfirmEdit()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--green),var(--green-d));border:none;border-radius:var(--radius-xs);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
             </div>
         </div>
     </div>
@@ -482,7 +547,6 @@
 
     /* ===== ESTADO ===== */
     var paUser=null;
-    var paChatUnsub=null;
     var paGalleryUnsub=null;
     var paNoticiasUnsub=null;
     var paDisciplinas=[];
@@ -601,9 +665,8 @@
             paLoadGallery();
             paLoadApostilas();
             paLoadAulas();
-            paChatLoadMessages();
-            paChatInitEmoji();
             paLoadStats();
+            chatInitEmoji();
 
         } catch(e) {
             console.error('Erro login aluno:', e);
@@ -626,7 +689,7 @@
     }
 
     function paLogout() {
-        if (paChatUnsub) { paChatUnsub(); paChatUnsub = null; }
+        if (chatUnsub) { chatUnsub(); chatUnsub = null; }
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
         if (paNoticiasUnsub) { paNoticiasUnsub(); paNoticiasUnsub = null; }
         document.getElementById('screen-portal').classList.remove('active');
@@ -671,12 +734,19 @@
         var mobNav = document.querySelector('.pf-mobile-nav');
         if (mobNav) mobNav.style.display = '';
 
-        if (section === 'chat' || section === 'galeria') {
+        if (section === 'galeria') {
             document.getElementById('pf-section-noticias').classList.add('active');
             if (newsCol) newsCol.classList.add('hidden-mobile');
             if (mobNav) mobNav.style.display = 'none';
-            if (section === 'chat') { paRightTab('chat', document.querySelector('.pf-right-tab')); paChatMarkRead(); }
-            else paRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
+            paRightTab('galeria');
+            return;
+        }
+
+        if (section === 'chat') {
+            if (mobNav) mobNav.style.display = 'none';
+            chatStart();
+            var target = document.getElementById('pf-section-chat');
+            if (target) target.classList.add('active');
             return;
         }
 
@@ -702,8 +772,7 @@
     function paRightTab(tab, el) {
         document.querySelectorAll('.pf-right-tab').forEach(function(t){ t.classList.remove('active'); });
         if (el) el.classList.add('active');
-        document.getElementById('pf-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
-        document.getElementById('pf-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
+        document.getElementById('pf-right-galeria').style.display = 'flex';
     }
 
     /* ===== NOTICIAS ===== */
@@ -759,33 +828,33 @@
         if (campo === 'email') {
             title.textContent = 'Editar Email';
             atual = paUser.email || '';
-            body.innerHTML = '<label>Email</label><input type="email" id="pf-edit-valor" value="' + atual + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+            body.innerHTML = '<label style="color:var(--gray600);font-size:12px;font-weight:600">Email</label><input type="email" id="pf-edit-valor" value="' + atual + '" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">';
         } else if (campo === 'whatsapp') {
             title.textContent = 'Editar WhatsApp';
             atual = paUser.whatsapp || '';
-            body.innerHTML = '<label>WhatsApp</label><input type="text" id="pf-edit-valor" value="' + atual + '" oninput="paFormatPhone(this)" maxlength="15" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+            body.innerHTML = '<label style="color:var(--gray600);font-size:12px;font-weight:600">WhatsApp</label><input type="text" id="pf-edit-valor" value="' + atual + '" oninput="paFormatPhone(this)" maxlength="15" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">';
         } else if (campo === 'endereco') {
             title.textContent = 'Editar Endereco';
             body.innerHTML =
-                '<label>Endereco (Rua/Av)</label><input type="text" id="pf-edit-endereco" value="' + (paUser.endereco || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+                '<label style="color:var(--gray600);font-size:12px;font-weight:600">Endereco (Rua/Av)</label><input type="text" id="pf-edit-endereco" value="' + (paUser.endereco || '') + '" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">' +
                 '<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px">' +
-                    '<div><label>Numero</label><input type="text" id="pf-edit-numero" value="' + (paUser.numero || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
-                    '<div><label>Bairro</label><input type="text" id="pf-edit-bairro" value="' + (paUser.bairro || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="color:var(--gray600);font-size:12px;font-weight:600">Numero</label><input type="text" id="pf-edit-numero" value="' + (paUser.numero || '') + '" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="color:var(--gray600);font-size:12px;font-weight:600">Bairro</label><input type="text" id="pf-edit-bairro" value="' + (paUser.bairro || '') + '" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px"></div>' +
                 '</div>' +
                 '<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:10px">' +
-                    '<div><label>Cidade</label><input type="text" id="pf-edit-cidade" value="' + (paUser.cidade || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
-                    '<div><label>Estado</label><input type="text" id="pf-edit-estado" value="' + (paUser.estado || '') + '" maxlength="2" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="color:var(--gray600);font-size:12px;font-weight:600">Cidade</label><input type="text" id="pf-edit-cidade" value="' + (paUser.cidade || '') + '" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="color:var(--gray600);font-size:12px;font-weight:600">Estado</label><input type="text" id="pf-edit-estado" value="' + (paUser.estado || '') + '" maxlength="2" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px"></div>' +
                 '</div>';
         } else if (campo === 'senha') {
             title.textContent = 'Alterar Senha';
             body.innerHTML =
-                '<label>Nova Senha</label><input type="password" id="pf-edit-valor" placeholder="Minimo 4 caracteres" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
-                '<label style="margin-top:10px;display:block">Confirmar Senha</label><input type="password" id="pf-edit-valor2" placeholder="Repita a senha" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+                '<label style="color:var(--gray600);font-size:12px;font-weight:600">Nova Senha</label><input type="password" id="pf-edit-valor" placeholder="Minimo 4 caracteres" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">' +
+                '<label style="margin-top:10px;display:block;color:var(--gray600);font-size:12px;font-weight:600">Confirmar Senha</label><input type="password" id="pf-edit-valor2" placeholder="Repita a senha" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">';
         }
 
-        body.innerHTML += '<label style="margin-top:14px;display:block;font-size:12px;color:#8b949e">Confirme com sua senha atual</label>' +
-            '<input type="password" id="pf-edit-senha" placeholder="Senha atual" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(34,139,34,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
-            '<div id="pf-edit-error" style="display:none;color:#f85149;font-size:12px;margin-top:8px"></div>';
+        body.innerHTML += '<label style="margin-top:14px;display:block;font-size:12px;color:var(--gray500)">Confirme com sua senha atual</label>' +
+            '<input type="password" id="pf-edit-senha" placeholder="Senha atual" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">' +
+            '<div id="pf-edit-error" style="display:none;color:var(--red);font-size:12px;margin-top:8px"></div>';
 
         modal.style.display = 'flex';
         modal._campo = campo;
@@ -862,119 +931,118 @@
         }
     }
 
-    /* ===== CHAT 1:1 COM ADMIN ===== */
-    var paChatEditTarget = null;
-    var paChatUnreadCount = 0;
-    var paChatLastRead = 0;
+    /* ===== CHAT WHATSAPP 1:1 ===== */
+    var chatUnsub = null;
+    var chatEditTarget = null;
+    var chatLastRead = 0;
+    var chatUnreadCount = 0;
 
-    function paChatUpdateBadge(count) {
-        paChatUnreadCount = count;
-        var badge = document.getElementById('pf-chat-badge');
-        var mBadge = document.getElementById('pf-chat-mobile-badge');
-        var tBadge = document.getElementById('pf-topbar-chat-badge');
-        if (count > 0) {
-            if (badge) { badge.textContent = count; badge.classList.remove('hidden'); }
-            if (mBadge) { mBadge.textContent = count; mBadge.classList.remove('hidden'); }
-            if (tBadge) { tBadge.textContent = count; tBadge.classList.remove('hidden'); }
-            document.title = '(' + count + ') Portal do Aluno - FARN';
-        } else {
-            if (badge) badge.classList.add('hidden');
-            if (mBadge) mBadge.classList.add('hidden');
-            if (tBadge) tBadge.classList.add('hidden');
-            document.title = 'Portal do Aluno - FARN';
-        }
-    }
-
-    function paChatMarkRead() {
-        paChatLastRead = Date.now();
-        try { localStorage.setItem('pa_chat_read_' + (paUser ? paUser.cpf : ''), paChatLastRead); } catch(e) {}
-        paChatUpdateBadge(0);
-    }
-
-    function paChatLoadMessages() {
+    function chatStart() {
         if (!paUser || !paUser.cpf) return;
-        var container = document.getElementById('pf-chat-messages');
-        if (paChatUnsub) { paChatUnsub(); paChatUnsub = null; }
+        var container = document.getElementById('chat-messages');
+        if (chatUnsub) { chatUnsub(); chatUnsub = null; }
 
         try {
-            var stored = localStorage.getItem('pa_chat_read_' + paUser.cpf);
-            paChatLastRead = stored ? parseInt(stored) : Date.now();
-        } catch(e) { paChatLastRead = Date.now(); }
+            var stored = localStorage.getItem('chat_read_' + paUser.cpf);
+            chatLastRead = stored ? parseInt(stored) : Date.now();
+        } catch(e) { chatLastRead = Date.now(); }
 
-        container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
+        container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
 
-        paChatUnsub = dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
+        chatUnsub = dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
             var unread = 0;
             if (snap.empty) {
-                container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
-                paChatUpdateBadge(0);
+                container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-comments"></i><p>Converse com a administracao da FARN.<br>Envie sua mensagem abaixo.</p></div>';
+                chatUpdateBadge(0);
                 return;
             }
             container.innerHTML = '';
+            var lastDate = '';
             snap.forEach(function(doc) {
                 var m = doc.data();
                 if (m.apagada) return;
                 var isMe = m.remetente === 'aluno';
                 if (!isMe) {
                     var msgTime = m.hora ? (m.hora.seconds ? m.hora.seconds * 1000 : new Date(m.hora).getTime()) : 0;
-                    if (msgTime > paChatLastRead) unread++;
+                    if (msgTime > chatLastRead) unread++;
                 }
+
+                var msgDate = '';
+                if (m.hora) {
+                    var d = new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora);
+                    msgDate = d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+                }
+                if (msgDate && msgDate !== lastDate) {
+                    lastDate = msgDate;
+                    var sep = document.createElement('div');
+                    sep.className = 'chat-date-sep';
+                    sep.innerHTML = '<span>' + msgDate + '</span>';
+                    container.appendChild(sep);
+                }
+
                 var wrap = document.createElement('div');
-                wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
+                wrap.className = 'chat-msg-wrap ' + (isMe ? 'me' : 'other');
+
                 var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#f57c00"><i class="fa-solid fa-shield-halved" style="margin-right:3px"></i>Administracao FARN</div>' : '';
-                var bodyHtml = '<div>' + (m.texto || '') + '</div>';
-                if (m.editado) bodyHtml += '<div class="pf-chat-edited">( editado )</div>';
+                var checkHtml = isMe ? '<span class="check"><i class="fa-solid fa-check-double"></i></span>' : '';
+                var avatarHtml = !isMe ? '<div class="chat-msg-avatar"><i class="fa-solid fa-shield-halved"></i></div>' : '';
+                var senderHtml = !isMe ? '<div class="chat-msg-sender">Administracao FARN</div>' : '';
+                var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
+                if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
                 var actionsHtml = '';
                 if (isMe) {
                     var safeTexto = (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    actionsHtml = '<div class="pf-chat-actions">' +
-                        '<button class="pf-chat-action-btn" onclick="paChatEditMsg(\'' + doc.id + '\', \'' + safeTexto + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
-                        '<button class="pf-chat-action-btn" onclick="paChatDeleteForMe(\'' + doc.id + '\')" title="Apagar para mim"><i class="fa-solid fa-trash"></i></button>' +
+                    actionsHtml = '<div class="chat-msg-actions">' +
+                        '<button class="chat-msg-action" onclick="chatEditMsg(\'' + doc.id + '\', \'' + safeTexto + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
+                        '<button class="chat-msg-action" onclick="chatDeleteForMe(\'' + doc.id + '\')" title="Apagar"><i class="fa-solid fa-trash"></i></button>' +
                         '</div>';
                 }
-                wrap.innerHTML = senderHtml + bodyHtml + '<div class="pf-chat-time">' + time + '</div>' + actionsHtml;
+
+                var bubbleHtml = '<div class="chat-msg-bubble ' + (isMe ? 'me' : 'other') + '">' +
+                    senderHtml + bodyHtml +
+                    '<div class="chat-msg-time">' + time + checkHtml + '</div>' +
+                    actionsHtml + '</div>';
+
+                wrap.innerHTML = avatarHtml + bubbleHtml;
                 container.appendChild(wrap);
             });
-            paChatUpdateBadge(unread);
+            chatUpdateBadge(unread);
             container.scrollTop = container.scrollHeight;
         }, function() {
-            container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
+            container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
         });
     }
 
-    function paChatEditMsg(msgId, texto) {
-        paChatEditTarget = msgId;
-        var editBar = document.getElementById('pf-chat-edit-bar');
-        var editLabel = document.getElementById('pf-chat-edit-label');
-        editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
-        editBar.classList.add('active');
-        var input = document.getElementById('pf-chat-input');
-        input.value = texto;
-        input.focus();
+    function chatUpdateBadge(count) {
+        chatUnreadCount = count;
+        var badge = document.getElementById('pf-chat-badge');
+        var mBadge = document.getElementById('pf-chat-mobile-badge');
+        if (count > 0) {
+            if (badge) { badge.textContent = count; badge.classList.remove('hidden'); }
+            if (mBadge) { mBadge.textContent = count; mBadge.classList.remove('hidden'); }
+            document.title = '(' + count + ') Portal do Aluno - FARN';
+        } else {
+            if (badge) badge.classList.add('hidden');
+            if (mBadge) mBadge.classList.add('hidden');
+            document.title = 'Portal do Aluno - FARN';
+        }
     }
 
-    function paChatCancelEdit() {
-        paChatEditTarget = null;
-        document.getElementById('pf-chat-edit-bar').classList.remove('active');
-        document.getElementById('pf-chat-input').value = '';
+    function chatMarkRead() {
+        chatLastRead = Date.now();
+        try { localStorage.setItem('chat_read_' + (paUser ? paUser.cpf : ''), chatLastRead); } catch(e) {}
+        chatUpdateBadge(0);
     }
 
-    function paChatDeleteForMe(msgId) {
-        if (!confirm('Apagar esta mensagem para voce?')) return;
-        if (!paUser) return;
-        dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(msgId).set({ apagada: true }, { merge: true });
-    }
-
-    function paChatSend() {
-        var input = document.getElementById('pf-chat-input');
+    function chatSend() {
+        var input = document.getElementById('chat-input');
         var texto = input.value.trim();
         if (!texto || !paUser) return;
         input.value = '';
 
-        if (paChatEditTarget) {
-            dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(paChatEditTarget).set({ texto: texto, editado: true }, { merge: true });
-            paChatCancelEdit();
+        if (chatEditTarget) {
+            dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(chatEditTarget).set({ texto: texto, editado: true }, { merge: true });
+            chatCancelEdit();
             return;
         }
 
@@ -997,12 +1065,36 @@
                 hora: firebase.firestore.FieldValue.serverTimestamp(),
                 lida: false
             });
+        }).then(function() {
+            chatMarkRead();
         }).catch(function(e) { console.error('Erro ao enviar:', e); });
     }
 
-    /* ===== EMOJI ===== */
-    function paChatInitEmoji() {
-        var panel = document.getElementById('pf-chat-emoji-panel');
+    function chatEditMsg(msgId, texto) {
+        chatEditTarget = msgId;
+        var editBar = document.getElementById('chat-edit-bar');
+        var editLabel = document.getElementById('chat-edit-label');
+        editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
+        editBar.classList.add('active');
+        var input = document.getElementById('chat-input');
+        input.value = texto;
+        input.focus();
+    }
+
+    function chatCancelEdit() {
+        chatEditTarget = null;
+        document.getElementById('chat-edit-bar').classList.remove('active');
+        document.getElementById('chat-input').value = '';
+    }
+
+    function chatDeleteForMe(msgId) {
+        if (!confirm('Apagar esta mensagem para voce?')) return;
+        if (!paUser) return;
+        dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(msgId).set({ apagada: true }, { merge: true });
+    }
+
+    function chatInitEmoji() {
+        var panel = document.getElementById('chat-emoji-panel');
         if (!panel) return;
         var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','💀','👀','💪','🤝','🇧🇷','⚽','🎮','📱','💻','🔧','💡','🔔','📦','🔑','✈️','🚗','🏥','🎓','📚','✏️'];
         panel.innerHTML = '';
@@ -1010,7 +1102,7 @@
             var span = document.createElement('span');
             span.textContent = e;
             span.onclick = function() {
-                var input = document.getElementById('pf-chat-input');
+                var input = document.getElementById('chat-input');
                 input.value += e;
                 input.focus();
             };
@@ -1018,15 +1110,15 @@
         });
     }
 
-    function paChatToggleEmoji(ev) {
+    function chatToggleEmoji(ev) {
         ev.stopPropagation();
-        var panel = document.getElementById('pf-chat-emoji-panel');
+        var panel = document.getElementById('chat-emoji-panel');
         panel.classList.toggle('active');
     }
 
     document.addEventListener('click', function(e) {
-        var panel = document.getElementById('pf-chat-emoji-panel');
-        if (panel && !panel.contains(e.target) && !e.target.closest('.pf-chat-emoji-btn')) {
+        var panel = document.getElementById('chat-emoji-panel');
+        if (panel && !panel.contains(e.target) && !e.target.closest('.chat-emoji-btn')) {
             panel.classList.remove('active');
         }
     });
@@ -1107,11 +1199,11 @@
                 count++;
                 var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
                 var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
-                var instrutorHtml = a.instrutor ? '<span class="pf-apostila-badge" style="background:rgba(33,136,255,.15);color:#2188ff"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
+                var instrutorHtml = a.instrutor ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
                 var card = document.createElement('div');
                 card.className = 'pf-apostila-card';
                 card.style.cursor = 'default';
-                card.innerHTML = '<div class="pf-apostila-icon" style="background:rgba(33,136,255,.12)"><i class="fa-solid fa-chalkboard-user" style="color:#2188ff"></i></div>' +
+                card.innerHTML = '<div class="pf-apostila-icon" style="background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.12)"><i class="fa-solid fa-chalkboard-user" style="color:var(--blue)"></i></div>' +
                     '<div class="pf-apostila-info">' +
                         '<div class="pf-apostila-titulo">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
                         '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +

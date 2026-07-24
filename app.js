@@ -956,7 +956,7 @@ async function openFormCandidato() {
     populateProjetoSelect();
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) btnAtualizar.style.display = 'none';
-    document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#f57c00;margin-right:8px"></i> Novo Pre-Cadastro';
+    document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#16a34a;margin-right:8px"></i> Novo Pre-Cadastro';
     showAdminSection('admin-form-candidato');
 }
 
@@ -1027,7 +1027,7 @@ async function editCandidato(index) {
         document.getElementById('fc-senha').value = '';
         document.getElementById('fc-senha').required = false;
     }
-    document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#f57c00;margin-right:8px"></i> Editar - ' + c.nome;
+    document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#16a34a;margin-right:8px"></i> Editar - ' + c.nome;
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) {
         btnAtualizar.style.display = '';
@@ -1237,14 +1237,14 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Camisa</span><span class="detail-value">${c.camisa||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Calcado</span><span class="detail-value">${c.calcado||'---'}</span></div>
             <div class="detail-section-title">Turma e Acesso</div>
-            ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#f57c00;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mat)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff"></div></div>` : ''}
+            ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#16a34a;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mat)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff"></div></div>` : ''}
             <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">Projeto</span><span class="detail-value" style="color:#ff9800;font-weight:600">${c.projeto||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value" style="color:${(c.tipoPessoa||'A')==='F'?'#ff9800':'#2196f3'};font-weight:700">${(c.tipoPessoa||'A')==='F'?'Formado (A)':'Academico (A)'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastro</span><span class="detail-value">${c.dataCadastro}</span></div>
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#f57c00;font-weight:600">${c.cadastradoPor || '---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
         </div>`;
     });
@@ -1607,7 +1607,7 @@ function renderAlunosList() {
     const idxMap = filtered.map(c => candidatos.indexOf(c));
 
     const allStatuses = [
-        { value: 'Pendente', label: 'Pendente', icon: 'fa-clock', color: '#f57c00', tab: 'pendentes' },
+        { value: 'Pendente', label: 'Pendente', icon: 'fa-clock', color: '#16a34a', tab: 'pendentes' },
         { value: 'Aprovado', label: 'Aprovado', icon: 'fa-check-circle', color: '#4caf50', tab: 'aprovados' },
         { value: 'Rejeitado', label: 'Reprovado', icon: 'fa-times-circle', color: '#f44336', tab: 'reprovados' },
         { value: 'Segunda Chamada', label: '2a Chamada', icon: 'fa-rotate', color: '#2196f3', tab: 'segunda-chamada' }
@@ -1644,7 +1644,7 @@ function renderAlunosList() {
         if (isAprovados) {
             return `<tr>
                 <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
-                <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
+                <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
                 <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
                 <td>${actionsHtml}</td>
             </tr>`;
@@ -1653,7 +1653,7 @@ function renderAlunosList() {
         return `<tr>
             <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
-            <td style="color:#f57c00;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
+            <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>
             <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
             <td>${c.dataCadastro || '-'}${c.dataHoraCadastro ? '<br><small style="color:#4caf50;font-size:9px">' + c.dataHoraCadastro + '</small>' : ''}</td>
@@ -2421,7 +2421,7 @@ function openBrowserCamera() {
     const overlay = document.createElement('div');
     overlay.id = 'camera-overlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px;align-items:center"><button id="camera-switch" style="padding:12px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center" title="Trocar camera"><i class="fa-solid fa-camera-rotate"></i></button><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#16a34a;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
     document.body.appendChild(overlay);
 
     const video = document.getElementById('camera-video');
@@ -2495,7 +2495,7 @@ function openDocCameraBrowser() {
     const overlay = document.createElement('div');
     overlay.id = 'camera-overlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#f57c00;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
+    overlay.innerHTML = '<video id="camera-video" autoplay playsinline style="max-width:100%;max-height:70vh;border-radius:8px"></video><div style="margin-top:16px;display:flex;gap:12px"><button id="camera-capture" style="padding:14px 32px;border:none;border-radius:50%;background:#16a34a;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Capturar</button><button id="camera-cancel" style="padding:14px 24px;border:none;border-radius:8px;background:#444;color:#fff;font-size:14px;cursor:pointer">Cancelar</button></div>';
     document.body.appendChild(overlay);
 
     const video = document.getElementById('camera-video');
@@ -2553,7 +2553,7 @@ function renderFilesList() {
     const list = document.getElementById('files-list'); if (!list) return;
     list.innerHTML = uploadedFiles.map(f => {
         const icon = f.file.name.endsWith('.pdf') ? 'fa-file-pdf' : f.file.name.match(/\.(jpg|jpeg|png)$/i) ? 'fa-file-image' : 'fa-file';
-        return `<div class="file-item"><i class="fa-solid ${icon}" style="color:#f57c00"></i><span class="file-name">${f.file.name}</span><span class="file-size">${(f.file.size/1024).toFixed(1)}KB</span><button type="button" class="btn-icon btn-danger-icon" onclick="removeFile(${f.id})"><i class="fa-solid fa-trash"></i></button></div>`;
+        return `<div class="file-item"><i class="fa-solid ${icon}" style="color:#16a34a"></i><span class="file-name">${f.file.name}</span><span class="file-size">${(f.file.size/1024).toFixed(1)}KB</span><button type="button" class="btn-icon btn-danger-icon" onclick="removeFile(${f.id})"><i class="fa-solid fa-trash"></i></button></div>`;
     }).join('');
 }
 
@@ -2762,20 +2762,20 @@ function showIOSInstallGuide() {
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px';
     overlay.innerHTML = '<div style="background:#1a1a2e;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#fff;text-align:center">' +
-        '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#f57c00"></i></div>' +
+        '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#16a34a"></i></div>' +
         '<h3 style="margin:0 0 8px;font-size:18px;color:#fff">Instalar FARN no iPhone</h3>' +
         '<p style="color:#aaa;font-size:13px;margin:0 0 20px">Siga os passos abaixo para adicionar o aplicativo a tela inicial:</p>' +
         '<div style="text-align:left;background:#12121e;border-radius:10px;padding:16px;margin-bottom:20px">' +
         '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
-        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</span>' +
-        '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque no botao <strong style="color:#fff">Compartilhar</strong> <i class="fa-solid fa-arrow-up-from-bracket" style="color:#f57c00;font-size:12px"></i> na barra inferior do Safari</span></div>' +
+        '<span style="background:#16a34a;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque no botao <strong style="color:#fff">Compartilhar</strong> <i class="fa-solid fa-arrow-up-from-bracket" style="color:#16a34a;font-size:12px"></i> na barra inferior do Safari</span></div>' +
         '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
-        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</span>' +
+        '<span style="background:#16a34a;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</span>' +
         '<span style="font-size:13px;color:#ccc;line-height:1.5">Role para baixo e selecione <strong style="color:#fff">Adicionar a Tela de Inicio</strong></span></div>' +
         '<div style="display:flex;gap:10px;align-items:flex-start">' +
-        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</span>' +
+        '<span style="background:#16a34a;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</span>' +
         '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque em <strong style="color:#fff">Adicionar</strong> no canto superior direito</span></div></div>' +
-        '<button onclick="this.closest(\'div[style]\').parentElement.remove()" style="background:#f57c00;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Entendi</button></div>';
+        '<button onclick="this.closest(\'div[style]\').parentElement.remove()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Entendi</button></div>';
     document.body.appendChild(overlay);
     overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
@@ -2784,20 +2784,20 @@ function showInstallGuide() {
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px';
     overlay.innerHTML = '<div style="background:#1a1a2e;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#fff;text-align:center">' +
-        '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#f57c00"></i></div>' +
+        '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#16a34a"></i></div>' +
         '<h3 style="margin:0 0 8px;font-size:18px;color:#fff">Instalar FARN</h3>' +
         '<p style="color:#aaa;font-size:13px;margin:0 0 20px">Adicione o aplicativo a tela inicial do seu dispositivo:</p>' +
         '<div style="text-align:left;background:#12121e;border-radius:10px;padding:16px;margin-bottom:20px">' +
         '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
-        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</span>' +
-        '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque no menu <strong style="color:#fff"> tres pontos </strong> <i class="fa-solid fa-ellipsis-vertical" style="color:#f57c00;font-size:12px"></i> no canto superior direito</span></div>' +
+        '<span style="background:#16a34a;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</span>' +
+        '<span style="font-size:13px;color:#ccc;line-height:1.5">Toque no menu <strong style="color:#fff"> tres pontos </strong> <i class="fa-solid fa-ellipsis-vertical" style="color:#16a34a;font-size:12px"></i> no canto superior direito</span></div>' +
         '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
-        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</span>' +
+        '<span style="background:#16a34a;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</span>' +
         '<span style="font-size:13px;color:#ccc;line-height:1.5">Selecione <strong style="color:#fff">Instalar aplicativo</strong> ou <strong style="color:#fff">Adicionar a tela inicial</strong></span></div>' +
         '<div style="display:flex;gap:10px;align-items:flex-start">' +
-        '<span style="background:#f57c00;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</span>' +
+        '<span style="background:#16a34a;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</span>' +
         '<span style="font-size:13px;color:#ccc;line-height:1.5">Confirme tocando em <strong style="color:#fff">Instalar</strong></span></div></div>' +
-        '<button onclick="this.closest(\'div[style]\').parentElement.remove()" style="background:#f57c00;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Entendi</button></div>';
+        '<button onclick="this.closest(\'div[style]\').parentElement.remove()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Entendi</button></div>';
     document.body.appendChild(overlay);
     overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
@@ -3145,7 +3145,7 @@ function apontamentoRenderHistorico(registros) {
             const stIcon = a.status === 'Presente' ? 'fa-check' : a.status === 'Falta' ? 'fa-xmark' : a.status === 'Justificada' ? 'fa-circle-info' : 'fa-question';
             const recId = r.docId || '';
             return '<tr style="border-bottom:1px solid #222">' +
-                '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:#f57c00;font-family:Courier New,monospace;white-space:nowrap">' + (a.matricula || '-') + '</td>' +
+                '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:#16a34a;font-family:Courier New,monospace;white-space:nowrap">' + (a.matricula || '-') + '</td>' +
                 '<td style="padding:8px 12px;font-size:13px;color:#ccc">' + (a.nome || '-') + '</td>' +
                 '<td style="padding:8px 12px;text-align:center"><span style="color:' + stColor + ';font-weight:700;font-size:13px"><i class="fa-solid ' + stIcon + '" style="margin-right:4px"></i>' + (a.status || '-') + '</span></td>' +
                 '<td style="padding:8px 12px;font-size:12px;color:#888">' + (a.obs || '-') + '</td>' +
@@ -3354,7 +3354,7 @@ async function apostilasLoadList() {
             var a = doc.data();
             var isVisivel = a.visivel !== false;
             var dateStr = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : '';
-            var turmaHtml = a.turma ? '<span style="background:rgba(245,124,0,.15);color:#f57c00;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '';
+            var turmaHtml = a.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '';
             var statusBadge = isVisivel
                 ? '<span style="background:rgba(76,175,80,.15);color:#4caf50;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Visivel</span>'
                 : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Oculto</span>';
@@ -3532,7 +3532,7 @@ async function discLoadList() {
         snap.forEach(function(doc) {
             var d = doc.data();
             var dateStr = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
-            var turmaHtml = d.turma ? '<span style="background:rgba(245,124,0,.15);color:#f57c00;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + d.turma + '</span>' : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
+            var turmaHtml = d.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + d.turma + '</span>' : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
             var instrutorHtml = d.instrutor ? '<span style="background:rgba(33,136,255,.15);color:#2188ff;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.instrutor + '</span>' : '';
             var card = document.createElement('div');
             card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(156,39,176,.15);border-radius:10px;margin-bottom:8px';
@@ -3752,7 +3752,7 @@ async function aulaLoadList() {
         snap.forEach(function(doc) {
             var a = doc.data();
             var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
-            var turmaHtml = a.turma ? '<span style="background:rgba(245,124,0,.15);color:#f57c00;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
+            var turmaHtml = a.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
             var instrutorHtml = a.instrutor ? '<span style="background:rgba(33,136,255,.15);color:#2188ff;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
             var card = document.createElement('div');
             card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(33,136,255,.15);border-radius:10px;margin-bottom:8px';

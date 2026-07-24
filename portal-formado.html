@@ -24,148 +24,148 @@
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter',sans-serif; background:#111827; color:#fff; min-height:100vh; }
+        body { font-family:'Inter',sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; }
 
         /* ===== LOGIN SCREEN ===== */
         #screen-login { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-        .pf-login-box { max-width:400px; width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:36px; text-align:center; }
-        .pf-login-box img { width:100px; height:100px; border-radius:50%; border:3px solid #f57c00; margin-bottom:16px; }
-        .pf-login-box h2 { color:#f57c00; font-size:20px; margin-bottom:4px; }
-        .pf-login-box p { color:#888; font-size:13px; margin-bottom:24px; }
+        .pf-login-box { max-width:400px; width:100%; background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; padding:36px; text-align:center; }
+        .pf-login-box img { width:100px; height:100px; border-radius:50%; border:3px solid #16a34a; margin-bottom:16px; }
+        .pf-login-box h2 { color:#16a34a; font-size:20px; margin-bottom:4px; }
+        .pf-login-box p { color:#64748b; font-size:13px; margin-bottom:24px; }
         .pf-login-box .pf-field { margin-bottom:14px; text-align:left; }
-        .pf-login-box .pf-field label { display:block; font-size:12px; color:#aaa; margin-bottom:4px; font-weight:600; }
-        .pf-login-box .pf-field input { width:100%; padding:12px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:10px; color:#fff; font-size:14px; }
-        .pf-login-box .pf-field input:focus { border-color:#f57c00; outline:none; }
-        .pf-login-btn { width:100%; background:linear-gradient(135deg,#f57c00,#ff9800); color:#fff; border:none; padding:14px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:4px; }
-        .pf-login-btn:hover { box-shadow:0 4px 16px rgba(245,124,0,.4); }
+        .pf-login-box .pf-field label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; font-weight:600; }
+        .pf-login-box .pf-field input { width:100%; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; color:#1e293b; font-size:14px; }
+        .pf-login-box .pf-field input:focus { border-color:#16a34a; outline:none; }
+        .pf-login-btn { width:100%; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:14px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:4px; }
+        .pf-login-btn:hover { box-shadow:0 4px 16px rgba(22,163,74,.4); }
         .pf-login-btn:disabled { opacity:.5; cursor:not-allowed; }
         .pf-login-error { color:#f44336; font-size:13px; margin-top:10px; display:none; }
-        .pf-login-footer { margin-top:16px; font-size:12px; color:#555; }
+        .pf-login-footer { margin-top:16px; font-size:12px; color:#94a3b8; }
 
         /* ===== PORTAL LAYOUT ===== */
         #screen-portal { display:none; height:100vh; }
         #screen-portal.active { display:grid; grid-template-columns:240px 1fr 320px; }
 
         /* ===== SIDEBAR ESQUERDO ===== */
-        .pf-sidebar { background:#0d1117; border-right:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; overflow-y:auto; }
-        .pf-sidebar-header { padding:20px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08); }
-        .pf-sidebar-header img { width:60px; height:60px; border-radius:50%; border:2px solid #f57c00; margin-bottom:8px; }
-        .pf-sidebar-header h3 { font-size:14px; color:#f57c00; font-weight:700; }
-        .pf-sidebar-header p { font-size:11px; color:#888; }
+        .pf-sidebar { background:#ffffff; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; overflow-y:auto; }
+        .pf-sidebar-header { padding:20px; text-align:center; border-bottom:1px solid #e2e8f0; }
+        .pf-sidebar-header img { width:60px; height:60px; border-radius:50%; border:2px solid #16a34a; margin-bottom:8px; }
+        .pf-sidebar-header h3 { font-size:14px; color:#16a34a; font-weight:700; }
+        .pf-sidebar-header p { font-size:11px; color:#64748b; }
 
         .pf-sidebar-nav { flex:1; padding:12px 0; }
-        .pf-nav-item { display:flex; align-items:center; gap:10px; padding:12px 20px; color:#aaa; font-size:13px; font-weight:500; cursor:pointer; transition:all .2s; border-left:3px solid transparent; }
-        .pf-nav-item:hover { background:rgba(255,255,255,.05); color:#fff; }
-        .pf-nav-item.active { background:rgba(245,124,0,.08); color:#f57c00; border-left-color:#f57c00; font-weight:700; }
+        .pf-nav-item { display:flex; align-items:center; gap:10px; padding:12px 20px; color:#64748b; font-size:13px; font-weight:500; cursor:pointer; transition:all .2s; border-left:3px solid transparent; }
+        .pf-nav-item:hover { background:#f1f5f9; color:#1e293b; }
+        .pf-nav-item.active { background:rgba(22,163,74,.08); color:#16a34a; border-left-color:#16a34a; font-weight:700; }
         .pf-nav-item i { width:18px; text-align:center; font-size:14px; }
 
-        .pf-sidebar-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,.08); }
+        .pf-sidebar-footer { padding:16px 20px; border-top:1px solid #e2e8f0; }
         .pf-sidebar-footer .pf-user { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-        .pf-sidebar-footer .pf-user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#f57c00,#ff9800); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
+        .pf-sidebar-footer .pf-user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#16a34a,#15803d); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; }
         .pf-sidebar-footer .pf-user-info { flex:1; }
-        .pf-sidebar-footer .pf-user-name { font-size:13px; font-weight:600; color:#fff; }
-        .pf-sidebar-footer .pf-user-cpf { font-size:11px; color:#666; }
+        .pf-sidebar-footer .pf-user-name { font-size:13px; font-weight:600; color:#1e293b; }
+        .pf-sidebar-footer .pf-user-cpf { font-size:11px; color:#94a3b8; }
         .pf-logout-btn { width:100%; padding:8px; background:rgba(244,67,54,.1); border:1px solid rgba(244,67,54,.3); border-radius:8px; color:#f44336; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; }
         .pf-logout-btn:hover { background:rgba(244,67,54,.2); }
 
         /* ===== CENTRO - NOTICIAS ===== */
-        .pf-center { overflow-y:auto; padding:20px; scrollbar-width:thin; scrollbar-color:rgba(249,168,37,.3) transparent; }
+        .pf-center { overflow-y:auto; padding:20px; scrollbar-width:thin; scrollbar-color:rgba(22,163,74,.3) transparent; }
         .pf-center::-webkit-scrollbar { width:6px; }
-        .pf-center::-webkit-scrollbar-track { background:rgba(0,0,0,.05); }
-        .pf-center::-webkit-scrollbar-thumb { background:rgba(249,168,37,.3); border-radius:10px; }
-        .pf-center::-webkit-scrollbar-thumb:hover { background:rgba(249,168,37,.5); }
-        .pf-center-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,.08); }
-        .pf-center-header i { font-size:20px; color:#f57c00; }
+        .pf-center::-webkit-scrollbar-track { background:rgba(0,0,0,.03); }
+        .pf-center::-webkit-scrollbar-thumb { background:rgba(22,163,74,.3); border-radius:10px; }
+        .pf-center::-webkit-scrollbar-thumb:hover { background:rgba(22,163,74,.5); }
+        .pf-center-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
+        .pf-center-header i { font-size:20px; color:#16a34a; }
         .pf-center-header h2 { font-size:18px; font-weight:700; }
-        .pf-center-header p { font-size:12px; color:#888; margin-left:auto; }
+        .pf-center-header p { font-size:12px; color:#94a3b8; margin-left:auto; }
 
-        .pf-noticia-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:20px; margin-bottom:16px; transition:all .2s; }
-        .pf-noticia-card:hover { border-color:rgba(245,124,0,.3); }
+        .pf-noticia-card { background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:16px; transition:all .2s; }
+        .pf-noticia-card:hover { border-color:rgba(22,163,74,.3); }
         .pf-noticia-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-        .pf-noticia-badge { background:#f57c00; color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px; }
-        .pf-noticia-date { font-size:11px; color:#666; margin-left:auto; }
-        .pf-noticia-title { font-size:15px; font-weight:700; color:#fff; margin-bottom:6px; }
-        .pf-noticia-text { font-size:13px; color:#aaa; line-height:1.6; }
+        .pf-noticia-badge { background:#eab308; color:#1e293b; font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px; }
+        .pf-noticia-date { font-size:11px; color:#94a3b8; margin-left:auto; }
+        .pf-noticia-title { font-size:15px; font-weight:700; color:#1e293b; margin-bottom:6px; }
+        .pf-noticia-text { font-size:13px; color:#64748b; line-height:1.6; }
         .pf-noticia-img { width:100%; border-radius:10px; margin-top:12px; max-height:300px; object-fit:cover; }
-        .pf-noticia-empty { text-align:center; padding:60px 20px; color:#555; }
+        .pf-noticia-empty { text-align:center; padding:60px 20px; color:#94a3b8; }
         .pf-noticia-empty i { font-size:40px; margin-bottom:10px; display:block; }
 
         /* ===== SECAO PADRAO ===== */
         .pf-section { display:none; }
         .pf-section.active { display:block; }
-        .pf-section-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,.08); }
-        .pf-section-header i { font-size:20px; color:#f57c00; }
+        .pf-section-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
+        .pf-section-header i { font-size:20px; color:#16a34a; }
         .pf-section-header h2 { font-size:18px; font-weight:700; }
 
         /* Dados */
         .pf-dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-        .pf-dados-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px}
-        .pf-dados-editable{cursor:pointer;transition:.2s;border-color:rgba(245,124,0,.15)}
-        .pf-dados-editable:hover{background:rgba(245,124,0,.06);border-color:rgba(245,124,0,.3)}
-        .pf-dados-label{font-size:11px;color:#8b949e;margin-bottom:4px;display:flex;align-items:center}
-        .pf-dados-val{font-size:14px;font-weight:600;color:#e6edf3;word-break:break-word}
+        .pf-dados-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:14px}
+        .pf-dados-editable{cursor:pointer;transition:.2s;border-color:rgba(22,163,74,.15)}
+        .pf-dados-editable:hover{background:rgba(22,163,74,.06);border-color:rgba(22,163,74,.3)}
+        .pf-dados-label{font-size:11px;color:#94a3b8;margin-bottom:4px;display:flex;align-items:center}
+        .pf-dados-val{font-size:14px;font-weight:600;color:#1e293b;word-break:break-word}
 
         .pf-em-construcao { text-align:center; padding:60px 20px; }
-        .pf-em-construcao i { font-size:50px; color:#ffc107; margin-bottom:12px; }
-        .pf-em-construcao h3 { color:#ffc107; font-size:18px; margin-bottom:6px; }
-        .pf-em-construcao p { color:#888; font-size:13px; }
+        .pf-em-construcao i { font-size:50px; color:#eab308; margin-bottom:12px; }
+        .pf-em-construcao h3 { color:#ca8a04; font-size:18px; margin-bottom:6px; }
+        .pf-em-construcao p { color:#64748b; font-size:13px; }
 
         /* ===== LATERAL DIREITA - CHAT + GALERIA ===== */
-        .pf-right { background:#0d1117; border-left:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; overflow:hidden; }
-        .pf-right-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.08); }
-        .pf-right-tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:600; color:#888; cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; }
-        .pf-right-tab:hover { color:#fff; }
-        .pf-right-tab.active { color:#f57c00; border-bottom-color:#f57c00; }
+        .pf-right { background:#ffffff; border-left:1px solid #e2e8f0; display:flex; flex-direction:column; overflow:hidden; }
+        .pf-right-tabs { display:flex; border-bottom:1px solid #e2e8f0; }
+        .pf-right-tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:600; color:#94a3b8; cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; }
+        .pf-right-tab:hover { color:#1e293b; }
+        .pf-right-tab.active { color:#16a34a; border-bottom-color:#16a34a; }
         .pf-right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#fff; }
         .pf-right-content { flex:1; overflow-y:auto; }
 
         /* CHAT */
         .pf-chat-header { padding:14px 16px; border-bottom:1px solid #e5e7eb; background:#fff; }
-        .pf-chat-header h4 { font-size:13px; font-weight:700; color:#f57c00; }
-        .pf-chat-header p { font-size:11px; color:#888; }
-        .pf-chat-select { width:100%; padding:8px 10px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; color:#333; font-size:12px; margin-top:8px; }
+        .pf-chat-header h4 { font-size:13px; font-weight:700; color:#16a34a; }
+        .pf-chat-header p { font-size:11px; color:#94a3b8; }
+        .pf-chat-select { width:100%; padding:8px 10px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; color:#1e293b; font-size:12px; margin-top:8px; }
         .pf-chat-select option { background:#fff; }
         .pf-chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; background:#fff; }
-        .pf-chat-empty { text-align:center; padding:40px 10px; color:#999; font-size:12px; }
-        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; color:#ccc; }
+        .pf-chat-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
+        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; color:#cbd5e1; }
 
         .pf-chat-bubble { max-width:85%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; position:relative; }
-        .pf-chat-bubble.me { background:#f57c00; color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
-        .pf-chat-bubble.other { background:#f0f0f0; color:#333; border:1px solid #e5e7eb; align-self:flex-start; border-bottom-left-radius:4px; }
+        .pf-chat-bubble.me { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+        .pf-chat-bubble.other { background:#f1f5f9; color:#1e293b; border:1px solid #e2e8f0; align-self:flex-start; border-bottom-left-radius:4px; }
         .pf-chat-sender { font-size:10px; font-weight:700; margin-bottom:3px; }
         .pf-chat-time { font-size:10px; color:rgba(255,255,255,.7); margin-top:3px; text-align:right; }
-        .pf-chat-bubble.other .pf-chat-time { color:#999; }
+        .pf-chat-bubble.other .pf-chat-time { color:#94a3b8; }
         .pf-chat-edited { font-size:9px; font-style:italic; opacity:.7; margin-top:2px; }
         .pf-chat-actions { display:flex; gap:4px; margin-top:4px; opacity:0; transition:opacity .2s; }
         .pf-chat-bubble:hover .pf-chat-actions { opacity:1; }
         .pf-chat-action-btn { background:rgba(255,255,255,.2); border:none; color:inherit; width:24px; height:24px; border-radius:50%; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; transition:background .2s; }
         .pf-chat-action-btn:hover { background:rgba(255,255,255,.35); }
-        .pf-chat-bubble.other .pf-chat-action-btn { background:#e5e7eb; color:#666; }
-        .pf-chat-bubble.other .pf-chat-action-btn:hover { background:#d1d5db; }
+        .pf-chat-bubble.other .pf-chat-action-btn { background:#e2e8f0; color:#64748b; }
+        .pf-chat-bubble.other .pf-chat-action-btn:hover { background:#cbd5e1; }
         .pf-chat-img { max-width:100%; border-radius:8px; margin-top:6px; cursor:pointer; }
 
-        .pf-chat-edit-bar { display:none; padding:8px 12px; background:#fff3e0; border-top:1px solid #f57c00; font-size:12px; color:#f57c00; align-items:center; gap:8px; }
+        .pf-chat-edit-bar { display:none; padding:8px 12px; background:#f0fdf4; border-top:1px solid #16a34a; font-size:12px; color:#16a34a; align-items:center; gap:8px; }
         .pf-chat-edit-bar.active { display:flex; }
-        .pf-chat-edit-cancel { background:none; border:1px solid #f57c00; color:#f57c00; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; margin-left:auto; }
+        .pf-chat-edit-cancel { background:none; border:1px solid #16a34a; color:#16a34a; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; margin-left:auto; }
         .pf-chat-input { display:flex; gap:8px; padding:12px; border-top:1px solid #e5e7eb; background:#fff; align-items:center; position:relative; }
-        .pf-chat-emoji-btn { background:none; border:none; color:#999; font-size:18px; cursor:pointer; padding:4px; border-radius:50%; transition:all .2s; }
-        .pf-chat-emoji-btn:hover { color:#f57c00; background:#fff3e0; }
+        .pf-chat-emoji-btn { background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer; padding:4px; border-radius:50%; transition:all .2s; }
+        .pf-chat-emoji-btn:hover { color:#16a34a; background:#f0fdf4; }
         .pf-chat-emoji-panel { display:none; position:absolute; bottom:100%; left:0; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; box-shadow:0 -4px 20px rgba(0,0,0,.1); width:280px; max-height:200px; overflow-y:auto; z-index:100; }
         .pf-chat-emoji-panel.active { display:block; }
         .pf-chat-emoji-panel span { font-size:20px; cursor:pointer; padding:4px; display:inline-block; border-radius:6px; transition:background .2s; }
-        .pf-chat-emoji-panel span:hover { background:#f0f0f0; }
-        .pf-chat-input input { flex:1; padding:10px 12px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; color:#333; font-size:13px; }
-        .pf-chat-input input:focus { border-color:#f57c00; outline:none; background:#fff; }
-        .pf-chat-send { background:#f57c00; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
-        .pf-chat-send:hover { background:#ff9800; }
+        .pf-chat-emoji-panel span:hover { background:#f1f5f9; }
+        .pf-chat-input input { flex:1; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#1e293b; font-size:13px; }
+        .pf-chat-input input:focus { border-color:#16a34a; outline:none; background:#fff; }
+        .pf-chat-send { background:#16a34a; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
+        .pf-chat-send:hover { background:#15803d; }
 
         /* GALERIA */
         .pf-gallery-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
-        .pf-gallery-item { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; border:1px solid rgba(255,255,255,.08); }
+        .pf-gallery-item { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; border:1px solid #e2e8f0; }
         .pf-gallery-item img { width:100%; height:100%; object-fit:cover; transition:transform .3s; }
         .pf-gallery-item:hover img { transform:scale(1.05); }
-        .pf-gallery-item .pf-gallery-date { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#aaa; font-size:10px; padding:4px 6px; text-align:center; }
-        .pf-gallery-empty { text-align:center; padding:40px 10px; color:#555; font-size:12px; }
+        .pf-gallery-item .pf-gallery-date { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#cbd5e1; font-size:10px; padding:4px 6px; text-align:center; }
+        .pf-gallery-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
         .pf-gallery-empty i { font-size:28px; margin-bottom:6px; display:block; }
 
         /* MODAL FOTO */
@@ -173,7 +173,7 @@
         .pf-photo-modal.active { display:flex; }
         .pf-photo-modal img { max-width:90%; max-height:85vh; border-radius:12px; }
         .pf-photo-modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.1); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; }
-        .pf-photo-modal-info { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#aaa; padding:8px 16px; border-radius:8px; font-size:12px; text-align:center; }
+        .pf-photo-modal-info { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#cbd5e1; padding:8px 16px; border-radius:8px; font-size:12px; text-align:center; }
 
         /* MOBILE */
         @media(max-width:1024px) {
@@ -201,15 +201,15 @@
                 <input type="password" id="pf-senha" placeholder="Sua senha">
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                <input type="checkbox" id="pf-lembrar" style="accent-color:#f57c00;width:16px;height:16px">
-                <label for="pf-lembrar" style="font-size:13px;color:#aaa;cursor:pointer">Lembrar usuario e senha</label>
+                <input type="checkbox" id="pf-lembrar" style="accent-color:#16a34a;width:16px;height:16px">
+                <label for="pf-lembrar" style="font-size:13px;color:#64748b;cursor:pointer">Lembrar usuario e senha</label>
             </div>
             <button class="pf-login-btn" id="pf-login-btn" onclick="pfLogin()">
                 <i class="fa-solid fa-right-to-bracket"></i> Entrar
             </button>
             <div class="pf-login-error" id="pf-login-error"></div>
             <div class="pf-login-footer">
-                <a href="recadastramento.html" style="color:#f57c00;text-decoration:none;font-size:13px"><i class="fa-solid fa-pen-to-square"></i> Ainda nao se cadastrou?</a>
+                <a href="recadastramento.html" style="color:#16a34a;text-decoration:none;font-size:13px"><i class="fa-solid fa-pen-to-square"></i> Ainda nao se cadastrou?</a>
             </div>
         </div>
     </div>
@@ -249,7 +249,7 @@
                     <div class="pf-user-avatar" id="pf-user-avatar">--</div>
                     <div class="pf-user-info">
                         <div class="pf-user-name" id="pf-user-name">---</div>
-                        <div id="pf-user-matricula" style="display:inline-block;margin-top:4px;padding:3px 10px;background:linear-gradient(135deg,#f57c00,#ff9800);border-radius:8px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px">---</div>
+                        <div id="pf-user-matricula" style="display:inline-block;margin-top:4px;padding:3px 10px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:8px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px">---</div>
                         <div class="pf-user-cpf" id="pf-user-cpf">CPF: ---</div>
                     </div>
                 </div>
@@ -267,14 +267,14 @@
                     <div><h2>Noticias da FARN</h2></div>
                     <p>Atualizado pelo administrador</p>
                 </div>
-                <div style="background:linear-gradient(135deg,rgba(249,168,37,.1),rgba(249,168,37,.03));border:1px solid rgba(249,168,37,.2);border-radius:16px;padding:28px;margin-bottom:24px;text-align:center">
-                    <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f57c00,#ff9800);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;color:#fff;box-shadow:0 4px 16px rgba(245,124,0,.3)">
+                <div style="background:linear-gradient(135deg,rgba(22,163,74,.1),rgba(22,163,74,.03));border:1px solid rgba(22,163,74,.2);border-radius:16px;padding:28px;margin-bottom:24px;text-align:center">
+                    <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#15803d);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;color:#fff;box-shadow:0 4px 16px rgba(22,163,74,.3)">
                         <i class="fa-solid fa-fire"></i>
                     </div>
-                    <h3 style="color:#f57c00;font-size:18px;margin:0 0 12px">Bem-vindo ao Portal do Formado!</h3>
-                    <p style="color:#ccc;font-size:14px;line-height:1.7;margin:0 0 10px">Estamos aos poucos construindo o Portal. <strong style="color:#4caf50">Em breve teremos novas atualizacoes!</strong></p>
-                    <p style="color:#bbb;font-size:14px;line-height:1.7;margin:0 0 10px">Em caso de duvidas voce ja pode entrar no <strong style="color:#2196f3">Chat</strong> e conversar com um de nossos atendentes.</p>
-                    <p style="color:#f57c00;font-size:15px;font-weight:700;margin:12px 0 0;line-height:1.6">
+                    <h3 style="color:#16a34a;font-size:18px;margin:0 0 12px">Bem-vindo ao Portal do Formado!</h3>
+                    <p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 10px">Estamos aos poucos construindo o Portal. <strong style="color:#16a34a">Em breve teremos novas atualizacoes!</strong></p>
+                    <p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 10px">Em caso de duvidas voce ja pode entrar no <strong style="color:#2563eb">Chat</strong> e conversar com um de nossos atendentes.</p>
+                    <p style="color:#16a34a;font-size:15px;font-weight:700;margin:12px 0 0;line-height:1.6">
                         <i class="fa-solid fa-heart" style="margin-right:4px"></i> Esse e seu espaco.<br>O espaco que lhe representa!
                     </p>
                 </div>
@@ -310,7 +310,7 @@
                     <i class="fa-solid fa-mobile-screen-button"></i>
                     <h2>Baixar Aplicativo</h2>
                 </div>
-                <p style="color:#888;font-size:14px;margin-bottom:24px;text-align:center">Baixe o aplicativo <strong style="color:#f57c00">Portal do Formado FARN</strong> e tenha acesso rapido as noticias, chat, galeria e muito mais.</p>
+                <p style="color:#64748b;font-size:14px;margin-bottom:24px;text-align:center">Baixe o aplicativo <strong style="color:#16a34a">Portal do Formado FARN</strong> e tenha acesso rapido as noticias, chat, galeria e muito mais.</p>
                 <div style="display:flex;flex-direction:column;gap:16px;max-width:400px;margin:0 auto">
                     <a href="#" onclick="pfDownloadApp('android');return false" style="display:flex;align-items:center;gap:16px;padding:18px 24px;background:linear-gradient(135deg,#1b5e20,#2e7d32);border-radius:14px;text-decoration:none;color:#fff;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(46,125,50,.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
                         <i class="fa-brands fa-google-play" style="font-size:32px"></i>
@@ -320,7 +320,7 @@
                         </div>
                         <i class="fa-solid fa-arrow-right" style="opacity:.6"></i>
                     </a>
-                    <a href="#" onclick="pfDownloadApp('ios');return false" style="display:flex;align-items:center;gap:16px;padding:18px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(255,255,255,.15);border-radius:14px;text-decoration:none;color:#fff;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(255,255,255,.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+                    <a href="#" onclick="pfDownloadApp('ios');return false" style="display:flex;align-items:center;gap:16px;padding:18px 24px;background:linear-gradient(135deg,#1e3a5f,#2563eb);border:1px solid rgba(37,99,235,.3);border-radius:14px;text-decoration:none;color:#fff;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(37,99,235,.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
                         <i class="fa-brands fa-apple" style="font-size:32px"></i>
                         <div style="flex:1">
                             <div style="font-size:11px;opacity:.8;text-transform:uppercase;letter-spacing:.5px">Disponivel na</div>
@@ -328,7 +328,7 @@
                         </div>
                         <i class="fa-solid fa-arrow-right" style="opacity:.6"></i>
                     </a>
-                    <a href="#" onclick="pfDownloadApp('apk');return false" style="display:flex;align-items:center;gap:16px;padding:18px 24px;background:linear-gradient(135deg,#e65100,#f57c00);border-radius:14px;text-decoration:none;color:#fff;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(245,124,0,.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+                    <a href="#" onclick="pfDownloadApp('apk');return false" style="display:flex;align-items:center;gap:16px;padding:18px 24px;background:linear-gradient(135deg,#a16207,#ca8a04);border-radius:14px;text-decoration:none;color:#fff;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(202,138,4,.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
                         <i class="fa-solid fa-file-zipper" style="font-size:28px"></i>
                         <div style="flex:1">
                             <div style="font-size:11px;opacity:.8;text-transform:uppercase;letter-spacing:.5px">Download direto</div>
@@ -337,8 +337,8 @@
                         <i class="fa-solid fa-download"></i>
                     </a>
                 </div>
-                <div style="margin-top:28px;text-align:center;padding:16px;background:rgba(255,255,255,.05);border-radius:12px;border:1px solid rgba(255,255,255,.08)">
-                    <p style="color:#888;font-size:12px;margin:0"><i class="fa-solid fa-circle-info" style="color:#2196f3;margin-right:4px"></i> O aplicativo esta em fase de desenvolvimento. Em breve disponivel nas lojas!</p>
+                <div style="margin-top:28px;text-align:center;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+                    <p style="color:#64748b;font-size:12px;margin:0"><i class="fa-solid fa-circle-info" style="color:#2563eb;margin-right:4px"></i> O aplicativo esta em fase de desenvolvimento. Em breve disponivel nas lojas!</p>
                 </div>
             </div>
 
@@ -414,16 +414,16 @@
     </div>
 
     <!-- MODAL EDITAR DADOS -->
-    <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)pfCloseEditModal()">
-        <div style="background:#161b22;border:1px solid rgba(245,124,0,.3);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+    <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)pfCloseEditModal()">
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                <h3 id="pf-edit-title" style="margin:0;font-size:16px;color:#f57c00"></h3>
-                <button onclick="pfCloseEditModal()" style="background:none;border:none;color:#8b949e;font-size:18px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+                <h3 id="pf-edit-title" style="margin:0;font-size:16px;color:#16a34a"></h3>
+                <button onclick="pfCloseEditModal()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="pf-edit-body"></div>
             <div style="display:flex;gap:10px;margin-top:16px">
-                <button onclick="pfCloseEditModal()" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#8b949e;font-size:13px;cursor:pointer">Cancelar</button>
-                <button onclick="pfConfirmEdit()" style="flex:1;padding:10px;background:linear-gradient(135deg,#f57c00,#e65100);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
+                <button onclick="pfCloseEditModal()" style="flex:1;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;font-size:13px;cursor:pointer">Cancelar</button>
+                <button onclick="pfConfirmEdit()" style="flex:1;padding:10px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
             </div>
         </div>
     </div>
@@ -624,33 +624,33 @@
         if (campo === 'email') {
             title.textContent = 'Editar Email';
             atual = pfUser.email || '';
-            body.innerHTML = '<label>Email</label><input type="email" id="pf-edit-valor" value="' + atual + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+            body.innerHTML = '<label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Email</label><input type="email" id="pf-edit-valor" value="' + atual + '" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px">';
         } else if (campo === 'whatsapp') {
             title.textContent = 'Editar WhatsApp';
             atual = pfUser.whatsapp || '';
-            body.innerHTML = '<label>WhatsApp</label><input type="text" id="pf-edit-valor" value="' + atual + '" oninput="pfFormatPhone(this)" maxlength="15" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+            body.innerHTML = '<label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">WhatsApp</label><input type="text" id="pf-edit-valor" value="' + atual + '" oninput="pfFormatPhone(this)" maxlength="15" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px">';
         } else if (campo === 'endereco') {
             title.textContent = 'Editar Endereco';
             body.innerHTML =
-                '<label>Endereco (Rua/Av)</label><input type="text" id="pf-edit-endereco" value="' + (pfUser.endereco || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
+                '<label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Endereco (Rua/Av)</label><input type="text" id="pf-edit-endereco" value="' + (pfUser.endereco || '') + '" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px">' +
                 '<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px">' +
-                    '<div><label>Numero</label><input type="text" id="pf-edit-numero" value="' + (pfUser.numero || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
-                    '<div><label>Bairro</label><input type="text" id="pf-edit-bairro" value="' + (pfUser.bairro || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Numero</label><input type="text" id="pf-edit-numero" value="' + (pfUser.numero || '') + '" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Bairro</label><input type="text" id="pf-edit-bairro" value="' + (pfUser.bairro || '') + '" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px"></div>' +
                 '</div>' +
                 '<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:10px">' +
-                    '<div><label>Cidade</label><input type="text" id="pf-edit-cidade" value="' + (pfUser.cidade || '') + '" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
-                    '<div><label>Estado</label><input type="text" id="pf-edit-estado" value="' + (pfUser.estado || '') + '" maxlength="2" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Cidade</label><input type="text" id="pf-edit-cidade" value="' + (pfUser.cidade || '') + '" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px"></div>' +
+                    '<div><label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Estado</label><input type="text" id="pf-edit-estado" value="' + (pfUser.estado || '') + '" maxlength="2" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px"></div>' +
                 '</div>';
         } else if (campo === 'senha') {
             title.textContent = 'Alterar Senha';
             body.innerHTML =
-                '<label>Nova Senha</label><input type="password" id="pf-edit-valor" placeholder="Minimo 4 caracteres" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
-                '<label style="margin-top:10px;display:block">Confirmar Senha</label><input type="password" id="pf-edit-valor2" placeholder="Repita a senha" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">';
+                '<label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Nova Senha</label><input type="password" id="pf-edit-valor" placeholder="Minimo 4 caracteres" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px">' +
+                '<label style="margin-top:10px;display:block;font-size:12px;color:#64748b;margin-bottom:4px">Confirmar Senha</label><input type="password" id="pf-edit-valor2" placeholder="Repita a senha" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px">';
         }
 
-        body.innerHTML += '<label style="margin-top:14px;display:block;font-size:12px;color:#8b949e">Confirme com sua senha atual</label>' +
-            '<input type="password" id="pf-edit-senha" placeholder="Senha atual" style="width:100%;padding:10px;background:rgba(13,17,23,.8);border:1px solid rgba(245,124,0,.2);border-radius:8px;color:#e6edf3;font-size:14px;margin-top:6px">' +
-            '<div id="pf-edit-error" style="display:none;color:#f85149;font-size:12px;margin-top:8px"></div>';
+        body.innerHTML += '<label style="margin-top:14px;display:block;font-size:12px;color:#64748b">Confirme com sua senha atual</label>' +
+            '<input type="password" id="pf-edit-senha" placeholder="Senha atual" style="width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;margin-top:6px">' +
+            '<div id="pf-edit-error" style="display:none;color:#dc2626;font-size:12px;margin-top:8px"></div>';
 
         modal.style.display = 'flex';
         modal._campo = campo;
@@ -734,10 +734,10 @@
         var html = '';
         if (pfUser.status === 'Ativo') {
             html = '<div style="text-align:center;padding:20px">' +
-                '<div style="font-size:50px;color:#4caf50;margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>' +
-                '<h3 style="color:#4caf50;margin-bottom:8px">Certificado Aprovado</h3>' +
-                '<p style="color:#aaa;font-size:13px;margin-bottom:16px">Emissao: ' + (pfUser.dataCertificado || '---') + '</p>';
-            if (pfUser.certificadoFrente) html += '<div style="max-width:400px;margin:0 auto"><img src="' + pfUser.certificadoFrente + '" style="width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.1)"></div>';
+                '<div style="font-size:50px;color:#16a34a;margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>' +
+                '<h3 style="color:#16a34a;margin-bottom:8px">Certificado Aprovado</h3>' +
+                '<p style="color:#64748b;font-size:13px;margin-bottom:16px">Emissao: ' + (pfUser.dataCertificado || '---') + '</p>';
+            if (pfUser.certificadoFrente) html += '<div style="max-width:400px;margin:0 auto"><img src="' + pfUser.certificadoFrente + '" style="width:100%;border-radius:10px;border:1px solid #e2e8f0"></div>';
             html += '</div>';
         } else {
             html = '<div class="pf-em-construcao"><i class="fa-solid fa-hourglass-half"></i><h3>Certificado Pendente</h3><p>Seu certificado ainda esta em analise.</p></div>';
@@ -767,7 +767,7 @@
                 var wrap = document.createElement('div');
                 wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
                 var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#f57c00">Administracao FARN</div>' : '';
+                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#16a34a">Administracao FARN</div>' : '';
                 var bodyHtml = '<div>' + (m.texto || '') + '</div>';
                 if (m.editado) bodyHtml += '<div class="pf-chat-edited">( editado )</div>';
                 var actionsHtml = '';
