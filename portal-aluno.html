@@ -285,12 +285,15 @@
             .pf-noticias-layout{grid-template-columns:1fr;height:100%}
             .pf-noticias-col.hidden-mobile{display:none}
             .pf-right-panel{position:relative;height:calc(100vh - 32px);border-radius:0;border:none;border-top:none;background:var(--gray100);overflow:hidden}
-            .pf-content{padding:16px 16px 80px;overflow:hidden}
+            .pf-content{padding:16px 16px 80px;overflow-y:auto;-webkit-overflow-scrolling:touch}
             .pf-stats-row{grid-template-columns:1fr}
             .pf-topbar{padding:0 14px}
             .pf-topbar-title{display:none}
             .pf-user-info{display:none}
             .pf-section.active#pf-section-chat{position:fixed;top:60px;left:0;right:0;bottom:0;z-index:90;background:var(--gray100)}
+            .pf-section{padding-bottom:20px}
+            .pf-welcome{padding:20px}
+            .pf-apostila-card{flex-wrap:wrap}
         }
     </style>
 </head>
