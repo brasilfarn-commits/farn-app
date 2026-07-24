@@ -10,13 +10,13 @@ var chatPortaisEditingMsg = null;
 function chatPortaisLoad() {
     if (chatPortaisUnsub) chatPortaisUnsub();
     var listEl = document.getElementById('chat-p-list');
-    listEl.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>';
+    listEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>';
 
     chatPortaisUnsub = dbFirestore.collection('chatAdmin').orderBy('ultimaHora', 'desc').onSnapshot(function(snap) {
         chatPortaisList = [];
         listEl.innerHTML = '';
         if (snap.empty) {
-            listEl.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-inbox"></i><br>Nenhuma conversa ainda</div>';
+            listEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-inbox"></i><br>Nenhuma conversa ainda</div>';
             chatPortaisUpdateBadge();
             return;
         }
@@ -29,7 +29,7 @@ function chatPortaisLoad() {
         chatPortaisUpdateBadge();
     }, function(e) {
         console.error('Erro chat admin:', e);
-        listEl.innerHTML = '<div style="text-align:center;color:#dc2626;padding:30px">Erro ao carregar conversas</div>';
+        listEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar conversas</div>';
     });
 }
 
@@ -46,30 +46,30 @@ function chatPortaisRenderList(lista) {
         var tipoIcon = c.tipo === 'formado' ? 'fa-graduation-cap' : 'fa-user';
         var isSelected = chatPortaisSelected === c._id;
         var naoLidas = c.naoLidas || 0;
-        var bgSel = isSelected ? 'background:#f1f5f9;' : '';
+        var bgSel = isSelected ? 'background:#f0fdf4;' : '';
 
-        var avatarBg = c.tipo === 'formado' ? '#2e7d32' : '#1565c0';
+        var avatarBg = c.tipo === 'formado' ? '#16a34a' : '#2563eb';
 
-        var html = '<div class="chat-p-item" onclick="chatPortaisSelect(\'' + c._id + '\')" style="padding:14px 16px;border-bottom:1px solid #e2e8f0;cursor:pointer;transition:background .2s;position:relative;' + bgSel + '" onmouseover="this.style.background=\'#f1f5f9\';var b=this.querySelector(\'.chat-p-del-btn\');if(b)b.style.display=\'flex\'" onmouseout="this.style.background=\'' + (isSelected ? '#f1f5f9' : 'transparent') + '\';var b=this.querySelector(\'.chat-p-del-btn\');if(b)b.style.display=\'none\'">' +
+        var html = '<div class="chat-p-item" onclick="chatPortaisSelect(\'' + c._id + '\')" style="padding:14px 16px;border-bottom:1px solid #e2e8f0;cursor:pointer;transition:background .2s;position:relative;' + bgSel + '" onmouseover="this.style.background=\'#f0fdf4\';var b=this.querySelector(\'.chat-p-del-btn\');if(b)b.style.display=\'flex\'" onmouseout="this.style.background=\'' + (isSelected ? '#f0fdf4' : 'transparent') + '\';var b=this.querySelector(\'.chat-p-del-btn\');if(b)b.style.display=\'none\'">' +
             '<div style="display:flex;gap:12px;align-items:center">' +
             '<div style="width:44px;height:44px;border-radius:50%;background:' + avatarBg + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;position:relative">' + initials +
-            '<div style="position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#ffffff;display:flex;align-items:center;justify-content:center"><i class="fa-solid ' + tipoIcon + '" style="font-size:9px;color:' + tipoColor + '"></i></div>' +
+            '<div style="position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#0d1117;display:flex;align-items:center;justify-content:center"><i class="fa-solid ' + tipoIcon + '" style="font-size:9px;color:' + tipoColor + '"></i></div>' +
             '</div>' +
             '<div style="flex:1;min-width:0">' +
             '<div style="display:flex;justify-content:space-between;align-items:center">' +
-            '<span style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + (naoLidas > 0 ? '#1e293b' : '#64748b') + '">' + (c.nome || '---') + '</span>' +
-            '<span style="font-size:11px;color:#888;flex-shrink:0">' + timeStr + '</span>' +
+            '<span style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + (naoLidas > 0 ? '#fff' : '#ddd') + '">' + (c.nome || '---') + '</span>' +
+            '<span style="font-size:11px;color:#64748b;flex-shrink:0">' + timeStr + '</span>' +
             '</div>' +
             '<div style="display:flex;gap:6px;align-items:center;margin-top:2px">' +
             '<span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;background:' + tipoColor + '22;color:' + tipoColor + ';border:1px solid ' + tipoColor + '44"><i class="fa-solid ' + tipoIcon + '" style="margin-right:3px"></i>' + tipoLabel + '</span>' +
-            '<span style="font-size:11px;color:#666">' + cpfDisp + '</span>' +
+            '<span style="font-size:11px;color:#64748b">' + cpfDisp + '</span>' +
             '</div>' +
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">' +
-            '<span style="font-size:12px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">' + (c.ultimaMsg || '') + '</span>' +
-            (naoLidas > 0 ? '<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;padding:0 6px">' + naoLidas + '</span>' : '') +
+            '<span style="font-size:12px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">' + (c.ultimaMsg || '') + '</span>' +
+            (naoLidas > 0 ? '<span style="background:#f44336;color:#fff;font-size:10px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;padding:0 6px">' + naoLidas + '</span>' : '') +
             '</div>' +
             '</div>' +
-            '<button class="chat-p-del-btn" onclick="event.stopPropagation();chatPortaisDeleteConversation(\'' + c._id + '\',\'' + (c.nome || '').replace(/'/g, "\\'") + '\')" title="Excluir conversa" style="display:none;position:absolute;top:8px;right:8px;background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.3);color:#dc2626;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:11px;align-items:center;justify-content:center;transition:all .15s;z-index:2" onmouseover="this.style.background=\'rgba(220,38,38,.35)\'" onmouseout="this.style.background=\'rgba(220,38,38,.12)\'"><i class="fa-solid fa-trash"></i></button>' +
+            '<button class="chat-p-del-btn" onclick="event.stopPropagation();chatPortaisDeleteConversation(\'' + c._id + '\',\'' + (c.nome || '').replace(/'/g, "\\'") + '\')" title="Excluir conversa" style="display:none;position:absolute;top:8px;right:8px;background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);color:#f44336;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:11px;align-items:center;justify-content:center;transition:all .15s;z-index:2" onmouseover="this.style.background=\'rgba(244,67,54,.35)\'" onmouseout="this.style.background=\'rgba(244,67,54,.12)\'"><i class="fa-solid fa-trash"></i></button>' +
             '</div></div>';
         listEl.innerHTML += html;
     });
@@ -110,12 +110,12 @@ function chatPortaisSelect(cpf) {
 
     if (chatPortaisMsgUnsub) chatPortaisMsgUnsub();
     var msgEl = document.getElementById('chat-p-messages');
-    msgEl.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+    msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
     chatPortaisMsgUnsub = dbFirestore.collection('chatAdmin').doc(cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
         msgEl.innerHTML = '';
         if (snap.empty) {
-            msgEl.innerHTML = '<div style="text-align:center;color:#666;padding:30px">Nenhuma mensagem</div>';
+            msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px">Nenhuma mensagem</div>';
             return;
         }
         var batch = dbFirestore.batch();
@@ -136,7 +136,7 @@ function chatPortaisSelect(cpf) {
             var remetenteColor = '';
             if (isAdmin) {
                 remetenteLabel = '<i class="fa-solid fa-shield-halved" style="margin-right:3px"></i> Administracao FARN';
-                remetenteColor = '#ff9800';
+                remetenteColor = '#16a34a';
             } else if (tipoRemetente === 'formado') {
                 remetenteLabel = '<i class="fa-solid fa-graduation-cap" style="margin-right:3px"></i> Portal do Formado';
                 remetenteColor = '#16a34a';
@@ -146,13 +146,13 @@ function chatPortaisSelect(cpf) {
             }
 
             var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-            var bg = isAdmin ? 'background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:12px 12px 2px 12px' : 'background:#ffffff;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px';
+            var bg = isAdmin ? 'background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:12px 12px 2px 12px' : 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;color:#1e293b';
             var editLabel = m.editado ? '<span style="font-size:9px;opacity:.6;font-style:italic">(editado)</span> ' : '';
             var senderLabel = '<div style="font-size:11px;color:' + remetenteColor + ';margin-bottom:2px">' + remetenteLabel + '</div>';
 
             var actionsHtml = '';
             if (isAdmin) {
-                actionsHtml = '<div class="chat-p-msg-actions" style="display:none;position:absolute;top:-8px;' + (isAdmin ? 'left:-8px' : 'right:-8px') + ';display:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:2px;gap:2px;z-index:5">' +
+                actionsHtml = '<div class="chat-p-msg-actions" style="display:none;position:absolute;top:-8px;' + (isAdmin ? 'left:-8px' : 'right:-8px') + ';display:none;background:#f0fdf4;border:1px solid #e2e8f0;border-radius:8px;padding:2px;gap:2px;z-index:5">' +
                     '<button onclick="event.stopPropagation();chatPortaisEditMsg(\'' + m._docId + '\',\'' + (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\')" title="Editar" style="background:none;border:none;color:#2563eb;cursor:pointer;padding:4px 6px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(37,99,235,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-pen"></i></button>' +
                     '<button onclick="event.stopPropagation();chatPortaisDeleteMsg(\'' + m._docId + '\')" title="Apagar para mim" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:4px 6px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(220,38,38,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-trash"></i></button>' +
                     '</div>';
@@ -160,13 +160,13 @@ function chatPortaisSelect(cpf) {
 
             bubble.innerHTML = senderLabel +
                 '<div style="padding:10px 14px;' + bg + ';position:relative">' + editLabel + (m.texto || '') + actionsHtml + '</div>' +
-                '<div style="font-size:10px;color:#666;margin-top:2px">' + time + '</div>';
+                '<div style="font-size:10px;color:#64748b;margin-top:2px">' + time + '</div>';
             msgEl.appendChild(bubble);
         });
         batch.commit().catch(function() {});
         msgEl.scrollTop = msgEl.scrollHeight;
     }, function() {
-        msgEl.innerHTML = '<div style="text-align:center;color:#dc2626;padding:30px">Erro ao carregar mensagens</div>';
+        msgEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar mensagens</div>';
     });
 }
 
@@ -288,7 +288,7 @@ function chatPortaisDeleteConversation(cpf, nome) {
             chatPortaisSelected = null;
             document.getElementById('chat-p-header').style.display = 'none';
             document.getElementById('chat-p-input-area').style.display = 'none';
-            document.getElementById('chat-p-messages').innerHTML = '<div style="text-align:center;color:#666;padding:60px 20px"><i class="fa-solid fa-comments" style="font-size:48px;margin-bottom:12px;display:block;opacity:0.3"></i><p>Selecione uma conversa para visualizar</p></div>';
+            document.getElementById('chat-p-messages').innerHTML = '<div style="text-align:center;color:#64748b;padding:60px 20px"><i class="fa-solid fa-comments" style="font-size:48px;margin-bottom:12px;display:block;opacity:0.3"></i><p>Selecione uma conversa para visualizar</p></div>';
         }
         alert('Conversa excluida com sucesso!');
     }).catch(function(e) {
@@ -327,7 +327,7 @@ function chatPortaisInitEmoji() {
         var btn = document.createElement('button');
         btn.textContent = em;
         btn.style.cssText = 'background:none;border:none;font-size:22px;cursor:pointer;padding:4px;border-radius:6px;transition:background .15s;line-height:1';
-        btn.onmouseover = function() { this.style.background = 'rgba(202,138,4,.2)'; };
+        btn.onmouseover = function() { this.style.background = 'rgba(249,168,37,.2)'; };
         btn.onmouseout = function() { this.style.background = 'none'; };
         btn.onclick = function(e) {
             e.stopPropagation();
@@ -400,10 +400,10 @@ function chatPortaisToggleContacts() {
 async function chatPortaisLoadContacts() {
     var container = document.getElementById('chat-p-contacts-list');
     if (!container) return;
-    container.innerHTML = '<div style="text-align:center;color:#666;padding:20px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando contatos...</div>';
+    container.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando contatos...</div>';
 
     if (typeof dbFirestore === 'undefined' || !dbFirestore) {
-        container.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px">Firestore nao inicializado</div>';
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:20px">Firestore nao inicializado</div>';
         return;
     }
 
@@ -450,7 +450,7 @@ async function chatPortaisLoadContacts() {
         });
     } catch(e) {
         console.error('Erro ao buscar contatos:', e);
-        container.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px"><i class="fa-solid fa-triangle-exclamation" style="font-size:24px;display:block;margin-bottom:8px"></i>Erro: ' + e.message + '</div>';
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:20px"><i class="fa-solid fa-triangle-exclamation" style="font-size:24px;display:block;margin-bottom:8px"></i>Erro: ' + e.message + '</div>';
         return;
     }
 
@@ -499,27 +499,27 @@ async function chatPortaisLoadContacts() {
         var status = u.status || 'Pendente';
         var isAtivo = status === 'Ativo';
         var isRejeitado = status === 'Rejeitado';
-        var tipoColor = isAtivo ? '#16a34a' : (isRejeitado ? '#dc2626' : '#eab308');
+        var tipoColor = isAtivo ? '#16a34a' : (isRejeitado ? '#dc2626' : '#ca8a04');
         var tipoIcon = isAtivo ? 'fa-graduation-cap' : (isRejeitado ? 'fa-ban' : 'fa-user');
         var tipoLabel = isAtivo ? 'Formado' : (isRejeitado ? 'Rejeitado' : 'Aluno');
         var avatarBg = isAtivo ? '#2e7d32' : (isRejeitado ? '#c62828' : '#1565c0');
-        var statusDot = isAtivo ? '#16a34a' : (isRejeitado ? '#dc2626' : '#eab308');
+        var statusDot = isAtivo ? '#16a34a' : (isRejeitado ? '#dc2626' : '#ca8a04');
 
         var item = document.createElement('div');
         item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px 8px 32px;cursor:pointer;border-radius:8px;transition:background .15s;margin-bottom:2px';
-        item.onmouseover = function() { this.style.background = 'rgba(0,0,0,.04)'; };
+        item.onmouseover = function() { this.style.background = 'rgba(255,255,255,.06)'; };
         item.onmouseout = function() { this.style.background = 'transparent'; };
         item.onclick = function() { chatPortaisStartFromContact(cpf, u.nome, isAtivo ? 'formado' : 'aluno'); };
 
         item.innerHTML = '<div style="width:30px;height:30px;border-radius:50%;background:' + avatarBg + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;flex-shrink:0;position:relative">' + initials +
-            '<div style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:' + statusDot + ';border:2px solid #ffffff"></div></div>' +
+            '<div style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:' + statusDot + ';border:2px solid #0d1117"></div></div>' +
             '<div style="flex:1;min-width:0">' +
-            '<div style="font-weight:600;font-size:12px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (u.nome || '---') + '</div>' +
+            '<div style="font-weight:600;font-size:12px;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (u.nome || '---') + '</div>' +
             '<div style="display:flex;gap:4px;align-items:center;margin-top:1px">' +
             '<span style="font-size:8px;padding:1px 5px;border-radius:8px;font-weight:600;background:' + tipoColor + '22;color:' + tipoColor + ';border:1px solid ' + tipoColor + '44"><i class="fa-solid ' + tipoIcon + '" style="margin-right:2px"></i>' + tipoLabel + '</span>' +
-            '<span style="font-size:9px;color:#666">' + cpfDisp + '</span>' +
+            '<span style="font-size:9px;color:#64748b">' + cpfDisp + '</span>' +
             '</div></div>' +
-            '<i class="fa-solid fa-comment-dots" style="color:#16a34a;font-size:12px;opacity:.5;flex-shrink:0"></i>';
+            '<i class="fa-solid fa-comment-dots" style="color:#4caf50;font-size:12px;opacity:.5;flex-shrink:0"></i>';
 
         return item;
     }
@@ -530,7 +530,7 @@ async function chatPortaisLoadContacts() {
         var usersSemTurma = usersByProjNoTurma[proj] || [];
         var collapseId = 'chat-proj-' + proj.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
         var projStatus = projeto.status || 'Em Andamento';
-        var statusDotColor = projStatus === 'Em Andamento' ? '#16a34a' : (projStatus === 'Concluido' ? '#2563eb' : '#eab308');
+        var statusDotColor = projStatus === 'Em Andamento' ? '#16a34a' : (projStatus === 'Concluido' ? '#2563eb' : '#ca8a04');
         var totalUsers = usersSemTurma.length;
         turmas.forEach(function(t) {
             totalUsers += (usersByTurma[proj + '||' + t.nome] || []).length;
@@ -538,12 +538,11 @@ async function chatPortaisLoadContacts() {
 
         var header = document.createElement('div');
         header.style.cssText = 'margin-bottom:4px';
-        header.innerHTML = '<div onclick="chatPortaisToggleProject(\'' + collapseId + '\')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(202,138,4,.08);border:1px solid rgba(202,138,4,.15);border-radius:10px;cursor:pointer;transition:background .2s" onmouseover="this.style.background=\'rgba(202,138,4,.18)\'" onmouseout="this.style.background=\'rgba(202,138,4,.08)\'">' +
-            '<i class="fa-solid fa-folder-open" style="color:#16a34a;font-size:14px"></i>' +
+        header.innerHTML = '<div onclick="chatPortaisToggleProject(\'' + collapseId + '\')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(249,168,37,.08);border:1px solid rgba(249,168,37,.15);border-radius:10px;cursor:pointer;transition:background .2s" onmouseover="this.style.background=\'rgba(249,168,37,.18)\'" onmouseout="this.style.background=\'rgba(249,168,37,.08)\'">' +
+'<i class="fa-solid fa-folder-open" style="color:#16a34a;font-size:14px"></i>' +
             '<span style="flex:1;font-weight:700;font-size:13px;color:#16a34a">' + proj + '</span>' +
-            '<span style="font-size:9px;padding:2px 6px;border-radius:8px;font-weight:600;background:' + statusDotColor + '22;color:' + statusDotColor + ';border:1px solid ' + statusDotColor + '44">' + projStatus + '</span>' +
-            '<span style="background:rgba(202,138,4,.2);color:#16a34a;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">' + totalUsers + '</span>' +
-            '<i class="fa-solid fa-chevron-down" id="chat-proj-icon-' + collapseId + '" style="color:#888;font-size:10px;transition:transform .2s"></i>' +
+            '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">' + totalUsers + '</span>' +
+            '<i class="fa-solid fa-chevron-down" id="chat-proj-icon-' + collapseId + '" style="color:#64748b;font-size:10px;transition:transform .2s"></i>' +
             '</div>';
         container.appendChild(header);
 
@@ -557,11 +556,11 @@ async function chatPortaisLoadContacts() {
 
             var turmaHeader = document.createElement('div');
             turmaHeader.style.cssText = 'margin-bottom:2px';
-            turmaHeader.innerHTML = '<div onclick="chatPortaisToggleProject(\'' + turmaCollapseId + '\')" style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 20px;cursor:pointer;border-radius:8px;transition:background .15s" onmouseover="this.style.background=\'rgba(0,0,0,.03)\'" onmouseout="this.style.background=\'transparent\'">' +
-                '<i class="fa-solid fa-users" style="color:#888;font-size:12px"></i>' +
-                '<span style="flex:1;font-weight:600;font-size:12px;color:#aaa">' + (t.nome || '---') + (t.descricao ? ' <span style="color:#666;font-weight:400;font-size:10px">- ' + t.descricao + '</span>' : '') + '</span>' +
-                '<span style="background:rgba(0,0,0,.05);color:#888;font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px">' + turmaUsers.length + '</span>' +
-                '<i class="fa-solid fa-chevron-down" id="chat-proj-icon-' + turmaCollapseId + '" style="color:#666;font-size:9px;transition:transform .2s"></i>' +
+            turmaHeader.innerHTML = '<div onclick="chatPortaisToggleProject(\'' + turmaCollapseId + '\')" style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 20px;cursor:pointer;border-radius:8px;transition:background .15s" onmouseover="this.style.background=\'rgba(255,255,255,.04)\'" onmouseout="this.style.background=\'transparent\'">' +
+                '<i class="fa-solid fa-users" style="color:#64748b;font-size:12px"></i>' +
+                '<span style="flex:1;font-weight:600;font-size:12px;color:#475569">' + (t.nome || '---') + (t.descricao ? ' <span style="color:#64748b;font-weight:400;font-size:10px">- ' + t.descricao + '</span>' : '') + '</span>' +
+                '<span style="background:rgba(22,163,74,.06);color:#64748b;font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px">' + turmaUsers.length + '</span>' +
+                '<i class="fa-solid fa-chevron-down" id="chat-proj-icon-' + turmaCollapseId + '" style="color:#64748b;font-size:9px;transition:transform .2s"></i>' +
                 '</div>';
             list.appendChild(turmaHeader);
 
@@ -620,12 +619,12 @@ function chatPortaisStartFromContact(cpf, nome, tipo) {
 
     if (chatPortaisMsgUnsub) chatPortaisMsgUnsub();
     var msgEl = document.getElementById('chat-p-messages');
-    msgEl.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+    msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
     chatPortaisMsgUnsub = dbFirestore.collection('chatAdmin').doc(cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
         msgEl.innerHTML = '';
         if (snap.empty) {
-            msgEl.innerHTML = '<div style="text-align:center;color:#666;padding:30px">Nenhuma mensagem ainda. Envie a primeira mensagem!</div>';
+            msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px">Nenhuma mensagem ainda. Envie a primeira mensagem!</div>';
             return;
         }
         var batch = dbFirestore.batch();
@@ -646,7 +645,7 @@ function chatPortaisStartFromContact(cpf, nome, tipo) {
             var remetenteColor = '';
             if (isAdmin) {
                 remetenteLabel = '<i class="fa-solid fa-shield-halved" style="margin-right:3px"></i> Administracao FARN';
-                remetenteColor = '#ff9800';
+                remetenteColor = '#16a34a';
             } else if (tipoRemetente === 'formado') {
                 remetenteLabel = '<i class="fa-solid fa-graduation-cap" style="margin-right:3px"></i> Portal do Formado';
                 remetenteColor = '#16a34a';
@@ -656,13 +655,13 @@ function chatPortaisStartFromContact(cpf, nome, tipo) {
             }
 
             var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-            var bg = isAdmin ? 'background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:12px 12px 2px 12px' : 'background:#ffffff;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px';
+            var bg = isAdmin ? 'background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:12px 12px 2px 12px' : 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;color:#1e293b';
             var editLabel = m.editado ? '<span style="font-size:9px;opacity:.6;font-style:italic">(editado)</span> ' : '';
             var senderLabel = '<div style="font-size:11px;color:' + remetenteColor + ';margin-bottom:2px">' + remetenteLabel + '</div>';
 
             var actionsHtml = '';
             if (isAdmin) {
-                actionsHtml = '<div class="chat-p-msg-actions" style="display:none;position:absolute;top:-8px;' + (isAdmin ? 'left:-8px' : 'right:-8px') + ';background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:2px;gap:2px;z-index:5">' +
+                actionsHtml = '<div class="chat-p-msg-actions" style="display:none;position:absolute;top:-8px;' + (isAdmin ? 'left:-8px' : 'right:-8px') + ';background:#f0fdf4;border:1px solid #e2e8f0;border-radius:8px;padding:2px;gap:2px;z-index:5">' +
                     '<button onclick="event.stopPropagation();chatPortaisEditMsg(\'' + m._docId + '\',\'' + (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\')" title="Editar" style="background:none;border:none;color:#2563eb;cursor:pointer;padding:4px 6px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(37,99,235,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-pen"></i></button>' +
                     '<button onclick="event.stopPropagation();chatPortaisDeleteMsg(\'' + m._docId + '\')" title="Apagar para mim" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:4px 6px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(220,38,38,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-trash"></i></button>' +
                     '</div>';
@@ -670,13 +669,13 @@ function chatPortaisStartFromContact(cpf, nome, tipo) {
 
             bubble.innerHTML = senderLabel +
                 '<div style="padding:10px 14px;' + bg + ';position:relative">' + editLabel + (m.texto || '') + actionsHtml + '</div>' +
-                '<div style="font-size:10px;color:#666;margin-top:2px">' + time + '</div>';
+                '<div style="font-size:10px;color:#64748b;margin-top:2px">' + time + '</div>';
             msgEl.appendChild(bubble);
         });
         batch.commit().catch(function() {});
         msgEl.scrollTop = msgEl.scrollHeight;
     }, function() {
-        msgEl.innerHTML = '<div style="text-align:center;color:#dc2626;padding:30px">Erro ao carregar mensagens</div>';
+        msgEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar mensagens</div>';
     });
 
     chatPortaisRenderList(chatPortaisList);

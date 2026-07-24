@@ -273,7 +273,7 @@
                 <!-- ALUNOS -->
                 <div id="admin-alunos" class="admin-section">
                     <!-- Selecao Projeto + Turma -->
-                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                             <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
                             <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para visualizar os alunos</span>
@@ -286,8 +286,8 @@
                                 </select>
                             </div>
                             <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                <label style="font-size:11px;font-weight:600;color:#4caf50;margin-bottom:4px;display:block">Turma *</label>
-                                <select id="alunos-selecao-turma" class="config-input" style="width:100%;border-color:#4caf50" onchange="alunosOnSelecaoChange()">
+                                <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
+                                <select id="alunos-selecao-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="alunosOnSelecaoChange()">
                                     <option value="">Selecione a turma...</option>
                                 </select>
                             </div>
@@ -345,8 +345,8 @@
                         </div>
                         <div class="card-body">
                             <div id="instrutores-empty" class="empty-state" style="display:none;padding:40px">
-                                <i class="fa-solid fa-chalkboard-user" style="font-size:48px;color:#444;margin-bottom:12px"></i>
-                                <p style="color:#888">Nenhum instrutor cadastrado</p>
+                                <i class="fa-solid fa-chalkboard-user" style="font-size:48px;color:#334155;margin-bottom:12px"></i>
+                                <p style="color:#475569">Nenhum instrutor cadastrado</p>
                             </div>
                             <div id="instrutores-lista" class="table-responsive" style="display:none">
                                 <table class="data-table">
@@ -372,7 +372,7 @@
                 <div id="admin-relatorios" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-chart-bar" style="color:#9c27b0;margin-right:8px"></i> Relatorios</h3>
+                            <h3><i class="fa-solid fa-chart-bar" style="color:#dc2626;margin-right:8px"></i> Relatorios</h3>
                         </div>
                         <div class="card-body">
                             <div class="config-grid">
@@ -394,14 +394,14 @@
                 <div id="modal-montar-relatorio" class="modal-overlay hidden" onclick="if(event.target===this)fecharModalMontarRelatorio()">
                     <div class="modal-content" style="max-width:700px;max-height:85vh;overflow-y:auto">
                         <div class="modal-header">
-                            <h3><i class="fa-solid fa-file-circle-plus" style="color:#9c27b0;margin-right:8px"></i> Montar Relatorio de Aluno</h3>
+                            <h3><i class="fa-solid fa-file-circle-plus" style="color:#dc2626;margin-right:8px"></i> Montar Relatorio de Aluno</h3>
                             <button class="modal-close" onclick="fecharModalMontarRelatorio()"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                         <div class="modal-body">
-                            <p style="color:#aaa;margin-bottom:12px;font-size:13px">Selecione os campos que deseja incluir no relatorio:</p>
+                            <p style="color:#475569;margin-bottom:12px;font-size:13px">Selecione os campos que deseja incluir no relatorio:</p>
                             <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
                                 <div style="display:flex;align-items:center;gap:6px">
-                                    <label style="color:#ccc;font-size:12px;font-weight:600"><i class="fa-solid fa-filter" style="color:#9c27b0;margin-right:4px"></i>Status:</label>
+                                    <label style="color:#334155;font-size:12px;font-weight:600"><i class="fa-solid fa-filter" style="color:#dc2626;margin-right:4px"></i>Status:</label>
                                     <select id="relatorio-status-filter" class="config-input" style="padding:6px 10px;font-size:12px;min-width:160px">
                                         <option value="Todos">Todos os Status</option>
                                         <option value="Aprovado" selected>Aprovado</option>
@@ -425,7 +425,7 @@
                 <div id="admin-projetos" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Projetos</h3>
+                            <h3><i class="fa-solid fa-handshake" style="color:#16a34a;margin-right:8px"></i> Projetos</h3>
                             <div class="header-actions">
                                 <button class="btn-primary" onclick="openFormProjeto()">
                                     <i class="fa-solid fa-plus"></i> Novo Projeto
@@ -442,7 +442,7 @@
                 <div id="admin-form-projeto" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3 id="projeto-form-title"><i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Projeto</h3>
+                            <h3 id="projeto-form-title"><i class="fa-solid fa-handshake" style="color:#16a34a;margin-right:8px"></i> Novo Projeto</h3>
                             <button class="btn-outline" onclick="showAdminSection('admin-projetos')">
                                 <i class="fa-solid fa-arrow-left"></i> Voltar
                             </button>
@@ -471,26 +471,26 @@
                                     </div>
                                 </div>
                                 <!-- TURMAS DO PROJETO -->
-                                <div style="margin-top:24px;border:1px solid #333;border-radius:10px;overflow:hidden">
-                                    <div style="padding:12px 16px;background:#1a1a2e;border-bottom:1px solid #333">
-                                        <h4 style="margin:0;color:#fff;font-size:14px"><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:8px"></i> Turmas do Projeto</h4>
+                                <div style="margin-top:24px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+                                    <div style="padding:12px 16px;background:#f0fdf4;border-bottom:1px solid #e2e8f0">
+                                        <h4 style="margin:0;color:#1e293b;font-size:14px"><i class="fa-solid fa-people-group" style="color:#16a34a;margin-right:8px"></i> Turmas do Projeto</h4>
                                     </div>
                                     <!-- Mini-formulário de turma -->
-                                    <div id="pf-turma-form" style="padding:16px;border-bottom:1px solid #222;background:#151525">
+                                    <div id="pf-turma-form" style="padding:16px;border-bottom:1px solid #222;background:#f8fafc">
                                         <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
                                             <div style="flex:2;min-width:200px">
-                                                <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Nome da Turma *</label>
+                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Turma *</label>
                                                 <input type="text" id="pf-turma-nome" class="config-input" placeholder="Ex: Turma 1" style="width:100%">
                                             </div>
                                             <div style="flex:2;min-width:200px">
-                                                <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Descrição</label>
+                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Descrição</label>
                                                 <input type="text" id="pf-turma-desc" class="config-input" placeholder="Descrição opcional" style="width:100%">
                                             </div>
                                             <div style="min-width:120px">
                                                 <button type="button" class="btn-primary btn-sm" id="pf-turma-btn-add" onclick="projetoAdicionarTurma()" style="width:100%;white-space:nowrap">
                                                     <i class="fa-solid fa-plus"></i> Adicionar
                                                 </button>
-                                                <button type="button" class="btn-primary btn-sm" id="pf-turma-btn-salvar" onclick="projetoSalvarTurma()" style="width:100%;white-space:nowrap;display:none;background:#ff9800">
+                                                <button type="button" class="btn-primary btn-sm" id="pf-turma-btn-salvar" onclick="projetoSalvarTurma()" style="width:100%;white-space:nowrap;display:none;background:#16a34a">
                                                     <i class="fa-solid fa-check"></i> Salvar
                                                 </button>
                                             </div>
@@ -503,8 +503,8 @@
                                     </div>
                                     <!-- Lista de turmas -->
                                     <div id="pf-turmas-lista">
-                                        <div id="pf-turmas-empty" style="text-align:center;padding:24px;color:#666;font-size:13px">
-                                            <i class="fa-solid fa-people-group" style="font-size:28px;color:#444;margin-bottom:8px;display:block"></i>
+                                        <div id="pf-turmas-empty" style="text-align:center;padding:24px;color:#475569;font-size:13px">
+                                            <i class="fa-solid fa-people-group" style="font-size:28px;color:#334155;margin-bottom:8px;display:block"></i>
                                             Nenhuma turma adicionada
                                         </div>
                                     </div>
@@ -520,7 +520,7 @@
                 <div id="admin-config" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-gear" style="color:#888;margin-right:8px"></i> Configuracoes</h3>
+                            <h3><i class="fa-solid fa-gear" style="color:#475569;margin-right:8px"></i> Configuracoes</h3>
                         </div>
                         <div class="card-body">
                             <div class="config-grid">
@@ -544,11 +544,11 @@
                 <div id="admin-apontamento" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-clipboard-check" style="color:#f57f17;margin-right:8px"></i> Apontamento de Presenca</h3>
+                            <h3><i class="fa-solid fa-clipboard-check" style="color:#ca8a04;margin-right:8px"></i> Apontamento de Presenca</h3>
                         </div>
                         <div class="card-body">
                             <!-- Selecao Projeto + Turma -->
-                            <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                            <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                                     <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
                                     <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
@@ -561,8 +561,8 @@
                                         </select>
                                     </div>
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#4caf50;margin-bottom:4px;display:block">Turma *</label>
-                                        <select id="apt-selecao-turma" class="config-input" style="width:100%;border-color:#4caf50" onchange="apontamentoOnSelecaoChange()">
+                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
+                                        <select id="apt-selecao-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoChange()">
                                             <option value="">Selecione a turma...</option>
                                         </select>
                                     </div>
@@ -576,17 +576,17 @@
                                     </button>
                                 </div>
                                 <!-- Filtros -->
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#1e1e1e;border-radius:10px;border:1px solid #2a2a2a">
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#f0fdf4;border-radius:10px;border:1px solid #e2e8f0">
                                     <div class="form-group" style="flex:1;min-width:140px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Inicio</label>
+                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data Inicio</label>
                                         <input type="date" id="apt-filtro-data-inicio" class="config-input" style="width:100%">
                                     </div>
                                     <div class="form-group" style="flex:1;min-width:140px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data Fim</label>
+                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data Fim</label>
                                         <input type="date" id="apt-filtro-data-fim" class="config-input" style="width:100%">
                                     </div>
                                     <div class="form-group" style="flex:1;min-width:160px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Matricula / Nome</label>
+                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Matricula / Nome</label>
                                         <input type="text" id="apt-filtro-matricula" class="config-input" style="width:100%" placeholder="Buscar...">
                                     </div>
                                     <button class="btn-primary" onclick="apontamentoFiltrar()" style="white-space:nowrap;margin:0">
@@ -599,27 +599,27 @@
                                 <!-- Resumo -->
                                 <div id="apt-resumo" style="display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap">
                                     <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                        <div id="apt-resumo-registros" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
-                                        <div style="font-size:11px;color:#aaa">Registros</div>
+                                        <div id="apt-resumo-registros" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                        <div style="font-size:11px;color:#475569">Registros</div>
                                     </div>
                                     <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                        <div id="apt-resumo-presentes" style="font-size:22px;font-weight:800;color:#4caf50">0</div>
-                                        <div style="font-size:11px;color:#aaa">Presentes</div>
+                                        <div id="apt-resumo-presentes" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                        <div style="font-size:11px;color:#475569">Presentes</div>
                                     </div>
                                     <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
                                         <div id="apt-resumo-faltas" style="font-size:22px;font-weight:800;color:#f44336">0</div>
-                                        <div style="font-size:11px;color:#aaa">Faltas</div>
+                                        <div style="font-size:11px;color:#475569">Faltas</div>
                                     </div>
                                     <div style="background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                        <div id="apt-resumo-justificadas" style="font-size:22px;font-weight:800;color:#ff9800">0</div>
-                                        <div style="font-size:11px;color:#aaa">Justificadas</div>
+                                        <div id="apt-resumo-justificadas" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                        <div style="font-size:11px;color:#475569">Justificadas</div>
                                     </div>
                                 </div>
                                 <!-- Lista -->
-                                <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#888">
-                                    <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#ddd;margin-bottom:16px"></i>
-                                    <h3 style="color:#aaa;margin-bottom:8px">Nenhum apontamento registrado</h3>
-                                    <p style="color:#888">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
+                                <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#475569">
+                                    <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#64748b;margin-bottom:16px"></i>
+                                    <h3 style="color:#475569;margin-bottom:8px">Nenhum apontamento registrado</h3>
+                                    <p style="color:#475569">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
                                 </div>
                                 <div id="apontamento-historico-lista" style="display:none"></div>
                             </div>
@@ -629,7 +629,7 @@
                 <div id="admin-usuarios" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-users-gear" style="color:#2196f3;margin-right:8px"></i> Gerenciar Usuarios</h3>
+                            <h3><i class="fa-solid fa-users-gear" style="color:#2563eb;margin-right:8px"></i> Gerenciar Usuarios</h3>
                             <div class="header-actions">
                                 <button class="btn-primary" onclick="openUsuarioForm()">
                                     <i class="fa-solid fa-plus"></i> Novo Usuario
@@ -645,7 +645,7 @@
                 <div id="admin-form-usuario" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3 id="usuario-form-title"><i class="fa-solid fa-user-plus" style="color:#2196f3;margin-right:8px"></i> Novo Usuario</h3>
+                            <h3 id="usuario-form-title"><i class="fa-solid fa-user-plus" style="color:#2563eb;margin-right:8px"></i> Novo Usuario</h3>
                         </div>
                         <div class="card-body">
                             <form id="usuario-form" onsubmit="return handleSaveUsuario(event)">
@@ -665,12 +665,28 @@
                                             <button type="button" class="btn-icon" onclick="toggleUsuarioSenha()"><i class="fa-solid fa-eye" id="uf-eye-icon"></i></button>
                                         </div>
                                     </div>
+                                    <div class="form-group">
+                                        <label>Tipo de Usuario *</label>
+                                        <select id="uf-tipo" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="colaborador">Colaborador</option>
+                                            <option value="visitante">Visitante</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="form-section" style="margin-top:20px">
-                                    <label style="font-weight:600;color:#fff;margin-bottom:12px;display:block"><i class="fa-solid fa-lock" style="color:#16a34a;margin-right:6px"></i> Permissoes de Acesso</label>
+                                    <label style="font-weight:600;color:#1e293b;margin-bottom:12px;display:block"><i class="fa-solid fa-lock" style="color:#16a34a;margin-right:6px"></i> Permissoes de Acesso</label>
+                                    <label class="permissao-item" style="margin-bottom:12px">
+                                        <input type="checkbox" id="uf-perm-all" onchange="toggleAllPermissoes()">
+                                        <div class="permissao-card" style="border:2px solid #16a34a;background:#f0fdf4">
+                                            <i class="fa-solid fa-check-double" style="color:#16a34a"></i>
+                                            <span style="color:#16a34a">Selecionar Todas</span>
+                                            <small>Dar acesso total ao sistema</small>
+                                        </div>
+                                    </label>
                                     <div class="permissoes-grid">
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-pre" value="pre-inscricao">
+                                            <input type="checkbox" class="uf-perm-check" value="pre-inscricao">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-file-pen"></i>
                                                 <span>Pre-Inscricao</span>
@@ -678,7 +694,7 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-alunos" value="alunos">
+                                            <input type="checkbox" class="uf-perm-check" value="alunos">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-user-graduate"></i>
                                                 <span>Alunos</span>
@@ -686,7 +702,7 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-turmas" value="turmas">
+                                            <input type="checkbox" class="uf-perm-check" value="turmas">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-people-group"></i>
                                                 <span>Turmas</span>
@@ -694,7 +710,7 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-instrutores" value="instrutores">
+                                            <input type="checkbox" class="uf-perm-check" value="instrutores">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-chalkboard-user"></i>
                                                 <span>Instrutores</span>
@@ -702,7 +718,7 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-relatorios" value="relatorios">
+                                            <input type="checkbox" class="uf-perm-check" value="relatorios">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-chart-bar"></i>
                                                 <span>Relatorios</span>
@@ -710,7 +726,7 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-projetos" value="projetos">
+                                            <input type="checkbox" class="uf-perm-check" value="projetos">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-handshake"></i>
                                                 <span>Projetos</span>
@@ -718,18 +734,66 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" id="uf-perm-config" value="config">
+                                            <input type="checkbox" class="uf-perm-check" value="usuarios">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-users-gear"></i>
+                                                <span>Usuarios</span>
+                                                <small>Gerenciar usuarios do sistema</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" class="uf-perm-check" value="config">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-gear"></i>
                                                 <span>Configuracoes</span>
                                                 <small>Acessar configuracoes</small>
                                             </div>
                                         </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" class="uf-perm-check" value="recadastramento">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-rotate"></i>
+                                                <span>Recadastramento</span>
+                                                <small>Campanha de recadastramento</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" class="uf-perm-check" value="chat-portais">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-comments"></i>
+                                                <span>Chat dos Portais</span>
+                                                <small>Responder mensagens dos portais</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" class="uf-perm-check" value="apostilas">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-book"></i>
+                                                <span>Apostilas</span>
+                                                <small>Gerenciar apostilas dos alunos</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" class="uf-perm-check" value="disciplinas">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-chalkboard"></i>
+                                                <span>Disciplinas e Aulas</span>
+                                                <small>Gerenciar disciplinas e aulas</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
+                                            <input type="checkbox" class="uf-perm-check" value="apontamento">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-clipboard-check"></i>
+                                                <span>Apontamento</span>
+                                                <small>Apontamento de presenca</small>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
                                 <div class="form-section" style="margin-top:20px" id="uf-turmas-section">
-                                    <label style="font-weight:600;color:#fff;margin-bottom:12px;display:block"><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:6px"></i> Turmas Vinculadas</label>
-                                    <small style="color:#888;display:block;margin-bottom:12px">Selecione as turmas que este usuario pode acessar. Deixe vazio para acesso a todas.</small>
+                                    <label style="font-weight:600;color:#1e293b;margin-bottom:12px;display:block"><i class="fa-solid fa-people-group" style="color:#16a34a;margin-right:6px"></i> Turmas Vinculadas</label>
+                                    <small style="color:#475569;display:block;margin-bottom:12px">Selecione as turmas que este usuario pode acessar. Deixe vazio para acesso a todas.</small>
                                     <div id="uf-turmas-list" class="permissoes-grid"></div>
                                 </div>
                                 <div style="display:flex;gap:12px;margin-top:24px">
@@ -744,7 +808,7 @@
                 <!-- LISTA PRE-INSCRITOS -->
                 <div id="admin-pre-inscricao" class="admin-section active">
                     <!-- Selecao Projeto + Turma -->
-                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                             <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
                             <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para visualizar os pre-inscritos</span>
@@ -757,8 +821,8 @@
                                 </select>
                             </div>
                             <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                <label style="font-size:11px;font-weight:600;color:#4caf50;margin-bottom:4px;display:block">Turma *</label>
-                                <select id="pre-selecao-turma" class="config-input" style="width:100%;border-color:#4caf50" onchange="preOnSelecaoChange()">
+                                <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
+                                <select id="pre-selecao-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="preOnSelecaoChange()">
                                     <option value="">Selecione a turma...</option>
                                 </select>
                             </div>
@@ -825,7 +889,7 @@
                             <form id="form-candidato" onsubmit="return handleCandidatoSubmit(event)">
 
                                 <!-- PROJETO E TURMA (DESTAQUE) -->
-                                <div class="form-section-card" style="border:2px solid #16a34a;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)">
+                                <div class="form-section-card" style="border:2px solid #16a34a;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%)">
                                     <div class="form-section-title"><i class="fa-solid fa-folder-open" style="color:#16a34a"></i><h3 style="color:#16a34a">Projeto & Turma</h3></div>
                                     <div class="form-section-body">
                                         <div class="form-row">
@@ -836,28 +900,28 @@
                                                 </select>
                                             </div>
                                             <div class="form-group" style="flex:1">
-                                                <label style="color:#4caf50;font-weight:700">Turma *</label>
-                                                <select id="fc-turma" class="config-input" required style="height:46px;border-color:#4caf50">
+                                                <label style="color:#16a34a;font-weight:700">Turma *</label>
+                                                <select id="fc-turma" class="config-input" required style="height:46px;border-color:#16a34a">
                                                     <option value="">Selecione a turma...</option>
                                                 </select>
                                             </div>
                                         </div>
                                         <div id="fc-turma-info" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.3)">
-                                            <span style="color:#4caf50;font-size:12px;font-weight:600"><i class="fa-solid fa-info-circle"></i> <span id="fc-turma-info-text"></span></span>
+                                            <span style="color:#16a34a;font-size:12px;font-weight:600"><i class="fa-solid fa-info-circle"></i> <span id="fc-turma-info-text"></span></span>
                                         </div>
                                         <div id="fc-matricula-wrapper" style="display:none;margin-top:14px">
-                                            <label style="color:#aaa;font-size:13px;font-weight:600">Matricula</label>
+                                            <label style="color:#475569;font-size:13px;font-weight:600">Matricula</label>
                                             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
-                                                <div id="fc-matricula-display" style="background:#1a1a2e;border:2px solid #16a34a;border-radius:8px;padding:12px 16px;text-align:center;color:#16a34a;font-size:22px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace"></div>
+                                                <div id="fc-matricula-display" style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:12px 16px;text-align:center;color:#16a34a;font-size:22px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace"></div>
                                                 <img id="fc-matricula-qr" src="" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff;display:none;">
                                                 <div style="display:flex;flex-direction:column;gap:6px;margin-left:8px">
-                                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #444;border-radius:6px;background:#1a1a2e;transition:all .2s" id="fc-tipo-academico-label">
-                                                        <input type="radio" name="fc-tipo-pessoa" value="A" style="accent-color:#2196f3" checked>
-                                                        <span style="color:#2196f3;font-weight:700;font-size:13px">Academico (A)</span>
+                                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#f0fdf4;transition:all .2s" id="fc-tipo-academico-label">
+                                                        <input type="radio" name="fc-tipo-pessoa" value="A" style="accent-color:#16a34a" checked>
+                                                        <span style="color:#2563eb;font-weight:700;font-size:13px">Academico (A)</span>
                                                     </label>
-                                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #444;border-radius:6px;background:#1a1a2e;transition:all .2s" id="fc-tipo-formado-label">
-                                                        <input type="radio" name="fc-tipo-pessoa" value="F" style="accent-color:#ff9800">
-                                                        <span style="color:#ff9800;font-weight:700;font-size:13px">Formado (A)</span>
+                                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#f0fdf4;transition:all .2s" id="fc-tipo-formado-label">
+                                                        <input type="radio" name="fc-tipo-pessoa" value="F" style="accent-color:#16a34a">
+                                                        <span style="color:#16a34a;font-weight:700;font-size:13px">Formado (A)</span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -1050,7 +1114,7 @@
                                 <div class="form-submit-bar">
                                     <button type="button" class="btn-outline" onclick="resetFormCandidato()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
                                     <button type="button" class="btn-outline" onclick="showAdminSection('admin-pre-inscricao')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                                    <button type="button" class="btn-outline btn-atualizar" id="btn-atualizar-cadastro" style="display:none;border-color:#4caf50;color:#4caf50" onclick="toggleAtualizarCadastro()"><i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro</button>
+                                    <button type="button" class="btn-outline btn-atualizar" id="btn-atualizar-cadastro" style="display:none;border-color:#16a34a;color:#16a34a" onclick="toggleAtualizarCadastro()"><i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro</button>
                                     <button type="submit" class="btn-primary btn-lg"><i class="fa-solid fa-check"></i> Salvar Pre-Cadastro</button>
                                 </div>
                             </form>
@@ -1078,21 +1142,21 @@
                         <div class="card-body">
                             <!-- Estatisticas -->
                             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">
-                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(22,163,74,.2);border-radius:10px;padding:16px;text-align:center">
+                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(22,163,74,.2);border-radius:10px;padding:16px;text-align:center">
                                     <div style="font-size:28px;font-weight:800;color:#16a34a" id="rc-total-count">0</div>
-                                    <div style="font-size:12px;color:#aaa">Total</div>
+                                    <div style="font-size:12px;color:#475569">Total</div>
                                 </div>
-                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(255,193,7,.3);border-radius:10px;padding:16px;text-align:center">
+                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(255,193,7,.3);border-radius:10px;padding:16px;text-align:center">
                                     <div style="font-size:28px;font-weight:800;color:#ffc107" id="rc-pendente-count">0</div>
-                                    <div style="font-size:12px;color:#aaa">Pendentes</div>
+                                    <div style="font-size:12px;color:#475569">Pendentes</div>
                                 </div>
-                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(76,175,80,.3);border-radius:10px;padding:16px;text-align:center">
-                                    <div style="font-size:28px;font-weight:800;color:#4caf50" id="rc-aprovado-count">0</div>
-                                    <div style="font-size:12px;color:#aaa">Ativos</div>
+                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(76,175,80,.3);border-radius:10px;padding:16px;text-align:center">
+                                    <div style="font-size:28px;font-weight:800;color:#16a34a" id="rc-aprovado-count">0</div>
+                                    <div style="font-size:12px;color:#475569">Ativos</div>
                                 </div>
-                                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(244,67,54,.3);border-radius:10px;padding:16px;text-align:center">
+                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(244,67,54,.3);border-radius:10px;padding:16px;text-align:center">
                                     <div style="font-size:28px;font-weight:800;color:#f44336" id="rc-rejeitado-count">0</div>
-                                    <div style="font-size:12px;color:#aaa">Rejeitados</div>
+                                    <div style="font-size:12px;color:#475569">Rejeitados</div>
                                 </div>
                             </div>
                             <!-- Filtros -->
@@ -1129,8 +1193,8 @@
                                     <tbody id="rc-table-body"></tbody>
                                 </table>
                             </div>
-                            <div id="rc-empty" style="display:none;text-align:center;padding:40px;color:#666">
-                                <i class="fa-solid fa-inbox" style="font-size:40px;margin-bottom:10px;display:block;color:#444"></i>
+                            <div id="rc-empty" style="display:none;text-align:center;padding:40px;color:#475569">
+                                <i class="fa-solid fa-inbox" style="font-size:40px;margin-bottom:10px;display:block;color:#334155"></i>
                                 <p>Nenhum recadastramento encontrado.</p>
                             </div>
                         </div>
@@ -1154,53 +1218,53 @@
                 <!-- CHAT DOS PORTAIS -->
                 <div id="admin-chat-portais" class="admin-section">
                     <div class="card full-width" style="height:calc(100vh - 120px);display:flex;flex-direction:column;padding:0">
-                        <div class="card-header" style="padding:16px 20px;border-bottom:1px solid #2a2a3a;flex-shrink:0">
+                        <div class="card-header" style="padding:16px 20px;border-bottom:1px solid #e2e8f0;flex-shrink:0">
                             <h3><i class="fa-solid fa-comments" style="color:#16a34a;margin-right:8px"></i> Chat dos Portais</h3>
                             <div style="display:flex;gap:8px;align-items:center">
-                                <button onclick="chatPortaisToggleContacts()" id="chat-p-contacts-btn" title="Contatos por Projeto" style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:#4caf50;height:36px;padding:0 12px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.background='rgba(76,175,80,.35)'" onmouseout="this.style.background='rgba(76,175,80,.15)'"><i class="fa-solid fa-address-book"></i> Contatos</button>
+                                <button onclick="chatPortaisToggleContacts()" id="chat-p-contacts-btn" title="Contatos por Projeto" style="background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);color:#16a34a;height:36px;padding:0 12px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.background='rgba(22,163,74,.35)'" onmouseout="this.style.background='rgba(22,163,74,.15)'"><i class="fa-solid fa-address-book"></i> Contatos</button>
                                 <input type="text" id="chat-p-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="max-width:220px" oninput="chatPortaisFilter()">
                             </div>
                         </div>
                         <div style="display:flex;flex:1;overflow:hidden">
                             <!-- LISTA DE CONVERSAS -->
-                            <div id="chat-p-list" style="width:320px;border-right:1px solid #2a2a3a;overflow-y:auto;flex-shrink:0"></div>
+                            <div id="chat-p-list" style="width:320px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0"></div>
 
                             <!-- PAINEL DE CONTATOS POR PROJETO -->
-                            <div id="chat-p-contacts-panel" style="display:none;width:320px;border-right:1px solid #2a2a3a;overflow-y:auto;flex-shrink:0;background:#0d1117">
-                                <div style="padding:14px 16px;border-bottom:1px solid #2a2a3a;display:flex;align-items:center;justify-content:space-between">
+                            <div id="chat-p-contacts-panel" style="display:none;width:320px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0;background:#f8fafc">
+                                <div style="padding:14px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between">
                                     <span style="font-weight:700;font-size:14px;color:#16a34a"><i class="fa-solid fa-address-book" style="margin-right:6px"></i> Contatos por Projeto</span>
-                                    <button onclick="chatPortaisToggleContacts()" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px"><i class="fa-solid fa-xmark"></i></button>
+                                    <button onclick="chatPortaisToggleContacts()" style="background:none;border:none;color:#475569;cursor:pointer;font-size:14px"><i class="fa-solid fa-xmark"></i></button>
                                 </div>
                                 <div id="chat-p-contacts-list" style="padding:8px">
-                                    <div style="text-align:center;color:#666;padding:20px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                                    <div style="text-align:center;color:#475569;padding:20px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
                                 </div>
                             </div>
 
                             <!-- AREA DO CHAT -->
                             <div style="flex:1;display:flex;flex-direction:column">
-                                <div id="chat-p-header" style="padding:12px 20px;border-bottom:1px solid #2a2a3a;display:none;flex-shrink:0">
+                                <div id="chat-p-header" style="padding:12px 20px;border-bottom:1px solid #e2e8f0;display:none;flex-shrink:0">
                                     <div style="display:flex;align-items:center;gap:12px">
-                                        <div id="chat-p-user-avatar" style="width:40px;height:40px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0"></div>
+                                        <div id="chat-p-user-avatar" style="width:40px;height:40px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;color:#1e293b;font-weight:700;font-size:16px;flex-shrink:0"></div>
                                         <div style="flex:1">
                                             <div id="chat-p-user-name" style="font-weight:700;font-size:15px"></div>
-                                            <div id="chat-p-user-info" style="font-size:12px;color:#aaa"></div>
+                                            <div id="chat-p-user-info" style="font-size:12px;color:#475569"></div>
                                         </div>
                                         <div style="display:flex;gap:6px;flex-shrink:0">
                                             <button onclick="chatPortaisClearAll()" title="Limpar tela para todos (apaga tudo)" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background='rgba(244,67,54,.35)'" onmouseout="this.style.background='rgba(244,67,54,.15)'"><i class="fa-solid fa-trash-can"></i></button>
-                                            <button onclick="chatPortaisToggleEmoji()" title="Emoji" id="chat-p-emoji-btn" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#ccc;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background='rgba(249,168,37,.25)'" onmouseout="this.style.background='rgba(255,255,255,.08)'"><i class="fa-solid fa-face-smile"></i></button>
+                                            <button onclick="chatPortaisToggleEmoji()" title="Emoji" id="chat-p-emoji-btn" style="background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.15);color:#334155;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background='rgba(22,163,74,.15)'" onmouseout="this.style.background='rgba(255,255,255,.08)'"><i class="fa-solid fa-face-smile"></i></button>
                                         </div>
                                     </div>
                                 </div>
-                                <div id="chat-p-emoji-panel" style="display:none;padding:8px 16px;border-bottom:1px solid #2a2a3a;background:#0d1117;flex-shrink:0">
+                                <div id="chat-p-emoji-panel" style="display:none;padding:8px 16px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0">
                                     <div id="chat-p-emoji-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:160px;overflow-y:auto"></div>
                                 </div>
                                 <div id="chat-p-messages" style="flex:1;overflow-y:auto;padding:16px 20px">
-                                    <div style="text-align:center;color:#666;padding:60px 20px">
+                                    <div style="text-align:center;color:#475569;padding:60px 20px">
                                         <i class="fa-solid fa-comments" style="font-size:48px;margin-bottom:12px;display:block;opacity:0.3"></i>
                                         <p>Selecione uma conversa para visualizar</p>
                                     </div>
                                 </div>
-                                <div id="chat-p-input-area" style="padding:12px 20px;border-top:1px solid #2a2a3a;display:none;flex-shrink:0">
+                                <div id="chat-p-input-area" style="padding:12px 20px;border-top:1px solid #e2e8f0;display:none;flex-shrink:0">
                                     <div style="display:flex;gap:8px">
                                         <input type="text" id="chat-p-input" placeholder="Digite sua mensagem..." class="config-input" style="flex:1" onkeypress="if(event.key==='Enter')chatPortaisSend()">
                                         <button class="btn-primary" onclick="chatPortaisSend()"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
@@ -1213,31 +1277,31 @@
 
                 <!-- APOSTILAS -->
                 <div id="admin-apostilas" class="admin-section">
-                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                         <h3 style="margin:0 0 14px;color:#16a34a"><i class="fa-solid fa-book-open" style="margin-right:8px"></i> Nova Apostila</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Titulo *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Titulo *</label>
                                 <input type="text" id="apost-titulo" class="config-input" placeholder="Ex: Comunicacao Tecnica e Ordem Unida">
                             </div>
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Projeto *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
                                 <select id="apost-projeto" class="config-input" onchange="apostOnProjetoChange()"><option value="">Carregando...</option></select>
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Descricao</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Descricao</label>
                                 <input type="text" id="apost-desc" class="config-input" placeholder="Breve descricao (opcional)">
                             </div>
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma (vazio = todas)</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma (vazio = todas)</label>
                                 <select id="apost-turma" class="config-input"><option value="">Todas as turmas</option></select>
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Arquivo PDF *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Arquivo PDF *</label>
                                 <select id="apost-file" class="config-input">
                                     <option value="">Selecione o PDF...</option>
                                     <option value="APOST/AP OU E CT.pdf">AP OU E CT.pdf - Comunicacao Tecnica e Ordem Unida</option>
@@ -1258,32 +1322,32 @@
                             <h3><i class="fa-solid fa-book-open" style="color:#16a34a;margin-right:8px"></i> Apostilas Cadastradas</h3>
                         </div>
                         <div id="apost-list" style="padding:16px">
-                            <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- DISCIPLINAS -->
                 <div id="admin-disciplinas" class="admin-section">
-                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #9c27b0;border-radius:12px;margin-bottom:20px">
+                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #9c27b0;border-radius:12px;margin-bottom:20px">
                         <h3 style="margin:0 0 14px;color:#ce93d8"><i class="fa-solid fa-graduation-cap" style="margin-right:8px"></i> Nova Disciplina</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Nome da Disciplina *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Disciplina *</label>
                                 <input type="text" id="disc-nome" class="config-input" placeholder="Ex: AP OU E CT">
                             </div>
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Projeto *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
                                 <select id="disc-projeto" class="config-input"><option value="">Selecione o projeto...</option></select>
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma</label>
                                 <select id="disc-turma" class="config-input"><option value="">Todas as turmas</option></select>
                             </div>
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Instrutor</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Instrutor</label>
                                 <select id="disc-instrutor" class="config-input"><option value="">Selecione o instrutor...</option></select>
                             </div>
                         </div>
@@ -1298,45 +1362,45 @@
                             <h3><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;margin-right:8px"></i> Disciplinas Cadastradas</h3>
                         </div>
                         <div id="disc-list" style="padding:16px">
-                            <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
                         </div>
                     </div>
 
                     <!-- AULAS -->
-                    <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #2188ff;border-radius:12px;margin-bottom:20px;margin-top:20px">
+                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #2188ff;border-radius:12px;margin-bottom:20px;margin-top:20px">
                         <h3 style="margin:0 0 14px;color:#2188ff"><i class="fa-solid fa-chalkboard" style="margin-right:8px"></i> Nova Aula</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Disciplina *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Disciplina *</label>
                                 <select id="aula-disciplina" class="config-input" onchange="aulaOnDisciplinaChange()"><option value="">Selecione a disciplina...</option></select>
                             </div>
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Projeto *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
                                 <select id="aula-projeto" class="config-input" onchange="aulaOnProjetoChange()"><option value="">Selecione o projeto...</option></select>
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma</label>
                                 <select id="aula-turma" class="config-input"><option value="">Todas as turmas</option></select>
                             </div>
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Instrutor</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Instrutor</label>
                                 <select id="aula-instrutor" class="config-input"><option value="">Selecione o instrutor...</option></select>
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Data da Aula *</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data da Aula *</label>
                                 <input type="date" id="aula-data" class="config-input">
                             </div>
                             <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Horario</label>
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Horario</label>
                                 <input type="text" id="aula-horario" class="config-input" placeholder="Ex: 14:00 as 17:00">
                             </div>
                         </div>
                         <div class="form-group" style="margin-bottom:12px">
-                            <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Conteudo / Assunto</label>
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Conteudo / Assunto</label>
                             <input type="text" id="aula-conteudo" class="config-input" placeholder="Breve descricao do conteudo da aula">
                         </div>
                         <button class="btn-primary" id="aula-save-btn" onclick="aulaSave()" style="height:42px">
@@ -1350,7 +1414,7 @@
                             <h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas Cadastradas</h3>
                         </div>
                         <div id="aula-list" style="padding:16px">
-                            <div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
                         </div>
                     </div>
                 </div>
@@ -1373,7 +1437,7 @@
         <div id="recad-photo-viewport" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;width:100%;cursor:grab;position:relative" onmousedown="recadPhotoDragStart(event)" ontouchstart="recadPhotoTouchStart(event)">
             <img id="recad-photo-modal-img" src="" style="max-width:none;max-height:none;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);transform-origin:center center;transition:transform 0.1s ease;user-select:none;-webkit-user-drag:none">
         </div>
-        <div id="recad-photo-modal-label" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#ccc;padding:8px 20px;border-radius:10px;font-size:13px;text-align:center;white-space:nowrap"></div>
+        <div id="recad-photo-modal-label" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#334155;padding:8px 20px;border-radius:10px;font-size:13px;text-align:center;white-space:nowrap"></div>
         <div id="recad-photo-zoom-indicator" style="position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#16a34a;padding:4px 14px;border-radius:8px;font-size:12px;font-weight:600;pointer-events:none;display:none">100%</div>
     </div>
 
@@ -1397,44 +1461,44 @@
     <div id="modal-instrutor-overlay" class="modal-overlay hidden" onclick="instrutorFecharModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width:600px;max-height:90vh;overflow-y:auto">
             <div class="modal-header">
-                <h3 id="instrutor-form-title"><i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Instrutor</h3>
+                <h3 id="instrutor-form-title"><i class="fa-solid fa-plus" style="color:#16a34a;margin-right:8px"></i> Novo Instrutor</h3>
                 <button class="modal-close" onclick="instrutorFecharModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <form id="form-instrutor" onsubmit="return instrutorSalvar(event)">
                     <input type="hidden" id="intr-id">
                     <div class="form-group" style="margin-bottom:14px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Nome Completo *</label>
+                        <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Nome Completo *</label>
                         <input type="text" id="intr-nome" class="config-input" placeholder="Nome completo" required>
                     </div>
                     <div class="form-row" style="display:flex;gap:14px;margin-bottom:14px">
                         <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Nome de Guerra *</label>
+                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Nome de Guerra *</label>
                             <input type="text" id="intr-guerra" class="config-input" placeholder="Nome de guerra" required>
                         </div>
                         <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">CPF *</label>
+                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">CPF *</label>
                             <input type="text" id="intr-cpf" class="config-input" placeholder="000.000.000-00" maxlength="14" required oninput="mascaraCPF(this)">
                         </div>
                     </div>
                     <div class="form-row" style="display:flex;gap:14px;margin-bottom:14px">
                         <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Matricula</label>
+                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Matricula</label>
                             <input type="text" id="intr-matricula" class="config-input" placeholder="Numero da matricula">
                         </div>
                         <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Fone</label>
+                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Fone</label>
                             <input type="text" id="intr-fone" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="mascaraFone(this)">
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom:14px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Email</label>
+                        <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Email</label>
                         <input type="email" id="intr-email" class="config-input" placeholder="email@exemplo.com">
                     </div>
                     <div class="form-group" style="margin-bottom:18px">
-                        <label style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:5px;display:block">Disciplinas</label>
+                        <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Disciplinas</label>
                         <div id="intr-disciplinas-checks" class="config-input" style="min-height:42px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-                            <span style="color:#666;font-size:13px">Nenhuma disciplina disponivel</span>
+                            <span style="color:#475569;font-size:13px">Nenhuma disciplina disponivel</span>
                         </div>
                     </div>
                     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -1466,7 +1530,7 @@
     <div id="modal-download-overlay" class="modal-overlay hidden" onclick="closeDownloadModal(event)">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fa-solid fa-mobile-screen-button" style="color:#4caf50;margin-right:8px"></i> Baixar App Android</h2>
+                <h2><i class="fa-solid fa-mobile-screen-button" style="color:#16a34a;margin-right:8px"></i> Baixar App Android</h2>
                 <button class="modal-close" onclick="closeDownloadModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
@@ -1515,26 +1579,26 @@
     <div id="modal-apontamento-overlay" class="modal-overlay hidden" onclick="apontamentoFecharModal(event)">
         <div class="modal-content" style="max-width:800px;max-height:90vh;overflow-y:auto">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-qrcode" style="color:#f57f17;margin-right:8px"></i> Apontar Aluno</h3>
+                <h3><i class="fa-solid fa-qrcode" style="color:#ca8a04;margin-right:8px"></i> Apontar Aluno</h3>
                 <button class="modal-close" onclick="apontamentoFecharModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <!-- Seleção Turma / Disciplina / Aula -->
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
                     <div class="form-group">
-                        <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Turma *</label>
+                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma *</label>
                         <select id="apt-turma" class="config-input" onchange="apontamentoOnTurmaChange()">
                             <option value="">Selecione...</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Disciplina *</label>
+                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Disciplina *</label>
                         <select id="apt-disciplina" class="config-input" onchange="apontamentoOnDisciplinaChange()">
                             <option value="">Selecione...</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:4px;display:block">Aula *</label>
+                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Aula *</label>
                         <select id="apt-aula" class="config-input" onchange="apontamentoOnAulaChange()">
                             <option value="">Selecione...</option>
                         </select>
@@ -1548,8 +1612,8 @@
                             <i class="fa-solid fa-stop"></i> Parar
                         </button>
                     </div>
-                    <div style="text-align:center;padding:8px;background:#1e1e1e;font-size:12px;color:#aaa">
-                        <i class="fa-solid fa-camera" style="color:#f57f17"></i> Aponte o QR Code do aluno para registrar presença
+                    <div style="text-align:center;padding:8px;background:#f0fdf4;font-size:12px;color:#475569">
+                        <i class="fa-solid fa-camera" style="color:#ca8a04"></i> Aponte o QR Code do aluno para registrar presença
                     </div>
                 </div>
                 <div style="text-align:center;margin-bottom:16px" id="apt-scan-btn-area">
@@ -1560,8 +1624,8 @@
                 <!-- Lista de Presença -->
                 <div id="apt-presenca-area" style="display:none">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                        <h4 style="margin:0;color:#fff"><i class="fa-solid fa-list-check" style="color:#4caf50;margin-right:6px"></i> Lista de Presença</h4>
-                        <span id="apt-presenca-count" style="font-size:12px;color:#888"></span>
+                        <h4 style="margin:0;color:#1e293b"><i class="fa-solid fa-list-check" style="color:#16a34a;margin-right:6px"></i> Lista de Presença</h4>
+                        <span id="apt-presenca-count" style="font-size:12px;color:#475569"></span>
                     </div>
                     <div id="apt-presenca-lista"></div>
                     <div style="margin-top:16px;text-align:right">

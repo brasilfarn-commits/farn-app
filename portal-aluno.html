@@ -285,15 +285,12 @@
             .pf-noticias-layout{grid-template-columns:1fr;height:100%}
             .pf-noticias-col.hidden-mobile{display:none}
             .pf-right-panel{position:relative;height:calc(100vh - 32px);border-radius:0;border:none;border-top:none;background:var(--gray100);overflow:hidden}
-            .pf-content{padding:16px 16px 80px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+            .pf-content{padding:16px 16px 80px;overflow:hidden}
             .pf-stats-row{grid-template-columns:1fr}
             .pf-topbar{padding:0 14px}
             .pf-topbar-title{display:none}
             .pf-user-info{display:none}
             .pf-section.active#pf-section-chat{position:fixed;top:60px;left:0;right:0;bottom:0;z-index:90;background:var(--gray100)}
-            .pf-section{padding-bottom:20px}
-            .pf-welcome{padding:20px}
-            .pf-apostila-card{flex-wrap:wrap}
         }
     </style>
 </head>
@@ -333,7 +330,6 @@
         <!-- TOP BAR -->
         <div class="pf-topbar">
             <div class="pf-topbar-left">
-                <a href="javascript:void(0)" onclick="history.back()" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:10px;color:#fff;text-decoration:none;font-size:14px;transition:.2s;flex-shrink:0;cursor:pointer" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'"><i class="fa-solid fa-arrow-left"></i></a>
                 <img class="pf-topbar-logo" src="logo-farn.png.png" alt="FARN">
                 <span class="pf-topbar-title">Portal do Aluno</span>
             </div>
@@ -423,7 +419,6 @@
                 <div class="pf-section" id="pf-section-chat">
                     <div class="chat-container">
                         <div class="chat-header">
-                            <a href="javascript:void(0)" onclick="history.back()" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:8px;color:#fff;text-decoration:none;font-size:13px;cursor:pointer;flex-shrink:0" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'"><i class="fa-solid fa-arrow-left"></i></a>
                             <div class="chat-header-avatar"><i class="fa-solid fa-shield-halved"></i></div>
                             <div class="chat-header-info">
                                 <div class="chat-header-name">Administracao FARN</div>

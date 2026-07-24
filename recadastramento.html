@@ -26,10 +26,10 @@
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); min-height:100vh; color:#fff; overflow-y:auto; }
+        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#f0fdf4,#ecfdf5,#f0fdf4); min-height:100vh; color:#1e293b; overflow-y:auto; }
 
         body::-webkit-scrollbar { width:8px; }
-        body::-webkit-scrollbar-track { background:rgba(255,255,255,.05); }
+        body::-webkit-scrollbar-track { background:rgba(0,0,0,.03); }
         body::-webkit-scrollbar-thumb { background:#16a34a; border-radius:10px; }
         body::-webkit-scrollbar-thumb:hover { background:#15803d; }
 
@@ -37,8 +37,8 @@
         @keyframes fadeIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
         .recad-welcome img { width:140px; height:140px; border-radius:50%; border:4px solid #16a34a; margin-bottom:20px; box-shadow:0 0 30px rgba(22,163,74,.3); }
         .recad-welcome h1 { font-size:28px; font-weight:800; color:#16a34a; margin-bottom:8px; }
-        .recad-welcome h2 { font-size:18px; font-weight:600; color:#fff; margin-bottom:16px; }
-        .recad-welcome p { font-size:14px; color:#aaa; max-width:500px; line-height:1.6; margin-bottom:24px; }
+        .recad-welcome h2 { font-size:18px; font-weight:600; color:#16a34a; margin-bottom:16px; }
+        .recad-welcome p { font-size:14px; color:#64748b; max-width:500px; line-height:1.6; margin-bottom:24px; }
         .recad-welcome .recad-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(22,163,74,.08); border:1px solid rgba(22,163,74,.2); border-radius:20px; padding:8px 18px; font-size:13px; color:#16a34a; font-weight:600; margin-bottom:24px; }
         .recad-btn-start { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:16px 40px; border-radius:12px; font-size:17px; font-weight:700; cursor:pointer; transition:all .3s; box-shadow:0 4px 20px rgba(22,163,74,.3); }
         .recad-btn-start:hover { transform:translateY(-2px); box-shadow:0 6px 30px rgba(22,163,74,.4); }
@@ -49,30 +49,30 @@
         .recad-form-container { display:none; max-width:700px; margin:0 auto; padding:20px; max-height:100vh; overflow-y:auto; }
         .recad-form-container.active { display:block; animation:fadeIn .6s ease; }
         .recad-form-container::-webkit-scrollbar { width:8px; }
-        .recad-form-container::-webkit-scrollbar-track { background:rgba(255,255,255,.05); border-radius:10px; }
+        .recad-form-container::-webkit-scrollbar-track { background:rgba(0,0,0,.03); border-radius:10px; }
         .recad-form-container::-webkit-scrollbar-thumb { background:#16a34a; border-radius:10px; }
         .recad-form-container::-webkit-scrollbar-thumb:hover { background:#15803d; }
         .recad-form-header { text-align:center; margin-bottom:30px; padding:24px; background:linear-gradient(135deg,rgba(22,163,74,.06),rgba(22,163,74,.03)); border:1px solid rgba(22,163,74,.15); border-radius:16px; }
         .recad-form-header img { width:80px; height:80px; border-radius:50%; border:3px solid #16a34a; margin-bottom:12px; }
         .recad-form-header h2 { font-size:22px; color:#16a34a; margin-bottom:4px; }
-        .recad-form-header p { font-size:13px; color:#aaa; }
+        .recad-form-header p { font-size:13px; color:#64748b; }
 
-        .recad-section { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:24px; margin-bottom:20px; }
-        .recad-section-title { display:flex; align-items:center; gap:10px; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); }
+        .recad-section { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:24px; margin-bottom:20px; }
+        .recad-section-title { display:flex; align-items:center; gap:10px; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid #e2e8f0; }
         .recad-section-title i { font-size:18px; color:#16a34a; }
         .recad-section-title h3 { font-size:16px; font-weight:700; color:#16a34a; }
 
         .recad-field { margin-bottom:16px; }
-        .recad-field label { display:block; font-size:13px; font-weight:600; color:#ccc; margin-bottom:6px; }
+        .recad-field label { display:block; font-size:13px; font-weight:600; color:#64748b; margin-bottom:6px; }
         .recad-field label .required { color:#f44336; }
         .recad-field input, .recad-field select, .recad-field textarea {
-            width:100%; padding:12px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
-            border-radius:10px; color:#fff; font-size:14px; font-family:'Inter',sans-serif; transition:all .3s;
+            width:100%; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0;
+            border-radius:10px; color:#1e293b; font-size:14px; font-family:'Inter',sans-serif; transition:all .3s;
         }
         .recad-field input:focus, .recad-field select:focus, .recad-field textarea:focus {
             border-color:#16a34a; outline:none; box-shadow:0 0 0 3px rgba(22,163,74,.1);
         }
-        .recad-field select option { background:#1a1a2e; color:#fff; }
+        .recad-field select option { background:#f8fafc; color:#1e293b; }
         .recad-row { display:grid; gap:16px; }
         .recad-row-2 { grid-template-columns:1fr 1fr; }
         .recad-row-3 { grid-template-columns:1fr 1fr 1fr; }
@@ -81,7 +81,7 @@
         .recad-upload-area:hover { border-color:#16a34a; background:rgba(22,163,74,.04); }
         .recad-upload-area.dragover { border-color:#16a34a; background:rgba(22,163,74,.06); }
         .recad-upload-area i { font-size:32px; color:#16a34a; margin-bottom:8px; }
-        .recad-upload-area p { font-size:13px; color:#aaa; }
+        .recad-upload-area p { font-size:13px; color:#64748b; }
         .recad-upload-area small { font-size:11px; color:#666; }
         .recad-upload-area input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
 
@@ -121,7 +121,7 @@
         .recad-success.active { display:block; animation:fadeIn .6s ease; }
         .recad-success i { font-size:60px; color:#4caf50; margin-bottom:16px; }
         .recad-success h2 { font-size:24px; color:#4caf50; margin-bottom:8px; }
-        .recad-success p { font-size:14px; color:#aaa; max-width:400px; margin:0 auto; line-height:1.6; }
+        .recad-success p { font-size:14px; color:#64748b; max-width:400px; margin:0 auto; line-height:1.6; }
 
         .recad-msg { padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13px; font-weight:600; display:none; }
         .recad-msg.error { display:block; background:rgba(244,67,54,.15); border:1px solid rgba(244,67,54,.3); color:#f44336; }
@@ -130,31 +130,31 @@
 
         .recad-check-container { display:none; max-width:450px; margin:0 auto; padding:30px 20px; text-align:center; }
         .recad-check-container.active { display:block; animation:fadeIn .6s ease; }
-        .recad-check-box { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:30px; margin-top:20px; }
+        .recad-check-box { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:30px; margin-top:20px; }
         .recad-check-box h3 { color:#2563eb; font-size:18px; margin-bottom:6px; }
-        .recad-check-box p { color:#888; font-size:13px; margin-bottom:20px; }
-        .recad-check-box .recad-field input { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#fff; }
+        .recad-check-box p { color:#64748b; font-size:13px; margin-bottom:20px; }
+        .recad-check-box .recad-field input { background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; }
         .recad-check-box .recad-field input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
         .recad-check-btn { width:100%; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; border:none; padding:14px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; transition:all .3s; }
         .recad-check-btn:hover { box-shadow:0 4px 16px rgba(37,99,235,.3); }
         .recad-check-btn:disabled { opacity:.5; cursor:not-allowed; }
-        .recad-check-back { display:inline-flex; align-items:center; gap:6px; color:#888; font-size:13px; cursor:pointer; margin-top:16px; transition:color .2s; }
-        .recad-check-back:hover { color:#fff; }
+        .recad-check-back { display:inline-flex; align-items:center; gap:6px; color:#64748b; font-size:13px; cursor:pointer; margin-top:16px; transition:color .2s; }
+        .recad-check-back:hover { color:#16a34a; }
 
         .recad-status-result { display:none; margin-top:20px; text-align:left; }
         .recad-status-result.active { display:block; animation:fadeIn .5s ease; }
-        .recad-status-card { background:rgba(255,255,255,.05); border-radius:14px; padding:24px; border:1px solid rgba(255,255,255,.1); }
+        .recad-status-card { background:#fff; border-radius:14px; padding:24px; border:1px solid #e2e8f0; }
         .recad-status-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
         .recad-status-icon { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
         .recad-status-icon.pendente { background:rgba(202,138,4,.1); color:#ca8a04; }
         .recad-status-icon.aprovado { background:rgba(76,175,80,.15); color:#4caf50; }
         .recad-status-icon.rejeitado { background:rgba(244,67,54,.15); color:#f44336; }
         .recad-status-info h3 { font-size:16px; margin-bottom:2px; }
-        .recad-status-info p { font-size:12px; color:#888; }
-        .recad-status-detail { border-top:1px solid rgba(255,255,255,.1); padding-top:14px; }
+        .recad-status-info p { font-size:12px; color:#64748b; }
+        .recad-status-detail { border-top:1px solid #e2e8f0; padding-top:14px; }
         .recad-status-detail-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
-        .recad-status-detail-row span:first-child { color:#888; }
-        .recad-status-detail-row span:last-child { color:#fff; font-weight:600; }
+        .recad-status-detail-row span:first-child { color:#64748b; }
+        .recad-status-detail-row span:last-child { color:#1e293b; font-weight:600; }
 
         @media(max-width:600px) {
             .recad-row-2, .recad-row-3 { grid-template-columns:1fr; }
@@ -167,7 +167,6 @@
 
     <!-- TELA DE BOAS-VINDAS -->
     <div id="recad-welcome" class="recad-welcome">
-        <a href="javascript:void(0)" onclick="history.back()" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.25);border-radius:12px;color:#16a34a;text-decoration:none;font-size:16px;margin-bottom:20px;transition:.2s;cursor:pointer" onmouseover="this.style.background='rgba(22,163,74,.2)'" onmouseout="this.style.background='rgba(22,163,74,.1)'"><i class="fa-solid fa-arrow-left"></i></a>
         <img src="logo-farn.png.png" alt="FARN">
         <div class="recad-badge"><i class="fa-solid fa-fire"></i> Campanha de Recadastramento</div>
         <h1>Recadastramento de Formados</h1>
@@ -217,8 +216,8 @@
                     </select>
                 </div>
                 <div id="rc-projeto-info" style="display:none;padding:12px 16px;border-radius:10px;background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.15);margin-top:8px">
-                    <div id="rc-projeto-desc" style="font-size:13px;color:#ccc"></div>
-                    <div id="rc-projeto-turmas" style="font-size:12px;color:#888;margin-top:6px"></div>
+                    <div id="rc-projeto-desc" style="font-size:13px;color:#64748b"></div>
+                    <div id="rc-projeto-turmas" style="font-size:12px;color:#64748b;margin-top:6px"></div>
                 </div>
             </div>
 
@@ -491,7 +490,7 @@
                 <div class="recad-field">
                     <label>Crie uma Senha <span class="required">*</span></label>
                     <input type="password" id="rc-senha" minlength="6" required placeholder="Minimo 6 caracteres">
-                    <span style="font-size:12px;color:#888;margin-top:4px;display:block"><i class="fa-solid fa-circle-info" style="color:#16a34a"></i> Crie uma senha de 6 digitos para acessar o app</span>
+                    <span style="font-size:12px;color:#64748b;margin-top:4px;display:block"><i class="fa-solid fa-circle-info" style="color:#16a34a"></i> Crie uma senha de 6 digitos para acessar o app</span>
                 </div>
             </div>
 
@@ -517,7 +516,7 @@
     <div id="recad-check" class="recad-check-container">
         <img src="logo-farn.png.png" alt="FARN" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;margin-bottom:16px">
         <h2 style="color:#2563eb">Conferir Status do Recadastramento</h2>
-        <p style="color:#888;font-size:13px">Informe seu CPF e a senha que voce cadastrou</p>
+        <p style="color:#64748b;font-size:13px">Informe seu CPF e a senha que voce cadastrou</p>
 
         <div class="recad-check-box">
             <div id="recad-check-msg" class="recad-msg"></div>
@@ -549,7 +548,7 @@
                         <p id="rc-status-label"></p>
                     </div>
                 </div>
-                <div id="rc-status-aprovado-msg" style="display:none;margin-top:16px;padding:16px;background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);border-radius:10px;font-size:13px;color:#ccc;line-height:1.7">
+                <div id="rc-status-aprovado-msg" style="display:none;margin-top:16px;padding:16px;background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);border-radius:10px;font-size:13px;color:#64748b;line-height:1.7">
                 </div>
                 <div class="recad-status-detail">
                     <div class="recad-status-detail-row">
@@ -578,7 +577,7 @@
                     <i class="fa-solid fa-graduation-cap"></i> Acessar Portal do Formado
                     <i class="fa-solid fa-arrow-right"></i>
                 </a>
-                <p style="color:#888;font-size:11px;margin-top:8px">Acesse com seu <strong>CPF</strong> e <strong>senha</strong> definidos no cadastro</p>
+                <p style="color:#64748b;font-size:11px;margin-top:8px">Acesse com seu <strong>CPF</strong> e <strong>senha</strong> definidos no cadastro</p>
             </div>
         </div>
     </div>

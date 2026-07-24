@@ -598,12 +598,12 @@ function applyUserPermissions() {
         'admin-config': p.includes('config') || isGeral,
         'admin-usuarios': p.includes('usuarios') || isGeral,
         'admin-form-usuario': p.includes('usuarios') || isGeral,
-        'admin-recadastramento': p.includes('admin') || isGeral,
-        'admin-recad-detalhe': p.includes('admin') || isGeral,
-        'admin-chat-portais': p.includes('admin') || isGeral,
-        'admin-apostilas': p.includes('admin') || isGeral,
-        'admin-disciplinas': p.includes('admin') || isGeral,
-        'admin-apontamento': p.includes('admin') || isGeral
+        'admin-recadastramento': p.includes('recadastramento') || p.includes('admin') || isGeral,
+        'admin-recad-detalhe': p.includes('recadastramento') || p.includes('admin') || isGeral,
+        'admin-chat-portais': p.includes('chat-portais') || p.includes('admin') || isGeral,
+        'admin-apostilas': p.includes('apostilas') || p.includes('admin') || isGeral,
+        'admin-disciplinas': p.includes('disciplinas') || p.includes('admin') || isGeral,
+        'admin-apontamento': p.includes('apontamento') || p.includes('admin') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -1126,7 +1126,7 @@ function preInicializar() {
     const selProj = document.getElementById('pre-selecao-projeto');
     if (!selProj) return;
     selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.forEach(p => {
+    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
     const conteudo = document.getElementById('pre-conteudo');
@@ -1859,7 +1859,7 @@ function abrirModalMontarRelatorio() {
     const grid = document.getElementById('campos-relatorio-grid');
     if (!grid) return;
     grid.innerHTML = camposRelatorio.map(c => `
-        <label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#1a1a2e;border-radius:6px;cursor:pointer;font-size:12px;color:#ccc;transition:background 0.2s" onmouseenter="this.style.background='#252545'" onmouseleave="this.style.background='#1a1a2e'">
+        <label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f0fdf4;border-radius:6px;cursor:pointer;font-size:12px;color:#475569;transition:background 0.2s" onmouseenter="this.style.background='#e2e8f0'" onmouseleave="this.style.background='#f0fdf4'">
             <input type="checkbox" class="campo-relatorio-check" value="${c.key}" style="accent-color:#9c27b0;width:14px;height:14px">
             ${c.label}
         </label>
@@ -2001,7 +2001,7 @@ function projetoRenderTurmas() {
             '</div>' +
             '<button type="button" class="btn-icon" title="Editar" onclick="projetoEditarTurma(' + i + ')"><i class="fa-solid fa-pen"></i></button>' +
             '<button type="button" class="btn-icon btn-danger-icon" title="Remover" onclick="projetoRemoverTurma(' + i + ')"><i class="fa-solid fa-trash"></i></button>';
-        div.addEventListener('mouseenter', function() { this.style.background = '#1a1a2e'; });
+        div.addEventListener('mouseenter', function() { this.style.background = '#e2e8f0'; });
         div.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
         lista.appendChild(div);
     });
@@ -2221,7 +2221,7 @@ function populateProjetoSelect() {
     if (!select) return;
     const current = select.value;
     select.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.forEach(p => {
+    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.nome;
         opt.textContent = p.nome + (p.responsavel ? ' - ' + p.responsavel : '');
@@ -2580,15 +2580,22 @@ function renderUsuariosList() {
                 'instrutores': '<span class="usuario-tag usuario-tag-instrutor">Instrutores</span>',
                 'relatorios': '<span class="usuario-tag usuario-tag-admin">Relatorios</span>',
                 'projetos': '<span class="usuario-tag usuario-tag-pre">Projetos</span>',
-                'config': '<span class="usuario-tag usuario-tag-admin">Config</span>'
+                'usuarios': '<span class="usuario-tag usuario-tag-admin">Usuarios</span>',
+                'config': '<span class="usuario-tag usuario-tag-admin">Config</span>',
+                'recadastramento': '<span class="usuario-tag usuario-tag-pre">Recadastramento</span>',
+                'chat-portais': '<span class="usuario-tag usuario-tag-instrutor">Chat</span>',
+                'apostilas': '<span class="usuario-tag usuario-tag-pre">Apostilas</span>',
+                'disciplinas': '<span class="usuario-tag usuario-tag-instrutor">Disciplinas</span>',
+                'apontamento': '<span class="usuario-tag usuario-tag-admin">Apontamento</span>'
             };
             return labels[p] || '';
         }).join('');
-        const statusBadge = u.ativo === false ? '<span style="color:#f44336;font-size:11px;font-weight:600">Inativo</span>' : '<span style="color:#4caf50;font-size:11px;font-weight:600">Ativo</span>';
+        const tipoBadge = u.tipo === 'colaborador' ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px">Colaborador</span>' : u.tipo === 'visitante' ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px">Visitante</span>' : '';
+        const statusBadge = u.ativo === false ? '<span style="color:#dc2626;font-size:11px;font-weight:600">Inativo</span>' : '<span style="color:#16a34a;font-size:11px;font-weight:600">Ativo</span>';
         const turmaTags = (u.turmasVinculadas || []).map(t => `<span class="usuario-tag usuario-tag-turma">${t}</span>`).join('');
         return `<div class="usuario-row">
             <div class="usuario-info">
-                <div class="usuario-nome">${u.nome || ''} ${statusBadge}</div>
+                <div class="usuario-nome">${u.nome || ''} ${tipoBadge} ${statusBadge}</div>
                 <div class="usuario-cpf">CPF: ${formatCPFDisplay(u.cpf)}</div>
                 <div class="usuario-permissoes">${permTags}</div>
                 ${turmaTags ? `<div class="usuario-permissoes" style="margin-top:4px"><small style="color:#888">Turmas:</small> ${turmaTags}</div>` : ''}
@@ -2606,13 +2613,9 @@ function openUsuarioForm(docId) {
     editingUsuarioDocId = docId || null;
     const form = document.getElementById('usuario-form');
     form.reset();
-    document.getElementById('uf-perm-pre').checked = false;
-    document.getElementById('uf-perm-alunos').checked = false;
-    document.getElementById('uf-perm-turmas').checked = false;
-    document.getElementById('uf-perm-instrutores').checked = false;
-    document.getElementById('uf-perm-relatorios').checked = false;
-    document.getElementById('uf-perm-projetos').checked = false;
-    document.getElementById('uf-perm-config').checked = false;
+    document.querySelectorAll('.uf-perm-check').forEach(cb => cb.checked = false);
+    const allCheck = document.getElementById('uf-perm-all');
+    if (allCheck) allCheck.checked = false;
     const turmasListEl = document.getElementById('uf-turmas-list');
     if (turmasListEl) {
         turmasListEl.innerHTML = turmas.map(t => `
@@ -2632,18 +2635,16 @@ function openUsuarioForm(docId) {
     if (docId) {
         const u = usuarios.find(u => u.docId === docId);
         if (u) {
-            document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#2196f3;margin-right:8px"></i> Editar Usuario';
+            document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#2563eb;margin-right:8px"></i> Editar Usuario';
             document.getElementById('uf-nome').value = u.nome || '';
             document.getElementById('uf-cpf').value = u.cpf || '';
             document.getElementById('uf-senha').value = u.senha || '';
+            document.getElementById('uf-tipo').value = u.tipo || '';
             const p = u.permissoes || [];
-            if (p.includes('pre-inscricao')) document.getElementById('uf-perm-pre').checked = true;
-            if (p.includes('alunos')) document.getElementById('uf-perm-alunos').checked = true;
-            if (p.includes('turmas')) document.getElementById('uf-perm-turmas').checked = true;
-            if (p.includes('instrutores')) document.getElementById('uf-perm-instrutores').checked = true;
-            if (p.includes('relatorios')) document.getElementById('uf-perm-relatorios').checked = true;
-            if (p.includes('projetos')) document.getElementById('uf-perm-projetos').checked = true;
-            if (p.includes('config')) document.getElementById('uf-perm-config').checked = true;
+            document.querySelectorAll('.uf-perm-check').forEach(cb => {
+                if (p.includes(cb.value)) cb.checked = true;
+            });
+            if (allCheck) allCheck.checked = document.querySelectorAll('.uf-perm-check:checked').length === document.querySelectorAll('.uf-perm-check').length;
             const tv = u.turmasVinculadas || [];
             if (tv.length > 0 && turmasListEl) {
                 turmasListEl.querySelectorAll('.uf-turma-check').forEach(cb => {
@@ -2652,7 +2653,7 @@ function openUsuarioForm(docId) {
             }
         }
     } else {
-        document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#2196f3;margin-right:8px"></i> Novo Usuario';
+        document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#2563eb;margin-right:8px"></i> Novo Usuario';
     }
     showAdminSection('admin-form-usuario', null);
 }
@@ -2666,21 +2667,16 @@ async function handleSaveUsuario(event) {
     const nome = document.getElementById('uf-nome').value.trim();
     const cpf = document.getElementById('uf-cpf').value.replace(/\D/g, '');
     const senha = document.getElementById('uf-senha').value;
-    if (!nome || !cpf || !senha) { alert('Preencha nome, CPF e senha.'); return false; }
+    const tipo = document.getElementById('uf-tipo').value;
+    if (!nome || !cpf || !senha || !tipo) { alert('Preencha nome, CPF, senha e tipo de usuario.'); return false; }
     if (cpf.length !== 11) { alert('CPF invalido.'); return false; }
     if (senha.length < 4) { alert('Senha deve ter minimo 4 caracteres.'); return false; }
     const permissoes = [];
-    if (document.getElementById('uf-perm-pre').checked) permissoes.push('pre-inscricao');
-    if (document.getElementById('uf-perm-alunos').checked) permissoes.push('alunos');
-    if (document.getElementById('uf-perm-turmas').checked) permissoes.push('turmas');
-    if (document.getElementById('uf-perm-instrutores').checked) permissoes.push('instrutores');
-    if (document.getElementById('uf-perm-relatorios').checked) permissoes.push('relatorios');
-    if (document.getElementById('uf-perm-projetos').checked) permissoes.push('projetos');
-    if (document.getElementById('uf-perm-config').checked) permissoes.push('config');
+    document.querySelectorAll('.uf-perm-check:checked').forEach(cb => permissoes.push(cb.value));
     if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
     const turmasVinculadas = [];
     document.querySelectorAll('.uf-turma-check:checked').forEach(cb => turmasVinculadas.push(cb.value));
-    const userData = { nome, cpf, senha, permissoes, turmasVinculadas, ativo: true };
+    const userData = { nome, cpf, senha, tipo, permissoes, turmasVinculadas, ativo: true };
     try {
         if (editingUsuarioDocId) {
             await dbFirestore.collection(FB_USUARIOS).doc(editingUsuarioDocId).set(userData, { merge: true });
@@ -2724,6 +2720,11 @@ function toggleUsuarioSenha() {
     else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
 }
 
+function toggleAllPermissoes() {
+    const allChecked = document.getElementById('uf-perm-all').checked;
+    document.querySelectorAll('.uf-perm-check').forEach(cb => cb.checked = allChecked);
+}
+
 // ===== PWA INSTALL =====
 
 var deferredPrompt = null;
@@ -2761,9 +2762,9 @@ function installApp() {
 function showIOSInstallGuide() {
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px';
-    overlay.innerHTML = '<div style="background:#1a1a2e;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#fff;text-align:center">' +
+    overlay.innerHTML = '<div style="background:#ffffff;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#1e293b;text-align:center">' +
         '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#16a34a"></i></div>' +
-        '<h3 style="margin:0 0 8px;font-size:18px;color:#fff">Instalar FARN no iPhone</h3>' +
+        '<h3 style="margin:0 0 8px;font-size:18px;color:#1e293b">Instalar FARN no iPhone</h3>' +
         '<p style="color:#aaa;font-size:13px;margin:0 0 20px">Siga os passos abaixo para adicionar o aplicativo a tela inicial:</p>' +
         '<div style="text-align:left;background:#12121e;border-radius:10px;padding:16px;margin-bottom:20px">' +
         '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
@@ -2783,9 +2784,9 @@ function showIOSInstallGuide() {
 function showInstallGuide() {
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px';
-    overlay.innerHTML = '<div style="background:#1a1a2e;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#fff;text-align:center">' +
+    overlay.innerHTML = '<div style="background:#ffffff;border-radius:16px;max-width:380px;width:100%;padding:28px;color:#1e293b;text-align:center">' +
         '<div style="font-size:48px;margin-bottom:16px"><i class="fa-solid fa-mobile-screen-button" style="color:#16a34a"></i></div>' +
-        '<h3 style="margin:0 0 8px;font-size:18px;color:#fff">Instalar FARN</h3>' +
+        '<h3 style="margin:0 0 8px;font-size:18px;color:#1e293b">Instalar FARN</h3>' +
         '<p style="color:#aaa;font-size:13px;margin:0 0 20px">Adicione o aplicativo a tela inicial do seu dispositivo:</p>' +
         '<div style="text-align:left;background:#12121e;border-radius:10px;padding:16px;margin-bottom:20px">' +
         '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">' +
@@ -2817,7 +2818,7 @@ function apontamentoPopularSelecaoProjeto() {
     const sel = document.getElementById('apt-selecao-projeto');
     if (!sel) return;
     sel.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.forEach(p => {
+    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
         sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
 }
@@ -3155,8 +3156,8 @@ function apontamentoRenderHistorico(registros) {
             '</tr>';
         }).join('');
         const cardId = 'apt-card-' + ri;
-        return '<div class="apt-card" id="' + cardId + '" style="background:#1a1a2e;border:1px solid #2a2a3a;border-radius:10px;margin-bottom:16px;overflow:hidden">' +
-            '<div style="padding:12px 16px;background:#151525;border-bottom:1px solid #2a2a3a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none" onclick="apontamentoToggleCard(\'' + cardId + '\')">' +
+        return '<div class="apt-card" id="' + cardId + '" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:16px;overflow:hidden">' +
+            '<div style="padding:12px 16px;background:#f0fdf4;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none" onclick="apontamentoToggleCard(\'' + cardId + '\')">' +
                 '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
                     '<i class="fa-solid fa-chevron-down" style="color:#666;font-size:12px;transition:transform 0.2s" id="apt-arrow-' + ri + '"></i>' +
                     '<span style="background:rgba(245,127,23,0.2);color:#f57f17;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700">' + (r.turma || '-') + '</span>' +
@@ -3240,7 +3241,9 @@ async function apostLoadProjetos() {
         sel.innerHTML = '<option value="">Selecione o projeto...</option>';
         snap.forEach(function(doc) {
             var p = doc.data();
-            sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+            if ((p.status || 'Em Andamento') === 'Em Andamento') {
+                sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+            }
         });
     } catch(e) {
         sel.innerHTML = '<option value="">Erro ao carregar projetos</option>';
@@ -3419,7 +3422,9 @@ async function discLoadProjetos() {
         sel.innerHTML = '<option value="">Selecione o projeto...</option>';
         snap.forEach(function(doc) {
             var p = doc.data();
-            sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+            if ((p.status || 'Em Andamento') === 'Em Andamento') {
+                sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+            }
         });
     } catch(e) {
         sel.innerHTML = '<option value="">Erro ao carregar projetos</option>';
@@ -3877,7 +3882,7 @@ function instrutorPopulateDisciplinas(selectedArr) {
     }
     allDisc.forEach(function(d) {
         var checked = selectedArr.indexOf(d) !== -1 ? 'checked' : '';
-        container.innerHTML += '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:13px;color:#ccc;white-space:nowrap"><input type="checkbox" value="' + d + '" class="intr-disc-check" ' + checked + '> ' + d + '</label>';
+        container.innerHTML += '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;background:#f0fdf4;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:13px;color:#475569;white-space:nowrap"><input type="checkbox" value="' + d + '" class="intr-disc-check" ' + checked + '> ' + d + '</label>';
     });
 }
 
