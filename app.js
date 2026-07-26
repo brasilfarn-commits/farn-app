@@ -3091,7 +3091,8 @@ async function apontamentoSalvar() {
         criadoPor: currentUserData ? currentUserData.nome || '' : ''
     };
     try {
-        await dbFirestore.collection('apontamentos').add(dados);
+        const aptRef = await dbFirestore.collection('apontamentos').add(dados);
+        const aptId = aptRef.id;
 
         let dataAula = '';
         try {
@@ -3114,7 +3115,8 @@ async function apontamentoSalvar() {
                 status: aluno.status || '',
                 obs: aluno.obs || '',
                 criadoEm: new Date().toISOString(),
-                criadoPor: currentUserData ? currentUserData.nome || '' : ''
+                criadoPor: currentUserData ? currentUserData.nome || '' : '',
+                apontamentoId: aptId
             });
         });
         await batch.commit();
