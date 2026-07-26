@@ -245,6 +245,26 @@ function configInstituicaoCarregarHome() {
     }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
 }
 
+function migrarDataInscricao() {
+    if (!firebaseReady) return;
+    var batch = dbFirestore.batch();
+    var count = 0;
+    dbFirestore.collection('candidatos').get().then(function(snap) {
+        snap.forEach(function(doc) {
+            var d = doc.data();
+            if (!d.dataInscricao) {
+                batch.set(doc.ref, { dataInscricao: '28/07/2026' }, { merge: true });
+                count++;
+            }
+        });
+        if (count > 0) {
+            batch.commit().then(function() {
+                console.log('Migracao dataInscricao: ' + candidatos.length + ' candidatos atualizados com 28/07/2026');
+            }).catch(function(e) { console.error('Erro na migracao dataInscricao:', e); });
+        }
+    }).catch(function(e) { console.error('Erro ao buscar candidatos para migracao:', e); });
+}
+
 async function syncAllDatabases() {
     if (!firebaseReady && !firebaseError) {
         alert('Firebase nao conectado. Verifique a conexao.');
@@ -680,6 +700,7 @@ function enterAdminPanel() {
     populateProjetoSelect();
     renderList();
     configInstituicaoCarregarHome();
+    migrarDataInscricao();
     if (typeof chatPortaisStartNotifListener === 'function') chatPortaisStartNotifListener();
 }
 
@@ -1047,7 +1068,7 @@ function showAdminSection(sectionId, navEl) {
 
 /* ===== FORM CANDIDATO ===== */
 
-const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-data-inscricao','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
 async function openFormCandidato() {
     editingIndex = null;
@@ -1069,6 +1090,7 @@ async function editCandidato(index) {
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
     document.getElementById('fc-nascimento').value = c.nascimento || '';
+    document.getElementById('fc-data-inscricao').value = c.dataInscricao || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
     document.getElementById('fc-nacionalidade').value = c.nacionalidade || '';
     document.getElementById('fc-naturalidade').value = c.naturalidade || '';
@@ -1198,6 +1220,7 @@ async function handleCandidatoSubmit(event) {
     data.status = editingIndex !== null ? candidatos[editingIndex].status : 'Pendente';
     data.dataCadastro = editingIndex !== null ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
     data.dataHoraCadastro = editingIndex !== null ? candidatos[editingIndex].dataHoraCadastro : new Date().toLocaleString('pt-BR');
+    data.dataInscricao = document.getElementById('fc-data-inscricao').value || '';
     if (editingIndex !== null && candidatos[editingIndex].atualizarCadastro) {
         data.atualizarCadastro = true;
     }
@@ -1343,6 +1366,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value" style="color:${(c.tipoPessoa||'A')==='F'?'#ff9800':'#2196f3'};font-weight:700">${(c.tipoPessoa||'A')==='F'?'Formado (A)':'Academico (A)'}</span></div>
             <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value">${c.status}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastro</span><span class="detail-value">${c.dataCadastro}</span></div>
+            <div class="detail-item"><span class="detail-label">Inscricao</span><span class="detail-value">${c.dataInscricao || '---'}</span></div>
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
@@ -1605,7 +1629,7 @@ function exportExcel() {
     if (!filtrados.length) { alert('Nenhum candidato para exportar nesta turma.'); return; }
     let csv = 'Nome,CPF,Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     filtrados.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}","${c.dataInscricao||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pre_inscritos_farn.csv'; a.click();
@@ -1952,6 +1976,7 @@ const camposRelatorio = [
     { key: 'senha', label: 'Senha' },
     { key: 'cadastradoPor', label: 'Cadastrado por' },
     { key: 'dataCadastro', label: 'Data Cadastro' },
+    { key: 'dataInscricao', label: 'Data Inscricao' },
     { key: 'dataHoraCadastro', label: 'Data/Hora 1o Cadastro' }
 ];
 
