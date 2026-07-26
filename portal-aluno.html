@@ -561,6 +561,8 @@
     var paGalleryUnsub=null;
     var paNoticiasUnsub=null;
     var paAptUnsub=null;
+    var paAulasUnsub=null;
+    var paAptAulasUnsub=null;
     var paDisciplinas=[];
 
     /* ===== FORMATACAO ===== */
@@ -705,6 +707,9 @@
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
         if (paNoticiasUnsub) { paNoticiasUnsub(); paNoticiasUnsub = null; }
         if (paAptUnsub) { paAptUnsub(); paAptUnsub = null; }
+        if (paAulasUnsub) { paAulasUnsub(); paAulasUnsub = null; }
+        if (paAptAulasUnsub) { paAptAulasUnsub(); paAptAulasUnsub = null; }
+        paPresencasCache = {};
         document.getElementById('screen-portal').classList.remove('active');
         document.getElementById('screen-login').style.display = 'flex';
         document.getElementById('pf-cpf').value = '';
@@ -1183,6 +1188,8 @@
     }
 
     /* ===== AULAS ===== */
+    var paPresencasCache = {};
+
     function paLoadAulas() {
         if (!paUser) return;
         var container = document.getElementById('pf-aula-list');
@@ -1190,51 +1197,89 @@
         var myProjeto = (paUser.projeto || '').trim();
         var myTurma = (paUser.turma || '').trim();
 
-        dbFirestore.collection('aulas').onSnapshot(function(snap) {
+        if (paAulasUnsub) { paAulasUnsub(); paAulasUnsub = null; }
+        if (paAptAulasUnsub) { paAptAulasUnsub(); paAptAulasUnsub = null; }
+
+        paAptAulasUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).onSnapshot(function(snap) {
+            paPresencasCache = {};
+            snap.forEach(function(doc) {
+                var p = doc.data();
+                var key = (p.aula || '') + '||' + (p.dataAula || '');
+                paPresencasCache[key] = p;
+            });
+            paRenderAulas(container, myProjeto, myTurma);
+        }, function() {});
+
+        paAulasUnsub = dbFirestore.collection('aulas').onSnapshot(function(snap) {
             var items = [];
             snap.forEach(function(doc) {
                 var a = doc.data();
                 a._id = doc.id;
                 items.push(a);
             });
-            if (items.length === 0) {
-                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula disponivel no momento.</p></div>';
-                return;
-            }
-            items.sort(function(x, y) {
-                var dx = x.data ? new Date(x.data).getTime() : 0;
-                var dy = y.data ? new Date(y.data).getTime() : 0;
-                return dy - dx;
-            });
-            container.innerHTML = '';
-            var count = 0;
-            items.forEach(function(a) {
-                if (a.projeto && myProjeto && a.projeto !== myProjeto) return;
-                if (a.turma && myTurma && a.turma !== myTurma) return;
-                count++;
-                var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
-                var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
-                var instrutorHtml = a.instrutor ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
-                var card = document.createElement('div');
-                card.className = 'pf-apostila-card';
-                card.style.cursor = 'default';
-                card.innerHTML = '<div class="pf-apostila-icon" style="background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.12)"><i class="fa-solid fa-chalkboard-user" style="color:var(--blue)"></i></div>' +
-                    '<div class="pf-apostila-info">' +
-                        '<div class="pf-apostila-titulo">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
-                        '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +
-                        '<div class="pf-apostila-meta">' +
-                            (dateStr ? '<span><i class="fa-solid fa-calendar-days" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
-                            turmaHtml + instrutorHtml +
-                        '</div>' +
-                    '</div>';
-                container.appendChild(card);
-            });
-            if (count === 0) {
-                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula para o seu projeto e turma.</p></div>';
-            }
+            paRenderAulasData = items;
+            paRenderAulas(container, myProjeto, myTurma);
         }, function() {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
         });
+    }
+
+    var paRenderAulasData = [];
+
+    function paRenderAulas(container, myProjeto, myTurma) {
+        var items = paRenderAulasData;
+        if (items.length === 0 && Object.keys(paPresencasCache).length === 0) {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula disponivel no momento.</p></div>';
+            return;
+        }
+        items.sort(function(x, y) {
+            var dx = x.data ? new Date(x.data).getTime() : 0;
+            var dy = y.data ? new Date(y.data).getTime() : 0;
+            return dy - dx;
+        });
+        container.innerHTML = '';
+        var count = 0;
+        items.forEach(function(a) {
+            if (a.projeto && myProjeto && a.projeto !== myProjeto) return;
+            if (a.turma && myTurma && a.turma !== myTurma) return;
+            count++;
+            var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+            var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
+            var instrutorHtml = a.instrutor ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
+
+            var presKey = (a.disciplina || '') + '||' + (a.data || '');
+            var presKey2 = (a.conteudo || a.disciplina || '') + '||' + (a.data || '');
+            var pres = paPresencasCache[presKey] || paPresencasCache[presKey2] || null;
+            if (!pres) {
+                for (var k in paPresencasCache) {
+                    var pp = paPresencasCache[k];
+                    if (pp.dataAula === a.data && (pp.aula || '').indexOf(a.disciplina || '') !== -1) { pres = pp; break; }
+                }
+            }
+            var statusBadge = '';
+            if (pres) {
+                var stColor = pres.status === 'Presente' ? '#16a34a' : pres.status === 'Falta' ? '#dc2626' : '#ca8a04';
+                var stIcon = pres.status === 'Presente' ? 'fa-check-circle' : pres.status === 'Falta' ? 'fa-times-circle' : 'fa-info-circle';
+                statusBadge = '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + stColor + '15;color:' + stColor + ';border:1px solid ' + stColor + '30;margin-left:8px"><i class="fa-solid ' + stIcon + '"></i> ' + pres.status + '</span>';
+            }
+
+            var card = document.createElement('div');
+            card.className = 'pf-apostila-card';
+            card.style.cursor = 'default';
+            card.innerHTML = '<div class="pf-apostila-icon" style="background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.12)"><i class="fa-solid fa-chalkboard-user" style="color:var(--blue)"></i></div>' +
+                '<div class="pf-apostila-info">' +
+                    '<div class="pf-apostila-titulo">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + statusBadge + '</div>' +
+                    '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +
+                    '<div class="pf-apostila-meta">' +
+                        (dateStr ? '<span><i class="fa-solid fa-calendar-days" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
+                        turmaHtml + instrutorHtml +
+                    '</div>' +
+                '</div>';
+            container.appendChild(card);
+        });
+        if (count === 0) {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula para o seu projeto e turma.</p></div>';
+        }
     }
 
     /* ===== GALERIA ===== */
