@@ -292,6 +292,31 @@
             .pf-user-info{display:none}
             .pf-section.active#pf-section-chat{position:fixed;top:60px;left:0;right:0;bottom:0;z-index:90;background:var(--gray100)}
         }
+        /* ===== CARTEIRA ===== */
+        #pf-carteira-container{display:flex;justify-content:center;margin:0 auto}
+        #pf-carteira-card{position:relative;width:100%;max-width:780px;aspect-ratio:1000/660;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+        #pf-carteira-bg{width:100%;height:100%;object-fit:cover;display:block}
+        #pf-carteira-foto{position:absolute;left:5.5%;top:34%;width:20%;height:44%;display:flex;flex-direction:column;align-items:center}
+        #pf-carteira-foto-img{width:100%;height:85%;background:#d0d5dd;border-radius:4px;border:2px solid #888;overflow:hidden;display:flex;align-items:center;justify-content:center}
+        #pf-carteira-foto-img img{width:100%;height:100%;object-fit:cover}
+        #pf-carteira-foto-img .no-photo{font-size:48px;color:#999}
+        #pf-carteira-foto-label{margin-top:2px;background:#1a3a7a;color:#fff;font-size:9px;font-weight:700;padding:2px 12px;border-radius:3px;letter-spacing:1px;text-align:center}
+        .pf-carteira-campo{position:absolute;left:30%;color:#3d2b1f;font-size:13px;font-weight:600;font-family:'Courier New',monospace;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48%}
+        #pf-carteira-nome{top:40.5%}
+        #pf-carteira-matricula{top:51.5%}
+        #pf-carteira-cpf{top:62%}
+        #pf-carteira-nascimento{top:72.5%}
+        #pf-carteira-mae{top:81%}
+        #pf-carteira-sangue{top:90.5%}
+        #pf-carteira-qr{position:absolute;right:3%;top:52%;width:16%;height:24%;display:flex;align-items:center;justify-content:center}
+        #pf-carteira-qr-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:4px}
+        #pf-carteira-qr-img img{max-width:100%;max-height:100%}
+        @media(max-width:600px){
+            #pf-carteira-card{max-width:100%;border-radius:8px}
+            .pf-carteira-campo{font-size:9px}
+            #pf-carteira-foto-label{font-size:6px;padding:1px 6px}
+        }
+
     </style>
 </head>
 <body>
@@ -356,6 +381,7 @@
                 <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
                 <div class="pf-nav-divider"></div>
                 <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
+                <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
                 <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
             </div>
@@ -506,8 +532,32 @@
                     </div>
                 </div>
 
-                <!-- CONSTRUCAO (fallback) -->
-                <div class="pf-section" id="pf-section-construcao">
+                <!-- CARTEIRA -->
+                <div class="pf-section" id="pf-section-carteira">
+                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-id-card"></i> Carteira Digital</h3>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Sua carteira de identificacao como Aluno(a) do Curso de Formacao de Bombeiro Profissional Civil.</p>
+                    <div id="pf-carteira-container">
+                        <div id="pf-carteira-card">
+                            <img src="CARTEIRA.png" id="pf-carteira-bg" alt="Carteira">
+                            <div id="pf-carteira-foto">
+                                <div id="pf-carteira-foto-img"></div>
+                                <div id="pf-carteira-foto-label">ALUNO(A)</div>
+                            </div>
+                            <div id="pf-carteira-nome" class="pf-carteira-campo"></div>
+                            <div id="pf-carteira-matricula" class="pf-carteira-campo"></div>
+                            <div id="pf-carteira-cpf" class="pf-carteira-campo"></div>
+                            <div id="pf-carteira-nascimento" class="pf-carteira-campo"></div>
+                            <div id="pf-carteira-mae" class="pf-carteira-campo"></div>
+                            <div id="pf-carteira-sangue" class="pf-carteira-campo"></div>
+                            <div id="pf-carteira-qr">
+                                <div id="pf-carteira-qr-img"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:16px;text-align:center">
+                        <button onclick="window.print()" style="padding:10px 24px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer"><i class="fa-solid fa-print"></i> Imprimir Carteira</button>
+                    </div>
+                </div>
                     <div class="pf-em-construcao">
                         <i class="fa-solid fa-wrench"></i>
                         <h3>Em construcao</h3>
@@ -528,6 +578,7 @@
             <div class="pf-mobile-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i><span>Chat</span><span id="pf-chat-mobile-badge" class="pf-mobile-nav-badge hidden">0</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span></div>
+            <div class="pf-mobile-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i><span>Carteira</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i><span>Apostilas</span></div>
         </div>
     </div>
@@ -779,6 +830,7 @@
         else document.getElementById('pf-section-construcao').classList.add('active');
 
         if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
+        if (section === 'carteira') { paLoadCarteira(); }
     }
 
     function paCheckHash() {
@@ -1398,6 +1450,51 @@
         }).catch(function(e) {
             listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
         });
+    }
+
+    /* ===== CARTEIRA ===== */
+    function paGenerateMatriculaForCard(cpf) {
+        var digits = (cpf || '').replace(/\D/g, '');
+        if (digits.length < 5) return '';
+        return 'ACD' + digits.slice(-5);
+    }
+    function paFormatCPF(cpf) {
+        var d = (cpf || '').replace(/\D/g, '');
+        if (d.length !== 11) return cpf || '---';
+        return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    function paLoadCarteira() {
+        if (!paUser) return;
+        var matricula = paUser.matricula || paGenerateMatriculaForCard(paUser.cpf) || '---';
+        var nome = paUser.nome || '---';
+        var cpf = paFormatCPF(paUser.cpf);
+        var nascimento = paUser.nascimento || '---';
+        var mae = paUser.mae || '---';
+        var sangue = paUser.fatorRh || '---';
+        var campoNome = document.getElementById('pf-carteira-nome');
+        var campoMat = document.getElementById('pf-carteira-matricula');
+        var campoCpf = document.getElementById('pf-carteira-cpf');
+        var campoNasc = document.getElementById('pf-carteira-nascimento');
+        var campoMae = document.getElementById('pf-carteira-mae');
+        var campoSangue = document.getElementById('pf-carteira-sangue');
+        var fotoEl = document.getElementById('pf-carteira-foto-img');
+        var qrEl = document.getElementById('pf-carteira-qr-img');
+        if (campoNome) campoNome.textContent = nome;
+        if (campoMat) campoMat.textContent = matricula;
+        if (campoCpf) campoCpf.textContent = cpf;
+        if (campoNasc) campoNasc.textContent = nascimento;
+        if (campoMae) campoMae.textContent = mae;
+        if (campoSangue) campoSangue.textContent = sangue;
+        if (fotoEl) {
+            if (paUser.photoDataUrl) {
+                fotoEl.innerHTML = '<img src="' + paUser.photoDataUrl + '" alt="Foto">';
+            } else {
+                fotoEl.innerHTML = '<div class="no-photo"><i class="fa-solid fa-user"></i></div>';
+            }
+        }
+        if (qrEl) {
+            qrEl.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=120x120&margin=1" alt="QR Code">';
+        }
     }
 
     /* Auto-login se lembrar estava marcado */
