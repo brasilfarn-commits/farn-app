@@ -3286,12 +3286,32 @@ async function apontamentoExcluirLista() {
     const label = select.options[select.selectedIndex].text;
     if (!confirm('Tem certeza que deseja excluir esta lista?\n\n' + label + '\n\nEsta acao nao pode ser desfeita.')) return;
     try {
-        const snap = await dbFirestore.collection('presencasAlunos').where('apontamentoId', '==', docId).get();
-        const batch = dbFirestore.batch();
-        snap.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
+        const aptDoc = await dbFirestore.collection('apontamentos').doc(docId).get();
+        const aptData = aptDoc.exists ? aptDoc.data() : {};
         await dbFirestore.collection('apontamentos').doc(docId).delete();
-        alert('Lista e registros de presenca excluidos com sucesso!');
+
+        const presSnap1 = await dbFirestore.collection('presencasAlunos').where('apontamentoId', '==', docId).get();
+        const batch1 = dbFirestore.batch();
+        presSnap1.forEach(doc => batch1.delete(doc.ref));
+        if (!presSnap1.empty) await batch1.commit();
+
+        if (aptData.turma || aptData.aula) {
+            let q = dbFirestore.collection('presencasAlunos');
+            if (aptData.turma) q = q.where('turma', '==', aptData.turma);
+            const presSnap2 = await q.get();
+            const batch2 = dbFirestore.batch();
+            let count = 0;
+            presSnap2.forEach(doc => {
+                const pd = doc.data();
+                if (aptData.aula && pd.aula === aptData.aula) {
+                    batch2.delete(doc.ref);
+                    count++;
+                }
+            });
+            if (count > 0) await batch2.commit();
+        }
+
+        alert('Lista excluida com sucesso!');
         apontamentoFiltrar();
     } catch (e) {
         alert('Erro ao excluir: ' + e.message);
