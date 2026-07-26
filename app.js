@@ -2923,8 +2923,29 @@ function apontamentoAtualizarAulas() {
 
 function apontamentoOnAulaChange() {
     const btnScan = document.getElementById('apt-btn-scan');
-    document.getElementById('apt-presenca-area').style.display = 'none';
+    const presencaArea = document.getElementById('apt-presenca-area');
+    presencaArea.style.display = 'none';
     btnScan.disabled = true;
+    aptPresencas = {};
+    const turma = document.getElementById('apt-turma').value;
+    if (!turma) return;
+    dbFirestore.collection('candidatos').where('turma', '==', turma).get().then(snap => {
+        aptAlunosNaTurma = [];
+        snap.forEach(doc => {
+            const c = doc.data();
+            if (c.ativo === false) return;
+            aptAlunosNaTurma.push({ cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '' });
+            aptPresencas[c.cpf] = { cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '', status: 'Falta', obs: '' };
+        });
+        apontamentoRenderLista();
+        if (aptAlunosNaTurma.length) {
+            btnScan.disabled = false;
+        } else {
+            alert('Nenhum aluno encontrado para a turma: ' + turma);
+        }
+    }).catch(err => {
+        console.error('Erro ao carregar alunos:', err);
+    });
 }
 
 function apontamentoIniciarScanner() {
