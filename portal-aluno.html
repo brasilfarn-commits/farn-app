@@ -665,6 +665,7 @@
             document.getElementById('screen-login').style.display = 'none';
             document.getElementById('screen-portal').classList.add('active');
             paCheckHash();
+            paGenerateQR();
 
             var initials = (paUser.nome || 'AL').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
             document.getElementById('pf-user-avatar').textContent = initials;
@@ -777,7 +778,7 @@
         if (target) target.classList.add('active');
         else document.getElementById('pf-section-construcao').classList.add('active');
 
-        if (section === 'apontamento') { paLoadApontamento(); paGenerateQR(); }
+        if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
     }
 
     function paCheckHash() {
@@ -1343,25 +1344,16 @@
         return 'ACD' + digits.slice(-5);
     }
     function paGenerateQR() {
-        if (!paUser) return;
         var qrEl = document.getElementById('pf-apontamento-qr-img');
         var infoEl = document.getElementById('pf-apontamento-qr-info');
         if (!qrEl) return;
-        qrEl.innerHTML = '';
+        if (!paUser) { qrEl.innerHTML = '<p style="color:#999;font-size:12px">Aguarde...</p>'; return; }
         var matricula = paUser.matricula || paGenerateMatricula(paUser.cpf) || '';
-        if (!matricula) { if (infoEl) infoEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i> Matricula nao encontrada.</p>'; return; }
-        var imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=180x180&margin=2';
-        var img = new Image();
-        img.src = imgUrl;
-        img.alt = 'QR Code';
-        img.style.cssText = 'width:180px;height:180px;border:2px solid #e2e8f0;border-radius:12px;padding:8px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08)';
-        img.onerror = function() {
-            qrEl.innerHTML = '<div style="padding:12px;color:#dc2626;font-size:13px"><i class="fa-solid fa-triangle-exclamation"></i> Nao foi possivel carregar o QR Code. Verifique sua conexao.</div>';
-        };
-        qrEl.appendChild(img);
+        if (!matricula) { qrEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation"></i> Matricula nao encontrada.</p>'; if (infoEl) infoEl.innerHTML = ''; return; }
+        qrEl.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=100x100&margin=2" alt="QR Code Matricula" style="width:120px;height:120px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff">';
         if (infoEl) {
-            infoEl.innerHTML = '<div style="margin-top:10px;font-size:16px;font-weight:700;color:#1e293b">' + (paUser.nome || '---') + '</div>' +
-                '<div style="font-size:14px;color:#64748b;font-family:Courier New,monospace;letter-spacing:2px;margin-top:4px;font-weight:600">' + matricula + '</div>';
+            infoEl.innerHTML = '<div style="margin-top:10px;font-size:20px;font-weight:800;color:#16a34a;font-family:Courier New,monospace;letter-spacing:2px">' + matricula + '</div>' +
+                '<div style="font-size:15px;color:#1e293b;font-weight:600;margin-top:4px">' + (paUser.nome || '---') + '</div>';
         }
     }
 
