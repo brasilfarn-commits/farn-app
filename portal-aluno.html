@@ -87,37 +87,24 @@
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
         /* Carteira */
-        .pf-carteira-card{max-width:680px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-        .pf-carteira-border{border:3px solid #8B6914;position:relative}
-        .pf-carteira-top{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-        .pf-carteira-seal{width:60px;height:60px;border-radius:50%;border:2px solid #c9a84c;background:radial-gradient(circle,#2c1810,#1a0f0a);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .pf-carteira-seal-inner{color:#c9a84c;font-size:6px;text-align:center;font-weight:700;line-height:1.3;letter-spacing:.5px}
-        .pf-carteira-title{color:#fff;font-size:15px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:1px;flex:1}
-        .pf-carteira-logo-farn{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle,#8B0000,#5a0000);border:2px solid #c9a84c;display:flex;align-items:center;justify-content:center;color:#c9a84c;font-size:12px;font-weight:900;letter-spacing:1px;flex-shrink:0}
-        .pf-carteira-body{display:flex;padding:16px 12px;gap:10px;min-height:180px;background:#fff;position:relative}
-        .pf-carteira-left{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);display:flex;align-items:center;padding:4px 0}
-        .pf-carteira-left-text{display:flex;flex-direction:column;align-items:center;gap:2px;color:#1a237e;font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
-        .pf-carteira-left-text span{white-space:nowrap}
-        .pf-carteira-center{flex:1;display:flex;gap:14px;align-items:flex-start;padding:0 8px}
-        .pf-carteira-foto-area{flex-shrink:0}
-        .pf-carteira-dados{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center}
-        .pf-carteira-dado{font-size:12px;line-height:1.5;color:#1e293b}
-        .pf-cd-label{font-weight:700;color:#374151;font-size:10px;text-transform:uppercase}
+        .pf-carteira-card{max-width:700px;margin:0 auto;position:relative;border-radius:8px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.2)}
+        .pf-carteira-bg{width:100%;display:block}
+        .pf-carteira-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+        .pf-carteira-foto-box{position:absolute;top:22%;left:28%;width:15%;height:38%;background:#f5f5f5;border:2px solid #8B6914;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+        .pf-carteira-foto-box img{width:100%;height:100%;object-fit:cover;display:none}
+        .pf-carteira-foto-box .fa-user{font-size:28px;color:#bbb}
+        .pf-carteira-dados-box{position:absolute;top:22%;left:45%;width:30%;display:flex;flex-direction:column;gap:3px}
+        .pf-carteira-dado{font-size:11px;line-height:1.4;color:#1e293b;display:flex;gap:4px}
+        .pf-cd-label{font-weight:700;color:#374151;font-size:9px;text-transform:uppercase;white-space:nowrap;min-width:60px}
         .pf-cd-val{font-weight:600}
-        .pf-cd-mat{color:#16a34a;font-family:'Courier New',monospace;font-size:14px;font-weight:800;letter-spacing:1px}
-        .pf-carteira-right{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;padding-top:8px}
-        .pf-carteira-qr-text{color:#dc2626;font-size:7px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.5px;line-height:1.3}
-        .pf-carteira-footer{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:10px 16px;text-align:center}
-        .pf-carteira-valores{color:#c9a84c;font-size:9px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
-        .pf-carteira-inst{color:#fff;font-size:8px;font-weight:600;letter-spacing:.5px;margin-bottom:3px}
-        .pf-carteira-aviso{color:#94a3b8;font-size:7px;font-style:italic;letter-spacing:.3px}
+        .pf-cd-mat{color:#16a34a;font-family:'Courier New',monospace;font-size:13px;font-weight:800;letter-spacing:1px}
+        .pf-carteira-qr-box{position:absolute;top:30%;right:6%;width:13%;text-align:center}
+        .pf-carteira-qr-box img{width:100%;border-radius:4px;background:#fff;padding:2px}
+        .pf-carteira-legal-box{position:absolute;bottom:8%;left:5%;width:90%;text-align:center}
+        .pf-carteira-legal-inst{color:#1a237e;font-size:9px;font-weight:700;letter-spacing:.5px;margin-bottom:2px}
+        .pf-carteira-legal-aviso{color:#555;font-size:8px;font-style:italic}
         @media(max-width:600px){
-            .pf-carteira-card{max-width:100%;transform:scale(.85);transform-origin:top center}
-            .pf-carteira-title{font-size:11px}
-            .pf-carteira-body{flex-direction:column;align-items:center}
-            .pf-carteira-left{writing-mode:horizontal-tb;transform:none;flex-direction:row;gap:6px;flex-wrap:wrap;justify-content:center}
-            .pf-carteira-center{flex-direction:column;align-items:center}
-            .pf-carteira-dados{text-align:center}
+            .pf-carteira-card{max-width:100%;transform:scale(.8);transform-origin:top center}
         }
 
         /* Welcome */
@@ -1421,47 +1408,25 @@
 
         var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=100x100&margin=2';
 
-        var fotoHtml = '<div style="width:110px;height:140px;background:#f0f0f0;border:2px solid #ccc;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden"><img id="pf-carteira-foto" src="" alt="Foto 3x4" style="display:none;width:100%;height:100%;object-fit:cover"><i id="pf-carteira-foto-icon" class="fa-solid fa-user" style="font-size:40px;color:#bbb"></i></div>';
-
         container.innerHTML =
         '<div class="pf-carteira-card">' +
-            '<div class="pf-carteira-border">' +
-                '<div class="pf-carteira-top">' +
-                    '<div class="pf-carteira-seal"><div class="pf-carteira-seal-inner">DPFCS<br>BS-BRASIL<br>BSELTDA</div></div>' +
-                    '<div class="pf-carteira-title">CARTEIRA DE IDENTIFICACAO DE ALUNO</div>' +
-                    '<div class="pf-carteira-logo-farn">FARN</div>' +
+            '<img src="CARTEIRA2.png" alt="Carteira FARN" class="pf-carteira-bg">' +
+            '<div class="pf-carteira-overlay">' +
+                '<div class="pf-carteira-foto-box" id="pf-carteira-foto-box">' +
+                    '<img id="pf-carteira-foto" src="" alt="Foto 3x4">' +
+                    '<i id="pf-carteira-foto-icon" class="fa-solid fa-user"></i>' +
                 '</div>' +
-                '<div class="pf-carteira-body">' +
-                    '<div class="pf-carteira-left">' +
-                        '<div class="pf-carteira-left-text">' +
-                            '<span>&#9733; ALUNO(A) &#9733;</span>' +
-                            '<span>VALIDA EM TODO</span>' +
-                            '<span>TERRITORIO NACIONAL</span>' +
-                            '<span>USO PESSOAL E</span>' +
-                            '<span>INTRANSFERIVEL</span>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="pf-carteira-center">' +
-                        '<div class="pf-carteira-foto-area">' + fotoHtml + '</div>' +
-                        '<div class="pf-carteira-dados">' +
-                            '<div class="pf-carteira-dado"><span class="pf-cd-label">NOME:</span> <span class="pf-cd-val">' + nome.toUpperCase() + '</span></div>' +
-                            '<div class="pf-carteira-dado"><span class="pf-cd-label">MATRICULA:</span> <span class="pf-cd-val pf-cd-mat">' + matricula + '</span></div>' +
-                            '<div class="pf-carteira-dado"><span class="pf-cd-label">CPF:</span> <span class="pf-cd-val">' + cpfDisp + '</span></div>' +
-                            '<div class="pf-carteira-dado"><span class="pf-cd-label">DATA NASC.:</span> <span class="pf-cd-val">' + nascimento + '</span></div>' +
-                            '<div class="pf-carteira-dado"><span class="pf-cd-label">TIPO SANG.:</span> <span class="pf-cd-val">' + fatorRh + '</span></div>' +
-                            '<div class="pf-carteira-dado"><span class="pf-cd-label">TURMA:</span> <span class="pf-cd-val">' + turma + '</span></div>' +
-                            '<div class="pf-carteira-dado"><span class="pf-cd-label">PROJETO:</span> <span class="pf-cd-val" style="color:#c2410c">' + projeto + '</span></div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="pf-carteira-right">' +
-                        '<img src="' + qrUrl + '" alt="QR Code" style="width:90px;height:90px;border:1px solid #ddd;border-radius:4px;background:#fff;padding:2px">' +
-                        '<div class="pf-carteira-qr-text">ESCANEIE PARA<br>VERIFICAR<br>AUTENTICIDADE</div>' +
-                    '</div>' +
+                '<div class="pf-carteira-dados-box">' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">NOME:</span> <span class="pf-cd-val">' + nome.toUpperCase() + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">MATRICULA:</span> <span class="pf-cd-val pf-cd-mat">' + matricula + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">CPF:</span> <span class="pf-cd-val">' + cpfDisp + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">NASC.:</span> <span class="pf-cd-val">' + nascimento + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TIPO SANG.:</span> <span class="pf-cd-val">' + fatorRh + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TURMA:</span> <span class="pf-cd-val">' + turma + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">PROJETO:</span> <span class="pf-cd-val" style="color:#c2410c">' + projeto + '</span></div>' +
                 '</div>' +
-                '<div class="pf-carteira-footer">' +
-                    '<div class="pf-carteira-valores">&#9733; DISCIPLINA &#9733; HONRA &#9733; CORAGEM &#9733; COMPROMISSO &#9733;</div>' +
-                    '<div class="pf-carteira-inst">FARN - FORCA AUXILIAR DE RESGATE NACIONAL - CNPJ 43.327.929/0001-32</div>' +
-                    '<div class="pf-carteira-aviso">NAO E VALIDA COMO CARTEIRA FUNCIONAL. SUJEITO AO CUMPRIMENTO DAS PENALIDADES EM CASO DE USO INDEVIDO.</div>' +
+                '<div class="pf-carteira-qr-box">' +
+                    '<img src="' + qrUrl + '" alt="QR Code">' +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -1473,6 +1438,8 @@
                 if (img) { img.src = src; img.style.display = 'block'; }
                 if (icon) icon.style.display = 'none';
             }
+        });
+    }
         });
     }
 
