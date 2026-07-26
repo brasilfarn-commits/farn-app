@@ -3322,12 +3322,30 @@ function apontamentoEditarAluno(recId, alunoIdx) {
     if (novaObs === null) return;
     a.status = statusFinal;
     a.obs = novaObs.trim() || a.obs;
+
+    const promisses = [];
+
     if (recId) {
-        dbFirestore.collection('apontamentos').doc(recId).update({ alunos: reg.alunos }).then(() => {
-            apontamentoFiltrar();
-            alert('Alteracao salva com sucesso!');
-        }).catch(e => { alert('Erro ao salvar: ' + e.message); });
+        promisses.push(dbFirestore.collection('apontamentos').doc(recId).update({ alunos: reg.alunos }));
     }
+
+    if (a.cpf) {
+        promisses.push(
+            dbFirestore.collection('presencasAlunos').where('cpf', '==', a.cpf).get().then(function(snap) {
+                snap.forEach(function(doc) {
+                    var pd = doc.data();
+                    if (pd.aula === (reg.aula || '') && pd.turma === (reg.turma || '')) {
+                        doc.ref.update({ status: statusFinal, obs: a.obs });
+                    }
+                });
+            })
+        );
+    }
+
+    Promise.all(promisses).then(function() {
+        apontamentoFiltrar();
+        alert('Alteracao salva com sucesso!');
+    }).catch(function(e) { alert('Erro ao salvar: ' + e.message); });
 }
 
 window.addEventListener('appinstalled', function() {
