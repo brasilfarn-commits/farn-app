@@ -225,6 +225,17 @@ function recadViewDetail(docId) {
 
     html += '</div>';
 
+    html += '<div style="margin-top:20px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2);border-radius:14px;padding:20px">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(37,99,235,.15)">' +
+        '<i class="fa-solid fa-envelope" style="color:#2563eb"></i><h3 style="color:#2563eb;font-size:15px">Mensagem para o Formado</h3></div>' +
+        '<p style="font-size:12px;color:#64748b;margin-bottom:10px">Escreva uma mensagem que aparecera quando o formado consultar seu status.</p>' +
+        '<textarea id="rc-mensagem-admin" class="config-input" rows="4" placeholder="Digite sua mensagem aqui..." style="width:100%;resize:vertical">' + (r.mensagemAdmin || '') + '</textarea>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">' +
+            '<button class="btn-primary btn-sm" onclick="recadEnviarMensagem(\'' + docId + '\')" style="background:#2563eb"><i class="fa-solid fa-paper-plane"></i> Enviar Mensagem</button>' +
+            (r.mensagemAdmin ? '<button class="btn-primary btn-sm" onclick="recadApagarMensagem(\'' + docId + '\')" style="background:#dc2626"><i class="fa-solid fa-trash"></i> Apagar</button>' : '') +
+        '</div>' +
+    '</div>';
+
     document.getElementById('rc-detalhe-body').innerHTML = html;
     showAdminSection('admin-recad-detalhe');
 }
@@ -258,6 +269,35 @@ async function recadUpdateStatus(docId, newStatus) {
     } catch (e) {
         console.error('Erro ao atualizar status:', e);
         alert('Erro ao atualizar status: ' + e.message);
+    }
+}
+
+async function recadEnviarMensagem(docId) {
+    var textarea = document.getElementById('rc-mensagem-admin');
+    if (!textarea) return;
+    var texto = textarea.value.trim();
+    if (!texto) { alert('Digite uma mensagem.'); return; }
+    try {
+        await dbFirestore.collection('recadastramentos').doc(docId).update({ mensagemAdmin: texto });
+        var r = recadData.find(function(x) { return x._docId === docId; });
+        if (r) r.mensagemAdmin = texto;
+        alert('Mensagem salva com sucesso!');
+        recadViewDetail(docId);
+    } catch (e) {
+        alert('Erro ao salvar mensagem: ' + e.message);
+    }
+}
+
+async function recadApagarMensagem(docId) {
+    if (!confirm('Apagar esta mensagem?')) return;
+    try {
+        await dbFirestore.collection('recadastramentos').doc(docId).update({ mensagemAdmin: firebase.firestore.FieldValue.delete() });
+        var r = recadData.find(function(x) { return x._docId === docId; });
+        if (r) delete r.mensagemAdmin;
+        alert('Mensagem apagada!');
+        recadViewDetail(docId);
+    } catch (e) {
+        alert('Erro ao apagar mensagem: ' + e.message);
     }
 }
 
