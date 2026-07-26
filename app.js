@@ -3286,8 +3286,12 @@ async function apontamentoExcluirLista() {
     const label = select.options[select.selectedIndex].text;
     if (!confirm('Tem certeza que deseja excluir esta lista?\n\n' + label + '\n\nEsta acao nao pode ser desfeita.')) return;
     try {
+        const snap = await dbFirestore.collection('presencasAlunos').where('apontamentoId', '==', docId).get();
+        const batch = dbFirestore.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
         await dbFirestore.collection('apontamentos').doc(docId).delete();
-        alert('Lista excluida com sucesso!');
+        alert('Lista e registros de presenca excluidos com sucesso!');
         apontamentoFiltrar();
     } catch (e) {
         alert('Erro ao excluir: ' + e.message);
