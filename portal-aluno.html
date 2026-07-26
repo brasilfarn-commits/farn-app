@@ -1233,8 +1233,8 @@
             return;
         }
         items.sort(function(x, y) {
-            var dx = x.data ? new Date(x.data).getTime() : 0;
-            var dy = y.data ? new Date(y.data).getTime() : 0;
+            var dx = x.data ? new Date(x.data + 'T' + (x.horario || '00:00')).getTime() : 0;
+            var dy = y.data ? new Date(y.data + 'T' + (y.horario || '00:00')).getTime() : 0;
             return dy - dx;
         });
         container.innerHTML = '';
