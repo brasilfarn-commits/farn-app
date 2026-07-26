@@ -218,7 +218,7 @@ function configInstituicaoSalvar() {
 
     dbFirestore.collection('configuracoes').doc('instituicao').set(dados, { merge: true })
         .then(function() {
-            toast('Dados da instituicao salvos com sucesso!', 'success');
+            alert('Dados da instituicao salvos com sucesso!');
             configInstituicaoFechar();
         })
         .catch(function(e) {
