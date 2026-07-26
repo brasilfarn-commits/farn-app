@@ -537,6 +537,11 @@
                                         <i class="fa-solid fa-rotate"></i> Sincronizar Todos os Bancos
                                     </button>
                                 </div>
+                                <div class="config-card" onclick="configInstituicaoOpen()">
+                                    <i class="fa-solid fa-building-columns"></i>
+                                    <span>Dados da Instituicao</span>
+                                    <small>Razao social, CNPJ, logo, dados do administrador</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1643,6 +1648,69 @@
                         <button class="btn-outline" onclick="apontamentoFecharModal()" style="margin-right:8px"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                         <button class="btn-primary" onclick="apontamentoSalvar()"><i class="fa-solid fa-save"></i> Salvar Apontamento</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DADOS DA INSTITUICAO -->
+    <div id="modal-config-inst-overlay" class="modal-overlay hidden" onclick="configInstituicaoFechar(event)">
+        <div class="modal-content" style="max-width:650px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-building-columns" style="color:#2563eb;margin-right:8px"></i> Dados da Instituicao</h3>
+                <button class="modal-close" onclick="configInstituicaoFechar()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- LOGO -->
+                <div style="text-align:center;margin-bottom:20px">
+                    <div id="config-inst-logo-preview" style="width:120px;height:120px;border-radius:12px;border:2px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden;background:#f8fafc;cursor:pointer" onclick="document.getElementById('config-inst-logo-input').click()">
+                        <i id="config-inst-logo-icon" class="fa-solid fa-image" style="font-size:32px;color:#94a3b8"></i>
+                        <img id="config-inst-logo-img" src="" alt="Logo" style="display:none;width:100%;height:100%;object-fit:cover">
+                    </div>
+                    <input type="file" id="config-inst-logo-input" accept="image/*" style="display:none" onchange="configInstituicaoLogoSelect(event)">
+                    <button class="btn-outline btn-sm" onclick="document.getElementById('config-inst-logo-input').click()"><i class="fa-solid fa-upload"></i> Selecionar Logo</button>
+                </div>
+                <!-- DADOS -->
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Razao Social *</label>
+                        <input type="text" id="config-inst-razao" class="config-input" placeholder="Ex: FARN - Forca Auxiliar de Resgate Nacional">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Nome Fantasia</label>
+                        <input type="text" id="config-inst-fantasia" class="config-input" placeholder="Ex: FARN">
+                    </div>
+                    <div class="form-group">
+                        <label>CNPJ *</label>
+                        <input type="text" id="config-inst-cnpj" class="config-input" placeholder="00.000.000/0000-00" maxlength="18">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone</label>
+                        <input type="text" id="config-inst-fone" class="config-input" placeholder="(00) 00000-0000" maxlength="15">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Email</label>
+                        <input type="email" id="config-inst-email" class="config-input" placeholder="contato@exemplo.com">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2;border-top:1px solid #e2e8f0;padding-top:16px;margin-top:8px">
+                        <label style="color:#2563eb"><i class="fa-solid fa-user-shield" style="margin-right:4px"></i> Dados do Administrador</label>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Nome do Usuario (Admin Geral)</label>
+                        <input type="text" id="config-inst-admin-user" class="config-input" placeholder="Nome do administrador">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Senha do Administrador</label>
+                        <div style="position:relative">
+                            <input type="password" id="config-inst-admin-senha" class="config-input" placeholder="Senha do administrador" style="padding-right:40px">
+                            <button type="button" onclick="var inp=document.getElementById('config-inst-admin-senha'); inp.type=inp.type==='password'?'text':'password'" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748b;font-size:14px"><i class="fa-solid fa-eye"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <!-- BOTOES -->
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;border-top:1px solid #e2e8f0;padding-top:16px">
+                    <button class="btn-outline" onclick="configInstituicaoFechar()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                    <button class="btn-primary" onclick="configInstituicaoSalvar()"><i class="fa-solid fa-save"></i> Salvar Dados</button>
                 </div>
             </div>
         </div>

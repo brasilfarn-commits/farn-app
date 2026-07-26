@@ -147,6 +147,86 @@ function backupProjetos() {
     batch.commit().catch(e => console.error('Erro ao salvar projetos:', e));
 }
 
+/* ===== DADOS DA INSTITUICAO ===== */
+var configInstLogoData = null;
+
+function configInstituicaoOpen() {
+    document.getElementById('modal-config-inst-overlay').classList.remove('hidden');
+    configInstituicaoCarregar();
+}
+
+function configInstituicaoFechar(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-config-inst-overlay').classList.add('hidden');
+}
+
+function configInstituicaoLogoSelect(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Imagem muito grande. Maximo 2MB.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        configInstLogoData = ev.target.result;
+        var img = document.getElementById('config-inst-logo-img');
+        var icon = document.getElementById('config-inst-logo-icon');
+        if (img) { img.src = configInstLogoData; img.style.display = 'block'; }
+        if (icon) icon.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function configInstituicaoCarregar() {
+    if (!firebaseReady) return;
+    dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc) {
+        if (doc.exists) {
+            var d = doc.data();
+            document.getElementById('config-inst-razao').value = d.razaoSocial || '';
+            document.getElementById('config-inst-fantasia').value = d.nomeFantasia || '';
+            document.getElementById('config-inst-cnpj').value = d.cnpj || '';
+            document.getElementById('config-inst-fone').value = d.fone || '';
+            document.getElementById('config-inst-email').value = d.email || '';
+            document.getElementById('config-inst-admin-user').value = d.adminUser || '';
+            document.getElementById('config-inst-admin-senha').value = d.adminSenha || '';
+            if (d.logo) {
+                configInstLogoData = d.logo;
+                var img = document.getElementById('config-inst-logo-img');
+                var icon = document.getElementById('config-inst-logo-icon');
+                if (img) { img.src = d.logo; img.style.display = 'block'; }
+                if (icon) icon.style.display = 'none';
+            }
+        }
+    }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
+}
+
+function configInstituicaoSalvar() {
+    var razao = document.getElementById('config-inst-razao').value.trim();
+    var cnpj = document.getElementById('config-inst-cnpj').value.trim();
+    if (!razao) { alert('Informe a Razao Social.'); return; }
+    if (!cnpj) { alert('Informe o CNPJ.'); return; }
+
+    var dados = {
+        razaoSocial: razao,
+        nomeFantasia: document.getElementById('config-inst-fantasia').value.trim(),
+        cnpj: cnpj,
+        fone: document.getElementById('config-inst-fone').value.trim(),
+        email: document.getElementById('config-inst-email').value.trim(),
+        adminUser: document.getElementById('config-inst-admin-user').value.trim(),
+        adminSenha: document.getElementById('config-inst-admin-senha').value,
+        logo: configInstLogoData || null,
+        atualizadoEm: new Date().toISOString()
+    };
+
+    dbFirestore.collection('configuracoes').doc('instituicao').set(dados, { merge: true })
+        .then(function() {
+            toast('Dados da instituicao salvos com sucesso!', 'success');
+            configInstituicaoFechar();
+        })
+        .catch(function(e) {
+            console.error('Erro ao salvar dados da instituicao:', e);
+            alert('Erro ao salvar: ' + e.message);
+        });
+}
+
 async function syncAllDatabases() {
     if (!firebaseReady && !firebaseError) {
         alert('Firebase nao conectado. Verifique a conexao.');
