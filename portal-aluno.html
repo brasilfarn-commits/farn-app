@@ -556,7 +556,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
@@ -1345,20 +1344,11 @@
         if (!qrEl) return;
         qrEl.innerHTML = '';
         var matricula = paUser.matricula || '';
-        if (!matricula && infoEl) { infoEl.innerHTML = '<p style="color:#dc2626;font-size:12px">Matricula nao encontrada. Aguarde a aprovacao do cadastro.</p>'; return; }
-        try {
-            new QRCode(qrEl, {
-                text: matricula,
-                width: 180,
-                height: 180,
-                colorDark: '#1e293b',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
-        } catch(e) { qrEl.innerHTML = '<p style="color:#dc2626;font-size:12px">Erro ao gerar QR Code</p>'; }
+        if (!matricula) { if (infoEl) infoEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i> Matricula nao encontrada. Aguarde a aprovacao do cadastro.</p>'; return; }
+        qrEl.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=180x180&margin=2" alt="QR Code Matricula" style="width:180px;height:180px;border:2px solid #e2e8f0;border-radius:12px;padding:8px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08)">';
         if (infoEl) {
-            infoEl.innerHTML = '<div style="margin-top:8px;font-size:15px;font-weight:700;color:#1e293b">' + (paUser.nome || '---') + '</div>' +
-                '<div style="font-size:13px;color:#64748b;font-family:Courier New,monospace;letter-spacing:1px;margin-top:4px">' + matricula + '</div>';
+            infoEl.innerHTML = '<div style="margin-top:10px;font-size:16px;font-weight:700;color:#1e293b">' + (paUser.nome || '---') + '</div>' +
+                '<div style="font-size:14px;color:#64748b;font-family:Courier New,monospace;letter-spacing:2px;margin-top:4px;font-weight:600">' + matricula + '</div>';
         }
     }
 
