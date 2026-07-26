@@ -355,6 +355,7 @@
                 <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
                 <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
                 <div class="pf-nav-divider"></div>
+                <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
                 <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
             </div>
@@ -491,6 +492,15 @@
                     </div>
                 </div>
 
+                <!-- APONTAMENTO -->
+                <div class="pf-section" id="pf-section-apontamento">
+                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-clipboard-check"></i> Meu Apontamento</h3>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Acompanhe sua presenca nas aulas.</p>
+                    <div id="pf-apontamento-list">
+                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                    </div>
+                </div>
+
                 <!-- CONSTRUCAO (fallback) -->
                 <div class="pf-section" id="pf-section-construcao">
                     <div class="pf-em-construcao">
@@ -512,6 +522,7 @@
             <div class="pf-mobile-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i><span>Galeria</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i><span>Chat</span><span id="pf-chat-mobile-badge" class="pf-mobile-nav-badge hidden">0</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
+            <div class="pf-mobile-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i><span>Apostilas</span></div>
         </div>
     </div>
@@ -753,6 +764,8 @@
         var target = document.getElementById('pf-section-' + section);
         if (target) target.classList.add('active');
         else document.getElementById('pf-section-construcao').classList.add('active');
+
+        if (section === 'apontamento') paLoadApontamento();
     }
 
     function paCheckHash() {
@@ -1266,6 +1279,40 @@
             msg = 'O aplicativo Portal do Aluno FARN esta em fase de desenvolvimento.\n\nEm breve o download direto (APK) estara disponivel!\n\nFique atento as atualizacoes.';
         }
         alert(msg);
+    }
+
+    /* ===== APONTAMENTO ===== */
+    function paLoadApontamento() {
+        var listEl = document.getElementById('pf-apontamento-list');
+        if (!listEl || !paUser) return;
+        listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
+        dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).orderBy('dataAula', 'desc').limit(50).get().then(function(snap) {
+            if (snap.empty) {
+                listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-clipboard-check" style="font-size:36px;color:#94a3b8;margin-bottom:10px"></i><p>Nenhum apontamento registrado</p></div>';
+                return;
+            }
+            var html = '';
+            snap.forEach(function(doc) {
+                var a = doc.data();
+                var dataFmt = a.dataAula ? new Date(a.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '---';
+                var statusColor = a.status === 'Presente' ? '#16a34a' : a.status === 'Falta' ? '#dc2626' : '#ca8a04';
+                var statusIcon = a.status === 'Presente' ? 'fa-check-circle' : a.status === 'Falta' ? 'fa-times-circle' : 'fa-info-circle';
+                html += '<div class="pf-noticia-card" style="border-left:3px solid ' + statusColor + '">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">';
+                html += '<div>';
+                html += '<div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px"><i class="fa-solid fa-book" style="color:var(--blue);margin-right:4px"></i>' + (a.disciplina || '---') + '</div>';
+                html += '<div style="font-size:12px;color:#64748b"><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + dataFmt + ' &bull; ' + (a.aula || '---') + '</div>';
+                html += '<div style="font-size:11px;color:#94a3b8;margin-top:2px"><i class="fa-solid fa-users" style="margin-right:3px"></i>' + (a.turma || '---') + ' &bull; ' + (a.projeto || '---') + '</div>';
+                if (a.obs) html += '<div style="font-size:11px;color:#64748b;margin-top:4px;font-style:italic"><i class="fa-solid fa-comment" style="margin-right:3px"></i>' + a.obs + '</div>';
+                html += '</div>';
+                html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + statusColor + '15;color:' + statusColor + ';border:1px solid ' + statusColor + '30"><i class="fa-solid ' + statusIcon + '"></i> ' + (a.status || '---') + '</span>';
+                html += '</div>';
+                html += '</div>';
+            });
+            listEl.innerHTML = html;
+        }).catch(function(e) {
+            listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
+        });
     }
 
     /* Auto-login se lembrar estava marcado */

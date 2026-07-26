@@ -615,6 +615,17 @@
                                         <div style="font-size:11px;color:#475569">Justificadas</div>
                                     </div>
                                 </div>
+                                <!-- Excluir Lista -->
+                                <div id="apt-excluir-area" style="display:none;margin-bottom:16px;padding:14px 16px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:10px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
+                                    <i class="fa-solid fa-trash" style="color:#dc2626;font-size:16px"></i>
+                                    <span style="font-size:13px;font-weight:600;color:#1e293b">Excluir lista de apontamento:</span>
+                                    <select id="apt-excluir-select" class="config-input" style="flex:1;min-width:250px;max-width:400px">
+                                        <option value="">Selecione a lista...</option>
+                                    </select>
+                                    <button class="btn-danger" onclick="apontamentoExcluirLista()" style="white-space:nowrap;margin:0">
+                                        <i class="fa-solid fa-trash"></i> Excluir
+                                    </button>
+                                </div>
                                 <!-- Lista -->
                                 <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#475569">
                                     <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#64748b;margin-bottom:16px"></i>

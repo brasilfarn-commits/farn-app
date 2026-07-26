@@ -2886,18 +2886,39 @@ function apontamentoOnTurmaChange() {
     document.getElementById('apt-aula').innerHTML = '<option value="">Selecione...</option>';
     document.getElementById('apt-presenca-area').style.display = 'none';
     const turma = document.getElementById('apt-turma').value;
-    if (!turma) return;
-    apontamentoAtualizarAulas();
+    const projeto = document.getElementById('apt-selecao-projeto').value;
+    const selDisc = document.getElementById('apt-disciplina');
+    selDisc.innerHTML = '<option value="">Carregando...</option>';
+    if (!turma) { selDisc.innerHTML = '<option value="">Selecione a disciplina</option>'; return; }
+    dbFirestore.collection('disciplinas').where('turma', '==', turma).get().then(snap => {
+        selDisc.innerHTML = '<option value="">Selecione a disciplina</option>';
+        snap.forEach(doc => {
+            const d = doc.data();
+            selDisc.innerHTML += '<option value="' + doc.id + '">' + d.nome + '</option>';
+        });
+        if (snap.empty) selDisc.innerHTML = '<option value="">Nenhuma disciplina encontrada</option>';
+    }).catch(() => { selDisc.innerHTML = '<option value="">Erro ao carregar</option>'; });
 }
 
 function apontamentoOnDisciplinaChange() {
     document.getElementById('apt-presenca-area').style.display = 'none';
-    apontamentoAtualizarAulas();
+    const selDisc = document.getElementById('apt-disciplina');
+    const discName = selDisc.options[selDisc.selectedIndex] ? selDisc.options[selDisc.selectedIndex].text : '';
+    const selAula = document.getElementById('apt-aula');
+    selAula.innerHTML = '<option value="">Carregando...</option>';
+    if (!discName || discName === 'Selecione a disciplina') { selAula.innerHTML = '<option value="">Selecione...</option>'; return; }
+    dbFirestore.collection('aulas').where('disciplina', '==', discName).get().then(snap => {
+        selAula.innerHTML = '<option value="">Selecione a aula</option>';
+        snap.forEach(doc => {
+            const a = doc.data();
+            const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            selAula.innerHTML += '<option value="' + doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
+        });
+        if (snap.empty) selAula.innerHTML = '<option value="">Nenhuma aula encontrada</option>';
+    }).catch(() => { selAula.innerHTML = '<option value="">Erro ao carregar</option>'; });
 }
 
 function apontamentoAtualizarAulas() {
-    var selAula = document.getElementById('apt-aula');
-    selAula.innerHTML = '<option value="">Selecione...</option>';
 }
 
 function apontamentoOnAulaChange() {
@@ -3037,6 +3058,9 @@ async function apontamentoSalvar() {
     if (!todos.length) { alert('Nenhum aluno na lista'); return; }
     const selAula = document.getElementById('apt-aula');
     const aulaNome = selAula.options[selAula.selectedIndex] ? selAula.options[selAula.selectedIndex].text : '';
+    const selDisc = document.getElementById('apt-disciplina');
+    const disciplinaNome = selDisc.options[selDisc.selectedIndex] ? selDisc.options[selDisc.selectedIndex].text : '';
+    const projeto = document.getElementById('apt-selecao-projeto').value || '';
     const dados = {
         turma: turma,
         aula: aulaNome,
@@ -3047,6 +3071,33 @@ async function apontamentoSalvar() {
     };
     try {
         await dbFirestore.collection('apontamentos').add(dados);
+
+        let dataAula = '';
+        try {
+            const aulaDoc = await dbFirestore.collection('aulas').doc(aulaId).get();
+            if (aulaDoc.exists) dataAula = aulaDoc.data().data || '';
+        } catch (e) {}
+
+        const batch = dbFirestore.batch();
+        todos.forEach(aluno => {
+            const ref = dbFirestore.collection('presencasAlunos').doc();
+            batch.set(ref, {
+                cpf: aluno.cpf || '',
+                nome: aluno.nome || '',
+                matricula: aluno.matricula || '',
+                turma: turma,
+                projeto: projeto,
+                disciplina: disciplinaNome,
+                aula: aulaNome,
+                dataAula: dataAula,
+                status: aluno.status || '',
+                obs: aluno.obs || '',
+                criadoEm: new Date().toISOString(),
+                criadoPor: currentUserData ? currentUserData.nome || '' : ''
+            });
+        });
+        await batch.commit();
+
         apontamentoPararScanner();
         document.getElementById('modal-apontamento-overlay').classList.add('hidden');
         alert('Apontamento salvo com sucesso!');
@@ -3142,14 +3193,14 @@ function apontamentoRenderHistorico(registros) {
         const faltaCount = alunos.filter(a => a.status === 'Falta').length;
         const justCount = alunos.filter(a => a.status === 'Justificada').length;
         const rows = alunos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map((a, ai) => {
-            const stColor = a.status === 'Presente' ? '#4caf50' : a.status === 'Falta' ? '#f44336' : a.status === 'Justificada' ? '#ff9800' : '#666';
+            const stColor = a.status === 'Presente' ? '#16a34a' : a.status === 'Falta' ? '#dc2626' : a.status === 'Justificada' ? '#ca8a04' : '#64748b';
             const stIcon = a.status === 'Presente' ? 'fa-check' : a.status === 'Falta' ? 'fa-xmark' : a.status === 'Justificada' ? 'fa-circle-info' : 'fa-question';
             const recId = r.docId || '';
-            return '<tr style="border-bottom:1px solid #222">' +
+            return '<tr style="border-bottom:1px solid #e2e8f0">' +
                 '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:#16a34a;font-family:Courier New,monospace;white-space:nowrap">' + (a.matricula || '-') + '</td>' +
-                '<td style="padding:8px 12px;font-size:13px;color:#ccc">' + (a.nome || '-') + '</td>' +
+                '<td style="padding:8px 12px;font-size:13px;color:#1e293b">' + (a.nome || '-') + '</td>' +
                 '<td style="padding:8px 12px;text-align:center"><span style="color:' + stColor + ';font-weight:700;font-size:13px"><i class="fa-solid ' + stIcon + '" style="margin-right:4px"></i>' + (a.status || '-') + '</span></td>' +
-                '<td style="padding:8px 12px;font-size:12px;color:#888">' + (a.obs || '-') + '</td>' +
+                '<td style="padding:8px 12px;font-size:12px;color:#64748b">' + (a.obs || '-') + '</td>' +
                 '<td style="padding:8px 12px;text-align:center">' +
                     '<button class="btn-icon" style="font-size:11px;padding:4px 6px" title="Editar" onclick="apontamentoEditarAluno(\'' + recId + '\',' + ai + ')"><i class="fa-solid fa-pen"></i></button>' +
                 '</td>' +
@@ -3187,6 +3238,37 @@ function apontamentoRenderHistorico(registros) {
             '<div class="apt-card-footer" style="padding:8px 16px;font-size:10px;color:#555;border-top:1px solid #2a2a3a">Registrado por: ' + (r.criadoPor || '-') + ' em ' + criadoEmFmt + '</div>' +
         '</div>';
     }).join('');
+
+    const excluirArea = document.getElementById('apt-excluir-area');
+    const excluirSelect = document.getElementById('apt-excluir-select');
+    if (excluirArea && excluirSelect) {
+        if (registros.length > 0) {
+            excluirArea.style.display = 'flex';
+            excluirSelect.innerHTML = '<option value="">Selecione a lista...</option>';
+            registros.forEach(r => {
+                const dataFmt = r.dataAula ? new Date(r.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data';
+                const label = dataFmt + ' - ' + (r.disciplina || '---') + ' | ' + (r.turma || '---') + ' | ' + (r.horaAula || '');
+                excluirSelect.innerHTML += '<option value="' + r.docId + '">' + label + '</option>';
+            });
+        } else {
+            excluirArea.style.display = 'none';
+        }
+    }
+}
+
+async function apontamentoExcluirLista() {
+    const select = document.getElementById('apt-excluir-select');
+    const docId = select.value;
+    if (!docId) { alert('Selecione uma lista para excluir.'); return; }
+    const label = select.options[select.selectedIndex].text;
+    if (!confirm('Tem certeza que deseja excluir esta lista?\n\n' + label + '\n\nEsta acao nao pode ser desfeita.')) return;
+    try {
+        await dbFirestore.collection('apontamentos').doc(docId).delete();
+        alert('Lista excluida com sucesso!');
+        apontamentoFiltrar();
+    } catch (e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
 }
 
 function apontamentoToggleCard(cardId) {
