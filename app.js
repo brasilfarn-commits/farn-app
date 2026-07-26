@@ -3246,7 +3246,7 @@ function apontamentoRenderHistorico(registros) {
                     '<span style="color:#666">/ ' + alunos.length + '</span>' +
                 '</div>' +
             '</div>' +
-            '<div class="apt-card-body" style="overflow-x:auto;display:none"> +
+            '<div class="apt-card-body" style="overflow-x:auto;display:none">' +
                 '<table style="width:100%;border-collapse:collapse">' +
                     '<thead><tr>' +
                         '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;min-width:140px">Matricula</th>' +
