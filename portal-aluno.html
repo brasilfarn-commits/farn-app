@@ -1289,14 +1289,16 @@
         var listEl = document.getElementById('pf-apontamento-list');
         if (!listEl || !paUser) return;
         listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
-        paAptUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).orderBy('criadoEm', 'desc').limit(50).onSnapshot(function(snap) {
+        paAptUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(100).onSnapshot(function(snap) {
             if (snap.empty) {
                 listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-clipboard-check" style="font-size:36px;color:#94a3b8;margin-bottom:10px"></i><p>Nenhum apontamento registrado</p></div>';
                 return;
             }
             var html = '';
-            snap.forEach(function(doc) {
-                var a = doc.data();
+            var docs = [];
+            snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; docs.push(d); });
+            docs.sort(function(a, b) { return (b.criadoEm || '').localeCompare(a.criadoEm || ''); });
+            docs.forEach(function(a) {
                 var dataFmt = a.dataAula ? new Date(a.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '---';
                 var horaFmt = a.criadoEm ? new Date(a.criadoEm).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '---';
                 var statusColor = a.status === 'Presente' ? '#16a34a' : a.status === 'Falta' ? '#dc2626' : '#ca8a04';
