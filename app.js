@@ -3660,20 +3660,20 @@ async function discLoadList() {
         snap.forEach(function(doc) {
             var d = doc.data();
             var dateStr = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
-            var turmaHtml = d.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + d.turma + '</span>' : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
-            var instrutorHtml = d.instrutor ? '<span style="background:rgba(33,136,255,.15);color:#2188ff;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.instrutor + '</span>' : '';
+            var turmaHtml = d.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + d.turma + '</span>' : '<span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
+            var instrutorHtml = d.instrutor ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.instrutor + '</span>' : '';
             var card = document.createElement('div');
-            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(156,39,176,.15);border-radius:10px;margin-bottom:8px';
-            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(156,39,176,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;font-size:18px"></i></div>' +
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(156,39,176,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-graduation-cap" style="color:#9c27b0;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:0">' +
-                    '<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (d.nome || 'Disciplina') + '</div>' +
-                    '<div style="font-size:11px;color:#888;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
+                    '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (d.nome || 'Disciplina') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
                         '<span>' + (d.projeto || '') + '</span>' + turmaHtml + instrutorHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
-                    '<button onclick="discEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.3);color:#ff9800;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(255,152,0,.35)\'" onmouseout="this.style.background=\'rgba(255,152,0,.15)\'"><i class="fa-solid fa-pen"></i></button>' +
-                    '<button onclick="discDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(244,67,54,.35)\'" onmouseout="this.style.background=\'rgba(244,67,54,.15)\'"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button onclick="discEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(245,127,23,.25)\'" onmouseout="this.style.background=\'rgba(245,127,23,.1)\'"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="discDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(220,38,38,.25)\'" onmouseout="this.style.background=\'rgba(220,38,38,.1)\'"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
             container.appendChild(card);
         });
@@ -3880,20 +3880,20 @@ async function aulaLoadList() {
         snap.forEach(function(doc) {
             var a = doc.data();
             var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
-            var turmaHtml = a.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
-            var instrutorHtml = a.instrutor ? '<span style="background:rgba(33,136,255,.15);color:#2188ff;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
+            var turmaHtml = a.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '<span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
+            var instrutorHtml = a.instrutor ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
             var card = document.createElement('div');
-            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(33,136,255,.15);border-radius:10px;margin-bottom:8px';
-            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(33,136,255,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-chalkboard" style="color:#2188ff;font-size:18px"></i></div>' +
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-chalkboard" style="color:#2563eb;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:0">' +
-                    '<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
-                    '<div style="font-size:11px;color:#888;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
+                    '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
                         '<span>' + (a.projeto || '') + '</span>' + turmaHtml + instrutorHtml + (dateStr ? '<span><i class="fa-solid fa-calendar-day" style="margin-right:2px"></i>' + dateStr + '</span>' : '') + (a.horario ? '<span><i class="fa-solid fa-clock" style="margin-right:2px"></i>' + a.horario + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
-                    '<button onclick="aulaEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.3);color:#ff9800;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(255,152,0,.35)\'" onmouseout="this.style.background=\'rgba(255,152,0,.15)\'"><i class="fa-solid fa-pen"></i></button>' +
-                    '<button onclick="aulaDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(244,67,54,.35)\'" onmouseout="this.style.background=\'rgba(244,67,54,.15)\'"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button onclick="aulaEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(245,127,23,.25)\'" onmouseout="this.style.background=\'rgba(245,127,23,.1)\'"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="aulaDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(220,38,38,.25)\'" onmouseout="this.style.background=\'rgba(220,38,38,.1)\'"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
             container.appendChild(card);
         });
