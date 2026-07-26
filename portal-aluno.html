@@ -1289,7 +1289,7 @@
         var listEl = document.getElementById('pf-apontamento-list');
         if (!listEl || !paUser) return;
         listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
-        paAptUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).orderBy('dataAula', 'desc').limit(50).onSnapshot(function(snap) {
+        paAptUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).orderBy('criadoEm', 'desc').limit(50).onSnapshot(function(snap) {
             if (snap.empty) {
                 listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-clipboard-check" style="font-size:36px;color:#94a3b8;margin-bottom:10px"></i><p>Nenhum apontamento registrado</p></div>';
                 return;
@@ -1298,17 +1298,23 @@
             snap.forEach(function(doc) {
                 var a = doc.data();
                 var dataFmt = a.dataAula ? new Date(a.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '---';
+                var horaFmt = a.criadoEm ? new Date(a.criadoEm).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '---';
                 var statusColor = a.status === 'Presente' ? '#16a34a' : a.status === 'Falta' ? '#dc2626' : '#ca8a04';
                 var statusIcon = a.status === 'Presente' ? 'fa-check-circle' : a.status === 'Falta' ? 'fa-times-circle' : 'fa-info-circle';
-                html += '<div class="pf-noticia-card" style="border-left:3px solid ' + statusColor + '">';
+                html += '<div class="pf-noticia-card" style="border-left:3px solid ' + statusColor + ';padding:14px 16px;margin-bottom:10px">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">';
-                html += '<div>';
-                html += '<div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px"><i class="fa-solid fa-book" style="color:var(--blue);margin-right:4px"></i>' + (a.disciplina || '---') + '</div>';
-                html += '<div style="font-size:12px;color:#64748b"><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + dataFmt + ' &bull; ' + (a.aula || '---') + '</div>';
-                html += '<div style="font-size:11px;color:#94a3b8;margin-top:2px"><i class="fa-solid fa-users" style="margin-right:3px"></i>' + (a.turma || '---') + ' &bull; ' + (a.projeto || '---') + '</div>';
-                if (a.obs) html += '<div style="font-size:11px;color:#64748b;margin-top:4px;font-style:italic"><i class="fa-solid fa-comment" style="margin-right:3px"></i>' + a.obs + '</div>';
+                html += '<div style="flex:1;min-width:200px">';
+                html += '<div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px"><i class="fa-solid fa-book" style="color:var(--blue);margin-right:6px"></i>' + (a.disciplina || '---') + '</div>';
+                html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-chalkboard" style="margin-right:4px"></i>' + (a.aula || '---') + '</div>';
+                html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>' + dataFmt + '</div>';
+                html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-users" style="margin-right:4px"></i>' + (a.turma || '---') + ' &bull; ' + (a.projeto || '---') + '</div>';
+                html += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;padding-top:6px;border-top:1px solid #e2e8f0">';
+                html += '<i class="fa-solid fa-clock" style="margin-right:4px"></i>Apontado em: ' + horaFmt;
+                if (a.criadoPor) html += '<br><i class="fa-solid fa-user-check" style="margin-right:4px"></i>Registrado por: ' + a.criadoPor;
                 html += '</div>';
-                html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + statusColor + '15;color:' + statusColor + ';border:1px solid ' + statusColor + '30"><i class="fa-solid ' + statusIcon + '"></i> ' + (a.status || '---') + '</span>';
+                if (a.obs) html += '<div style="font-size:11px;color:#64748b;margin-top:4px;font-style:italic"><i class="fa-solid fa-comment" style="margin-right:4px"></i>' + a.obs + '</div>';
+                html += '</div>';
+                html += '<span style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:' + statusColor + '15;color:' + statusColor + ';border:1px solid ' + statusColor + '30;white-space:nowrap"><i class="fa-solid ' + statusIcon + '"></i> ' + (a.status || '---') + '</span>';
                 html += '</div>';
                 html += '</div>';
             });
