@@ -1233,9 +1233,12 @@
             return;
         }
         items.sort(function(x, y) {
-            var dx = x.data ? new Date(x.data + 'T' + (x.horario || '00:00')).getTime() : 0;
-            var dy = y.data ? new Date(y.data + 'T' + (y.horario || '00:00')).getTime() : 0;
-            return dy - dx;
+            var dx = x.data ? new Date(x.data + 'T12:00:00').getTime() : 0;
+            var dy = y.data ? new Date(y.data + 'T12:00:00').getTime() : 0;
+            if (dx !== dy) return dx - dy;
+            var hx = (x.horario || '').replace(/\D/g, '').substring(0, 4);
+            var hy = (y.horario || '').replace(/\D/g, '').substring(0, 4);
+            return hx.localeCompare(hy);
         });
         container.innerHTML = '';
         var count = 0;
