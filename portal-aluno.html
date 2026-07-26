@@ -86,6 +86,40 @@
         .pf-section.active{display:block}
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
+        /* Carteira */
+        .pf-carteira-card{max-width:680px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+        .pf-carteira-border{border:3px solid #8B6914;position:relative}
+        .pf-carteira-top{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .pf-carteira-seal{width:60px;height:60px;border-radius:50%;border:2px solid #c9a84c;background:radial-gradient(circle,#2c1810,#1a0f0a);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .pf-carteira-seal-inner{color:#c9a84c;font-size:6px;text-align:center;font-weight:700;line-height:1.3;letter-spacing:.5px}
+        .pf-carteira-title{color:#fff;font-size:15px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:1px;flex:1}
+        .pf-carteira-logo-farn{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle,#8B0000,#5a0000);border:2px solid #c9a84c;display:flex;align-items:center;justify-content:center;color:#c9a84c;font-size:12px;font-weight:900;letter-spacing:1px;flex-shrink:0}
+        .pf-carteira-body{display:flex;padding:16px 12px;gap:10px;min-height:180px;background:#fff;position:relative}
+        .pf-carteira-left{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);display:flex;align-items:center;padding:4px 0}
+        .pf-carteira-left-text{display:flex;flex-direction:column;align-items:center;gap:2px;color:#1a237e;font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+        .pf-carteira-left-text span{white-space:nowrap}
+        .pf-carteira-center{flex:1;display:flex;gap:14px;align-items:flex-start;padding:0 8px}
+        .pf-carteira-foto-area{flex-shrink:0}
+        .pf-carteira-dados{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center}
+        .pf-carteira-dado{font-size:12px;line-height:1.5;color:#1e293b}
+        .pf-cd-label{font-weight:700;color:#374151;font-size:10px;text-transform:uppercase}
+        .pf-cd-val{font-weight:600}
+        .pf-cd-mat{color:#16a34a;font-family:'Courier New',monospace;font-size:14px;font-weight:800;letter-spacing:1px}
+        .pf-carteira-right{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;padding-top:8px}
+        .pf-carteira-qr-text{color:#dc2626;font-size:7px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.5px;line-height:1.3}
+        .pf-carteira-footer{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:10px 16px;text-align:center}
+        .pf-carteira-valores{color:#c9a84c;font-size:9px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+        .pf-carteira-inst{color:#fff;font-size:8px;font-weight:600;letter-spacing:.5px;margin-bottom:3px}
+        .pf-carteira-aviso{color:#94a3b8;font-size:7px;font-style:italic;letter-spacing:.3px}
+        @media(max-width:600px){
+            .pf-carteira-card{max-width:100%;transform:scale(.85);transform-origin:top center}
+            .pf-carteira-title{font-size:11px}
+            .pf-carteira-body{flex-direction:column;align-items:center}
+            .pf-carteira-left{writing-mode:horizontal-tb;transform:none;flex-direction:row;gap:6px;flex-wrap:wrap;justify-content:center}
+            .pf-carteira-center{flex-direction:column;align-items:center}
+            .pf-carteira-dados{text-align:center}
+        }
+
         /* Welcome */
         .pf-welcome{background:linear-gradient(135deg,var(--green),var(--blue));border:none;border-radius:var(--radius);padding:32px;margin-bottom:24px;position:relative;overflow:hidden;color:#fff}
         .pf-welcome::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,255,255,.15),transparent 70%);border-radius:50%;pointer-events:none}
@@ -292,60 +326,6 @@
             .pf-user-info{display:none}
             .pf-section.active#pf-section-chat{position:fixed;top:60px;left:0;right:0;bottom:0;z-index:90;background:var(--gray100)}
         }
-
-        /* ===== CARTEIRA ===== */
-        .pf-carteira-card{width:540px;max-width:100%;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.25);font-family:'Segoe UI',Arial,sans-serif;position:relative;background:#f5f0e8}
-        .cart-top-bar{height:8px;background:linear-gradient(90deg,#1a237e 0%,#1a237e 30%,#c5a028 30%,#c5a028 70%,#1a237e 70%)}
-        .cart-header{background:linear-gradient(180deg,#0d1b4a 0%,#162d6e 100%);padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;position:relative}
-        .cart-logo-left{flex-shrink:0}
-        .cart-logo-circle{width:64px;height:64px;border-radius:50%;border:3px solid #c5a028;background:linear-gradient(135deg,#1a237e,#0d47a1);display:flex;align-items:center;justify-content:center}
-        .cart-logo-inner{color:#fff;font-size:6px;text-align:center;line-height:1.3;font-weight:700;letter-spacing:.5px}
-        .cart-title-center{flex:1;text-align:center}
-        .cart-subtitle-top{color:#c5a028;font-size:9px;letter-spacing:2px;font-weight:600}
-        .cart-title-main{color:#fff;font-size:28px;font-weight:900;letter-spacing:4px;text-shadow:2px 2px 4px rgba(0,0,0,.4);line-height:1.1}
-        .cart-subtitle-bottom{color:#c5a028;font-size:11px;letter-spacing:3px;font-weight:700}
-        .cart-logo-right{flex-shrink:0}
-        .cart-shield{width:60px;height:70px;background:linear-gradient(180deg,#1a237e,#0d47a1);border:2px solid #c5a028;border-radius:4px 4px 4px 4px;clip-path:polygon(0 0,100% 0,100% 80%,50% 100%,0 80%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px}
-        .cart-shield-star{color:#c5a028;font-size:14px}
-        .cart-shield-text{color:#fff;font-size:5px;text-align:center;line-height:1.4;font-weight:600}
-        .cart-shield-text strong{font-size:8px;color:#c5a028}
-        .cart-body{display:flex;min-height:180px;position:relative}
-        .cart-left-strip{width:28px;background:linear-gradient(180deg,#c5a028,#b8941f);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;gap:8px}
-        .cart-strip-text{writing-mode:vertical-rl;text-orientation:mixed;color:#1a237e;font-size:8px;font-weight:800;letter-spacing:1px}
-        .cart-strip-valid{writing-mode:vertical-rl;text-orientation:mixed;color:#1a237e;font-size:5px;font-weight:600;letter-spacing:.5px}
-        .cart-strip-uso{writing-mode:vertical-rl;text-orientation:mixed;color:#1a237e;font-size:5px;font-weight:600}
-        .cart-center-content{flex:1;display:flex;padding:16px;gap:14px;position:relative}
-        .cart-center-content::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:160px;height:160px;background:url('logobc.jpeg') center/contain no-repeat;opacity:.06;pointer-events:none}
-        .cart-photo-area{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px}
-        .cart-photo-frame{width:100px;height:120px;border:2px solid #1a237e;border-radius:4px;background:#e8e4dc;display:flex;align-items:center;justify-content:center;overflow:hidden}
-        .cart-photo-frame img{width:100%;height:100%;object-fit:cover}
-        .cart-photo-label{font-size:7px;color:#666;font-weight:600;letter-spacing:1px}
-        .cart-data-area{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px}
-        .cart-field{font-size:11px;color:#1a237e;line-height:1.4}
-        .cart-field-label{font-weight:800;color:#0d1b4a;letter-spacing:.5px}
-        .cart-field-value{font-weight:600}
-        .cart-field-value.cart-matricula{color:#c5a028;font-size:14px;font-weight:900;font-family:'Courier New',monospace;letter-spacing:2px}
-        .cart-qr-area{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
-        .cart-qr-area img{width:80px;height:80px;border:1px solid #ddd;border-radius:4px;padding:2px;background:#fff}
-        .cart-qr-text{font-size:6px;color:#c5a028;font-weight:700;text-align:center;letter-spacing:.5px;line-height:1.3}
-        .cart-bottom-info{background:#0d1b4a;padding:8px 16px;text-align:center}
-        .cart-institution{color:#c5a028;font-size:8px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
-        .cart-warning{color:#fff;font-size:6.5px;font-weight:600;letter-spacing:.3px;line-height:1.4;opacity:.9}
-        .cart-bottom-bar{background:linear-gradient(90deg,#c5a028,#b8941f);padding:6px;text-align:center;color:#1a237e;font-size:8px;font-weight:800;letter-spacing:1px}
-        @media print{.pf-carteira-card{box-shadow:none;border:1px solid #ccc}.pf-mobile-nav,.pf-topbar{display:none!important}.pf-content{padding:0!important}}
-        @media(max-width:600px){
-            .pf-carteira-card{width:100%;border-radius:0}
-            .cart-header{padding:10px 8px 8px}
-            .cart-logo-circle{width:48px;height:48px}
-            .cart-logo-inner{font-size:5px}
-            .cart-title-main{font-size:20px}
-            .cart-shield{width:44px;height:52px}
-            .cart-center-content{padding:10px;gap:8px}
-            .cart-photo-frame{width:70px;height:84px}
-            .cart-data-area{gap:4px}
-            .cart-field{font-size:9px}
-            .cart-qr-area img{width:60px;height:60px}
-        }
     </style>
 </head>
 <body>
@@ -409,8 +389,8 @@
                 <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
                 <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
                 <div class="pf-nav-divider"></div>
-                <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
                 <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
+                <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
                 <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
             </div>
@@ -563,67 +543,11 @@
 
                 <!-- CARTEIRA -->
                 <div class="pf-section" id="pf-section-carteira">
-                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-id-card"></i> Minha Carteira de Aluno</h3>
-                    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Visualize e salve sua carteira de identificacao de aluno.</p>
-                    <div id="pf-carteira-area" style="display:flex;justify-content:center;margin-bottom:20px">
-                        <div class="pf-carteira-card" id="pf-carteira-card">
-                            <div class="cart-top-bar"></div>
-                            <div class="cart-header">
-                                <div class="cart-logo-left">
-                                    <div class="cart-logo-circle">
-                                        <div class="cart-logo-inner">DPFBCS<br>BS.BRASIL<br>BSLTDA</div>
-                                    </div>
-                                </div>
-                                <div class="cart-title-center">
-                                    <div class="cart-subtitle-top">CURSO DE FORMACAO DE</div>
-                                    <div class="cart-title-main">BOMBEIRO</div>
-                                    <div class="cart-subtitle-bottom">PROFISSIONAL CIVIL</div>
-                                </div>
-                                <div class="cart-logo-right">
-                                    <div class="cart-shield">
-                                        <div class="cart-shield-star">&#9733;</div>
-                                        <div class="cart-shield-text">BS.BRASIL<br><strong>FARN</strong><br>COMANDO<br>BRASIL</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="cart-body">
-                                <div class="cart-left-strip">
-                                    <div class="cart-strip-text">&#9733; ALUNO(A) &#9733;</div>
-                                    <div class="cart-strip-valid">VALIDA EM TODO TERRITORIO NACIONAL</div>
-                                    <div class="cart-strip-uso">USO PESSOAL E INTRANSFERIVEL</div>
-                                </div>
-                                <div class="cart-center-content">
-                                    <div class="cart-photo-area">
-                                        <div class="cart-photo-frame" id="cart-photo-frame">
-                                            <i class="fa-solid fa-user" style="font-size:32px;color:#ccc"></i>
-                                        </div>
-                                        <div class="cart-photo-label">FOTO 3x4</div>
-                                    </div>
-                                    <div class="cart-data-area">
-                                        <div class="cart-field"><span class="cart-field-label">NOME:</span> <span class="cart-field-value" id="cart-nome">---</span></div>
-                                        <div class="cart-field"><span class="cart-field-label">MATRICULA:</span> <span class="cart-field-value cart-matricula" id="cart-matricula">---</span></div>
-                                        <div class="cart-field"><span class="cart-field-label">CPF:</span> <span class="cart-field-value" id="cart-cpf">---</span></div>
-                                        <div class="cart-field"><span class="cart-field-label">DATA NASC.:</span> <span class="cart-field-value" id="cart-nascimento">---</span></div>
-                                        <div class="cart-field"><span class="cart-field-label">TIPO SANGUINEO:</span> <span class="cart-field-value" id="cart-sangue">---</span></div>
-                                    </div>
-                                    <div class="cart-qr-area">
-                                        <div id="cart-qr-img"></div>
-                                        <div class="cart-qr-text">ESCANEIE PARA VERIFICAR<br>AUTENTICIDADE</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="cart-bottom-info">
-                                <div class="cart-institution">FARN - FORCA AUXILIAR DE RESGATE NACIONAL | CNPJ: 43.327.929/0001-32</div>
-                                <div class="cart-warning">CARTEIRA DE IDENTIFICACAO DE ALUNO. NAO E VALIDA COMO CARTEIRA FUNCIONAL. SUJEITO AO CUMPRIMENTO DAS PENALIDADES EM CASO DE USO INDEVIDO.</div>
-                            </div>
-                            <div class="cart-bottom-bar">
-                                <span>&#9733; DISCIPLINA &#9733; HONRA &#9733; CORAGEM &#9733; COMPROMISSO &#9733;</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="text-align:center;margin-top:10px">
-                        <button onclick="paCarteiraPrint()" class="pf-btn pf-btn-primary" style="margin-right:8px"><i class="fa-solid fa-print"></i> Imprimir</button>
-                        <button onclick="paCarteiraSalvar()" class="pf-btn pf-btn-outline"><i class="fa-solid fa-download"></i> Salvar Imagem</button>
+                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-id-card"></i> Carteira de Identificacao</h3>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Visualize e imprima sua carteira de aluno.</p>
+                    <div id="pf-carteira-container"></div>
+                    <div style="text-align:center;margin-top:20px">
+                        <button onclick="window.print()" style="background:var(--green);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer"><i class="fa-solid fa-print"></i> Imprimir Carteira</button>
                     </div>
                 </div>
 
@@ -648,8 +572,8 @@
             <div class="pf-mobile-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i><span>Galeria</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i><span>Chat</span><span id="pf-chat-mobile-badge" class="pf-mobile-nav-badge hidden">0</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i><span>Carteira</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span></div>
+            <div class="pf-mobile-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i><span>Carteira</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i><span>Apostilas</span></div>
         </div>
     </div>
@@ -901,7 +825,7 @@
         else document.getElementById('pf-section-construcao').classList.add('active');
 
         if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
-        if (section === 'carteira') { setTimeout(paCarteiraLoad, 300); }
+        if (section === 'carteira') { paGenerateCarteira(); }
     }
 
     function paCheckHash() {
@@ -1461,6 +1385,11 @@
     }
 
     /* ===== QR CODE ===== */
+    function paGenerateMatricula(cpf) {
+        var digits = (cpf || '').replace(/\D/g, '');
+        if (digits.length < 5) return '';
+        return 'ACD' + digits.slice(-5);
+    }
     function paGenerateQR() {
         var qrEl = document.getElementById('pf-apontamento-qr-img');
         var infoEl = document.getElementById('pf-apontamento-qr-info');
@@ -1473,6 +1402,78 @@
             infoEl.innerHTML = '<div style="margin-top:10px;font-size:20px;font-weight:800;color:#16a34a;font-family:Courier New,monospace;letter-spacing:2px">' + matricula + '</div>' +
                 '<div style="font-size:15px;color:#1e293b;font-weight:600;margin-top:4px">' + (paUser.nome || '---') + '</div>';
         }
+    }
+
+    /* ===== CARTEIRA ===== */
+    function paGenerateCarteira() {
+        var container = document.getElementById('pf-carteira-container');
+        if (!container) return;
+        if (!paUser) { container.innerHTML = '<p style="color:#999">Aguarde carregamento...</p>'; return; }
+        var matricula = paUser.matricula || paGenerateMatricula(paUser.cpf) || '---';
+        var cpf = paUser.cpf || '';
+        var cpfDisp = cpf;
+        if (cpf.length === 11) cpfDisp = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        var nascimento = paUser.nascimento || '---';
+        var fatorRh = paUser.fatorRh || '---';
+        var nome = paUser.nome || '---';
+        var turma = paUser.turma || '---';
+        var projeto = paUser.projeto || '---';
+
+        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=100x100&margin=2';
+
+        var fotoHtml = '<div style="width:110px;height:140px;background:#f0f0f0;border:2px solid #ccc;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden"><img id="pf-carteira-foto" src="" alt="Foto 3x4" style="display:none;width:100%;height:100%;object-fit:cover"><i id="pf-carteira-foto-icon" class="fa-solid fa-user" style="font-size:40px;color:#bbb"></i></div>';
+
+        container.innerHTML =
+        '<div class="pf-carteira-card">' +
+            '<div class="pf-carteira-border">' +
+                '<div class="pf-carteira-top">' +
+                    '<div class="pf-carteira-seal"><div class="pf-carteira-seal-inner">DPFCS<br>BS-BRASIL<br>BSELTDA</div></div>' +
+                    '<div class="pf-carteira-title">CARTEIRA DE IDENTIFICACAO DE ALUNO</div>' +
+                    '<div class="pf-carteira-logo-farn">FARN</div>' +
+                '</div>' +
+                '<div class="pf-carteira-body">' +
+                    '<div class="pf-carteira-left">' +
+                        '<div class="pf-carteira-left-text">' +
+                            '<span>&#9733; ALUNO(A) &#9733;</span>' +
+                            '<span>VALIDA EM TODO</span>' +
+                            '<span>TERRITORIO NACIONAL</span>' +
+                            '<span>USO PESSOAL E</span>' +
+                            '<span>INTRANSFERIVEL</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="pf-carteira-center">' +
+                        '<div class="pf-carteira-foto-area">' + fotoHtml + '</div>' +
+                        '<div class="pf-carteira-dados">' +
+                            '<div class="pf-carteira-dado"><span class="pf-cd-label">NOME:</span> <span class="pf-cd-val">' + nome.toUpperCase() + '</span></div>' +
+                            '<div class="pf-carteira-dado"><span class="pf-cd-label">MATRICULA:</span> <span class="pf-cd-val pf-cd-mat">' + matricula + '</span></div>' +
+                            '<div class="pf-carteira-dado"><span class="pf-cd-label">CPF:</span> <span class="pf-cd-val">' + cpfDisp + '</span></div>' +
+                            '<div class="pf-carteira-dado"><span class="pf-cd-label">DATA NASC.:</span> <span class="pf-cd-val">' + nascimento + '</span></div>' +
+                            '<div class="pf-carteira-dado"><span class="pf-cd-label">TIPO SANG.:</span> <span class="pf-cd-val">' + fatorRh + '</span></div>' +
+                            '<div class="pf-carteira-dado"><span class="pf-cd-label">TURMA:</span> <span class="pf-cd-val">' + turma + '</span></div>' +
+                            '<div class="pf-carteira-dado"><span class="pf-cd-label">PROJETO:</span> <span class="pf-cd-val" style="color:#c2410c">' + projeto + '</span></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="pf-carteira-right">' +
+                        '<img src="' + qrUrl + '" alt="QR Code" style="width:90px;height:90px;border:1px solid #ddd;border-radius:4px;background:#fff;padding:2px">' +
+                        '<div class="pf-carteira-qr-text">ESCANEIE PARA<br>VERIFICAR<br>AUTENTICIDADE</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="pf-carteira-footer">' +
+                    '<div class="pf-carteira-valores">&#9733; DISCIPLINA &#9733; HONRA &#9733; CORAGEM &#9733; COMPROMISSO &#9733;</div>' +
+                    '<div class="pf-carteira-inst">FARN - FORCA AUXILIAR DE RESGATE NACIONAL - CNPJ 43.327.929/0001-32</div>' +
+                    '<div class="pf-carteira-aviso">NAO E VALIDA COMO CARTEIRA FUNCIONAL. SUJEITO AO CUMPRIMENTO DAS PENALIDADES EM CASO DE USO INDEVIDO.</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+        getFoto(paUser.cpf).then(function(src) {
+            if (src) {
+                var img = document.getElementById('pf-carteira-foto');
+                var icon = document.getElementById('pf-carteira-foto-icon');
+                if (img) { img.src = src; img.style.display = 'block'; }
+                if (icon) icon.style.display = 'none';
+            }
+        });
     }
 
     /* ===== APONTAMENTO (real-time) ===== */
@@ -1516,72 +1517,6 @@
         }).catch(function(e) {
             listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
         });
-    }
-
-    /* ===== CARTEIRA ===== */
-    function paGenerateMatricula(cpf) {
-        var digits = (cpf || '').replace(/\D/g, '');
-        if (digits.length < 5) return '';
-        return 'ACD' + digits.slice(-5);
-    }
-
-    function paCarteiraLoad() {
-        if (!paUser) return;
-        var matricula = paUser.matricula || paGenerateMatricula(paUser.cpf) || '---';
-        var cpf = paUser.cpf || '---';
-        if (cpf.length === 11) cpf = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        var nascimento = paUser.nascimento || '---';
-        var nome = paUser.nome || '---';
-        var sangue = paUser.tipoSanguineo || paUser.sangue || '---';
-
-        document.getElementById('cart-nome').textContent = nome;
-        document.getElementById('cart-matricula').textContent = matricula;
-        document.getElementById('cart-cpf').textContent = cpf;
-        document.getElementById('cart-nascimento').textContent = nascimento;
-        document.getElementById('cart-sangue').textContent = sangue;
-
-        var qrEl = document.getElementById('cart-qr-img');
-        if (qrEl && matricula !== '---') {
-            qrEl.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=80x80&margin=2" alt="QR Code" style="width:80px;height:80px;border:1px solid #ddd;border-radius:4px;padding:2px;background:#fff">';
-        }
-
-        var photoFrame = document.getElementById('cart-photo-frame');
-        if (photoFrame) {
-            if (paUser.photoDataUrl) {
-                photoFrame.innerHTML = '<img src="' + paUser.photoDataUrl + '" alt="Foto">';
-            } else {
-                photoFrame.innerHTML = '<i class="fa-solid fa-user" style="font-size:32px;color:#ccc"></i>';
-            }
-        }
-    }
-
-    function paCarteiraPrint() {
-        window.print();
-    }
-
-    function paCarteiraSalvar() {
-        var card = document.getElementById('pf-carteira-card');
-        if (!card) return;
-        if (typeof html2canvas !== 'undefined') {
-            html2canvas(card, {scale:2, useCORS:true}).then(function(canvas) {
-                var link = document.createElement('a');
-                link.download = 'carteira-aluno-' + (paUser.nome || 'aluno').replace(/\s+/g,'-') + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        } else {
-            var s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-            s.onload = function() {
-                html2canvas(card, {scale:2, useCORS:true}).then(function(canvas) {
-                    var link = document.createElement('a');
-                    link.download = 'carteira-aluno-' + (paUser.nome || 'aluno').replace(/\s+/g,'-') + '.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                });
-            };
-            document.head.appendChild(s);
-        }
     }
 
     /* Auto-login se lembrar estava marcado */
