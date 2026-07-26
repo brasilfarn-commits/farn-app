@@ -3233,7 +3233,7 @@ function apontamentoRenderHistorico(registros) {
         return '<div class="apt-card" id="' + cardId + '" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:16px;overflow:hidden">' +
             '<div style="padding:12px 16px;background:#f0fdf4;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none" onclick="apontamentoToggleCard(\'' + cardId + '\')">' +
                 '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
-                    '<i class="fa-solid fa-chevron-down" style="color:#666;font-size:12px;transition:transform 0.2s" id="apt-arrow-' + ri + '"></i>' +
+                    '<i class="fa-solid fa-chevron-down" style="color:#666;font-size:12px;transition:transform 0.2s;transform:rotate(-90deg)" id="apt-arrow-' + ri + '"></i>' +
                     '<span style="background:rgba(245,127,23,0.2);color:#f57f17;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700">' + (r.turma || '-') + '</span>' +
                     '<span style="color:#ccc;font-size:13px"><i class="fa-solid fa-book" style="color:#f57f17;margin-right:4px"></i>' + (r.disciplina || '-') + '</span>' +
                     '<span style="color:#aaa;font-size:12px"><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + dataFmt + ' ' + horaFmt + '</span>' +
@@ -3246,7 +3246,7 @@ function apontamentoRenderHistorico(registros) {
                     '<span style="color:#666">/ ' + alunos.length + '</span>' +
                 '</div>' +
             '</div>' +
-            '<div class="apt-card-body" style="overflow-x:auto">' +
+            '<div class="apt-card-body" style="overflow-x:auto;display:none"> +
                 '<table style="width:100%;border-collapse:collapse">' +
                     '<thead><tr>' +
                         '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;min-width:140px">Matricula</th>' +
@@ -3258,7 +3258,7 @@ function apontamentoRenderHistorico(registros) {
                     '<tbody>' + rows + '</tbody>' +
                 '</table>' +
             '</div>' +
-            '<div class="apt-card-footer" style="padding:8px 16px;font-size:10px;color:#555;border-top:1px solid #2a2a3a">Registrado por: ' + (r.criadoPor || '-') + ' em ' + criadoEmFmt + '</div>' +
+            '<div class="apt-card-footer" style="padding:8px 16px;font-size:10px;color:#555;border-top:1px solid #2a2a3a;display:none">Registrado por: ' + (r.criadoPor || '-') + ' em ' + criadoEmFmt + '</div>' +
         '</div>';
     }).join('');
 
@@ -3270,7 +3270,8 @@ function apontamentoRenderHistorico(registros) {
             excluirSelect.innerHTML = '<option value="">Selecione a lista...</option>';
             registros.forEach(r => {
                 const dataFmt = r.dataAula ? new Date(r.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data';
-                const label = dataFmt + ' - ' + (r.disciplina || '---') + ' | ' + (r.turma || '---') + ' | ' + (r.horaAula || '');
+                const aulaLabel = r.aula || '---';
+                const label = aulaLabel + ' - ' + dataFmt + ' | ' + (r.turma || '---') + ' | ' + (r.disciplina || '---');
                 excluirSelect.innerHTML += '<option value="' + r.docId + '">' + label + '</option>';
             });
         } else {
