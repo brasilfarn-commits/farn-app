@@ -1338,13 +1338,18 @@
     }
 
     /* ===== QR CODE ===== */
+    function paGenerateMatricula(cpf) {
+        var digits = (cpf || '').replace(/\D/g, '');
+        if (digits.length < 5) return '';
+        return 'ACD' + digits.slice(-5);
+    }
     function paGenerateQR() {
         if (!paUser) return;
         var qrEl = document.getElementById('pf-apontamento-qr-img');
         var infoEl = document.getElementById('pf-apontamento-qr-info');
         if (!qrEl) return;
         qrEl.innerHTML = '';
-        var matricula = paUser.matricula || '';
+        var matricula = paUser.matricula || paGenerateMatricula(paUser.cpf) || '';
         if (!matricula) { if (infoEl) infoEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i> Matricula nao encontrada. Aguarde a aprovacao do cadastro.</p>'; return; }
         try {
             var qr = qrcode(0, 'M');
