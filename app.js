@@ -227,6 +227,24 @@ function configInstituicaoSalvar() {
         });
 }
 
+function configInstituicaoCarregarHome() {
+    if (!firebaseReady) return;
+    dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc) {
+        if (doc.exists) {
+            var d = doc.data();
+            if (d.razaoSocial) document.getElementById('admin-home-razao').textContent = d.razaoSocial.toUpperCase();
+            if (d.nomeFantasia) document.getElementById('admin-home-fantasia').textContent = d.nomeFantasia;
+            if (d.logo) document.getElementById('admin-home-logo').src = d.logo;
+            var infoEl = document.getElementById('admin-home-inst-info');
+            var hasInfo = false;
+            if (d.cnpj) { document.getElementById('admin-home-cnpj').textContent = 'CNPJ: ' + d.cnpj; hasInfo = true; }
+            if (d.fone) { document.getElementById('admin-home-fone').textContent = 'Tel: ' + d.fone; hasInfo = true; }
+            if (d.email) { document.getElementById('admin-home-email').textContent = 'Email: ' + d.email; hasInfo = true; }
+            if (infoEl && hasInfo) infoEl.style.display = 'block';
+        }
+    }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
+}
+
 async function syncAllDatabases() {
     if (!firebaseReady && !firebaseError) {
         alert('Firebase nao conectado. Verifique a conexao.');
@@ -497,6 +515,7 @@ async function initApp() {
         if (firstVisible) firstVisible.click();
         await populateTurmaSelect();
         populateProjetoSelect();
+        configInstituicaoCarregarHome();
         renderList();
         if (restoreFormState()) {
             showAdminSection('admin-form-candidato', document.querySelector('.nav-item:nth-child(2)'));
@@ -660,6 +679,7 @@ function enterAdminPanel() {
     populateTurmaSelect();
     populateProjetoSelect();
     renderList();
+    configInstituicaoCarregarHome();
     if (typeof chatPortaisStartNotifListener === 'function') chatPortaisStartNotifListener();
 }
 

@@ -220,11 +220,16 @@
                 <!-- HOME -->
                 <div id="admin-home" class="admin-section active">
                     <div class="admin-home-container">
-                        <img src="logo-farn.png.png" alt="FARN" class="admin-home-logo">
-                        <h1 class="admin-home-title">ADMINISTRAÇÃO FARN</h1>
-                        <p class="admin-home-subtitle">Força Auxiliar de Resgate Nacional</p>
+                        <img id="admin-home-logo" src="logo-farn.png.png" alt="FARN" class="admin-home-logo" style="cursor:pointer" onclick="configInstituicaoOpen()">
+                        <h1 class="admin-home-title" id="admin-home-razao">ADMINISTRAÇÃO FARN</h1>
+                        <p class="admin-home-subtitle" id="admin-home-fantasia">Força Auxiliar de Resgate Nacional</p>
                         <div class="admin-home-divider"></div>
                         <p class="admin-home-desc">Sistema de Gestão Educacional</p>
+                        <div id="admin-home-inst-info" style="display:none;text-align:center;margin-bottom:20px;padding:12px 20px;background:rgba(255,255,255,.08);border-radius:10px;border:1px solid rgba(255,255,255,.1)">
+                            <div id="admin-home-cnpj" style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px"></div>
+                            <div id="admin-home-fone" style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px"></div>
+                            <div id="admin-home-email" style="font-size:12px;color:rgba(255,255,255,.7)"></div>
+                        </div>
                         <div class="admin-home-grid">
                             <div class="admin-home-card" onclick="showAdminSection('admin-pre-inscricao', document.querySelector('.nav-item:nth-child(2)')); preInicializar()">
                                 <i class="fa-solid fa-file-pen"></i>
