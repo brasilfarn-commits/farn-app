@@ -560,6 +560,7 @@
     var paUser=null;
     var paGalleryUnsub=null;
     var paNoticiasUnsub=null;
+    var paAptUnsub=null;
     var paDisciplinas=[];
 
     /* ===== FORMATACAO ===== */
@@ -703,6 +704,7 @@
         if (chatUnsub) { chatUnsub(); chatUnsub = null; }
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
         if (paNoticiasUnsub) { paNoticiasUnsub(); paNoticiasUnsub = null; }
+        if (paAptUnsub) { paAptUnsub(); paAptUnsub = null; }
         document.getElementById('screen-portal').classList.remove('active');
         document.getElementById('screen-login').style.display = 'flex';
         document.getElementById('pf-cpf').value = '';
@@ -1281,12 +1283,13 @@
         alert(msg);
     }
 
-    /* ===== APONTAMENTO ===== */
+    /* ===== APONTAMENTO (real-time) ===== */
     function paLoadApontamento() {
+        if (paAptUnsub) { paAptUnsub(); paAptUnsub = null; }
         var listEl = document.getElementById('pf-apontamento-list');
         if (!listEl || !paUser) return;
         listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
-        dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).orderBy('dataAula', 'desc').limit(50).get().then(function(snap) {
+        paAptUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).orderBy('dataAula', 'desc').limit(50).onSnapshot(function(snap) {
             if (snap.empty) {
                 listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-clipboard-check" style="font-size:36px;color:#94a3b8;margin-bottom:10px"></i><p>Nenhum apontamento registrado</p></div>';
                 return;
