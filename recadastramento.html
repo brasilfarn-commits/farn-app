@@ -568,12 +568,12 @@
                         <span id="rc-status-motivo" style="color:#f44336"></span>
                     </div>
                 </div>
-                <div id="rc-status-mensagem-row" style="display:none;margin-top:16px;padding:16px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2);border-radius:10px">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                        <i class="fa-solid fa-envelope" style="color:#2563eb;font-size:14px"></i>
-                        <span style="font-size:13px;font-weight:700;color:#2563eb">Mensagem da FARN</span>
+                <div id="rc-status-msg-admin" style="display:none;margin-top:16px;padding:16px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.15);border-radius:12px">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                        <i class="fa-solid fa-envelope" style="color:#2563eb;font-size:16px"></i>
+                        <strong style="color:#2563eb;font-size:14px">Mensagem da equipe FARN</strong>
                     </div>
-                    <p id="rc-status-mensagem-texto" style="margin:0;font-size:13px;color:#1e293b;line-height:1.6;white-space:pre-wrap"></p>
+                    <p id="rc-status-msg-admin-text" style="color:#1e293b;font-size:13px;line-height:1.7;margin:0;white-space:pre-wrap"></p>
                 </div>
             </div>
             <button class="recad-btn-check" onclick="rcResetCheck()" style="margin-top:16px">
@@ -750,13 +750,6 @@
             motivoRow.style.display = 'none';
             var aprovadoMsg = document.getElementById('rc-status-aprovado-msg');
             aprovadoMsg.style.display = 'none';
-            var mensagemRow = document.getElementById('rc-status-mensagem-row');
-            mensagemRow.style.display = 'none';
-
-            if (r.mensagemAdmin) {
-                mensagemRow.style.display = 'block';
-                document.getElementById('rc-status-mensagem-texto').textContent = r.mensagemAdmin;
-            }
 
             if (r.status === 'Ativo') {
                 icon.classList.add('aprovado');
@@ -788,6 +781,15 @@
                 document.getElementById('rc-status-portal-link').style.display = 'none';
             }
 
+            var msgAdminEl = document.getElementById('rc-status-msg-admin');
+            var msgAdminText = document.getElementById('rc-status-msg-admin-text');
+            if (r.mensagemAdmin && r.mensagemAdmin.trim()) {
+                msgAdminText.textContent = r.mensagemAdmin;
+                msgAdminEl.style.display = 'block';
+            } else {
+                msgAdminEl.style.display = 'none';
+            }
+
             document.getElementById('recad-check').querySelector('.recad-check-box').style.display = 'none';
             document.getElementById('recad-status-result').classList.add('active');
 
@@ -807,7 +809,7 @@
         document.getElementById('rc-check-cpf').value = '';
         document.getElementById('rc-check-senha').value = '';
         document.getElementById('recad-check-msg').className = 'recad-msg';
-        document.getElementById('rc-status-mensagem-row').style.display = 'none';
+        document.getElementById('rc-status-msg-admin').style.display = 'none';
     }
 
     function rcHandleFile(event, type) {

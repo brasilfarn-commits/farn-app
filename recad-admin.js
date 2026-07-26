@@ -75,12 +75,13 @@ function recadRenderTable() {
             '<td>' + (r.projeto || '---') + '</td>' +
             '<td>' + cidadeUf + '</td>' +
             '<td>' + dataEnvio + '</td>' +
-            '<td><span style="background:' + statusBg + ';color:' + statusColor + ';padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">' + (r.status || 'Pendente') + '</span></td>' +
+            '<td><span style="background:' + statusBg + ';color:' + statusColor + ';padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">' + (r.status || 'Pendente') + '</span>' + (r.mensagemAdmin ? ' <i class="fa-solid fa-envelope" style="color:#2563eb;margin-left:4px;font-size:11px" title="Mensagem enviada"></i>' : '') + '</td>' +
             '<td style="white-space:nowrap">' +
             '<button class="btn-outline btn-sm" onclick="recadViewDetail(\'' + docId + '\')" title="Ver detalhes"><i class="fa-solid fa-eye"></i></button> ' +
             '<button class="btn-outline btn-sm" onclick="recadEdit(\'' + docId + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button> ' +
             '<button class="btn-outline btn-sm" onclick="recadDelete(\'' + docId + '\')" title="Excluir" style="color:#f44336;border-color:#f44336"><i class="fa-solid fa-trash"></i></button> ' +
-            '<button class="btn-outline btn-sm" onclick="recadPrint(\'' + docId + '\')" title="Imprimir"><i class="fa-solid fa-print"></i></button>' +
+            '<button class="btn-outline btn-sm" onclick="recadPrint(\'' + docId + '\')" title="Imprimir"><i class="fa-solid fa-print"></i></button> ' +
+            '<button class="btn-outline btn-sm" onclick="recadEnviarMensagem(\'' + docId + '\')" title="Enviar mensagem" style="color:#2563eb;border-color:#2563eb"><i class="fa-solid fa-envelope"></i></button> ' +
             '</td>' +
             '</tr>';
     }).join('');
@@ -88,6 +89,24 @@ function recadRenderTable() {
 
 function recadFilter() {
     recadRenderTable();
+}
+
+function recadEnviarMensagem(docId) {
+    var r = recadData.find(function(x) { return x._docId === docId; });
+    if (!r) return;
+    var nome = r.nome || '---';
+    var msgAtual = r.mensagemAdmin || '';
+    var novaMsg = prompt('Enviar mensagem para: ' + nome + '\n\nMensagem atual: ' + (msgAtual || '(nenhuma)') + '\n\nDigite a mensagem (deixe vazio para remover):', msgAtual);
+    if (novaMsg === null) return;
+    novaMsg = novaMsg.trim();
+    var updateData = { mensagemAdmin: novaMsg };
+    dbFirestore.collection('recadastramentos').doc(docId).update(updateData).then(function() {
+        r.mensagemAdmin = novaMsg;
+        recadRenderTable();
+        alert(novaMsg ? 'Mensagem enviada com sucesso!' : 'Mensagem removida com sucesso!');
+    }).catch(function(e) {
+        alert('Erro ao enviar mensagem: ' + e.message);
+    });
 }
 
 function recadPopulateProjectFilter() {
@@ -139,6 +158,16 @@ function recadViewDetail(docId) {
             '<button class="btn-primary btn-sm" onclick="recadUpdateStatus(\'' + docId + '\',\'Pendente\')" style="background:#ffc107;color:#000"><i class="fa-solid fa-hourglass-half"></i> Pendente</button>' +
         '</div>' +
     '</div>';
+
+    if (r.mensagemAdmin) {
+        html += '<div style="margin:16px 0;padding:16px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:12px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+            '<div><i class="fa-solid fa-envelope" style="color:#2563eb;margin-right:6px"></i><strong style="color:#2563eb;font-size:13px">Mensagem para o aluno:</strong></div>' +
+            '<button class="btn-outline btn-sm" onclick="recadEnviarMensagem(\'' + docId + '\')" style="font-size:11px;padding:3px 8px"><i class="fa-solid fa-pen"></i> Editar</button>' +
+            '</div>' +
+            '<p style="color:#1e293b;font-size:13px;line-height:1.6;margin:0;white-space:pre-wrap">' + r.mensagemAdmin + '</p>' +
+            '</div>';
+    }
 
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
 
@@ -225,17 +254,6 @@ function recadViewDetail(docId) {
 
     html += '</div>';
 
-    html += '<div style="margin-top:20px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2);border-radius:14px;padding:20px">' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(37,99,235,.15)">' +
-        '<i class="fa-solid fa-envelope" style="color:#2563eb"></i><h3 style="color:#2563eb;font-size:15px">Mensagem para o Formado</h3></div>' +
-        '<p style="font-size:12px;color:#64748b;margin-bottom:10px">Escreva uma mensagem que aparecera quando o formado consultar seu status.</p>' +
-        '<textarea id="rc-mensagem-admin" class="config-input" rows="4" placeholder="Digite sua mensagem aqui..." style="width:100%;resize:vertical">' + (r.mensagemAdmin || '') + '</textarea>' +
-        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">' +
-            '<button class="btn-primary btn-sm" onclick="recadEnviarMensagem(\'' + docId + '\')" style="background:#2563eb"><i class="fa-solid fa-paper-plane"></i> Enviar Mensagem</button>' +
-            (r.mensagemAdmin ? '<button class="btn-primary btn-sm" onclick="recadApagarMensagem(\'' + docId + '\')" style="background:#dc2626"><i class="fa-solid fa-trash"></i> Apagar</button>' : '') +
-        '</div>' +
-    '</div>';
-
     document.getElementById('rc-detalhe-body').innerHTML = html;
     showAdminSection('admin-recad-detalhe');
 }
@@ -269,35 +287,6 @@ async function recadUpdateStatus(docId, newStatus) {
     } catch (e) {
         console.error('Erro ao atualizar status:', e);
         alert('Erro ao atualizar status: ' + e.message);
-    }
-}
-
-async function recadEnviarMensagem(docId) {
-    var textarea = document.getElementById('rc-mensagem-admin');
-    if (!textarea) return;
-    var texto = textarea.value.trim();
-    if (!texto) { alert('Digite uma mensagem.'); return; }
-    try {
-        await dbFirestore.collection('recadastramentos').doc(docId).update({ mensagemAdmin: texto });
-        var r = recadData.find(function(x) { return x._docId === docId; });
-        if (r) r.mensagemAdmin = texto;
-        alert('Mensagem salva com sucesso!');
-        recadViewDetail(docId);
-    } catch (e) {
-        alert('Erro ao salvar mensagem: ' + e.message);
-    }
-}
-
-async function recadApagarMensagem(docId) {
-    if (!confirm('Apagar esta mensagem?')) return;
-    try {
-        await dbFirestore.collection('recadastramentos').doc(docId).update({ mensagemAdmin: firebase.firestore.FieldValue.delete() });
-        var r = recadData.find(function(x) { return x._docId === docId; });
-        if (r) delete r.mensagemAdmin;
-        alert('Mensagem apagada!');
-        recadViewDetail(docId);
-    } catch (e) {
-        alert('Erro ao apagar mensagem: ' + e.message);
     }
 }
 
