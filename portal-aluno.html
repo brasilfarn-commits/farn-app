@@ -496,6 +496,11 @@
                 <div class="pf-section" id="pf-section-apontamento">
                     <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-clipboard-check"></i> Meu Apontamento</h3>
                     <p style="font-size:13px;color:#64748b;margin-bottom:16px">Acompanhe sua presenca nas aulas.</p>
+                    <div id="pf-apontamento-qr" style="text-align:center;margin-bottom:20px;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">
+                        <p style="font-size:13px;color:#64748b;margin-bottom:12px"><i class="fa-solid fa-qrcode" style="color:var(--blue);margin-right:4px"></i> Apresente este QR Code ao instructor para registrar sua presenca</p>
+                        <div id="pf-apontamento-qr-img" style="display:inline-block"></div>
+                        <div id="pf-apontamento-qr-info" style="margin-top:10px"></div>
+                    </div>
                     <div id="pf-apontamento-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
@@ -551,6 +556,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
@@ -772,7 +778,7 @@
         if (target) target.classList.add('active');
         else document.getElementById('pf-section-construcao').classList.add('active');
 
-        if (section === 'apontamento') paLoadApontamento();
+        if (section === 'apontamento') { paLoadApontamento(); paGenerateQR(); }
     }
 
     function paCheckHash() {
@@ -1329,6 +1335,31 @@
             msg = 'O aplicativo Portal do Aluno FARN esta em fase de desenvolvimento.\n\nEm breve o download direto (APK) estara disponivel!\n\nFique atento as atualizacoes.';
         }
         alert(msg);
+    }
+
+    /* ===== QR CODE ===== */
+    function paGenerateQR() {
+        if (!paUser) return;
+        var qrEl = document.getElementById('pf-apontamento-qr-img');
+        var infoEl = document.getElementById('pf-apontamento-qr-info');
+        if (!qrEl) return;
+        qrEl.innerHTML = '';
+        var matricula = paUser.matricula || '';
+        if (!matricula && infoEl) { infoEl.innerHTML = '<p style="color:#dc2626;font-size:12px">Matricula nao encontrada. Aguarde a aprovacao do cadastro.</p>'; return; }
+        try {
+            new QRCode(qrEl, {
+                text: matricula,
+                width: 180,
+                height: 180,
+                colorDark: '#1e293b',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } catch(e) { qrEl.innerHTML = '<p style="color:#dc2626;font-size:12px">Erro ao gerar QR Code</p>'; }
+        if (infoEl) {
+            infoEl.innerHTML = '<div style="margin-top:8px;font-size:15px;font-weight:700;color:#1e293b">' + (paUser.nome || '---') + '</div>' +
+                '<div style="font-size:13px;color:#64748b;font-family:Courier New,monospace;letter-spacing:1px;margin-top:4px">' + matricula + '</div>';
+        }
     }
 
     /* ===== APONTAMENTO (real-time) ===== */
