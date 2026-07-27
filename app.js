@@ -1854,6 +1854,74 @@ function printTableAlunos() {
     w.document.close();
 }
 
+async function relatorioRegimento() {
+    const modal = document.getElementById('modal-relatorio-regimento');
+    const tbody = document.getElementById('regimento-aceites-body');
+    const statsDiv = document.getElementById('regimento-stats');
+    modal.classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
+    statsDiv.innerHTML = '';
+    try {
+        const snap = await dbFirestore.collection('regimentoAceites').get();
+        const aceites = [];
+        snap.forEach(doc => aceites.push(doc.data()));
+        aceites.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+        const totalCandidatos = candidatos.length;
+        const totalAceitaram = aceites.length;
+        const pendentes = totalCandidatos - totalAceitaram;
+        statsDiv.innerHTML = `
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+                <div style="font-size:24px;font-weight:700;color:#16a34a">${totalAceitaram}</div>
+                <div style="font-size:11px;color:#166534;font-weight:600">Aceitaram</div>
+            </div>
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+                <div style="font-size:24px;font-weight:700;color:#ca8a04">${pendentes}</div>
+                <div style="font-size:11px;color:#92400e;font-weight:600">Pendentes</div>
+            </div>
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+                <div style="font-size:24px;font-weight:700;color:#1e293b">${totalCandidatos}</div>
+                <div style="font-size:11px;color:#475569;font-weight:600">Total de Alunos</div>
+            </div>`;
+        if (!aceites.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno aceitou o regimento ainda.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = aceites.map(a => {
+            const cpfFmt = (a.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            const dataAceite = a.dataAceite ? new Date(a.dataAceite).toLocaleDateString('pt-BR') + ' ' + new Date(a.dataAceite).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '-';
+            return `<tr>
+                <td style="font-size:12px;font-weight:600">${a.nome || '-'}</td>
+                <td style="font-size:12px">${cpfFmt}</td>
+                <td style="font-size:12px">${a.turma || '-'}</td>
+                <td style="font-size:12px">${a.projeto || '-'}</td>
+                <td style="font-size:12px">${dataAceite}</td>
+            </tr>`;
+        }).join('');
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar: ' + e.message + '</td></tr>';
+    }
+}
+
+function fecharModalRelatorioRegimento() {
+    document.getElementById('modal-relatorio-regimento').classList.add('hidden');
+}
+
+function exportarRegimentoCSV() {
+    const tbody = document.getElementById('regimento-aceites-body');
+    const rows = tbody.querySelectorAll('tr');
+    if (!rows.length || rows[0].querySelector('td[colspan]')) { alert('Nenhum dado para exportar.'); return; }
+    let csv = 'Nome;CPF;Turma;Projeto;Data do Aceite\n';
+    rows.forEach(r => {
+        const cells = r.querySelectorAll('td');
+        csv += Array.from(cells).map(c => '"' + c.textContent.trim().replace(/"/g, '""') + '"').join(';') + '\n';
+    });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'regimento_aceites_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+}
+
 function relatorioUniforme() {
     const aprovados = candidatos.filter(c => c.status === 'Aprovado');
     if (!aprovados.length) { alert('Nenhum aluno aprovado para gerar relatorio.'); return; }
@@ -2120,9 +2188,17 @@ function projetoRenderTurmas() {
         const div = document.createElement('div');
         div.className = 'pf-turma-item';
         div.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid #222;transition:background 0.2s';
+        var infoExtra = '';
+        if (t.previsao) infoExtra += '<span style="color:#94a3b8;font-size:11px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>Previsao: ' + t.previsao + '</span>';
+        if (t.dias && t.dias.length) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + t.dias.join(', ') + '</span>';
+        if (t.horarios) {
+            var hList = Object.entries(t.horarios).map(function(e) { return e[0] + ': ' + e[1].inicio + ' - ' + e[1].fim; }).join(', ');
+            if (hList) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-clock" style="margin-right:4px"></i>' + hList + '</span>';
+        }
         div.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;gap:2px">' +
             '<span style="color:#fff;font-size:13px;font-weight:600"><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:8px"></i>' + t.nome + '</span>' +
             (t.descricao ? '<span style="color:#888;font-size:12px;margin-left:24px">' + t.descricao + '</span>' : '') +
+            (infoExtra ? '<span style="margin-left:24px;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">' + infoExtra + '</span>' : '') +
             '</div>' +
             '<button type="button" class="btn-icon" title="Editar" onclick="projetoEditarTurma(' + i + ')"><i class="fa-solid fa-pen"></i></button>' +
             '<button type="button" class="btn-icon btn-danger-icon" title="Remover" onclick="projetoRemoverTurma(' + i + ')"><i class="fa-solid fa-trash"></i></button>';
@@ -2132,6 +2208,82 @@ function projetoRenderTurmas() {
     });
 }
 
+function pfTurmaToggleDia(el) {
+    el.closest('label').style.background = el.checked ? '#16a34a' : '#fff';
+    el.closest('label').style.color = el.checked ? '#fff' : '#1e293b';
+    el.closest('label').style.borderColor = el.checked ? '#16a34a' : '#d1d5db';
+    pfTurmaAtualizarHorarios();
+}
+
+function pfTurmaAtualizarHorarios() {
+    var area = document.getElementById('pf-turma-horarios-area');
+    if (!area) return;
+    var dias = [];
+    document.querySelectorAll('#pf-turma-dias input[type=checkbox]:checked').forEach(function(cb) { dias.push(cb.value); });
+    if (!dias.length) { area.innerHTML = '<span style="font-size:11px;color:#94a3b8">Selecione os dias da semana para definir horarios</span>'; return; }
+    var html = '<label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px;display:block">Horarios por Dia</label><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
+    dias.forEach(function(d) {
+        var val = { inicio: '08:00', fim: '17:00' };
+        html += '<div style="display:flex;align-items:center;gap:6px;background:#fff;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px">' +
+            '<span style="font-size:12px;font-weight:600;color:#1e293b;min-width:32px">' + d + '</span>' +
+            '<input type="time" value="' + val.inicio + '" class="pf-turma-hora-inicio" data-dia="' + d + '" style="font-size:11px;padding:3px 4px;border:1px solid #d1d5db;border-radius:4px;width:75px">' +
+            '<span style="color:#94a3b8;font-size:11px">-</span>' +
+            '<input type="time" value="' + val.fim + '" class="pf-turma-hora-fim" data-dia="' + d + '" style="font-size:11px;padding:3px 4px;border:1px solid #d1d5db;border-radius:4px;width:75px">' +
+            '</div>';
+    });
+    html += '</div>';
+    area.innerHTML = html;
+}
+
+function pfTurmaColetarDados() {
+    var dias = [];
+    document.querySelectorAll('#pf-turma-dias input[type=checkbox]:checked').forEach(function(cb) { dias.push(cb.value); });
+    var horarios = {};
+    dias.forEach(function(d) {
+        var ini = document.querySelector('.pf-turma-hora-inicio[data-dia="' + d + '"]');
+        var fim = document.querySelector('.pf-turma-hora-fim[data-dia="' + d + '"]');
+        horarios[d] = { inicio: ini ? ini.value : '08:00', fim: fim ? fim.value : '17:00' };
+    });
+    return {
+        previsao: document.getElementById('pf-turma-previsao').value || '',
+        dias: dias,
+        horarios: horarios
+    };
+}
+
+function pfTurmaPreencherForm(t) {
+    document.getElementById('pf-turma-previsao').value = t.previsao || '';
+    document.querySelectorAll('#pf-turma-dias input[type=checkbox]').forEach(function(cb) {
+        var checked = t.dias && t.dias.indexOf(cb.value) !== -1;
+        cb.checked = checked;
+        cb.closest('label').style.background = checked ? '#16a34a' : '#fff';
+        cb.closest('label').style.color = checked ? '#fff' : '#1e293b';
+        cb.closest('label').style.borderColor = checked ? '#16a34a' : '#d1d5db';
+    });
+    pfTurmaAtualizarHorarios();
+    if (t.horarios) {
+        Object.entries(t.horarios).forEach(function(e) {
+            var ini = document.querySelector('.pf-turma-hora-inicio[data-dia="' + e[0] + '"]');
+            var fim = document.querySelector('.pf-turma-hora-fim[data-dia="' + e[0] + '"]');
+            if (ini) ini.value = e[1].inicio || '08:00';
+            if (fim) fim.value = e[1].fim || '17:00';
+        });
+    }
+}
+
+function pfTurmaLimparForm() {
+    document.getElementById('pf-turma-nome').value = '';
+    document.getElementById('pf-turma-desc').value = '';
+    document.getElementById('pf-turma-previsao').value = '';
+    document.querySelectorAll('#pf-turma-dias input[type=checkbox]').forEach(function(cb) {
+        cb.checked = false;
+        cb.closest('label').style.background = '#fff';
+        cb.closest('label').style.color = '#1e293b';
+        cb.closest('label').style.borderColor = '#d1d5db';
+    });
+    pfTurmaAtualizarHorarios();
+}
+
 function projetoAdicionarTurma() {
     const nomeEl = document.getElementById('pf-turma-nome');
     const descEl = document.getElementById('pf-turma-desc');
@@ -2139,9 +2291,9 @@ function projetoAdicionarTurma() {
     if (!nome) { nomeEl.focus(); nomeEl.style.borderColor = '#f44336'; setTimeout(function() { nomeEl.style.borderColor = ''; }, 2000); return; }
     var duplicada = projetoTurmasTemp.find(function(t) { return t.nome.toLowerCase() === nome.toLowerCase(); });
     if (duplicada) { alert('Ja existe uma turma com esse nome neste projeto.'); return; }
-    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim() });
-    nomeEl.value = '';
-    descEl.value = '';
+    var extras = pfTurmaColetarDados();
+    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim(), previsao: extras.previsao, dias: extras.dias, horarios: extras.horarios });
+    pfTurmaLimparForm();
     nomeEl.focus();
     projetoRenderTurmas();
 }
@@ -2151,6 +2303,7 @@ function projetoEditarTurma(i) {
     if (!t) return;
     document.getElementById('pf-turma-nome').value = t.nome;
     document.getElementById('pf-turma-desc').value = t.descricao || '';
+    pfTurmaPreencherForm(t);
     editingProjetoTurmaIdx = i;
     document.getElementById('pf-turma-btn-add').style.display = 'none';
     document.getElementById('pf-turma-btn-salvar').style.display = '';
@@ -2165,16 +2318,19 @@ function projetoSalvarTurma() {
     if (!nome) { nomeEl.focus(); nomeEl.style.borderColor = '#f44336'; setTimeout(function() { nomeEl.style.borderColor = ''; }, 2000); return; }
     var duplicada = projetoTurmasTemp.find(function(t, idx) { return idx !== editingProjetoTurmaIdx && t.nome.toLowerCase() === nome.toLowerCase(); });
     if (duplicada) { alert('Ja existe outra turma com esse nome neste projeto.'); return; }
+    var extras = pfTurmaColetarDados();
     projetoTurmasTemp[editingProjetoTurmaIdx].nome = nome;
     projetoTurmasTemp[editingProjetoTurmaIdx].descricao = descEl.value.trim();
+    projetoTurmasTemp[editingProjetoTurmaIdx].previsao = extras.previsao;
+    projetoTurmasTemp[editingProjetoTurmaIdx].dias = extras.dias;
+    projetoTurmasTemp[editingProjetoTurmaIdx].horarios = extras.horarios;
     projetoCancelarEdicaoTurma();
     projetoRenderTurmas();
 }
 
 function projetoCancelarEdicaoTurma() {
     editingProjetoTurmaIdx = null;
-    document.getElementById('pf-turma-nome').value = '';
-    document.getElementById('pf-turma-desc').value = '';
+    pfTurmaLimparForm();
     document.getElementById('pf-turma-btn-add').style.display = '';
     document.getElementById('pf-turma-btn-salvar').style.display = 'none';
     document.getElementById('pf-turma-btn-cancelar').style.display = 'none';
@@ -2191,12 +2347,81 @@ function openFormProjeto() {
     editingProjetoIndex = null;
     projetoTurmasTemp = [];
     projetoCancelarEdicaoTurma();
+    pfTurmaAtualizarHorarios();
     document.getElementById('pf-nome').value = '';
     document.getElementById('pf-cnpj').value = '';
     document.getElementById('pf-responsavel').value = '';
     projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Novo Projeto';
     showAdminSection('admin-form-projeto');
+}
+
+async function sincronizarNomeProjeto(nomeAntigo, nomeNovo) {
+    if (!nomeAntigo || !nomeNovo || nomeAntigo === nomeNovo) return;
+    try {
+        let total = 0;
+
+        const candSnap = await dbFirestore.collection(FB_CANDIDATOS).where('projeto', '==', nomeAntigo).get();
+        let batch1 = dbFirestore.batch(); let b1count = 0;
+        for (const doc of candSnap.docs) {
+            batch1.update(doc.ref, { projeto: nomeNovo }); total++; b1count++;
+            if (b1count >= 450) { await batch1.commit(); batch1 = dbFirestore.batch(); b1count = 0; }
+        }
+        if (b1count) await batch1.commit();
+
+        const turSnap = await dbFirestore.collection(FB_TURMAS).where('projeto', '==', nomeAntigo).get();
+        let batch2 = dbFirestore.batch(); let b2count = 0;
+        for (const doc of turSnap.docs) {
+            batch2.update(doc.ref, { projeto: nomeNovo }); total++; b2count++;
+            if (b2count >= 450) { await batch2.commit(); batch2 = dbFirestore.batch(); b2count = 0; }
+        }
+        if (b2count) await batch2.commit();
+
+        let lastPres = null;
+        while (true) {
+            let q = dbFirestore.collection('presencasAlunos').where('projeto', '==', nomeAntigo).limit(450);
+            if (lastPres) q = q.startAfter(lastPres);
+            const presSnap = await q.get();
+            if (presSnap.empty) break;
+            const batch3 = dbFirestore.batch();
+            presSnap.forEach(doc => { batch3.update(doc.ref, { projeto: nomeNovo }); total++; });
+            await batch3.commit();
+            lastPres = presSnap.docs[presSnap.docs.length - 1];
+            if (presSnap.size < 450) break;
+        }
+
+        let lastApt = null;
+        while (true) {
+            let q = dbFirestore.collection('apontamentos').limit(100);
+            if (lastApt) q = q.startAfter(lastApt);
+            const aptSnap = await q.get();
+            if (aptSnap.empty) break;
+            for (const doc of aptSnap.docs) {
+                if (doc.id === '_index') continue;
+                const d = doc.data();
+                if (d.alunos && Array.isArray(d.alunos)) {
+                    let changed = false;
+                    d.alunos.forEach(a => { if (a.projeto === nomeAntigo) { a.projeto = nomeNovo; changed = true; } });
+                    if (changed) { await doc.ref.update({ alunos: d.alunos }); total++; }
+                }
+            }
+            lastApt = aptSnap.docs[aptSnap.docs.length - 1];
+            if (aptSnap.size < 100) break;
+        }
+
+        const chatSnap = await dbFirestore.collection('chatAdmin').where('projeto', '==', nomeAntigo).get();
+        let batch5 = dbFirestore.batch(); let b5count = 0;
+        for (const doc of chatSnap.docs) {
+            batch5.update(doc.ref, { projeto: nomeNovo }); total++; b5count++;
+            if (b5count >= 450) { await batch5.commit(); batch5 = dbFirestore.batch(); b5count = 0; }
+        }
+        if (b5count) await batch5.commit();
+
+        alert('Projeto renomeado com sucesso! ' + total + ' registros sincronizados.');
+    } catch (e) {
+        console.error('Erro ao sincronizar nome do projeto:', e);
+        alert('Atencao: projeto renomeado, mas houve erro na sincronizacao: ' + e.message);
+    }
 }
 
 async function handleProjetoSubmit(event) {
@@ -2216,6 +2441,9 @@ async function handleProjetoSubmit(event) {
             if (data.docId) {
                 await dbFirestore.collection(FB_PROJETOS).doc(String(data.docId)).set(data, { merge: true });
             }
+            if (old.nome && old.nome !== nome) {
+                await sincronizarNomeProjeto(old.nome, nome);
+            }
             turmas = turmas.filter(t => t.projeto !== old.nome);
             editingProjetoIndex = null;
         } else {
@@ -2226,9 +2454,11 @@ async function handleProjetoSubmit(event) {
         }
         for (const t of projetoTurmasTemp) {
             const existe = turmas.find(tx => tx.nome === t.nome && tx.projeto === nome);
-            if (!existe) {
-                const novaTurma = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome };
-                turmas.push(novaTurma);
+            const turmaData = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome, previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} };
+            if (existe) {
+                Object.assign(existe, turmaData);
+            } else {
+                turmas.push(turmaData);
             }
         }
         await backupTurmas();
@@ -2297,7 +2527,7 @@ function editProjeto(i) {
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
     document.getElementById('pf-status').value = p.status || 'Em Andamento';
-    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '' }));
+    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} }));
     projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
     showAdminSection('admin-form-projeto');

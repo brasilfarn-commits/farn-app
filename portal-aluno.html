@@ -378,6 +378,7 @@
                 <div class="pf-nav-divider"></div>
                 <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
                 <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
+                <div class="pf-nav-item" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i> Declaracoes</div>
                 <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
             </div>
@@ -538,6 +539,32 @@
                     </div>
                 </div>
 
+                <!-- DECLARACOES -->
+                <div class="pf-section" id="pf-section-decl">
+                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-file-lines"></i> Declaracoes</h3>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Gere declaracoes de matricula e visualize o regimento interno.</p>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap">
+                        <div style="flex:1;min-width:240px;text-align:center;padding:24px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+                            <i class="fa-solid fa-file-pdf" style="font-size:36px;color:#dc2626;margin-bottom:10px"></i>
+                            <p style="font-size:14px;color:#1e293b;font-weight:600;margin-bottom:4px">Declaracao de Matricula</p>
+                            <p style="font-size:11px;color:#64748b;margin-bottom:14px">PDF com seus dados completos.</p>
+                            <button onclick="paGerarDeclaracao()" id="pf-decl-btn" style="background:var(--green);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                                <i class="fa-solid fa-download"></i> Gerar Declaracao
+                            </button>
+                            <div id="pf-decl-status" style="margin-top:10px;font-size:11px;color:#64748b;display:none"></div>
+                        </div>
+                        <div style="flex:1;min-width:240px;text-align:center;padding:24px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+                            <i class="fa-solid fa-shield-halved" style="font-size:36px;color:var(--green);margin-bottom:10px"></i>
+                            <p style="font-size:14px;color:#1e293b;font-weight:600;margin-bottom:4px">Regimento Interno</p>
+                            <p style="font-size:11px;color:#64748b;margin-bottom:14px">Leia e aceite o regimento da FARN.</p>
+                            <button onclick="paAbrirRegimento()" id="pf-regimento-btn" style="background:#1e293b;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                                <i class="fa-solid fa-book-open"></i> Regimento Interno
+                            </button>
+                            <div id="pf-regimento-status" style="margin-top:10px;font-size:11px;color:#64748b"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- CONSTRUCAO (fallback) -->
                 <div class="pf-section" id="pf-section-construcao">
                     <div class="pf-em-construcao">
@@ -561,6 +588,7 @@
             <div class="pf-mobile-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i><span>Carteira</span></div>
+            <div class="pf-mobile-nav-item" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i><span>Declaracoes</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i><span>Apostilas</span></div>
         </div>
     </div>
@@ -587,6 +615,33 @@
         </div>
     </div>
 
+    <!-- MODAL REGIMENTO INTERNO -->
+    <div id="pf-regimento-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);overflow-y:auto;padding:20px" onclick="if(event.target===this)paFecharRegimento()">
+        <div style="background:#fff;border-radius:16px;max-width:800px;margin:0 auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:20px 24px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <div style="font-size:18px;font-weight:700;color:#fff">REGIMENTO INTERNO</div>
+                    <div style="font-size:12px;color:#bbf7d0;margin-top:2px">FORCA AUXILIAR DE RESGATE NACIONAL - FARN</div>
+                </div>
+                <button onclick="paFecharRegimento()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="pf-regimento-body" style="padding:24px 28px;max-height:70vh;overflow-y:auto;font-size:13px;color:#1e293b;line-height:1.7"></div>
+            <div id="pf-regimento-footer" style="padding:16px 28px;border-top:1px solid #e2e8f0;background:#f8fafc;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1e293b;cursor:pointer;flex:1">
+                    <input type="checkbox" id="pf-regimento-check" style="width:18px;height:18px;accent-color:#16a34a" onchange="document.getElementById('pf-regimento-aceitar').disabled=!this.checked">
+                    Li e concordo com todas as normas do Regimento Interno e Codigo de Etica da FARN.
+                </label>
+                <button onclick="paImprimirRegimento()" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                    <i class="fa-solid fa-print"></i> Imprimir
+                </button>
+                <button id="pf-regimento-aceitar" onclick="paAceitarRegimento()" disabled style="background:#16a34a;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;opacity:.5">
+                    <i class="fa-solid fa-check"></i> Aceitar Regimento
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
@@ -602,6 +657,8 @@
     var paAulasUnsub=null;
     var paAptAulasUnsub=null;
     var paDisciplinas=[];
+    var paPortalLiberado=false;
+    var paRegimentoBloqueio=false;
 
     /* ===== FORMATACAO ===== */
     function paFormatCPF(input) {
@@ -675,7 +732,19 @@
 
             var parceiroSnap = await dbFirestore.collection('parceiros').where('nome','==',projetoDoAluno).limit(1).get();
             var statusProjeto = parceiroSnap.empty ? '' : parceiroSnap.docs[0].data().status;
-            if (parceiroSnap.empty || (statusProjeto !== 'Em Andamento' && statusProjeto !== 'Ativo')) {
+            var projetoEncontrado = !parceiroSnap.empty;
+            if (parceiroSnap.empty) {
+                var snapAlt = await dbFirestore.collection('parceiros').get();
+                snapAlt.forEach(function(d) {
+                    if (projetoEncontrado) return;
+                    var nd = d.data();
+                    if (nd.nome && projetoDoAluno && (nd.nome.toLowerCase().indexOf(projetoDoAluno.toLowerCase()) !== -1 || projetoDoAluno.toLowerCase().indexOf(nd.nome.toLowerCase()) !== -1)) {
+                        statusProjeto = nd.status || '';
+                        projetoEncontrado = true;
+                    }
+                });
+            }
+            if (projetoEncontrado && statusProjeto !== 'Em Andamento' && statusProjeto !== 'Ativo') {
                 errEl.textContent = 'Seu projeto nao esta disponivel no momento.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
@@ -713,13 +782,21 @@
             var wm = document.getElementById('pf-welcome-matricula');
             if (wm && paUser.matricula) { wm.style.display = 'flex'; wm.querySelector('span').textContent = 'Matricula: ' + paUser.matricula; }
 
-            paLoadNoticias();
-            paLoadDados();
-            paLoadGallery();
-            paLoadApostilas();
-            paLoadAulas();
-            paLoadStats();
-            chatInitEmoji();
+            /* Verifica regimento - bloqueia ate aceitar */
+            var aceiteSnap = await dbFirestore.collection('regimentoAceites').doc(paUser.cpf).get();
+            if (!aceiteSnap.exists) {
+                paPortalLiberado = false;
+                paBloquearPortal();
+            } else {
+                paPortalLiberado = true;
+                paLoadNoticias();
+                paLoadDados();
+                paLoadGallery();
+                paLoadApostilas();
+                paLoadAulas();
+                paLoadStats();
+                chatInitEmoji();
+            }
 
         } catch(e) {
             console.error('Erro login aluno:', e);
@@ -754,6 +831,71 @@
         document.getElementById('pf-cpf').value = '';
         document.getElementById('pf-senha').value = '';
         paUser = null;
+    }
+
+    /* ===== BLOQUEIO REGIMENTO ===== */
+    function paBloquearPortal() {
+        paRegimentoBloqueio = true;
+        var sidebar = document.querySelector('.pf-sidebar');
+        var navItems = sidebar ? sidebar.querySelectorAll('.pf-nav-item') : [];
+        navItems.forEach(function(item) {
+            var onclick = item.getAttribute('onclick') || '';
+            if (onclick.indexOf("'decl'") === -1) {
+                item.style.opacity = '0.3';
+                item.style.pointerEvents = 'none';
+            }
+        });
+        var mobNav = document.querySelector('.pf-mobile-nav-items');
+        if (mobNav) {
+            mobNav.querySelectorAll('.pf-mobile-nav-item').forEach(function(item) {
+                var onclick = item.getAttribute('onclick') || '';
+                if (onclick.indexOf("'decl'") === -1) {
+                    item.style.opacity = '0.3';
+                    item.style.pointerEvents = 'none';
+                }
+            });
+        }
+        document.querySelectorAll('.pf-section').forEach(function(s) {
+            if (s.id !== 'pf-section-decl') s.style.display = 'none';
+        });
+        var secDecl = document.getElementById('pf-section-decl');
+        if (secDecl) { secDecl.style.display = ''; secDecl.classList.add('active'); }
+        if (sidebar) {
+            var declNav = sidebar.querySelector('[onclick*="decl"]');
+            if (declNav) { sidebar.querySelectorAll('.pf-nav-item').forEach(function(n){n.classList.remove('active')}); declNav.classList.add('active'); }
+        }
+        if (mobNav) {
+            var mobDecl = mobNav.querySelector('[onclick*="decl"]');
+            if (mobDecl) { mobNav.querySelectorAll('.pf-mobile-nav-item').forEach(function(n){n.classList.remove('active')}); mobDecl.classList.add('active'); }
+        }
+        setTimeout(function(){ paAbrirRegimento(); }, 400);
+    }
+
+    function paLiberarPortal() {
+        paPortalLiberado = true;
+        paRegimentoBloqueio = false;
+        var sidebar = document.querySelector('.pf-sidebar');
+        var navItems = sidebar ? sidebar.querySelectorAll('.pf-nav-item') : [];
+        navItems.forEach(function(item) {
+            item.style.opacity = '';
+            item.style.pointerEvents = '';
+        });
+        var mobNav = document.querySelector('.pf-mobile-nav-items');
+        if (mobNav) {
+            mobNav.querySelectorAll('.pf-mobile-nav-item').forEach(function(item) {
+                item.style.opacity = '';
+                item.style.pointerEvents = '';
+            });
+        }
+        document.querySelectorAll('.pf-section').forEach(function(s) { s.style.display = ''; });
+        paShowSection('inicio', sidebar ? sidebar.querySelector('.pf-nav-item') : null);
+        paLoadNoticias();
+        paLoadDados();
+        paLoadGallery();
+        paLoadApostilas();
+        paLoadAulas();
+        paLoadStats();
+        chatInitEmoji();
     }
 
     /* ===== STATS ===== */
@@ -813,6 +955,7 @@
 
         if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
         if (section === 'carteira') { paGenerateCarteira(); }
+        if (section === 'decl') { }
     }
 
     function paCheckHash() {
@@ -1485,6 +1628,525 @@
         }).catch(function(e) {
             listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
         });
+    }
+
+    /* ===== DECLARACAO PDF ===== */
+    async function paGerarDeclaracao() {
+        var btn = document.getElementById('pf-decl-btn');
+        var statusEl = document.getElementById('pf-decl-status');
+        if (!paUser) { alert('Necessario estar logado.'); return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...';
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#64748b';
+        statusEl.textContent = 'Buscando dados da turma e instituicao...';
+
+        try {
+            var turmaNome = (paUser.turma || '').trim();
+            var projetoNome = (paUser.projeto || '').trim();
+
+            var turmaData = {};
+            if (turmaNome) {
+                var turmaId = turmaNome + '_' + projetoNome;
+                try {
+                    var turmaDoc = await dbFirestore.collection('turmas').doc(turmaId).get();
+                    if (turmaDoc.exists) {
+                        turmaData = turmaDoc.data();
+                    } else {
+                        var turmaSnap = await dbFirestore.collection('turmas').where('nome', '==', turmaNome).get();
+                        turmaSnap.forEach(function(doc) {
+                            var d = doc.data();
+                            if (d.projeto === projetoNome) turmaData = d;
+                        });
+                        if (!turmaData.nome) {
+                            turmaSnap.forEach(function(doc) { if (!turmaData.nome) turmaData = doc.data(); });
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Erro ao buscar turma:', e);
+                }
+            }
+
+            var instData = {};
+            try {
+                var instSnap = await dbFirestore.collection('configuracoes').doc('instituicao').get();
+                if (instSnap.exists) instData = instSnap.data();
+            } catch(e) {}
+
+            statusEl.textContent = 'Gerando PDF...';
+
+            var jsPDF = window.jspdf.jsPDF;
+            var doc = new jsPDF('p', 'mm', 'a4');
+            var pw = 210, ph = 297;
+            var margin = 20;
+            var y = margin;
+
+            function addLine(color, yVal) {
+                doc.setDrawColor(color === 'green' ? 22 : color === 'red' ? 220 : 200);
+                doc.setLineWidth(0.5);
+                doc.line(margin, yVal, pw - margin, yVal);
+            }
+
+            /* --- CABECALHO --- */
+            if (instData.logo) {
+                try {
+                    doc.addImage(instData.logo, 'PNG', margin, y, 25, 25);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(14);
+                    doc.setTextColor(30, 41, 59);
+                    doc.text(instData.nomeFantasia || instData.razaoSocial || 'Instituicao', margin + 30, y + 8);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.setTextColor(100, 116, 139);
+                    if (instData.razaoSocial && instData.nomeFantasia) {
+                        doc.text(instData.razaoSocial, margin + 30, y + 14);
+                    }
+                    if (instData.cnpj) doc.text('CNPJ: ' + instData.cnpj, margin + 30, y + 20);
+                    y += 30;
+                } catch(e) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(14);
+                    doc.setTextColor(30, 41, 59);
+                    doc.text(instData.nomeFantasia || instData.razaoSocial || 'Instituicao', pw / 2, y + 8, { align: 'center' });
+                    if (instData.cnpj) {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(10);
+                        doc.setTextColor(100, 116, 139);
+                        doc.text('CNPJ: ' + instData.cnpj, pw / 2, y + 14, { align: 'center' });
+                    }
+                    y += 20;
+                }
+            } else {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                doc.setTextColor(30, 41, 59);
+                doc.text(instData.nomeFantasia || instData.razaoSocial || 'Instituicao', pw / 2, y + 6, { align: 'center' });
+                if (instData.cnpj) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.setTextColor(100, 116, 139);
+                    doc.text('CNPJ: ' + instData.cnpj, pw / 2, y + 12, { align: 'center' });
+                }
+                y += 16;
+            }
+
+            addLine('green', y);
+            y += 10;
+
+            /* --- TITULO --- */
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(22, 163, 74);
+            doc.text('DECLARACAO DE MATRICULA', pw / 2, y, { align: 'center' });
+            y += 10;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            var dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+            doc.text('Emitida em: ' + dataAtual, pw / 2, y, { align: 'center' });
+            y += 12;
+
+            addLine('green', y);
+            y += 10;
+
+            /* --- DADOS DO ALUNO --- */
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(30, 41, 59);
+            doc.text('Dados do Aluno', margin, y);
+            y += 7;
+
+            function addField(label, value) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(71, 85, 105);
+                doc.text(label + ':', margin, y);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(30, 41, 59);
+                doc.text(value || '---', margin + 45, y);
+                y += 6;
+            }
+
+            var cpfFmt = paUser.cpf || '';
+            if (cpfFmt.length === 11) cpfFmt = cpfFmt.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+
+            var matricula = paUser.matricula || ('ACD' + (paUser.cpf || '').slice(-5));
+
+            addField('Nome Completo', paUser.nome || '---');
+            addField('CPF', cpfFmt);
+            addField('Matricula', matricula);
+            addField('Data de Nascimento', paUser.nascimento || '---');
+            y += 4;
+
+            addLine('green', y);
+            y += 8;
+
+            /* --- DADOS DO PROJETO E TURMA --- */
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(30, 41, 59);
+            doc.text('Dados do Projeto e Turma', margin, y);
+            y += 7;
+
+            addField('Projeto', projetoNome || '---');
+            addField('Turma', turmaNome || '---');
+            function fmtDateBR(v) {
+                if (!v) return '---';
+                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { var p = v.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) return v;
+                return v;
+            }
+
+            addField('Data de Inscricao', fmtDateBR(paUser.dataInscricao));
+
+            addField('Previsao Final', fmtDateBR(turmaData.previsao));
+
+            var diasSemana = turmaData.dias || [];
+            addField('Dias da Semana', diasSemana.length ? diasSemana.join(', ') : '---');
+            y += 4;
+
+            addLine('green', y);
+            y += 8;
+
+            /* --- HORARIOS --- */
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(30, 41, 59);
+            doc.text('Horarios das Aulas', margin, y);
+            y += 7;
+
+            var horarios = turmaData.horarios || {};
+            var diaOrder = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+            var diaFull = { Seg: 'Segunda-feira', Ter: 'Terca-feira', Qua: 'Quarta-feira', Qui: 'Quinta-feira', Sex: 'Sexta-feira', Sab: 'Sabado', Dom: 'Domingo' };
+
+            if (Object.keys(horarios).length) {
+                diaOrder.forEach(function(d) {
+                    if (horarios[d]) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(10);
+                        doc.setTextColor(71, 85, 105);
+                        doc.text((diaFull[d] || d) + ':', margin, y);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(30, 41, 59);
+                        doc.text(horarios[d].inicio + ' - ' + horarios[d].fim, margin + 45, y);
+                        y += 6;
+                    }
+                });
+            } else {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139);
+                doc.text('Nenhum horario cadastrado para esta turma.', margin, y);
+                y += 6;
+            }
+            y += 4;
+
+            addLine('green', y);
+            y += 10;
+
+            /* --- TEXTO DECLARATIVO --- */
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            var declText = 'Declaro, para os devidos fins, que o(a) aluno(a) acima identificado(a) encontra-se regularmente matriculado(a) no projeto "' + (projetoNome || '---') + '", turma "' + (turmaNome || '---') + '", ';
+            if (diasSemana.length) declText += 'com aulas nos dias ' + diasSemana.join(', ') + ', ';
+            declText += 'conforme dados acima.';
+            var declLines = doc.splitTextToSize(declText, pw - 2 * margin);
+            doc.text(declLines, margin, y);
+            y += declLines.length * 5 + 10;
+
+            addLine('green', y);
+            y += 8;
+
+            /* --- RODAPE --- */
+            var footerY = ph - margin - 15;
+            addLine('green', footerY - 5);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            var footerParts = [];
+            if (instData.endereco) footerParts.push(instData.endereco);
+            if (instData.email) footerParts.push('Email: ' + instData.email);
+            if (instData.fone) footerParts.push('Tel: ' + instData.fone);
+            if (footerParts.length) {
+                doc.text(footerParts.join('  |  '), pw / 2, footerY, { align: 'center' });
+            }
+            doc.text((instData.nomeFantasia || instData.razaoSocial || '') + ' - Todos os direitos reservados', pw / 2, footerY + 5, { align: 'center' });
+
+            statusEl.style.color = '#16a34a';
+            statusEl.textContent = 'Declaracao gerada com sucesso!';
+
+            var filename = 'Declaracao_' + (paUser.nome || 'aluno').replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.pdf';
+            doc.save(filename);
+
+        } catch(e) {
+            console.error('Erro ao gerar declaracao:', e);
+            statusEl.style.color = '#dc2626';
+            statusEl.textContent = 'Erro ao gerar declaracao: ' + e.message;
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-download"></i> Gerar Declaracao desta Semana';
+    }
+
+    /* ===== REGIMENTO INTERNO ===== */
+    var paRegimentoHtml = null;
+
+    function paAbrirRegimento() {
+        var modal = document.getElementById('pf-regimento-modal');
+        var body = document.getElementById('pf-regimento-body');
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        if (!paRegimentoHtml) paRenderRegimento(body);
+        paVerificarAceite();
+    }
+
+    function paFecharRegimento() {
+        if (paRegimentoBloqueio) return;
+        document.getElementById('pf-regimento-modal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    async function paVerificarAceite() {
+        if (!paUser) return;
+        var statusEl = document.getElementById('pf-regimento-status');
+        var btnAceitar = document.getElementById('pf-regimento-aceitar');
+        var check = document.getElementById('pf-regimento-check');
+        var footer = document.getElementById('pf-regimento-footer');
+        try {
+            var snap = await dbFirestore.collection('regimentoAceites').doc(paUser.cpf).get();
+            if (snap.exists) {
+                var d = snap.data();
+                var dataAceite = d.dataAceite ? new Date(d.dataAceite).toLocaleDateString('pt-BR') : '';
+                if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#16a34a"></i> Regimento aceito em ' + dataAceite;
+                if (footer) footer.innerHTML = '<div style="flex:1;text-align:center;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0"><i class="fa-solid fa-check-circle" style="color:#16a34a;font-size:16px"></i> <span style="font-size:13px;font-weight:600;color:#15803d">Regimento aceito em ' + dataAceite + '</span></div><button onclick="paImprimirRegimento()" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-print"></i> Imprimir</button>';
+            } else {
+                if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-clock" style="color:#ca8a04"></i> Regimento pendente de aceite';
+            }
+        } catch(e) {}
+    }
+
+    function paRenderRegimento(container) {
+        var h = '';
+        h += '<div style="text-align:center;margin-bottom:20px">';
+        h += '<div style="font-size:11px;font-weight:600;color:#16a34a;letter-spacing:2px;text-transform:uppercase">Forca Auxiliar de Resgate Nacional</div>';
+        h += '<div style="font-size:20px;font-weight:700;color:#1e293b;margin:6px 0">REGIMENTO INTERNO OFICIAL E COMPLETO</div>';
+        h += '<div style="font-size:12px;color:#64748b">CNPJ: 43.327.929/0001-32 | Contato: (81) 98403-1538 | E-mail: brasilfarn@gmail.com</div>';
+        h += '<div style="width:60px;height:3px;background:linear-gradient(90deg,#16a34a,#22c55e);margin:12px auto;border-radius:2px"></div>';
+        h += '</div>';
+
+        h += paRegCapitulo('I', 'DA NATUREZA E DOS OBJETIVOS', [
+            { art: 'Art. 1', txt: 'A Forca Auxiliar de Resgate Nacional (FARN) e uma instituicao privada de ensino paramilitar, destinada a formacao, capacitacao e aperfeicoamento de cidadaos em tecnicas de resgate, salvamento, disciplina e pronto atendimento.' },
+            { art: 'Art. 2', txt: 'Sao objetivos fundamentais da FARN:', list: [
+                'Promover a disciplina consciente e o respeito as instituicoes.',
+                'Capacitar o corpo discente com alto padrao tecnico operacional.',
+                'Desenvolver o espirito de corpo, o civismo e a lideranca.'
+            ]}
+        ]);
+
+        h += paRegCapitulo('II', 'DA ESTRUTURA ORGANIZACIONAL E DA HIERARQUIA', [
+            { art: 'Art. 3', txt: 'A estrutura organizacional da FARN adota o regime de hierarquia e disciplina paramilitar, dividida nos seguintes graus hierarquicos, em ordem ascendente:' },
+        ]);
+        h += '<div style="margin:8px 0 16px 20px">';
+        var cargos = [
+            { nome: 'Aluno', desc: 'Corpo discente matriculado nos cursos regulares ou especiais.' },
+            { nome: 'Monitor (Representante de Turma)', desc: 'Aluno destacado para auxiliar na coordenacao imediata de sua respectiva turma.' },
+            { nome: 'Auxiliar de Instrutor', desc: 'Membro graduado responsavel pelo apoio logistico e didatico durante as instrucoes.' },
+            { nome: 'Instrutor', desc: 'Profissional habilitado responsavel pela ministracao de aulas teoricas e praticas.' },
+            { nome: 'Coordenador', desc: 'Responsavel pela supervisao direta das atividades de ensino e escalas de instrucao.' },
+            { nome: 'Comandante de Divisao', desc: 'Oficiais superiores responsaveis pelas diretorias de area (Pedagogico, Servicos, Suprimentos).' },
+            { nome: 'Comandante Geral (Diretor Geral / Proprietario)', desc: 'Autoridade maxima administrativa, juridica e operacional da instituicao.' }
+        ];
+        cargos.forEach(function(c, i) {
+            h += '<div style="display:flex;gap:8px;margin-bottom:6px;align-items:flex-start">';
+            h += '<span style="background:#16a34a;color:#fff;border-radius:50%;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">' + (i+1) + '</span>';
+            h += '<div><span style="font-weight:600">' + c.nome + ':</span> <span style="color:#475569">' + c.desc + '</span></div>';
+            h += '</div>';
+        });
+        h += '</div>';
+
+        h += paRegCapitulo('III', 'DAS ATRIBUICOES E COMPETENCIAS', [
+            { art: 'Art. 4', txt: 'Ao Comandante Geral compete a administracao global, assinatura de certificados, parcerias institucionais e a tomada de decisoes soberanas sobre o destino da FARN.' },
+            { art: 'Art. 5', txt: 'Aos Comandantes de Divisao compete gerenciar suas respectivas pastas (Pedagogica, Servicos e Suprimentos), reportando as novidades diretamente ao Comandante Geral.' },
+            { art: 'Art. 6', txt: 'Ao Coordenador compete fiscalizar o cumprimento do cronograma de ensino e o comportamento dos instrutores e alunos.' },
+            { art: 'Art. 7', txt: 'Aos Instrutores e Auxiliares compete a execucao tecnica das materias, zelo pela seguranca dos alunos e manutencao da ordem nos locais de instrucao.' },
+            { art: 'Art. 8', txt: 'Ao Monitor compete servir de elo de ligacao entre a turma e o corpo de instrutores/coordenacao, zelando pela pontualidade e apresentacao da sua fracao.' },
+            { art: 'Art. 9', txt: 'Ao Aluno compete cumprir integralmente o plano de curso, as ordens emanadas de seus superiores e zelar pela reputacao da FARN.' }
+        ]);
+
+        h += paRegCapitulo('IV', 'DO REGIME DISCIPLINAR', [
+            { art: 'Art. 10', txt: 'A disciplina na FARN baseia-se no cumprimento rigoroso dos deveres e na submissao voluntaria a hierarquia.' },
+            { art: 'Art. 11', txt: 'Constituem faltas disciplinares:', list: [
+                'Chegar atrasado as instrucoes sem justificativa.',
+                'Apresentar-se com o uniforme alterado, sujo ou incompleto.',
+                'Demonstrar falta de compostura ou desrespeito com superiores ou pares.',
+                'Faltar com a verdade ou omitir fatos de relevancia institucional.'
+            ]},
+            { art: 'Art. 12', txt: 'As sancoes disciplinares aplicaveis, de acordo com a gravidade, sao:', list: [
+                'Advertencia verbal.',
+                'Repreensao por escrito.',
+                'Suspensao das atividades academicas.',
+                'Desligamento (exclusao) a bem da disciplina.'
+            ]}
+        ]);
+
+        h += paRegCapitulo('V', 'DOS UNIFORMES E DA APRESENTACAO PESSOAL', [
+            { art: 'Art. 13', txt: 'O uso do uniforme da FARN e obrigatorio em todas as atividades oficiais, devendo estar sempre limpo e alinhado.' },
+            { art: 'Art. 14', txt: 'A apresentacao pessoal exige:', list: [
+                'Corte de cabelo padrao (masculino) ou cabelo totalmente preso em coque com rede (feminino).',
+                'Proibicao do uso de adornos chamativos (brincos grandes, colares visiveis, aneis em excesso) durante as instrucoes operacionais por motivos de seguranca.'
+            ]},
+            { art: 'Art. 15', txt: 'Das Regras de Aquisicao e Uso de Uniformes:', list: [
+                'Todo uniforme ou peca de identificacao com a marca FARN e de uso exclusivo em atividades autorizadas pela instituicao.',
+                'A aquisicao das pecas padrao (gandola, calca operacional, camiseta, coturno e coberturas) deve ser realizada pelo aluno exclusivamente junto a Diretoria de Suprimentos ou fornecedores formalmente homologados.',
+                'E expressamente proibida a comercializacao, doacao ou emprestimo de pecas do uniforme a terceiros alheios a instituicao.',
+                'O uso indevido do uniforme fora do ambito escolar ou sem autorizacao previa em eventos sociais resultara em sancao disciplinar imediata.'
+            ]}
+        ]);
+
+        h += paRegCapitulo('VI', 'DOS CRITERIOS DE AVALIACAO E APROVACAO', [
+            { art: 'Art. 16', txt: 'O rendimento escolar do aluno sera avaliado de forma continua atraves de exames intelectuais (teoricos) e avaliacoes de desempenho tecnico (praticos).' },
+            { art: 'Art. 17', txt: 'Para a obtencao da aprovacao em qualquer curso da FARN, o aluno devera cumprir cumulativamente os seguintes requisitos:', list: [
+                'Nota Minima: Obter media igual ou superior a 7,0 (sete) em cada disciplina teorica e pratica.',
+                'Frequencia Minima: Atingir frequencia minima obrigatoria de 75% das horas-aula ministradas.',
+                'Avaliacao de Aptidao Fisica e Disciplinar: Obter parecer "Apto" emitido pela Diretoria Pedagogica e pela Coordenacao de Curso ao termino das instrucoes de campo.'
+            ]},
+            { art: 'Art. 18', txt: 'O aluno que nao atingir os criterios minimos de nota podera realizar uma Prova de Recuperacao, mediante cronograma fixado pela Diretoria Pedagogica. O aluno reprovado por infrequencia ou indisciplina sera desligado sem direito a recurso.' }
+        ]);
+
+        h += paRegCapitulo('VII', 'DO CODIGO DE ETICA', [], true);
+        h += '<div style="font-size:13px;font-weight:600;color:#16a34a;margin:12px 0 6px">Secao I - Dos Principios Fundamentais</div>';
+        h += paRegArtigo('Art. 19', 'O sentimento do dever, o brio paramilitar e o decoro da classe impoem, a cada integrante da FARN, conduta moral e profissional irrepreensiveis, com observancia dos seguintes principios:', [
+            'Honestidade em todos os atos da vida civil e academica.',
+            'Lealdade aos superiores, pares, subordinados e as instituicoes publicas.',
+            'Coragem para agir em situacoes de risco e para assumir as responsabilidades por seus atos.',
+            'Respeito a dignidade humana, sendo vedado qualquer ato de preconceito, discriminacao ou abuso de autoridade.'
+        ]);
+        h += '<div style="font-size:13px;font-weight:600;color:#16a34a;margin:12px 0 6px">Secao II - Dos Deveres de Conduta</div>';
+        h += paRegArtigo('Art. 20', 'Sao deveres de etica e cidadania exigidos de todos os membros da FARN, do Aluno ao Comandante Geral:', [
+            'Amar a patria e defender os simbolos nacionais.',
+            'Cultivar os vinculos de camaradagem e a solidariedade com os companheiros de farda.',
+            'Exercer com zelo e dedicacao as missoes de resgate, salvamento e instrucao que lhe forem confiadas.',
+            'Zelar pelo bom nome da FARN em ambientes publicos, redes sociais e meios digitais, mesmo fora do horario de instrucao.'
+        ]);
+        h += '<div style="font-size:13px;font-weight:600;color:#16a34a;margin:12px 0 6px">Secao III - Das Vedacoes Eticas</div>';
+        h += paRegArtigo('Art. 21', 'E terminantemente proibido ao integrante da FARN:', [
+            'Utilizar o nome ou o uniforme da instituicao para obter vantagens pessoais, politicas ou financeiras.',
+            'Praticar atos de trote vexatorio, humilhacao fisica ou psicologica contra alunos ou candidatos.',
+            'Divulgar imagens ou videos com o uniforme da FARN que facam apologia ao crime, apologia a partidos politicos ou que firam a moral publica.',
+            'Portar-se de maneira incompativel com a funcao paramilitar, mesmo de folga, quando devidamente identificado.'
+        ]);
+        h += '<div style="font-size:13px;font-weight:600;color:#16a34a;margin:12px 0 6px">Secao IV - Do Compromisso e Juramento de Formatura</div>';
+        h += paRegArtigo('Art. 22', 'Ao concluir o periodo de formacao basica, o aluno prestara, obrigatoriamente, perante a bandeira nacional e o comando da FARN, o seguinte juramento oficial:');
+        h += '<div style="margin:10px 0 16px 16px;padding:16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-left:4px solid #16a34a;border-radius:0 8px 8px 0;font-style:italic;color:#166534;font-size:13px;line-height:1.8">';
+        h += '"Ao ingressar formalmente nas fileiras da Forca Auxiliar de Resgate Nacional (FARN), prometo, sob minha honra: regular minha conduta pelos preceitos da moral, da disciplina e da etica. Dedicar-me-ei inteiramente a instrucao tecnica e a preservacao de vidas. Respeitarei os meus superiores hierarquicos e cumprirei com lealdade as ordens emanadas da autoridade competente. Estarei sempre pronto para servir, salvar e proteger, mesmo com o sacrificio da propria vida."';
+        h += '</div>';
+
+        h += paRegCapitulo('VIII', 'DAS DISPOSICOES GERAIS', [
+            { art: 'Art. 23', txt: 'Os casos omissos neste Regimento Interno serao resolvidos soberanamente pelo Comandante Geral, ouvido o corpo de Comandantes de Divisao.' },
+            { art: 'Art. 24', txt: 'Este regimento entra em vigor na data de sua publicacao oficial.' }
+        ]);
+
+        h += '<div style="text-align:center;margin:20px 0;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">';
+        h += '<div style="font-size:12px;color:#64748b;margin-bottom:4px">Aprovado em 26 de julho de 2026</div>';
+        h += '<div style="font-size:12px;font-weight:600;color:#1e293b;margin-top:8px">COMANDANTE GERAL - FARN</div>';
+        h += '<div style="font-size:11px;color:#64748b">Diretor Geral e Proprietario</div>';
+        h += '</div>';
+
+        var alNome = paUser ? (paUser.nome || '') : '';
+        var alCpf = paUser && paUser.cpf ? paUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '';
+
+        h += '<div style="margin:24px 0 0;padding-top:20px;border-top:2px solid #16a34a">';
+        h += '<div style="text-align:center;font-size:15px;font-weight:700;color:#1e293b;margin-bottom:12px"><i class="fa-solid fa-file-signature" style="color:#16a34a;margin-right:6px"></i> ANEXO I - TERMO DE MATRICULA E RESPONSABILIDADE</div>';
+        h += '<div style="font-size:13px;color:#1e293b;line-height:1.8;margin-bottom:12px">';
+        h += 'Eu, <strong>' + alNome + '</strong>, inscrito no CPF sob o n&ordm; <strong>' + alCpf + '</strong>, aluno regularmente matriculado na <strong>FORCA AUXILIAR DE RESGATE NACIONAL (FARN)</strong>, declaro para os devidos fins que:';
+        h += '</div>';
+        h += '<div style="margin-left:12px">';
+        var anexo = [
+            { tit: 'CIENCIA DAS NORMAS:', txt: 'Tomei pleno conhecimento das normas, termos e condicoes estabelecidas neste Regimento Interno e Codigo de Etica, obrigando-me a cumpri-los integralmente, sob pena das sancoes disciplinares previstas.' },
+            { tit: 'APTIDAO FISICA E MENTAL:', txt: 'Declaro gozar de plena saude fisica e mental, estando apto a realizar os esfogos, exercicios e simulacoes inerentes a rotina de formacao paramilitar e tecnicas de resgate.' },
+            { tit: 'RISCOS ATINENTES A ATIVIDADE:', txt: 'Estou ciente de que as instrucoes envolvem atividades praticas operacionais de campo e simulacoes de risco controlado, assumindo a responsabilidade pelo cumprimento rigoroso das ordens de seguranca dadas pelos instrutores.' },
+            { tit: 'DIREITO DE IMAGEM:', txt: 'Autorizo, a titulo gratuito, o uso de minha imagem e voz captadas durante as instrucoes, formaturas e eventos oficiais da FARN, para fins de divulgacao institucional, pedagogica ou em redes sociais oficiais da instituicao.' }
+        ];
+        anexo.forEach(function(a, i) {
+            h += '<div style="margin-bottom:10px;display:flex;gap:8px"><span style="font-weight:700;color:#16a34a;min-width:18px">' + (i+1) + '.</span><div><strong>' + a.tit + '</strong> ' + a.txt + '</div></div>';
+        });
+        h += '</div>';
+        h += '<div style="text-align:center;margin-top:16px;font-size:13px;color:#64748b">Por ser a expressao da verdade, declaro ciencia e concordancia.</div>';
+        h += '</div>';
+
+        container.innerHTML = h;
+        paRegimentoHtml = h;
+    }
+
+    function paRegCapitulo(num, titulo, arts, isH2) {
+        var h = '<div style="margin:20px 0 12px;padding-bottom:8px;border-bottom:2px solid #16a34a">';
+        h += '<div style="font-size:' + (isH2 ? '14' : '13') + 'px;font-weight:700;color:#1e293b">';
+        h += '<span style="display:inline-block;background:#16a34a;color:#fff;border-radius:4px;padding:2px 8px;font-size:11px;margin-right:6px">CAP. ' + num + '</span>';
+        h += titulo;
+        h += '</div></div>';
+        if (arts && arts.length) {
+            arts.forEach(function(a) { h += paRegArtigo(a.art, a.txt, a.list); });
+        }
+        return h;
+    }
+
+    function paRegArtigo(art, txt, list) {
+        var h = '<div style="margin:8px 0;padding-left:8px;border-left:3px solid #e2e8f0">';
+        h += '<div style="font-size:13px;color:#1e293b;line-height:1.7"><strong>' + art + '</strong> - ' + txt + '</div>';
+        if (list && list.length) {
+            h += '<ul style="margin:6px 0 6px 20px;padding:0">';
+            list.forEach(function(item) { h += '<li style="font-size:12px;color:#475569;margin-bottom:4px;line-height:1.6">' + item + '</li>'; });
+            h += '</ul>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function paImprimirRegimento() {
+        if (!paRegimentoHtml) return;
+        var body = document.getElementById('pf-regimento-body');
+        var pw = window.open('', '_blank', 'width=800,height=600');
+        pw.document.write('<!DOCTYPE html><html><head><title>Regimento Interno - FARN</title>');
+        pw.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">');
+        pw.document.write('<style>');
+        pw.document.write('body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;margin:30px;font-size:12px;line-height:1.6}');
+        pw.document.write('strong{font-weight:700}');
+        pw.document.write('@media print{body{margin:15px}}');
+        pw.document.write('</style></head><body>');
+        pw.document.write(body ? body.innerHTML : '');
+        pw.document.write('</body></html>');
+        pw.document.close();
+        pw.focus();
+        setTimeout(function(){ pw.print(); }, 500);
+    }
+
+    async function paAceitarRegimento() {
+        if (!paUser) return;
+        var btn = document.getElementById('pf-regimento-aceitar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+        try {
+            await dbFirestore.collection('regimentoAceites').doc(paUser.cpf).set({
+                cpf: paUser.cpf,
+                nome: paUser.nome || '',
+                turma: paUser.turma || '',
+                projeto: paUser.projeto || '',
+                dataAceite: new Date().toISOString()
+            });
+            paVerificarAceite();
+            if (!paPortalLiberado) {
+                paFecharRegimento();
+                paLiberarPortal();
+            }
+        } catch(e) {
+            console.error('Erro ao aceitar regimento:', e);
+            alert('Erro ao salvar: ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Aceitar Regimento';
+        }
     }
 
     /* Auto-login se lembrar estava marcado */
