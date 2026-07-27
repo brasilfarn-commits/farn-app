@@ -2420,6 +2420,14 @@ async function sincronizarNomeProjeto(nomeAntigo, nomeNovo) {
         }
         if (b5count) await batch5.commit();
 
+        const aulaSnap = await dbFirestore.collection('aulas').where('projeto', '==', nomeAntigo).get();
+        let batch6 = dbFirestore.batch(); let b6count = 0;
+        for (const doc of aulaSnap.docs) {
+            batch6.update(doc.ref, { projeto: nomeNovo }); total++; b6count++;
+            if (b6count >= 450) { await batch6.commit(); batch6 = dbFirestore.batch(); b6count = 0; }
+        }
+        if (b6count) await batch6.commit();
+
         alert('Projeto renomeado com sucesso! ' + total + ' registros sincronizados.');
     } catch (e) {
         console.error('Erro ao sincronizar nome do projeto:', e);
