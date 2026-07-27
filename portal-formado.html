@@ -189,7 +189,7 @@
     <!-- LOGIN -->
     <div id="screen-login">
         <div class="pf-login-box">
-            <img src="logo-farn.png.png" alt="FARN">
+            <img data-farn-logo src="logo-farn.png.png" alt="FARN">
             <h2>Portal do Formado</h2>
             <p>Entre com seu CPF e senha cadastrados</p>
             <div class="pf-field">
@@ -220,7 +220,7 @@
         <!-- SIDEBAR ESQUERDO -->
         <aside class="pf-sidebar">
             <div class="pf-sidebar-header">
-                <img src="logo-farn.png.png" alt="FARN">
+                <img data-farn-logo src="logo-farn.png.png" alt="FARN">
                 <h3>Portal do Formado</h3>
                 <p>FARN - BRASIL</p>
             </div>
@@ -922,6 +922,12 @@
 
     /* Auto-login se lembrar estava marcado */
     pfAutoLogin();
+    /* Carregar logo da instituicao */
+    dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc){
+        if(doc.exists && doc.data().logo){
+            document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
+        }
+    }).catch(function(){});
     </script>
 </body>
 </html>

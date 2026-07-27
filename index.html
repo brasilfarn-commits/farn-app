@@ -49,7 +49,7 @@
         <div class="login-container">
             <div class="login-left">
                 <div class="login-left-content">
-                    <img src="logo-farn.png.png" alt="FARN Logo" class="login-logo-large">
+                    <img data-farn-logo src="logo-farn.png.png" alt="FARN Logo" class="login-logo-large">
                     <h1 class="login-brand">FARN</h1>
                     <p class="login-subtitle">Forca Auxiliar de Resgate Nacional</p>
                     <div class="login-divider"></div>
@@ -59,7 +59,7 @@
             <div class="login-right">
                 <div class="login-form-container">
                     <div class="login-form-header">
-                        <img src="logo-farn.png.png" alt="FARN" class="login-logo-small">
+                        <img data-farn-logo src="logo-farn.png.png" alt="FARN" class="login-logo-small">
                         <h2>Bem-vindo</h2>
                         <p>Selecione seu tipo de acesso e entre com suas credenciais</p>
                     </div>
@@ -133,7 +133,7 @@
         <div class="dashboard">
             <aside class="sidebar">
                 <div class="sidebar-header">
-                    <img src="logo-farn.png.png" alt="FARN" class="sidebar-logo">
+                    <img data-farn-logo src="logo-farn.png.png" alt="FARN" class="sidebar-logo">
                     <h3>FARN Admin</h3>
                     <span class="sidebar-version">v1.0</span>
                 </div>
@@ -220,7 +220,7 @@
                 <!-- HOME -->
                 <div id="admin-home" class="admin-section active">
                     <div class="admin-home-container">
-                        <img id="admin-home-logo" src="logo-farn.png.png" alt="FARN" class="admin-home-logo" style="cursor:pointer" onclick="configInstituicaoOpen()">
+                        <img id="admin-home-logo" data-farn-logo src="logo-farn.png.png" alt="FARN" class="admin-home-logo" style="cursor:pointer" onclick="configInstituicaoOpen()">
                         <h1 class="admin-home-title" id="admin-home-razao">ADMINISTRAÇÃO FARN</h1>
                         <p class="admin-home-subtitle" id="admin-home-fantasia">Força Auxiliar de Resgate Nacional</p>
                         <div class="admin-home-divider"></div>
@@ -1780,5 +1780,15 @@
     <script src="app.js"></script>
     <script src="recad-admin.js"></script>
     <script src="chat-admin.js"></script>
+    <script>
+    (function(){
+        if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
+        firebase.firestore().collection('configuracoes').doc('instituicao').get().then(function(doc){
+            if(doc.exists && doc.data().logo){
+                document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
+            }
+        }).catch(function(){});
+    })();
+    </script>
 </body>
 </html>

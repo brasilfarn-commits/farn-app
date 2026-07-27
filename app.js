@@ -219,6 +219,9 @@ function configInstituicaoSalvar() {
     dbFirestore.collection('configuracoes').doc('instituicao').set(dados, { merge: true })
         .then(function() {
             alert('Dados da instituicao salvos com sucesso!');
+            if (dados.logo) {
+                document.querySelectorAll('[data-farn-logo]').forEach(function(img) { img.src = dados.logo; });
+            }
             configInstituicaoFechar();
         })
         .catch(function(e) {

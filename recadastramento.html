@@ -167,7 +167,7 @@
 
     <!-- TELA DE BOAS-VINDAS -->
     <div id="recad-welcome" class="recad-welcome">
-        <img src="logo-farn.png.png" alt="FARN">
+        <img data-farn-logo src="logo-farn.png.png" alt="FARN">
         <div class="recad-badge"><i class="fa-solid fa-fire"></i> Campanha de Recadastramento</div>
         <h1>Recadastramento de Formados</h1>
         <h2>FARN - Forca Auxiliar de Resgate Nacional</h2>
@@ -186,7 +186,7 @@
             <i class="fa-solid fa-magnifying-glass"></i> Conferir Meu Status
         </button>
         <div class="recad-footer">
-            <img src="logo-farn.png.png" alt="FARN" style="width:24px;height:24px;vertical-align:middle;border-radius:50%">
+            <img data-farn-logo src="logo-farn.png.png" alt="FARN" style="width:24px;height:24px;vertical-align:middle;border-radius:50%">
             FARN - BRASIL
         </div>
     </div>
@@ -194,7 +194,7 @@
     <!-- FORMULARIO -->
     <div id="recad-form-container" class="recad-form-container">
         <div class="recad-form-header">
-            <img src="logo-farn.png.png" alt="FARN">
+            <img data-farn-logo src="logo-farn.png.png" alt="FARN">
             <h2>Formulario de Recadastramento</h2>
             <p>Preencha seus dados abaixo. Campos com * sao obrigatorios.</p>
         </div>
@@ -514,7 +514,7 @@
 
     <!-- TELA DE CONSULTA DE STATUS -->
     <div id="recad-check" class="recad-check-container">
-        <img src="logo-farn.png.png" alt="FARN" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;margin-bottom:16px">
+        <img data-farn-logo src="logo-farn.png.png" alt="FARN" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;margin-bottom:16px">
         <h2 style="color:#2563eb">Conferir Status do Recadastramento</h2>
         <p style="color:#64748b;font-size:13px">Informe seu CPF e a senha que voce cadastrou</p>
 
@@ -1061,5 +1061,15 @@
             <button class="rc-camera-btn-retake" onclick="rcRetakePhoto()"><i class="fa-solid fa-rotate"></i> Outra Foto</button>
         </div>
     </div>
+    <script>
+    (function(){
+        if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
+        firebase.firestore().collection('configuracoes').doc('instituicao').get().then(function(doc){
+            if(doc.exists && doc.data().logo){
+                document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
+            }
+        }).catch(function(){});
+    })();
+    </script>
 </body>
 </html>
