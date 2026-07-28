@@ -130,10 +130,11 @@ function chatPortaisSelect(cpf) {
     chatPortaisMsgUnsub = dbFirestore.collection('chatAdmin').doc(cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
         msgEl.innerHTML = '';
         if (snap.empty) {
-            msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px">Nenhuma mensagem</div>';
+            msgEl.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-comments"></i><p>Nenhuma mensagem ainda. Envie a primeira!</p></div>';
             return;
         }
         var batch = dbFirestore.batch();
+        var lastDate = '';
         snap.forEach(function(doc) {
             var m = doc.data();
             m._docId = doc.id;
@@ -142,46 +143,67 @@ function chatPortaisSelect(cpf) {
             }
             if (m.apagada) return;
             var isAdmin = m.remetente === 'admin';
-            var bubble = document.createElement('div');
-            bubble.className = 'chat-p-bubble-wrap';
-            bubble.style.cssText = 'max-width:70%;margin-bottom:12px;position:relative;' + (isAdmin ? 'margin-left:auto;text-align:right' : '');
+
+            var msgDate = '';
+            if (m.hora) {
+                var d = new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora);
+                msgDate = d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+            }
+            if (msgDate && msgDate !== lastDate) {
+                lastDate = msgDate;
+                var sep = document.createElement('div');
+                sep.className = 'chat-date-sep';
+                sep.innerHTML = '<span>' + msgDate + '</span>';
+                msgEl.appendChild(sep);
+            }
+
+            var wrap = document.createElement('div');
+            wrap.className = 'chat-msg-wrap ' + (isAdmin ? 'me' : 'other');
+
+            var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
 
             var tipoRemetente = m.tipo || (m.remetente === 'admin' ? 'admin' : user.tipo || 'aluno');
             var remetenteLabel = '';
-            var remetenteColor = '';
             if (isAdmin) {
                 remetenteLabel = '<i class="fa-solid fa-shield-halved" style="margin-right:3px"></i> Administracao FARN';
-                remetenteColor = '#16a34a';
             } else if (tipoRemetente === 'formado') {
                 remetenteLabel = '<i class="fa-solid fa-graduation-cap" style="margin-right:3px"></i> Portal do Formado';
-                remetenteColor = '#16a34a';
             } else {
                 remetenteLabel = '<i class="fa-solid fa-user" style="margin-right:3px"></i> Portal do Aluno';
-                remetenteColor = '#2563eb';
             }
 
-            var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-            var bg = isAdmin ? 'background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:12px 12px 2px 12px' : 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;color:#1e293b';
-            var editLabel = m.editado ? '<span style="font-size:9px;opacity:.6;font-style:italic">(editado)</span> ' : '';
-            var senderLabel = '<div style="font-size:11px;color:' + remetenteColor + ';margin-bottom:2px">' + remetenteLabel + '</div>';
+            var avatarHtml = !isAdmin ? '<div class="chat-msg-avatar"' + (tipoRemetente === 'formado' ? ' style="background:var(--green)"' : '') + '><i class="fa-solid ' + (tipoRemetente === 'formado' ? 'fa-graduation-cap' : 'fa-user') + '"></i></div>' : '';
+            var senderHtml = '<div class="chat-msg-sender"' + (!isAdmin ? ' style="color:' + (tipoRemetente === 'formado' ? 'var(--green)' : 'var(--green)') + '"' : '') + '>' + remetenteLabel + '</div>';
+            var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
+            if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
 
             var actionsHtml = '';
             if (isAdmin) {
-                actionsHtml = '<div class="chat-p-msg-actions" style="display:none;position:absolute;top:-8px;' + (isAdmin ? 'left:-8px' : 'right:-8px') + ';display:none;background:#f0fdf4;border:1px solid #e2e8f0;border-radius:8px;padding:2px;gap:2px;z-index:5">' +
-                    '<button onclick="event.stopPropagation();chatPortaisEditMsg(\'' + m._docId + '\',\'' + (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\')" title="Editar" style="background:none;border:none;color:#2563eb;cursor:pointer;padding:4px 6px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(37,99,235,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-pen"></i></button>' +
-                    '<button onclick="event.stopPropagation();chatPortaisDeleteMsg(\'' + m._docId + '\')" title="Apagar para mim" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:4px 6px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(220,38,38,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-trash"></i></button>' +
+                actionsHtml = '<div class="chat-p-msg-actions" style="display:none;position:absolute;top:-4px;left:-8px;background:var(--white);border:1px solid var(--gray200);border-radius:8px;padding:3px;gap:2px;z-index:5;display:none">' +
+                    '<button onclick="event.stopPropagation();chatPortaisEditMsg(\'' + m._docId + '\',\'' + (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\')" title="Editar" style="background:none;border:none;color:#2563eb;cursor:pointer;padding:3px 5px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(37,99,235,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="event.stopPropagation();chatPortaisDeleteMsg(\'' + m._docId + '\')" title="Apagar para mim" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:3px 5px;font-size:11px;border-radius:4px" onmouseover="this.style.background=\'rgba(220,38,38,.1)\'" onmouseout="this.style.background=\'none\'"><i class="fa-solid fa-trash"></i></button>' +
                     '</div>';
             }
 
-            bubble.innerHTML = senderLabel +
-                '<div style="padding:10px 14px;' + bg + ';position:relative">' + editLabel + (m.texto || '') + actionsHtml + '</div>' +
-                '<div style="font-size:10px;color:#64748b;margin-top:2px">' + time + '</div>';
-            msgEl.appendChild(bubble);
+            var bubbleHtml = '<div class="chat-msg-bubble ' + (isAdmin ? 'me' : 'other') + '" style="position:relative">' +
+                senderHtml + bodyHtml +
+                '<div class="chat-msg-time">' + time + '</div>' +
+                actionsHtml +
+                '</div>';
+
+            wrap.innerHTML = avatarHtml + bubbleHtml;
+
+            if (!isAdmin) {
+                wrap.onmouseover = function() { var a = wrap.querySelector('.chat-p-msg-actions'); if(a) a.style.display = 'flex'; };
+                wrap.onmouseout = function() { var a = wrap.querySelector('.chat-p-msg-actions'); if(a) a.style.display = 'none'; };
+            }
+
+            msgEl.appendChild(wrap);
         });
         batch.commit().catch(function() {});
         msgEl.scrollTop = msgEl.scrollHeight;
     }, function() {
-        msgEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar mensagens</div>';
+        msgEl.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar mensagens</p></div>';
     });
 }
 
@@ -845,10 +867,11 @@ function chatPortaisAbrirGrupo(grupoId, turmaNome, membros) {
     chatPortaisMsgUnsub = dbFirestore.collection('chatAdmin').doc(grupoId).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
         msgEl.innerHTML = '';
         if (snap.empty) {
-            msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px">Nenhuma mensagem neste grupo</div>';
+            msgEl.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-users"></i><p>Nenhuma mensagem neste grupo</p></div>';
             return;
         }
         var batch = dbFirestore.batch();
+        var lastDate = '';
         snap.forEach(function(doc) {
             var m = doc.data();
             m._docId = doc.id;
@@ -857,24 +880,43 @@ function chatPortaisAbrirGrupo(grupoId, turmaNome, membros) {
             }
             if (m.apagada) return;
             var isAdmin = m.remetente === 'admin';
-            var bubble = document.createElement('div');
-            bubble.style.cssText = 'max-width:70%;margin-bottom:12px;position:relative;' + (isAdmin ? 'margin-left:auto;text-align:right' : '');
+
+            var msgDate = '';
+            if (m.hora) {
+                var d = new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora);
+                msgDate = d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+            }
+            if (msgDate && msgDate !== lastDate) {
+                lastDate = msgDate;
+                var sep = document.createElement('div');
+                sep.className = 'chat-date-sep';
+                sep.innerHTML = '<span>' + msgDate + '</span>';
+                msgEl.appendChild(sep);
+            }
+
+            var wrap = document.createElement('div');
+            wrap.className = 'chat-msg-wrap ' + (isAdmin ? 'me' : 'other');
+
+            var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
 
             var remetenteLabel = isAdmin ? '<i class="fa-solid fa-shield-halved" style="margin-right:3px"></i> Administracao FARN' : '<i class="fa-solid fa-user" style="margin-right:3px"></i> ' + (m.nome || 'Aluno');
-            var remetenteColor = isAdmin ? '#16a34a' : '#2563eb';
-            var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-            var bg = isAdmin ? 'background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-radius:12px 12px 2px 12px' : 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;color:#1e293b';
-            var editLabel = m.editado ? '<span style="font-size:9px;opacity:.6;font-style:italic">(editado)</span> ' : '';
 
-            bubble.innerHTML = '<div style="font-size:11px;color:' + remetenteColor + ';margin-bottom:2px">' + remetenteLabel + '</div>' +
-                '<div style="padding:10px 14px;' + bg + '">' + editLabel + (m.texto || '') + '</div>' +
-                '<div style="font-size:10px;color:#64748b;margin-top:2px">' + time + '</div>';
-            msgEl.appendChild(bubble);
+            var avatarHtml = !isAdmin ? '<div class="chat-msg-avatar" style="background:#ca8a04"><i class="fa-solid fa-user"></i></div>' : '';
+            var senderHtml = '<div class="chat-msg-sender"' + (isAdmin ? '' : ' style="color:#ca8a04"') + '>' + remetenteLabel + '</div>';
+            var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
+            if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
+
+            var bubbleHtml = '<div class="chat-msg-bubble ' + (isAdmin ? 'me' : 'other') + '">' +
+                senderHtml + bodyHtml +
+                '<div class="chat-msg-time">' + time + '</div></div>';
+
+            wrap.innerHTML = avatarHtml + bubbleHtml;
+            msgEl.appendChild(wrap);
         });
         batch.commit().catch(function() {});
         msgEl.scrollTop = msgEl.scrollHeight;
     }, function() {
-        msgEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar mensagens</div>';
+        msgEl.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar mensagens</p></div>';
     });
 
     chatPortaisFilter();
@@ -902,35 +944,5 @@ function chatPortaisSendGrupo(texto) {
         ultimaRemetente: 'admin',
         totalMsgs: firebase.firestore.FieldValue.increment(1)
     }, { merge: true });
-
-    if (chatPortaisGrupoMembros && chatPortaisGrupoMembros.length) {
-        var fanMsg = {
-            texto: texto,
-            remetente: 'admin',
-            nome: 'Administracao FARN',
-            hora: firebase.firestore.FieldValue.serverTimestamp(),
-            lida: false,
-            grupo: chatPortaisGrupoTurma
-        };
-        var batch = dbFirestore.batch();
-        var count = 0;
-        chatPortaisGrupoMembros.forEach(function(m) {
-            var cpf = m.cpf || m;
-            var ref = dbFirestore.collection('chatAdmin').doc(String(cpf)).collection('msgs').doc();
-            batch.set(ref, fanMsg);
-            count++;
-            dbFirestore.collection('chatAdmin').doc(String(cpf)).set({
-                ultimaMsg: '[Grupo ' + chatPortaisGrupoTurma + '] ' + texto,
-                ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
-                ultimaRemetente: 'admin',
-                nome: m.nome || cpf,
-                cpf: String(cpf),
-                tipo: 'aluno',
-                projeto: '',
-                naoLidas: firebase.firestore.FieldValue.increment(1)
-            }, { merge: true });
-        });
-        batch.commit().catch(function(e) { console.error('Erro fan-out grupo:', e); });
-    }
     return true;
 }

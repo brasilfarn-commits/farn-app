@@ -1291,14 +1291,6 @@
                 ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
                 ultimaRemetente: paUser.cpf
             }, { merge: true });
-            dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').add({
-                texto: texto,
-                remetente: 'aluno',
-                nome: paUser.nome || 'Aluno',
-                hora: firebase.firestore.FieldValue.serverTimestamp(),
-                lida: false,
-                grupo: chatGrupoData ? chatGrupoData.nome : ''
-            }).catch(function() {});
             return;
         }
 
