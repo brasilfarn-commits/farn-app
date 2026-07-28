@@ -731,6 +731,15 @@
                 return;
             }
 
+            /* Verifica se esta aprovado */
+            if (dados.status !== 'Aprovado') {
+                errEl.textContent = 'Seu cadastro ainda nao foi aprovado. Somente alunos com status Aprovado podem acessar o portal.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
             /* Verifica se o projeto esta Em Andamento ou Ativo */
             var projetoDoAluno = dados.projeto;
             if (!projetoDoAluno) {
