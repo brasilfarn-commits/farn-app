@@ -440,6 +440,10 @@
                         </div>
                         <div class="modal-body">
                             <div id="regimento-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+                            <div style="display:flex;gap:0;margin-bottom:12px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+                                <div id="regimento-tab-aceitaram" class="regimento-tab active" onclick="regimentoSetTab('aceitaram')" style="flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s"><i class="fa-solid fa-check-circle"></i> Aceitaram</div>
+                                <div id="regimento-tab-pendentes" class="regimento-tab" onclick="regimentoSetTab('pendentes')" style="flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f8fafc;color:#64748b;border-bottom:2px solid transparent;transition:all .2s"><i class="fa-solid fa-clock"></i> Pendentes</div>
+                            </div>
                             <div style="overflow-x:auto">
                                 <table class="config-table" id="tabela-regimento-aceites" style="width:100%">
                                     <thead>

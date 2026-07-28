@@ -1857,6 +1857,10 @@ function printTableAlunos() {
     w.document.close();
 }
 
+var regimentoTabAtual = 'aceitaram';
+var regimentoAceites = [];
+var regimentoPendentes = [];
+
 async function relatorioRegimento() {
     const modal = document.getElementById('modal-relatorio-regimento');
     const tbody = document.getElementById('regimento-aceites-body');
@@ -1864,14 +1868,31 @@ async function relatorioRegimento() {
     modal.classList.remove('hidden');
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
     statsDiv.innerHTML = '';
+    regimentoTabAtual = 'aceitaram';
+    regimentoAceites = [];
+    regimentoPendentes = [];
+    document.getElementById('regimento-tab-aceitaram').className = 'regimento-tab active';
+    document.getElementById('regimento-tab-aceitaram').style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s';
+    document.getElementById('regimento-tab-pendentes').className = 'regimento-tab';
+    document.getElementById('regimento-tab-pendentes').style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f8fafc;color:#64748b;border-bottom:2px solid transparent;transition:all .2s';
     try {
         const snap = await dbFirestore.collection('regimentoAceites').get();
         const aceites = [];
         snap.forEach(doc => aceites.push(doc.data()));
+        regimentoAceites = aceites;
         aceites.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-        const totalCandidatos = candidatos.filter(c => c.status === 'Aprovado').length;
+
+        const aprovados = candidatos.filter(c => c.status === 'Aprovado');
+        const totalAprovados = aprovados.length;
         const totalAceitaram = aceites.length;
-        const pendentes = totalCandidatos - totalAceitaram;
+        const pendentes = totalAprovados - totalAceitaram;
+
+        /* Build pending list: approved students not in aceites */
+        const aceitesCpf = {};
+        aceites.forEach(a => { if (a.cpf) aceitesCpf[a.cpf] = true; });
+        regimentoPendentes = aprovados.filter(c => !aceitesCpf[c.cpf]);
+        regimentoPendentes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
         statsDiv.innerHTML = `
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
                 <div style="font-size:24px;font-weight:700;color:#16a34a">${totalAceitaram}</div>
@@ -1882,26 +1903,62 @@ async function relatorioRegimento() {
                 <div style="font-size:11px;color:#92400e;font-weight:600">Pendentes</div>
             </div>
             <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
-                <div style="font-size:24px;font-weight:700;color:#1e293b">${totalCandidatos}</div>
+                <div style="font-size:24px;font-weight:700;color:#1e293b">${totalAprovados}</div>
                 <div style="font-size:11px;color:#475569;font-weight:600">Total de Aprovados</div>
             </div>`;
-        if (!aceites.length) {
+
+        regimentoRenderTab('aceitaram');
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar: ' + e.message + '</td></tr>';
+    }
+}
+
+function regimentoSetTab(tab) {
+    regimentoTabAtual = tab;
+    ['aceitaram', 'pendentes'].forEach(function(t) {
+        var el = document.getElementById('regimento-tab-' + t);
+        if (t === tab) {
+            el.style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s';
+        } else {
+            el.style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f8fafc;color:#64748b;border-bottom:2px solid transparent;transition:all .2s';
+        }
+    });
+    regimentoRenderTab(tab);
+}
+
+function regimentoRenderTab(tab) {
+    const tbody = document.getElementById('regimento-aceites-body');
+    if (tab === 'pendentes') {
+        if (!regimentoPendentes.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">Todos os aprovados ja aceitaram o regimento.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = regimentoPendentes.map(function(c) {
+            const cpfFmt = (c.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            return '<tr>' +
+                '<td style="font-size:12px;font-weight:600">' + (c.nome || '-') + '</td>' +
+                '<td style="font-size:12px">' + cpfFmt + '</td>' +
+                '<td style="font-size:12px">' + (c.turma || '-') + '</td>' +
+                '<td style="font-size:12px">' + (c.projeto || '-') + '</td>' +
+                '<td style="font-size:12px;color:#ca8a04"><i class="fa-solid fa-clock"></i> Pendente</td>' +
+                '</tr>';
+        }).join('');
+    } else {
+        if (!regimentoAceites.length) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno aceitou o regimento ainda.</td></tr>';
             return;
         }
-        tbody.innerHTML = aceites.map(a => {
+        tbody.innerHTML = regimentoAceites.map(function(a) {
             const cpfFmt = (a.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             const dataAceite = a.dataAceite ? new Date(a.dataAceite).toLocaleDateString('pt-BR') + ' ' + new Date(a.dataAceite).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '-';
-            return `<tr>
-                <td style="font-size:12px;font-weight:600">${a.nome || '-'}</td>
-                <td style="font-size:12px">${cpfFmt}</td>
-                <td style="font-size:12px">${a.turma || '-'}</td>
-                <td style="font-size:12px">${a.projeto || '-'}</td>
-                <td style="font-size:12px">${dataAceite}</td>
-            </tr>`;
+            return '<tr>' +
+                '<td style="font-size:12px;font-weight:600">' + (a.nome || '-') + '</td>' +
+                '<td style="font-size:12px">' + cpfFmt + '</td>' +
+                '<td style="font-size:12px">' + (a.turma || '-') + '</td>' +
+                '<td style="font-size:12px">' + (a.projeto || '-') + '</td>' +
+                '<td style="font-size:12px">' + dataAceite + '</td>' +
+                '</tr>';
         }).join('');
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar: ' + e.message + '</td></tr>';
     }
 }
 
@@ -1910,18 +1967,24 @@ function fecharModalRelatorioRegimento() {
 }
 
 function exportarRegimentoCSV() {
-    const tbody = document.getElementById('regimento-aceites-body');
-    const rows = tbody.querySelectorAll('tr');
-    if (!rows.length || rows[0].querySelector('td[colspan]')) { alert('Nenhum dado para exportar.'); return; }
-    let csv = 'Nome;CPF;Turma;Projeto;Data do Aceite\n';
-    rows.forEach(r => {
-        const cells = r.querySelectorAll('td');
-        csv += Array.from(cells).map(c => '"' + c.textContent.trim().replace(/"/g, '""') + '"').join(';') + '\n';
+    const dados = regimentoTabAtual === 'aceitaram' ? regimentoAceites : regimentoPendentes;
+    if (!dados || !dados.length) { alert('Nenhum dado para exportar.'); return; }
+    const labelData = regimentoTabAtual === 'aceitaram' ? 'Data do Aceite' : 'Status';
+    let csv = 'Nome;CPF;Turma;Projeto;' + labelData + '\n';
+    dados.forEach(function(item) {
+        const nome = item.nome || '';
+        const cpf = (item.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        const turma = item.turma || '';
+        const projeto = item.projeto || '';
+        const data = regimentoTabAtual === 'aceitaram'
+            ? (item.dataAceite ? new Date(item.dataAceite).toLocaleDateString('pt-BR') : '-')
+            : 'Pendente';
+        csv += '"' + nome.replace(/"/g, '""') + '";"' + cpf + '";"' + turma.replace(/"/g, '""') + '";"' + projeto.replace(/"/g, '""') + '";"' + data + '"\n';
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'regimento_aceites_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.download = 'regimento_' + regimentoTabAtual + '_' + new Date().toISOString().slice(0,10) + '.csv';
     link.click();
 }
 
