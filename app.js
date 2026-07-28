@@ -3365,29 +3365,52 @@ function apontamentoPararScanner() {
 
 function apontamentoOnQrSuccess(decodedText) {
     const matricula = decodedText.trim().toUpperCase();
-    let encontrado = null;
+    let encontrado = apontamentoBuscarAlunoPorMatricula(matricula);
+    if (!encontrado) {
+        alert('Aluno com matrícula ' + matricula + ' não encontrado nesta turma');
+        return;
+    }
+    apontamentoMarcarPresente(encontrado);
+}
+
+function apontamentoBuscarMatricula() {
+    const input = document.getElementById('apt-matricula-input');
+    const matricula = input.value.trim().toUpperCase();
+    if (!matricula) { alert('Digite uma matrícula'); return; }
+    let encontrado = apontamentoBuscarAlunoPorMatricula(matricula);
+    if (!encontrado) {
+        alert('Aluno com matrícula ' + matricula + ' não encontrado nesta turma');
+        return;
+    }
+    apontamentoMarcarPresente(encontrado);
+    input.value = '';
+    input.focus();
+}
+
+function apontamentoBuscarAlunoPorMatricula(matricula) {
     for (const cpf in aptPresencas) {
         if (aptPresencas[cpf].matricula.toUpperCase() === matricula) {
-            encontrado = aptPresencas[cpf];
-            break;
+            return aptPresencas[cpf];
         }
     }
-    if (!encontrado) {
-        encontrado = aptAlunosNaTurma.find(c => (c.matricula || '').toUpperCase() === matricula);
-        if (encontrado) {
-            aptPresencas[encontrado.cpf] = { matricula: encontrado.matricula || '', nome: encontrado.nome || '', cpf: encontrado.cpf || '', status: 'Presente', obs: '' };
-        } else {
-            alert('Aluno com matrícula ' + matricula + ' não encontrado nesta turma');
-            return;
+    return aptAlunosNaTurma.find(c => (c.matricula || '').toUpperCase() === matricula) || null;
+}
+
+function apontamentoMarcarPresente(aluno) {
+    if (!aluno.cpf) {
+        aptPresencas['temp_' + Date.now()] = { matricula: aluno.matricula || '', nome: aluno.nome || '', cpf: aluno.cpf || '', status: 'Presente', obs: '' };
+    } else {
+        if (!aptPresencas[aluno.cpf]) {
+            aptPresencas[aluno.cpf] = { matricula: aluno.matricula || '', nome: aluno.nome || '', cpf: aluno.cpf || '', status: 'Presente', obs: '' };
         }
-    }
-    if (!encontrado.status || encontrado.status === 'Falta' || encontrado.status === 'Justificada') {
-        encontrado.status = 'Presente';
+        if (!aluno.status || aluno.status === 'Falta' || aluno.status === 'Justificada') {
+            aptPresencas[aluno.cpf].status = 'Presente';
+        }
     }
     apontamentoRenderLista();
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#4caf50;color:#fff;padding:12px 20px;border-radius:8px;z-index:99999;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
-    toast.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px"></i> ' + (encontrado.nome || matricula) + ' — Presente';
+    toast.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px"></i> ' + (aluno.nome || aluno.matricula || 'Aluno') + ' — Presente';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2000);
 }

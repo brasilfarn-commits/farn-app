@@ -1708,6 +1708,14 @@
                         <i class="fa-solid fa-camera"></i> Iniciar Câmera para QR Code
                     </button>
                 </div>
+                <!-- Digitar Matrícula Manualmente -->
+                <div id="apt-manual-area" style="text-align:center;margin-bottom:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">
+                    <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:8px"><i class="fa-solid fa-keyboard" style="color:#2563eb;margin-right:6px"></i> Ou digite a matrícula do aluno:</div>
+                    <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="apt-matricula-input" placeholder="Ex: ACD12345" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;width:200px;outline:none;background:#fff;color:#1e293b" onkeypress="if(event.key==='Enter')apontamentoBuscarMatricula()">
+                        <button class="btn-primary" onclick="apontamentoBuscarMatricula()" style="background:#2563eb;gap:6px"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                    </div>
+                </div>
                 <!-- Lista de Presença -->
                 <div id="apt-presenca-area" style="display:none">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
