@@ -1421,7 +1421,10 @@
                 var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
                 var avatarHtml = !isMe ? '<div class="chat-msg-avatar" style="' + (m.remetente === 'admin' ? 'background:#16a34a' : 'background:#ca8a04') + '">' + (m.remetente === 'admin' ? '<i class="fa-solid fa-shield-halved"></i>' : '<i class="fa-solid fa-user"></i>') + '</div>' : '';
                 var senderLabel = m.remetente === 'admin' ? 'Administracao FARN' : (m.nome || 'Aluno');
-                var senderHtml = '<div class="chat-msg-sender" style="' + (m.remetente === 'admin' ? 'color:#16a34a' : 'color:#ca8a04') + '">' + senderLabel + '</div>';
+                var senderHtml = '';
+                if (!isMe) {
+                    senderHtml = '<div class="chat-msg-sender" style="' + (m.remetente === 'admin' ? 'color:#16a34a' : 'color:#ca8a04') + '">' + senderLabel + '</div>';
+                }
                 var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
                 if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
 

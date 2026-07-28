@@ -173,7 +173,10 @@ function chatPortaisSelect(cpf) {
             }
 
             var avatarHtml = !isAdmin ? '<div class="chat-msg-avatar"' + (tipoRemetente === 'formado' ? ' style="background:var(--green)"' : '') + '><i class="fa-solid ' + (tipoRemetente === 'formado' ? 'fa-graduation-cap' : 'fa-user') + '"></i></div>' : '';
-            var senderHtml = '<div class="chat-msg-sender"' + (!isAdmin ? ' style="color:' + (tipoRemetente === 'formado' ? 'var(--green)' : 'var(--green)') + '"' : '') + '>' + remetenteLabel + '</div>';
+            var senderHtml = '';
+            if (!isAdmin) {
+                senderHtml = '<div class="chat-msg-sender">' + remetenteLabel + '</div>';
+            }
             var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
             if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
 
@@ -902,7 +905,10 @@ function chatPortaisAbrirGrupo(grupoId, turmaNome, membros) {
             var remetenteLabel = isAdmin ? '<i class="fa-solid fa-shield-halved" style="margin-right:3px"></i> Administracao FARN' : '<i class="fa-solid fa-user" style="margin-right:3px"></i> ' + (m.nome || 'Aluno');
 
             var avatarHtml = !isAdmin ? '<div class="chat-msg-avatar" style="background:#ca8a04"><i class="fa-solid fa-user"></i></div>' : '';
-            var senderHtml = '<div class="chat-msg-sender"' + (isAdmin ? '' : ' style="color:#ca8a04"') + '>' + remetenteLabel + '</div>';
+            var senderHtml = '';
+            if (!isAdmin) {
+                senderHtml = '<div class="chat-msg-sender" style="color:#ca8a04">' + remetenteLabel + '</div>';
+            }
             var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
             if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
 
