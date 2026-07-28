@@ -41,14 +41,14 @@ function chatPortaisRenderList(lista) {
         var cpfDisp = c.cpf || '';
         if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         var timeStr = c.ultimaHora ? new Date(c.ultimaHora.seconds ? c.ultimaHora.seconds * 1000 : c.ultimaHora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-        var tipoLabel = c.tipo === 'formado' ? 'Formado' : 'Aluno';
-        var tipoColor = c.tipo === 'formado' ? '#16a34a' : '#2563eb';
-        var tipoIcon = c.tipo === 'formado' ? 'fa-graduation-cap' : 'fa-user';
+        var tipoLabel = c.tipo === 'formado' ? 'Formado' : c.tipo === 'grupo' ? 'Grupo' : 'Aluno';
+        var tipoColor = c.tipo === 'formado' ? '#16a34a' : c.tipo === 'grupo' ? '#2563eb' : '#2563eb';
+        var tipoIcon = c.tipo === 'formado' ? 'fa-graduation-cap' : c.tipo === 'grupo' ? 'fa-users' : 'fa-user';
         var isSelected = chatPortaisSelected === c._id;
         var naoLidas = c.naoLidas || 0;
         var bgSel = isSelected ? 'background:#f0fdf4;' : '';
 
-        var avatarBg = c.tipo === 'formado' ? '#16a34a' : '#2563eb';
+        var avatarBg = c.tipo === 'formado' ? '#16a34a' : c.tipo === 'grupo' ? '#2563eb' : '#2563eb';
 
         var html = '<div class="chat-p-item" onclick="chatPortaisSelect(\'' + c._id + '\')" style="padding:14px 16px;border-bottom:1px solid #e2e8f0;cursor:pointer;transition:background .2s;position:relative;' + bgSel + '" onmouseover="this.style.background=\'#f0fdf4\';var b=this.querySelector(\'.chat-p-del-btn\');if(b)b.style.display=\'flex\'" onmouseout="this.style.background=\'' + (isSelected ? '#f0fdf4' : 'transparent') + '\';var b=this.querySelector(\'.chat-p-del-btn\');if(b)b.style.display=\'none\'">' +
             '<div style="display:flex;gap:12px;align-items:center">' +
@@ -85,6 +85,11 @@ function chatPortaisFilter() {
 }
 
 function chatPortaisSelect(cpf) {
+    if (cpf.startsWith('grupo_')) {
+        var g = chatPortaisList.find(function(c) { return c._id === cpf; });
+        if (g) chatPortaisAbrirGrupo(cpf, g.nome || cpf, (g.membros || []).map(function(m) { return { cpf: m, nome: '' }; }));
+        return;
+    }
     chatPortaisSelected = cpf;
     chatPortaisEditingMsg = null;
     var user = chatPortaisList.find(function(c) { return c._id === cpf; });
@@ -183,6 +188,11 @@ function chatPortaisSend() {
     }
 
     input.value = '';
+
+    if (chatPortaisSelected.startsWith('grupo_')) {
+        chatPortaisSendGrupo(texto);
+        return;
+    }
 
     var msgData = {
         texto: texto,
@@ -680,4 +690,238 @@ function chatPortaisStartFromContact(cpf, nome, tipo) {
 
     chatPortaisRenderList(chatPortaisList);
     document.getElementById('chat-p-input').focus();
+}
+
+/* ===== GRUPOS POR TURMA ===== */
+function chatPortaisGerarGrupos() {
+    var modal = document.getElementById('chat-p-grupos-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'chat-p-grupos-modal';
+        modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);overflow-y:auto;padding:20px';
+        modal.onclick = function(e) { if (e.target === modal) chatPortaisFecharGrupos(); };
+        modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:700px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">' +
+            '<div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:20px 24px;display:flex;justify-content:space-between;align-items:center">' +
+            '<div><div style="font-size:18px;font-weight:700;color:#fff"><i class="fa-solid fa-users" style="margin-right:8px"></i> Grupos por Turma</div>' +
+            '<div style="font-size:12px;color:#bfdbfe;margin-top:2px">Gerencie conversas em grupo por turma</div></div>' +
+            '<button onclick="chatPortaisFecharGrupos()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button></div>' +
+            '<div id="chat-p-grupos-list" style="padding:16px 20px;max-height:60vh;overflow-y:auto"></div>' +
+            '<div style="padding:12px 20px;border-top:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:flex-end;gap:8px">' +
+            '<button onclick="chatPortaisCriarTodosGrupos()" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-wand-magic-sparkles"></i> Criar Todos os Grupos</button>' +
+            '<button onclick="chatPortaisFecharGrupos()" style="background:#e2e8f0;color:#475569;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Fechar</button></div></div>';
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'block';
+    document.getElementById('chat-p-grupos-list').innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando turmas...</div>';
+    chatPortaisCarregarGrupos();
+}
+
+function chatPortaisFecharGrupos() {
+    var modal = document.getElementById('chat-p-grupos-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function chatPortaisCarregarGrupos() {
+    var container = document.getElementById('chat-p-grupos-list');
+    try {
+        var turSnap = await dbFirestore.collection('turmas').get();
+        var turmas = [];
+        turSnap.forEach(function(doc) { var t = doc.data(); t._id = doc.id; turmas.push(t); });
+
+        var candSnap = await dbFirestore.collection('candidatos').get();
+        var todosCand = [];
+        candSnap.forEach(function(doc) { var c = doc.data(); c._docId = doc.id; todosCand.push(c); });
+
+        var chatsSnap = await dbFirestore.collection('chatAdmin').where('tipo', '==', 'grupo').get();
+        var gruposExistentes = {};
+        chatsSnap.forEach(function(doc) { gruposExistentes[doc.id] = doc.data(); });
+
+        if (!turmas.length) {
+            container.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-layer-group" style="font-size:32px;display:block;margin-bottom:8px;opacity:.3"></i>Nenhuma turma encontrada</div>';
+            return;
+        }
+
+        var html = '';
+        turmas.forEach(function(t) {
+            var turmaNome = t.nome || t.id || t._id;
+            var alunos = todosCand.filter(function(c) { return c.turma === turmaNome; });
+            var grupoId = 'grupo_' + turmaNome.replace(/\s+/g, '_').toUpperCase();
+            var existe = !!gruposExistentes[grupoId];
+            var msgCount = gruposExistentes[grupoId] ? (gruposExistentes[grupoId].totalMsgs || 0) : 0;
+            var projeto = t.projeto || '';
+
+            html += '<div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid ' + (existe ? '#e2e8f0' : '#fde68a') + ';border-radius:12px;margin-bottom:10px;background:' + (existe ? '#fff' : '#fffbeb') + '">' +
+                '<div style="width:44px;height:44px;border-radius:12px;background:' + (existe ? '#2563eb' : '#ca8a04') + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0"><i class="fa-solid fa-users"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                '<div style="font-weight:700;font-size:14px;color:#1e293b">' + turmaNome + '</div>' +
+                '<div style="font-size:11px;color:#64748b">' + (projeto || 'Sem projeto') + ' &bull; ' + alunos.length + ' aluno(s)' + (existe ? ' &bull; ' + msgCount + ' msg(s)' : ' &bull; <span style="color:#ca8a04;font-weight:600">Nao criado</span>') + '</div>' +
+                '</div>' +
+                '<button onclick="chatPortaisAbrirGrupo(\'' + grupoId + '\',\'' + turmaNome.replace(/'/g, "\\'") + '\',' + JSON.stringify(alunos.map(function(a){return {cpf:a.cpf||a.id,nome:a.nome||''}})).replace(/"/g, '&quot;') + ')" style="background:' + (existe ? '#2563eb' : '#16a34a') + ';color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:5px"><i class="fa-solid ' + (existe ? 'fa-comment-dots' : 'fa-plus') + '"></i> ' + (existe ? 'Abrir' : 'Criar') + '</button>' +
+                '</div>';
+        });
+        container.innerHTML = html;
+    } catch(e) {
+        container.innerHTML = '<div style="text-align:center;color:#dc2626;padding:30px">Erro: ' + e.message + '</div>';
+    }
+}
+
+async function chatPortaisCriarTodosGrupos() {
+    var btn = event.target.closest('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando...';
+    try {
+        var turSnap = await dbFirestore.collection('turmas').get();
+        var candSnap = await dbFirestore.collection('candidatos').get();
+        var chatsSnap = await dbFirestore.collection('chatAdmin').where('tipo', '==', 'grupo').get();
+        var existentes = {};
+        chatsSnap.forEach(function(doc) { existentes[doc.id] = true; });
+
+        var todosCand = [];
+        candSnap.forEach(function(doc) { var c = doc.data(); c._docId = doc.id; todosCand.push(c); });
+
+        var criados = 0;
+        turSnap.forEach(function(doc) {
+            var t = doc.data();
+            var turmaNome = t.nome || doc.id;
+            var grupoId = 'grupo_' + turmaNome.replace(/\s+/g, '_').toUpperCase();
+            if (existentes[grupoId]) return;
+
+            var alunos = todosCand.filter(function(c) { return c.turma === turmaNome; });
+            dbFirestore.collection('chatAdmin').doc(grupoId).set({
+                tipo: 'grupo',
+                nome: turmaNome,
+                projeto: t.projeto || '',
+                turma: turmaNome,
+                membros: alunos.map(function(a) { return a.cpf || a._docId; }),
+                nomesMembros: alunos.map(function(a) { return a.nome || ''; }),
+                totalMsgs: 0,
+                ultimaMsg: 'Grupo criado',
+                ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            criados++;
+        });
+
+        alert(criados + ' grupo(s) criado(s) com sucesso!');
+        chatPortaisCarregarGrupos();
+    } catch(e) {
+        alert('Erro ao criar grupos: ' + e.message);
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Criar Todos os Grupos';
+}
+
+function chatPortaisAbrirGrupo(grupoId, turmaNome, membros) {
+    chatPortaisFecharGrupos();
+    chatPortaisSelected = grupoId;
+    chatPortaisGrupoMembros = membros;
+    chatPortaisGrupoTurma = turmaNome;
+    chatPortaisEditingMsg = null;
+
+    var initials = turmaNome.substring(0, 2).toUpperCase();
+
+    document.getElementById('chat-p-header').style.display = 'block';
+    document.getElementById('chat-p-input-area').style.display = 'flex';
+    document.getElementById('chat-p-user-avatar').textContent = initials;
+    document.getElementById('chat-p-user-avatar').style.background = '#2563eb';
+    document.getElementById('chat-p-user-name').innerHTML = '<i class="fa-solid fa-users" style="margin-right:6px"></i>' + turmaNome + ' <span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;background:rgba(37,99,235,.12);color:#2563eb;border:1px solid rgba(37,99,235,.3);margin-left:6px"><i class="fa-solid fa-users" style="margin-right:3px"></i>Grupo</span>';
+    document.getElementById('chat-p-user-info').textContent = membros.length + ' membro(s) &bull; Chat em grupo';
+
+    chatPortaisRenderList(chatPortaisList);
+
+    var msgEl = document.getElementById('chat-p-messages');
+    msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+    if (chatPortaisMsgUnsub) chatPortaisMsgUnsub();
+    chatPortaisMsgUnsub = dbFirestore.collection('chatAdmin').doc(grupoId).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
+        msgEl.innerHTML = '';
+        if (snap.empty) {
+            msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px">Nenhuma mensagem neste grupo</div>';
+            return;
+        }
+        var batch = dbFirestore.batch();
+        snap.forEach(function(doc) {
+            var m = doc.data();
+            m._docId = doc.id;
+            if (m.remetente !== 'admin' && !m.lida) {
+                batch.set(doc.ref, { lida: true }, { merge: true });
+            }
+            if (m.apagada) return;
+            var isAdmin = m.remetente === 'admin';
+            var bubble = document.createElement('div');
+            bubble.style.cssText = 'max-width:70%;margin-bottom:12px;position:relative;' + (isAdmin ? 'margin-left:auto;text-align:right' : '');
+
+            var remetenteLabel = isAdmin ? '<i class="fa-solid fa-shield-halved" style="margin-right:3px"></i> Administracao FARN' : '<i class="fa-solid fa-user" style="margin-right:3px"></i> ' + (m.nome || 'Aluno');
+            var remetenteColor = isAdmin ? '#16a34a' : '#2563eb';
+            var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+            var bg = isAdmin ? 'background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-radius:12px 12px 2px 12px' : 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;color:#1e293b';
+            var editLabel = m.editado ? '<span style="font-size:9px;opacity:.6;font-style:italic">(editado)</span> ' : '';
+
+            bubble.innerHTML = '<div style="font-size:11px;color:' + remetenteColor + ';margin-bottom:2px">' + remetenteLabel + '</div>' +
+                '<div style="padding:10px 14px;' + bg + '">' + editLabel + (m.texto || '') + '</div>' +
+                '<div style="font-size:10px;color:#64748b;margin-top:2px">' + time + '</div>';
+            msgEl.appendChild(bubble);
+        });
+        batch.commit().catch(function() {});
+        msgEl.scrollTop = msgEl.scrollHeight;
+    }, function() {
+        msgEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar mensagens</div>';
+    });
+
+    chatPortaisRenderList(chatPortaisList);
+    document.getElementById('chat-p-input').focus();
+}
+
+var chatPortaisGrupoMembros = [];
+var chatPortaisGrupoTurma = '';
+
+function chatPortaisSendGrupo(texto) {
+    if (!texto || !chatPortaisSelected || !chatPortaisSelected.startsWith('grupo_')) return false;
+
+    var msgData = {
+        texto: texto,
+        remetente: 'admin',
+        nome: 'Administracao FARN',
+        hora: firebase.firestore.FieldValue.serverTimestamp(),
+        lida: false
+    };
+
+    dbFirestore.collection('chatAdmin').doc(chatPortaisSelected).collection('msgs').add(msgData);
+    dbFirestore.collection('chatAdmin').doc(chatPortaisSelected).set({
+        ultimaMsg: texto,
+        ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
+        ultimaRemetente: 'admin',
+        totalMsgs: firebase.firestore.FieldValue.increment(1)
+    }, { merge: true });
+
+    if (chatPortaisGrupoMembros && chatPortaisGrupoMembros.length) {
+        var fanMsg = {
+            texto: texto,
+            remetente: 'admin',
+            nome: 'Administracao FARN',
+            hora: firebase.firestore.FieldValue.serverTimestamp(),
+            lida: false,
+            grupo: chatPortaisGrupoTurma
+        };
+        var batch = dbFirestore.batch();
+        var count = 0;
+        chatPortaisGrupoMembros.forEach(function(m) {
+            var cpf = m.cpf || m;
+            var ref = dbFirestore.collection('chatAdmin').doc(String(cpf)).collection('msgs').doc();
+            batch.set(ref, fanMsg);
+            count++;
+            dbFirestore.collection('chatAdmin').doc(String(cpf)).set({
+                ultimaMsg: '[Grupo ' + chatPortaisGrupoTurma + '] ' + texto,
+                ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
+                ultimaRemetente: 'admin',
+                nome: m.nome || cpf,
+                cpf: String(cpf),
+                tipo: 'aluno',
+                projeto: '',
+                naoLidas: firebase.firestore.FieldValue.increment(1)
+            }, { merge: true });
+        });
+        batch.commit().catch(function(e) { console.error('Erro fan-out grupo:', e); });
+    }
+    return true;
 }
