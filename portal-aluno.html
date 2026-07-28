@@ -2286,6 +2286,10 @@
 
     async function paAceitarRegimento() {
         if (!paUser) return;
+        if (paUser.status !== 'Aprovado') {
+            alert('Seu cadastro precisa estar com status Aprovado para aceitar o Regimento.');
+            return;
+        }
         var btn = document.getElementById('pf-regimento-aceitar');
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';

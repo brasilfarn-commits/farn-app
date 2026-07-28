@@ -1869,7 +1869,7 @@ async function relatorioRegimento() {
         const aceites = [];
         snap.forEach(doc => aceites.push(doc.data()));
         aceites.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-        const totalCandidatos = candidatos.length;
+        const totalCandidatos = candidatos.filter(c => c.status === 'Aprovado').length;
         const totalAceitaram = aceites.length;
         const pendentes = totalCandidatos - totalAceitaram;
         statsDiv.innerHTML = `
@@ -1883,7 +1883,7 @@ async function relatorioRegimento() {
             </div>
             <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
                 <div style="font-size:24px;font-weight:700;color:#1e293b">${totalCandidatos}</div>
-                <div style="font-size:11px;color:#475569;font-weight:600">Total de Alunos</div>
+                <div style="font-size:11px;color:#475569;font-weight:600">Total de Aprovados</div>
             </div>`;
         if (!aceites.length) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno aceitou o regimento ainda.</td></tr>';
