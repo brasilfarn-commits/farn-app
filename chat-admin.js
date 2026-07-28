@@ -946,3 +946,90 @@ function chatPortaisSendGrupo(texto) {
     }, { merge: true });
     return true;
 }
+
+/* ===== EXCLUIR TODAS AS CONVERSAS ===== */
+function chatPortaisExcluirTodas() {
+    if (!confirm('ATENCAO! Isso ira EXCLUIR PERMANENTEMENTE TODAS as conversas do chat (alunos, formados e grupos).\n\nEsta acao NAO pode ser desfeita!')) return;
+    if (!confirm('CONFIRMACAO FINAL: Tem certeza absoluta? Todas as mensagens de todos os usuarios serao perdidas.')) return;
+
+    var btn = document.querySelector('[onclick="chatPortaisExcluirTodas()"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Excluindo...'; }
+
+    chatPortaisExcluirProxima(0);
+}
+
+function chatPortaisExcluirProxima(index) {
+    dbFirestore.collection('chatAdmin').limit(20).get().then(function(snap) {
+        if (snap.empty) {
+            if (chatPortaisMsgUnsub) { chatPortaisMsgUnsub(); chatPortaisMsgUnsub = null; }
+            if (chatPortaisUnsub) { chatPortaisUnsub(); chatPortaisUnsub = null; }
+            chatPortaisSelected = null;
+            document.getElementById('chat-p-header').style.display = 'none';
+            document.getElementById('chat-p-input-area').style.display = 'none';
+            document.getElementById('chat-p-messages').innerHTML = '<div class="chat-empty"><i class="fa-solid fa-comments"></i><p>Selecione uma conversa para visualizar</p></div>';
+            chatPortaisList = [];
+            document.getElementById('chat-p-list').innerHTML = '<div class="chat-empty" style="padding:30px"><i class="fa-solid fa-inbox"></i><p>Todas as conversas foram excluidas</p></div>';
+            var btn = document.querySelector('[onclick="chatPortaisExcluirTodas()"]');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Excluir Tudo'; }
+            alert('Todas as conversas foram excluidas com sucesso!');
+            return;
+        }
+
+        var docs = [];
+        snap.forEach(function(d) { docs.push(d); });
+
+        var i = -1;
+        function processNext() {
+            i++;
+            if (i >= docs.length) {
+                chatPortaisExcluirProxima(index + docs.length);
+                return;
+            }
+            var doc = docs[i];
+            var ref = dbFirestore.collection('chatAdmin').doc(doc.id).collection('msgs');
+            ref.limit(450).get().then(function(msgsSnap) {
+                if (msgsSnap.empty) {
+                    return dbFirestore.collection('chatAdmin').doc(doc.id).delete().then(processNext);
+                }
+                var batch = dbFirestore.batch();
+                msgsSnap.forEach(function(m) { batch.delete(m.ref); });
+                return batch.commit().then(function() {
+                    return ref.limit(450).get().then(function(nextSnap) {
+                        if (nextSnap.empty) {
+                            return dbFirestore.collection('chatAdmin').doc(doc.id).delete().then(processNext);
+                        }
+                        var b2 = dbFirestore.batch();
+                        nextSnap.forEach(function(m) { b2.delete(m.ref); });
+                        return b2.commit().then(function() {
+                            return ref.limit(450).get().then(function(thirdSnap) {
+                                if (thirdSnap.empty) {
+                                    return dbFirestore.collection('chatAdmin').doc(doc.id).delete().then(processNext);
+                                }
+                                var b3 = dbFirestore.batch();
+                                thirdSnap.forEach(function(m) { b3.delete(m.ref); });
+                                return b3.commit().then(function() {
+                                    return ref.get().then(function(rest) {
+                                        var b4 = dbFirestore.batch();
+                                        rest.forEach(function(m) { b4.delete(m.ref); });
+                                        return b4.commit().then(function() {
+                                            return dbFirestore.collection('chatAdmin').doc(doc.id).delete().then(processNext);
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            }).catch(function(e) {
+                console.error('Erro ao excluir ' + doc.id, e);
+                processNext();
+            });
+        }
+        processNext();
+    }).catch(function(e) {
+        console.error('Erro ao buscar conversas:', e);
+        var btn = document.querySelector('[onclick="chatPortaisExcluirTodas()"]');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Excluir Tudo'; }
+        alert('Erro ao excluir: ' + e.message);
+    });
+}
