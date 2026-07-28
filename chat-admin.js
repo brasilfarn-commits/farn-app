@@ -6,6 +6,7 @@ var chatPortaisMsgUnsub = null;
 var chatPortaisNotifUnsub = null;
 var chatPortaisEmojiPanelOpen = false;
 var chatPortaisEditingMsg = null;
+var chatPortaisTab = 'todas';
 
 function chatPortaisLoad() {
     if (chatPortaisUnsub) chatPortaisUnsub();
@@ -25,8 +26,7 @@ function chatPortaisLoad() {
             c._id = doc.id;
             chatPortaisList.push(c);
         });
-        chatPortaisRenderList(chatPortaisList);
-        chatPortaisUpdateBadge();
+        chatPortaisFilter();
     }, function(e) {
         console.error('Erro chat admin:', e);
         listEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar conversas</div>';
@@ -77,11 +77,23 @@ function chatPortaisRenderList(lista) {
 
 function chatPortaisFilter() {
     var q = (document.getElementById('chat-p-search').value || '').toLowerCase();
-    if (!q) { chatPortaisRenderList(chatPortaisList); return; }
-    var filtered = chatPortaisList.filter(function(c) {
+    var filtered = chatPortaisList;
+    if (chatPortaisTab === 'alunos') filtered = filtered.filter(function(c) { return c.tipo !== 'formado' && c.tipo !== 'grupo'; });
+    else if (chatPortaisTab === 'formados') filtered = filtered.filter(function(c) { return c.tipo === 'formado'; });
+    else if (chatPortaisTab === 'grupos') filtered = filtered.filter(function(c) { return c.tipo === 'grupo'; });
+    if (q) filtered = filtered.filter(function(c) {
         return (c.nome || '').toLowerCase().includes(q) || (c.cpf || '').includes(q);
     });
     chatPortaisRenderList(filtered);
+}
+
+function chatPortaisSetTab(tab) {
+    chatPortaisTab = tab;
+    document.querySelectorAll('.chat-p-tab').forEach(function(el) {
+        if (el.dataset.tab === tab) { el.style.color = '#16a34a'; el.style.borderBottomColor = '#16a34a'; }
+        else { el.style.color = '#64748b'; el.style.borderBottomColor = 'transparent'; }
+    });
+    chatPortaisFilter();
 }
 
 function chatPortaisSelect(cpf) {
@@ -109,11 +121,9 @@ function chatPortaisSelect(cpf) {
     document.getElementById('chat-p-user-name').innerHTML = (user.nome || '---') + ' <span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;background:' + tipoColor + '22;color:' + tipoColor + ';border:1px solid ' + tipoColor + '44;margin-left:6px"><i class="fa-solid ' + tipoIcon + '" style="margin-right:3px"></i>' + tipoLabel + '</span>';
     document.getElementById('chat-p-user-info').textContent = 'CPF: ' + cpfDisp + ' | Projeto: ' + (user.projeto || '---');
 
-    chatPortaisRenderList(chatPortaisList);
+    chatPortaisFilter();
 
     dbFirestore.collection('chatAdmin').doc(cpf).set({ naoLidas: 0 }, { merge: true });
-
-    if (chatPortaisMsgUnsub) chatPortaisMsgUnsub();
     var msgEl = document.getElementById('chat-p-messages');
     msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
@@ -692,7 +702,6 @@ function chatPortaisStartFromContact(cpf, nome, tipo) {
     document.getElementById('chat-p-input').focus();
 }
 
-/* ===== GRUPOS POR TURMA ===== */
 function chatPortaisGerarGrupos() {
     var modal = document.getElementById('chat-p-grupos-modal');
     if (!modal) {
@@ -827,7 +836,7 @@ function chatPortaisAbrirGrupo(grupoId, turmaNome, membros) {
     document.getElementById('chat-p-user-name').innerHTML = '<i class="fa-solid fa-users" style="margin-right:6px"></i>' + turmaNome + ' <span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;background:rgba(37,99,235,.12);color:#2563eb;border:1px solid rgba(37,99,235,.3);margin-left:6px"><i class="fa-solid fa-users" style="margin-right:3px"></i>Grupo</span>';
     document.getElementById('chat-p-user-info').textContent = membros.length + ' membro(s) &bull; Chat em grupo';
 
-    chatPortaisRenderList(chatPortaisList);
+    chatPortaisFilter();
 
     var msgEl = document.getElementById('chat-p-messages');
     msgEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
@@ -868,7 +877,7 @@ function chatPortaisAbrirGrupo(grupoId, turmaNome, membros) {
         msgEl.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar mensagens</div>';
     });
 
-    chatPortaisRenderList(chatPortaisList);
+    chatPortaisFilter();
     document.getElementById('chat-p-input').focus();
 }
 

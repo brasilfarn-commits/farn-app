@@ -1303,6 +1303,12 @@
                                 <input type="text" id="chat-p-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="max-width:220px" oninput="chatPortaisFilter()">
                             </div>
                         </div>
+                        <div id="chat-p-tabs" style="display:flex;border-bottom:1px solid #e2e8f0;flex-shrink:0;padding:0 8px;background:#f8fafc">
+                            <div class="chat-p-tab active" data-tab="todas" onclick="chatPortaisSetTab('todas')" style="padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;transition:all .2s"><i class="fa-solid fa-layer-group" style="margin-right:5px"></i>Todas</div>
+                            <div class="chat-p-tab" data-tab="alunos" onclick="chatPortaisSetTab('alunos')" style="padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;transition:all .2s"><i class="fa-solid fa-user-graduate" style="margin-right:5px"></i>Alunos</div>
+                            <div class="chat-p-tab" data-tab="formados" onclick="chatPortaisSetTab('formados')" style="padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;transition:all .2s"><i class="fa-solid fa-graduation-cap" style="margin-right:5px"></i>Formados</div>
+                            <div class="chat-p-tab" data-tab="grupos" onclick="chatPortaisSetTab('grupos')" style="padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;transition:all .2s"><i class="fa-solid fa-users" style="margin-right:5px"></i>Grupos</div>
+                        </div>
                         <div style="display:flex;flex:1;overflow:hidden">
                             <!-- LISTA DE CONVERSAS -->
                             <div id="chat-p-list" style="width:320px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0"></div>

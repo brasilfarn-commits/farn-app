@@ -442,22 +442,22 @@
                 <!-- CHAT -->
                 <div class="pf-section" id="pf-section-chat">
                     <div class="chat-container">
+                        <div id="chat-pa-tabs" style="display:flex;border-bottom:2px solid #e2e8f0;flex-shrink:0;background:#f8fafc;border-radius:12px 12px 0 0;overflow:hidden">
+                            <div class="chat-pa-tab active" data-pa-tab="admin" onclick="chatSetTab('admin')" style="flex:1;padding:12px 10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#16a34a;border-bottom:3px solid #16a34a;transition:all .2s;background:#fff"><i class="fa-solid fa-shield-halved" style="margin-right:5px"></i>Administracao</div>
+                            <div class="chat-pa-tab" data-pa-tab="grupo" onclick="chatSetTab('grupo')" style="flex:1;padding:12px 10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#64748b;border-bottom:3px solid transparent;transition:all .2s;display:none"><i class="fa-solid fa-users" style="margin-right:5px"></i>Grupo da Turma</div>
+                        </div>
                         <div id="chat-group-bar" style="display:none;padding:10px 14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:12px;margin-bottom:10px;align-items:center;gap:10px">
                             <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px"><i class="fa-solid fa-users"></i></div>
                             <div style="flex:1">
                                 <div style="font-weight:700;font-size:14px;color:#fff" id="chat-group-name"></div>
                                 <div style="font-size:11px;color:#bfdbfe" id="chat-group-info"></div>
                             </div>
-                            <button onclick="chatSairGrupo()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
                         </div>
                         <div class="chat-header" id="chat-header-admin">
                             <div class="chat-header-avatar"><i class="fa-solid fa-shield-halved"></i></div>
                             <div class="chat-header-info">
                                 <div class="chat-header-name">Administracao FARN</div>
                                 <div class="chat-header-status">Online</div>
-                            </div>
-                            <div id="chat-grupo-btn-wrap" style="display:none;margin-left:auto">
-                                <button onclick="chatEntrarGrupo()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-users"></i> Entrar no Grupo</button>
                             </div>
                         </div>
                         <div class="chat-messages" id="chat-messages">
@@ -1357,29 +1357,46 @@
             if (doc.exists) {
                 chatGrupoId = grupoId;
                 chatGrupoData = doc.data();
-                var btnWrap = document.getElementById('chat-grupo-btn-wrap');
-                if (btnWrap) btnWrap.style.display = '';
-                if (chatModo === 'grupo') {
-                    document.getElementById('chat-group-bar').style.display = 'flex';
-                    document.getElementById('chat-group-name').textContent = chatGrupoData.nome || turma;
-                    document.getElementById('chat-group-info').textContent = 'Grupo da turma ' + turma;
-                }
+                var tabGrupo = document.querySelector('.chat-pa-tab[data-pa-tab="grupo"]');
+                if (tabGrupo) tabGrupo.style.display = '';
             }
         }).catch(function() {});
     }
 
-    function chatEntrarGrupo() {
-        if (!chatGrupoId) return;
-        chatModo = 'grupo';
+    function chatSetTab(tab) {
+        if (tab === 'grupo' && !chatGrupoId) return;
+        chatModo = tab;
         chatEditTarget = null;
         document.getElementById('chat-edit-bar').classList.remove('active');
-        document.getElementById('chat-header-admin').style.display = 'none';
+        document.querySelectorAll('.chat-pa-tab').forEach(function(el) {
+            if (el.dataset.paTab === tab) {
+                el.style.color = '#16a34a';
+                el.style.borderBottomColor = '#16a34a';
+                el.style.background = '#fff';
+            } else {
+                el.style.color = '#64748b';
+                el.style.borderBottomColor = 'transparent';
+                el.style.background = 'transparent';
+            }
+        });
+        if (tab === 'admin') {
+            chatSairGrupo();
+        } else {
+            chatEntrarGrupo();
+        }
+    }
+
+    function chatEntrarGrupo() {
+        if (!chatGrupoId) return;
+        if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+
+        var turma = paUser.turma;
         document.getElementById('chat-group-bar').style.display = 'flex';
+        document.getElementById('chat-group-name').textContent = chatGrupoData.nome || turma;
+        document.getElementById('chat-group-info').textContent = 'Grupo da turma ' + turma;
+        document.getElementById('chat-header-admin').style.display = 'none';
 
         var container = document.getElementById('chat-messages');
-        container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando grupo...</p></div>';
-
-        if (chatUnsub) { chatUnsub(); chatUnsub = null; }
 
         chatGrupoUnsub = dbFirestore.collection('chatAdmin').doc(chatGrupoId).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
             container.innerHTML = '';
@@ -1430,10 +1447,9 @@
     }
 
     function chatSairGrupo() {
-        chatModo = 'admin';
-        chatEditTarget = null;
-        document.getElementById('chat-edit-bar').classList.remove('active');
         if (chatGrupoUnsub) { chatGrupoUnsub(); chatGrupoUnsub = null; }
+        document.getElementById('chat-group-bar').style.display = 'none';
+        document.getElementById('chat-header-admin').style.display = '';
         chatStart();
     }
 
