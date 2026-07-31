@@ -433,6 +433,7 @@ function initFirebaseListeners() {
             });
             instrutores = result;
             if (firebaseReady && typeof instrutorListar === 'function') instrutorListar();
+            if (typeof tfmPopulateInstrutores === 'function') tfmPopulateInstrutores();
             checkReady();
         }, (error) => {
             console.error('Erro Firestore instrutores:', error);
@@ -3867,6 +3868,20 @@ function tfmEsc(val) {
     return String(val == null ? '' : val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function tfmPopulateInstrutores() {
+    const sel = document.getElementById('tfm-instrutor');
+    if (!sel) return;
+    const atual = sel.value;
+    let ops = '<option value="">Selecione o instrutor...</option>';
+    (instrutores || []).slice().sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); }).forEach(function(i) {
+        let label = i.nome || '';
+        if (i.guerra) label += ' (' + i.guerra + ')';
+        ops += '<option value="' + tfmEsc(i.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(label) + '</option>';
+    });
+    sel.innerHTML = ops;
+    sel.value = atual;
+}
+
 function tfmInicializar() {
     const selProj = document.getElementById('tfm-selecao-projeto');
     if (!selProj) return;
@@ -3876,6 +3891,7 @@ function tfmInicializar() {
     });
     const conteudo = document.getElementById('tfm-conteudo');
     if (conteudo) conteudo.style.display = 'none';
+    tfmPopulateInstrutores();
 }
 
 function tfmOnSelecaoProjetoChange() {
@@ -3909,6 +3925,26 @@ async function tfmOnSelecaoChange() {
             tfmExistentes[doc.data().cpf] = Object.assign({ docId: doc.id }, doc.data());
         });
     } catch(e) { console.error('Erro ao carregar TFM:', e); }
+
+    const selInst = document.getElementById('tfm-instrutor');
+    if (selInst && !selInst.value) {
+        let instrutorSalvo = null;
+        Object.keys(tfmExistentes).forEach(function(cpf) {
+            if (!instrutorSalvo && tfmExistentes[cpf].instrutor) instrutorSalvo = tfmExistentes[cpf].instrutor;
+        });
+        if (instrutorSalvo) {
+            const opt = selInst.querySelector('option[value="' + String(instrutorSalvo).replace(/"/g, '&quot;') + '"]');
+            if (opt) selInst.value = instrutorSalvo;
+            else {
+                const optNovo = document.createElement('option');
+                optNovo.value = instrutorSalvo;
+                optNovo.textContent = instrutorSalvo;
+                selInst.appendChild(optNovo);
+                selInst.value = instrutorSalvo;
+            }
+        }
+    }
+
     tfmRender();
     tfmAtualizarResumo();
 }
