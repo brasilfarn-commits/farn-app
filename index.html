@@ -170,6 +170,10 @@
                         <i class="fa-solid fa-clipboard-check"></i>
                         <span>Apontamento</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-tfm', this); tfmInicializar()">
+                        <i class="fa-solid fa-dumbbell"></i>
+                        <span>TFM do Aluno</span>
+                    </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-recadastramento', this); recadLoadAll()">
                         <i class="fa-solid fa-rotate"></i>
                         <span>Recadastramento</span>
@@ -702,6 +706,116 @@
                                     <p style="color:#475569">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
                                 </div>
                                 <div id="apontamento-historico-lista" style="display:none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="admin-tfm" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-dumbbell" style="color:#16a34a;margin-right:8px"></i> TFM do Aluno - Teste Fisico Motor</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Protocolo dos testes -->
+                            <div style="padding:18px 20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                                    <i class="fa-solid fa-stopwatch" style="color:#16a34a;font-size:16px"></i>
+                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Protocolo de Avaliacao</span>
+                                </div>
+                                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">A) Flexao de Bracos (Solo)</div>
+                                        <div style="font-size:11px;color:#475569;line-height:1.5">Tempo de 1 minuto. Posicao padrao para homens e com joelhos no chao para mulheres.</div>
+                                    </div>
+                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">B) Abdominal Remador</div>
+                                        <div style="font-size:11px;color:#475569;line-height:1.5">Tempo de 1 minuto. Movimento completo estendendo bracos e pernas e flexionando-os juntos.</div>
+                                    </div>
+                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">C) Corrida de Resistencia</div>
+                                        <div style="font-size:11px;color:#475569;line-height:1.5">Tempo de 12 minutos continuos em pista plana.</div>
+                                    </div>
+                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">D) Deslocamento Operacional</div>
+                                        <div style="font-size:11px;color:#475569;line-height:1.5">Caminhar carregando uma carga de 20 kg por 50 metros sem correr ou derrubar, com tempo de corte de 3 minutos.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Selecao Projeto + Turma -->
+                            <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                    <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
+                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
+                                </div>
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
+                                        <select id="tfm-selecao-projeto" class="config-input" style="width:100%;border-color:#16a34a" onchange="tfmOnSelecaoProjetoChange()">
+                                            <option value="">Selecione o projeto...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
+                                        <select id="tfm-selecao-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="tfmOnSelecaoChange()">
+                                            <option value="">Selecione a turma...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Conteudo -->
+                            <div id="tfm-conteudo" style="display:none">
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;padding:16px;background:#f0fdf4;border-radius:10px;border:1px solid #e2e8f0">
+                                    <div class="form-group" style="flex:1;min-width:140px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data da Prova</label>
+                                        <input type="date" id="tfm-data-prova" class="config-input" style="width:100%">
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:180px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Instrutor Responsavel</label>
+                                        <input type="text" id="tfm-instrutor" class="config-input" style="width:100%" placeholder="Nome do instrutor">
+                                    </div>
+                                    <button class="btn-primary" onclick="tfmSalvarTodos()" style="white-space:nowrap;margin:0">
+                                        <i class="fa-solid fa-floppy-disk"></i> Salvar Todos
+                                    </button>
+                                    <button class="btn-outline" onclick="tfmExportarCSV()" style="white-space:nowrap;margin:0">
+                                        <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                                    </button>
+                                </div>
+                                <!-- Resumo -->
+                                <div id="tfm-resumo" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+                                    <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
+                                        <div id="tfm-resumo-alunos" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                        <div style="font-size:11px;color:#475569">Alunos</div>
+                                    </div>
+                                    <div style="background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
+                                        <div id="tfm-resumo-avaliados" style="font-size:22px;font-weight:800;color:#2563eb">0</div>
+                                        <div style="font-size:11px;color:#475569">Avaliados</div>
+                                    </div>
+                                    <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
+                                        <div id="tfm-resumo-aptos" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                        <div style="font-size:11px;color:#475569">Aptos</div>
+                                    </div>
+                                    <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
+                                        <div id="tfm-resumo-inaptos" style="font-size:22px;font-weight:800;color:#f44336">0</div>
+                                        <div style="font-size:11px;color:#475569">Inaptos</div>
+                                    </div>
+                                </div>
+                                <!-- Tabela -->
+                                <div style="overflow-x:auto">
+                                    <table class="data-table" id="tfm-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Aluno</th>
+                                                <th>A) Flexoes (1min)</th>
+                                                <th>B) Abdominais (1min)</th>
+                                                <th>C) Corrida (metros)</th>
+                                                <th>D) Deslocamento (20kg / 50m)</th>
+                                                <th>Resultado</th>
+                                                <th>Acoes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tfm-table-body"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
