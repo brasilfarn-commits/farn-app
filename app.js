@@ -4378,6 +4378,7 @@ function tfmRenderLista(resultados) {
             '<td>' + tfmEsc(a.instrutor || '-') + '</td>' +
             '<td style="font-size:12px;color:#64748b">' + tfmEsc(a.observacao || '-') + '</td>' +
             '<td><div class="actions-cell">' +
+                '<button class="btn-icon" title="Editar agendamento" onclick="tfmAbrirNovoAgendamento(\'' + turmaEsc + '\')"><i class="fa-solid fa-pen"></i></button>' +
                 '<button class="btn-icon" title="Avaliar turma" onclick="tfmAvaliarTurma(\'' + projetoEsc + '\',\'' + turmaEsc + '\')"><i class="fa-solid fa-stopwatch"></i></button>' +
                 '<button class="btn-icon btn-danger-icon" title="Excluir agendamento" onclick="tfmExcluirAgendamentoLista(\'' + turmaEsc + '\')"><i class="fa-solid fa-trash"></i></button>' +
             '</div></td>' +
@@ -4428,7 +4429,11 @@ async function tfmExcluirAgendamentoLista(turma) {
     }
 }
 
-function tfmAbrirNovoAgendamento() {
+var tfmNovoTurmaOriginal = null;
+
+function tfmAbrirNovoAgendamento(turmaDoc) {
+    const editar = turmaDoc ? tfmAgendadosLista.find(function(a) { return a.turmaDoc === turmaDoc; }) : null;
+    tfmNovoTurmaOriginal = editar ? editar.turma : null;
     const selProj = document.getElementById('tfm-novo-projeto');
     if (selProj) {
         selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
@@ -4438,13 +4443,44 @@ function tfmAbrirNovoAgendamento() {
     }
     const selTurma = document.getElementById('tfm-novo-turma');
     if (selTurma) selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (editar) {
+        if (selProj) selProj.value = editar.projeto;
+        tfmNovoOnProjetoChange();
+        if (selTurma) selTurma.value = editar.turma;
+    } else {
+        tfmNovoOnProjetoChange();
+    }
     const selData = document.getElementById('tfm-novo-data');
-    if (selData) selData.value = '';
-    tfmPopulateAgendaInstrutor(document.getElementById('tfm-novo-instrutor'));
+    if (selData) {
+        let dt = null;
+        if (editar && editar.dataAgendamento) {
+            if (typeof editar.dataAgendamento.toDate === 'function') dt = editar.dataAgendamento.toDate();
+            else {
+                const dd = new Date(editar.dataAgendamento);
+                if (!isNaN(dd.getTime())) dt = dd;
+            }
+        }
+        selData.value = dt ? dt.toISOString().slice(0, 16) : '';
+    }
+    const selInst = document.getElementById('tfm-novo-instrutor');
+    tfmPopulateAgendaInstrutor(selInst);
+    if (selInst && editar && editar.instrutor) {
+        const opt = selInst.querySelector('option[value="' + String(editar.instrutor).replace(/"/g, '&quot;') + '"]');
+        if (opt) selInst.value = editar.instrutor;
+        else {
+            const optNovo = document.createElement('option');
+            optNovo.value = editar.instrutor;
+            optNovo.textContent = editar.instrutor;
+            selInst.appendChild(optNovo);
+            selInst.value = editar.instrutor;
+        }
+    }
     const elObs = document.getElementById('tfm-novo-obs');
-    if (elObs) elObs.value = '';
+    if (elObs) elObs.value = (editar && editar.observacao) || '';
     const aviso = document.getElementById('tfm-novo-aviso');
-    if (aviso) aviso.style.display = 'none';
+    if (aviso) aviso.style.display = editar ? '' : 'none';
+    const titulo = document.getElementById('tfm-novo-titulo');
+    if (titulo) titulo.textContent = editar ? 'Editar Agendamento de TFM' : 'Novo Agendamento de TFM';
     const overlay = document.getElementById('modal-tfm-novo-overlay');
     if (overlay) overlay.classList.remove('hidden');
 }
@@ -4466,6 +4502,7 @@ function tfmFecharNovoAgendamento(event) {
     if (event && event.target && event.target.id !== 'modal-tfm-novo-overlay') return;
     const overlay = document.getElementById('modal-tfm-novo-overlay');
     if (overlay) overlay.classList.add('hidden');
+    tfmNovoTurmaOriginal = null;
 }
 
 async function tfmSalvarNovoAgendamento() {
@@ -4488,6 +4525,10 @@ async function tfmSalvarNovoAgendamento() {
             observacao: observacao,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
+        if (tfmNovoTurmaOriginal && tfmNovoTurmaOriginal !== turma) {
+            await dbFirestore.collection('tfmAgendamentos').doc(tfmNovoTurmaOriginal).delete();
+        }
+        tfmNovoTurmaOriginal = null;
         tfmFecharNovoAgendamento();
         await tfmCarregarLista();
         alert('Agendamento salvo com sucesso!');
