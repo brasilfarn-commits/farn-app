@@ -586,10 +586,36 @@
                         <i class="fa-solid fa-dumbbell"></i>
                         <h2>TFM - Teste de Aptidao Fisica e Militar</h2>
                     </div>
-                    <div class="pf-em-construcao">
-                        <i class="fa-solid fa-person-running"></i>
-                        <h3>Em construcao</h3>
-                        <p>Esta pagina estara disponivel em breve. Acompanhe suas noticias e aulas!</p>
+
+                    <div style="padding:16px 18px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                            <i class="fa-solid fa-stopwatch" style="color:#16a34a;font-size:15px"></i>
+                            <span style="color:#16a34a;font-weight:700;font-size:14px">Protocolo de Avaliacao</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+                            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">A) Flexao de Bracos (Solo)</div>
+                                <div style="font-size:11px;color:#475569;line-height:1.5">Tempo de 1 minuto. Posicao padrao para homens e com joelhos no chao para mulheres.</div>
+                            </div>
+                            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">B) Abdominal Remador</div>
+                                <div style="font-size:11px;color:#475569;line-height:1.5">Tempo de 1 minuto. Movimento completo estendendo bracos e pernas e flexionando-os juntos.</div>
+                            </div>
+                            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">C) Corrida de Resistencia</div>
+                                <div style="font-size:11px;color:#475569;line-height:1.5">Tempo em segundos. Quanto menor o tempo, melhor o desempenho.</div>
+                            </div>
+                            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+                                <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">D) Deslocamento Operacional</div>
+                                <div style="font-size:11px;color:#475569;line-height:1.5">Caminhar carregando uma carga de 20 kg por 50 metros sem correr ou derrubar.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-dumbbell"></i> Aulas de TFM</h3>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as aulas de TFM do seu projeto e turma.</p>
+                    <div id="pf-tfm-aula-list">
+                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
                 </div>
 
@@ -994,6 +1020,7 @@
         if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
+        if (section === 'tfm') { paLoadTfm(); }
     }
 
     function paCheckHash() {
@@ -1581,6 +1608,7 @@
             });
             paRenderAulasData = items;
             paRenderAulas(container, myProjeto, myTurma);
+            paLoadTfm();
         }, function() {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
         });
@@ -1588,7 +1616,7 @@
 
     var paRenderAulasData = [];
 
-    function paRenderAulas(container, myProjeto, myTurma) {
+    function paRenderAulas(container, myProjeto, myTurma, discFilter) {
         var items = paRenderAulasData;
         if (items.length === 0 && Object.keys(paPresencasCache).length === 0) {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula disponivel no momento.</p></div>';
@@ -1607,6 +1635,11 @@
         items.forEach(function(a) {
             if (a.projeto && myProjeto && a.projeto !== myProjeto) return;
             if (a.turma && myTurma && a.turma !== myTurma) return;
+            if (discFilter === 'TFM') {
+                if ((a.disciplina || '').trim().toUpperCase() !== 'TFM') return;
+            } else if ((a.disciplina || '').trim().toUpperCase() === 'TFM') {
+                return;
+            }
             count++;
             var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
             var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
@@ -1643,8 +1676,17 @@
             container.appendChild(card);
         });
         if (count === 0) {
-            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula para o seu projeto e turma.</p></div>';
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>' + (discFilter === 'TFM' ? 'Nenhuma aula de TFM para o seu projeto e turma.' : 'Nenhuma aula para o seu projeto e turma.') + '</p></div>';
         }
+    }
+
+    function paLoadTfm() {
+        var container = document.getElementById('pf-tfm-aula-list');
+        if (!container) return;
+        if (!paUser) return;
+        var myProjeto = (paUser.projeto || '').trim();
+        var myTurma = (paUser.turma || '').trim();
+        paRenderAulas(container, myProjeto, myTurma, 'TFM');
     }
 
     /* ===== GALERIA ===== */
