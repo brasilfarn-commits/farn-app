@@ -558,34 +558,7 @@ async function initApp() {
             populateProjetoSelect();
         }
     } else {
-        const lastCpf = getLastLogin();
-        if (lastCpf) {
-            const cpfInput = document.getElementById('cpf');
-            if (cpfInput) {
-                let v = lastCpf;
-                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
-                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
-                cpfInput.value = v;
-            }
-        }
-        // Carregar credenciais salvas (Lembrar-me)
-        const creds = loadCredentials();
-        if (creds.cpf) {
-            const cpfInput = document.getElementById('cpf');
-            if (cpfInput) {
-                let v = creds.cpf;
-                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
-                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
-                cpfInput.value = v;
-            }
-            const pwdInput = document.getElementById('password');
-            if (pwdInput && creds.pwd) {
-                pwdInput.value = creds.pwd;
-                document.getElementById('remember-me').checked = true;
-            }
-        }
+        landingCarregarInstituicao();
     }
 }
 
@@ -769,12 +742,49 @@ function handleLogout() {
     if (typeof chatPortaisUnsub !== 'undefined' && chatPortaisUnsub) { chatPortaisUnsub(); chatPortaisUnsub = null; }
     document.getElementById('screen-admin').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
-    document.getElementById('cpf').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('login-error').classList.add('hidden');
     editingIndex = null;
     currentUserData = null;
     clearLoginState();
+    landingCarregarInstituicao();
+}
+
+function landingCarregarInstituicao() {
+    if (!dbFirestore) return;
+    dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc) {
+        if (doc.exists) {
+            var d = doc.data();
+            var nome = d.nomeFantasia || d.razaoSocial || 'FARN';
+            var el = document.getElementById('landing-nome');
+            if (el) el.textContent = nome.toUpperCase();
+            el = document.getElementById('landing-header-nome');
+            if (el) el.textContent = nome.toUpperCase();
+            el = document.getElementById('landing-footer-nome');
+            if (el) el.textContent = nome;
+            el = document.getElementById('landing-copy-nome');
+            if (el) el.textContent = nome;
+            el = document.getElementById('landing-razao');
+            if (el) el.textContent = d.razaoSocial || '';
+            el = document.getElementById('landing-footer-razao');
+            if (el) el.textContent = d.razaoSocial || '';
+            el = document.getElementById('landing-sub');
+            if (el && d.nomeFantasia) el.textContent = d.nomeFantasia;
+            el = document.getElementById('landing-header-sub');
+            if (el && d.nomeFantasia) el.textContent = d.nomeFantasia;
+            el = document.getElementById('landing-razao-titulo');
+            if (el && d.razaoSocial) el.textContent = d.razaoSocial;
+            el = document.getElementById('landing-cnpj');
+            if (el) el.textContent = d.cnpj ? 'CNPJ: ' + d.cnpj : 'CNPJ: --';
+            el = document.getElementById('landing-fone');
+            if (el) el.textContent = d.fone ? 'Telefone: ' + d.fone : 'Telefone: --';
+            el = document.getElementById('landing-email');
+            if (el) el.textContent = d.email ? 'E-mail: ' + d.email : 'E-mail: --';
+            if (d.logo) {
+                FARN_LOGO = d.logo;
+                document.querySelectorAll('#screen-login [data-farn-logo]').forEach(function(img) { img.src = d.logo; });
+            }
+            document.title = nome + ' - Sistema de Gestao Educacional';
+        }
+    }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
 }
 
 /* ===== ONLINE TRACKING ===== */

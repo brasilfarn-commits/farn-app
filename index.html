@@ -6,6 +6,454 @@
     <title>FARN - Forca Auxiliar de Resgate Nacional</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ===== PAGINA INSTITUCIONAL (LANDING) ===== */
+        #screen-login.landing-screen,
+        #screen-login.landing-screen.active {
+            display: block;
+            height: auto;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(61,130,74,.18) 0%, transparent 38%),
+                radial-gradient(circle at 85% 60%, rgba(212,175,55,.10) 0%, transparent 30%),
+                linear-gradient(160deg, #0c2113 0%, #12301c 40%, #1a3d25 70%, #0e2416 100%);
+            color: #e8f2e9;
+            overflow-x: hidden;
+        }
+        #screen-login.landing-screen::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: .10;
+            background:
+                radial-gradient(ellipse at 10% 20%, rgba(0,0,0,.55) 0 8%, transparent 8.5%),
+                radial-gradient(ellipse at 30% 70%, rgba(255,255,255,.25) 0 6%, transparent 6.5%),
+                radial-gradient(ellipse at 55% 35%, rgba(0,0,0,.45) 0 9%, transparent 9.5%),
+                radial-gradient(ellipse at 75% 65%, rgba(255,255,255,.22) 0 7%, transparent 7.5%),
+                radial-gradient(ellipse at 90% 15%, rgba(0,0,0,.5) 0 6%, transparent 6.5%),
+                radial-gradient(ellipse at 45% 90%, rgba(255,255,255,.22) 0 8%, transparent 8.5%);
+            background-size: 360px 360px;
+        }
+        .landing-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(8, 24, 13, .82);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(212,175,55,.25);
+        }
+        .landing-header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .landing-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .landing-brand-logo {
+            width: 46px;
+            height: 46px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            padding: 3px;
+            border: 2px solid var(--gold, #d4af37);
+        }
+        .landing-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+        .landing-brand-text strong { font-size: 17px; font-weight: 800; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .landing-brand-text span { font-size: 11.5px; color: #b9d4bd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .landing-nav { display: flex; gap: 8px; }
+        .landing-nav a {
+            color: #cfe6d2;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 9px;
+            transition: .25s;
+        }
+        .landing-nav a:hover { background: rgba(255,255,255,.09); color: var(--gold-l, #f0d78c); }
+
+        .landing-hero {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 56px 24px 40px;
+        }
+        .landing-hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            gap: 40px;
+            align-items: center;
+        }
+        .flag-scene {
+            position: relative;
+            height: 380px;
+            display: flex;
+        }
+        .flag-pole {
+            width: 12px;
+            height: 100%;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #6b7280, #d1d5db 40%, #9ca3af 60%, #4b5563);
+            box-shadow: 4px 6px 16px rgba(0,0,0,.5);
+            position: relative;
+            flex-shrink: 0;
+            margin-right: 18px;
+        }
+        .flag-pole::before {
+            content: '';
+            position: absolute;
+            top: -26px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #ffe9a0, var(--gold, #d4af37) 55%, #8a6d1a);
+            box-shadow: 0 4px 12px rgba(0,0,0,.45);
+        }
+        .flag-pole::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 22px;
+            height: 14px;
+            background: linear-gradient(180deg, #9ca3af, #4b5563);
+            border-radius: 6px 6px 0 0;
+        }
+        .flag {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            align-self: flex-start;
+            height: 300px;
+            margin-top: 0;
+            border-radius: 4px 14px 14px 4px;
+            overflow: hidden;
+            transform-origin: left center;
+            animation: flag-sway 6s ease-in-out infinite;
+            box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.25);
+            border: 2px solid rgba(212,175,55,.55);
+        }
+        @keyframes flag-sway {
+            0%, 100% { transform: rotate(-1.4deg) skewY(-.6deg); }
+            30% { transform: rotate(.6deg) skewY(.5deg); }
+            55% { transform: rotate(-.4deg) skewY(1deg); }
+            80% { transform: rotate(1.2deg) skewY(-.4deg); }
+        }
+        .flag-strip {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 16.66%;
+            background: linear-gradient(180deg, #1d5c2e 0%, #2f7a3f 55%, #1a4a26 100%);
+            animation: strip-wave 5.2s ease-in-out infinite;
+            animation-delay: calc(var(--i, 0) * .13s);
+        }
+        @keyframes strip-wave {
+            0%, 100% { transform: translateY(0) skewY(0); }
+            30% { transform: translateY(-9px) skewY(-1.8deg); }
+            60% { transform: translateY(4px) skewY(1.4deg); }
+        }
+        .flag::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            z-index: 3;
+            background: linear-gradient(90deg, #a8861f, var(--gold-l, #f0d78c) 50%, #a8861f);
+        }
+        .flag-content {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 26px;
+            background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.10) 0%, transparent 60%);
+        }
+        .flag-logo {
+            width: 118px;
+            height: 118px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            padding: 6px;
+            border: 3px solid var(--gold, #d4af37);
+            box-shadow: 0 10px 26px rgba(0,0,0,.4);
+            margin-bottom: 16px;
+        }
+        .flag-title {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #fff;
+            text-shadow: 0 3px 10px rgba(0,0,0,.5);
+            max-width: 100%;
+            line-height: 1.1;
+        }
+        .flag-sub {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gold-l, #f0d78c);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            max-width: 100%;
+        }
+        .flag-razao {
+            font-size: 11px;
+            color: #cfe6d2;
+            margin-top: 8px;
+            max-width: 100%;
+            opacity: .9;
+        }
+        .landing-hero-right { padding-left: 8px; }
+        .landing-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--gold, #d4af37);
+        }
+        .landing-eyebrow::before {
+            content: '';
+            width: 26px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--gold, #d4af37), transparent);
+        }
+        .landing-hero-right h2 {
+            font-size: clamp(26px, 3.4vw, 42px);
+            font-weight: 800;
+            line-height: 1.18;
+            margin: 14px 0 16px;
+            color: #fff;
+        }
+        .landing-hero-right h2 span { color: var(--gold-l, #f0d78c); }
+        .landing-hero-right > p {
+            font-size: 15px;
+            line-height: 1.65;
+            color: #c6dcc9;
+            max-width: 520px;
+        }
+        .landing-hero-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+        .landing-hero-badges span {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #e8f2e9;
+            padding: 8px 14px;
+            border-radius: 30px;
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(212,175,55,.35);
+        }
+        .landing-hero-badges i { color: var(--gold, #d4af37); }
+
+        .landing-portais {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 48px 24px 56px;
+        }
+        .landing-section-head { text-align: center; margin-bottom: 34px; }
+        .landing-section-head .landing-eyebrow::before { display: none; }
+        .landing-section-head h2 {
+            font-size: clamp(22px, 2.8vw, 32px);
+            font-weight: 800;
+            color: #fff;
+            margin: 10px 0 8px;
+        }
+        .landing-section-head p { color: #b9d4bd; font-size: 14px; }
+        .landing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+        }
+        .landing-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-decoration: none;
+            padding: 26px 20px 22px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.12);
+            transition: .3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .landing-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold, #d4af37), transparent);
+            opacity: 0;
+            transition: .3s;
+        }
+        .landing-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255,255,255,.09);
+            border-color: rgba(212,175,55,.5);
+            box-shadow: 0 18px 40px rgba(0,0,0,.35);
+        }
+        .landing-card:hover::after { opacity: 1; }
+        .landing-card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--gold-l, #f0d78c);
+            background: rgba(212,175,55,.12);
+            border: 1px solid rgba(212,175,55,.35);
+        }
+        .landing-card h3 { font-size: 16px; font-weight: 800; color: #fff; }
+        .landing-card p { font-size: 12.5px; line-height: 1.55; color: #b9d4bd; flex: 1; }
+        .landing-card-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--gold-l, #f0d78c);
+            margin-top: 4px;
+        }
+        .landing-card-btn i { transition: transform .25s; }
+        .landing-card:hover .landing-card-btn i { transform: translateX(4px); }
+
+        .landing-sobre {
+            position: relative;
+            z-index: 1;
+            background: rgba(255,255,255,.03);
+            border-top: 1px solid rgba(212,175,55,.2);
+            border-bottom: 1px solid rgba(212,175,55,.2);
+        }
+        .landing-sobre-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+        .landing-sobre-text { text-align: center; max-width: 720px; margin: 0 auto 34px; }
+        .landing-sobre-text .landing-eyebrow::before { display: none; }
+        .landing-sobre-text h2 { font-size: clamp(20px, 2.6vw, 30px); font-weight: 800; color: #fff; margin: 10px 0 10px; }
+        .landing-sobre-text p { font-size: 14.5px; line-height: 1.7; color: #c6dcc9; }
+        .landing-sobre-text p strong { color: var(--gold-l, #f0d78c); }
+        .landing-values {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+        .landing-value {
+            text-align: center;
+            padding: 26px 20px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+        }
+        .landing-value i {
+            font-size: 26px;
+            color: var(--gold, #d4af37);
+            background: rgba(212,175,55,.1);
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(212,175,55,.3);
+            margin-bottom: 12px;
+        }
+        .landing-value h4 { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+        .landing-value p { font-size: 12.5px; color: #b9d4bd; line-height: 1.55; }
+
+        .landing-footer { position: relative; z-index: 1; }
+        .landing-footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 34px 24px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .landing-footer-brand { display: flex; align-items: center; gap: 12px; }
+        .landing-footer-logo {
+            width: 46px;
+            height: 46px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            padding: 3px;
+            border: 2px solid var(--gold, #d4af37);
+        }
+        .landing-footer-brand > div { display: flex; flex-direction: column; line-height: 1.25; }
+        .landing-footer-brand strong { font-size: 15px; font-weight: 800; }
+        .landing-footer-brand span { font-size: 11.5px; color: #b9d4bd; }
+        .landing-footer-info { display: flex; flex-wrap: wrap; gap: 16px; }
+        .landing-footer-info span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            color: #cfe6d2;
+            background: rgba(255,255,255,.05);
+            padding: 8px 13px;
+            border-radius: 9px;
+            border: 1px solid rgba(255,255,255,.1);
+        }
+        .landing-footer-info i { color: var(--gold, #d4af37); }
+        .landing-footer-copy {
+            border-top: 1px solid rgba(255,255,255,.08);
+            text-align: center;
+            padding: 16px 24px;
+            font-size: 12px;
+            color: #93ad98;
+        }
+        .landing-footer-copy span { font-weight: 700; color: #cfe6d2; }
+
+        @media (max-width: 860px) {
+            .landing-hero-grid { grid-template-columns: 1fr; }
+            .flag-scene { height: 320px; }
+            .landing-hero-right { padding-left: 0; }
+            .landing-nav { display: none; }
+        }
+        @media (max-width: 480px) {
+            .landing-header-inner { padding: 10px 16px; }
+            .landing-hero { padding: 36px 16px 28px; }
+            .flag { height: 260px; }
+            .flag-logo { width: 92px; height: 92px; }
+            .flag-title { font-size: 24px; }
+            .landing-portais { padding: 40px 16px; }
+            .landing-sobre-inner { padding: 40px 16px; }
+            .landing-footer-inner { padding: 26px 16px 16px; flex-direction: column; align-items: flex-start; }
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#16a34a">
@@ -44,96 +492,145 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
-    <div id="screen-login" class="screen active">
-        <div class="login-container">
-            <div class="login-left">
-                <div class="login-left-content">
-                    <img data-farn-logo src="logo-farn.png.png" alt="FARN Logo" class="login-logo-large">
-                    <h1 class="login-brand">FARN</h1>
-                    <p class="login-subtitle">Forca Auxiliar de Resgate Nacional</p>
-                    <div class="login-divider"></div>
-                    <p class="login-desc">Sistema de Gestao Educacional</p>
+    <!-- PAGINA INSTITUCIONAL (LANDING) -->
+    <div id="screen-login" class="screen landing-screen active">
+        <header class="landing-header">
+            <div class="landing-header-inner">
+                <div class="landing-brand">
+                    <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="landing-brand-logo">
+                    <div class="landing-brand-text">
+                        <strong id="landing-header-nome">FARN</strong>
+                        <span id="landing-header-sub">Força Auxiliar de Resgate Nacional</span>
+                    </div>
                 </div>
+                <nav class="landing-nav">
+                    <a href="#landing-portais">Portais</a>
+                    <a href="#landing-sobre">Instituição</a>
+                    <a href="#landing-contato">Contato</a>
+                </nav>
             </div>
-            <div class="login-right">
-                <div class="login-form-container">
-                    <div class="login-form-header">
-                        <img data-farn-logo src="logo-farn.png.png" alt="FARN" class="login-logo-small">
-                        <h2>Bem-vindo</h2>
-                        <p>Selecione seu tipo de acesso e entre com suas credenciais</p>
-                    </div>
-                    <div class="login-role-selector">
-                        <label class="login-role-label">Tipo de Usuario</label>
-                        <div class="login-role-grid">
-                            <button type="button" class="login-role-btn selected" data-role="admin" onclick="selectLoginRole(this)">
-                                <i class="fa-solid fa-user-shield"></i>
-                                <span>Acesse aqui</span>
-                            </button>
-                            <a href="portal-formado.html" class="login-role-btn" style="text-decoration:none">
-                                <i class="fa-solid fa-graduation-cap"></i>
-                                <span>Portal do Formado</span>
-                            </a>
-                            <a href="portal-aluno.html" class="login-role-btn" style="text-decoration:none">
-                                <i class="fa-solid fa-user-graduate"></i>
-                                <span>Portal do Aluno</span>
-                            </a>
-                            <a href="portal-docente.html" class="login-role-btn" style="text-decoration:none">
-                                <i class="fa-solid fa-chalkboard-user"></i>
-                                <span>Portal do Docente</span>
-                            </a>
-                            <a href="portal-coordenacao.html" class="login-role-btn" style="text-decoration:none">
-                                <i class="fa-solid fa-user-tie"></i>
-                                <span>Portal da Coordenação</span>
-                            </a>
-                        </div>
-                    </div>
-                    <form id="login-form" onsubmit="return handleLogin(event)">
-                        <input type="hidden" id="selected-role" value="admin">
-                        <div class="input-group">
-                            <label for="cpf">CPF ou Matricula</label>
-                            <div class="input-wrapper">
-                                <i class="fa-solid fa-id-card"></i>
-                                <input type="text" id="cpf" placeholder="000.000.000-00 ou ACD00000" maxlength="15" required>
+        </header>
+
+        <section class="landing-hero">
+            <div class="landing-hero-grid">
+                <div class="landing-hero-left">
+                    <div class="flag-scene">
+                        <div class="flag-pole"></div>
+                        <div class="flag">
+                            <div class="flag-strip" style="--i:0"></div>
+                            <div class="flag-strip" style="--i:1"></div>
+                            <div class="flag-strip" style="--i:2"></div>
+                            <div class="flag-strip" style="--i:3"></div>
+                            <div class="flag-strip" style="--i:4"></div>
+                            <div class="flag-strip" style="--i:5"></div>
+                            <div class="flag-content">
+                                <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="flag-logo">
+                                <h1 class="flag-title" id="landing-nome">FARN</h1>
+                                <span class="flag-sub" id="landing-sub">Força Auxiliar de Resgate Nacional</span>
+                                <span class="flag-razao" id="landing-razao"></span>
                             </div>
                         </div>
-                        <div class="input-group">
-                            <label for="password">Senha</label>
-                            <div class="input-wrapper">
-                                <i class="fa-solid fa-lock"></i>
-                                <input type="password" id="password" placeholder="Digite sua senha" required>
-                                <button type="button" class="toggle-password" onclick="togglePassword()">
-                                    <i class="fa-solid fa-eye" id="eye-icon"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="remember-group">
-                            <label class="remember-label">
-                                <input type="checkbox" id="remember-me">
-                                <span class="remember-text">Lembrar CPF e senha</span>
-                            </label>
-                        </div>
-                        <div id="login-error" class="error-message hidden">
-                            <i class="fa-solid fa-circle-exclamation"></i>
-                            <span>CPF ou senha invalidos</span>
-                        </div>
-                        <div id="login-role-error" class="error-message hidden">
-                            <i class="fa-solid fa-circle-exclamation"></i>
-                            <span>Selecione o tipo de usuario</span>
-                        </div>
-                        <button type="submit" class="btn-login">
-                            <span>Entrar</span>
-                            <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-                    </form>
-                    <div class="login-footer">
-                        <p>&copy; 2026 FARN - Todos os direitos reservados</p>
-
-
+                    </div>
+                </div>
+                <div class="landing-hero-right">
+                    <span class="landing-eyebrow">Sistema de Gestão Educacional</span>
+                    <h2>Educação, disciplina e <span>preparação para o futuro.</span></h2>
+                    <p>Uma instituição de ensino com padrão paramilitar, formando cidadãos preparados para os desafios da carreira e da vida. Conheça os portais e acesse a sua área.</p>
+                    <div class="landing-hero-badges">
+                        <span><i class="fa-solid fa-star"></i> Tradição</span>
+                        <span><i class="fa-solid fa-shield-halved"></i> Disciplina</span>
+                        <span><i class="fa-solid fa-medal"></i> Excelência</span>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <section class="landing-portais" id="landing-portais">
+            <div class="landing-section-head">
+                <span class="landing-eyebrow">Acesso aos Portais</span>
+                <h2>Escolha o seu portal de acesso</h2>
+                <p>Selecione abaixo a área correspondente ao seu perfil. Cada portal possui login próprio.</p>
+            </div>
+            <div class="landing-cards">
+                <a href="admin-login.html" class="landing-card">
+                    <span class="landing-card-icon"><i class="fa-solid fa-user-shield"></i></span>
+                    <h3>Acesse aqui</h3>
+                    <p>Área restrita da administração da instituição.</p>
+                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+                <a href="portal-formado.html" class="landing-card">
+                    <span class="landing-card-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+                    <h3>Portal do Formado</h3>
+                    <p>Para quem já concluiu a formação e deseja manter o vínculo.</p>
+                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+                <a href="portal-aluno.html" class="landing-card">
+                    <span class="landing-card-icon"><i class="fa-solid fa-user-graduate"></i></span>
+                    <h3>Portal do Aluno</h3>
+                    <p>Acompanhe notas, frequência, apostilas e materiais de estudo.</p>
+                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+                <a href="portal-docente.html" class="landing-card">
+                    <span class="landing-card-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
+                    <h3>Portal do Docente</h3>
+                    <p>Espaço do professor para turmas, notas e acompanhamento.</p>
+                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+                <a href="portal-coordenacao.html" class="landing-card">
+                    <span class="landing-card-icon"><i class="fa-solid fa-user-tie"></i></span>
+                    <h3>Portal da Coordenação</h3>
+                    <p>Gestão pedagógica e acompanhamento das turmas.</p>
+                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+            </div>
+        </section>
+
+        <section class="landing-sobre" id="landing-sobre">
+            <div class="landing-sobre-inner">
+                <div class="landing-sobre-text">
+                    <span class="landing-eyebrow">Nossa Instituição</span>
+                    <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
+                    <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
+                </div>
+                <div class="landing-values">
+                    <div class="landing-value">
+                        <i class="fa-solid fa-helmet-safety"></i>
+                        <h4>Disciplina</h4>
+                        <p>Rotina, hierarquia e compromisso como base do aprendizado.</p>
+                    </div>
+                    <div class="landing-value">
+                        <i class="fa-solid fa-hand-fist"></i>
+                        <h4>Coragem</h4>
+                        <p>Desenvolvimento físico, mental e emocional do aluno.</p>
+                    </div>
+                    <div class="landing-value">
+                        <i class="fa-solid fa-book-open"></i>
+                        <h4>Conhecimento</h4>
+                        <p>Conteúdo técnico, atualizado e aplicado a cada etapa.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="landing-footer" id="landing-contato">
+            <div class="landing-footer-inner">
+                <div class="landing-footer-brand">
+                    <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="landing-footer-logo">
+                    <div>
+                        <strong id="landing-footer-nome">FARN</strong>
+                        <span id="landing-footer-razao"></span>
+                    </div>
+                </div>
+                <div class="landing-footer-info">
+                    <span><i class="fa-solid fa-id-card"></i> <span id="landing-cnpj">CNPJ: --</span></span>
+                    <span><i class="fa-solid fa-phone"></i> <span id="landing-fone">Telefone: --</span></span>
+                    <span><i class="fa-solid fa-envelope"></i> <span id="landing-email">E-mail: --</span></span>
+                </div>
+            </div>
+            <div class="landing-footer-copy">
+                <p>&copy; 2026 <span id="landing-copy-nome">FARN</span> - Todos os direitos reservados</p>
+            </div>
+        </footer>
     </div>
 
     <!-- TELA ADMIN -->

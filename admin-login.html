@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Acesso Restrito - FARN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --g-d: #14301c;
+            --g: #1f4a2c;
+            --g-l: #2f7a3f;
+            --gold: #d4af37;
+            --gold-l: #f0d78c;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 15% 25%, rgba(77,154,88,.20) 0%, transparent 38%),
+                radial-gradient(circle at 85% 15%, rgba(212,175,55,.10) 0%, transparent 30%),
+                radial-gradient(circle at 75% 85%, rgba(11,28,16,.85) 0%, transparent 45%),
+                linear-gradient(135deg, #0c2113 0%, var(--g-d) 40%, #1d3a24 70%, #102a18 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .12;
+            background:
+                radial-gradient(ellipse at 10% 20%, rgba(0,0,0,.55) 0 8%, transparent 8.5%),
+                radial-gradient(ellipse at 30% 70%, rgba(255,255,255,.25) 0 6%, transparent 6.5%),
+                radial-gradient(ellipse at 55% 35%, rgba(0,0,0,.45) 0 9%, transparent 9.5%),
+                radial-gradient(ellipse at 75% 65%, rgba(255,255,255,.22) 0 7%, transparent 7.5%),
+                radial-gradient(ellipse at 90% 15%, rgba(0,0,0,.5) 0 6%, transparent 6.5%),
+                radial-gradient(ellipse at 45% 90%, rgba(255,255,255,.22) 0 8%, transparent 8.5%);
+            background-size: 360px 360px;
+        }
+        .back-home {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 20;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #cfe6d2;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 9px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.16);
+            transition: .25s;
+        }
+        .back-home:hover { background: rgba(255,255,255,.16); color: #fff; }
+        .login-wrap {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            max-width: 420px;
+        }
+        .login-card {
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(212,175,55,.35);
+            border-radius: 18px;
+            padding: 34px 30px 26px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 24px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
+        }
+        .login-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .login-logo {
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            padding: 6px;
+            border: 3px solid var(--gold);
+            box-shadow: 0 0 0 5px rgba(212,175,55,.15), 0 12px 28px rgba(0,0,0,.4);
+            margin-bottom: 14px;
+        }
+        .login-shield {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            color: var(--gold);
+            font-size: 18px;
+            opacity: .9;
+        }
+        .login-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: .5px;
+        }
+        .login-title span { color: var(--gold); }
+        .login-sub {
+            font-size: 13px;
+            color: #b9d4bd;
+            margin-top: 6px;
+        }
+        .login-divider {
+            width: 64px;
+            height: 3px;
+            margin: 16px auto 0;
+            border-radius: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #d9eadb;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 7px;
+        }
+        .input-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,.09);
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 11px;
+            padding: 0 14px;
+            transition: .25s;
+        }
+        .input-box:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,.18); }
+        .input-box i { color: var(--gold); font-size: 15px; width: 18px; text-align: center; }
+        .input-box input {
+            flex: 1;
+            background: transparent;
+            border: 0;
+            outline: 0;
+            color: #fff;
+            font-size: 15px;
+            font-family: inherit;
+            padding: 13px 0;
+        }
+        .input-box input::placeholder { color: rgba(255,255,255,.38); }
+        .input-box .toggle-eye {
+            background: none;
+            border: 0;
+            color: rgba(255,255,255,.5);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+        }
+        .input-box .toggle-eye:hover { color: var(--gold-l); }
+        .remember-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 2px 0 18px;
+            color: #b9d4bd;
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .remember-row input { accent-color: var(--gold); width: 15px; height: 15px; }
+        .btn-login {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px;
+            border: 0;
+            border-radius: 11px;
+            background: linear-gradient(135deg, var(--gold-l), var(--gold) 55%, #a8861f);
+            color: #1c2a12;
+            font-size: 15px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            letter-spacing: .4px;
+            box-shadow: 0 10px 24px rgba(212,175,55,.3);
+            transition: .25s;
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(212,175,55,.42); }
+        .btn-login:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+        .btn-login .spinner { display: none; }
+        .btn-login.loading .spinner { display: inline-block; }
+        .btn-login.loading .btn-label { display: none; }
+        .error-msg {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 14px;
+            padding: 10px 12px;
+            border-radius: 9px;
+            background: rgba(239,68,68,.14);
+            border: 1px solid rgba(239,68,68,.4);
+            color: #fecaca;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .error-msg.show { display: flex; }
+        .login-foot {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #93ad98;
+        }
+        .login-foot i { color: var(--gold); }
+        .login-foot .inst-name { color: #cfe6d2; font-weight: 700; }
+        @media (max-width: 480px) {
+            .login-card { padding: 28px 20px 22px; }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-home"><i class="fa-solid fa-arrow-left"></i> Voltar ao início</a>
+
+    <div class="login-wrap">
+        <div class="login-card">
+            <i class="fa-solid fa-shield-halved login-shield"></i>
+            <div class="login-top">
+                <img data-farn-logo src="logo-farn.png.png" alt="Logo" class="login-logo">
+                <h1 class="login-title">Acesso <span>Restrito</span></h1>
+                <p class="login-sub" id="inst-nome">Força Auxiliar de Resgate Nacional</p>
+                <div class="login-divider"></div>
+            </div>
+
+            <form id="al-form" onsubmit="return alLogin(event)">
+                <div class="field">
+                    <label for="al-cpf">CPF</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-id-card"></i>
+                        <input type="text" id="al-cpf" placeholder="000.000.000-00" maxlength="15" oninput="alFormatCpf(this)" autocomplete="username">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="al-senha">Senha</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="al-senha" placeholder="Digite sua senha" autocomplete="current-password">
+                        <button type="button" class="toggle-eye" onclick="alTogglePass()"><i class="fa-solid fa-eye" id="al-eye"></i></button>
+                    </div>
+                </div>
+                <label class="remember-row">
+                    <input type="checkbox" id="al-lembrar">
+                    Lembrar meu CPF
+                </label>
+                <div id="al-error" class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> <span id="al-error-text">CPF ou senha inválidos.</span></div>
+                <button type="submit" class="btn-login" id="al-btn">
+                    <span class="btn-label">Entrar</span>
+                    <i class="fa-solid fa-spinner fa-spin spinner"></i>
+                </button>
+            </form>
+
+            <div class="login-foot">
+                <p><i class="fa-solid fa-user-shield"></i> Área restrita à administração da instituição.</p>
+                <p style="margin-top:6px"><span class="inst-name" id="inst-razao"></span> &copy; 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var dbFirestore = firebase.firestore();
+
+        const ADMIN_CPF = '05004959471';
+        const ADMIN_SENHA = '212121';
+
+        function alFormatCpf(input) {
+            var v = input.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            input.value = v;
+        }
+
+        function alTogglePass() {
+            var input = document.getElementById('al-senha');
+            var icon = document.getElementById('al-eye');
+            if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+            else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+        }
+
+        function alShowError(msg) {
+            document.getElementById('al-error-text').textContent = msg;
+            document.getElementById('al-error').classList.add('show');
+        }
+
+        async function alLogin(event) {
+            event.preventDefault();
+            var cpf = document.getElementById('al-cpf').value.replace(/\D/g, '');
+            var senha = document.getElementById('al-senha').value;
+            var btn = document.getElementById('al-btn');
+            document.getElementById('al-error').classList.remove('show');
+            if (!cpf || !senha) { alShowError('Informe o CPF e a senha.'); return false; }
+            btn.disabled = true;
+            btn.classList.add('loading');
+            try {
+                var user = null;
+                if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
+                    user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+                } else {
+                    var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+                    snap.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha && u.ativo !== false) user = u;
+                    });
+                }
+                if (!user) { alShowError('CPF ou senha inválidos.'); btn.disabled = false; btn.classList.remove('loading'); return false; }
+                if (document.getElementById('al-lembrar').checked) localStorage.setItem('farn_remember_cpf', cpf);
+                localStorage.setItem('farn_login', 'admin');
+                localStorage.setItem('farn_user_data', JSON.stringify(user));
+                localStorage.setItem('farn_last_cpf', user.cpf || cpf);
+                location.href = 'index.html';
+            } catch (e) {
+                console.error('Erro no login:', e);
+                alShowError('Falha de conexão. Tente novamente.');
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            }
+            return false;
+        }
+
+        function alCarregarInstituicao() {
+            dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc) {
+                if (doc.exists) {
+                    var d = doc.data();
+                    if (d.nomeFantasia || d.razaoSocial) {
+                        var nome = d.nomeFantasia || d.razaoSocial;
+                        document.getElementById('inst-nome').textContent = nome;
+                        document.title = 'Acesso Restrito - ' + nome;
+                    }
+                    if (d.razaoSocial) document.getElementById('inst-razao').textContent = d.razaoSocial;
+                    if (d.logo) {
+                        document.querySelectorAll('[data-farn-logo]').forEach(function(img) { img.src = d.logo; });
+                    }
+                }
+            }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
+        }
+
+        (function() {
+            var last = localStorage.getItem('farn_remember_cpf') || localStorage.getItem('farn_last_cpf') || '';
+            if (last) {
+                last = last.replace(/\D/g, '');
+                if (last.length > 9) last = last.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (last.length > 6) last = last.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (last.length > 3) last = last.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                document.getElementById('al-cpf').value = last;
+                document.getElementById('al-lembrar').checked = true;
+            }
+            alCarregarInstituicao();
+        })();
+    </script>
+</body>
+</html>
