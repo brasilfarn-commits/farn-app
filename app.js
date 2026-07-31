@@ -9,6 +9,7 @@ let pendingDeleteIndex = null;
 let currentAluno = null;
 let usuarios = [];
 let currentUserData = null;
+let landingLoginErrorTimer = null;
 let projetos = [];
 let onlineCpfs = new Set();
 let onlineHeartbeat = null;
@@ -561,6 +562,7 @@ async function initApp() {
     } else {
         document.body.classList.add('landing-mode');
         landingCarregarInstituicao();
+        landingPreencherCpfLembrado();
     }
 }
 
@@ -791,6 +793,83 @@ function landingCarregarInstituicao() {
             document.title = nome + ' - Sistema de Gestao Educacional';
         }
     }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
+}
+
+/* ===== LOGIN DO ACESSE AQUI (HEADER DA LANDING) ===== */
+
+function landingPreencherCpfLembrado() {
+    var last = localStorage.getItem('farn_remember_cpf') || localStorage.getItem('farn_last_cpf') || '';
+    var inp = document.getElementById('landing-login-cpf');
+    if (!inp) return;
+    if (last) {
+        last = last.replace(/\D/g, '');
+        if (last.length > 9) last = last.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (last.length > 6) last = last.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (last.length > 3) last = last.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        inp.value = last;
+    }
+}
+
+function landingFormatCpf(input) {
+    var v = input.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+    input.value = v;
+}
+
+function landingToggleSenha() {
+    var input = document.getElementById('landing-login-senha');
+    var icon = document.getElementById('landing-login-eye-icon');
+    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+}
+
+function landingShowLoginError(msg) {
+    var el = document.getElementById('landing-login-error');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(landingLoginErrorTimer);
+    landingLoginErrorTimer = setTimeout(function() { el.classList.remove('show'); }, 4000);
+}
+
+function landingFocarLogin() {
+    var inp = document.getElementById('landing-login-cpf');
+    if (!inp) return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(function() { inp.focus(); }, 350);
+}
+
+async function landingLogin(event) {
+    if (event) event.preventDefault();
+    var cpf = document.getElementById('landing-login-cpf').value.replace(/\D/g, '');
+    var senha = document.getElementById('landing-login-senha').value;
+    var btn = document.getElementById('landing-login-btn');
+    if (!cpf || !senha) { landingShowLoginError('Informe o CPF e a senha.'); return false; }
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+        var user = null;
+        if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
+            user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+        } else {
+            var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+            snap.forEach(function(doc) {
+                var u = doc.data();
+                if (u.senha === senha && u.ativo !== false) user = u;
+            });
+        }
+        if (!user) { landingShowLoginError('CPF ou senha inválidos.'); if (btn) { btn.disabled = false; btn.classList.remove('loading'); } return false; }
+        currentUserData = user;
+        saveLastLogin(cpf);
+        enterAdminPanel();
+        saveLoginState();
+    } catch (e) {
+        console.error('Erro no login:', e);
+        landingShowLoginError('Falha de conexão. Tente novamente.');
+        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+    return false;
 }
 
 /* ===== ONLINE TRACKING ===== */

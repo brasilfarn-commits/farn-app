@@ -98,6 +98,83 @@
         }
         .landing-nav a:hover { background: rgba(255,255,255,.09); color: var(--gold-l, #f0d78c); }
 
+        /* ===== LOGIN DO ACESSE AQUI NO HEADER ===== */
+        .landing-login {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-left: auto;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(212,175,55,.30);
+            border-radius: 10px;
+            padding: 5px;
+            position: relative;
+        }
+        .landing-login-field {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,.28);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 7px;
+            padding: 5px 9px;
+            color: #dbe6ff;
+        }
+        .landing-login-field > i { font-size: 12px; opacity: .7; }
+        .landing-login-field input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 13px;
+            width: 112px;
+            font-family: inherit;
+        }
+        .landing-login-field input::placeholder { color: rgba(255,255,255,.45); }
+        .landing-login-eye {
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,.6);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0;
+        }
+        .landing-login-eye:hover { color: #f0d78c; }
+        .landing-login-btn {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(135deg, #d4af37, #b8962e);
+            color: #0a1c40;
+            border: none;
+            border-radius: 7px;
+            padding: 8px 15px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            letter-spacing: .3px;
+            transition: .25s;
+            white-space: nowrap;
+        }
+        .landing-login-btn:hover { filter: brightness(1.08); }
+        .landing-login-btn.loading { opacity: .65; pointer-events: none; }
+        .landing-login-error {
+            position: absolute;
+            top: calc(100% + 7px);
+            right: 0;
+            background: #dc2626;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 11px;
+            border-radius: 7px;
+            display: none;
+            white-space: nowrap;
+            z-index: 60;
+            box-shadow: 0 6px 18px rgba(0,0,0,.35);
+        }
+        .landing-login-error.show { display: block; }
+
         .landing-hero {
             position: relative;
             z-index: 1;
@@ -396,6 +473,13 @@
             .landing-hero-grid { grid-template-columns: 1fr; }
             .landing-hero-right { padding-left: 0; }
             .landing-nav { display: none; }
+            .landing-login { margin-left: auto; }
+        }
+        @media (max-width: 620px) {
+            .landing-header-inner { flex-wrap: wrap; }
+            .landing-login { width: 100%; margin-left: 0; flex-wrap: wrap; }
+            .landing-login-field { flex: 1 1 42%; }
+            .landing-login-btn { flex: 1 1 100%; justify-content: center; }
         }
         @media (max-width: 480px) {
             .landing-header-inner { padding: 10px 16px; }
@@ -462,6 +546,19 @@
                     <a href="#landing-sobre">Instituição</a>
                     <a href="#landing-contato">Contato</a>
                 </nav>
+                <form class="landing-login" onsubmit="landingLogin(event)" autocomplete="off">
+                    <div class="landing-login-field">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="landing-login-cpf" placeholder="CPF" oninput="landingFormatCpf(this)" autocomplete="off">
+                    </div>
+                    <div class="landing-login-field">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="landing-login-senha" placeholder="Senha" autocomplete="current-password">
+                        <button type="button" class="landing-login-eye" onclick="landingToggleSenha()" tabindex="-1" aria-label="Mostrar senha"><i class="fa-solid fa-eye" id="landing-login-eye-icon"></i></button>
+                    </div>
+                    <button type="submit" class="landing-login-btn" id="landing-login-btn"><span>Entrar</span><i class="fa-solid fa-right-to-bracket"></i></button>
+                    <span class="landing-login-error" id="landing-login-error"></span>
+                </form>
             </div>
         </header>
 
@@ -496,11 +593,11 @@
                 <p>Selecione abaixo a área correspondente ao seu perfil. Cada portal possui login próprio.</p>
             </div>
             <div class="landing-cards">
-                <a href="admin-login.html" class="landing-card">
+                <a href="#landing-contato" onclick="landingFocarLogin(); return false;" class="landing-card">
                     <span class="landing-card-icon"><i class="fa-solid fa-user-shield"></i></span>
                     <h3>Acesse aqui</h3>
-                    <p>Área restrita da administração da instituição.</p>
-                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                    <p>Área restrita da administração. Informe seu CPF e senha no topo da página.</p>
+                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
                 </a>
                 <a href="portal-formado.html" class="landing-card">
                     <span class="landing-card-icon"><i class="fa-solid fa-graduation-cap"></i></span>
