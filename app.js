@@ -5207,11 +5207,7 @@ function instrutorAbrirModal(id) {
         document.getElementById('intr-calca').value = inst.calca || '';
         document.getElementById('intr-camisa').value = inst.camisa || '';
         document.getElementById('intr-calcado').value = inst.calcado || '';
-        if (inst.projeto) {
-            instrutorSetSelectedValues('intr-projeto', inst.projeto);
-            instrutorOnProjetoChange();
-            instrutorSetSelectedValues('intr-turma', inst.turma || '');
-        }
+        instrutorPopulateSelects(inst.projeto || [], inst.turma || []);
         calcularIdadeCampo('intr-nascimento', 'intr-idade');
         instrutorPopulateDisciplinas(inst.disciplinas || []);
     } else {
@@ -5319,47 +5315,38 @@ function renderFormadosList() {
     }).join('');
 }
 
-function instrutorGetSelectedValues(id) {
-    var el = document.getElementById(id);
-    if (!el) return [];
-    return Array.from(el.selectedOptions).map(function(o) { return o.value; }).filter(Boolean);
-}
-
-function instrutorSetSelectedValues(id, valores) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    var arr = Array.isArray(valores) ? valores : (valores ? [valores] : []);
-    Array.prototype.forEach.call(el.options, function(o) {
-        o.selected = arr.indexOf(o.value) !== -1;
-    });
-}
-
-function instrutorPopulateSelects(projetoSelecionado, turmaSelecionada) {
-    var selProj = document.getElementById('intr-projeto');
-    if (!selProj) return;
-    selProj.innerHTML = '<option value="">Selecione os projetos...</option>';
+function instrutorPopulateSelects(projetosSelecionados, turmasSelecionadas) {
+    var containerProj = document.getElementById('intr-projetos-checks');
+    if (!containerProj) return;
+    var projArr = Array.isArray(projetosSelecionados) ? projetosSelecionados : (projetosSelecionados ? [projetosSelecionados] : []);
+    var turmaArr = Array.isArray(turmasSelecionadas) ? turmasSelecionadas : (turmasSelecionadas ? [turmasSelecionadas] : []);
+    containerProj.innerHTML = '';
     projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
-        selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
+        var checked = projArr.indexOf(p.nome) !== -1 ? 'checked' : '';
+        containerProj.innerHTML += '<label class="intr-check-item"><input type="checkbox" class="intr-proj-check" value="' + p.nome + '" ' + checked + ' onchange="instrutorOnProjetoChange()"> ' + p.nome + '</label>';
     });
-    if (projetoSelecionado) instrutorSetSelectedValues('intr-projeto', projetoSelecionado);
-    instrutorOnProjetoChange();
-    if (turmaSelecionada) instrutorSetSelectedValues('intr-turma', turmaSelecionada);
+    instrutorOnProjetoChange(turmaArr);
 }
 
-function instrutorOnProjetoChange() {
-    var selProj = document.getElementById('intr-projeto');
-    var select = document.getElementById('intr-turma');
-    if (!selProj || !select) return;
-    var projetosSelecionados = instrutorGetSelectedValues('intr-projeto');
-    var current = instrutorGetSelectedValues('intr-turma');
-    select.innerHTML = '<option value="">Selecione as turmas...</option>';
-    var turmasFiltradas = projetosSelecionados.length
-        ? turmas.filter(function(t) { return projetosSelecionados.indexOf(t.projeto) !== -1; })
-        : turmas;
+function instrutorOnProjetoChange(turmasSelecionadas) {
+    var containerTurma = document.getElementById('intr-turmas-checks');
+    if (!containerTurma) return;
+    var projsSelecionados = instrutorGetSelectedProjetos();
+    var turmaArr = (turmasSelecionadas && Array.isArray(turmasSelecionadas)) ? turmasSelecionadas : [];
+    containerTurma.innerHTML = '';
+    var turmasFiltradas = projsSelecionados.length ? turmas.filter(t => projsSelecionados.indexOf(t.projeto) !== -1) : turmas;
     turmasFiltradas.forEach(t => {
-        select.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        var checked = turmaArr.indexOf(t.nome) !== -1 ? 'checked' : '';
+        containerTurma.innerHTML += '<label class="intr-check-item"><input type="checkbox" class="intr-turma-check" value="' + t.nome + '" ' + checked + '> ' + t.nome + '</label>';
     });
-    instrutorSetSelectedValues('intr-turma', current);
+}
+
+function instrutorGetSelectedProjetos() {
+    return Array.from(document.querySelectorAll('.intr-proj-check:checked')).map(function(cb) { return cb.value; });
+}
+
+function instrutorGetSelectedTurmas() {
+    return Array.from(document.querySelectorAll('.intr-turma-check:checked')).map(function(cb) { return cb.value; });
 }
 
 async function remanejarFormado(i) {
@@ -5462,8 +5449,8 @@ async function instrutorSalvar(e) {
         fone: document.getElementById('intr-fone').value.trim(),
         email: document.getElementById('intr-email').value.trim(),
         senha: senha,
-        projeto: instrutorGetSelectedValues('intr-projeto'),
-        turma: instrutorGetSelectedValues('intr-turma'),
+        projeto: instrutorGetSelectedProjetos(),
+        turma: instrutorGetSelectedTurmas(),
         nascimento: document.getElementById('intr-nascimento').value,
         dataInscricao: document.getElementById('intr-data-inscricao').value,
         estadoCivil: document.getElementById('intr-estado-civil').value,
