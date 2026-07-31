@@ -175,24 +175,31 @@
         .pf-photo-modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.1); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; }
         .pf-photo-modal-info { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#cbd5e1; padding:8px 16px; border-radius:8px; font-size:12px; text-align:center; }
 
-        /* ===== MOBILE NAV ===== */
-        .pf-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#ffffff;border-top:1px solid #e2e8f0;padding:6px 0;z-index:100;box-shadow:0 -4px 16px rgba(0,0,0,.06)}
-        .pf-mobile-nav-items{display:flex;justify-content:space-around;overflow-x:auto}
-        .pf-mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;color:#94a3b8;font-size:9px;font-weight:600;cursor:pointer;transition:.2s;border-radius:8px;white-space:nowrap}
-        .pf-mobile-nav-item i{font-size:18px}
-        .pf-mobile-nav-item.active{color:#16a34a}
-        .pf-mobile-nav-item:active{background:rgba(22,163,74,.06)}
-        .pf-mobile-nav-close{display:none;margin-left:auto;background:none;border:none;color:#64748b;font-size:16px;cursor:pointer;padding:12px 16px;align-items:center}
+        /* ===== TOPBAR MOBILE ===== */
+        .pf-topbar{display:none;position:fixed;top:0;left:0;right:0;background:#ffffff;border-bottom:1px solid #e2e8f0;padding:10px 16px;align-items:center;gap:12px;z-index:150;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+        .pf-topbar-logo{width:34px;height:34px;border-radius:50%;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;background:#fff}
+        .pf-topbar-logo img{width:30px;height:30px;border-radius:50%}
+        .pf-topbar-title{font-size:14px;font-weight:700;color:#16a34a}
+        .pf-topbar-btn{background:none;border:none;color:#16a34a;font-size:20px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background .2s}
+        .pf-topbar-btn:active{background:rgba(22,163,74,.1)}
+
+        /* SIDEBAR DRAWER MOBILE */
+        .pf-sidebar-close{display:none;background:none;border:none;color:#64748b;font-size:16px;cursor:pointer;padding:4px 8px}
+        .pf-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300}
 
         /* MOBILE */
         @media(max-width:1024px) {
             #screen-portal.active { grid-template-columns:1fr; grid-template-rows:1fr; }
-            .pf-sidebar { display:none; }
+            #screen-portal.active ~ .pf-topbar { display:flex; }
+            .pf-sidebar { position:fixed; top:0; left:0; bottom:0; width:264px; z-index:400; transform:translateX(-100%); transition:transform .25s ease; box-shadow:none; }
+            .pf-sidebar.mobile-open { transform:translateX(0); box-shadow:0 0 40px rgba(0,0,0,.35); }
+            .pf-sidebar-header { position:relative; }
+            .pf-sidebar-close { display:block; position:absolute; top:12px; right:12px; }
+            .pf-sidebar-overlay.mobile-open { display:block; }
             .pf-right { display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:200; background:#fff; flex-direction:column; border:none; }
             .pf-right.mobile-open { display:flex; }
-            #screen-portal.active ~ .pf-mobile-nav { display:block; }
-            .pf-center { padding:16px; padding-bottom:80px; }
             .pf-mobile-nav-close { display:flex; }
+            .pf-center { padding:70px 16px 24px; }
         }
         @media(min-width:1025px) {
             .pf-mobile-nav-close { display:none; }
@@ -238,6 +245,7 @@
                 <img data-farn-logo src="logo-farn.png.png" alt="FARN">
                 <h3>Portal do Formado</h3>
                 <p>FARN - BRASIL</p>
+                <button class="pf-sidebar-close" onclick="pfCloseSidebar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <nav class="pf-sidebar-nav">
                 <div class="pf-nav-item active" onclick="pfShowSection('noticias', this)">
@@ -422,29 +430,15 @@
         </aside>
     </div>
 
-    <!-- NAV MOBILE -->
-    <div class="pf-mobile-nav" id="pf-mobile-nav">
-        <div class="pf-mobile-nav-items">
-            <div class="pf-mobile-nav-item active" onclick="pfShowSection('noticias', this)">
-                <i class="fa-solid fa-newspaper"></i><span>Inicio</span>
-            </div>
-            <div class="pf-mobile-nav-item" onclick="pfShowSection('chat', this)">
-                <i class="fa-solid fa-comments"></i><span>Chat</span>
-            </div>
-            <div class="pf-mobile-nav-item" onclick="pfShowSection('galeria', this)">
-                <i class="fa-solid fa-images"></i><span>Galeria</span>
-            </div>
-            <div class="pf-mobile-nav-item" onclick="pfShowSection('meus-dados', this)">
-                <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
-            </div>
-            <div class="pf-mobile-nav-item" onclick="pfShowSection('certificado', this)">
-                <i class="fa-solid fa-certificate"></i><span>Certificado</span>
-            </div>
-            <div class="pf-mobile-nav-item" onclick="pfShowSection('baixar-app', this)">
-                <i class="fa-solid fa-mobile-screen-button"></i><span>App</span>
-            </div>
-        </div>
+    <!-- TOPBAR MOBILE -->
+    <div class="pf-topbar" id="pf-topbar">
+        <button class="pf-topbar-btn" onclick="pfToggleSidebar()" title="Menu"><i class="fa-solid fa-bars"></i></button>
+        <div class="pf-topbar-logo"><img data-farn-logo src="logo-farn.png.png" alt="FARN"></div>
+        <div class="pf-topbar-title">Portal do Formado</div>
     </div>
+
+    <!-- OVERLAY SIDEBAR -->
+    <div class="pf-sidebar-overlay" id="pf-sidebar-overlay" onclick="pfCloseSidebar()"></div>
     <div id="pf-photo-modal" class="pf-photo-modal" onclick="pfClosePhoto()">
         <button class="pf-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
         <img id="pf-photo-modal-img" src="">
@@ -581,6 +575,9 @@
         document.getElementById('screen-login').style.display = 'flex';
         document.getElementById('pf-cpf').value = '';
         document.getElementById('pf-senha').value = '';
+        pfCloseSidebar();
+        var right = document.getElementById('pf-right');
+        if (right) right.classList.remove('mobile-open');
         pfUser = null;
     }
 
@@ -588,8 +585,8 @@
     function pfShowSection(section, el) {
         document.querySelectorAll('.pf-section').forEach(function(s){ s.classList.remove('active'); });
         document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
-        document.querySelectorAll('.pf-mobile-nav-item').forEach(function(n){ n.classList.remove('active'); });
         if (el) el.classList.add('active');
+        pfCloseSidebar();
 
         if (section === 'chat' || section === 'galeria') {
             document.getElementById('pf-section-noticias').classList.add('active');
@@ -604,12 +601,26 @@
         else document.getElementById('pf-section-construcao').classList.add('active');
     }
 
+    function pfToggleSidebar() {
+        var sb = document.querySelector('.pf-sidebar');
+        var ov = document.getElementById('pf-sidebar-overlay');
+        if (sb) sb.classList.toggle('mobile-open');
+        if (ov) ov.classList.toggle('mobile-open');
+    }
+
+    function pfCloseSidebar() {
+        var sb = document.querySelector('.pf-sidebar');
+        var ov = document.getElementById('pf-sidebar-overlay');
+        if (sb) sb.classList.remove('mobile-open');
+        if (ov) ov.classList.remove('mobile-open');
+    }
+
     function pfRightCloseMobile() {
         var right = document.getElementById('pf-right');
         if (right) right.classList.remove('mobile-open');
-        document.querySelectorAll('.pf-mobile-nav-item').forEach(function(n){ n.classList.remove('active'); });
-        var inicio = document.querySelector('.pf-mobile-nav-item');
-        if (inicio) inicio.classList.add('active');
+        document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
+        var first = document.querySelector('.pf-nav-item');
+        if (first) first.classList.add('active');
     }
 
     function pfRightTab(tab, el) {
