@@ -200,13 +200,17 @@
         .pf-app-card p{font-size:12px;color:var(--gray500)}
 
         /* Apostila / Aula */
-        .pf-apostila-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;transition:.3s;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .pf-apostila-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:14px;transition:.3s;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04)}
         .pf-apostila-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
         .pf-apostila-icon{width:50px;height:50px;background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(220,38,38,.04));border:1px solid rgba(220,38,38,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
         .pf-apostila-icon i{font-size:20px;color:var(--red)}
         .pf-apostila-info{flex:1;min-width:0}
         .pf-apostila-titulo{font-size:14px;font-weight:700;color:var(--gray800);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .pf-apostila-desc{font-size:12px;color:var(--gray500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pf-apostila-desc.full{white-space:normal;line-height:1.5;margin-bottom:6px;word-break:break-word}
+        .pf-apostila-info-row{font-size:12px;color:var(--gray600);margin-bottom:5px;line-height:1.45;display:flex;flex-wrap:wrap;gap:4px}
+        .pf-apostila-info-label{font-weight:700;color:var(--gray700);flex-shrink:0}
+        .pf-apostila-info-val{color:var(--gray500);white-space:pre-wrap;word-break:break-word;min-width:0}
         .pf-apostila-meta{font-size:10px;color:var(--gray400);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
         .pf-apostila-badge{background:rgba(22,163,74,.08);color:var(--green);font-size:10px;padding:3px 10px;border-radius:var(--radius-xs);font-weight:700;letter-spacing:.2px}
 
@@ -1569,10 +1573,15 @@
                 var dateStr = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : '';
                 var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
                 var projetoHtml = a.projeto ? '<span class="pf-apostila-badge" style="background:rgba(33,136,255,.15);color:#2188ff">' + a.projeto + '</span>' : '';
+                var obsHtml = (a.observacao || a.descricao) ? '<div class="pf-apostila-desc full">' + (a.observacao || a.descricao) + '</div>' : '';
+                var ferramentasHtml = a.ferramentas ? '<div class="pf-apostila-info-row"><span class="pf-apostila-info-label"><i class="fa-solid fa-toolbox" style="margin-right:3px"></i>Ferramentas:</span><span class="pf-apostila-info-val">' + a.ferramentas + '</span></div>' : '';
+                var metodoHtml = a.metodoAvaliacao ? '<div class="pf-apostila-info-row"><span class="pf-apostila-info-label"><i class="fa-solid fa-clipboard-check" style="margin-right:3px"></i>Metodo de avaliacao:</span><span class="pf-apostila-info-val">' + a.metodoAvaliacao + '</span></div>' : '';
                 card.innerHTML = '<div class="pf-apostila-icon"><i class="fa-solid fa-file-pdf"></i></div>' +
                     '<div class="pf-apostila-info">' +
                         '<div class="pf-apostila-titulo">' + (a.titulo || 'Apostila') + '</div>' +
-                        '<div class="pf-apostila-desc">' + (a.descricao || '') + '</div>' +
+                        obsHtml +
+                        ferramentasHtml +
+                        metodoHtml +
                         '<div class="pf-apostila-meta">' + projetoHtml + turmaHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') + '</div>' +
                     '</div>';
                 container.appendChild(card);
