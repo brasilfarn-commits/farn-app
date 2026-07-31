@@ -617,6 +617,12 @@
                     <div id="pf-tfm-aula-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
+
+                    <h3 style="font-size:16px;color:var(--green);margin:24px 0 14px"><i class="fa-solid fa-clipboard-check"></i> Meu Resultado TFM</h3>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe o resultado automatico da sua avaliacao, com data e hora.</p>
+                    <div id="pf-tfm-resultado">
+                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                    </div>
                 </div>
 
                 <!-- CONSTRUCAO (fallback) -->
@@ -1020,7 +1026,7 @@
         if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
-        if (section === 'tfm') { paLoadTfm(); }
+        if (section === 'tfm') { paLoadTfm(); paLoadTfmResultado(); }
     }
 
     function paCheckHash() {
@@ -1687,6 +1693,45 @@
         var myProjeto = (paUser.projeto || '').trim();
         var myTurma = (paUser.turma || '').trim();
         paRenderAulas(container, myProjeto, myTurma, 'TFM');
+    }
+
+    function paLoadTfmResultado() {
+        var container = document.getElementById('pf-tfm-resultado');
+        if (!container || !paUser) return;
+        var cpf = (paUser.cpf || '').replace(/\D/g, '');
+        if (!cpf) {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-circle-info"></i><p>CPF nao encontrado.</p></div>';
+            return;
+        }
+        dbFirestore.collection('tfmAlunos').doc(cpf).get().then(function(doc) {
+            if (!doc.exists) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-hourglass-half"></i><p>Voce ainda nao possui resultado TFM registrado.</p></div>';
+                return;
+            }
+            var r = doc.data();
+            var res = r.resultado || 'Pendente';
+            var cor = res === 'Apto' ? '#16a34a' : res === 'Inapto' ? '#dc2626' : '#ca8a04';
+            var icon = res === 'Apto' ? 'fa-circle-check' : res === 'Inapto' ? 'fa-circle-xmark' : 'fa-circle-info';
+            var dt = r.dataResultado ? new Date(r.dataResultado) : null;
+            var dtStr = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('pt-BR') : 'Registro sem data/hora';
+            var detalhes = (r.flexoes != null || r.abdominais != null || r.corridaSeg != null || r.deslocamentoConcluiu) ?
+                '<div style="font-size:12px;color:#475569;margin-top:6px">A) Flexoes: ' + (r.flexoes != null ? r.flexoes : '-') + ' | B) Abdominais: ' + (r.abdominais != null ? r.abdominais : '-') + ' | C) Corrida: ' + (r.corridaSeg != null ? r.corridaSeg + 's' : '-') + ' | D) Deslocamento: ' + (r.deslocamentoConcluiu || '-') + '</div>' : '';
+            container.innerHTML = '<div style="background:#fff;border:1px solid ' + cor + '40;border-radius:12px;padding:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,.05)">' +
+                '<div style="width:52px;height:52px;border-radius:50%;background:' + cor + '15;color:' + cor + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px"><i class="fa-solid ' + icon + '"></i></div>' +
+                '<div style="flex:1;min-width:200px">' +
+                    '<div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Resultado de Aptidao (auto)</div>' +
+                    '<div style="font-size:22px;font-weight:800;color:' + cor + '">' + res + '</div>' + detalhes +
+                '</div>' +
+                '<div style="text-align:right;flex-shrink:0">' +
+                    '<div style="font-size:11px;color:#94a3b8;font-weight:600">Registrado em</div>' +
+                    '<div style="font-size:13px;font-weight:700;color:#1e293b">' + dtStr + '</div>' +
+                    (r.dataProva ? '<div style="font-size:11px;color:#94a3b8;margin-top:4px">Data da prova: ' + r.dataProva + '</div>' : '') +
+                '</div>' +
+            '</div>';
+        }).catch(function(e) {
+            console.error('Erro ao carregar resultado TFM:', e);
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar resultado.</p></div>';
+        });
     }
 
     /* ===== GALERIA ===== */

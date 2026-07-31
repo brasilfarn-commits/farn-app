@@ -4032,7 +4032,8 @@ async function tfmSalvar(cpf) {
         abdominais: v.abdominais,
         corridaSeg: v.corridaSeg,
         deslocamentoConcluiu: v.deslocamentoConcluiu,
-        resultado: v.resultado
+        resultado: v.resultado,
+        dataResultado: new Date().toISOString()
     };
     try {
         await dbFirestore.collection('tfmAlunos').doc(al.cpf).set(dados, { merge: true });
@@ -4065,7 +4066,8 @@ async function tfmSalvarTodos() {
                 abdominais: v.abdominais,
                 corridaSeg: v.corridaSeg,
                 deslocamentoConcluiu: v.deslocamentoConcluiu,
-                resultado: v.resultado
+                resultado: v.resultado,
+                dataResultado: new Date().toISOString()
             }, { merge: true });
             salvos++;
         } catch(e) {
