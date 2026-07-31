@@ -1768,7 +1768,7 @@
 
     <!-- MODAL INSTRUTOR -->
     <div id="modal-instrutor-overlay" class="modal-overlay hidden" onclick="instrutorFecharModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:600px;max-height:90vh;overflow-y:auto">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:820px;max-height:92vh;overflow-y:auto">
             <div class="modal-header">
                 <h3 id="instrutor-form-title"><i class="fa-solid fa-plus" style="color:#16a34a;margin-right:8px"></i> Novo Instrutor</h3>
                 <button class="modal-close" onclick="instrutorFecharModal()"><i class="fa-solid fa-xmark"></i></button>
@@ -1776,53 +1776,200 @@
             <div class="modal-body">
                 <form id="form-instrutor" onsubmit="return instrutorSalvar(event)">
                     <input type="hidden" id="intr-id">
-                    <div class="form-group" style="margin-bottom:14px">
-                        <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Nome Completo *</label>
-                        <input type="text" id="intr-nome" class="config-input" placeholder="Nome completo" required>
+                    <input type="hidden" id="intr-origem">
+                    <div id="intr-aviso-remanejamento" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:8px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.25);color:#1d4ed8;font-size:12px;font-weight:600">
+                        <i class="fa-solid fa-arrows-rotate"></i> Formado em remanejamento para o corpo de instrutores. Confira os dados e salve para ativar.
                     </div>
-                    <div class="form-row" style="display:flex;gap:14px;margin-bottom:14px">
-                        <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Nome de Guerra *</label>
-                            <input type="text" id="intr-guerra" class="config-input" placeholder="Nome de guerra" required>
-                        </div>
-                        <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">CPF *</label>
-                            <input type="text" id="intr-cpf" class="config-input" placeholder="000.000.000-00" maxlength="14" required oninput="mascaraCPF(this)">
-                        </div>
-                        <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Genero de Nascimento *</label>
-                            <select id="intr-genero" class="config-input" required>
-                                <option value="">Selecione...</option>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Feminino">Feminino</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row" style="display:flex;gap:14px;margin-bottom:14px">
-                        <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Matricula</label>
-                            <input type="text" id="intr-matricula" class="config-input" placeholder="Numero da matricula">
-                        </div>
-                        <div class="form-group" style="flex:1">
-                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Fone</label>
-                            <input type="text" id="intr-fone" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="mascaraFone(this)">
+
+                    <!-- PROJETO E TURMA -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-folder-open"></i><h3>Projeto & Turma</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1">
+                                    <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Projeto</label>
+                                    <select id="intr-projeto" class="config-input" onchange="instrutorOnProjetoChange()">
+                                        <option value="">Selecione o projeto...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex:1">
+                                    <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Turma</label>
+                                    <select id="intr-turma" class="config-input">
+                                        <option value="">Selecione a turma...</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group" style="margin-bottom:14px">
-                        <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Email</label>
-                        <input type="email" id="intr-email" class="config-input" placeholder="email@exemplo.com">
-                    </div>
-                    <div class="form-group" style="margin-bottom:18px">
-                        <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Senha de Acesso *</label>
-                        <input type="text" id="intr-senha" class="config-input" placeholder="Senha para acesso ao Portal do Docente" required>
-                    </div>
-                    <div class="form-group" style="margin-bottom:18px">
-                        <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Disciplinas</label>
-                        <div id="intr-disciplinas-checks" class="config-input" style="min-height:42px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-                            <span style="color:#475569;font-size:13px">Nenhuma disciplina disponivel</span>
+
+                    <!-- DADOS PESSOAIS -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-user"></i><h3>Dados Pessoais</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group full"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Nome Completo *</label><input type="text" id="intr-nome" class="config-input" placeholder="Nome completo" required></div>
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Nome de Guerra *</label><input type="text" id="intr-guerra" class="config-input" placeholder="Nome de guerra" required></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">CPF *</label><input type="text" id="intr-cpf" class="config-input" placeholder="000.000.000-00" maxlength="14" required oninput="mascaraCPF(this)"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Matricula</label><input type="text" id="intr-matricula" class="config-input" placeholder="Numero da matricula"></div>
+                            </div>
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Data de Nascimento *</label><input type="date" id="intr-nascimento" class="config-input" onchange="calcularIdadeCampo('intr-nascimento','intr-idade')"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Idade (auto)</label><input type="text" id="intr-idade" class="config-input" placeholder="0 anos" readonly tabindex="-1"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Data de Inscricao</label><input type="date" id="intr-data-inscricao" class="config-input"></div>
+                            </div>
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Estado Civil</label>
+                                    <select id="intr-estado-civil" class="config-input">
+                                        <option value="">Selecione...</option>
+                                        <option value="Solteiro(a)">Solteiro(a)</option>
+                                        <option value="Casado(a)">Casado(a)</option>
+                                        <option value="Viuvo(a)">Viuvo(a)</option>
+                                        <option value="Divorciado(a)">Divorciado(a)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Genero de Nascimento *</label>
+                                    <select id="intr-genero" class="config-input" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Feminino">Feminino</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Fone / WhatsApp</label><input type="text" id="intr-fone" class="config-input" placeholder="(00) 00000-0000" maxlength="15" oninput="mascaraFone(this)"></div>
+                            </div>
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Nacionalidade</label><input type="text" id="intr-nacionalidade" class="config-input" placeholder="Brasileira"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Naturalidade</label><input type="text" id="intr-naturalidade" class="config-input" placeholder="Cidade/Estado"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Titulo de Eleitor</label><input type="text" id="intr-titulo" class="config-input" placeholder="0000.0000.0000" maxlength="18"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Profissao</label><input type="text" id="intr-profissao" class="config-input"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Mae</label><input type="text" id="intr-mae" class="config-input"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Pai</label><input type="text" id="intr-pai" class="config-input"></div>
+                            </div>
                         </div>
                     </div>
-                    <div style="display:flex;gap:8px;justify-content:flex-end">
+
+                    <!-- CONTATO -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-address-book"></i><h3>Contato</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Email *</label><input type="email" id="intr-email" class="config-input" placeholder="email@exemplo.com" required></div>
+                        </div>
+                    </div>
+
+                    <!-- ENDERECO -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-location-dot"></i><h3>Endereco</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-row-4">
+                                <div class="form-group col-3"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Endereco</label><input type="text" id="intr-endereco" class="config-input"></div>
+                                <div class="form-group col-1"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Numero</label><input type="text" id="intr-numero" class="config-input"></div>
+                            </div>
+                            <div class="form-row-4">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Bairro</label><input type="text" id="intr-bairro" class="config-input"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Cidade</label><input type="text" id="intr-cidade" class="config-input"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Estado</label>
+                                    <select id="intr-estado" class="config-input">
+                                        <option value="">UF</option>
+                                        <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                                        <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                                        <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                                        <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                                        <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                                        <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                                        <option>SP</option><option>SE</option><option>TO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Local de Votacao</label><input type="text" id="intr-local-votacao" class="config-input"></div>
+                        </div>
+                    </div>
+
+                    <!-- DADOS FISICOS -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-heart-pulse"></i><h3>Dados Fisicos e Saude</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Altura (cm)</label><input type="number" id="intr-altura" class="config-input" min="100" max="250"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Peso (kg)</label><input type="number" id="intr-peso" class="config-input" min="30" max="250"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Fator RH</label>
+                                    <select id="intr-fator-rh" class="config-input">
+                                        <option value="">Selecione...</option>
+                                        <option>O+</option><option>O-</option><option>A+</option><option>A-</option>
+                                        <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Hipertensao?</label><select id="intr-hipertensao" class="config-input"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Diabetes?</label><select id="intr-diabetes" class="config-input"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Deficiencia Fisica?</label><select id="intr-deficiencia" class="config-input"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></div>
+                            </div>
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Tatuagem?</label><select id="intr-tatuagem" class="config-input"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Cirurgia?</label><select id="intr-cirurgia" class="config-input"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Bebida Alcoolica?</label><select id="intr-alcool" class="config-input"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Medicamento em uso?</label><input type="text" id="intr-medicamento" class="config-input"></div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Cansaco frequente?</label><select id="intr-cansaco" class="config-input"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UNIFORME -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-shirt"></i><h3>Medidas e Uniforme</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-row-3">
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Calca</label>
+                                    <select id="intr-calca" class="config-input">
+                                        <option value="">Selecione...</option>
+                                        <option value="35">35</option><option value="36">36</option><option value="37">37</option>
+                                        <option value="38">38</option><option value="39">39</option><option value="40">40</option>
+                                        <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                                        <option value="44">44</option><option value="45">45</option><option value="46">46</option>
+                                        <option value="OUT">OUT</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Camisa</label>
+                                    <select id="intr-camisa" class="config-input">
+                                        <option value="">Selecione...</option>
+                                        <option value="P">P</option><option value="M">M</option>
+                                        <option value="G">G</option><option value="GG">GG</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Calcado</label>
+                                    <select id="intr-calcado" class="config-input">
+                                        <option value="">Selecione...</option>
+                                        <option value="35">35</option><option value="36">36</option><option value="37">37</option>
+                                        <option value="38">38</option><option value="39">39</option><option value="40">40</option>
+                                        <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                                        <option value="44">44</option><option value="OUT">OUT</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ACESSO E DISCIPLINAS -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-key"></i><h3>Senha de Acesso e Disciplinas</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group" style="margin-bottom:14px">
+                                <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Senha de Acesso *</label>
+                                <input type="text" id="intr-senha" class="config-input" placeholder="Senha para acesso ao Portal do Docente" required>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Disciplinas</label>
+                                <div id="intr-disciplinas-checks" class="config-input" style="min-height:42px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                                    <span style="color:#475569;font-size:13px">Nenhuma disciplina disponivel</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
                         <button type="button" class="btn-secondary" onclick="instrutorLimparForm()"><i class="fa-solid fa-eraser"></i> Limpar</button>
                         <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Salvar</button>
                     </div>

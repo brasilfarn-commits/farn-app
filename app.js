@@ -1343,6 +1343,8 @@ function renderList() {
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidato(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
+                ${(c.tipoPessoa || 'A') === 'F' && !c.remanejadoInstrutor ? `<button class="btn-icon" title="Remanejar como Instrutor" onclick="remanejarFormado(${i})" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>` : ''}
+                ${c.remanejadoInstrutor ? `<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> INSTRUTOR</span>` : ''}
             </div></td>
         </tr>`;
     }).join('');
@@ -1406,6 +1408,7 @@ function viewCandidato(i) {
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
+            ${(c.tipoPessoa || 'A') === 'F' ? (c.remanejadoInstrutor ? `<div class="detail-item full" style="margin-top:8px"><span class="detail-label">Remanejamento</span><span class="detail-value" style="color:#1d4ed8;font-weight:700">Formado remanejado como Instrutor em ${c.remanejadoEm || '---'} por ${c.remanejadoPor || '---'}</span></div>` : `<div style="grid-column:1/-1;text-align:center;margin-top:14px;padding:16px;border:1px dashed #2563eb;border-radius:10px;background:rgba(37,99,235,.04)"><p style="font-size:13px;color:#475569;margin-bottom:10px;font-weight:600">Formado elegivel para entrar no corpo de instrutores.</p><button class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" onclick="remanejarFormado(${i})"><i class="fa-solid fa-arrows-rotate"></i> Remanejar como Instrutor</button></div>`) : ''}
         </div>`;
     });
     openModal();
@@ -5158,6 +5161,7 @@ function mascaraFone(el) {
 function instrutorAbrirModal(id) {
     editingInstrutorId = id || null;
     instrutorLimparForm();
+    instrutorPopulateSelects();
     var titleEl = document.getElementById('instrutor-form-title');
     if (id) {
         var inst = instrutores.find(i => i.id === id);
@@ -5172,6 +5176,41 @@ function instrutorAbrirModal(id) {
         document.getElementById('intr-fone').value = inst.fone || '';
         document.getElementById('intr-email').value = inst.email || '';
         document.getElementById('intr-senha').value = inst.senha || '';
+        document.getElementById('intr-nascimento').value = inst.nascimento || '';
+        document.getElementById('intr-data-inscricao').value = inst.dataInscricao || '';
+        document.getElementById('intr-estado-civil').value = inst.estadoCivil || '';
+        document.getElementById('intr-nacionalidade').value = inst.nacionalidade || '';
+        document.getElementById('intr-naturalidade').value = inst.naturalidade || '';
+        document.getElementById('intr-titulo').value = inst.tituloEleitor || '';
+        document.getElementById('intr-profissao').value = inst.profissao || '';
+        document.getElementById('intr-mae').value = inst.mae || '';
+        document.getElementById('intr-pai').value = inst.pai || '';
+        document.getElementById('intr-endereco').value = inst.endereco || '';
+        document.getElementById('intr-numero').value = inst.numero || '';
+        document.getElementById('intr-bairro').value = inst.bairro || '';
+        document.getElementById('intr-cidade').value = inst.cidade || '';
+        document.getElementById('intr-estado').value = inst.estado || '';
+        document.getElementById('intr-local-votacao').value = inst.localVotacao || '';
+        document.getElementById('intr-altura').value = inst.altura || '';
+        document.getElementById('intr-peso').value = inst.peso || '';
+        document.getElementById('intr-fator-rh').value = inst.fatorRh || '';
+        document.getElementById('intr-hipertensao').value = inst.hipertensao || 'Nao';
+        document.getElementById('intr-diabetes').value = inst.diabetes || 'Nao';
+        document.getElementById('intr-deficiencia').value = inst.deficiencia || 'Nao';
+        document.getElementById('intr-tatuagem').value = inst.tatuagem || 'Nao';
+        document.getElementById('intr-cirurgia').value = inst.cirurgia || 'Nao';
+        document.getElementById('intr-alcool').value = inst.alcool || 'Nao';
+        document.getElementById('intr-medicamento').value = inst.medicamento || '';
+        document.getElementById('intr-cansaco').value = inst.cansaco || 'Nao';
+        document.getElementById('intr-calca').value = inst.calca || '';
+        document.getElementById('intr-camisa').value = inst.camisa || '';
+        document.getElementById('intr-calcado').value = inst.calcado || '';
+        if (inst.projeto) {
+            document.getElementById('intr-projeto').value = inst.projeto;
+            instrutorOnProjetoChange();
+            document.getElementById('intr-turma').value = inst.turma || '';
+        }
+        calcularIdadeCampo('intr-nascimento', 'intr-idade');
         instrutorPopulateDisciplinas(inst.disciplinas || []);
     } else {
         titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Instrutor';
@@ -5187,15 +5226,115 @@ function instrutorFecharModal(event) {
 
 function instrutorLimparForm() {
     document.getElementById('intr-id').value = '';
-    document.getElementById('intr-nome').value = '';
-    document.getElementById('intr-guerra').value = '';
-    document.getElementById('intr-cpf').value = '';
-    document.getElementById('intr-genero').value = '';
-    document.getElementById('intr-matricula').value = '';
-    document.getElementById('intr-fone').value = '';
-    document.getElementById('intr-email').value = '';
-    document.getElementById('intr-senha').value = '';
+    document.getElementById('intr-origem').value = '';
+    document.getElementById('intr-aviso-remanejamento').style.display = 'none';
+    ['intr-nome','intr-guerra','intr-cpf','intr-matricula','intr-fone','intr-email','intr-senha','intr-nascimento','intr-idade','intr-data-inscricao','intr-nacionalidade','intr-naturalidade','intr-titulo','intr-profissao','intr-mae','intr-pai','intr-endereco','intr-numero','intr-bairro','intr-cidade','intr-local-votacao','intr-altura','intr-peso','intr-medicamento'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    ['intr-genero','intr-estado-civil','intr-estado','intr-fator-rh','intr-calca','intr-camisa','intr-calcado'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.selectedIndex = 0;
+    });
+    ['intr-hipertensao','intr-diabetes','intr-deficiencia','intr-tatuagem','intr-cirurgia','intr-alcool','intr-cansaco'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = 'Nao';
+    });
+    instrutorPopulateSelects();
     instrutorPopulateDisciplinas([]);
+}
+
+function instrutorPopulateSelects(projetoSelecionado, turmaSelecionada) {
+    var selProj = document.getElementById('intr-projeto');
+    if (!selProj) return;
+    selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
+    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+        selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
+    });
+    if (projetoSelecionado) selProj.value = projetoSelecionado;
+    instrutorOnProjetoChange();
+    var selTurma = document.getElementById('intr-turma');
+    if (selTurma && turmaSelecionada) selTurma.value = turmaSelecionada;
+}
+
+function instrutorOnProjetoChange() {
+    var projetoNome = document.getElementById('intr-projeto').value;
+    var select = document.getElementById('intr-turma');
+    if (!select) return;
+    var current = select.value;
+    select.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
+            select.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    } else {
+        turmas.forEach(t => {
+            select.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    }
+    if (current) select.value = current;
+}
+
+async function remanejarFormado(i) {
+    var c = candidatos[i];
+    if (!c) return;
+    if ((c.tipoPessoa || 'A') !== 'F') { alert('Somente cadastros do tipo Formado (A) podem ser remanejados.'); return; }
+    if (c.remanejadoInstrutor) { alert('Este formado ja foi remanejado como instrutor.'); return; }
+    var senha = prompt('Digite a senha do administrador para remanejar o formado como instrutor:');
+    if (!senha) return;
+    if (senha !== ADMIN_SENHA) { alert('Senha incorreta! Remanejamento cancelado.'); return; }
+    var jaExiste = instrutores.find(x => x.cpf === c.cpf);
+    if (jaExiste) { alert('Ja existe um instrutor cadastrado com este CPF.'); return; }
+    instrutorAbrirRemanejado(c);
+}
+
+function instrutorAbrirRemanejado(c) {
+    editingInstrutorId = null;
+    instrutorLimparForm();
+    document.getElementById('intr-origem').value = c.id || '';
+    document.getElementById('intr-aviso-remanejamento').style.display = 'block';
+    document.getElementById('instrutor-form-title').innerHTML = '<i class="fa-solid fa-arrows-rotate" style="color:#2563eb;margin-right:8px"></i> Remanejar Formado como Instrutor';
+    document.getElementById('intr-nome').value = c.nome || '';
+    document.getElementById('intr-guerra').value = '';
+    document.getElementById('intr-cpf').value = c.cpf || '';
+    document.getElementById('intr-genero').value = c.genero || '';
+    document.getElementById('intr-matricula').value = c.matricula || '';
+    document.getElementById('intr-fone').value = c.whatsapp || '';
+    document.getElementById('intr-email').value = c.email || '';
+    document.getElementById('intr-senha').value = c.senha || (c.cpf ? c.cpf.substring(0, 6) : '');
+    document.getElementById('intr-nascimento').value = c.nascimento || '';
+    document.getElementById('intr-data-inscricao').value = c.dataInscricao || '';
+    document.getElementById('intr-estado-civil').value = c.estadoCivil || '';
+    document.getElementById('intr-nacionalidade').value = c.nacionalidade || '';
+    document.getElementById('intr-naturalidade').value = c.naturalidade || '';
+    document.getElementById('intr-titulo').value = c.tituloEleitor || '';
+    document.getElementById('intr-profissao').value = c.profissao || '';
+    document.getElementById('intr-mae').value = c.mae || '';
+    document.getElementById('intr-pai').value = c.pai || '';
+    document.getElementById('intr-endereco').value = c.endereco || '';
+    document.getElementById('intr-numero').value = c.numero || '';
+    document.getElementById('intr-bairro').value = c.bairro || '';
+    document.getElementById('intr-cidade').value = c.cidade || '';
+    document.getElementById('intr-estado').value = c.estado || '';
+    document.getElementById('intr-local-votacao').value = c.localVotacao || '';
+    document.getElementById('intr-altura').value = c.altura || '';
+    document.getElementById('intr-peso').value = c.peso || '';
+    document.getElementById('intr-fator-rh').value = c.fatorRh || '';
+    document.getElementById('intr-hipertensao').value = c.hipertensao || 'Nao';
+    document.getElementById('intr-diabetes').value = c.diabetes || 'Nao';
+    document.getElementById('intr-deficiencia').value = c.deficiencia || 'Nao';
+    document.getElementById('intr-tatuagem').value = c.tatuagem || 'Nao';
+    document.getElementById('intr-cirurgia').value = c.cirurgia || 'Nao';
+    document.getElementById('intr-alcool').value = c.alcool || 'Nao';
+    document.getElementById('intr-medicamento').value = c.medicamento || '';
+    document.getElementById('intr-cansaco').value = c.cansaco || 'Nao';
+    document.getElementById('intr-calca').value = c.calca || '';
+    document.getElementById('intr-camisa').value = c.camisa || '';
+    document.getElementById('intr-calcado').value = c.calcado || '';
+    instrutorPopulateSelects(c.projeto, c.turma);
+    calcularIdadeCampo('intr-nascimento', 'intr-idade');
+    instrutorPopulateDisciplinas([]);
+    document.getElementById('modal-instrutor-overlay').classList.remove('hidden');
 }
 
 function instrutorPopulateDisciplinas(selectedArr) {
@@ -5236,9 +5375,41 @@ async function instrutorSalvar(e) {
         fone: document.getElementById('intr-fone').value.trim(),
         email: document.getElementById('intr-email').value.trim(),
         senha: senha,
+        projeto: document.getElementById('intr-projeto').value,
+        turma: document.getElementById('intr-turma').value,
+        nascimento: document.getElementById('intr-nascimento').value,
+        dataInscricao: document.getElementById('intr-data-inscricao').value,
+        estadoCivil: document.getElementById('intr-estado-civil').value,
+        nacionalidade: document.getElementById('intr-nacionalidade').value.trim(),
+        naturalidade: document.getElementById('intr-naturalidade').value.trim(),
+        tituloEleitor: document.getElementById('intr-titulo').value.trim(),
+        profissao: document.getElementById('intr-profissao').value.trim(),
+        mae: document.getElementById('intr-mae').value.trim(),
+        pai: document.getElementById('intr-pai').value.trim(),
+        endereco: document.getElementById('intr-endereco').value.trim(),
+        numero: document.getElementById('intr-numero').value.trim(),
+        bairro: document.getElementById('intr-bairro').value.trim(),
+        cidade: document.getElementById('intr-cidade').value.trim(),
+        estado: document.getElementById('intr-estado').value,
+        localVotacao: document.getElementById('intr-local-votacao').value.trim(),
+        altura: document.getElementById('intr-altura').value,
+        peso: document.getElementById('intr-peso').value,
+        fatorRh: document.getElementById('intr-fator-rh').value,
+        hipertensao: document.getElementById('intr-hipertensao').value,
+        diabetes: document.getElementById('intr-diabetes').value,
+        deficiencia: document.getElementById('intr-deficiencia').value,
+        tatuagem: document.getElementById('intr-tatuagem').value,
+        cirurgia: document.getElementById('intr-cirurgia').value,
+        alcool: document.getElementById('intr-alcool').value,
+        medicamento: document.getElementById('intr-medicamento').value.trim(),
+        cansaco: document.getElementById('intr-cansaco').value,
+        calca: document.getElementById('intr-calca').value,
+        camisa: document.getElementById('intr-camisa').value,
+        calcado: document.getElementById('intr-calcado').value,
         disciplinas: instrutorGetSelectedDisciplinas(),
         atualizadoEm: new Date().toISOString()
     };
+    var origemCandidato = document.getElementById('intr-origem').value;
     try {
         if (editingInstrutorId) {
             await dbFirestore.collection('instrutores').doc(editingInstrutorId).update(dados);
@@ -5252,10 +5423,28 @@ async function instrutorSalvar(e) {
             var ref = await dbFirestore.collection('instrutores').add(dados);
             dados.id = ref.id;
             instrutores.push(dados);
-            alert('Instrutor cadastrado com sucesso!');
+            if (origemCandidato) {
+                dados.remanejadoDe = origemCandidato;
+                dados.remanejadoEm = new Date().toISOString();
+                dados.remanejadoPor = currentUserData ? currentUserData.nome : 'Administrador';
+                await dbFirestore.collection('instrutores').doc(ref.id).update({ remanejadoDe: origemCandidato, remanejadoEm: dados.remanejadoEm, remanejadoPor: dados.remanejadoPor });
+                var candIdx = candidatos.findIndex(function(c) { return String(c.id) === String(origemCandidato); });
+                if (candIdx !== -1) {
+                    candidatos[candIdx].remanejadoInstrutor = true;
+                    candidatos[candIdx].remanejadoEm = dados.remanejadoEm;
+                    candidatos[candIdx].remanejadoPor = dados.remanejadoPor;
+                    if (candidatos[candIdx].id) {
+                        await dbFirestore.collection('candidatos').doc(String(candidatos[candIdx].id)).update({ remanejadoInstrutor: true, remanejadoEm: dados.remanejadoEm, remanejadoPor: dados.remanejadoPor });
+                    }
+                    backupCandidatos();
+                }
+            }
+            alert('Instrutor cadastrado com sucesso!' + (origemCandidato ? ' Formado remanejado e ativado como instrutor.' : ''));
         }
         instrutorFecharModal();
         instrutorListar();
+        renderList();
+        document.getElementById('modal-overlay').classList.add('hidden');
     } catch (e) {
         console.error('Erro ao salvar instrutor:', e);
         alert('Erro ao salvar instrutor: ' + e.message);
