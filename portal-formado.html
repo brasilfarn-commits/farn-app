@@ -569,6 +569,27 @@
         }
     }
 
+    function pfAdminAutoAccess() {
+        if (localStorage.getItem('farn_login') === 'admin') {
+            document.getElementById('screen-portal').classList.add('active');
+            var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
+            var initials = (adminData.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+            document.getElementById('pf-user-avatar').textContent = initials;
+            document.getElementById('pf-user-name').textContent = adminData.nome || 'Administrador';
+            var matEl = document.getElementById('pf-user-matricula');
+            if (matEl) matEl.textContent = 'Administrador | Acesso total';
+            var cpfDisp = adminData.cpf || '';
+            if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
+            pfLoadNoticias();
+            pfLoadDados();
+            pfLoadCertificado();
+            pfLoadGallery();
+            if (typeof pfChatLoadMessages === 'function') pfChatLoadMessages();
+            if (typeof pfChatInitEmoji === 'function') pfChatInitEmoji();
+        }
+    }
+
     function pfLogout() {
         if (pfChatUnsub) { pfChatUnsub(); pfChatUnsub = null; }
         if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
@@ -980,8 +1001,10 @@
 
     /* Auto-login se lembrar estava marcado */
     pfAutoLogin();
-    /* Se não há credenciais salvas, redirecionar para landing */
-    if (!localStorage.getItem('pf_lembrar_cpf') && !localStorage.getItem('pf_lembrar_senha')) {
+    pfAdminAutoAccess();
+    /* Se não há credenciais salvas E não é admin, redirecionar para landing */
+    var isAdmin = localStorage.getItem('farn_login') === 'admin';
+    if (!isAdmin && !localStorage.getItem('pf_lembrar_cpf') && !localStorage.getItem('pf_lembrar_senha')) {
         location.replace('index.html');
     }
     /* Carregar logo da instituicao */

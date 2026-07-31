@@ -548,6 +548,14 @@
             }
         }
 
+        function pdAdminAutoAccess() {
+            if (localStorage.getItem('farn_login') === 'admin') {
+                var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
+                var adminDoc = { nome: adminData.nome || 'Administrador Geral', cpf: adminData.cpf || '05004959471', guerra: '', matricula: '', isAdmin: true };
+                pdEntrar(adminDoc);
+            }
+        }
+
         function mostrarConstrucao(item){
             document.querySelectorAll('.pf-nav-item').forEach(function(i){ i.classList.remove('active'); });
             item.classList.add('active');
@@ -558,8 +566,10 @@
         }
 
         pdAutoLogin();
-        /* Se não há sessão nem credenciais salvas, redirecionar para landing */
-        if (!sessionStorage.getItem('pd_sessao') && !localStorage.getItem('pd_lembrar_cpf')) {
+        pdAdminAutoAccess();
+        /* Se não há sessão nem credenciais salvas E não é admin, redirecionar para landing */
+        var isAdmin = localStorage.getItem('farn_login') === 'admin';
+        if (!isAdmin && !sessionStorage.getItem('pd_sessao') && !localStorage.getItem('pd_lembrar_cpf')) {
             location.replace('index.html');
         }
         /* Carregar logo da instituicao */

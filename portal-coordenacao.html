@@ -254,6 +254,20 @@
             }
         }
 
+        function pcAdminAutoAccess() {
+            if (localStorage.getItem('farn_login') === 'admin') {
+                var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
+                pcUser = { nome: adminData.nome || 'Administrador Geral', cpf: adminData.cpf || '05004959471', permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'], _docId: 'admin' };
+                document.getElementById('screen-portal').classList.add('active');
+                var initials = pcUser.nome.split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+                document.getElementById('pc-user-avatar').textContent = initials;
+                document.getElementById('pc-user-name').textContent = pcUser.nome;
+                var cpfDisp = pcUser.cpf;
+                if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                document.getElementById('pc-user-cpf').textContent = 'CPF: ' + cpfDisp;
+            }
+        }
+
         function pcLogout() {
             document.getElementById('screen-portal').classList.remove('active');
             localStorage.removeItem('pc_lembrar_cpf');
@@ -264,8 +278,10 @@
 
         /* Auto login se houver credenciais salvas */
         if (document.getElementById('pc-cpf')) pcAutoLogin();
-        /* Se não há credenciais salvas, redirecionar para landing */
-        if (!localStorage.getItem('pc_lembrar_cpf') && !localStorage.getItem('pc_lembrar_senha')) {
+        pcAdminAutoAccess();
+        /* Se não há credenciais salvas E não é admin, redirecionar para landing */
+        var isAdmin = localStorage.getItem('farn_login') === 'admin';
+        if (!isAdmin && !localStorage.getItem('pc_lembrar_cpf') && !localStorage.getItem('pc_lembrar_senha')) {
             location.replace('index.html');
         }
 

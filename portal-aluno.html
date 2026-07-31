@@ -894,6 +894,32 @@
         }
     }
 
+    function paAdminAutoAccess() {
+        if (localStorage.getItem('farn_login') === 'admin') {
+            document.getElementById('screen-portal').classList.add('active');
+            var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
+            var initials = (adminData.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+            document.getElementById('pf-user-avatar').textContent = initials;
+            document.getElementById('pf-user-name').textContent = adminData.nome || 'Administrador';
+            var matEl = document.getElementById('pf-user-matricula');
+            if (matEl) matEl.textContent = 'Administrador | Acesso total';
+            var cpfDisp = adminData.cpf || '';
+            if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
+            document.getElementById('pf-welcome-name').textContent = 'Administrador';
+            var wm = document.getElementById('pf-welcome-matricula');
+            if (wm) { wm.style.display = 'flex'; wm.querySelector('span').textContent = 'Administrador | Acesso total'; }
+            paPortalLiberado = true;
+            paLoadNoticias();
+            paLoadDados();
+            paLoadGallery();
+            paLoadApostilas();
+            paLoadAulas();
+            paLoadStats();
+            if (typeof chatInitEmoji === 'function') chatInitEmoji();
+        }
+    }
+
     function paLogout() {
         if (chatUnsub) { chatUnsub(); chatUnsub = null; }
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
@@ -2467,8 +2493,10 @@
 
     /* Auto-login se lembrar estava marcado */
     paAutoLogin();
-    /* Se não há credenciais salvas, redirecionar para landing */
-    if (!localStorage.getItem('pa_lembrar_cpf') && !localStorage.getItem('pa_lembrar_senha')) {
+    paAdminAutoAccess();
+    /* Se não há credenciais salvas E não é admin, redirecionar para landing */
+    var isAdmin = localStorage.getItem('farn_login') === 'admin';
+    if (!isAdmin && !localStorage.getItem('pa_lembrar_cpf') && !localStorage.getItem('pa_lembrar_senha')) {
         location.replace('index.html');
     }
     /* Carregar logo da instituicao */
