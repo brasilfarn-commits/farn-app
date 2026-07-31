@@ -5427,7 +5427,20 @@ async function instrutorSalvar(e) {
                 dados.remanejadoDe = origemCandidato;
                 dados.remanejadoEm = new Date().toISOString();
                 dados.remanejadoPor = currentUserData ? currentUserData.nome : 'Administrador';
-                await dbFirestore.collection('instrutores').doc(ref.id).update({ remanejadoDe: origemCandidato, remanejadoEm: dados.remanejadoEm, remanejadoPor: dados.remanejadoPor });
+                // Envia copia integral do cadastro do formado para o banco de instrutores
+                var candSnap = await dbFirestore.collection('candidatos').doc(String(origemCandidato)).get();
+                var copiaCadastro = {};
+                if (candSnap.exists) {
+                    var origData = candSnap.data() || {};
+                    Object.keys(origData).forEach(function(k) {
+                        if (k !== 'id') copiaCadastro['cadastroFormado_' + k] = origData[k];
+                    });
+                }
+                copiaCadastro.remanejadoDe = origemCandidato;
+                copiaCadastro.remanejadoEm = dados.remanejadoEm;
+                copiaCadastro.remanejadoPor = dados.remanejadoPor;
+                copiaCadastro.copiaCadastroFormado = true;
+                await dbFirestore.collection('instrutores').doc(ref.id).update(copiaCadastro);
                 var candIdx = candidatos.findIndex(function(c) { return String(c.id) === String(origemCandidato); });
                 if (candIdx !== -1) {
                     candidatos[candIdx].remanejadoInstrutor = true;
@@ -5467,7 +5480,7 @@ function instrutorListar() {
         var cpfFmt = i.cpf ? i.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-';
         var discHtml = (i.disciplinas || []).map(function(d) { return '<span class="badge blue" style="font-size:10px;margin:1px">' + d + '</span>'; }).join(' ');
         return '<tr>' +
-            '<td style="font-weight:600">' + (i.nome || '-') + '</td>' +
+            '<td style="font-weight:600">' + (i.nome || '-') + (i.remanejadoDe ? ' <span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px">FORMADO</span>' : '') + '</td>' +
             '<td>' + (i.guerra || '-') + '</td>' +
             '<td>' + cpfFmt + '</td>' +
             '<td>' + (i.genero || '-') + '</td>' +
