@@ -440,6 +440,21 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
 
             try {
+                /* Acesso do administrador geral */
+                if (cpf === '05004959471' && senha === '212121') {
+                    var adminDocente = { nome: 'Administrador Geral', cpf: cpf, guerra: '', matricula: '', isAdmin: true };
+                    sessionStorage.setItem('pd_sessao', JSON.stringify(adminDocente));
+                    if (document.getElementById('pd-lembrar').checked) {
+                        localStorage.setItem('pd_lembrar_cpf', cpf);
+                        localStorage.setItem('pd_lembrar_senha', senha);
+                    } else {
+                        localStorage.removeItem('pd_lembrar_cpf');
+                        localStorage.removeItem('pd_lembrar_senha');
+                    }
+                    pdEntrar(adminDocente);
+                    return;
+                }
+
                 var snap = await dbFirestore.collection('instrutores')
                     .where('cpf', '==', cpf)
                     .limit(1)
@@ -500,7 +515,7 @@
             document.getElementById('pd-user-avatar').textContent = inicial || 'D';
             document.getElementById('pd-user-name').textContent = guerra ? guerra + ' ' + nome.split(' ')[0] : nome.split(' ')[0];
             var matEl = document.getElementById('pd-user-matricula');
-            matEl.textContent = docente.matricula ? 'Instrutor | Mat: ' + docente.matricula : 'Instrutor';
+            matEl.textContent = docente.isAdmin ? 'Administrador | Acesso total' : (docente.matricula ? 'Instrutor | Mat: ' + docente.matricula : 'Instrutor');
             var cpfDisp = docente.cpf || '';
             if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             document.getElementById('pd-user-cpf').textContent = 'CPF: ' + cpfDisp;
