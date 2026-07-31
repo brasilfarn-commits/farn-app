@@ -1957,6 +1957,49 @@
         </div>
     </div>
 
+    <div id="modal-tfm-agenda-overlay" class="modal-overlay hidden" onclick="tfmFecharModalAgendar(event)">
+        <div class="modal-content" style="max-width:520px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-calendar-check" style="color:#16a34a;margin-right:8px"></i> Agendar TFM</h3>
+                <button class="modal-close" onclick="tfmFecharModalAgendar()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Aluno</label>
+                        <input type="text" id="tfm-agenda-aluno" class="config-input" readonly style="background:#f8fafc;font-weight:600;color:#1e293b">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Data e Hora do TFM *</label>
+                        <input type="datetime-local" id="tfm-agenda-data" class="config-input" onchange="tfmAtualizarBotaoCancelar()">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Instrutor Responsavel</label>
+                        <select id="tfm-agenda-instrutor" class="config-input">
+                            <option value="">Selecione o instrutor...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Observacao</label>
+                        <textarea id="tfm-agenda-obs" class="config-input" rows="3" placeholder="Ex: Chegar 15 min antes, levar documento com foto..."></textarea>
+                    </div>
+                    <div id="tfm-agenda-aviso" class="form-group" style="grid-column:span 2;display:none">
+                        <div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.5">
+                            <i class="fa-solid fa-circle-info"></i> Este aluno ja possui um agendamento. Salvar substituira o agendamento atual.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                <button id="tfm-agenda-btn-cancelar-agend" class="btn-outline" style="color:#dc2626;border-color:#fecaca" onclick="tfmCancelarAgendamento()"><i class="fa-solid fa-ban"></i> Cancelar Agendamento</button>
+                <div style="display:flex;gap:10px">
+                    <button class="btn-outline" onclick="tfmFecharModalAgendar()"><i class="fa-solid fa-xmark"></i> Fechar</button>
+                    <button class="btn-primary" onclick="tfmSalvarAgendamento()"><i class="fa-solid fa-calendar-check"></i> Salvar Agendamento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script src="recad-admin.js"></script>
     <script src="chat-admin.js"></script>

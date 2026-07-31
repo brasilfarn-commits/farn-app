@@ -612,6 +612,12 @@
                         </div>
                     </div>
 
+                    <h3 style="font-size:16px;color:var(--green);margin:24px 0 14px"><i class="fa-solid fa-calendar-check"></i> Meu TFM Agendado</h3>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Veja aqui a data e hora do seu teste agendado pelo instrutor.</p>
+                    <div id="pf-tfm-agendamento">
+                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                    </div>
+
                     <h3 style="font-size:16px;color:var(--green);margin:24px 0 14px"><i class="fa-solid fa-clipboard-check"></i> Meu Resultado TFM</h3>
                     <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe o resultado automatico da sua avaliacao, com data e hora.</p>
                     <div id="pf-tfm-resultado">
@@ -1020,7 +1026,7 @@
         if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
-        if (section === 'tfm') { paLoadTfmResultado(); }
+        if (section === 'tfm') { paLoadTfmAgendamento(); paLoadTfmResultado(); }
     }
 
     function paCheckHash() {
@@ -1677,6 +1683,51 @@
         if (count === 0) {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>' + (discFilter === 'TFM' ? 'Nenhuma aula de TFM para o seu projeto e turma.' : 'Nenhuma aula para o seu projeto e turma.') + '</p></div>';
         }
+    }
+
+    function paEsc(val) {
+        return String(val == null ? '' : val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function paLoadTfmAgendamento() {
+        var container = document.getElementById('pf-tfm-agendamento');
+        if (!container) return;
+        if (!paUser) return;
+        var cpf = (paUser.cpf || '').replace(/\D/g, '');
+        if (!cpf) {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-circle-info"></i><p>CPF nao encontrado.</p></div>';
+            return;
+        }
+        dbFirestore.collection('tfmAgendamentos').doc(cpf).get().then(function(doc) {
+            if (!doc.exists) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Voce ainda nao possui TFM agendado.</p></div>';
+                return;
+            }
+            var a = doc.data();
+            var dt = null;
+            if (a.dataAgendamento) {
+                if (typeof a.dataAgendamento.toDate === 'function') dt = a.dataAgendamento.toDate();
+                else {
+                    var dd = new Date(a.dataAgendamento);
+                    if (!isNaN(dd.getTime())) dt = dd;
+                }
+            }
+            var p = function(n) { return String(n).padStart(2, '0'); };
+            var dtStr = dt ? p(dt.getDate()) + '/' + p(dt.getMonth() + 1) + '/' + dt.getFullYear() + ' as ' + p(dt.getHours()) + ':' + p(dt.getMinutes()) : 'Data a definir';
+            var obs = a.observacao ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-circle-info"></i> ' + paEsc(obs) + '</div>' : '';
+            var inst = a.instrutor ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-chalkboard-user"></i> Instrutor: ' + paEsc(a.instrutor) + '</div>' : '';
+            container.innerHTML = '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;padding:18px">' +
+                '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">' +
+                '<div style="width:52px;height:52px;border-radius:12px;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px"><i class="fa-solid fa-calendar-check"></i></div>' +
+                '<div style="flex:1;min-width:200px">' +
+                '<div style="font-size:12px;color:#16a34a;font-weight:700;margin-bottom:4px">TFM AGENDADO</div>' +
+                '<div style="font-size:18px;font-weight:800;color:#14532d">' + paEsc(dtStr) + '</div>' +
+                '</div>' +
+                '</div>' + inst + obs +
+                '</div>';
+        }, function() {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar o agendamento.</p></div>';
+        });
     }
 
     function paLoadTfmResultado() {
