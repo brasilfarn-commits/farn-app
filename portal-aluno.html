@@ -612,12 +612,6 @@
                         </div>
                     </div>
 
-                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-dumbbell"></i> Aulas de TFM</h3>
-                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as aulas de TFM do seu projeto e turma.</p>
-                    <div id="pf-tfm-aula-list">
-                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
-                    </div>
-
                     <h3 style="font-size:16px;color:var(--green);margin:24px 0 14px"><i class="fa-solid fa-clipboard-check"></i> Meu Resultado TFM</h3>
                     <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe o resultado automatico da sua avaliacao, com data e hora.</p>
                     <div id="pf-tfm-resultado">
@@ -1026,7 +1020,7 @@
         if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
-        if (section === 'tfm') { paLoadTfm(); paLoadTfmResultado(); }
+        if (section === 'tfm') { paLoadTfmResultado(); }
     }
 
     function paCheckHash() {
@@ -1614,7 +1608,6 @@
             });
             paRenderAulasData = items;
             paRenderAulas(container, myProjeto, myTurma);
-            paLoadTfm();
         }, function() {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
         });
@@ -1684,15 +1677,6 @@
         if (count === 0) {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-chalkboard-user"></i><p>' + (discFilter === 'TFM' ? 'Nenhuma aula de TFM para o seu projeto e turma.' : 'Nenhuma aula para o seu projeto e turma.') + '</p></div>';
         }
-    }
-
-    function paLoadTfm() {
-        var container = document.getElementById('pf-tfm-aula-list');
-        if (!container) return;
-        if (!paUser) return;
-        var myProjeto = (paUser.projeto || '').trim();
-        var myTurma = (paUser.turma || '').trim();
-        paRenderAulas(container, myProjeto, myTurma, 'TFM');
     }
 
     function paLoadTfmResultado() {
