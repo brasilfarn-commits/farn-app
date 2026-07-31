@@ -841,6 +841,12 @@ function landingFocarLogin() {
     setTimeout(function() { inp.focus(); }, 350);
 }
 
+function landingSelecionarPortal(portal) {
+    var sel = document.getElementById('landing-login-portal');
+    if (sel && sel.querySelector('option[value="' + portal + '"]')) sel.value = portal;
+    landingFocarLogin();
+}
+
 async function landingLogin(event) {
     if (event) event.preventDefault();
     var cpf = document.getElementById('landing-login-cpf').value.replace(/\D/g, '');
@@ -849,27 +855,110 @@ async function landingLogin(event) {
     if (!cpf || !senha) { landingShowLoginError('Informe o CPF e a senha.'); return false; }
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
-        var user = null;
+        // Admin geral sempre vai para o painel admin (acesso total)
         if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-            user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
-        } else {
-            var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-            snap.forEach(function(doc) {
-                var u = doc.data();
-                if (u.senha === senha && u.ativo !== false) user = u;
-            });
+            var user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+            currentUserData = user;
+            saveLastLogin(cpf);
+            enterAdminPanel();
+            saveLoginState();
+            if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+            return true;
         }
-        if (!user) { landingShowLoginError('CPF ou senha inválidos.'); if (btn) { btn.disabled = false; btn.classList.remove('loading'); } return false; }
-        currentUserData = user;
-        saveLastLogin(cpf);
-        enterAdminPanel();
-        saveLoginState();
+        var portal = document.getElementById('landing-login-portal').value;
+        var ok = false;
+        if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
+        else if (portal === 'formado') ok = await landingLoginFormado(cpf, senha);
+        else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
+        else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
+        else if (portal === 'coordenacao') ok = await landingLoginCoordenacao(cpf, senha);
+        if (!ok) {
+            if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+        }
     } catch (e) {
         console.error('Erro no login:', e);
         landingShowLoginError('Falha de conexão. Tente novamente.');
         if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     }
     return false;
+}
+
+async function landingLoginAdmin(cpf, senha) {
+    var user = null;
+    if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
+        user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+    } else {
+        var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+        snap.forEach(function(doc) {
+            var u = doc.data();
+            if (u.senha === senha && u.ativo !== false) user = u;
+        });
+    }
+    if (!user) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    currentUserData = user;
+    saveLastLogin(cpf);
+    enterAdminPanel();
+    saveLoginState();
+    return true;
+}
+
+async function landingLoginFormado(cpf, senha) {
+    var snap = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).where('senha', '==', senha).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    var u = snap.docs[0].data();
+    if (u.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Aguarde aprovação da administração.'); return false; }
+    localStorage.setItem('pf_lembrar_cpf', cpf);
+    localStorage.setItem('pf_lembrar_senha', senha);
+    location.href = 'portal-formado.html';
+    return true;
+}
+
+async function landingLoginAluno(cpf, senha) {
+    var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF não encontrado.'); return false; }
+    var u = snap.docs[0].data();
+    if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
+    if (u.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
+    if (u.status !== 'Aprovado') { landingShowLoginError('Seu cadastro ainda não foi aprovado. Somente alunos com status Aprovado podem acessar.'); return false; }
+    if (!u.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
+    localStorage.setItem('pa_lembrar_cpf', cpf);
+    localStorage.setItem('pa_lembrar_senha', senha);
+    location.href = 'portal-aluno.html';
+    return true;
+}
+
+async function landingLoginDocente(cpf, senha) {
+    if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
+        var adminDoc = { nome: 'Administrador Geral', cpf: cpf, guerra: '', matricula: '', isAdmin: true };
+        sessionStorage.setItem('pd_sessao', JSON.stringify(adminDoc));
+        localStorage.setItem('pd_lembrar_cpf', cpf);
+        localStorage.setItem('pd_lembrar_senha', senha);
+        location.href = 'portal-docente.html';
+        return true;
+    }
+    var snap = await dbFirestore.collection('instrutores').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF não encontrado entre os instrutores.'); return false; }
+    var u = snap.docs[0].data();
+    if (!u.senha) { landingShowLoginError('Senha de acesso não cadastrada. Contate a administração.'); return false; }
+    if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
+    u._docId = snap.docs[0].id;
+    sessionStorage.setItem('pd_sessao', JSON.stringify(u));
+    localStorage.setItem('pd_lembrar_cpf', cpf);
+    localStorage.setItem('pd_lembrar_senha', senha);
+    location.href = 'portal-docente.html';
+    return true;
+}
+
+async function landingLoginCoordenacao(cpf, senha) {
+    var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    var u = snap.docs[0].data();
+    if (u.senha !== senha) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    if (u.ativo === false) { landingShowLoginError('Usuário desativado. Contate o administrador.'); return false; }
+    localStorage.setItem('pc_lembrar_cpf', cpf);
+    localStorage.setItem('pc_lembrar_senha', senha);
+    location.href = 'portal-coordenacao.html';
+    return true;
 }
 
 /* ===== ONLINE TRACKING ===== */

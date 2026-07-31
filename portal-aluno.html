@@ -24,6 +24,8 @@
 
         /* ===== LOGIN ===== */
         #screen-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--green-d) 0%,var(--green) 30%,var(--blue) 60%,var(--yellow) 100%);position:relative;overflow:hidden}
+        /* Login agora é centralizado na landing - esconder tela de login do portal */
+        #screen-login { display: none !important; }
         #screen-login::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);top:-250px;right:-150px;border-radius:50%}
         #screen-login::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%);bottom:-200px;left:-100px;border-radius:50%}
         .pf-login-card{background:rgba(255,255,255,.97);border:none;border-radius:28px;padding:44px 36px;width:100%;max-width:400px;position:relative;z-index:1;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -901,10 +903,10 @@
         if (paAptAulasUnsub) { paAptAulasUnsub(); paAptAulasUnsub = null; }
         paPresencasCache = {};
         document.getElementById('screen-portal').classList.remove('active');
-        document.getElementById('screen-login').style.display = 'flex';
-        document.getElementById('pf-cpf').value = '';
-        document.getElementById('pf-senha').value = '';
+        localStorage.removeItem('pa_lembrar_cpf');
+        localStorage.removeItem('pa_lembrar_senha');
         paUser = null;
+        location.href = 'index.html';
     }
 
     /* ===== BLOQUEIO REGIMENTO ===== */
@@ -2465,6 +2467,10 @@
 
     /* Auto-login se lembrar estava marcado */
     paAutoLogin();
+    /* Se não há credenciais salvas, redirecionar para landing */
+    if (!localStorage.getItem('pa_lembrar_cpf') && !localStorage.getItem('pa_lembrar_senha')) {
+        location.replace('index.html');
+    }
     /* Carregar logo da instituicao */
     dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc){
         if(doc.exists && doc.data().logo){

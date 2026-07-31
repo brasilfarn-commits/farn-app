@@ -28,6 +28,8 @@
 
         /* ===== LOGIN SCREEN ===== */
         #screen-login { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+        /* Login agora é centralizado na landing - esconder tela de login do portal */
+        #screen-login { display: none !important; }
         .pf-login-box { max-width:400px; width:100%; background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; padding:36px; text-align:center; }
         .pf-login-box img { width:100px; height:100px; border-radius:50%; border:3px solid #16a34a; margin-bottom:16px; }
         .pf-login-box h2 { color:#16a34a; font-size:20px; margin-bottom:4px; }
@@ -572,13 +574,10 @@
         if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
         if (pfNoticiasUnsub) { pfNoticiasUnsub(); pfNoticiasUnsub = null; }
         document.getElementById('screen-portal').classList.remove('active');
-        document.getElementById('screen-login').style.display = 'flex';
-        document.getElementById('pf-cpf').value = '';
-        document.getElementById('pf-senha').value = '';
-        pfCloseSidebar();
-        var right = document.getElementById('pf-right');
-        if (right) right.classList.remove('mobile-open');
+        localStorage.removeItem('pf_lembrar_cpf');
+        localStorage.removeItem('pf_lembrar_senha');
         pfUser = null;
+        location.href = 'index.html';
     }
 
     /* ===== NAVEGACAO ===== */
@@ -981,6 +980,10 @@
 
     /* Auto-login se lembrar estava marcado */
     pfAutoLogin();
+    /* Se não há credenciais salvas, redirecionar para landing */
+    if (!localStorage.getItem('pf_lembrar_cpf') && !localStorage.getItem('pf_lembrar_senha')) {
+        location.replace('index.html');
+    }
     /* Carregar logo da instituicao */
     dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc){
         if(doc.exists && doc.data().logo){

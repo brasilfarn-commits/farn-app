@@ -131,6 +131,23 @@
             font-family: inherit;
         }
         .landing-login-field input::placeholder { color: rgba(255,255,255,.45); }
+        .landing-login-portal-field select {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 13px;
+            font-family: inherit;
+            max-width: 152px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            padding-right: 14px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'><path fill='%23f0d78c' d='M1 1l3.5 4L8 1z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 0 center;
+        }
+        .landing-login-portal-field select option { background: #0a1c40; color: #fff; }
         .landing-login-eye {
             background: transparent;
             border: none;
@@ -547,6 +564,16 @@
                     <a href="#landing-contato">Contato</a>
                 </nav>
                 <form class="landing-login" onsubmit="landingLogin(event)" autocomplete="off">
+                    <div class="landing-login-field landing-login-portal-field">
+                        <i class="fa-solid fa-globe"></i>
+                        <select id="landing-login-portal" aria-label="Escolha o portal">
+                            <option value="admin">Administrador</option>
+                            <option value="formado">Portal do Formado</option>
+                            <option value="aluno">Portal do Aluno</option>
+                            <option value="docente">Portal do Docente</option>
+                            <option value="coordenacao">Portal da Coordenação</option>
+                        </select>
+                    </div>
                     <div class="landing-login-field">
                         <i class="fa-solid fa-user"></i>
                         <input type="text" id="landing-login-cpf" placeholder="CPF" oninput="landingFormatCpf(this)" autocomplete="off">
@@ -590,38 +617,38 @@
             <div class="landing-section-head">
                 <span class="landing-eyebrow">Acesso aos Portais</span>
                 <h2>Escolha o seu portal de acesso</h2>
-                <p>Selecione abaixo a área correspondente ao seu perfil. Cada portal possui login próprio.</p>
+                <p>Selecione o portal no campo acima (topo da página), informe seu CPF e senha para entrar.</p>
             </div>
             <div class="landing-cards">
-                <a href="#landing-contato" onclick="landingFocarLogin(); return false;" class="landing-card">
+                <a href="#landing-contato" onclick="landingSelecionarPortal('admin'); return false;" class="landing-card">
                     <span class="landing-card-icon"><i class="fa-solid fa-user-shield"></i></span>
                     <h3>Acesse aqui</h3>
-                    <p>Área restrita da administração. Informe seu CPF e senha no topo da página.</p>
+                    <p>Área restrita da administração da instituição.</p>
                     <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
                 </a>
-                <a href="portal-formado.html" class="landing-card">
+                <a href="#landing-contato" onclick="landingSelecionarPortal('formado'); return false;" class="landing-card">
                     <span class="landing-card-icon"><i class="fa-solid fa-graduation-cap"></i></span>
                     <h3>Portal do Formado</h3>
                     <p>Para quem já concluiu a formação e deseja manter o vínculo.</p>
-                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
                 </a>
-                <a href="portal-aluno.html" class="landing-card">
+                <a href="#landing-contato" onclick="landingSelecionarPortal('aluno'); return false;" class="landing-card">
                     <span class="landing-card-icon"><i class="fa-solid fa-user-graduate"></i></span>
                     <h3>Portal do Aluno</h3>
                     <p>Acompanhe notas, frequência, apostilas e materiais de estudo.</p>
-                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
                 </a>
-                <a href="portal-docente.html" class="landing-card">
+                <a href="#landing-contato" onclick="landingSelecionarPortal('docente'); return false;" class="landing-card">
                     <span class="landing-card-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
                     <h3>Portal do Docente</h3>
                     <p>Espaço do professor para turmas, notas e acompanhamento.</p>
-                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
                 </a>
-                <a href="portal-coordenacao.html" class="landing-card">
+                <a href="#landing-contato" onclick="landingSelecionarPortal('coordenacao'); return false;" class="landing-card">
                     <span class="landing-card-icon"><i class="fa-solid fa-user-tie"></i></span>
                     <h3>Portal da Coordenação</h3>
                     <p>Gestão pedagógica e acompanhamento das turmas.</p>
-                    <span class="landing-card-btn">Acessar <i class="fa-solid fa-arrow-right"></i></span>
+                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
                 </a>
             </div>
         </section>
