@@ -3910,7 +3910,7 @@ async function tfmOnSelecaoChange() {
     const projeto = document.getElementById('tfm-selecao-projeto').value;
     const turma = document.getElementById('tfm-selecao-turma').value;
     const conteudo = document.getElementById('tfm-conteudo');
-    if (!projeto || !turma) { conteudo.style.display = 'none'; return; }
+    if (!projeto || !turma) { conteudo.style.display = 'none'; tfmRenderSalvos(); return; }
     conteudo.style.display = '';
     const dataEl = document.getElementById('tfm-data-prova');
     if (dataEl && !dataEl.value) dataEl.value = new Date().toISOString().slice(0, 10);
@@ -3947,6 +3947,7 @@ async function tfmOnSelecaoChange() {
 
     tfmRender();
     tfmAtualizarResumo();
+    tfmRenderSalvos();
 }
 
 function tfmRender() {
@@ -3961,7 +3962,7 @@ function tfmRender() {
         const e = tfmExistentes[al.cpf] || {};
         const res = e.resultado || 'Pendente';
         const cpfDisplay = formatCPFDisplay(al.cpf || '');
-        html += '<tr>' +
+        html += '<tr data-cpf="' + al.cpf + '">' +
             '<td><div style="font-weight:600;font-size:13px;color:#1e293b">' + tfmEsc(al.nome) + '</div>' +
             '<div style="font-size:11px;color:#64748b">Mat: ' + tfmEsc(al.matricula || '-') + ' | CPF: ' + tfmEsc(cpfDisplay || '-') + '</div></td>' +
             '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-flexoes-' + al.cpf + '" value="' + (e.flexoes != null ? e.flexoes : '') + '" placeholder="0" oninput="tfmAtualizarResumo()"></td>' +
@@ -4149,6 +4150,67 @@ function tfmAtualizarResumo() {
     el('tfm-resumo-avaliados', avaliados);
     el('tfm-resumo-aptos', aptos);
     el('tfm-resumo-inaptos', inaptos);
+}
+
+function tfmRenderSalvos() {
+    const tbody = document.getElementById('tfm-salvos-body');
+    const countEl = document.getElementById('tfm-salvos-count');
+    if (!tbody) return;
+    const projeto = document.getElementById('tfm-selecao-projeto') ? document.getElementById('tfm-selecao-projeto').value : '';
+    const turma = document.getElementById('tfm-selecao-turma') ? document.getElementById('tfm-selecao-turma').value : '';
+    if (!projeto || !turma) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Selecione um projeto e turma para visualizar os TFM salvos.</td></tr>';
+        if (countEl) countEl.textContent = '0 registro(s)';
+        return;
+    }
+    const cpfs = Object.keys(tfmExistentes);
+    if (!cpfs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM salvo para esta turma.</td></tr>';
+        if (countEl) countEl.textContent = '0 registro(s)';
+        return;
+    }
+    if (countEl) countEl.textContent = cpfs.length + ' registro(s)';
+    tbody.innerHTML = cpfs.map(function(cpf) {
+        const e = tfmExistentes[cpf];
+        const al = tfmAlunos.find(a => a.cpf === cpf);
+        const nome = al ? al.nome : (e.nome || cpf);
+        const mat = al ? al.matricula : (e.matricula || '-');
+        const res = e.resultado || 'Pendente';
+        const cor = res === 'Apto' ? '#16a34a' : res === 'Inapto' ? '#dc2626' : '#ca8a04';
+        const dt = e.dataResultado ? new Date(e.dataResultado) : null;
+        const dtStr = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('pt-BR') : (e.dataProva || '-');
+        return '<tr>' +
+            '<td style="font-weight:600">' + tfmEsc(nome) + '</td>' +
+            '<td>' + tfmEsc(mat || '-') + '</td>' +
+            '<td><span class="badge" style="background:' + cor + '15;color:' + cor + ';border:1px solid ' + cor + '30">' + res + '</span></td>' +
+            '<td style="font-size:12px;color:#64748b">' + tfmEsc(dtStr) + '</td>' +
+            '<td><div class="actions-cell">' +
+                '<button class="btn-icon" title="Editar" onclick="tfmEditarSalvo(\'' + cpf + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="tfmExcluirSalvo(\'' + cpf + '\')"><i class="fa-solid fa-trash"></i></button>' +
+            '</div></td></tr>';
+    }).join('');
+}
+
+function tfmEditarSalvo(cpf) {
+    const linha = document.querySelector('#tfm-table-body tr[data-cpf="' + cpf + '"]');
+    if (!linha) { alert('Aluno nao encontrado na tabela de avaliacao.'); return; }
+    linha.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    linha.style.transition = 'background .6s';
+    linha.style.background = '#fef9c3';
+    setTimeout(function() { linha.style.background = ''; }, 2500);
+}
+
+async function tfmExcluirSalvo(cpf) {
+    const al = tfmAlunos.find(a => a.cpf === cpf);
+    const nome = al ? al.nome : (tfmExistentes[cpf] ? tfmExistentes[cpf].nome : cpf);
+    if (!confirm('Excluir o TFM de ' + nome + '?')) return;
+    try {
+        await dbFirestore.collection('tfmAlunos').doc(cpf).delete();
+        alert('TFM excluido com sucesso!');
+        tfmOnSelecaoChange();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
 }
 
 function tfmExportarCSV() {
