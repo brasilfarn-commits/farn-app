@@ -4284,6 +4284,10 @@ function tfmPreencherAgenda() {
     }
     if (elObs) elObs.value = (ag && ag.observacao) || '';
     if (btnCanc) btnCanc.style.display = ag ? '' : 'none';
+    const testeEl = document.getElementById('tfm-teste-conteudo');
+    if (testeEl) testeEl.style.display = ag ? '' : 'none';
+    const avisoEl = document.getElementById('tfm-agenda-aviso');
+    if (avisoEl) avisoEl.style.display = ag ? 'none' : 'flex';
     if (statusEl) {
         if (ag) {
             statusEl.style.display = '';
