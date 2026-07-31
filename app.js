@@ -1354,7 +1354,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(c.cpf)}</span></div>
             <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${c.nascimento||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Idade</span><span class="detail-value">${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '---'}</span></div>
-            <div class="detail-item"><span class="detail-label">Genero</span><span class="detail-value">${c.genero||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Genero de Nascimento</span><span class="detail-value">${c.genero||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Estado Civil</span><span class="detail-value">${c.estadoCivil||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Nacionalidade</span><span class="detail-value">${c.nacionalidade||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Naturalidade</span><span class="detail-value">${c.naturalidade||'---'}</span></div>
@@ -1445,9 +1445,9 @@ function printCandidato(i) {
         <h2>Dados Pessoais</h2>
         <div class="row"><div class="col"><div class="label">Nome</div><div class="val"${c.atualizarCadastro ? ' style="color:#2e7d32;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' [ATUALIZAR]' : ''}</div></div></div>
         <div class="row"><div class="col"><div class="label">CPF</div><div class="val">${formatCPFDisplay(c.cpf)}</div></div><div class="col"><div class="label">Nascimento</div><div class="val">${c.nascimento||'---'}</div></div></div>
-        <div class="row"><div class="col"><div class="label">Idade</div><div class="val">${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '---'}</div></div><div class="col"><div class="label">Genero</div><div class="val">${c.genero||'---'}</div></div></div>
+        <div class="row"><div class="col"><div class="label">Idade</div><div class="val">${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '---'}</div></div><div class="col"><div class="label">Genero de Nascimento</div><div class="val">${c.genero||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Estado Civil</div><div class="val">${c.estadoCivil||'---'}</div></div><div class="col"><div class="label">Nacionalidade</div><div class="val">${c.nacionalidade||'---'}</div></div></div>
-        <div class="row"><div class="col"><div class="label">Genero</div><div class="val">${c.genero||'---'}</div></div></div>
+        <div class="row"><div class="col"><div class="label">Genero de Nascimento</div><div class="val">${c.genero||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Profissao</div><div class="val">${c.profissao||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Mae</div><div class="val">${c.mae||'---'}</div></div><div class="col"><div class="label">Pai</div><div class="val">${c.pai||'---'}</div></div></div>
         <h2>Contato</h2>
@@ -1656,7 +1656,7 @@ function exportExcel() {
     const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
     const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
     if (!filtrados.length) { alert('Nenhum candidato para exportar nesta turma.'); return; }
-    let csv = 'Nome,CPF,Nascimento,Idade,Genero,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
+    let csv = 'Nome,CPF,Nascimento,Idade,Genero de Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     filtrados.forEach(c => {
         csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : ''}","${c.genero||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}","${c.dataInscricao||''}"\n`;
     });
@@ -2102,7 +2102,7 @@ const camposRelatorio = [
     { key: 'matricula', label: 'Matricula' },
     { key: 'nascimento', label: 'Data de Nascimento' },
     { key: 'idade', label: 'Idade' },
-    { key: 'genero', label: 'Genero' },
+    { key: 'genero', label: 'Genero de Nascimento' },
     { key: 'estadoCivil', label: 'Estado Civil' },
     { key: 'nacionalidade', label: 'Nacionalidade' },
     { key: 'naturalidade', label: 'Naturalidade' },
