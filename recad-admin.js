@@ -265,15 +265,18 @@ async function recadUpdateStatus(docId, newStatus) {
     if (!confirm(msg + ' este recadastramento?')) return;
     try {
         var updateData = { status: newStatus };
+        var r = recadData.find(function(x) { return x._docId === docId; });
 
         if (newStatus === 'Ativo') {
-            var r = recadData.find(function(x) { return x._docId === docId; });
+            var matricula = null;
             if (r) {
                 var cpf = (r.cpf || '').replace(/\D/g, '');
                 var ultimos5 = cpf.slice(-5);
                 var ano = r.dataCertificado ? new Date(r.dataCertificado).getFullYear() : new Date().getFullYear();
-                updateData.matricula = ano + ultimos5;
+                matricula = ano + ultimos5;
             }
+            await recadMoverParaFormados(docId, r, matricula);
+            return;
         }
 
         await dbFirestore.collection('recadastramentos').doc(docId).update(updateData);
@@ -289,6 +292,55 @@ async function recadUpdateStatus(docId, newStatus) {
     } catch (e) {
         console.error('Erro ao atualizar status:', e);
         alert('Erro ao atualizar status: ' + e.message);
+    }
+}
+
+async function recadMoverParaFormados(docId, r, matricula) {
+    if (!r) {
+        alert('Dados do recadastrado nao encontrados.');
+        return;
+    }
+    try {
+        var cpf = (r.cpf || '').replace(/\D/g, '');
+        if (!cpf) {
+            alert('CPF invalido. Nao foi possivel ativar e mover para os formados.');
+            return;
+        }
+
+        var novoFormado = {};
+        var campos = ['nome','cpf','rg','nascimento','idade','genero','estadoCivil','nacionalidade','naturalidade','mae','pai','profissao','titulo','email','whatsapp','endereco','numero','bairro','cidade','estado','altura','peso','fatorRh','hipertensao','diabetes','deficiencia','tatuagem','cirurgia','alcool','medicamento','cansaco','calca','camisa','calcado','tamanhoUniforme','dataCertificado','certificadoFrente','certificadoVerso','senha','projeto','turma','dataHoraCadastro'];
+        campos.forEach(function(c) {
+            if (r[c] !== undefined && r[c] !== null && r[c] !== '') novoFormado[c] = r[c];
+        });
+        novoFormado.cpf = cpf;
+        novoFormado.matricula = matricula || r.matricula || '';
+        novoFormado.tipoPessoa = 'F';
+        novoFormado.status = 'Aprovado';
+        novoFormado.origem = 'recadastramento';
+        novoFormado.ativadoEm = new Date();
+        novoFormado.ativadoPor = (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) ? currentUserData.nome : 'Administrador';
+
+        var existentes = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).get();
+        if (!existentes.empty) {
+            var docExistente = null;
+            existentes.forEach(function(d) { docExistente = d; });
+            delete novoFormado.cpf;
+            delete novoFormado.ativadoEm;
+            delete novoFormado.ativadoPor;
+            await docExistente.ref.update(novoFormado);
+        } else {
+            await dbFirestore.collection('candidatos').add(novoFormado);
+        }
+
+        await dbFirestore.collection('recadastramentos').doc(docId).delete();
+        recadData = recadData.filter(function(x) { return x._docId !== docId; });
+        recadRenderTable();
+        recadUpdateCounts();
+        showAdminSection('admin-recadastramento');
+        alert('Recadastrado ativado e enviado para o banco dos formados ativos!' + (matricula ? '\nMatricula gerada: ' + matricula : ''));
+    } catch (e) {
+        console.error('Erro ao mover para formados:', e);
+        alert('Erro ao mover para formados: ' + e.message);
     }
 }
 
