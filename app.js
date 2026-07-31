@@ -433,7 +433,6 @@ function initFirebaseListeners() {
             });
             instrutores = result;
             if (firebaseReady && typeof instrutorListar === 'function') instrutorListar();
-            if (typeof tfmPopulateInstrutores === 'function') tfmPopulateInstrutores();
             if (typeof tfmPopulateAgendaInstrutor === 'function') {
                 const selAg = document.getElementById('tfm-agenda-instrutor');
                 const conteudoTfm = document.getElementById('tfm-conteudo');
@@ -3901,20 +3900,6 @@ function tfmEsc(val) {
     return String(val == null ? '' : val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function tfmPopulateInstrutores() {
-    const sel = document.getElementById('tfm-instrutor');
-    if (!sel) return;
-    const atual = sel.value;
-    let ops = '<option value="">Selecione o instrutor...</option>';
-    (instrutores || []).slice().sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); }).forEach(function(i) {
-        let label = i.nome || '';
-        if (i.guerra) label += ' (' + i.guerra + ')';
-        ops += '<option value="' + tfmEsc(i.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(label) + '</option>';
-    });
-    sel.innerHTML = ops;
-    sel.value = atual;
-}
-
 function tfmInicializar() {
     const selProj = document.getElementById('tfm-selecao-projeto');
     if (!selProj) return;
@@ -3924,7 +3909,6 @@ function tfmInicializar() {
     });
     const conteudo = document.getElementById('tfm-conteudo');
     if (conteudo) conteudo.style.display = 'none';
-    tfmPopulateInstrutores();
 }
 
 function tfmOnSelecaoProjetoChange() {
@@ -3945,8 +3929,6 @@ async function tfmOnSelecaoChange() {
     const conteudo = document.getElementById('tfm-conteudo');
     if (!projeto || !turma) { conteudo.style.display = 'none'; tfmRenderSalvos(); return; }
     conteudo.style.display = '';
-    const dataEl = document.getElementById('tfm-data-prova');
-    if (dataEl && !dataEl.value) dataEl.value = new Date().toISOString().slice(0, 10);
 
     tfmAlunos = candidatos.filter(c => c.status === 'Aprovado' && c.ativo !== false && c.turma === turma)
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
@@ -3961,25 +3943,6 @@ async function tfmOnSelecaoChange() {
         const docAg = await dbFirestore.collection('tfmAgendamentos').doc(turma).get();
         if (docAg.exists) tfmAgendamentoTurma = docAg.data();
     } catch(e) { console.error('Erro ao carregar TFM:', e); }
-
-    const selInst = document.getElementById('tfm-instrutor');
-    if (selInst && !selInst.value) {
-        let instrutorSalvo = null;
-        Object.keys(tfmExistentes).forEach(function(cpf) {
-            if (!instrutorSalvo && tfmExistentes[cpf].instrutor) instrutorSalvo = tfmExistentes[cpf].instrutor;
-        });
-        if (instrutorSalvo) {
-            const opt = selInst.querySelector('option[value="' + String(instrutorSalvo).replace(/"/g, '&quot;') + '"]');
-            if (opt) selInst.value = instrutorSalvo;
-            else {
-                const optNovo = document.createElement('option');
-                optNovo.value = instrutorSalvo;
-                optNovo.textContent = instrutorSalvo;
-                selInst.appendChild(optNovo);
-                selInst.value = instrutorSalvo;
-            }
-        }
-    }
 
     tfmPreencherAgenda();
     tfmRender();
@@ -4087,21 +4050,36 @@ function tfmCalcularAptidao(al, v) {
     };
 }
 
+function tfmDadosAgendados() {
+    const ag = tfmAgendamentoTurma;
+    let dataProva = '';
+    if (ag && ag.dataAgendamento) {
+        let d = null;
+        if (typeof ag.dataAgendamento.toDate === 'function') d = ag.dataAgendamento.toDate();
+        else {
+            const dd = new Date(ag.dataAgendamento);
+            if (!isNaN(dd.getTime())) d = dd;
+        }
+        if (d) dataProva = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    if (!dataProva) dataProva = new Date().toISOString().slice(0, 10);
+    return { dataProva: dataProva, instrutor: (ag && ag.instrutor) || '' };
+}
+
 async function tfmSalvar(cpf) {
     const al = tfmAlunos.find(a => a.cpf === cpf);
     if (!al) return;
     const v = tfmColetarValores(cpf);
     if (!tfmValoresPreenchidos(v)) { alert('Preencha ao menos um resultado do teste para salvar.'); return; }
-    const dataProva = document.getElementById('tfm-data-prova').value || new Date().toISOString().slice(0, 10);
-    const instrutor = document.getElementById('tfm-instrutor').value.trim();
+    const ag = tfmDadosAgendados();
     const dados = {
         cpf: al.cpf,
         nome: al.nome || '',
         matricula: al.matricula || '',
         turma: al.turma || '',
         projeto: al.projeto || '',
-        dataProva: dataProva,
-        instrutor: instrutor,
+        dataProva: ag.dataProva,
+        instrutor: ag.instrutor,
         flexoes: v.flexoes,
         abdominais: v.abdominais,
         corridaSeg: v.corridaSeg,
@@ -4122,11 +4100,10 @@ async function tfmSalvarTodos() {
     if (!tfmAlunos.length) { alert('Nenhum aluno nesta turma.'); return; }
     let salvos = 0;
     const erros = [];
+    const ag = tfmDadosAgendados();
     for (const al of tfmAlunos) {
         const v = tfmColetarValores(al.cpf);
         if (!tfmValoresPreenchidos(v)) continue;
-        const dataProva = document.getElementById('tfm-data-prova').value || new Date().toISOString().slice(0, 10);
-        const instrutor = document.getElementById('tfm-instrutor').value.trim();
         try {
             await dbFirestore.collection('tfmAlunos').doc(al.cpf).set({
                 cpf: al.cpf,
@@ -4134,8 +4111,8 @@ async function tfmSalvarTodos() {
                 matricula: al.matricula || '',
                 turma: al.turma || '',
                 projeto: al.projeto || '',
-                dataProva: dataProva,
-                instrutor: instrutor,
+                dataProva: ag.dataProva,
+                instrutor: ag.instrutor,
                 flexoes: v.flexoes,
                 abdominais: v.abdominais,
                 corridaSeg: v.corridaSeg,
