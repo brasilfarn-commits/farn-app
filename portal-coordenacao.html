@@ -262,6 +262,13 @@
 
         /* Auto login se houver credenciais salvas */
         if (document.getElementById('pc-cpf')) pcAutoLogin();
+
+        /* Carregar logo da instituicao */
+        dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc){
+            if(doc.exists && doc.data().logo){
+                document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
+            }
+        }).catch(function(){});
     </script>
 </body>
 </html>

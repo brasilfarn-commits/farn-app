@@ -465,7 +465,7 @@ function recadPrint(docId) {
         '.ativo{background:#e8f5e9;color:#2e7d32}.pendente{background:#fff8e1;color:#f57f17}.rejeitado{background:#ffebee;color:#c62828}' +
         '.footer{text-align:center;margin-top:30px;font-size:11px;color:#999;border-top:1px solid #ddd;padding-top:10px}' +
         '</style></head><body>' +
-        '<img src="logo-farn.png.png" style="width:60px;display:block;margin:0 auto 10px">' +
+        '<img src="' + (typeof FARN_LOGO !== 'undefined' ? FARN_LOGO : 'logo-farn.png.png') + '" style="width:60px;display:block;margin:0 auto 10px">' +
         '<h2>FARN - Ficha de Recadastramento</h2>' +
         '<h3>Forca Auxiliar de Resgate Nacional</h3>';
     printHtml += '<div class="status ' + (r.status === 'Ativo' ? 'ativo' : r.status === 'Rejeitado' ? 'rejeitado' : 'pendente') + '">' +

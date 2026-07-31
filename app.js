@@ -149,6 +149,7 @@ function backupProjetos() {
 
 /* ===== DADOS DA INSTITUICAO ===== */
 var configInstLogoData = null;
+var FARN_LOGO = 'logo-farn.png.png';
 
 function configInstituicaoOpen() {
     document.getElementById('modal-config-inst-overlay').classList.remove('hidden');
@@ -220,6 +221,7 @@ function configInstituicaoSalvar() {
         .then(function() {
             alert('Dados da instituicao salvos com sucesso!');
             if (dados.logo) {
+                FARN_LOGO = dados.logo;
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img) { img.src = dados.logo; });
             }
             configInstituicaoFechar();
@@ -237,7 +239,7 @@ function configInstituicaoCarregarHome() {
             var d = doc.data();
             if (d.razaoSocial) document.getElementById('admin-home-razao').textContent = d.razaoSocial.toUpperCase();
             if (d.nomeFantasia) document.getElementById('admin-home-fantasia').textContent = d.nomeFantasia;
-            if (d.logo) document.getElementById('admin-home-logo').src = d.logo;
+            if (d.logo) { document.getElementById('admin-home-logo').src = d.logo; FARN_LOGO = d.logo; }
             var infoEl = document.getElementById('admin-home-inst-info');
             var hasInfo = false;
             if (d.cnpj) { document.getElementById('admin-home-cnpj').textContent = 'CNPJ: ' + d.cnpj; hasInfo = true; }
@@ -2065,7 +2067,7 @@ function relatorioUniforme() {
         @media print{body{padding:0;font-size:11px}.print-btn{display:none}th{background:#1a237e !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#f5f7fa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
     </style></head><body>
         <div class="header">
-            <img src="logo-farn.png.png" alt="FARN">
+            <img src="${FARN_LOGO}" alt="FARN">
             <div class="title-line">FARN - BRASIL - BS.BRASIL - COMMAND BRASIL</div>
             <div class="info-line">CNPJ: 43.327.929/0001-32 | Telefone: (81) 98403-1538</div>
         </div>
@@ -2229,7 +2231,7 @@ function gerarRelatorioPersonalizado() {
         @media print{body{padding:0;font-size:9px}.print-btn{display:none}th{background:#1a237e !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#f5f7fa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
     </style></head><body>
         <div class="header">
-            <img src="logo-farn.png.png" alt="FARN">
+            <img src="${FARN_LOGO}" alt="FARN">
             <div class="title-line">FARN - BRASIL - BS.BRASIL - COMMAND BRASIL</div>
             <div class="info-line">CNPJ: 43.327.929/0001-32 | Telefone: (81) 98403-1538</div>
         </div>
