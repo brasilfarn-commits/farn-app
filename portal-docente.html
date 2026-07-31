@@ -321,7 +321,36 @@
     </style>
 </head>
 <body>
-    <div id="screen-portal" class="active" style="display:flex">
+    <!-- TELA DE LOGIN -->
+    <div id="screen-login">
+        <div class="pf-login-card">
+            <div class="pf-login-logo">
+                <img src="logo-farn.png.png" alt="FARN" data-farn-logo>
+                <h1>FARN <span>Docente</span></h1>
+                <p>ACESSO RESTRITO AOS INSTRUTORES</p>
+            </div>
+            <div class="pf-login-error" id="pd-login-error"></div>
+            <div class="pf-login-field">
+                <label>CPF</label>
+                <input type="text" id="pd-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+            </div>
+            <div class="pf-login-field">
+                <label>Senha</label>
+                <input type="password" id="pd-senha" placeholder="Sua senha" onkeydown="if(event.key==='Enter')pdLogin()">
+            </div>
+            <div class="pf-login-remember">
+                <input type="checkbox" id="pd-lembrar">
+                <label for="pd-lembrar">Lembrar minha senha</label>
+            </div>
+            <button class="pf-login-btn" id="pd-login-btn" onclick="pdLogin()">
+                <i class="fa-solid fa-right-to-bracket"></i> Entrar
+            </button>
+            <a class="pf-login-back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+        </div>
+    </div>
+
+    <!-- PORTAL -->
+    <div id="screen-portal">
         <header class="pf-topbar">
             <div class="pf-topbar-left">
                 <img src="logo-farn.png.png" alt="FARN" class="pf-topbar-logo" data-farn-logo>
@@ -329,11 +358,12 @@
             </div>
             <div class="pf-topbar-right">
                 <div class="pf-user-info">
-                    <div class="pf-user-name">Docente</div>
-                    <div class="pf-user-matricula">Acesso em construcao</div>
+                    <div class="pf-user-name" id="pd-user-name">Docente</div>
+                    <div class="pf-user-matricula" id="pd-user-matricula">Instrutor</div>
+                    <div class="pf-user-cpf" id="pd-user-cpf"></div>
                 </div>
-                <div class="pf-user-avatar">D</div>
-                <a href="index.html" class="pf-logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</a>
+                <div class="pf-user-avatar" id="pd-user-avatar">D</div>
+                <button class="pf-logout-btn" onclick="pdSair()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</button>
             </div>
         </header>
         <div class="pf-body">
@@ -378,7 +408,128 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
+        var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
+        if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+        var dbFirestore = firebase.firestore();
+
+        function mascaraCPF(el) {
+            var v = el.value.replace(/\D/g, '').substring(0, 11);
+            v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            el.value = v;
+        }
+
+        function pdMostrarErro(msg) {
+            var errEl = document.getElementById('pd-login-error');
+            errEl.textContent = msg;
+            errEl.style.display = 'block';
+        }
+
+        async function pdLogin() {
+            var cpf = document.getElementById('pd-cpf').value.replace(/\D/g, '');
+            var senha = document.getElementById('pd-senha').value;
+            var btn = document.getElementById('pd-login-btn');
+
+            document.getElementById('pd-login-error').style.display = 'none';
+            if (!cpf || cpf.length !== 11) { pdMostrarErro('CPF invalido.'); return; }
+            if (!senha) { pdMostrarErro('Informe sua senha.'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
+
+            try {
+                var snap = await dbFirestore.collection('instrutores')
+                    .where('cpf', '==', cpf)
+                    .limit(1)
+                    .get();
+
+                if (snap.empty) {
+                    pdMostrarErro('CPF nao encontrado entre os instrutores.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                    return;
+                }
+
+                var doc = snap.docs[0];
+                var dados = doc.data();
+
+                if (!dados.senha) {
+                    pdMostrarErro('Senha de acesso nao cadastrada. Contate a administracao.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                    return;
+                }
+
+                if (dados.senha !== senha) {
+                    pdMostrarErro('Senha incorreta.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                    return;
+                }
+
+                var docente = dados;
+                docente._docId = doc.id;
+                sessionStorage.setItem('pd_sessao', JSON.stringify(docente));
+
+                if (document.getElementById('pd-lembrar').checked) {
+                    localStorage.setItem('pd_lembrar_cpf', cpf);
+                    localStorage.setItem('pd_lembrar_senha', senha);
+                } else {
+                    localStorage.removeItem('pd_lembrar_cpf');
+                    localStorage.removeItem('pd_lembrar_senha');
+                }
+
+                pdEntrar(docente);
+            } catch(e) {
+                console.error('Erro login docente:', e);
+                pdMostrarErro('Erro ao acessar. Tente novamente.');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+        }
+
+        function pdEntrar(docente) {
+            document.getElementById('screen-login').style.display = 'none';
+            document.getElementById('screen-portal').classList.add('active');
+
+            var nome = docente.nome || 'Docente';
+            var guerra = docente.guerra || '';
+            var inicial = (guerra || nome).split(' ').filter(Boolean).slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
+            document.getElementById('pd-user-avatar').textContent = inicial || 'D';
+            document.getElementById('pd-user-name').textContent = guerra ? guerra + ' ' + nome.split(' ')[0] : nome.split(' ')[0];
+            var matEl = document.getElementById('pd-user-matricula');
+            matEl.textContent = docente.matricula ? 'Instrutor | Mat: ' + docente.matricula : 'Instrutor';
+            var cpfDisp = docente.cpf || '';
+            if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            document.getElementById('pd-user-cpf').textContent = 'CPF: ' + cpfDisp;
+        }
+
+        function pdSair() {
+            sessionStorage.removeItem('pd_sessao');
+            document.getElementById('screen-portal').classList.remove('active');
+            document.getElementById('screen-login').style.display = 'flex';
+            document.getElementById('pd-senha').value = '';
+        }
+
+        function pdAutoLogin() {
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (sessao) {
+                try {
+                    pdEntrar(JSON.parse(sessao));
+                    return;
+                } catch(e) {}
+            }
+            var cpfSalvo = localStorage.getItem('pd_lembrar_cpf');
+            var senhaSalva = localStorage.getItem('pd_lembrar_senha');
+            if (cpfSalvo && senhaSalva) {
+                document.getElementById('pd-cpf').value = cpfSalvo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                document.getElementById('pd-senha').value = senhaSalva;
+                document.getElementById('pd-lembrar').checked = true;
+            }
+        }
+
         function mostrarConstrucao(item){
             document.querySelectorAll('.pf-nav-item').forEach(function(i){ i.classList.remove('active'); });
             item.classList.add('active');
@@ -387,6 +538,8 @@
             document.querySelectorAll('.pf-mobile-nav-item').forEach(function(i){ i.classList.remove('active'); });
             item.classList.add('active');
         }
+
+        pdAutoLogin();
     </script>
 </body>
 </html>

@@ -5171,6 +5171,7 @@ function instrutorAbrirModal(id) {
         document.getElementById('intr-matricula').value = inst.matricula || '';
         document.getElementById('intr-fone').value = inst.fone || '';
         document.getElementById('intr-email').value = inst.email || '';
+        document.getElementById('intr-senha').value = inst.senha || '';
         instrutorPopulateDisciplinas(inst.disciplinas || []);
     } else {
         titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Instrutor';
@@ -5193,6 +5194,7 @@ function instrutorLimparForm() {
     document.getElementById('intr-matricula').value = '';
     document.getElementById('intr-fone').value = '';
     document.getElementById('intr-email').value = '';
+    document.getElementById('intr-senha').value = '';
     instrutorPopulateDisciplinas([]);
 }
 
@@ -5222,6 +5224,9 @@ async function instrutorSalvar(e) {
     var cpf = document.getElementById('intr-cpf').value.trim();
     if (!nome || !guerra || !cpf) { alert('Preencha Nome Completo, Nome de Guerra e CPF'); return; }
     var genero = document.getElementById('intr-genero').value;
+    var senha = document.getElementById('intr-senha').value.trim();
+    if (!senha) { alert('Preencha a senha de acesso do instrutor.'); return; }
+    if (senha.length < 4) { alert('Senha deve ter minimo 4 caracteres.'); return; }
     var dados = {
         nome: nome,
         guerra: guerra,
@@ -5230,6 +5235,7 @@ async function instrutorSalvar(e) {
         matricula: document.getElementById('intr-matricula').value.trim(),
         fone: document.getElementById('intr-fone').value.trim(),
         email: document.getElementById('intr-email').value.trim(),
+        senha: senha,
         disciplinas: instrutorGetSelectedDisciplinas(),
         atualizadoEm: new Date().toISOString()
     };
