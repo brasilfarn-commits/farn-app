@@ -1,0 +1,7 @@
+# Arquivos temporarios do Word
+~\$*.docx
+~\$*.doc
+
+# Firebase
+.firebase/
+firebase-debug.log
