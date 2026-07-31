@@ -5208,9 +5208,9 @@ function instrutorAbrirModal(id) {
         document.getElementById('intr-camisa').value = inst.camisa || '';
         document.getElementById('intr-calcado').value = inst.calcado || '';
         if (inst.projeto) {
-            document.getElementById('intr-projeto').value = inst.projeto;
+            instrutorSetSelectedValues('intr-projeto', inst.projeto);
             instrutorOnProjetoChange();
-            document.getElementById('intr-turma').value = inst.turma || '';
+            instrutorSetSelectedValues('intr-turma', inst.turma || '');
         }
         calcularIdadeCampo('intr-nascimento', 'intr-idade');
         instrutorPopulateDisciplinas(inst.disciplinas || []);
@@ -5319,35 +5319,47 @@ function renderFormadosList() {
     }).join('');
 }
 
+function instrutorGetSelectedValues(id) {
+    var el = document.getElementById(id);
+    if (!el) return [];
+    return Array.from(el.selectedOptions).map(function(o) { return o.value; }).filter(Boolean);
+}
+
+function instrutorSetSelectedValues(id, valores) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var arr = Array.isArray(valores) ? valores : (valores ? [valores] : []);
+    Array.prototype.forEach.call(el.options, function(o) {
+        o.selected = arr.indexOf(o.value) !== -1;
+    });
+}
+
 function instrutorPopulateSelects(projetoSelecionado, turmaSelecionada) {
     var selProj = document.getElementById('intr-projeto');
     if (!selProj) return;
-    selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
+    selProj.innerHTML = '<option value="">Selecione os projetos...</option>';
     projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
-    if (projetoSelecionado) selProj.value = projetoSelecionado;
+    if (projetoSelecionado) instrutorSetSelectedValues('intr-projeto', projetoSelecionado);
     instrutorOnProjetoChange();
-    var selTurma = document.getElementById('intr-turma');
-    if (selTurma && turmaSelecionada) selTurma.value = turmaSelecionada;
+    if (turmaSelecionada) instrutorSetSelectedValues('intr-turma', turmaSelecionada);
 }
 
 function instrutorOnProjetoChange() {
-    var projetoNome = document.getElementById('intr-projeto').value;
+    var selProj = document.getElementById('intr-projeto');
     var select = document.getElementById('intr-turma');
-    if (!select) return;
-    var current = select.value;
-    select.innerHTML = '<option value="">Selecione a turma...</option>';
-    if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
-            select.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
-        });
-    } else {
-        turmas.forEach(t => {
-            select.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
-        });
-    }
-    if (current) select.value = current;
+    if (!selProj || !select) return;
+    var projetosSelecionados = instrutorGetSelectedValues('intr-projeto');
+    var current = instrutorGetSelectedValues('intr-turma');
+    select.innerHTML = '<option value="">Selecione as turmas...</option>';
+    var turmasFiltradas = projetosSelecionados.length
+        ? turmas.filter(function(t) { return projetosSelecionados.indexOf(t.projeto) !== -1; })
+        : turmas;
+    turmasFiltradas.forEach(t => {
+        select.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+    });
+    instrutorSetSelectedValues('intr-turma', current);
 }
 
 async function remanejarFormado(i) {
@@ -5450,8 +5462,8 @@ async function instrutorSalvar(e) {
         fone: document.getElementById('intr-fone').value.trim(),
         email: document.getElementById('intr-email').value.trim(),
         senha: senha,
-        projeto: document.getElementById('intr-projeto').value,
-        turma: document.getElementById('intr-turma').value,
+        projeto: instrutorGetSelectedValues('intr-projeto'),
+        turma: instrutorGetSelectedValues('intr-turma'),
         nascimento: document.getElementById('intr-nascimento').value,
         dataInscricao: document.getElementById('intr-data-inscricao').value,
         estadoCivil: document.getElementById('intr-estado-civil').value,
