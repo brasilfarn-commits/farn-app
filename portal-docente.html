@@ -549,8 +549,8 @@
         }
 
         function pdAdminAutoAccess() {
-            if (localStorage.getItem('farn_login') === 'admin') {
-                var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
+            var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
+            if (adminData.permissoes && adminData.permissoes.includes('admin')) {
                 var adminDoc = { nome: adminData.nome || 'Administrador Geral', cpf: adminData.cpf || '05004959471', guerra: '', matricula: '', isAdmin: true };
                 pdEntrar(adminDoc);
             }
@@ -568,7 +568,8 @@
         pdAutoLogin();
         pdAdminAutoAccess();
         /* Se não há sessão nem credenciais salvas E não é admin, redirecionar para landing */
-        var isAdmin = localStorage.getItem('farn_login') === 'admin';
+        var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
+        var isAdmin = adminData.permissoes && adminData.permissoes.includes('admin');
         if (!isAdmin && !sessionStorage.getItem('pd_sessao') && !localStorage.getItem('pd_lembrar_cpf')) {
             location.replace('index.html');
         }

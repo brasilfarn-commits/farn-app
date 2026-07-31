@@ -855,16 +855,40 @@ async function landingLogin(event) {
     if (!cpf || !senha) { landingShowLoginError('Informe o CPF e a senha.'); return false; }
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
-        // Admin geral sempre vai para o painel admin (acesso total)
+        // Primeiro verifica se é admin na coleção usuarios (inclui admin geral hardcoded)
+        var adminUser = null;
         if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-            var user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
-            currentUserData = user;
+            adminUser = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+        } else {
+            var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+            snap.forEach(function(doc) {
+                var u = doc.data();
+                if (u.senha === senha && u.ativo !== false && u.permissoes && u.permissoes.includes('admin')) adminUser = u;
+            });
+        }
+
+        // Se é admin, tem acesso a TUDO
+        if (adminUser) {
+            currentUserData = adminUser;
             saveLastLogin(cpf);
-            enterAdminPanel();
-            saveLoginState();
+            var portal = document.getElementById('landing-login-portal').value;
+            saveLoginState(); // salva farn_login = 'admin' e farn_user_data
+            if (portal === 'admin') {
+                enterAdminPanel();
+            } else if (portal === 'formado') {
+                location.href = 'portal-formado.html';
+            } else if (portal === 'aluno') {
+                location.href = 'portal-aluno.html';
+            } else if (portal === 'docente') {
+                location.href = 'portal-docente.html';
+            } else if (portal === 'coordenacao') {
+                location.href = 'portal-coordenacao.html';
+            }
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return true;
         }
+
+        // Não é admin - login específico do portal escolhido
         var portal = document.getElementById('landing-login-portal').value;
         var ok = false;
         if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
