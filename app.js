@@ -680,6 +680,7 @@ async function handleLogin(event) {
 }
 
 function enterAdminPanel() {
+    document.documentElement.classList.add('farn-admin-session');
     document.body.classList.remove('landing-mode');
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-admin').classList.add('active');
@@ -745,6 +746,7 @@ function handleLogout() {
     if (typeof chatPortaisUnsub !== 'undefined' && chatPortaisUnsub) { chatPortaisUnsub(); chatPortaisUnsub = null; }
     document.getElementById('screen-admin').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
+    document.documentElement.classList.remove('farn-admin-session');
     document.body.classList.add('landing-mode');
     editingIndex = null;
     currentUserData = null;
