@@ -281,35 +281,6 @@
 
                 <!-- ALUNOS -->
                 <div id="admin-alunos" class="admin-section">
-                            <!-- Pesquisa TFM Agendados -->
-                            <div style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-                                    <h4 style="margin:0;font-size:15px;color:#1e293b"><i class="fa-solid fa-magnifying-glass" style="color:#2563eb;margin-right:8px"></i> Pesquisar TFM Agendados</h4>
-                                    <span id="tfm-busca-count" style="font-size:12px;color:#64748b;font-weight:600"></span>
-                                </div>
-                                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-                                    <input type="text" id="tfm-busca-input" class="config-input" style="flex:1;min-width:220px" placeholder="Buscar por projeto, turma ou instrutor..." onkeydown="if(event.key==='Enter')tfmPesquisarAgendados()">
-                                    <button class="btn-primary" onclick="tfmPesquisarAgendados()"><i class="fa-solid fa-magnifying-glass"></i> Pesquisar</button>
-                                    <button class="btn-outline" onclick="tfmLimparPesquisa()"><i class="fa-solid fa-broom"></i> Limpar</button>
-                                </div>
-                                <div style="overflow-x:auto">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Projeto</th>
-                                                <th>Turma</th>
-                                                <th>Data/Hora Agendada</th>
-                                                <th>Instrutor</th>
-                                                <th>Observacao</th>
-                                                <th>Acoes</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tfm-busca-body">
-                                            <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Digite um termo e clique em Pesquisar para localizar TFM agendados.</td></tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
                             <!-- Selecao Projeto + Turma -->
                             <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
@@ -771,11 +742,45 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Selecao Projeto + Turma -->
-                            <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                                    <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
+                            <!-- Lista de TFM Agendados -->
+                            <div id="tfm-lista-wrap" style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+                                    <div style="display:flex;align-items:center;gap:8px">
+                                        <i class="fa-solid fa-calendar-check" style="color:#16a34a;font-size:16px"></i>
+                                        <span style="color:#16a34a;font-weight:700;font-size:14px">TFM Agendados</span>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                                        <span id="tfm-lista-count" style="font-size:12px;color:#64748b;font-weight:600"></span>
+                                        <button class="btn-primary" onclick="tfmAbrirNovoAgendamento()"><i class="fa-solid fa-plus"></i> Novo Agendamento de TFM</button>
+                                    </div>
+                                </div>
+                                <input type="text" id="tfm-lista-filtro" class="config-input" style="width:100%;max-width:400px;margin-bottom:14px" placeholder="Filtrar por projeto, turma ou instrutor..." oninput="tfmFiltrarLista()">
+                                <div style="overflow-x:auto">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Projeto</th>
+                                                <th>Turma</th>
+                                                <th>Data/Hora Agendada</th>
+                                                <th>Instrutor</th>
+                                                <th>Observacao</th>
+                                                <th>Acoes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tfm-lista-body">
+                                            <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Selecao Projeto + Turma (avaliacao) -->
+                            <div id="tfm-selecao-wrap" style="display:none;padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+                                    <div style="display:flex;align-items:center;gap:8px">
+                                        <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
+                                        <span style="color:#16a34a;font-weight:700;font-size:14px">Avaliacao da Turma Agendada</span>
+                                    </div>
+                                    <button class="btn-outline" onclick="tfmVoltarLista()" style="white-space:nowrap"><i class="fa-solid fa-arrow-left"></i> Voltar para lista</button>
                                 </div>
                                 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
@@ -2012,6 +2017,54 @@
                     <button class="btn-outline" onclick="configInstituicaoFechar()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                     <button class="btn-primary" onclick="configInstituicaoSalvar()"><i class="fa-solid fa-save"></i> Salvar Dados</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-tfm-novo-overlay" class="modal-overlay hidden" onclick="tfmFecharNovoAgendamento(event)">
+        <div class="modal-content" style="max-width:560px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-calendar-plus" style="color:#16a34a;margin-right:8px"></i> Novo Agendamento de TFM</h3>
+                <button class="modal-close" onclick="tfmFecharNovoAgendamento()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Projeto *</label>
+                        <select id="tfm-novo-projeto" class="config-input" onchange="tfmNovoOnProjetoChange()">
+                            <option value="">Selecione o projeto...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Turma *</label>
+                        <select id="tfm-novo-turma" class="config-input">
+                            <option value="">Selecione a turma...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Data e Hora do TFM *</label>
+                        <input type="datetime-local" id="tfm-novo-data" class="config-input">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Instrutor Responsavel</label>
+                        <select id="tfm-novo-instrutor" class="config-input">
+                            <option value="">Selecione o instrutor...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Observacao</label>
+                        <input type="text" id="tfm-novo-obs" class="config-input" placeholder="Ex: Chegar 15 min antes, levar documento com foto...">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2;display:none" id="tfm-novo-aviso">
+                        <div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.5">
+                            <i class="fa-solid fa-circle-info"></i> Esta turma ja possui um agendamento. Salvar substituira o agendamento atual.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="tfmFecharNovoAgendamento()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                <button class="btn-primary" onclick="tfmSalvarNovoAgendamento()"><i class="fa-solid fa-calendar-check"></i> Salvar Agendamento</button>
             </div>
         </div>
     </div>

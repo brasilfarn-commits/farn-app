@@ -3909,6 +3909,11 @@ function tfmInicializar() {
     });
     const conteudo = document.getElementById('tfm-conteudo');
     if (conteudo) conteudo.style.display = 'none';
+    const selecaoWrap = document.getElementById('tfm-selecao-wrap');
+    if (selecaoWrap) selecaoWrap.style.display = 'none';
+    const listaWrap = document.getElementById('tfm-lista-wrap');
+    if (listaWrap) listaWrap.style.display = '';
+    tfmCarregarLista();
 }
 
 function tfmOnSelecaoProjetoChange() {
@@ -4298,7 +4303,7 @@ async function tfmSalvarAgendamentoTurma() {
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
         tfmAgendamentoTurma = { projeto: projeto, turma: turma, dataAgendamento: firebase.firestore.Timestamp.fromDate(dt), instrutor: instrutor, observacao: observacao };
-        tfmBuscaCache = null;
+        tfmAgendadosLista = [];
         tfmPreencherAgenda();
         alert('Agendamento da turma salvo com sucesso!');
     } catch(e) {
@@ -4313,7 +4318,7 @@ async function tfmCancelarAgendamentoTurma() {
     try {
         await dbFirestore.collection('tfmAgendamentos').doc(turma).delete();
         tfmAgendamentoTurma = null;
-        tfmBuscaCache = null;
+        tfmAgendadosLista = [];
         tfmPreencherAgenda();
         alert('Agendamento da turma cancelado com sucesso!');
     } catch(e) {
@@ -4321,73 +4326,173 @@ async function tfmCancelarAgendamentoTurma() {
     }
 }
 
-var tfmBuscaCache = null;
+var tfmAgendadosLista = [];
 
-async function tfmPesquisarAgendados() {
-    const termo = (document.getElementById('tfm-busca-input').value || '').trim().toLowerCase();
-    if (!termo) { alert('Digite um termo para pesquisar.'); return; }
-    const tbody = document.getElementById('tfm-busca-body');
-    const countEl = document.getElementById('tfm-busca-count');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Pesquisando...</td></tr>';
+async function tfmCarregarLista() {
+    const tbody = document.getElementById('tfm-lista-body');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
     try {
-        if (!tfmBuscaCache) {
-            const snap = await dbFirestore.collection('tfmAgendamentos').get();
-            tfmBuscaCache = [];
-            snap.forEach(doc => {
-                tfmBuscaCache.push(Object.assign({ turmaDoc: doc.id }, doc.data()));
-            });
-        }
-        const resultados = tfmBuscaCache.filter(function(a) {
-            return String(a.turma || '').toLowerCase().indexOf(termo) !== -1 ||
-                String(a.projeto || '').toLowerCase().indexOf(termo) !== -1 ||
-                String(a.instrutor || '').toLowerCase().indexOf(termo) !== -1 ||
-                String(a.observacao || '').toLowerCase().indexOf(termo) !== -1;
+        const snap = await dbFirestore.collection('tfmAgendamentos').get();
+        tfmAgendadosLista = [];
+        snap.forEach(doc => {
+            tfmAgendadosLista.push(Object.assign({ turmaDoc: doc.id }, doc.data()));
         });
-        if (countEl) countEl.textContent = resultados.length + ' encontrado(s)';
-        if (!tbody) return;
-        if (!resultados.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM agendado encontrado para o termo pesquisado.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = resultados.map(function(a) {
-            const dt = a.dataAgendamento ? tfmFormatarDataHora(a.dataAgendamento) : 'Data a definir';
-            return '<tr>' +
-                '<td>' + tfmEsc(a.projeto || '-') + '</td>' +
-                '<td style="font-weight:600">' + tfmEsc(a.turma || '-') + '</td>' +
-                '<td style="font-size:12px;color:#16a34a;font-weight:700">' + tfmEsc(dt) + '</td>' +
-                '<td>' + tfmEsc(a.instrutor || '-') + '</td>' +
-                '<td style="font-size:12px;color:#64748b">' + tfmEsc(a.observacao || '-') + '</td>' +
-                '<td><button class="btn-icon btn-danger-icon" title="Excluir agendamento" onclick="tfmExcluirAgendamentoPesquisa(\'' + String(a.turma).replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-trash"></i></button></td>' +
-                '</tr>';
-        }).join('');
+        tfmAgendadosLista.sort(function(a, b) { return String(a.turma || '').localeCompare(String(b.turma || '')); });
+        tfmFiltrarLista();
     } catch(e) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px;font-size:13px">Erro ao pesquisar: ' + tfmEsc(e.message) + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px;font-size:13px">Erro ao carregar agendamentos: ' + tfmEsc(e.message) + '</td></tr>';
     }
 }
 
-function tfmLimparPesquisa() {
-    const input = document.getElementById('tfm-busca-input');
-    const tbody = document.getElementById('tfm-busca-body');
-    const countEl = document.getElementById('tfm-busca-count');
-    if (input) input.value = '';
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Digite um termo e clique em Pesquisar para localizar TFM agendados.</td></tr>';
-    if (countEl) countEl.textContent = '';
+function tfmFiltrarLista() {
+    const input = document.getElementById('tfm-lista-filtro');
+    const termo = (input ? input.value : '').trim().toLowerCase();
+    const resultados = tfmAgendadosLista.filter(function(a) {
+        return !termo ||
+            String(a.turma || '').toLowerCase().indexOf(termo) !== -1 ||
+            String(a.projeto || '').toLowerCase().indexOf(termo) !== -1 ||
+            String(a.instrutor || '').toLowerCase().indexOf(termo) !== -1 ||
+            String(a.observacao || '').toLowerCase().indexOf(termo) !== -1;
+    });
+    const countEl = document.getElementById('tfm-lista-count');
+    if (countEl) countEl.textContent = resultados.length + ' agendamento(s)';
+    tfmRenderLista(resultados);
 }
 
-async function tfmExcluirAgendamentoPesquisa(turma) {
+function tfmRenderLista(resultados) {
+    const tbody = document.getElementById('tfm-lista-body');
+    if (!tbody) return;
+    if (!resultados.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM agendado. Clique em "Novo Agendamento de TFM" para agendar uma turma.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = resultados.map(function(a) {
+        const dt = a.dataAgendamento ? tfmFormatarDataHora(a.dataAgendamento) : 'Data a definir';
+        const turmaEsc = String(a.turma || '').replace(/'/g, "\\'");
+        const projetoEsc = String(a.projeto || '').replace(/'/g, "\\'");
+        return '<tr>' +
+            '<td>' + tfmEsc(a.projeto || '-') + '</td>' +
+            '<td style="font-weight:600">' + tfmEsc(a.turma || '-') + '</td>' +
+            '<td style="font-size:12px;color:#16a34a;font-weight:700">' + tfmEsc(dt) + '</td>' +
+            '<td>' + tfmEsc(a.instrutor || '-') + '</td>' +
+            '<td style="font-size:12px;color:#64748b">' + tfmEsc(a.observacao || '-') + '</td>' +
+            '<td><div class="actions-cell">' +
+                '<button class="btn-icon" title="Avaliar turma" onclick="tfmAvaliarTurma(\'' + projetoEsc + '\',\'' + turmaEsc + '\')"><i class="fa-solid fa-stopwatch"></i></button>' +
+                '<button class="btn-icon btn-danger-icon" title="Excluir agendamento" onclick="tfmExcluirAgendamentoLista(\'' + turmaEsc + '\')"><i class="fa-solid fa-trash"></i></button>' +
+            '</div></td>' +
+            '</tr>';
+    }).join('');
+}
+
+function tfmAvaliarTurma(projeto, turma) {
+    const listaWrap = document.getElementById('tfm-lista-wrap');
+    const selecaoWrap = document.getElementById('tfm-selecao-wrap');
+    const conteudo = document.getElementById('tfm-conteudo');
+    if (listaWrap) listaWrap.style.display = 'none';
+    if (selecaoWrap) selecaoWrap.style.display = '';
+    const selProj = document.getElementById('tfm-selecao-projeto');
+    const selTurma = document.getElementById('tfm-selecao-turma');
+    if (selProj) {
+        selProj.value = projeto;
+        tfmOnSelecaoProjetoChange();
+        if (selTurma) selTurma.value = turma;
+        tfmOnSelecaoChange();
+    }
+    if (conteudo) conteudo.style.display = '';
+}
+
+function tfmVoltarLista() {
+    const listaWrap = document.getElementById('tfm-lista-wrap');
+    const selecaoWrap = document.getElementById('tfm-selecao-wrap');
+    const conteudo = document.getElementById('tfm-conteudo');
+    if (listaWrap) listaWrap.style.display = '';
+    if (selecaoWrap) selecaoWrap.style.display = 'none';
+    if (conteudo) conteudo.style.display = 'none';
+    tfmCarregarLista();
+}
+
+async function tfmExcluirAgendamentoLista(turma) {
     if (!confirm('Excluir o agendamento do TFM da turma "' + turma + '"?')) return;
     try {
         await dbFirestore.collection('tfmAgendamentos').doc(turma).delete();
-        if (tfmBuscaCache) tfmBuscaCache = null;
-        tfmPesquisarAgendados();
-        const selTurma = document.getElementById('tfm-selecao-turma');
-        if (selTurma && selTurma.value === turma && tfmAgendamentoTurma) {
+        tfmAgendadosLista = tfmAgendadosLista.filter(function(a) { return a.turmaDoc !== turma; });
+        if (tfmAgendamentoTurma && document.getElementById('tfm-selecao-turma').value === turma) {
             tfmAgendamentoTurma = null;
             tfmPreencherAgenda();
         }
+        tfmFiltrarLista();
         alert('Agendamento excluido com sucesso!');
     } catch(e) {
         alert('Erro ao excluir agendamento: ' + e.message);
+    }
+}
+
+function tfmAbrirNovoAgendamento() {
+    const selProj = document.getElementById('tfm-novo-projeto');
+    if (selProj) {
+        selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
+        projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+            selProj.innerHTML += '<option value="' + tfmEsc(p.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(p.nome + (p.responsavel ? ' - ' + p.responsavel : '')).replace(/</g, '&lt;') + '</option>';
+        });
+    }
+    const selTurma = document.getElementById('tfm-novo-turma');
+    if (selTurma) selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    const selData = document.getElementById('tfm-novo-data');
+    if (selData) selData.value = '';
+    tfmPopulateAgendaInstrutor(document.getElementById('tfm-novo-instrutor'));
+    const elObs = document.getElementById('tfm-novo-obs');
+    if (elObs) elObs.value = '';
+    const aviso = document.getElementById('tfm-novo-aviso');
+    if (aviso) aviso.style.display = 'none';
+    const overlay = document.getElementById('modal-tfm-novo-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+}
+
+function tfmNovoOnProjetoChange() {
+    const projetoNome = document.getElementById('tfm-novo-projeto').value;
+    const selTurma = document.getElementById('tfm-novo-turma');
+    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
+            selTurma.innerHTML += '<option value="' + tfmEsc(t.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(t.nome + (t.descricao ? ' - ' + t.descricao : '')).replace(/</g, '&lt;') + '</option>';
+        });
+    }
+    const aviso = document.getElementById('tfm-novo-aviso');
+    if (aviso) aviso.style.display = 'none';
+}
+
+function tfmFecharNovoAgendamento(event) {
+    if (event && event.target && event.target.id !== 'modal-tfm-novo-overlay') return;
+    const overlay = document.getElementById('modal-tfm-novo-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+async function tfmSalvarNovoAgendamento() {
+    const projeto = document.getElementById('tfm-novo-projeto').value;
+    const turma = document.getElementById('tfm-novo-turma').value;
+    const dataVal = document.getElementById('tfm-novo-data').value;
+    const instrutor = document.getElementById('tfm-novo-instrutor').value;
+    const observacao = document.getElementById('tfm-novo-obs').value.trim();
+    if (!projeto) { alert('Selecione o projeto.'); return; }
+    if (!turma) { alert('Selecione a turma.'); return; }
+    if (!dataVal) { alert('Informe a data e hora do TFM.'); return; }
+    const dt = new Date(dataVal);
+    if (isNaN(dt.getTime())) { alert('Data/hora invalida.'); return; }
+    try {
+        await dbFirestore.collection('tfmAgendamentos').doc(turma).set({
+            projeto: projeto,
+            turma: turma,
+            dataAgendamento: firebase.firestore.Timestamp.fromDate(dt),
+            instrutor: instrutor,
+            observacao: observacao,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        tfmFecharNovoAgendamento();
+        await tfmCarregarLista();
+        alert('Agendamento salvo com sucesso!');
+    } catch(e) {
+        alert('Erro ao salvar agendamento: ' + e.message);
     }
 }
 
