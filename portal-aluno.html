@@ -175,6 +175,9 @@
         .pf-dados-val{font-size:14px;font-weight:600;color:var(--gray800);word-break:break-word}
 
         /* Construcao */
+        .pf-section-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--gray200)}
+        .pf-section-header i{font-size:20px;color:var(--green)}
+        .pf-section-header h2{font-size:18px;font-weight:700;color:var(--gray800)}
         .pf-em-construcao{text-align:center;padding:60px 20px;color:var(--gray300)}
         .pf-em-construcao i{font-size:44px;margin-bottom:16px;display:block;color:var(--gray300)}
         .pf-em-construcao h3{font-size:17px;color:var(--gray500);margin-bottom:6px;font-weight:600}
@@ -375,6 +378,7 @@
                 <div class="pf-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i> Chat<span id="pf-chat-badge" class="pf-nav-badge hidden">0</span></div>
                 <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
                 <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
+                <div class="pf-nav-item" onclick="paShowSection('tfm',this)"><i class="fa-solid fa-dumbbell"></i> TFM</div>
                 <div class="pf-nav-divider"></div>
                 <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
                 <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
@@ -576,6 +580,19 @@
                     </div>
                 </div>
 
+                <!-- TFM -->
+                <div class="pf-section" id="pf-section-tfm">
+                    <div class="pf-section-header">
+                        <i class="fa-solid fa-dumbbell"></i>
+                        <h2>TFM - Teste de Aptidao Fisica e Militar</h2>
+                    </div>
+                    <div class="pf-em-construcao">
+                        <i class="fa-solid fa-person-running"></i>
+                        <h3>Em construcao</h3>
+                        <p>Esta pagina estara disponivel em breve. Acompanhe suas noticias e aulas!</p>
+                    </div>
+                </div>
+
                 <!-- CONSTRUCAO (fallback) -->
                 <div class="pf-section" id="pf-section-construcao">
                     <div class="pf-em-construcao">
@@ -597,6 +614,7 @@
             <div class="pf-mobile-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i><span>Galeria</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i><span>Chat</span><span id="pf-chat-mobile-badge" class="pf-mobile-nav-badge hidden">0</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
+            <div class="pf-mobile-nav-item" onclick="paShowSection('tfm',this)"><i class="fa-solid fa-dumbbell"></i><span>TFM</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i><span>Carteira</span></div>
             <div class="pf-mobile-nav-item" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i><span>Declaracoes</span></div>
