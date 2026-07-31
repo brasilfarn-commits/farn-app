@@ -8,6 +8,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         /* ===== PAGINA INSTITUCIONAL (LANDING) ===== */
+        body.landing-mode {
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: auto;
+            min-height: 100vh;
+            background: #0c2113;
+            -webkit-user-select: text;
+            user-select: text;
+        }
         #screen-login.landing-screen,
         #screen-login.landing-screen.active {
             display: block;
@@ -92,133 +101,69 @@
             gap: 40px;
             align-items: center;
         }
-        .flag-scene {
+        .inst-panel {
             position: relative;
-            height: 380px;
-            display: flex;
-        }
-        .flag-pole {
-            width: 12px;
-            height: 100%;
-            border-radius: 6px;
-            background: linear-gradient(90deg, #6b7280, #d1d5db 40%, #9ca3af 60%, #4b5563);
-            box-shadow: 4px 6px 16px rgba(0,0,0,.5);
-            position: relative;
-            flex-shrink: 0;
-            margin-right: 18px;
-        }
-        .flag-pole::before {
-            content: '';
-            position: absolute;
-            top: -26px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 30%, #ffe9a0, var(--gold, #d4af37) 55%, #8a6d1a);
-            box-shadow: 0 4px 12px rgba(0,0,0,.45);
-        }
-        .flag-pole::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 22px;
-            height: 14px;
-            background: linear-gradient(180deg, #9ca3af, #4b5563);
-            border-radius: 6px 6px 0 0;
-        }
-        .flag {
-            position: relative;
-            flex: 1;
-            min-width: 0;
-            align-self: flex-start;
-            height: 300px;
-            margin-top: 0;
-            border-radius: 4px 14px 14px 4px;
-            overflow: hidden;
-            transform-origin: left center;
-            animation: flag-sway 6s ease-in-out infinite;
-            box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.25);
-            border: 2px solid rgba(212,175,55,.55);
-        }
-        @keyframes flag-sway {
-            0%, 100% { transform: rotate(-1.4deg) skewY(-.6deg); }
-            30% { transform: rotate(.6deg) skewY(.5deg); }
-            55% { transform: rotate(-.4deg) skewY(1deg); }
-            80% { transform: rotate(1.2deg) skewY(-.4deg); }
-        }
-        .flag-strip {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 16.66%;
-            background: linear-gradient(180deg, #1d5c2e 0%, #2f7a3f 55%, #1a4a26 100%);
-            animation: strip-wave 5.2s ease-in-out infinite;
-            animation-delay: calc(var(--i, 0) * .13s);
-        }
-        @keyframes strip-wave {
-            0%, 100% { transform: translateY(0) skewY(0); }
-            30% { transform: translateY(-9px) skewY(-1.8deg); }
-            60% { transform: translateY(4px) skewY(1.4deg); }
-        }
-        .flag::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            z-index: 3;
-            background: linear-gradient(90deg, #a8861f, var(--gold-l, #f0d78c) 50%, #a8861f);
-        }
-        .flag-content {
-            position: absolute;
-            inset: 0;
-            z-index: 4;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 26px;
-            background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.10) 0%, transparent 60%);
+            padding: 46px 38px;
+            border-radius: 22px;
+            background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+            border: 1px solid rgba(212,175,55,.45);
+            box-shadow: 0 24px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14);
+            min-height: 380px;
+            overflow: hidden;
         }
-        .flag-logo {
-            width: 118px;
-            height: 118px;
+        .inst-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 18%, rgba(212,175,55,.12) 0%, transparent 55%);
+        }
+        .inst-panel-insignia {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            font-size: 26px;
+            color: rgba(212,175,55,.55);
+        }
+        .inst-panel-logo {
+            width: 150px;
+            height: 150px;
             object-fit: contain;
             border-radius: 50%;
             background: #fff;
-            padding: 6px;
-            border: 3px solid var(--gold, #d4af37);
-            box-shadow: 0 10px 26px rgba(0,0,0,.4);
-            margin-bottom: 16px;
+            padding: 8px;
+            border: 4px solid var(--gold, #d4af37);
+            box-shadow: 0 0 0 8px rgba(212,175,55,.14), 0 16px 40px rgba(0,0,0,.45);
+            margin-bottom: 22px;
+            position: relative;
         }
-        .flag-title {
-            font-size: 30px;
+        .inst-panel-title {
+            font-size: clamp(26px, 3vw, 38px);
             font-weight: 800;
             letter-spacing: 1px;
             color: #fff;
-            text-shadow: 0 3px 10px rgba(0,0,0,.5);
+            text-shadow: 0 3px 12px rgba(0,0,0,.5);
             max-width: 100%;
-            line-height: 1.1;
+            line-height: 1.15;
         }
-        .flag-sub {
+        .inst-panel-sub {
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--gold-l, #f0d78c);
-            margin-top: 8px;
+            margin-top: 10px;
             text-transform: uppercase;
-            letter-spacing: .6px;
+            letter-spacing: .8px;
             max-width: 100%;
         }
-        .flag-razao {
-            font-size: 11px;
+        .inst-panel-razao {
+            font-size: 11.5px;
             color: #cfe6d2;
-            margin-top: 8px;
+            margin-top: 10px;
             max-width: 100%;
             opacity: .9;
         }
@@ -439,16 +384,15 @@
 
         @media (max-width: 860px) {
             .landing-hero-grid { grid-template-columns: 1fr; }
-            .flag-scene { height: 320px; }
             .landing-hero-right { padding-left: 0; }
             .landing-nav { display: none; }
         }
         @media (max-width: 480px) {
             .landing-header-inner { padding: 10px 16px; }
             .landing-hero { padding: 36px 16px 28px; }
-            .flag { height: 260px; }
-            .flag-logo { width: 92px; height: 92px; }
-            .flag-title { font-size: 24px; }
+            .inst-panel { padding: 34px 20px; min-height: 300px; }
+            .inst-panel-logo { width: 110px; height: 110px; }
+            .inst-panel-title { font-size: 24px; }
             .landing-portais { padding: 40px 16px; }
             .landing-sobre-inner { padding: 40px 16px; }
             .landing-footer-inner { padding: 26px 16px 16px; flex-direction: column; align-items: flex-start; }
@@ -514,22 +458,12 @@
         <section class="landing-hero">
             <div class="landing-hero-grid">
                 <div class="landing-hero-left">
-                    <div class="flag-scene">
-                        <div class="flag-pole"></div>
-                        <div class="flag">
-                            <div class="flag-strip" style="--i:0"></div>
-                            <div class="flag-strip" style="--i:1"></div>
-                            <div class="flag-strip" style="--i:2"></div>
-                            <div class="flag-strip" style="--i:3"></div>
-                            <div class="flag-strip" style="--i:4"></div>
-                            <div class="flag-strip" style="--i:5"></div>
-                            <div class="flag-content">
-                                <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="flag-logo">
-                                <h1 class="flag-title" id="landing-nome">FARN</h1>
-                                <span class="flag-sub" id="landing-sub">Força Auxiliar de Resgate Nacional</span>
-                                <span class="flag-razao" id="landing-razao"></span>
-                            </div>
-                        </div>
+                    <div class="inst-panel">
+                        <i class="fa-solid fa-shield-halved inst-panel-insignia"></i>
+                        <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="inst-panel-logo">
+                        <h1 class="inst-panel-title" id="landing-nome">FARN</h1>
+                        <span class="inst-panel-sub" id="landing-sub">Força Auxiliar de Resgate Nacional</span>
+                        <span class="inst-panel-razao" id="landing-razao"></span>
                     </div>
                 </div>
                 <div class="landing-hero-right">

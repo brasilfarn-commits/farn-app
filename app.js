@@ -542,6 +542,7 @@ async function initApp() {
     backupCandidatos();
 
     if (restoreLoginState()) {
+        document.body.classList.remove('landing-mode');
         document.getElementById('screen-login').classList.remove('active');
         document.getElementById('screen-admin').classList.add('active');
         document.getElementById('topbar-user-name').textContent = currentUserData ? currentUserData.nome : 'Administrador';
@@ -558,6 +559,7 @@ async function initApp() {
             populateProjetoSelect();
         }
     } else {
+        document.body.classList.add('landing-mode');
         landingCarregarInstituicao();
     }
 }
@@ -678,6 +680,7 @@ async function handleLogin(event) {
 }
 
 function enterAdminPanel() {
+    document.body.classList.remove('landing-mode');
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-admin').classList.add('active');
     document.getElementById('topbar-user-name').textContent = currentUserData ? currentUserData.nome : 'Administrador';
@@ -742,6 +745,7 @@ function handleLogout() {
     if (typeof chatPortaisUnsub !== 'undefined' && chatPortaisUnsub) { chatPortaisUnsub(); chatPortaisUnsub = null; }
     document.getElementById('screen-admin').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
+    document.body.classList.add('landing-mode');
     editingIndex = null;
     currentUserData = null;
     clearLoginState();
