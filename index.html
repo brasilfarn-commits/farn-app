@@ -364,6 +364,7 @@
                                             <th>Nome</th>
                                             <th>Nome Guerra</th>
                                             <th>CPF</th>
+                                            <th>Genero</th>
                                             <th>Matricula</th>
                                             <th>Disciplinas</th>
                                             <th>Fone</th>
@@ -1061,7 +1062,7 @@
                                 </div>
                                 <table class="data-table" id="pre-table">
                                     <thead>
-                                        <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                        <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Genero</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
                                     </thead>
                                     <tbody id="pre-table-body"></tbody>
                                 </table>
@@ -1139,6 +1140,13 @@
                                                     <option value="Casado(a)">Casado(a)</option>
                                                     <option value="Viuvo(a)">Viuvo(a)</option>
                                                     <option value="Divorciado(a)">Divorciado(a)</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group"><label>Genero *</label>
+                                                <select id="fc-genero" class="config-input" required>
+                                                    <option value="">Selecione...</option>
+                                                    <option value="Masculino">Masculino</option>
+                                                    <option value="Feminino">Feminino</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -1684,6 +1692,14 @@
                         <div class="form-group" style="flex:1">
                             <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">CPF *</label>
                             <input type="text" id="intr-cpf" class="config-input" placeholder="000.000.000-00" maxlength="14" required oninput="mascaraCPF(this)">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Genero *</label>
+                            <select id="intr-genero" class="config-input" required>
+                                <option value="">Selecione...</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Feminino">Feminino</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row" style="display:flex;gap:14px;margin-bottom:14px">

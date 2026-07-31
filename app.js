@@ -1071,7 +1071,7 @@ function showAdminSection(sectionId, navEl) {
 
 /* ===== FORM CANDIDATO ===== */
 
-const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-data-inscricao','fc-estado-civil','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-data-inscricao','fc-estado-civil','fc-genero','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
 async function openFormCandidato() {
     editingIndex = null;
@@ -1095,6 +1095,7 @@ async function editCandidato(index) {
     document.getElementById('fc-nascimento').value = c.nascimento || '';
     document.getElementById('fc-data-inscricao').value = c.dataInscricao || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
+    document.getElementById('fc-genero').value = c.genero || '';
     document.getElementById('fc-nacionalidade').value = c.nacionalidade || '';
     document.getElementById('fc-naturalidade').value = c.naturalidade || '';
     document.getElementById('fc-titulo').value = c.tituloEleitor || '';
@@ -1294,7 +1295,7 @@ function renderList() {
     const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
     const p = filtrados.filter(c => c.status === 'Pendente').length;
     if (badge) badge.textContent = p + ' pendente' + (p !== 1 ? 's' : '');
-    if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
+    if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
     tbody.innerHTML = filtrados.map((c) => {
         const i = candidatos.indexOf(c);
         const sc = c.status === 'Aprovado' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
@@ -1303,6 +1304,7 @@ function renderList() {
             <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td>${c.nascimento || '-'}</td>
+            <td>${c.genero || '-'}</td>
             <td>${c.turma || '-'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</td>
             <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
             <td><span class="badge ${sc}">${c.status}</span></td>
@@ -1331,6 +1333,7 @@ function viewCandidato(i) {
             <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value"${c.atualizarCadastro ? ' style="color:#a5d6a7;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:11px;color:#66bb6a"></i>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(c.cpf)}</span></div>
             <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${c.nascimento||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Genero</span><span class="detail-value">${c.genero||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Estado Civil</span><span class="detail-value">${c.estadoCivil||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Nacionalidade</span><span class="detail-value">${c.nacionalidade||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Naturalidade</span><span class="detail-value">${c.naturalidade||'---'}</span></div>
@@ -1422,6 +1425,7 @@ function printCandidato(i) {
         <div class="row"><div class="col"><div class="label">Nome</div><div class="val"${c.atualizarCadastro ? ' style="color:#2e7d32;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' [ATUALIZAR]' : ''}</div></div></div>
         <div class="row"><div class="col"><div class="label">CPF</div><div class="val">${formatCPFDisplay(c.cpf)}</div></div><div class="col"><div class="label">Nascimento</div><div class="val">${c.nascimento||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Estado Civil</div><div class="val">${c.estadoCivil||'---'}</div></div><div class="col"><div class="label">Nacionalidade</div><div class="val">${c.nacionalidade||'---'}</div></div></div>
+        <div class="row"><div class="col"><div class="label">Genero</div><div class="val">${c.genero||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Profissao</div><div class="val">${c.profissao||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Mae</div><div class="val">${c.mae||'---'}</div></div><div class="col"><div class="label">Pai</div><div class="val">${c.pai||'---'}</div></div></div>
         <h2>Contato</h2>
@@ -1581,7 +1585,7 @@ async function importExcelFile(event) {
         if (rows.length < 2) { alert('A planilha esta vazia ou nao contem dados.'); return; }
 
         const fieldMap = [
-            'nome', 'cpf', 'nascimento', 'estadoCivil', 'nacionalidade',
+            'nome', 'cpf', 'nascimento', 'genero', 'estadoCivil', 'nacionalidade',
             'naturalidade', 'profissao', 'tituloEleitor', 'mae', 'pai', 'email', 'whatsapp',
             'endereco', 'numero', 'bairro', 'cidade', 'estado', 'localVotacao',
             'altura', 'peso', 'fatorRh', 'hipertensao', 'diabetes',
@@ -1630,9 +1634,9 @@ function exportExcel() {
     const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
     const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
     if (!filtrados.length) { alert('Nenhum candidato para exportar nesta turma.'); return; }
-    let csv = 'Nome,CPF,Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
+    let csv = 'Nome,CPF,Nascimento,Genero,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     filtrados.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}","${c.dataInscricao||''}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.genero||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}","${c.dataInscricao||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pre_inscritos_farn.csv'; a.click();
@@ -2075,6 +2079,7 @@ const camposRelatorio = [
     { key: 'cpf', label: 'CPF' },
     { key: 'matricula', label: 'Matricula' },
     { key: 'nascimento', label: 'Data de Nascimento' },
+    { key: 'genero', label: 'Genero' },
     { key: 'estadoCivil', label: 'Estado Civil' },
     { key: 'nacionalidade', label: 'Nacionalidade' },
     { key: 'naturalidade', label: 'Naturalidade' },
@@ -4665,6 +4670,7 @@ function instrutorAbrirModal(id) {
         document.getElementById('intr-nome').value = inst.nome || '';
         document.getElementById('intr-guerra').value = inst.guerra || '';
         document.getElementById('intr-cpf').value = inst.cpf || '';
+        document.getElementById('intr-genero').value = inst.genero || '';
         document.getElementById('intr-matricula').value = inst.matricula || '';
         document.getElementById('intr-fone').value = inst.fone || '';
         document.getElementById('intr-email').value = inst.email || '';
@@ -4686,6 +4692,7 @@ function instrutorLimparForm() {
     document.getElementById('intr-nome').value = '';
     document.getElementById('intr-guerra').value = '';
     document.getElementById('intr-cpf').value = '';
+    document.getElementById('intr-genero').value = '';
     document.getElementById('intr-matricula').value = '';
     document.getElementById('intr-fone').value = '';
     document.getElementById('intr-email').value = '';
@@ -4717,10 +4724,12 @@ async function instrutorSalvar(e) {
     var guerra = document.getElementById('intr-guerra').value.trim();
     var cpf = document.getElementById('intr-cpf').value.trim();
     if (!nome || !guerra || !cpf) { alert('Preencha Nome Completo, Nome de Guerra e CPF'); return; }
+    var genero = document.getElementById('intr-genero').value;
     var dados = {
         nome: nome,
         guerra: guerra,
         cpf: cpf,
+        genero: genero,
         matricula: document.getElementById('intr-matricula').value.trim(),
         fone: document.getElementById('intr-fone').value.trim(),
         email: document.getElementById('intr-email').value.trim(),
@@ -4769,6 +4778,7 @@ function instrutorListar() {
             '<td style="font-weight:600">' + (i.nome || '-') + '</td>' +
             '<td>' + (i.guerra || '-') + '</td>' +
             '<td>' + cpfFmt + '</td>' +
+            '<td>' + (i.genero || '-') + '</td>' +
             '<td>' + (i.matricula || '-') + '</td>' +
             '<td>' + (discHtml || '-') + '</td>' +
             '<td>' + (i.fone || '-') + '</td>' +

@@ -245,7 +245,15 @@
                         <input type="date" id="rc-nascimento" required>
                     </div>
                 </div>
-                <div class="recad-row recad-row-3">
+                <div class="recad-row recad-row-2">
+                    <div class="recad-field">
+                        <label>Genero <span class="required">*</span></label>
+                        <select id="rc-genero" required>
+                            <option value="">Selecione...</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                        </select>
+                    </div>
                     <div class="recad-field">
                         <label>Estado Civil <span class="required">*</span></label>
                         <select id="rc-estado-civil" required>
@@ -256,6 +264,8 @@
                             <option value="Divorciado(a)">Divorciado(a)</option>
                         </select>
                     </div>
+                </div>
+                <div class="recad-row recad-row-2">
                     <div class="recad-field">
                         <label>Nacionalidade <span class="required">*</span></label>
                         <input type="text" id="rc-nacionalidade" value="Brasileira" required>
@@ -903,6 +913,7 @@
             cpf: document.getElementById('rc-cpf').value.replace(/\D/g, ''),
             rg: document.getElementById('rc-rg').value.trim(),
             nascimento: document.getElementById('rc-nascimento').value,
+            genero: document.getElementById('rc-genero').value,
             estadoCivil: document.getElementById('rc-estado-civil').value,
             nacionalidade: document.getElementById('rc-nacionalidade').value.trim(),
             naturalidade: document.getElementById('rc-naturalidade').value.trim(),
