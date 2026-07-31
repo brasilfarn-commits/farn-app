@@ -4562,108 +4562,116 @@ function tfmExportarCSV() {
 /* ===== APOSTILAS ADMIN ===== */
 var apostEditingId = null;
 
-async function apostLoadProjetos() {
-    var sel = document.getElementById('apost-projeto');
+/* ===== APOSTILAS POR DISCIPLINA ===== */
+var apostEditingId = null;
+var apostDisciplinaId = null;
+var apostDisciplina = null;
+
+function apostFecharModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    var modal = document.getElementById('apost-modal-overlay');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function apostAbrirModal(disciplinaId) {
     try {
-        var snap = await dbFirestore.collection('parceiros').orderBy('nome').get();
-        sel.innerHTML = '<option value="">Selecione o projeto...</option>';
-        snap.forEach(function(doc) {
-            var p = doc.data();
-            if ((p.status || 'Em Andamento') === 'Em Andamento') {
-                sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
-            }
-        });
+        var doc = await dbFirestore.collection('disciplinas').doc(disciplinaId).get();
+        if (!doc.exists) { alert('Disciplina nao encontrada.'); return; }
+        var d = doc.data();
+        apostDisciplinaId = disciplinaId;
+        apostDisciplina = d;
+        var info = document.getElementById('apost-modal-disciplina');
+        if (info) {
+            info.innerHTML = '<div style="font-size:14px;font-weight:700;color:#9c27b0;margin-bottom:6px"><i class="fa-solid fa-graduation-cap" style="margin-right:6px"></i>' + (d.nome || 'Disciplina') + '</div>' +
+                '<div style="font-size:12px;color:#64748b;display:flex;gap:10px;flex-wrap:wrap">' +
+                    '<span><i class="fa-solid fa-folder-open" style="margin-right:4px"></i>' + (d.projeto || '-') + '</span>' +
+                    '<span><i class="fa-solid fa-users" style="margin-right:4px"></i>' + (d.turma || 'Todas as turmas') + '</span>' +
+                    (d.instrutor ? '<span><i class="fa-solid fa-chalkboard-user" style="margin-right:4px"></i>' + d.instrutor + '</span>' : '') +
+                '</div>';
+        }
+        document.getElementById('apost-file').value = '';
+        document.getElementById('apost-observacao').value = '';
+        document.getElementById('apost-ferramentas').value = '';
+        document.getElementById('apost-metodo').value = '';
+        document.getElementById('apost-visivel').checked = false;
+        var msg = document.getElementById('apost-msg');
+        if (msg) msg.style.display = 'none';
+        var btn = document.getElementById('apost-upload-btn');
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvar Apostila';
+        apostEditingId = null;
+
+        var snap = await dbFirestore.collection('apostilasAlunos').where('disciplinaId', '==', disciplinaId).limit(1).get();
+        if (snap.empty) {
+            snap = await dbFirestore.collection('apostilasAlunos').where('titulo', '==', (d.nome || '')).limit(1).get();
+        }
+        if (!snap.empty) {
+            snap.forEach(function(apDoc) {
+                var a = apDoc.data();
+                apostEditingId = apDoc.id;
+                document.getElementById('apost-file').value = a.url || '';
+                document.getElementById('apost-observacao').value = a.observacao || '';
+                document.getElementById('apost-ferramentas').value = a.ferramentas || '';
+                document.getElementById('apost-metodo').value = a.metodoAvaliacao || '';
+                document.getElementById('apost-visivel').checked = a.visivel !== false;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Apostila';
+            });
+        }
+
+        document.getElementById('apost-modal-overlay').classList.remove('hidden');
     } catch(e) {
-        sel.innerHTML = '<option value="">Erro ao carregar projetos</option>';
+        console.error('Erro ao abrir apostila:', e);
+        alert('Erro ao carregar apostila: ' + e.message);
     }
 }
 
-function apostOnProjetoChange() {
-    var projetoNome = document.getElementById('apost-projeto').value;
-    var selTurma = document.getElementById('apost-turma');
-    selTurma.innerHTML = '<option value="">Todas as turmas</option>';
-    if (projetoNome) {
-        var turmasDoProjeto = turmas.filter(function(t) { return t.projeto === projetoNome; });
-        turmasDoProjeto.forEach(function(t) {
-            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
-        });
-    }
-}
-
-async function apostSave() {
-    var titulo = document.getElementById('apost-titulo').value.trim();
-    var projeto = document.getElementById('apost-projeto').value;
-    var desc = document.getElementById('apost-desc').value.trim();
-    var turma = document.getElementById('apost-turma').value.trim();
+async function apostSalvarModal(e) {
+    e.preventDefault();
+    if (!apostDisciplina) return;
     var arquivo = document.getElementById('apost-file').value;
-    var btn = document.getElementById('apost-upload-btn');
-
-    if (!titulo) { apostShowMsg('Informe o titulo.', 'err'); return; }
-    if (!projeto) { apostShowMsg('Selecione o projeto.', 'err'); return; }
+    var observacao = document.getElementById('apost-observacao').value.trim();
+    var ferramentas = document.getElementById('apost-ferramentas').value.trim();
+    var metodo = document.getElementById('apost-metodo').value.trim();
+    var visivel = document.getElementById('apost-visivel').checked;
     if (!arquivo) { apostShowMsg('Selecione o arquivo PDF.', 'err'); return; }
-
+    var btn = document.getElementById('apost-upload-btn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
-
     try {
         var dados = {
-            titulo: titulo,
-            descricao: desc,
-            projeto: projeto,
-            turma: turma,
-            url: arquivo
+            titulo: apostDisciplina.nome || 'Apostila',
+            descricao: observacao,
+            observacao: observacao,
+            ferramentas: ferramentas,
+            metodoAvaliacao: metodo,
+            projeto: apostDisciplina.projeto || '',
+            turma: apostDisciplina.turma || '',
+            disciplinaId: apostDisciplinaId,
+            disciplinaNome: apostDisciplina.nome || '',
+            url: arquivo,
+            visivel: visivel
         };
-
         if (apostEditingId) {
             await dbFirestore.collection('apostilasAlunos').doc(apostEditingId).update(dados);
             apostShowMsg('Apostila atualizada com sucesso!', 'ok');
-            apostEditingId = null;
-            document.getElementById('apost-upload-btn').innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar';
         } else {
-            dados.visivel = false;
             dados.data = new Date().toISOString();
             dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
             await dbFirestore.collection('apostilasAlunos').add(dados);
             apostShowMsg('Apostila cadastrada com sucesso!', 'ok');
         }
-
-        document.getElementById('apost-titulo').value = '';
-        document.getElementById('apost-desc').value = '';
-        document.getElementById('apost-turma').value = '';
-        document.getElementById('apost-file').value = '';
+        setTimeout(function() { apostFecharModal(); }, 1200);
         apostilasLoadList();
     } catch(e) {
         console.error('Erro ao salvar apostila:', e);
         apostShowMsg('Erro: ' + e.message, 'err');
     }
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar';
-}
-
-async function apostEdit(docId) {
-    try {
-        var doc = await dbFirestore.collection('apostilasAlunos').doc(docId).get();
-        if (!doc.exists) { apostShowMsg('Apostila nao encontrada.', 'err'); return; }
-        var a = doc.data();
-        document.getElementById('apost-titulo').value = a.titulo || '';
-        document.getElementById('apost-desc').value = a.descricao || '';
-        document.getElementById('apost-file').value = a.url || '';
-        document.getElementById('apost-projeto').value = a.projeto || '';
-        apostOnProjetoChange();
-        setTimeout(function() {
-            document.getElementById('apost-turma').value = a.turma || '';
-        }, 100);
-        apostEditingId = docId;
-        document.getElementById('apost-upload-btn').innerHTML = '<i class="fa-solid fa-check"></i> Atualizar';
-        apostShowMsg('Editando: ' + (a.titulo || 'Apostila') + ' — altere os campos e clique Atualizar.', 'ok');
-        document.getElementById('apost-titulo').focus();
-    } catch(e) {
-        apostShowMsg('Erro ao carregar apostila: ' + e.message, 'err');
-    }
+    btn.innerHTML = apostEditingId ? '<i class="fa-solid fa-check"></i> Atualizar Apostila' : '<i class="fa-solid fa-check"></i> Salvar Apostila';
 }
 
 function apostShowMsg(text, type) {
     var el = document.getElementById('apost-msg');
+    if (!el) return;
     el.textContent = text;
     el.style.display = 'block';
     el.style.background = type === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
@@ -4673,58 +4681,53 @@ function apostShowMsg(text, type) {
 
 async function apostilasLoadList() {
     var container = document.getElementById('apost-list');
-    apostLoadProjetos();
+    if (!container) return;
+    container.innerHTML = '<div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando disciplinas...</div>';
     try {
-        var snap = await dbFirestore.collection('apostilasAlunos').orderBy('data', 'desc').get();
-        if (snap.empty) {
-            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-book-open" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma apostila cadastrada.</p></div>';
+        var snapDisc = await dbFirestore.collection('disciplinas').orderBy('nome').get();
+        var apostSnap = await dbFirestore.collection('apostilasAlunos').get();
+        var apostilas = {};
+        apostSnap.forEach(function(doc) {
+            var a = doc.data();
+            a._id = doc.id;
+            apostilas[a.disciplinaId || doc.id] = a;
+        });
+        if (snapDisc.empty) {
+            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-graduation-cap" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma disciplina cadastrada. Cadastre disciplinas na secao Disciplinas e Aulas.</p></div>';
             return;
         }
         container.innerHTML = '';
-        snap.forEach(function(doc) {
-            var a = doc.data();
-            var isVisivel = a.visivel !== false;
-            var dateStr = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : '';
-            var turmaHtml = a.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '';
-            var statusBadge = isVisivel
-                ? '<span style="background:rgba(76,175,80,.15);color:#4caf50;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Visivel</span>'
-                : '<span style="background:rgba(255,255,255,.06);color:#666;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Oculto</span>';
-            var toggleColor = isVisivel ? 'rgba(33,136,255,.15)' : 'rgba(255,255,255,.06)';
-            var toggleBorder = isVisivel ? 'rgba(33,136,255,.3)' : 'rgba(255,255,255,.1)';
-            var toggleIconColor = isVisivel ? '#2188ff' : '#666';
-            var toggleOver = isVisivel ? 'rgba(33,136,255,.35)' : 'rgba(255,255,255,.12)';
-            var toggleTitle = isVisivel ? 'Ocultar do Portal do Aluno' : 'Mostrar no Portal do Aluno';
-            var toggleIcon = isVisivel ? 'fa-eye' : 'fa-eye-slash';
+        snapDisc.forEach(function(doc) {
+            var d = doc.data();
+            var apost = apostilas[d.id] || null;
+            var temApostila = !!(apost && apost.url);
+            var turmaHtml = d.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + d.turma + '</span>' : '<span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
+            var instrutorHtml = d.instrutor ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.instrutor + '</span>' : '';
+            var statusApost = temApostila
+                ? '<span style="background:rgba(76,175,80,.15);color:#4caf50;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-file-pdf" style="margin-right:3px"></i>Com apostila</span>'
+                : '<span style="background:rgba(245,158,11,.12);color:#f59e0b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-circle-plus" style="margin-right:3px"></i>Sem apostila</span>';
             var card = document.createElement('div');
-            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border:1px solid ' + (isVisivel ? 'rgba(33,136,255,.15)' : 'rgba(255,255,255,.06)') + ';border-radius:10px;margin-bottom:8px';
-            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(244,67,54,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-pdf" style="color:#f44336;font-size:18px"></i></div>' +
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid ' + (temApostila ? 'rgba(76,175,80,.4)' : '#e2e8f0') + ';border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .2s';
+            card.onclick = function() { apostAbrirModal(doc.id); };
+            card.onmouseover = function() { card.style.borderColor = '#16a34a'; card.style.background = 'rgba(22,163,74,.05)'; };
+            card.onmouseout = function() { card.style.borderColor = temApostila ? 'rgba(76,175,80,.4)' : '#e2e8f0'; card.style.background = '#f8fafc'; };
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(156,39,176,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-graduation-cap" style="color:#9c27b0;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:0">' +
-                    '<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.titulo || 'Apostila') + '</div>' +
-                    '<div style="font-size:11px;color:#888;display:flex;gap:8px;align-items:center;margin-top:2px">' +
-                        '<span>' + (a.projeto || '') + '</span>' + turmaHtml + statusBadge + (dateStr ? '<span>' + dateStr + '</span>' : '') +
+                    '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (d.nome || 'Disciplina') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
+                        '<span>' + (d.projeto || '') + '</span>' + turmaHtml + instrutorHtml + statusApost +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
-                    '<button onclick="apostToggleVisivel(\'' + doc.id + '\',' + isVisivel + ')" title="' + toggleTitle + '" style="background:' + toggleColor + ';border:1px solid ' + toggleBorder + ';color:' + toggleIconColor + ';width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'' + toggleOver + '\'" onmouseout="this.style.background=\'' + toggleColor + '\'"><i class="fa-solid ' + toggleIcon + '"></i></button>' +
-                    '<button onclick="apostEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.3);color:#ff9800;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(255,152,0,.35)\'" onmouseout="this.style.background=\'rgba(255,152,0,.15)\'"><i class="fa-solid fa-pen"></i></button>' +
-                    '<button onclick="window.open(\'' + a.url + '\',\'_blank\')" title="Abrir PDF" style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:#4caf50;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(76,175,80,.35)\'" onmouseout="this.style.background=\'rgba(76,175,80,.15)\'"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>' +
-                    '<button onclick="apostDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(244,67,54,.35)\'" onmouseout="this.style.background=\'rgba(244,67,54,.15)\'"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button class="btn-primary btn-sm" style="background:#16a34a;border:none;font-size:11px;padding:6px 12px;white-space:nowrap" onclick="event.stopPropagation();apostAbrirModal(\'' + doc.id + '\')"><i class="fa-solid fa-' + (temApostila ? 'pen' : 'file-circle-plus') + '" style="margin-right:4px"></i>' + (temApostila ? 'Editar' : 'Cadastrar') + '</button>' +
+                    (temApostila ? '<button title="Abrir PDF" style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:#4caf50;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px" onclick="event.stopPropagation();window.open(\'' + apost.url + '\',\'_blank\')"><i class="fa-solid fa-file-pdf"></i></button>' : '') +
+                    (temApostila ? '<button title="Excluir apostila" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px" onclick="event.stopPropagation();apostDelete(\'' + apost._id + '\')"><i class="fa-solid fa-trash"></i></button>' : '') +
                 '</div>';
             container.appendChild(card);
         });
     } catch(e) {
         console.error('Erro ao listar apostilas:', e);
-        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar apostilas.</div>';
-    }
-}
-
-async function apostToggleVisivel(docId, atual) {
-    var novo = !atual;
-    try {
-        await dbFirestore.collection('apostilasAlunos').doc(docId).update({ visivel: novo });
-        apostilasLoadList();
-    } catch(e) {
-        alert('Erro ao alterar visibilidade: ' + e.message);
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar disciplinas.</div>';
     }
 }
 

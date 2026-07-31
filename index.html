@@ -1647,52 +1647,13 @@
 
                 <!-- APOSTILAS -->
                 <div id="admin-apostilas" class="admin-section">
-                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
-                        <h3 style="margin:0 0 14px;color:#16a34a"><i class="fa-solid fa-book-open" style="margin-right:8px"></i> Nova Apostila</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Titulo *</label>
-                                <input type="text" id="apost-titulo" class="config-input" placeholder="Ex: Comunicacao Tecnica e Ordem Unida">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
-                                <select id="apost-projeto" class="config-input" onchange="apostOnProjetoChange()"><option value="">Carregando...</option></select>
-                            </div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Descricao</label>
-                                <input type="text" id="apost-desc" class="config-input" placeholder="Breve descricao (opcional)">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma (vazio = todas)</label>
-                                <select id="apost-turma" class="config-input"><option value="">Todas as turmas</option></select>
-                            </div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Arquivo PDF *</label>
-                                <select id="apost-file" class="config-input">
-                                    <option value="">Selecione o PDF...</option>
-                                    <option value="APOST/AP OU E CT.pdf">AP OU E CT.pdf - Comunicacao Tecnica e Ordem Unida</option>
-                                    <option value="APOST/APH.pdf">APH.pdf</option>
-                                    <option value="APOST/GER ANL.pdf">GER ANL.pdf</option>
-                                    <option value="APOST/Legisla%C3%A7%C3%A3o.pdf">Legislacao.pdf</option>
-                                </select>
-                            </div>
-                            <button class="btn-primary" id="apost-upload-btn" onclick="apostSave()" style="height:42px">
-                                <i class="fa-solid fa-check"></i> Cadastrar
-                            </button>
-                        </div>
-                        <div id="apost-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
-
                     <div class="card">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-book-open" style="color:#16a34a;margin-right:8px"></i> Apostilas Cadastradas</h3>
+                            <h3><i class="fa-solid fa-book-open" style="color:#16a34a;margin-right:8px"></i> Apostilas por Disciplina</h3>
+                            <span style="font-size:12px;color:#64748b"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i> Clique em uma disciplina para cadastrar ou editar a apostila em PDF, observacao do conteudo, ferramentas e metodo de avaliacao.</span>
                         </div>
                         <div id="apost-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando disciplinas...</div>
                         </div>
                     </div>
                 </div>
@@ -2029,6 +1990,79 @@
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
                         <button type="button" class="btn-secondary" onclick="instrutorLimparForm()"><i class="fa-solid fa-eraser"></i> Limpar</button>
                         <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL APOSTILA -->
+    <div id="apost-modal-overlay" class="modal-overlay hidden" onclick="apostFecharModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:680px;max-height:92vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-book-open" style="color:#16a34a;margin-right:8px"></i> Apostila da Disciplina</h3>
+                <button class="modal-close" onclick="apostFecharModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-apostila" onsubmit="return apostSalvarModal(event)">
+                    <div id="apost-modal-disciplina" style="margin-bottom:14px;padding:12px 14px;border-radius:8px;background:rgba(156,39,176,.06);border:1px solid rgba(156,39,176,.2)"></div>
+
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-file-pdf"></i><h3>Apostila em PDF</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group full">
+                                <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Arquivo PDF *</label>
+                                <select id="apost-file" class="config-input">
+                                    <option value="">Selecione o PDF...</option>
+                                    <option value="APOST/AP OU E CT.pdf">AP OU E CT.pdf - Comunicacao Tecnica e Ordem Unida</option>
+                                    <option value="APOST/APH.pdf">APH.pdf</option>
+                                    <option value="APOST/GER ANL.pdf">GER ANL.pdf</option>
+                                    <option value="APOST/Legisla%C3%A7%C3%A3o.pdf">Legislacao.pdf</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-align-left"></i><h3>Observacao do Conteudo</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group full">
+                                <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Observacao do conteudo que sera aplicado</label>
+                                <textarea id="apost-observacao" class="config-input" rows="4" style="resize:vertical" placeholder="Descreva o conteudo que sera aplicado..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-toolbox"></i><h3>Ferramentas Utilizadas</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group full">
+                                <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Ferramentas utilizadas em sala de aula ou em area externa</label>
+                                <textarea id="apost-ferramentas" class="config-input" rows="3" style="resize:vertical" placeholder="Ex: extintor, mangueira, cordas, projetor, manequim..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-clipboard-check"></i><h3>Metodo de Avaliacao</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group full">
+                                <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Metodo de avaliacao</label>
+                                <textarea id="apost-metodo" class="config-input" rows="3" style="resize:vertical" placeholder="Ex: prova pratica, prova escrita, avaliacao continua..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;cursor:pointer">
+                        <input type="checkbox" id="apost-visivel" style="width:18px;height:18px;accent-color:#16a34a;cursor:pointer">
+                        <label for="apost-visivel" style="font-size:13px;font-weight:600;color:#475569;cursor:pointer"><i class="fa-solid fa-eye" style="color:#16a34a;margin-right:4px"></i> Apostila visivel no Portal do Aluno</label>
+                    </div>
+
+                    <div id="apost-msg" style="display:none;margin-bottom:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                        <button type="button" class="btn-secondary" onclick="apostFecharModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                        <button type="submit" class="btn-primary" id="apost-upload-btn"><i class="fa-solid fa-check"></i> Salvar Apostila</button>
                     </div>
                 </form>
             </div>
