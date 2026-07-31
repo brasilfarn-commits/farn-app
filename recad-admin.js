@@ -200,6 +200,7 @@ function recadViewDetail(docId) {
         { label: 'CPF', val: cpf },
         { label: 'RG', val: r.rg },
         { label: 'Data de Nascimento', val: r.nascimento },
+        { label: 'Idade', val: r.idade },
         { label: 'Genero', val: r.genero },
         { label: 'Estado Civil', val: r.estadoCivil },
         { label: 'Nacionalidade', val: r.nacionalidade },
@@ -306,6 +307,7 @@ function recadExportExcel() {
             'Matricula': r.matricula || '',
             'RG': r.rg || '',
             'Nascimento': r.nascimento || '',
+            'Idade': r.idade || '',
             'Genero': r.genero || '',
             'Estado Civil': r.estadoCivil || '',
             'Email': r.email || '',
@@ -423,6 +425,7 @@ function recadPrint(docId) {
         { l: 'CPF', v: cpf },
         { l: 'RG', v: r.rg },
         { l: 'Nascimento', v: r.nascimento },
+        { l: 'Idade', v: r.idade },
         { l: 'Genero', v: r.genero },
         { l: 'Estado Civil', v: r.estadoCivil },
         { l: 'Nacionalidade', v: r.nacionalidade },
@@ -674,6 +677,7 @@ function recadEditInline(docId) {
         { key: 'cpf', label: 'CPF', type: 'text' },
         { key: 'rg', label: 'RG', type: 'text' },
         { key: 'nascimento', label: 'Nascimento', type: 'date' },
+        { key: 'idade', label: 'Idade', type: 'text' },
         { key: 'genero', label: 'Genero', type: 'select', options: ['','Masculino','Feminino'] },
         { key: 'estadoCivil', label: 'Estado Civil', type: 'select', options: ['','Solteiro(a)','Casado(a)','Divorciado(a)','Viuvo(a)','Uniao Estavel'] },
         { key: 'nacionalidade', label: 'Nacionalidade', type: 'text' },
@@ -780,7 +784,7 @@ function recadRemovePhoto() {
 
 async function recadSaveEditInline(docId) {
     var updates = {};
-    var textFields = ['nome','cpf','rg','nascimento','genero','estadoCivil','nacionalidade','naturalidade','mae','pai','profissao','titulo','email','whatsapp','endereco','numero','bairro','cidade','estado','projeto','matricula','dataCertificado','senha'];
+    var textFields = ['nome','cpf','rg','nascimento','idade','genero','estadoCivil','nacionalidade','naturalidade','mae','pai','profissao','titulo','email','whatsapp','endereco','numero','bairro','cidade','estado','projeto','matricula','dataCertificado','senha'];
     textFields.forEach(function(f) {
         var el = document.getElementById('rc-edit-' + f);
         if (el) updates[f] = el.value.trim();

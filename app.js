@@ -1071,7 +1071,25 @@ function showAdminSection(sectionId, navEl) {
 
 /* ===== FORM CANDIDATO ===== */
 
-const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-data-inscricao','fc-estado-civil','fc-genero','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+function calcularIdade(dataNascimento) {
+    if (!dataNascimento) return '';
+    var nasc = new Date(dataNascimento + (dataNascimento.length === 10 ? 'T00:00:00' : ''));
+    if (isNaN(nasc.getTime())) return '';
+    var hoje = new Date();
+    var anos = hoje.getFullYear() - nasc.getFullYear();
+    var m = hoje.getMonth() - nasc.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) anos--;
+    return anos >= 0 ? anos : '';
+}
+
+function calcularIdadeCampo(nascId, idadeId) {
+    var el = document.getElementById(idadeId);
+    if (!el) return;
+    var v = calcularIdade(document.getElementById(nascId) ? document.getElementById(nascId).value : '');
+    el.value = v !== '' ? v + ' anos' : '';
+}
+
+const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-idade','fc-data-inscricao','fc-estado-civil','fc-genero','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
 async function openFormCandidato() {
     editingIndex = null;
@@ -1093,6 +1111,7 @@ async function editCandidato(index) {
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
     document.getElementById('fc-nascimento').value = c.nascimento || '';
+    calcularIdadeCampo('fc-nascimento', 'fc-idade');
     document.getElementById('fc-data-inscricao').value = c.dataInscricao || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
     document.getElementById('fc-genero').value = c.genero || '';
@@ -1295,7 +1314,7 @@ function renderList() {
     const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
     const p = filtrados.filter(c => c.status === 'Pendente').length;
     if (badge) badge.textContent = p + ' pendente' + (p !== 1 ? 's' : '');
-    if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
+    if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
     tbody.innerHTML = filtrados.map((c) => {
         const i = candidatos.indexOf(c);
         const sc = c.status === 'Aprovado' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
@@ -1304,6 +1323,7 @@ function renderList() {
             <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td>${c.nascimento || '-'}</td>
+            <td>${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '-'}</td>
             <td>${c.genero || '-'}</td>
             <td>${c.turma || '-'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</td>
             <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
@@ -1333,6 +1353,7 @@ function viewCandidato(i) {
             <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value"${c.atualizarCadastro ? ' style="color:#a5d6a7;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:11px;color:#66bb6a"></i>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(c.cpf)}</span></div>
             <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${c.nascimento||'---'}</span></div>
+            <div class="detail-item"><span class="detail-label">Idade</span><span class="detail-value">${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '---'}</span></div>
             <div class="detail-item"><span class="detail-label">Genero</span><span class="detail-value">${c.genero||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Estado Civil</span><span class="detail-value">${c.estadoCivil||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Nacionalidade</span><span class="detail-value">${c.nacionalidade||'---'}</span></div>
@@ -1424,6 +1445,7 @@ function printCandidato(i) {
         <h2>Dados Pessoais</h2>
         <div class="row"><div class="col"><div class="label">Nome</div><div class="val"${c.atualizarCadastro ? ' style="color:#2e7d32;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' [ATUALIZAR]' : ''}</div></div></div>
         <div class="row"><div class="col"><div class="label">CPF</div><div class="val">${formatCPFDisplay(c.cpf)}</div></div><div class="col"><div class="label">Nascimento</div><div class="val">${c.nascimento||'---'}</div></div></div>
+        <div class="row"><div class="col"><div class="label">Idade</div><div class="val">${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '---'}</div></div><div class="col"><div class="label">Genero</div><div class="val">${c.genero||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Estado Civil</div><div class="val">${c.estadoCivil||'---'}</div></div><div class="col"><div class="label">Nacionalidade</div><div class="val">${c.nacionalidade||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Genero</div><div class="val">${c.genero||'---'}</div></div></div>
         <div class="row"><div class="col"><div class="label">Profissao</div><div class="val">${c.profissao||'---'}</div></div></div>
@@ -1634,9 +1656,9 @@ function exportExcel() {
     const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
     const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
     if (!filtrados.length) { alert('Nenhum candidato para exportar nesta turma.'); return; }
-    let csv = 'Nome,CPF,Nascimento,Genero,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
+    let csv = 'Nome,CPF,Nascimento,Idade,Genero,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     filtrados.forEach(c => {
-        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${c.genero||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}","${c.dataInscricao||''}"\n`;
+        csv += `"${c.nome}","${c.cpf}","${c.nascimento||''}","${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : ''}","${c.genero||''}","${c.estadoCivil||''}","${c.nacionalidade||''}","${c.naturalidade||''}","${c.profissao||''}","${c.mae||''}","${c.pai||''}","${c.tituloEleitor||''}","${c.email||''}","${c.whatsapp||''}","${c.endereco||''}","${c.numero||''}","${c.bairro||''}","${c.cidade||''}","${c.estado||''}","${c.altura||''}","${c.peso||''}","${c.fatorRh||''}","${c.hipertensao||''}","${c.diabetes||''}","${c.deficiencia||''}","${c.tatuagem||''}","${c.cirurgia||''}","${c.alcool||''}","${c.medicamento||''}","${c.cansaco||''}","${c.calca||''}","${c.camisa||''}","${c.calcado||''}","${c.turma||''}","${c.projeto||''}","${c.status}","${c.senha||''}","${c.dataCadastro}","${c.dataHoraCadastro||''}","${c.dataInscricao||''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pre_inscritos_farn.csv'; a.click();
@@ -2079,6 +2101,7 @@ const camposRelatorio = [
     { key: 'cpf', label: 'CPF' },
     { key: 'matricula', label: 'Matricula' },
     { key: 'nascimento', label: 'Data de Nascimento' },
+    { key: 'idade', label: 'Idade' },
     { key: 'genero', label: 'Genero' },
     { key: 'estadoCivil', label: 'Estado Civil' },
     { key: 'nacionalidade', label: 'Nacionalidade' },

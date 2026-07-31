@@ -231,7 +231,7 @@
                     <label>Nome Completo <span class="required">*</span></label>
                     <input type="text" id="rc-nome" required>
                 </div>
-                <div class="recad-row recad-row-3">
+                <div class="recad-row recad-row-2">
                     <div class="recad-field">
                         <label>CPF <span class="required">*</span></label>
                         <input type="text" id="rc-cpf" maxlength="14" required oninput="rcFormatCPF(this)">
@@ -240,9 +240,15 @@
                         <label>RG <span class="required">*</span></label>
                         <input type="text" id="rc-rg" required>
                     </div>
+                </div>
+                <div class="recad-row recad-row-2">
                     <div class="recad-field">
                         <label>Data de Nascimento <span class="required">*</span></label>
-                        <input type="date" id="rc-nascimento" required>
+                        <input type="date" id="rc-nascimento" required onchange="calcularIdadeCampo('rc-nascimento','rc-idade')">
+                    </div>
+                    <div class="recad-field">
+                        <label>Idade (auto)</label>
+                        <input type="text" id="rc-idade" placeholder="0 anos" readonly>
                     </div>
                 </div>
                 <div class="recad-row recad-row-2">
@@ -897,6 +903,24 @@
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    function calcularIdade(dataNascimento) {
+        if (!dataNascimento) return '';
+        var nasc = new Date(dataNascimento + (dataNascimento.length === 10 ? 'T00:00:00' : ''));
+        if (isNaN(nasc.getTime())) return '';
+        var hoje = new Date();
+        var anos = hoje.getFullYear() - nasc.getFullYear();
+        var m = hoje.getMonth() - nasc.getMonth();
+        if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) anos--;
+        return anos >= 0 ? anos : '';
+    }
+
+    function calcularIdadeCampo(nascId, idadeId) {
+        var el = document.getElementById(idadeId);
+        if (!el) return;
+        var v = calcularIdade(document.getElementById(nascId) ? document.getElementById(nascId).value : '');
+        el.value = v !== '' ? v + ' anos' : '';
+    }
+
     async function recadSubmit(event) {
         event.preventDefault();
         if (!document.getElementById('rc-projeto').value) { rcMsg('Por favor, selecione seu projeto.', 'error'); return false; }
@@ -913,6 +937,7 @@
             cpf: document.getElementById('rc-cpf').value.replace(/\D/g, ''),
             rg: document.getElementById('rc-rg').value.trim(),
             nascimento: document.getElementById('rc-nascimento').value,
+            idade: document.getElementById('rc-idade').value,
             genero: document.getElementById('rc-genero').value,
             estadoCivil: document.getElementById('rc-estado-civil').value,
             nacionalidade: document.getElementById('rc-nacionalidade').value.trim(),
