@@ -281,12 +281,41 @@
 
                 <!-- ALUNOS -->
                 <div id="admin-alunos" class="admin-section">
-                    <!-- Selecao Projeto + Turma -->
-                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                            <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                            <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para visualizar os alunos</span>
-                        </div>
+                            <!-- Pesquisa TFM Agendados -->
+                            <div style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+                                    <h4 style="margin:0;font-size:15px;color:#1e293b"><i class="fa-solid fa-magnifying-glass" style="color:#2563eb;margin-right:8px"></i> Pesquisar TFM Agendados</h4>
+                                    <span id="tfm-busca-count" style="font-size:12px;color:#64748b;font-weight:600"></span>
+                                </div>
+                                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                                    <input type="text" id="tfm-busca-input" class="config-input" style="flex:1;min-width:220px" placeholder="Buscar por projeto, turma ou instrutor..." onkeydown="if(event.key==='Enter')tfmPesquisarAgendados()">
+                                    <button class="btn-primary" onclick="tfmPesquisarAgendados()"><i class="fa-solid fa-magnifying-glass"></i> Pesquisar</button>
+                                    <button class="btn-outline" onclick="tfmLimparPesquisa()"><i class="fa-solid fa-broom"></i> Limpar</button>
+                                </div>
+                                <div style="overflow-x:auto">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Projeto</th>
+                                                <th>Turma</th>
+                                                <th>Data/Hora Agendada</th>
+                                                <th>Instrutor</th>
+                                                <th>Observacao</th>
+                                                <th>Acoes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tfm-busca-body">
+                                            <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Digite um termo e clique em Pesquisar para localizar TFM agendados.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Selecao Projeto + Turma -->
+                            <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                    <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
+                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
+                                </div>
                         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                             <div class="form-group" style="flex:1;min-width:200px;margin:0">
                                 <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>

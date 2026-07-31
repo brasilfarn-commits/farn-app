@@ -4298,6 +4298,7 @@ async function tfmSalvarAgendamentoTurma() {
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
         tfmAgendamentoTurma = { projeto: projeto, turma: turma, dataAgendamento: firebase.firestore.Timestamp.fromDate(dt), instrutor: instrutor, observacao: observacao };
+        tfmBuscaCache = null;
         tfmPreencherAgenda();
         alert('Agendamento da turma salvo com sucesso!');
     } catch(e) {
@@ -4312,10 +4313,81 @@ async function tfmCancelarAgendamentoTurma() {
     try {
         await dbFirestore.collection('tfmAgendamentos').doc(turma).delete();
         tfmAgendamentoTurma = null;
+        tfmBuscaCache = null;
         tfmPreencherAgenda();
         alert('Agendamento da turma cancelado com sucesso!');
     } catch(e) {
         alert('Erro ao cancelar agendamento: ' + e.message);
+    }
+}
+
+var tfmBuscaCache = null;
+
+async function tfmPesquisarAgendados() {
+    const termo = (document.getElementById('tfm-busca-input').value || '').trim().toLowerCase();
+    if (!termo) { alert('Digite um termo para pesquisar.'); return; }
+    const tbody = document.getElementById('tfm-busca-body');
+    const countEl = document.getElementById('tfm-busca-count');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Pesquisando...</td></tr>';
+    try {
+        if (!tfmBuscaCache) {
+            const snap = await dbFirestore.collection('tfmAgendamentos').get();
+            tfmBuscaCache = [];
+            snap.forEach(doc => {
+                tfmBuscaCache.push(Object.assign({ turmaDoc: doc.id }, doc.data()));
+            });
+        }
+        const resultados = tfmBuscaCache.filter(function(a) {
+            return String(a.turma || '').toLowerCase().indexOf(termo) !== -1 ||
+                String(a.projeto || '').toLowerCase().indexOf(termo) !== -1 ||
+                String(a.instrutor || '').toLowerCase().indexOf(termo) !== -1 ||
+                String(a.observacao || '').toLowerCase().indexOf(termo) !== -1;
+        });
+        if (countEl) countEl.textContent = resultados.length + ' encontrado(s)';
+        if (!tbody) return;
+        if (!resultados.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM agendado encontrado para o termo pesquisado.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = resultados.map(function(a) {
+            const dt = a.dataAgendamento ? tfmFormatarDataHora(a.dataAgendamento) : 'Data a definir';
+            return '<tr>' +
+                '<td>' + tfmEsc(a.projeto || '-') + '</td>' +
+                '<td style="font-weight:600">' + tfmEsc(a.turma || '-') + '</td>' +
+                '<td style="font-size:12px;color:#16a34a;font-weight:700">' + tfmEsc(dt) + '</td>' +
+                '<td>' + tfmEsc(a.instrutor || '-') + '</td>' +
+                '<td style="font-size:12px;color:#64748b">' + tfmEsc(a.observacao || '-') + '</td>' +
+                '<td><button class="btn-icon btn-danger-icon" title="Excluir agendamento" onclick="tfmExcluirAgendamentoPesquisa(\'' + String(a.turma).replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-trash"></i></button></td>' +
+                '</tr>';
+        }).join('');
+    } catch(e) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px;font-size:13px">Erro ao pesquisar: ' + tfmEsc(e.message) + '</td></tr>';
+    }
+}
+
+function tfmLimparPesquisa() {
+    const input = document.getElementById('tfm-busca-input');
+    const tbody = document.getElementById('tfm-busca-body');
+    const countEl = document.getElementById('tfm-busca-count');
+    if (input) input.value = '';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Digite um termo e clique em Pesquisar para localizar TFM agendados.</td></tr>';
+    if (countEl) countEl.textContent = '';
+}
+
+async function tfmExcluirAgendamentoPesquisa(turma) {
+    if (!confirm('Excluir o agendamento do TFM da turma "' + turma + '"?')) return;
+    try {
+        await dbFirestore.collection('tfmAgendamentos').doc(turma).delete();
+        if (tfmBuscaCache) tfmBuscaCache = null;
+        tfmPesquisarAgendados();
+        const selTurma = document.getElementById('tfm-selecao-turma');
+        if (selTurma && selTurma.value === turma && tfmAgendamentoTurma) {
+            tfmAgendamentoTurma = null;
+            tfmPreencherAgenda();
+        }
+        alert('Agendamento excluido com sucesso!');
+    } catch(e) {
+        alert('Erro ao excluir agendamento: ' + e.message);
     }
 }
 
