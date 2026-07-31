@@ -335,6 +335,7 @@ function initFirebaseListeners() {
             if (firebaseReady) {
                 renderList();
                 if (typeof renderAlunosList === 'function') renderAlunosList();
+                if (typeof renderFormadosList === 'function') renderFormadosList();
             }
             checkReady();
         }, (error) => {
@@ -725,6 +726,7 @@ function applyUserPermissions() {
         'admin-pre-inscricao': p.includes('pre-inscricao') || isGeral,
         'admin-alunos': p.includes('alunos') || isGeral,
         'admin-instrutores': p.includes('instrutores') || isGeral,
+        'admin-formados': p.includes('formados') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
         'admin-projetos': p.includes('projetos') || isGeral,
         'admin-form-projeto': p.includes('projetos') || isGeral,
@@ -1074,7 +1076,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-instrutores': 'Instrutores', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
 }
 
@@ -5242,6 +5244,79 @@ function instrutorLimparForm() {
     });
     instrutorPopulateSelects();
     instrutorPopulateDisciplinas([]);
+}
+
+/* ===== FORMADOS ===== */
+
+function formadosInicializar() {
+    var selProj = document.getElementById('formados-filtro-projeto');
+    if (!selProj) return;
+    var currentProj = selProj.value;
+    selProj.innerHTML = '<option value="">Todos os projetos</option>';
+    projetos.forEach(function(p) {
+        selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+    });
+    if (currentProj) selProj.value = currentProj;
+    formadosOnFiltroChange();
+}
+
+function formadosOnFiltroChange() {
+    var selProj = document.getElementById('formados-filtro-projeto');
+    var selTurma = document.getElementById('formados-filtro-turma');
+    if (!selProj || !selTurma) return;
+    var projeto = selProj.value;
+    var current = selTurma.value;
+    selTurma.innerHTML = '<option value="">Todas as turmas</option>';
+    var turmasFiltradas = projeto ? turmas.filter(function(t) { return t.projeto === projeto; }) : turmas;
+    turmasFiltradas.forEach(function(t) {
+        selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
+    });
+    if (current) selTurma.value = current;
+    renderFormadosList();
+}
+
+function renderFormadosList() {
+    var tbody = document.getElementById('formados-table-body');
+    if (!tbody) return;
+    var selProj = document.getElementById('formados-filtro-projeto');
+    var selTurma = document.getElementById('formados-filtro-turma');
+    var projeto = selProj ? selProj.value : '';
+    var turma = selTurma ? selTurma.value : '';
+    var lista = candidatos.filter(function(c) {
+        return (c.tipoPessoa || 'A') === 'F' && c.status === 'Aprovado' &&
+            (!projeto || c.projeto === projeto) &&
+            (!turma || c.turma === turma);
+    });
+    var badge = document.getElementById('formados-count-badge');
+    if (badge) badge.textContent = lista.length + ' formado' + (lista.length !== 1 ? 's' : '');
+    var empty = document.getElementById('formados-empty');
+    var listaEl = document.getElementById('formados-lista');
+    if (!lista.length) {
+        if (empty) empty.style.display = 'block';
+        if (listaEl) listaEl.style.display = 'none';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    if (listaEl) listaEl.style.display = 'block';
+    tbody.innerHTML = lista.map(function(c) {
+        var i = candidatos.indexOf(c);
+        var statusBadge = c.status === 'Aprovado' ? '<span class="badge green">Aprovado</span>' : '<span class="badge pendente">' + (c.status || '-') + '</span>';
+        var remanejado = c.remanejadoInstrutor
+            ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> INSTRUTOR</span>'
+            : '<span style="color:#94a3b8;font-size:11px">---</span>';
+        return '<tr>' +
+            '<td style="font-weight:600">' + (c.nome || '-') + '</td>' +
+            '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
+            '<td>' + (c.turma || '-') + '</td>' +
+            '<td style="color:#ff9800;font-weight:600">' + (c.projeto || '-') + '</td>' +
+            '<td>' + (c.matricula || '-') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + remanejado + '</td>' +
+            '<td><div class="actions-cell">' +
+                '<button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(' + i + ')"><i class="fa-solid fa-eye"></i></button>' +
+                (!c.remanejadoInstrutor ? '<button class="btn-icon" title="Remanejar como Instrutor" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
+            '</div></td></tr>';
+    }).join('');
 }
 
 function instrutorPopulateSelects(projetoSelecionado, turmaSelecionada) {

@@ -158,6 +158,10 @@
                         <i class="fa-solid fa-chalkboard-user"></i>
                         <span>Instrutores</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-formados', this); formadosInicializar()">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <span>Formados</span>
+                    </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-relatorios', this)">
                         <i class="fa-solid fa-chart-bar"></i>
                         <span>Relatorios</span>
@@ -251,11 +255,15 @@
                                 <i class="fa-solid fa-chalkboard-user"></i>
                                 <span>Instrutores</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item:nth-child(5)'))">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-formados', document.querySelector('.nav-item:nth-child(5)')); formadosInicializar()">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <span>Formados</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item:nth-child(6)'))">
                                 <i class="fa-solid fa-chart-bar"></i>
                                 <span>Relatórios</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item:nth-child(6)')); renderProjetosList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item:nth-child(7)')); renderProjetosList()">
                                 <i class="fa-solid fa-handshake"></i>
                                 <span>Projetos</span>
                             </div>
@@ -263,19 +271,19 @@
                                 <i class="fa-solid fa-mobile-screen-button"></i>
                                 <span>Baixar App Android</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item:nth-child(9)')); recadLoadAll()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item:nth-child(10)')); recadLoadAll()">
                                 <i class="fa-solid fa-rotate"></i>
                                 <span>Recadastramento</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-chat-portais', document.querySelector('.nav-item:nth-child(11)')); chatPortaisLoad()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-chat-portais', document.querySelector('.nav-item:nth-child(12)')); chatPortaisLoad()">
                                 <i class="fa-solid fa-comments"></i>
                                 <span>Chat dos Portais</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-apostilas', document.querySelector('.nav-item:nth-child(12)')); apostilasLoadList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-apostilas', document.querySelector('.nav-item:nth-child(13)')); apostilasLoadList()">
                                 <i class="fa-solid fa-book-open"></i>
                                 <span>Apostilas</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item:nth-child(13)')); discLoadList(); aulaLoadList()">>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item:nth-child(14)')); discLoadList(); aulaLoadList()">>
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Disciplinas</span>
                             </div>
@@ -377,6 +385,59 @@
                                         </tr>
                                     </thead>
                                     <tbody id="instrutores-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORMADOS -->
+                <div id="admin-formados" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-graduation-cap" style="color:#2563eb;margin-right:8px"></i> Formados</h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="padding:18px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #2563eb;border-radius:12px;margin-bottom:18px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                    <i class="fa-solid fa-filter" style="color:#2563eb;font-size:16px"></i>
+                                    <span style="color:#1d4ed8;font-weight:700;font-size:14px">Pesquisar Formados por Projeto e Turma</span>
+                                    <span id="formados-count-badge" style="margin-left:auto;background:#2563eb;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px"></span>
+                                </div>
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#1d4ed8;margin-bottom:4px;display:block">Projeto</label>
+                                        <select id="formados-filtro-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="formadosOnFiltroChange()">
+                                            <option value="">Todos os projetos</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#1d4ed8;margin-bottom:4px;display:block">Turma</label>
+                                        <select id="formados-filtro-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="renderFormadosList()">
+                                            <option value="">Todas as turmas</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="formados-empty" class="empty-state" style="display:none;padding:40px">
+                                <i class="fa-solid fa-graduation-cap" style="font-size:48px;color:#334155;margin-bottom:12px"></i>
+                                <p style="color:#475569">Nenhum formado ativo encontrado</p>
+                            </div>
+                            <div id="formados-lista" class="table-responsive" style="display:none">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>CPF</th>
+                                            <th>Turma</th>
+                                            <th>Projeto</th>
+                                            <th>Matricula</th>
+                                            <th>Status</th>
+                                            <th>Remanejado</th>
+                                            <th>Acoes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="formados-table-body"></tbody>
                                 </table>
                             </div>
                         </div>
