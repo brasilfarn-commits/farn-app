@@ -1693,12 +1693,12 @@
         var container = document.getElementById('pf-tfm-agendamento');
         if (!container) return;
         if (!paUser) return;
-        var cpf = (paUser.cpf || '').replace(/\D/g, '');
-        if (!cpf) {
-            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-circle-info"></i><p>CPF nao encontrado.</p></div>';
+        var turma = (paUser.turma || '').trim();
+        if (!turma) {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-circle-info"></i><p>Turma nao encontrada.</p></div>';
             return;
         }
-        dbFirestore.collection('tfmAgendamentos').doc(cpf).get().then(function(doc) {
+        dbFirestore.collection('tfmAgendamentos').doc(turma).get().then(function(doc) {
             if (!doc.exists) {
                 container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Voce ainda nao possui TFM agendado.</p></div>';
                 return;

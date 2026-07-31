@@ -434,10 +434,10 @@ function initFirebaseListeners() {
             instrutores = result;
             if (firebaseReady && typeof instrutorListar === 'function') instrutorListar();
             if (typeof tfmPopulateInstrutores === 'function') tfmPopulateInstrutores();
-            {
+            if (typeof tfmPopulateAgendaInstrutor === 'function') {
                 const selAg = document.getElementById('tfm-agenda-instrutor');
-                const overlayAg = document.getElementById('modal-tfm-agenda-overlay');
-                if (selAg && overlayAg && !overlayAg.classList.contains('hidden')) {
+                const conteudoTfm = document.getElementById('tfm-conteudo');
+                if (selAg && conteudoTfm && conteudoTfm.style.display !== 'none') {
                     const atual = selAg.value;
                     tfmPopulateAgendaInstrutor(selAg);
                     selAg.value = atual;
@@ -3872,7 +3872,7 @@ window.addEventListener('appinstalled', function() {
 /* ===== TFM DO ALUNO ===== */
 var tfmAlunos = [];
 var tfmExistentes = {};
-var tfmAgendados = {};
+var tfmAgendamentoTurma = null;
 
 function tfmFormatarDataHora(ts) {
     let d = null;
@@ -3952,16 +3952,14 @@ async function tfmOnSelecaoChange() {
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     tfmExistentes = {};
-    tfmAgendados = {};
+    tfmAgendamentoTurma = null;
     try {
         const snap = await dbFirestore.collection('tfmAlunos').where('turma', '==', turma).get();
         snap.forEach(doc => {
             tfmExistentes[doc.data().cpf] = Object.assign({ docId: doc.id }, doc.data());
         });
-        const snapAg = await dbFirestore.collection('tfmAgendamentos').where('turma', '==', turma).get();
-        snapAg.forEach(doc => {
-            tfmAgendados[doc.data().cpf] = Object.assign({ docId: doc.id }, doc.data());
-        });
+        const docAg = await dbFirestore.collection('tfmAgendamentos').doc(turma).get();
+        if (docAg.exists) tfmAgendamentoTurma = docAg.data();
     } catch(e) { console.error('Erro ao carregar TFM:', e); }
 
     const selInst = document.getElementById('tfm-instrutor');
@@ -3983,6 +3981,7 @@ async function tfmOnSelecaoChange() {
         }
     }
 
+    tfmPreencherAgenda();
     tfmRender();
     tfmAtualizarResumo();
     tfmRenderSalvos();
@@ -3998,15 +3997,11 @@ function tfmRender() {
     let html = '';
     tfmAlunos.forEach(al => {
         const e = tfmExistentes[al.cpf] || {};
-        const ag = tfmAgendados[al.cpf] || null;
         const res = e.resultado || 'Pendente';
         const cpfDisplay = formatCPFDisplay(al.cpf || '');
-        const agStr = ag ? tfmFormatarDataHora(ag.dataAgendamento) : '';
         html += '<tr data-cpf="' + al.cpf + '">' +
             '<td><div style="font-weight:600;font-size:13px;color:#1e293b">' + tfmEsc(al.nome) + '</div>' +
-            '<div style="font-size:11px;color:#64748b">Mat: ' + tfmEsc(al.matricula || '-') + ' | CPF: ' + tfmEsc(cpfDisplay || '-') + '</div>' +
-            (ag ? '<div style="font-size:11px;color:#16a34a;font-weight:700;margin-top:3px"><i class="fa-solid fa-calendar-check"></i> Agendado: ' + tfmEsc(agStr) + '</div>' : '') +
-            '</td>' +
+            '<div style="font-size:11px;color:#64748b">Mat: ' + tfmEsc(al.matricula || '-') + ' | CPF: ' + tfmEsc(cpfDisplay || '-') + '</div></td>' +
             '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-flexoes-' + al.cpf + '" value="' + (e.flexoes != null ? e.flexoes : '') + '" placeholder="0" oninput="tfmAtualizarResumo()"></td>' +
             '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-abdominais-' + al.cpf + '" value="' + (e.abdominais != null ? e.abdominais : '') + '" placeholder="0" oninput="tfmAtualizarResumo()"></td>' +
             '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-corrida-' + al.cpf + '" value="' + (e.corridaSeg != null ? e.corridaSeg : '') + '" placeholder="seg" title="Tempo em segundos" oninput="tfmAtualizarResumo()"></td>' +
@@ -4021,10 +4016,7 @@ function tfmRender() {
             '<option value="Inapto"' + (res === 'Inapto' ? ' selected' : '') + '>Inapto</option>' +
             '</select></td>' +
             '<td id="tfm-badge-' + al.cpf + '" style="text-align:center"><span style="background:#f1f5f9;color:#64748b;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700">INCOMPLETO</span></td>' +
-            '<td><div class="actions-cell" style="justify-content:center;gap:6px">' +
-            '<button class="btn-outline btn-sm" style="padding:8px 12px;font-size:12px;margin:0" title="Agendar TFM" onclick="tfmAbrirModalAgendar(\'' + al.cpf + '\')"><i class="fa-solid fa-calendar-check"></i> Agendar</button>' +
-            '<button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="tfmSalvar(\'' + al.cpf + '\')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>' +
-            '</div></td>' +
+            '<td><button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="tfmSalvar(\'' + al.cpf + '\')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button></td>' +
             '</tr>';
     });
     tbody.innerHTML = html;
@@ -4217,7 +4209,6 @@ function tfmRenderSalvos() {
     if (countEl) countEl.textContent = cpfs.length + ' registro(s)';
     tbody.innerHTML = cpfs.map(function(cpf) {
         const e = tfmExistentes[cpf];
-        const ag = tfmAgendados[cpf] || null;
         const al = tfmAlunos.find(a => a.cpf === cpf);
         const nome = al ? al.nome : (e.nome || cpf);
         const mat = al ? al.matricula : (e.matricula || '-');
@@ -4225,15 +4216,13 @@ function tfmRenderSalvos() {
         const cor = res === 'Apto' ? '#16a34a' : res === 'Inapto' ? '#dc2626' : '#ca8a04';
         const dt = e.dataResultado ? new Date(e.dataResultado) : null;
         const dtStr = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('pt-BR') : (e.dataProva || '-');
-        const agStr = ag ? tfmFormatarDataHora(ag.dataAgendamento) : '';
         return '<tr>' +
-            '<td style="font-weight:600">' + tfmEsc(nome) + (ag ? '<div style="font-size:11px;color:#16a34a;font-weight:700"><i class="fa-solid fa-calendar-check"></i> Agendado: ' + tfmEsc(agStr) + '</div>' : '') + '</td>' +
+            '<td style="font-weight:600">' + tfmEsc(nome) + '</td>' +
             '<td>' + tfmEsc(mat || '-') + '</td>' +
             '<td><span class="badge" style="background:' + cor + '15;color:' + cor + ';border:1px solid ' + cor + '30">' + res + '</span></td>' +
             '<td style="font-size:12px;color:#64748b">' + tfmEsc(dtStr) + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon" title="Editar" onclick="tfmEditarSalvo(\'' + cpf + '\')"><i class="fa-solid fa-pen"></i></button>' +
-                '<button class="btn-icon" title="Agendar" onclick="tfmAbrirModalAgendar(\'' + cpf + '\')"><i class="fa-solid fa-calendar-check"></i></button>' +
                 '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="tfmExcluirSalvo(\'' + cpf + '\')"><i class="fa-solid fa-trash"></i></button>' +
             '</div></td></tr>';
     }).join('');
@@ -4261,74 +4250,54 @@ async function tfmExcluirSalvo(cpf) {
     }
 }
 
-var tfmAgendaCpf = null;
-
-function tfmAbrirModalAgendar(cpf) {
-    const al = tfmAlunos.find(a => a.cpf === cpf);
-    if (!al) { alert('Aluno nao encontrado.'); return; }
-    tfmAgendaCpf = cpf;
-    const ag = tfmAgendados[cpf] || null;
-
-    const elAluno = document.getElementById('tfm-agenda-aluno');
-    if (elAluno) elAluno.value = al.nome + ' - Mat: ' + (al.matricula || '-');
-
-    const sel = document.getElementById('tfm-agenda-instrutor');
-    tfmPopulateAgendaInstrutor(sel);
-
+function tfmPreencherAgenda() {
     const elData = document.getElementById('tfm-agenda-data');
-    if (elData) {
-        let dt = null;
-        if (ag && ag.dataAgendamento) {
-            if (typeof ag.dataAgendamento.toDate === 'function') dt = ag.dataAgendamento.toDate();
-            else {
-                const dd = new Date(ag.dataAgendamento);
-                if (!isNaN(dd.getTime())) dt = dd;
-            }
-        }
-        elData.value = dt ? dt.toISOString().slice(0, 16) : '';
-    }
+    const elInst = document.getElementById('tfm-agenda-instrutor');
+    const elObs = document.getElementById('tfm-agenda-obs');
+    const btnCanc = document.getElementById('tfm-agenda-btn-cancelar');
+    const statusEl = document.getElementById('tfm-agenda-status');
+    if (!elData) return;
+    const ag = tfmAgendamentoTurma;
 
-    if (sel && ag && ag.instrutor) {
-        const opt = sel.querySelector('option[value="' + String(ag.instrutor).replace(/"/g, '&quot;') + '"]');
-        if (opt) sel.value = ag.instrutor;
+    tfmPopulateAgendaInstrutor(elInst);
+
+    let dt = null;
+    if (ag && ag.dataAgendamento) {
+        if (typeof ag.dataAgendamento.toDate === 'function') dt = ag.dataAgendamento.toDate();
+        else {
+            const dd = new Date(ag.dataAgendamento);
+            if (!isNaN(dd.getTime())) dt = dd;
+        }
+    }
+    elData.value = dt ? dt.toISOString().slice(0, 16) : '';
+
+    if (ag && ag.instrutor && elInst) {
+        const opt = elInst.querySelector('option[value="' + String(ag.instrutor).replace(/"/g, '&quot;') + '"]');
+        if (opt) elInst.value = ag.instrutor;
         else {
             const optNovo = document.createElement('option');
             optNovo.value = ag.instrutor;
             optNovo.textContent = ag.instrutor;
-            sel.appendChild(optNovo);
-            sel.value = ag.instrutor;
+            elInst.appendChild(optNovo);
+            elInst.value = ag.instrutor;
         }
     }
-
-    const elObs = document.getElementById('tfm-agenda-obs');
     if (elObs) elObs.value = (ag && ag.observacao) || '';
-
-    const aviso = document.getElementById('tfm-agenda-aviso');
-    if (aviso) aviso.style.display = ag ? '' : 'none';
-    tfmAtualizarBotaoCancelar();
-
-    const overlay = document.getElementById('modal-tfm-agenda-overlay');
-    if (overlay) overlay.classList.remove('hidden');
+    if (btnCanc) btnCanc.style.display = ag ? '' : 'none';
+    if (statusEl) {
+        if (ag) {
+            statusEl.style.display = '';
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#16a34a;margin-right:4px"></i> TFM da turma agendado para ' + tfmEsc(tfmFormatarDataHora(ag.dataAgendamento) || 'data a definir');
+        } else {
+            statusEl.style.display = 'none';
+        }
+    }
 }
 
-function tfmAtualizarBotaoCancelar() {
-    const btn = document.getElementById('tfm-agenda-btn-cancelar-agend');
-    if (!btn) return;
-    const existe = !!(tfmAgendaCpf && tfmAgendados[tfmAgendaCpf]);
-    btn.style.display = existe ? '' : 'none';
-}
-
-function tfmFecharModalAgendar(event) {
-    if (event && event.target && event.target.id !== 'modal-tfm-agenda-overlay') return;
-    const overlay = document.getElementById('modal-tfm-agenda-overlay');
-    if (overlay) overlay.classList.add('hidden');
-    tfmAgendaCpf = null;
-}
-
-async function tfmSalvarAgendamento() {
-    if (!tfmAgendaCpf) return;
-    const al = tfmAlunos.find(a => a.cpf === tfmAgendaCpf);
-    if (!al) { alert('Aluno nao encontrado.'); return; }
+async function tfmSalvarAgendamentoTurma() {
+    const projeto = document.getElementById('tfm-selecao-projeto').value;
+    const turma = document.getElementById('tfm-selecao-turma').value;
+    if (!projeto || !turma) { alert('Selecione o projeto e a turma.'); return; }
     const elData = document.getElementById('tfm-agenda-data');
     const elInst = document.getElementById('tfm-agenda-instrutor');
     const elObs = document.getElementById('tfm-agenda-obs');
@@ -4338,13 +4307,8 @@ async function tfmSalvarAgendamento() {
     if (isNaN(dt.getTime())) { alert('Data/hora invalida.'); return; }
     const instrutor = elInst ? elInst.value : '';
     const observacao = elObs ? elObs.value.trim() : '';
-    const projeto = document.getElementById('tfm-selecao-projeto').value;
-    const turma = document.getElementById('tfm-selecao-turma').value;
     try {
-        await dbFirestore.collection('tfmAgendamentos').doc(tfmAgendaCpf).set({
-            cpf: tfmAgendaCpf,
-            nome: al.nome,
-            matricula: al.matricula || '',
+        await dbFirestore.collection('tfmAgendamentos').doc(turma).set({
             projeto: projeto,
             turma: turma,
             dataAgendamento: firebase.firestore.Timestamp.fromDate(dt),
@@ -4352,25 +4316,23 @@ async function tfmSalvarAgendamento() {
             observacao: observacao,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
-        tfmFecharModalAgendar();
-        tfmOnSelecaoChange();
-        alert('Agendamento salvo com sucesso!');
+        tfmAgendamentoTurma = { projeto: projeto, turma: turma, dataAgendamento: firebase.firestore.Timestamp.fromDate(dt), instrutor: instrutor, observacao: observacao };
+        tfmPreencherAgenda();
+        alert('Agendamento da turma salvo com sucesso!');
     } catch(e) {
         alert('Erro ao salvar agendamento: ' + e.message);
     }
 }
 
-async function tfmCancelarAgendamento() {
-    if (!tfmAgendaCpf) return;
-    const ag = tfmAgendados[tfmAgendaCpf];
-    if (!ag) return;
-    const nome = ag.nome || tfmAgendaCpf;
-    if (!confirm('Cancelar o agendamento do TFM de ' + nome + '?')) return;
+async function tfmCancelarAgendamentoTurma() {
+    const turma = document.getElementById('tfm-selecao-turma').value;
+    if (!turma || !tfmAgendamentoTurma) return;
+    if (!confirm('Cancelar o agendamento do TFM da turma?')) return;
     try {
-        await dbFirestore.collection('tfmAgendamentos').doc(tfmAgendaCpf).delete();
-        tfmFecharModalAgendar();
-        tfmOnSelecaoChange();
-        alert('Agendamento cancelado com sucesso!');
+        await dbFirestore.collection('tfmAgendamentos').doc(turma).delete();
+        tfmAgendamentoTurma = null;
+        tfmPreencherAgenda();
+        alert('Agendamento da turma cancelado com sucesso!');
     } catch(e) {
         alert('Erro ao cancelar agendamento: ' + e.message);
     }
