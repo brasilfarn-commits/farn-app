@@ -3917,7 +3917,7 @@ function tfmRender() {
     const tbody = document.getElementById('tfm-table-body');
     if (!tbody) return;
     if (!tfmAlunos.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748b"><i class="fa-solid fa-users-slash" style="font-size:28px;margin-bottom:10px;display:block;color:#94a3b8"></i>Nenhum aluno ativo nesta turma.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b"><i class="fa-solid fa-users-slash" style="font-size:28px;margin-bottom:10px;display:block;color:#94a3b8"></i>Nenhum aluno ativo nesta turma.</td></tr>';
         return;
     }
     let html = '';
@@ -3930,7 +3930,7 @@ function tfmRender() {
             '<div style="font-size:11px;color:#64748b">Mat: ' + tfmEsc(al.matricula || '-') + ' | CPF: ' + tfmEsc(cpfDisplay || '-') + '</div></td>' +
             '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-flexoes-' + al.cpf + '" value="' + (e.flexoes != null ? e.flexoes : '') + '" placeholder="0" oninput="tfmAtualizarResumo()"></td>' +
             '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-abdominais-' + al.cpf + '" value="' + (e.abdominais != null ? e.abdominais : '') + '" placeholder="0" oninput="tfmAtualizarResumo()"></td>' +
-            '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-corrida-' + al.cpf + '" value="' + (e.corridaMetros != null ? e.corridaMetros : '') + '" placeholder="0" oninput="tfmAtualizarResumo()"></td>' +
+            '<td><input type="number" min="0" class="config-input small" style="width:88px" id="tfm-corrida-' + al.cpf + '" value="' + (e.corridaSeg != null ? e.corridaSeg : '') + '" placeholder="seg" title="Tempo em segundos" oninput="tfmAtualizarResumo()"></td>' +
             '<td><select class="config-input small" style="width:98px" id="tfm-desloc-concluiu-' + al.cpf + '" onchange="tfmAtualizarResumo()">' +
             '<option value="">Concluiu?</option>' +
             '<option value="Sim"' + (e.deslocamentoConcluiu === 'Sim' ? ' selected' : '') + '>Sim</option>' +
@@ -3941,6 +3941,7 @@ function tfmRender() {
             '<option value="Apto"' + (res === 'Apto' ? ' selected' : '') + '>Apto</option>' +
             '<option value="Inapto"' + (res === 'Inapto' ? ' selected' : '') + '>Inapto</option>' +
             '</select></td>' +
+            '<td id="tfm-badge-' + al.cpf + '" style="text-align:center"><span style="background:#f1f5f9;color:#64748b;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700">INCOMPLETO</span></td>' +
             '<td><button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="tfmSalvar(\'' + al.cpf + '\')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button></td>' +
             '</tr>';
     });
@@ -3963,14 +3964,53 @@ function tfmColetarValores(cpf) {
     return {
         flexoes: num('tfm-flexoes-' + cpf),
         abdominais: num('tfm-abdominais-' + cpf),
-        corridaMetros: num('tfm-corrida-' + cpf),
+        corridaSeg: num('tfm-corrida-' + cpf),
         deslocamentoConcluiu: str('tfm-desloc-concluiu-' + cpf),
         resultado: str('tfm-resultado-' + cpf) || 'Pendente'
     };
 }
 
 function tfmValoresPreenchidos(v) {
-    return v.flexoes != null || v.abdominais != null || v.corridaMetros != null || v.deslocamentoConcluiu || v.resultado !== 'Pendente';
+    return v.flexoes != null || v.abdominais != null || v.corridaSeg != null || v.deslocamentoConcluiu || v.resultado !== 'Pendente';
+}
+
+function tfmCalcularAptidao(al, v) {
+    if (!v) v = {};
+    const genero = (al.genero || '').toLowerCase();
+    const idade = calcularIdade(al.nascimento);
+    if (genero !== 'masculino' && genero !== 'feminino') {
+        return { avaliado: false, apto: false, motivo: 'Informe o genero de nascimento do aluno.' };
+    }
+    if (idade === '') {
+        return { avaliado: false, apto: false, motivo: 'Informe a data de nascimento do aluno.' };
+    }
+    let lim;
+    if (genero === 'masculino') {
+        if (idade <= 29) lim = { A: 25, B: 35, C: 30 };
+        else if (idade <= 39) lim = { A: 20, B: 30, C: 40 };
+        else lim = { A: 15, B: 25, C: 50 };
+    } else {
+        if (idade <= 29) lim = { A: 18, B: 28, C: 40 };
+        else if (idade <= 39) lim = { A: 14, B: 24, C: 50 };
+        else lim = { A: 10, B: 18, C: 60 };
+    }
+    const A = v.flexoes, B = v.abdominais, C = v.corridaSeg, D = v.deslocamentoConcluiu;
+    if (A == null || B == null || C == null || !D) {
+        return { avaliado: false, apto: false, motivo: 'Preencha as questoes A, B, C e D.' };
+    }
+    const falhas = [];
+    if (A < lim.A) falhas.push('A) minimo ' + lim.A + ' flexoes (fez ' + A + ')');
+    if (B < lim.B) falhas.push('B) minimo ' + lim.B + ' abdominais (fez ' + B + ')');
+    if (C > lim.C) falhas.push('C) maximo ' + lim.C + 's (fez ' + C + 's)');
+    if (D !== 'Sim') falhas.push('D) deslocamento deve ser Sim');
+    return {
+        avaliado: true,
+        apto: falhas.length === 0,
+        idade: idade,
+        faixa: idade <= 29 ? 'Ate 29 anos' : (idade <= 39 ? '30 a 39 anos' : '40 anos ou +'),
+        genero: al.genero,
+        motivo: falhas.length ? falhas.join('; ') : 'Todos os criterios atendidos'
+    };
 }
 
 async function tfmSalvar(cpf) {
@@ -3990,7 +4030,7 @@ async function tfmSalvar(cpf) {
         instrutor: instrutor,
         flexoes: v.flexoes,
         abdominais: v.abdominais,
-        corridaMetros: v.corridaMetros,
+        corridaSeg: v.corridaSeg,
         deslocamentoConcluiu: v.deslocamentoConcluiu,
         resultado: v.resultado
     };
@@ -4023,7 +4063,7 @@ async function tfmSalvarTodos() {
                 instrutor: instrutor,
                 flexoes: v.flexoes,
                 abdominais: v.abdominais,
-                corridaMetros: v.corridaMetros,
+                corridaSeg: v.corridaSeg,
                 deslocamentoConcluiu: v.deslocamentoConcluiu,
                 resultado: v.resultado
             }, { merge: true });
@@ -4047,10 +4087,24 @@ function tfmAtualizarResumo() {
     let avaliados = 0, aptos = 0, inaptos = 0;
     tfmAlunos.forEach(al => {
         const v = tfmColetarValores(al.cpf);
+        const auto = tfmCalcularAptidao(al, v);
+        const badgeEl = document.getElementById('tfm-badge-' + al.cpf);
+        const resEl = document.getElementById('tfm-resultado-' + al.cpf);
+        if (badgeEl) {
+            if (!auto.avaliado) {
+                badgeEl.innerHTML = '<span style="background:#f1f5f9;color:#64748b;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700">INCOMPLETO</span>';
+            } else if (auto.apto) {
+                badgeEl.innerHTML = '<span style="background:#16a34a;color:#fff;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;box-shadow:0 1px 4px rgba(22,163,74,.4)" title="' + tfmEsc(auto.motivo) + '">APTO</span>';
+            } else {
+                badgeEl.innerHTML = '<span style="background:#dc2626;color:#fff;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;box-shadow:0 1px 4px rgba(220,38,38,.4)" title="' + tfmEsc(auto.motivo) + '">INAPTO</span>';
+            }
+        }
+        if (resEl && auto.avaliado) resEl.value = auto.apto ? 'Apto' : 'Inapto';
         if (tfmValoresPreenchidos(v)) {
             avaliados++;
-            if (v.resultado === 'Apto') aptos++;
-            else if (v.resultado === 'Inapto') inaptos++;
+            const resFinal = auto.avaliado ? (auto.apto ? 'Apto' : 'Inapto') : v.resultado;
+            if (resFinal === 'Apto') aptos++;
+            else if (resFinal === 'Inapto') inaptos++;
         }
     });
     el('tfm-resumo-alunos', tfmAlunos.length);
@@ -4063,11 +4117,11 @@ function tfmExportarCSV() {
     if (!tfmAlunos.length) { alert('Nenhuma turma selecionada.'); return; }
     const turma = document.getElementById('tfm-selecao-turma').value;
     const projeto = document.getElementById('tfm-selecao-projeto').value;
-    let csv = 'Nome;CPF;Matricula;Projeto;Turma;Data Prova;Instrutor;Flexoes (1min);Abdominais (1min);Corrida (metros);Desloc. Concluiu;Resultado\n';
+    let csv = 'Nome;CPF;Matricula;Projeto;Turma;Data Prova;Instrutor;Flexoes (1min);Abdominais (1min);Corrida (seg);Desloc. Concluiu;Resultado\n';
     tfmAlunos.forEach(al => {
         const e = tfmExistentes[al.cpf] || {};
         const cpf = formatCPFDisplay(al.cpf || '');
-        csv += '"' + String(al.nome || '').replace(/"/g, '""') + '";"' + cpf + '";"' + String(al.matricula || '').replace(/"/g, '""') + '";"' + String(projeto || '').replace(/"/g, '""') + '";"' + String(turma || '').replace(/"/g, '""') + '";"' + (e.dataProva || '') + '";"' + String(e.instrutor || '').replace(/"/g, '""') + '";' + (e.flexoes != null ? e.flexoes : '') + ';' + (e.abdominais != null ? e.abdominais : '') + ';' + (e.corridaMetros != null ? e.corridaMetros : '') + ';"' + (e.deslocamentoConcluiu || '') + '";"' + (e.resultado || 'Pendente') + '"\n';
+        csv += '"' + String(al.nome || '').replace(/"/g, '""') + '";"' + cpf + '";"' + String(al.matricula || '').replace(/"/g, '""') + '";"' + String(projeto || '').replace(/"/g, '""') + '";"' + String(turma || '').replace(/"/g, '""') + '";"' + (e.dataProva || '') + '";"' + String(e.instrutor || '').replace(/"/g, '""') + '";' + (e.flexoes != null ? e.flexoes : '') + ';' + (e.abdominais != null ? e.abdominais : '') + ';' + (e.corridaSeg != null ? e.corridaSeg : '') + ';"' + (e.deslocamentoConcluiu || '') + '";"' + (e.resultado || 'Pendente') + '"\n';
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
