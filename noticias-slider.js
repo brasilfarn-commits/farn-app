@@ -19,7 +19,7 @@
         '.farn-slide-video{width:100%;height:100%;object-fit:contain;display:block;background:#000}',
         '.farn-slide-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;width:58px;height:58px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:.2s;padding-left:4px}',
         '.farn-slide-play:hover{background:rgba(220,38,38,.8)}',
-        '.farn-slide-caption{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.82));text-align:left}',
+        '.farn-slide-caption{background:#0b1220;border-top:1px solid rgba(255,255,255,.08);padding:12px 14px;text-align:left;border-radius:0 0 16px 16px}',
         '.farn-slide-titulo{color:#fff;font-size:14px;font-weight:700;line-height:1.3}',
         '.farn-slide-texto{color:#e2e8f0;font-size:12px;line-height:1.45;margin-top:4px}',
         '.farn-slider-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:36px;height:36px;border:none;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:.2s}',
@@ -65,16 +65,13 @@
     function renderSlider(container, slides) {
         container.innerHTML = '';
         if (!slides || !slides.length) return;
-        var html = '<div class="farn-slider"><div class="farn-slider-track">';        slides.forEach(function(s, i) {
-            var cap = '';
-            if (s.titulo) cap += '<div class="farn-slide-titulo">' + esc(s.titulo) + '</div>';
-            if (s.texto) cap += '<div class="farn-slide-texto">' + esc(s.texto) + '</div>';
-            if (cap) cap = '<div class="farn-slide-caption">' + cap + '</div>';
+        var html = '<div class="farn-slider"><div class="farn-slider-track">';
+        slides.forEach(function(s, i) {
             var media = s.videoUrl
                 ? '<video class="farn-slide-video" src="' + esc(s.videoUrl) + '" poster="' + esc(s.imagem || '') + '" preload="metadata" muted playsinline></video>' +
                   '<button type="button" class="farn-slide-play" aria-label="Reproduzir"><i class="fa-solid fa-play"></i></button>'
                 : '<img src="' + esc(s.imagem) + '" alt="' + ((s.titulo || s.texto) ? esc(s.titulo || s.texto) : 'Noticia') + '">';
-            html += '<div class="farn-slide">' + cap + media + '</div>';
+            html += '<div class="farn-slide">' + media + '</div>';
         });
         html += '</div>' +
             '<button type="button" class="farn-slider-btn farn-slider-prev" aria-label="Anterior"><i class="fa-solid fa-chevron-left"></i></button>' +
@@ -82,6 +79,7 @@
             '<div class="farn-slider-dots">' + slides.map(function(_, i) {
                 return '<button type="button" class="farn-slider-dot' + (i === 0 ? ' active' : '') + '" data-i="' + i + '"></button>';
             }).join('') + '</div></div>';
+        html += '<div class="farn-slider-caption"></div>';
         container.innerHTML = html;
 
         var track = container.querySelector('.farn-slider-track');
@@ -89,10 +87,22 @@
         var idx = 0;
         var timer = null;
 
+        function updateCaption() {
+            var box = container.querySelector('.farn-slider-caption');
+            if (!box) return;
+            var s = slides[idx];
+            var cap = '';
+            if (s.titulo) cap += '<div class="farn-slide-titulo">' + esc(s.titulo) + '</div>';
+            if (s.texto) cap += '<div class="farn-slide-texto">' + esc(s.texto) + '</div>';
+            box.style.display = cap ? '' : 'none';
+            box.innerHTML = cap;
+        }
+
         function go(n) {
             idx = (n + slides.length) % slides.length;
             track.style.transform = 'translateX(-' + (idx * 100) + '%)';
             dots.forEach(function(d, i) { d.classList.toggle('active', i === idx); });
+            updateCaption();
         }
 
         function start() {
@@ -137,6 +147,7 @@
             });
         });
 
+        updateCaption();
         start();
     }
 
