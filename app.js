@@ -790,7 +790,7 @@ function landingCarregarInstituicao() {
                 FARN_LOGO = d.logo;
                 document.querySelectorAll('#screen-login [data-farn-logo]').forEach(function(img) { img.src = d.logo; });
             }
-            document.title = nome + ' - Sistema de Gestao Educacional';
+            document.title = nome || 'FARN';
         }
     }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
 }
