@@ -2156,17 +2156,22 @@ async function relatorioRegimento() {
         const snap = await dbFirestore.collection('regimentoAceites').get();
         const aceites = [];
         snap.forEach(doc => aceites.push(doc.data()));
-        regimentoAceites = aceites;
-        aceites.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
+        /* Base: apenas alunos ATIVOS do formulario (status Aprovado) */
         const aprovados = candidatos.filter(c => c.status === 'Aprovado');
+        const aprovadosCpf = {};
+        aprovados.forEach(c => { if (c.cpf) aprovadosCpf[c.cpf] = true; });
+        const aceitesAtivos = aceites.filter(a => aprovadosCpf[a.cpf]);
+        aceitesAtivos.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+        regimentoAceites = aceitesAtivos;
+
         const totalAprovados = aprovados.length;
-        const totalAceitaram = aceites.length;
+        const totalAceitaram = aceitesAtivos.length;
         const pendentes = totalAprovados - totalAceitaram;
 
         /* Build pending list: approved students not in aceites */
         const aceitesCpf = {};
-        aceites.forEach(a => { if (a.cpf) aceitesCpf[a.cpf] = true; });
+        aceitesAtivos.forEach(a => { if (a.cpf) aceitesCpf[a.cpf] = true; });
         regimentoPendentes = aprovados.filter(c => !aceitesCpf[c.cpf]);
         regimentoPendentes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
