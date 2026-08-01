@@ -201,75 +201,11 @@
         }
         .landing-hero-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr);
             gap: 40px;
-            align-items: center;
-        }
-        .inst-panel {
-            position: relative;
-            display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 46px 38px;
-            border-radius: 22px;
-            background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-            border: 1px solid rgba(212,175,55,.45);
-            box-shadow: 0 24px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14);
-            min-height: 380px;
-            overflow: hidden;
-        }
-        .inst-panel::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: radial-gradient(circle at 50% 18%, rgba(212,175,55,.12) 0%, transparent 55%);
-        }
-        .inst-panel-insignia {
-            position: absolute;
-            top: 18px;
-            right: 22px;
-            font-size: 26px;
-            color: rgba(212,175,55,.55);
-        }
-        .inst-panel-logo {
-            width: 150px;
-            height: 150px;
-            object-fit: contain;
-            border-radius: 50%;
-            background: #fff;
-            padding: 8px;
-            border: 4px solid var(--gold, #d4af37);
-            box-shadow: 0 0 0 8px rgba(212,175,55,.14), 0 16px 40px rgba(0,0,0,.45);
-            margin-bottom: 22px;
-            position: relative;
-        }
-        .inst-panel-title {
-            font-size: clamp(26px, 3vw, 38px);
-            font-weight: 800;
-            letter-spacing: 1px;
-            color: #fff;
-            text-shadow: 0 3px 12px rgba(0,0,0,.5);
-            max-width: 100%;
-            line-height: 1.15;
-        }
-        .inst-panel-sub {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--gold-l, #f0d78c);
-            margin-top: 10px;
-            text-transform: uppercase;
-            letter-spacing: .8px;
-            max-width: 100%;
-        }
-        .inst-panel-razao {
-            font-size: 11.5px;
-            color: #cfe6d2;
-            margin-top: 10px;
-            max-width: 100%;
-            opacity: .9;
         }
         .landing-hero-right { padding-left: 8px; }
         .landing-eyebrow {
@@ -300,7 +236,9 @@
             font-size: 15px;
             line-height: 1.65;
             color: #c6dcc9;
-            max-width: 520px;
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
         }
         .landing-hero-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
         .landing-hero-badges span {
@@ -501,9 +439,6 @@
         @media (max-width: 480px) {
             .landing-header-inner { padding: 10px 16px; }
             .landing-hero { padding: 36px 16px 28px; }
-            .inst-panel { padding: 34px 20px; min-height: 300px; }
-            .inst-panel-logo { width: 110px; height: 110px; }
-            .inst-panel-title { font-size: 24px; }
             .landing-portais { padding: 40px 16px; }
             .landing-sobre-inner { padding: 40px 16px; }
             .landing-footer-inner { padding: 26px 16px 16px; flex-direction: column; align-items: flex-start; }
@@ -591,15 +526,6 @@
 
         <section class="landing-hero">
             <div class="landing-hero-grid">
-                <div class="landing-hero-left">
-                    <div class="inst-panel">
-                        <i class="fa-solid fa-shield-halved inst-panel-insignia"></i>
-                        <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="inst-panel-logo">
-                        <h1 class="inst-panel-title" id="landing-nome">FARN</h1>
-                        <span class="inst-panel-sub" id="landing-sub">Força Auxiliar de Resgate Nacional</span>
-                        <span class="inst-panel-razao" id="landing-razao"></span>
-                    </div>
-                </div>
                 <div class="landing-hero-right">
                     <span class="landing-eyebrow">Sistema de Gestão Educacional</span>
                     <h2>Educação, disciplina e <span>preparação para o futuro.</span></h2>
