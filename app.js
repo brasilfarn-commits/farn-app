@@ -2157,8 +2157,8 @@ async function relatorioRegimento() {
         const aceites = [];
         snap.forEach(doc => aceites.push(doc.data()));
 
-        /* Base: apenas alunos ATIVOS do formulario (status Aprovado) */
-        const aprovados = candidatos.filter(c => c.status === 'Aprovado');
+        /* Base: apenas alunos ATIVOS do formulario (status Aprovado e nao formados) */
+        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Aprovado');
         const aprovadosCpf = {};
         aprovados.forEach(c => { if (c.cpf) aprovadosCpf[c.cpf] = true; });
         const aceitesAtivos = aceites.filter(a => aprovadosCpf[a.cpf]);
