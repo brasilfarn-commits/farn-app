@@ -118,6 +118,9 @@
                     var ref = document.querySelector(repl);
                     if (ref) ref.style.display = slides.length ? 'none' : '';
                 }
+                if (t.hasAttribute('data-noticias-slider-empty') && t.parentElement) {
+                    t.parentElement.style.display = slides.length ? '' : 'none';
+                }
                 t.style.display = slides.length ? '' : 'none';
                 renderSlider(t, slides);
             });

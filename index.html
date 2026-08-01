@@ -262,6 +262,13 @@
             margin: 0 auto;
             padding: 48px 24px 56px;
         }
+        .landing-noticias {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 8px 24px 48px;
+        }
         .landing-section-head { text-align: center; margin-bottom: 34px; }
         .landing-section-head .landing-eyebrow::before { display: none; }
         .landing-section-head h2 {
@@ -527,7 +534,6 @@
         <section class="landing-hero">
             <div class="landing-hero-grid">
                 <div class="landing-hero-right">
-                    <span class="landing-eyebrow">Sistema de Gestão Educacional</span>
                     <h2>Educação, disciplina e <span>preparação para o futuro.</span></h2>
                     <p>Uma instituição de ensino com padrão paramilitar, formando cidadãos preparados para os desafios da carreira e da vida. Conheça os portais e acesse a sua área.</p>
                     <div class="landing-hero-badges">
@@ -536,6 +542,18 @@
                         <span><i class="fa-solid fa-medal"></i> Excelência</span>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- NOTICIAS -->
+        <section class="landing-noticias" id="landing-noticias" data-noticias-slider-empty>
+            <div class="landing-noticias-inner">
+                <div class="landing-section-head">
+                    <span class="landing-eyebrow">Notícias</span>
+                    <h2>Fique por dentro das novidades</h2>
+                    <p>Notícias e comunicados da instituição.</p>
+                </div>
+                <div id="landing-noticias-slider" data-noticias-slider style="--farn-slider-h:320px"></div>
             </div>
         </section>
 
