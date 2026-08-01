@@ -1735,33 +1735,45 @@
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-circle-info"></i><p>Turma nao encontrada.</p></div>';
             return;
         }
-        dbFirestore.collection('tfmAgendamentos').doc(turma).get().then(function(doc) {
-            if (!doc.exists) {
+        dbFirestore.collection('tfmAgendamentos').where('turma', '==', turma).get().then(function(snap) {
+            if (snap.empty) {
                 container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Voce ainda nao possui TFM agendado.</p></div>';
                 return;
             }
-            var a = doc.data();
-            var dt = null;
-            if (a.dataAgendamento) {
-                if (typeof a.dataAgendamento.toDate === 'function') dt = a.dataAgendamento.toDate();
-                else {
-                    var dd = new Date(a.dataAgendamento);
-                    if (!isNaN(dd.getTime())) dt = dd;
-                }
-            }
+            var lista = [];
+            snap.forEach(function(d) { lista.push(d.data()); });
+            lista.sort(function(x, y) {
+                var tx = x.criadoEm && typeof x.criadoEm.toMillis === 'function' ? x.criadoEm.toMillis() : 0;
+                var ty = y.criadoEm && typeof y.criadoEm.toMillis === 'function' ? y.criadoEm.toMillis() : 0;
+                return ty - tx;
+            });
             var p = function(n) { return String(n).padStart(2, '0'); };
-            var dtStr = dt ? p(dt.getDate()) + '/' + p(dt.getMonth() + 1) + '/' + dt.getFullYear() + ' as ' + p(dt.getHours()) + ':' + p(dt.getMinutes()) : 'Data a definir';
-            var obs = a.observacao ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-circle-info"></i> ' + paEsc(obs) + '</div>' : '';
-            var inst = a.instrutor ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-chalkboard-user"></i> Instrutor: ' + paEsc(a.instrutor) + '</div>' : '';
-            container.innerHTML = '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;padding:18px">' +
-                '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">' +
-                '<div style="width:52px;height:52px;border-radius:12px;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px"><i class="fa-solid fa-calendar-check"></i></div>' +
-                '<div style="flex:1;min-width:200px">' +
-                '<div style="font-size:12px;color:#16a34a;font-weight:700;margin-bottom:4px">TFM AGENDADO</div>' +
-                '<div style="font-size:18px;font-weight:800;color:#14532d">' + paEsc(dtStr) + '</div>' +
-                '</div>' +
-                '</div>' + inst + obs +
-                '</div>';
+            var html = '';
+            lista.forEach(function(a, idx) {
+                var dt = null;
+                if (a.dataAgendamento) {
+                    if (typeof a.dataAgendamento.toDate === 'function') dt = a.dataAgendamento.toDate();
+                    else {
+                        var dd = new Date(a.dataAgendamento);
+                        if (!isNaN(dd.getTime())) dt = dd;
+                    }
+                }
+                var dtStr = dt ? p(dt.getDate()) + '/' + p(dt.getMonth() + 1) + '/' + dt.getFullYear() + ' as ' + p(dt.getHours()) + ':' + p(dt.getMinutes()) : 'Data a definir';
+                var obs = a.observacao ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-circle-info"></i> ' + paEsc(a.observacao) + '</div>' : '';
+                var inst = a.instrutor ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-chalkboard-user"></i> Instrutor: ' + paEsc(a.instrutor) + '</div>' : '';
+                var rotulo = lista.length > 1 ? '<div style="font-size:11px;color:#15803d;font-weight:700;margin-bottom:4px">AGENDAMENTO ' + (idx + 1) + ' DE ' + lista.length + '</div>' : '';
+                html += '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;padding:18px;margin-bottom:10px">' +
+                    rotulo +
+                    '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">' +
+                    '<div style="width:52px;height:52px;border-radius:12px;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px"><i class="fa-solid fa-calendar-check"></i></div>' +
+                    '<div style="flex:1;min-width:200px">' +
+                    '<div style="font-size:12px;color:#16a34a;font-weight:700;margin-bottom:4px">TFM AGENDADO</div>' +
+                    '<div style="font-size:18px;font-weight:800;color:#14532d">' + paEsc(dtStr) + '</div>' +
+                    '</div>' +
+                    '</div>' + inst + obs +
+                    '</div>';
+            });
+            container.innerHTML = html;
         }, function() {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar o agendamento.</p></div>';
         });
@@ -1775,31 +1787,35 @@
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-circle-info"></i><p>CPF nao encontrado.</p></div>';
             return;
         }
-        dbFirestore.collection('tfmAlunos').doc(cpf).get().then(function(doc) {
-            if (!doc.exists) {
+        dbFirestore.collection('tfmAlunos').where('cpf', '==', cpf).get().then(function(snap) {
+            if (snap.empty) {
                 container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-hourglass-half"></i><p>Voce ainda nao possui resultado TFM registrado.</p></div>';
                 return;
             }
-            var r = doc.data();
-            var res = r.resultado || 'Pendente';
-            var cor = res === 'Apto' ? '#16a34a' : res === 'Inapto' ? '#dc2626' : '#ca8a04';
-            var icon = res === 'Apto' ? 'fa-circle-check' : res === 'Inapto' ? 'fa-circle-xmark' : 'fa-circle-info';
-            var dt = r.dataResultado ? new Date(r.dataResultado) : null;
-            var dtStr = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('pt-BR') : 'Registro sem data/hora';
-            var detalhes = (r.flexoes != null || r.abdominais != null || r.corridaSeg != null || r.deslocamentoConcluiu) ?
-                '<div style="font-size:12px;color:#475569;margin-top:6px">A) Flexoes: ' + (r.flexoes != null ? r.flexoes : '-') + ' | B) Abdominais: ' + (r.abdominais != null ? r.abdominais : '-') + ' | C) Corrida: ' + (r.corridaSeg != null ? r.corridaSeg + 's' : '-') + ' | D) Deslocamento: ' + (r.deslocamentoConcluiu || '-') + '</div>' : '';
-            container.innerHTML = '<div style="background:#fff;border:1px solid ' + cor + '40;border-radius:12px;padding:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,.05)">' +
-                '<div style="width:52px;height:52px;border-radius:50%;background:' + cor + '15;color:' + cor + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px"><i class="fa-solid ' + icon + '"></i></div>' +
-                '<div style="flex:1;min-width:200px">' +
-                    '<div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Resultado de Aptidao (auto)</div>' +
-                    '<div style="font-size:22px;font-weight:800;color:' + cor + '">' + res + '</div>' + detalhes +
-                '</div>' +
-                '<div style="text-align:right;flex-shrink:0">' +
-                    '<div style="font-size:11px;color:#94a3b8;font-weight:600">Registrado em</div>' +
-                    '<div style="font-size:13px;font-weight:700;color:#1e293b">' + dtStr + '</div>' +
-                    (r.dataProva ? '<div style="font-size:11px;color:#94a3b8;margin-top:4px">Data da prova: ' + r.dataProva + '</div>' : '') +
-                '</div>' +
-            '</div>';
+            var html = '';
+            snap.forEach(function(d) {
+                var r = d.data();
+                var res = r.resultado || 'Pendente';
+                var cor = res === 'Apto' ? '#16a34a' : res === 'Inapto' ? '#dc2626' : '#ca8a04';
+                var icon = res === 'Apto' ? 'fa-circle-check' : res === 'Inapto' ? 'fa-circle-xmark' : 'fa-circle-info';
+                var dt = r.dataResultado ? new Date(r.dataResultado) : null;
+                var dtStr = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('pt-BR') : 'Registro sem data/hora';
+                var detalhes = (r.flexoes != null || r.abdominais != null || r.corridaSeg != null || r.deslocamentoConcluiu) ?
+                    '<div style="font-size:12px;color:#475569;margin-top:6px">A) Flexoes: ' + (r.flexoes != null ? r.flexoes : '-') + ' | B) Abdominais: ' + (r.abdominais != null ? r.abdominais : '-') + ' | C) Corrida: ' + (r.corridaSeg != null ? r.corridaSeg + 's' : '-') + ' | D) Deslocamento: ' + (r.deslocamentoConcluiu || '-') + '</div>' : '';
+                html += '<div style="background:#fff;border:1px solid ' + cor + '40;border-radius:12px;padding:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:10px">' +
+                    '<div style="width:52px;height:52px;border-radius:50%;background:' + cor + '15;color:' + cor + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px"><i class="fa-solid ' + icon + '"></i></div>' +
+                    '<div style="flex:1;min-width:200px">' +
+                        '<div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Resultado de Aptidao (auto)</div>' +
+                        '<div style="font-size:22px;font-weight:800;color:' + cor + '">' + paEsc(res) + '</div>' + detalhes +
+                    '</div>' +
+                    '<div style="text-align:right;flex-shrink:0">' +
+                        '<div style="font-size:11px;color:#94a3b8;font-weight:600">Registrado em</div>' +
+                        '<div style="font-size:13px;font-weight:700;color:#1e293b">' + paEsc(dtStr) + '</div>' +
+                        (r.dataProva ? '<div style="font-size:11px;color:#94a3b8;margin-top:4px">Data da prova: ' + paEsc(r.dataProva) + '</div>' : '') +
+                    '</div>' +
+                '</div>';
+            });
+            container.innerHTML = html;
         }).catch(function(e) {
             console.error('Erro ao carregar resultado TFM:', e);
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar resultado.</p></div>';
