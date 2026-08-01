@@ -192,22 +192,6 @@
         }
         .landing-login-error.show { display: block; }
 
-        .landing-hero {
-            position: relative;
-            z-index: 1;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 56px 24px 40px;
-        }
-        .landing-hero-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 40px;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        .landing-hero-right { padding-left: 8px; }
         .landing-eyebrow {
             display: inline-flex;
             align-items: center;
@@ -224,36 +208,6 @@
             height: 2px;
             background: linear-gradient(90deg, var(--gold, #d4af37), transparent);
         }
-        .landing-hero-right h2 {
-            font-size: clamp(26px, 3.4vw, 42px);
-            font-weight: 800;
-            line-height: 1.18;
-            margin: 14px 0 16px;
-            color: #fff;
-        }
-        .landing-hero-right h2 span { color: var(--gold-l, #f0d78c); }
-        .landing-hero-right > p {
-            font-size: 15px;
-            line-height: 1.65;
-            color: #c6dcc9;
-            max-width: 640px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .landing-hero-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
-        .landing-hero-badges span {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 12.5px;
-            font-weight: 700;
-            color: #e8f2e9;
-            padding: 8px 14px;
-            border-radius: 30px;
-            background: rgba(255,255,255,.07);
-            border: 1px solid rgba(212,175,55,.35);
-        }
-        .landing-hero-badges i { color: var(--gold, #d4af37); }
 
         .landing-portais {
             position: relative;
@@ -432,8 +386,6 @@
         .landing-footer-copy span { font-weight: 700; color: #cfe6d2; }
 
         @media (max-width: 860px) {
-            .landing-hero-grid { grid-template-columns: 1fr; }
-            .landing-hero-right { padding-left: 0; }
             .landing-nav { display: none; }
             .landing-login { margin-left: auto; }
         }
@@ -445,7 +397,6 @@
         }
         @media (max-width: 480px) {
             .landing-header-inner { padding: 10px 16px; }
-            .landing-hero { padding: 36px 16px 28px; }
             .landing-portais { padding: 40px 16px; }
             .landing-sobre-inner { padding: 40px 16px; }
             .landing-footer-inner { padding: 26px 16px 16px; flex-direction: column; align-items: flex-start; }
@@ -530,20 +481,6 @@
                 </form>
             </div>
         </header>
-
-        <section class="landing-hero">
-            <div class="landing-hero-grid">
-                <div class="landing-hero-right">
-                    <h2>Educação, disciplina e <span>preparação para o futuro.</span></h2>
-                    <p>Uma instituição de ensino com padrão paramilitar, formando cidadãos preparados para os desafios da carreira e da vida. Conheça os portais e acesse a sua área.</p>
-                    <div class="landing-hero-badges">
-                        <span><i class="fa-solid fa-star"></i> Tradição</span>
-                        <span><i class="fa-solid fa-shield-halved"></i> Disciplina</span>
-                        <span><i class="fa-solid fa-medal"></i> Excelência</span>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- NOTICIAS -->
         <section class="landing-noticias" id="landing-noticias" data-noticias-slider-empty>
