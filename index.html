@@ -768,6 +768,10 @@
                         <i class="fa-solid fa-graduation-cap"></i>
                         <span>Disciplinas</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-noticias', this)">
+                        <i class="fa-solid fa-newspaper"></i>
+                        <span>Noticias</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -855,6 +859,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item:nth-child(14)')); discLoadList(); aulaLoadList()">>
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Disciplinas</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item:nth-child(15)'));">
+                                <i class="fa-solid fa-newspaper"></i>
+                                <span>Noticias</span>
                             </div>
                         </div>
                     </div>
@@ -2346,6 +2354,20 @@
                         </div>
                         <div id="aula-list" style="padding:16px">
                             <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOTICIAS -->
+                <div id="admin-noticias" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-newspaper" style="color:#dc2626;margin-right:8px"></i> Noticias</h3>
+                        </div>
+                        <div class="card-body" style="text-align:center;padding:60px 20px">
+                            <i class="fa-solid fa-person-digging" style="font-size:56px;color:#cbd5e1"></i>
+                            <h3 style="margin:20px 0 8px;color:#475569">Em construção</h3>
+                            <p style="color:#94a3b8;font-size:14px">Esta pagina esta em construcao e ficara disponivel em breve.</p>
                         </div>
                     </div>
                 </div>
