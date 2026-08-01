@@ -1837,14 +1837,20 @@
     /* ===== GALERIA ===== */
     function paLoadGallery() {
         var grid = document.getElementById('pf-gallery-grid');
+        var myProjeto = (paUser && paUser.projeto || '').trim();
+        var myTurma = (paUser && paUser.turma || '').trim();
         paGalleryUnsub = dbFirestore.collection('galeriaAlunos').orderBy('data', 'desc').onSnapshot(function(snap) {
             if (snap.empty) {
                 grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
                 return;
             }
             grid.innerHTML = '';
+            var count = 0;
             snap.forEach(function(doc) {
                 var g = doc.data();
+                if (g.projeto && myProjeto && g.projeto !== myProjeto) return;
+                if (g.turma && myTurma && g.turma !== myTurma) return;
+                count++;
                 var item = document.createElement('div');
                 item.className = 'pf-gallery-item';
                 item.onclick = function() { paOpenPhoto(g.url); };
@@ -1853,6 +1859,7 @@
                     '<div class="pf-gallery-date">' + (g.titulo || '') + (dateStr ? ' - ' + dateStr : '') + '</div>';
                 grid.appendChild(item);
             });
+            if (!count) grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
         }, function() {
             grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
         });

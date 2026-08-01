@@ -6175,3 +6175,126 @@ function noticiasPreviewIniciar(coluna) {
         if (btn) btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver slide';
     }
 }
+
+/* ===== GALERIA (ADMIN) ===== */
+var galeriaPendentes = [];
+
+function galeriaAdminInicializar() {
+    galeriaPendentes = [];
+    var selProj = document.getElementById('galeria-selecao-projeto');
+    var selTurma = document.getElementById('galeria-selecao-turma');
+    var thumbs = document.getElementById('galeria-thumbs');
+    var titulo = document.getElementById('galeria-titulo');
+    if (thumbs) thumbs.innerHTML = '';
+    if (titulo) titulo.value = '';
+    if (selProj) {
+        selProj.innerHTML = '<option value="">Projeto...</option>';
+        projetos.forEach(function(p) {
+            selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+        });
+    }
+    if (selTurma) selTurma.innerHTML = '<option value="">Turma...</option>';
+    galeriaAdminCarregar();
+}
+
+function galeriaAdminOnProjetoChange() {
+    var projetoNome = document.getElementById('galeria-selecao-projeto').value;
+    var selTurma = document.getElementById('galeria-selecao-turma');
+    selTurma.innerHTML = '<option value="">Turma...</option>';
+    if (projetoNome) {
+        turmas.filter(function(t) { return t.projeto === projetoNome; }).forEach(function(t) {
+            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
+        });
+    }
+    galeriaAdminCarregar();
+}
+
+function galeriaAdminOnTurmaChange() {
+    galeriaAdminCarregar();
+}
+
+function galeriaAdminSelecionarImagens(input) {
+    var thumbs = document.getElementById('galeria-thumbs');
+    if (thumbs) thumbs.innerHTML = '';
+    galeriaPendentes = [];
+    if (!input || !input.files || !input.files.length) return;
+    Array.prototype.forEach.call(input.files, function(file) {
+        noticiasCompressImage(file).then(function(dataUrl) {
+            galeriaPendentes.push(dataUrl);
+            if (thumbs) {
+                var img = document.createElement('img');
+                img.src = dataUrl;
+                img.style.cssText = 'width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0';
+                thumbs.appendChild(img);
+            }
+        });
+    });
+}
+
+async function galeriaAdminSalvar() {
+    var projeto = document.getElementById('galeria-selecao-projeto').value;
+    var turma = document.getElementById('galeria-selecao-turma').value;
+    var titulo = document.getElementById('galeria-titulo') ? document.getElementById('galeria-titulo').value.trim() : '';
+    if (!projeto || !turma) { alert('Selecione o projeto e a turma.'); return; }
+    if (!galeriaPendentes.length) { alert('Selecione as imagens primeiro.'); return; }
+    var batch = dbFirestore.batch();
+    galeriaPendentes.forEach(function(dataUrl) {
+        batch.set(dbFirestore.collection('galeriaAlunos').doc(), {
+            url: dataUrl,
+            titulo: titulo,
+            projeto: projeto,
+            turma: turma,
+            data: firebase.firestore.FieldValue.serverTimestamp(),
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    });
+    await batch.commit();
+    galeriaPendentes = [];
+    var thumbs = document.getElementById('galeria-thumbs');
+    if (thumbs) thumbs.innerHTML = '';
+    var file = document.getElementById('galeria-file');
+    if (file) file.value = '';
+    alert('Fotos adicionadas a galeria!');
+    galeriaAdminCarregar();
+}
+
+function galeriaAdminCarregar() {
+    var container = document.getElementById('galeria-lista');
+    if (!container) return;
+    var projeto = document.getElementById('galeria-selecao-projeto').value;
+    var turma = document.getElementById('galeria-selecao-turma').value;
+    if (!projeto || !turma) {
+        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Selecione projeto e turma acima.</div>';
+        return;
+    }
+    container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>';
+    dbFirestore.collection('galeriaAlunos').orderBy('data', 'desc').get().then(function(snap) {
+        var arr = [];
+        snap.forEach(function(doc) {
+            var g = doc.data();
+            g.id = doc.id;
+            if (g.projeto && g.projeto !== projeto) return;
+            if (g.turma && g.turma !== turma) return;
+            arr.push(g);
+        });
+        if (!arr.length) {
+            container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Nenhuma foto para este projeto/turma.</div>';
+            return;
+        }
+        container.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px">' + arr.map(function(g) {
+            return '<div style="position:relative;width:90px;flex:none">' +
+                '<img src="' + g.url + '" style="width:90px;height:68px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0">' +
+                '<button onclick="galeriaAdminExcluir(\'' + g.id + '\')" title="Excluir" style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:6px;width:20px;height:20px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+        }).join('') + '</div>';
+    }).catch(function() {
+        container.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px;font-size:13px">Erro ao carregar fotos.</div>';
+    });
+}
+
+function galeriaAdminExcluir(id) {
+    if (!confirm('Remover esta foto da galeria?')) return;
+    dbFirestore.collection('galeriaAlunos').doc(id).delete().then(function() {
+        galeriaAdminCarregar();
+    });
+}

@@ -562,6 +562,10 @@
                         <i class="fa-solid fa-newspaper"></i>
                         <span>Noticias</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-galeria', this); galeriaAdminInicializar()">
+                        <i class="fa-solid fa-images"></i>
+                        <span>Galeria</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -2209,6 +2213,50 @@
                                     <div id="noticias-thumbs-direita" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
                                     <div id="noticias-lista-direita" style="margin-top:12px">
                                         <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GALERIA -->
+                <div id="admin-galeria" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-images" style="color:#2563eb;margin-right:8px"></i> Galeria</h3>
+                            <small>Anexe fotos para a galeria do portal do aluno, vinculadas a um projeto e turma.</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="config-grid" style="grid-template-columns:1fr 1fr;align-items:start;gap:16px">
+                                <div class="config-card" style="padding:16px;align-items:stretch">
+                                    <i class="fa-solid fa-upload" style="font-size:20px"></i>
+                                    <span style="font-size:13px">Adicionar fotos a galeria</span>
+                                    <small>Selecione o projeto e a turma que verao as fotos, escolha as imagens e salve.</small>
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+                                        <select id="galeria-selecao-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminOnProjetoChange()">
+                                            <option value="">Projeto...</option>
+                                        </select>
+                                        <select id="galeria-selecao-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminOnTurmaChange()">
+                                            <option value="">Turma...</option>
+                                        </select>
+                                    </div>
+                                    <input type="text" id="galeria-titulo" class="config-input" placeholder="Legenda / titulo (opcional)" style="width:100%;margin-top:8px">
+                                    <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:12px 0 0;align-self:flex-start">
+                                        <i class="fa-solid fa-images"></i> Selecionar imagens
+                                        <input type="file" id="galeria-file" accept="image/*" multiple style="display:none" onchange="galeriaAdminSelecionarImagens(this)">
+                                    </label>
+                                    <div id="galeria-thumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+                                        <button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="galeriaAdminSalvar()"><i class="fa-solid fa-floppy-disk"></i> Salvar fotos</button>
+                                    </div>
+                                </div>
+                                <div class="config-card" style="padding:16px;align-items:stretch">
+                                    <i class="fa-solid fa-layer-group" style="font-size:20px"></i>
+                                    <span style="font-size:13px">Fotos da galeria</span>
+                                    <small>Fotos cadastradas para o projeto/turma selecionado. Clique na lixeira para remover.</small>
+                                    <div id="galeria-lista" style="margin-top:12px">
+                                        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Selecione projeto e turma acima.</div>
                                     </div>
                                 </div>
                             </div>
