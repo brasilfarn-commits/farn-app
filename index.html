@@ -593,11 +593,14 @@
             <div class="landing-hero-grid">
                 <div class="landing-hero-left">
                     <div class="inst-panel">
-                        <i class="fa-solid fa-shield-halved inst-panel-insignia"></i>
-                        <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="inst-panel-logo">
-                        <h1 class="inst-panel-title" id="landing-nome">FARN</h1>
-                        <span class="inst-panel-sub" id="landing-sub">Força Auxiliar de Resgate Nacional</span>
-                        <span class="inst-panel-razao" id="landing-razao"></span>
+                        <div id="inst-conteudo">
+                            <i class="fa-solid fa-shield-halved inst-panel-insignia"></i>
+                            <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="inst-panel-logo">
+                            <h1 class="inst-panel-title" id="landing-nome">FARN</h1>
+                            <span class="inst-panel-sub" id="landing-sub">Força Auxiliar de Resgate Nacional</span>
+                            <span class="inst-panel-razao" id="landing-razao"></span>
+                        </div>
+                        <div id="inst-slider" data-noticias-slider data-noticias-slider-replace="#inst-conteudo" style="--farn-slider-h:380px"></div>
                     </div>
                 </div>
                 <div class="landing-hero-right">
@@ -768,7 +771,7 @@
                         <i class="fa-solid fa-graduation-cap"></i>
                         <span>Disciplinas</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-noticias', this)">
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-noticias', this); noticiasInicializar()">
                         <i class="fa-solid fa-newspaper"></i>
                         <span>Noticias</span>
                     </a>
@@ -860,7 +863,7 @@
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Disciplinas</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item:nth-child(15)'));">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item:nth-child(15)')); noticiasInicializar()">
                                 <i class="fa-solid fa-newspaper"></i>
                                 <span>Noticias</span>
                             </div>
@@ -2364,10 +2367,34 @@
                         <div class="card-header">
                             <h3><i class="fa-solid fa-newspaper" style="color:#dc2626;margin-right:8px"></i> Noticias</h3>
                         </div>
-                        <div class="card-body" style="text-align:center;padding:60px 20px">
-                            <i class="fa-solid fa-person-digging" style="font-size:56px;color:#cbd5e1"></i>
-                            <h3 style="margin:20px 0 8px;color:#475569">Em construção</h3>
-                            <p style="color:#94a3b8;font-size:14px">Esta pagina esta em construcao e ficara disponivel em breve.</p>
+                        <div class="card-body">
+                            <div class="config-grid" style="grid-template-columns:1fr 1fr;align-items:start">
+                                <div class="config-card" style="padding:16px">
+                                    <i class="fa-solid fa-image" style="font-size:20px"></i>
+                                    <span style="font-size:13px">Adicionar imagens ao slide</span>
+                                    <small>As imagens aparecem em um slide automatico (translacao para a esquerda) na tela inicial do site e nas janelas de noticias dos portais.</small>
+                                    <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">
+                                        <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:0">
+                                            <i class="fa-solid fa-upload"></i> Selecionar imagens
+                                            <input type="file" id="noticias-file" accept="image/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this)">
+                                        </label>
+                                        <button class="btn-outline" onclick="noticiasPreviewIniciar()" id="noticias-btn-preview" style="display:none;padding:8px 14px;font-size:12px"><i class="fa-solid fa-eye"></i> Ver slide</button>
+                                    </div>
+                                    <div id="noticias-preview-slider" style="display:none;margin-top:14px"></div>
+                                    <div id="noticias-pre-selecao" style="display:none;margin-top:12px">
+                                        <div id="noticias-thumbs" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+                                        <button class="btn-primary" style="margin-top:12px;padding:8px 14px;font-size:12px;margin-bottom:0" onclick="noticiasSalvarImagens()"><i class="fa-solid fa-floppy-disk"></i> Salvar imagens no slide</button>
+                                    </div>
+                                </div>
+                                <div class="config-card" style="padding:16px">
+                                    <i class="fa-solid fa-newspaper"></i>
+                                    <span style="font-size:13px">Slides cadastrados</span>
+                                    <small>Use as setas para reordenar ou exclua para remover do slide.</small>
+                                    <div id="noticias-lista" style="margin-top:12px">
+                                        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2940,6 +2967,7 @@
     <script src="app.js"></script>
     <script src="recad-admin.js"></script>
     <script src="chat-admin.js"></script>
+    <script src="noticias-slider.js"></script>
     <script>
     (function(){
         if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
