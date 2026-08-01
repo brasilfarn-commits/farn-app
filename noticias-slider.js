@@ -28,7 +28,8 @@
         '.farn-slider-next{right:10px}',
         '.farn-slider-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:5}',
         '.farn-slider-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.45);cursor:pointer;transition:.2s;border:none;padding:0}',
-        '.farn-slider-dot.active{background:#fff;width:18px;border-radius:4px}'
+        '.farn-slider-dot.active{background:#fff;width:18px;border-radius:4px}',
+        '.farn-slider-empty{display:flex;align-items:center;justify-content:center;gap:8px;color:#94a3b8;font-size:13px;border:1px dashed rgba(255,255,255,.2);border-radius:16px;background:#1e293b;height:var(--farn-slider-h,260px)}'
     ].join('');
 
     var styleEl = document.createElement('style');
@@ -64,8 +65,7 @@
     function renderSlider(container, slides) {
         container.innerHTML = '';
         if (!slides || !slides.length) return;
-        var html = '<div class="farn-slider"><div class="farn-slider-track">';
-        slides.forEach(function(s, i) {
+        var html = '<div class="farn-slider"><div class="farn-slider-track">';        slides.forEach(function(s, i) {
             var cap = '';
             if (s.titulo) cap += '<div class="farn-slide-titulo">' + esc(s.titulo) + '</div>';
             if (s.texto) cap += '<div class="farn-slide-texto">' + esc(s.texto) + '</div>';
@@ -140,6 +140,15 @@
         start();
     }
 
+    function renderPlaceholder(container) {
+        container.innerHTML = '';
+        container.style.display = '';
+        var d = document.createElement('div');
+        d.className = 'farn-slider farn-slider-empty';
+        d.innerHTML = '<i class="fa-solid fa-newspaper"></i><span>Sem notícias nesta coluna</span>';
+        container.appendChild(d);
+    }
+
     function initTargets() {
         var targets = document.querySelectorAll('[data-noticias-slider]');
         if (!targets.length) return;
@@ -154,6 +163,11 @@
                 }
                 if (t.hasAttribute('data-noticias-slider-empty') && t.parentElement) {
                     t.parentElement.style.display = sl.length ? '' : 'none';
+                }
+                if (t.hasAttribute('data-noticias-slider-fix')) {
+                    if (sl.length) { t.style.display = ''; renderSlider(t, sl); }
+                    else renderPlaceholder(t);
+                    return;
                 }
                 t.style.display = sl.length ? '' : 'none';
                 renderSlider(t, sl);
