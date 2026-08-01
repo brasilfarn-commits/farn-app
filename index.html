@@ -351,6 +351,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
         const firebaseConfig = {
@@ -2145,8 +2146,9 @@
                                     <div class="noticias-admin-col-titulo"><i class="fa-solid fa-align-left"></i> Coluna Esquerda</div>
                                     <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:0">
                                         <i class="fa-solid fa-upload"></i> Selecionar imagens
-                                        <input type="file" id="noticias-file-esquerda" accept="image/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'esquerda')">
+                                        <input type="file" id="noticias-file-esquerda" accept="image/*,video/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'esquerda')">
                                     </label>
+                                    <small style="color:#94a3b8;font-size:11px">Imagens ou vídeos (o vídeo será enviado ao armazenamento).</small>
                                     <textarea id="noticias-texto-esquerda" class="noticias-texto-input" placeholder="Texto da noticia (aparece sobre a imagem)"></textarea>
                                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                                         <button class="btn-outline" onclick="noticiasPreviewIniciar('esquerda')" id="noticias-btn-preview-esquerda" style="display:none;padding:8px 14px;font-size:12px"><i class="fa-solid fa-eye"></i> Ver slide</button>
@@ -2162,8 +2164,9 @@
                                     <div class="noticias-admin-col-titulo"><i class="fa-solid fa-align-center"></i> Coluna Central</div>
                                     <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:0">
                                         <i class="fa-solid fa-upload"></i> Selecionar imagens
-                                        <input type="file" id="noticias-file-meio" accept="image/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'meio')">
+                                        <input type="file" id="noticias-file-meio" accept="image/*,video/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'meio')">
                                     </label>
+                                    <small style="color:#94a3b8;font-size:11px">Imagens ou vídeos (o vídeo será enviado ao armazenamento).</small>
                                     <textarea id="noticias-texto-meio" class="noticias-texto-input" placeholder="Texto da noticia (aparece sobre a imagem)"></textarea>
                                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                                         <button class="btn-outline" onclick="noticiasPreviewIniciar('meio')" id="noticias-btn-preview-meio" style="display:none;padding:8px 14px;font-size:12px"><i class="fa-solid fa-eye"></i> Ver slide</button>
@@ -2179,8 +2182,9 @@
                                     <div class="noticias-admin-col-titulo"><i class="fa-solid fa-align-right"></i> Coluna Direita</div>
                                     <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:0">
                                         <i class="fa-solid fa-upload"></i> Selecionar imagens
-                                        <input type="file" id="noticias-file-direita" accept="image/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'direita')">
+                                        <input type="file" id="noticias-file-direita" accept="image/*,video/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'direita')">
                                     </label>
+                                    <small style="color:#94a3b8;font-size:11px">Imagens ou vídeos (o vídeo será enviado ao armazenamento).</small>
                                     <textarea id="noticias-texto-direita" class="noticias-texto-input" placeholder="Texto da noticia (aparece sobre a imagem)"></textarea>
                                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                                         <button class="btn-outline" onclick="noticiasPreviewIniciar('direita')" id="noticias-btn-preview-direita" style="display:none;padding:8px 14px;font-size:12px"><i class="fa-solid fa-eye"></i> Ver slide</button>
