@@ -888,14 +888,19 @@ async function landingLogin(event) {
             return true;
         }
 
-        // Não é admin - login específico do portal escolhido
+        // Não é admin - verifica se é usuário do sistema com permissão de acesso ao portal
         var portal = document.getElementById('landing-login-portal').value;
         var ok = false;
-        if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
-        else if (portal === 'formado') ok = await landingLoginFormado(cpf, senha);
-        else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
-        else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
-        else if (portal === 'coordenacao') ok = await landingLoginCoordenacao(cpf, senha);
+        if (portal !== 'admin') {
+            ok = await landingLoginPortalPerm(cpf, senha, portal);
+        }
+        if (!ok) {
+            if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
+            else if (portal === 'formado') ok = await landingLoginFormado(cpf, senha);
+            else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
+            else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
+            else if (portal === 'coordenacao') ok = await landingLoginCoordenacao(cpf, senha);
+        }
         if (!ok) {
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
         }
@@ -905,6 +910,26 @@ async function landingLogin(event) {
         if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     }
     return false;
+}
+
+async function landingLoginPortalPerm(cpf, senha, portal) {
+    var permKey = 'portal-' + portal;
+    var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) return false;
+    var user = null;
+    snap.forEach(function(doc) {
+        var u = doc.data();
+        if (u.senha === senha && u.ativo !== false && u.permissoes && u.permissoes.includes(permKey)) user = u;
+    });
+    if (!user) return false;
+    currentUserData = user;
+    saveLastLogin(cpf);
+    try { localStorage.setItem('farn_user_data', JSON.stringify(user)); } catch(e) {}
+    if (portal === 'formado') location.href = 'portal-formado.html';
+    else if (portal === 'aluno') location.href = 'portal-aluno.html';
+    else if (portal === 'docente') location.href = 'portal-docente.html';
+    else if (portal === 'coordenacao') location.href = 'portal-coordenacao.html';
+    return true;
 }
 
 async function landingLoginAdmin(cpf, senha) {
@@ -3267,7 +3292,11 @@ function renderUsuariosList() {
                 'chat-portais': '<span class="usuario-tag usuario-tag-instrutor">Chat</span>',
                 'apostilas': '<span class="usuario-tag usuario-tag-pre">Apostilas</span>',
                 'disciplinas': '<span class="usuario-tag usuario-tag-instrutor">Disciplinas</span>',
-                'apontamento': '<span class="usuario-tag usuario-tag-admin">Apontamento</span>'
+                'apontamento': '<span class="usuario-tag usuario-tag-admin">Apontamento</span>',
+                'portal-formado': '<span class="usuario-tag usuario-tag-portal">Portal Formado</span>',
+                'portal-aluno': '<span class="usuario-tag usuario-tag-portal">Portal Aluno</span>',
+                'portal-docente': '<span class="usuario-tag usuario-tag-portal">Portal Docente</span>',
+                'portal-coordenacao': '<span class="usuario-tag usuario-tag-portal">Portal Coordenacao</span>'
             };
             return labels[p] || '';
         }).join('');

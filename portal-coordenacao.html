@@ -256,8 +256,8 @@
 
         function pcAdminAutoAccess() {
             var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
-            if (adminData.permissoes && adminData.permissoes.includes('admin')) {
-                pcUser = { nome: adminData.nome || 'Administrador Geral', cpf: adminData.cpf || '05004959471', permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'], _docId: 'admin' };
+            if (adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-coordenacao'))) {
+                pcUser = { nome: adminData.nome || 'Administrador Geral', cpf: adminData.cpf || '05004959471', permissoes: adminData.permissoes || ['admin', 'pre-inscricao', 'instrutor', 'usuarios'], _docId: 'admin' };
                 document.getElementById('screen-portal').classList.add('active');
                 var initials = pcUser.nome.split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
                 document.getElementById('pc-user-avatar').textContent = initials;
@@ -281,7 +281,7 @@
         pcAdminAutoAccess();
         /* Se não há credenciais salvas E não é admin, redirecionar para landing */
         var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
-        var isAdmin = adminData.permissoes && adminData.permissoes.includes('admin');
+        var isAdmin = adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-coordenacao'));
         if (!isAdmin && !localStorage.getItem('pc_lembrar_cpf') && !localStorage.getItem('pc_lembrar_senha')) {
             location.replace('index.html');
         }

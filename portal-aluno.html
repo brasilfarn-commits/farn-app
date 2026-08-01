@@ -896,7 +896,7 @@
 
     function paAdminAutoAccess() {
         var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
-        if (adminData.permissoes && adminData.permissoes.includes('admin')) {
+        if (adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-aluno'))) {
             document.getElementById('screen-portal').classList.add('active');
             var initials = (adminData.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
             document.getElementById('pf-user-avatar').textContent = initials;
@@ -2496,7 +2496,7 @@
     paAdminAutoAccess();
     /* Se não há credenciais salvas E não é admin, redirecionar para landing */
     var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
-    var isAdmin = adminData.permissoes && adminData.permissoes.includes('admin');
+    var isAdmin = adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-aluno'));
     if (!isAdmin && !localStorage.getItem('pa_lembrar_cpf') && !localStorage.getItem('pa_lembrar_senha')) {
         location.replace('index.html');
     }
