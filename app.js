@@ -4087,6 +4087,8 @@ window.addEventListener('appinstalled', function() {
 var tfmAlunos = [];
 var tfmExistentes = {};
 var tfmAgendamentoTurma = null;
+var tfmAgendamentoSelecionadoId = null;
+var tfmAgendamentoAbrirId = null;
 
 function tfmFormatarDataHora(ts) {
     let d = null;
@@ -4155,13 +4157,37 @@ async function tfmOnSelecaoChange() {
 
     tfmExistentes = {};
     tfmAgendamentoTurma = null;
+    tfmAgendamentoSelecionadoId = null;
+    const abrirId = tfmAgendamentoAbrirId;
+    tfmAgendamentoAbrirId = null;
     try {
-        const snap = await dbFirestore.collection('tfmAlunos').where('turma', '==', turma).get();
+        if (abrirId) {
+            const docAg = await dbFirestore.collection('tfmAgendamentos').doc(abrirId).get();
+            if (docAg.exists) {
+                tfmAgendamentoTurma = docAg.data();
+                tfmAgendamentoSelecionadoId = abrirId;
+            }
+        }
+        if (!tfmAgendamentoTurma) {
+            const snapAg = await dbFirestore.collection('tfmAgendamentos').where('turma', '==', turma).get();
+            let melhor = null;
+            let melhorT = -1;
+            snapAg.forEach(d => {
+                const dts = d.data().criadoEm;
+                const t = dts && typeof dts.toMillis === 'function' ? dts.toMillis() : (dts ? new Date(dts).getTime() : 0);
+                if (t >= melhorT) { melhorT = t; melhor = d; }
+            });
+            if (melhor) {
+                tfmAgendamentoTurma = melhor.data();
+                tfmAgendamentoSelecionadoId = melhor.id;
+            }
+        }
+        const snap = tfmAgendamentoSelecionadoId
+            ? await dbFirestore.collection('tfmAlunos').where('agendamentoId', '==', tfmAgendamentoSelecionadoId).get()
+            : await dbFirestore.collection('tfmAlunos').where('turma', '==', turma).get();
         snap.forEach(doc => {
             tfmExistentes[doc.data().cpf] = Object.assign({ docId: doc.id }, doc.data());
         });
-        const docAg = await dbFirestore.collection('tfmAgendamentos').doc(turma).get();
-        if (docAg.exists) tfmAgendamentoTurma = docAg.data();
     } catch(e) { console.error('Erro ao carregar TFM:', e); }
 
     tfmPreencherAgenda();
@@ -4307,9 +4333,12 @@ async function tfmSalvar(cpf) {
         resultado: v.resultado,
         dataResultado: new Date().toISOString()
     };
+    if (tfmAgendamentoSelecionadoId) dados.agendamentoId = tfmAgendamentoSelecionadoId;
+    const resDocId = tfmAgendamentoSelecionadoId ? tfmAgendamentoSelecionadoId + '__' + al.cpf : al.cpf;
     try {
-        await dbFirestore.collection('tfmAlunos').doc(al.cpf).set(dados, { merge: true });
+        await dbFirestore.collection('tfmAlunos').doc(resDocId).set(dados, { merge: true });
         alert('TFM de ' + (al.nome || al.cpf) + ' salvo com sucesso!');
+        tfmAgendamentoAbrirId = tfmAgendamentoSelecionadoId;
         tfmOnSelecaoChange();
     } catch(e) {
         alert('Erro ao salvar: ' + e.message);
@@ -4325,7 +4354,7 @@ async function tfmSalvarTodos() {
         const v = tfmColetarValores(al.cpf);
         if (!tfmValoresPreenchidos(v)) continue;
         try {
-            await dbFirestore.collection('tfmAlunos').doc(al.cpf).set({
+            const dados = {
                 cpf: al.cpf,
                 nome: al.nome || '',
                 matricula: al.matricula || '',
@@ -4339,7 +4368,10 @@ async function tfmSalvarTodos() {
                 deslocamentoConcluiu: v.deslocamentoConcluiu,
                 resultado: v.resultado,
                 dataResultado: new Date().toISOString()
-            }, { merge: true });
+            };
+            if (tfmAgendamentoSelecionadoId) dados.agendamentoId = tfmAgendamentoSelecionadoId;
+            const resDocId = tfmAgendamentoSelecionadoId ? tfmAgendamentoSelecionadoId + '__' + al.cpf : al.cpf;
+            await dbFirestore.collection('tfmAlunos').doc(resDocId).set(dados, { merge: true });
             salvos++;
         } catch(e) {
             erros.push((al.nome || al.cpf) + ': ' + e.message);
@@ -4348,6 +4380,7 @@ async function tfmSalvarTodos() {
     if (salvos === 0) { alert('Nenhum resultado preenchido para salvar.'); return; }
     if (erros.length) alert(salvos + ' TFM(s) salvos.\nErros em ' + erros.length + ':\n' + erros.join('\n'));
     else alert(salvos + ' TFM(s) salvos com sucesso!');
+    tfmAgendamentoAbrirId = tfmAgendamentoSelecionadoId;
     tfmOnSelecaoChange();
 }
 
@@ -4439,8 +4472,10 @@ async function tfmExcluirSalvo(cpf) {
     const nome = al ? al.nome : (tfmExistentes[cpf] ? tfmExistentes[cpf].nome : cpf);
     if (!confirm('Excluir o TFM de ' + nome + '?')) return;
     try {
-        await dbFirestore.collection('tfmAlunos').doc(cpf).delete();
+        const resDocId = tfmAgendamentoSelecionadoId ? tfmAgendamentoSelecionadoId + '__' + cpf : cpf;
+        await dbFirestore.collection('tfmAlunos').doc(resDocId).delete();
         alert('TFM excluido com sucesso!');
+        tfmAgendamentoAbrirId = tfmAgendamentoSelecionadoId;
         tfmOnSelecaoChange();
     } catch(e) {
         alert('Erro ao excluir: ' + e.message);
@@ -4509,7 +4544,10 @@ async function tfmSalvarAgendamentoTurma() {
     const instrutor = elInst ? elInst.value : '';
     const observacao = elObs ? elObs.value.trim() : '';
     try {
-        await dbFirestore.collection('tfmAgendamentos').doc(turma).set({
+        const ref = tfmAgendamentoSelecionadoId
+            ? dbFirestore.collection('tfmAgendamentos').doc(tfmAgendamentoSelecionadoId)
+            : dbFirestore.collection('tfmAgendamentos').doc();
+        await ref.set({
             projeto: projeto,
             turma: turma,
             dataAgendamento: firebase.firestore.Timestamp.fromDate(dt),
@@ -4518,6 +4556,7 @@ async function tfmSalvarAgendamentoTurma() {
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
         tfmAgendamentoTurma = { projeto: projeto, turma: turma, dataAgendamento: firebase.firestore.Timestamp.fromDate(dt), instrutor: instrutor, observacao: observacao };
+        tfmAgendamentoSelecionadoId = ref.id;
         tfmAgendadosLista = [];
         tfmPreencherAgenda();
         alert('Agendamento da turma salvo com sucesso!');
@@ -4527,12 +4566,13 @@ async function tfmSalvarAgendamentoTurma() {
 }
 
 async function tfmCancelarAgendamentoTurma() {
+    if (!tfmAgendamentoSelecionadoId || !tfmAgendamentoTurma) return;
     const turma = document.getElementById('tfm-selecao-turma').value;
-    if (!turma || !tfmAgendamentoTurma) return;
     if (!confirm('Cancelar o agendamento do TFM da turma?')) return;
     try {
-        await dbFirestore.collection('tfmAgendamentos').doc(turma).delete();
+        await dbFirestore.collection('tfmAgendamentos').doc(tfmAgendamentoSelecionadoId).delete();
         tfmAgendamentoTurma = null;
+        tfmAgendamentoSelecionadoId = null;
         tfmAgendadosLista = [];
         tfmPreencherAgenda();
         alert('Agendamento da turma cancelado com sucesso!');
@@ -4586,6 +4626,7 @@ function tfmRenderLista(resultados) {
         const dt = a.dataAgendamento ? tfmFormatarDataHora(a.dataAgendamento) : 'Data a definir';
         const turmaEsc = String(a.turma || '').replace(/'/g, "\\'");
         const projetoEsc = String(a.projeto || '').replace(/'/g, "\\'");
+        const docEsc = String(a.turmaDoc || '').replace(/'/g, "\\'");
         return '<tr>' +
             '<td>' + tfmEsc(a.projeto || '-') + '</td>' +
             '<td style="font-weight:600">' + tfmEsc(a.turma || '-') + '</td>' +
@@ -4593,15 +4634,16 @@ function tfmRenderLista(resultados) {
             '<td>' + tfmEsc(a.instrutor || '-') + '</td>' +
             '<td style="font-size:12px;color:#64748b">' + tfmEsc(a.observacao || '-') + '</td>' +
             '<td><div class="actions-cell">' +
-                '<button class="btn-icon" title="Editar agendamento" onclick="tfmAbrirNovoAgendamento(\'' + turmaEsc + '\')"><i class="fa-solid fa-pen"></i></button>' +
-                '<button class="btn-icon" title="Avaliar turma" onclick="tfmAvaliarTurma(\'' + projetoEsc + '\',\'' + turmaEsc + '\')"><i class="fa-solid fa-stopwatch"></i></button>' +
-                '<button class="btn-icon btn-danger-icon" title="Excluir agendamento" onclick="tfmExcluirAgendamentoLista(\'' + turmaEsc + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                '<button class="btn-icon" title="Editar agendamento" onclick="tfmAbrirNovoAgendamento(\'' + docEsc + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="btn-icon" title="Avaliar turma" onclick="tfmAvaliarTurma(\'' + projetoEsc + '\',\'' + turmaEsc + '\',\'' + docEsc + '\')"><i class="fa-solid fa-stopwatch"></i></button>' +
+                '<button class="btn-icon btn-danger-icon" title="Excluir agendamento" onclick="tfmExcluirAgendamentoLista(\'' + docEsc + '\')"><i class="fa-solid fa-trash"></i></button>' +
             '</div></td>' +
             '</tr>';
     }).join('');
 }
 
-function tfmAvaliarTurma(projeto, turma) {
+function tfmAvaliarTurma(projeto, turma, agendamentoId) {
+    tfmAgendamentoAbrirId = agendamentoId || null;
     const listaWrap = document.getElementById('tfm-lista-wrap');
     const selecaoWrap = document.getElementById('tfm-selecao-wrap');
     const conteudo = document.getElementById('tfm-conteudo');
@@ -4628,13 +4670,16 @@ function tfmVoltarLista() {
     tfmCarregarLista();
 }
 
-async function tfmExcluirAgendamentoLista(turma) {
+async function tfmExcluirAgendamentoLista(docId) {
+    const ag = tfmAgendadosLista.find(function(a) { return a.turmaDoc === docId; });
+    const turma = ag ? (ag.turma || docId) : docId;
     if (!confirm('Excluir o agendamento do TFM da turma "' + turma + '"?')) return;
     try {
-        await dbFirestore.collection('tfmAgendamentos').doc(turma).delete();
-        tfmAgendadosLista = tfmAgendadosLista.filter(function(a) { return a.turmaDoc !== turma; });
-        if (tfmAgendamentoTurma && document.getElementById('tfm-selecao-turma').value === turma) {
+        await dbFirestore.collection('tfmAgendamentos').doc(docId).delete();
+        tfmAgendadosLista = tfmAgendadosLista.filter(function(a) { return a.turmaDoc !== docId; });
+        if (tfmAgendamentoSelecionadoId === docId) {
             tfmAgendamentoTurma = null;
+            tfmAgendamentoSelecionadoId = null;
             tfmPreencherAgenda();
         }
         tfmFiltrarLista();
@@ -4645,10 +4690,12 @@ async function tfmExcluirAgendamentoLista(turma) {
 }
 
 var tfmNovoTurmaOriginal = null;
+var tfmNovoAgendamentoDocId = null;
 
 function tfmAbrirNovoAgendamento(turmaDoc) {
     const editar = turmaDoc ? tfmAgendadosLista.find(function(a) { return a.turmaDoc === turmaDoc; }) : null;
     tfmNovoTurmaOriginal = editar ? editar.turma : null;
+    tfmNovoAgendamentoDocId = editar ? editar.turmaDoc : null;
     const selProj = document.getElementById('tfm-novo-projeto');
     if (selProj) {
         selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
@@ -4718,6 +4765,7 @@ function tfmFecharNovoAgendamento(event) {
     const overlay = document.getElementById('modal-tfm-novo-overlay');
     if (overlay) overlay.classList.add('hidden');
     tfmNovoTurmaOriginal = null;
+    tfmNovoAgendamentoDocId = null;
 }
 
 async function tfmSalvarNovoAgendamento() {
@@ -4732,7 +4780,10 @@ async function tfmSalvarNovoAgendamento() {
     const dt = new Date(dataVal);
     if (isNaN(dt.getTime())) { alert('Data/hora invalida.'); return; }
     try {
-        await dbFirestore.collection('tfmAgendamentos').doc(turma).set({
+        const ref = tfmNovoAgendamentoDocId
+            ? dbFirestore.collection('tfmAgendamentos').doc(tfmNovoAgendamentoDocId)
+            : dbFirestore.collection('tfmAgendamentos').doc();
+        await ref.set({
             projeto: projeto,
             turma: turma,
             dataAgendamento: firebase.firestore.Timestamp.fromDate(dt),
@@ -4740,10 +4791,8 @@ async function tfmSalvarNovoAgendamento() {
             observacao: observacao,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
-        if (tfmNovoTurmaOriginal && tfmNovoTurmaOriginal !== turma) {
-            await dbFirestore.collection('tfmAgendamentos').doc(tfmNovoTurmaOriginal).delete();
-        }
         tfmNovoTurmaOriginal = null;
+        tfmNovoAgendamentoDocId = null;
         tfmFecharNovoAgendamento();
         await tfmCarregarLista();
         alert('Agendamento salvo com sucesso!');
