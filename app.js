@@ -1985,10 +1985,10 @@ function renderAlunosList() {
 
     const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
+    const filtered = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
     const isAprovados = currentAlunosTab === 'aprovados';
 
-    const allByTurma = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
+    const allByTurma = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && (!turmaFiltro || c.turma === turmaFiltro));
     document.getElementById('tab-count-aprovados').textContent = allByTurma.filter(c => c.status === 'Aprovado').length;
     document.getElementById('tab-count-pendentes').textContent = allByTurma.filter(c => c.status === 'Pendente').length;
     document.getElementById('tab-count-reprovados').textContent = allByTurma.filter(c => c.status === 'Rejeitado').length;
@@ -2106,7 +2106,7 @@ function filterAlunos() {
 function exportExcelAlunos() {
     const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
+    const filtered = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
     if (!filtered.length) { alert('Nenhum aluno para exportar nesta aba.'); return; }
     let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Projeto,Status,Data Cadastro,Data/Hora 1o Cadastro\n';
     filtered.forEach(c => {
@@ -2119,7 +2119,7 @@ function exportExcelAlunos() {
 function printTableAlunos() {
     const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
+    const filtered = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
     if (!filtered.length) { alert('Nenhum aluno para imprimir nesta aba.'); return; }
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - Alunos - ${statusFilter}</title><style>

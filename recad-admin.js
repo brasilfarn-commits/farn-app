@@ -321,14 +321,19 @@ async function recadMoverParaFormados(docId, r, matricula) {
         novoFormado.ativadoPor = (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) ? currentUserData.nome : 'Administrador';
 
         var existentes = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).get();
+        var destino = 'formados';
         if (!existentes.empty) {
             var docExistente = null;
             existentes.forEach(function(d) { docExistente = d; });
+            var tipoAtual = docExistente.data().tipoPessoa || 'A';
             delete novoFormado.cpf;
             delete novoFormado.ativadoEm;
             delete novoFormado.ativadoPor;
+            novoFormado.tipoPessoa = tipoAtual === 'F' ? 'F' : 'A';
+            destino = tipoAtual === 'F' ? 'formados' : 'alunos';
             await docExistente.ref.update(novoFormado);
         } else {
+            novoFormado.tipoPessoa = 'F';
             await dbFirestore.collection('candidatos').add(novoFormado);
         }
 
@@ -337,7 +342,7 @@ async function recadMoverParaFormados(docId, r, matricula) {
         recadRenderTable();
         recadUpdateCounts();
         showAdminSection('admin-recadastramento');
-        alert('Recadastrado ativado e enviado para o banco dos formados ativos!' + (matricula ? '\nMatricula gerada: ' + matricula : ''));
+        alert('Recadastrado ativado e ' + (destino === 'alunos' ? 'mantido como ALUNO ativo!' : 'enviado para o banco dos formados ativos!') + (matricula ? '\nMatricula gerada: ' + matricula : ''));
     } catch (e) {
         console.error('Erro ao mover para formados:', e);
         alert('Erro ao mover para formados: ' + e.message);
