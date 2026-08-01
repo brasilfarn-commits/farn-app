@@ -4437,7 +4437,13 @@ function tfmRenderSalvos() {
         if (countEl) countEl.textContent = '0 registro(s)';
         return;
     }
-    const cpfs = Object.keys(tfmExistentes);
+    const cpfs = Object.keys(tfmExistentes).sort(function(a, b) {
+        const ea = tfmExistentes[a];
+        const eb = tfmExistentes[b];
+        const ta = ea.dataResultado ? tfmAgDataMillis(ea.dataResultado) : (ea.dataProva ? tfmAgDataMillis(ea.dataProva) : 0);
+        const tb = eb.dataResultado ? tfmAgDataMillis(eb.dataResultado) : (eb.dataProva ? tfmAgDataMillis(eb.dataProva) : 0);
+        return tb - ta;
+    });
     if (!cpfs.length) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM salvo para esta turma.</td></tr>';
         if (countEl) countEl.textContent = '0 registro(s)';
