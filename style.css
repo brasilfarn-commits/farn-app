@@ -3642,7 +3642,7 @@ select.config-input option {
 
 .noticias-admin-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     align-items: start;
 }
@@ -3655,6 +3655,12 @@ select.config-input option {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
+    align-items: stretch;
+}
+
+.noticias-admin-col .btn-primary,
+.noticias-admin-col .btn-outline {
+    align-self: flex-start;
 }
 
 .noticias-admin-col-titulo {
