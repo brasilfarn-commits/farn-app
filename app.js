@@ -5908,28 +5908,30 @@ async function instrutoresInicializar() {
 
 /* ===== NOTICIAS / SLIDE ===== */
 
-var noticiasPendentes = [];
+var noticiasColunas = ['esquerda', 'meio', 'direita'];
+var noticiasPendentes = { esquerda: [], meio: [], direita: [] };
 var noticiasLista = [];
 var noticiasUnsub = null;
 
 function noticiasInicializar() {
-    noticiasPendentes = [];
-    var file = document.getElementById('noticias-file');
-    if (file) file.value = '';
-    var pre = document.getElementById('noticias-pre-selecao');
-    if (pre) pre.style.display = 'none';
-    var btnPrev = document.getElementById('noticias-btn-preview');
-    if (btnPrev) { btnPrev.style.display = 'none'; btnPrev.innerHTML = '<i class="fa-solid fa-eye"></i> Ver slide'; }
-    var prev = document.getElementById('noticias-preview-slider');
-    if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
-    var thumbs = document.getElementById('noticias-thumbs');
-    if (thumbs) thumbs.innerHTML = '';
+    noticiasColunas.forEach(function(coluna) {
+        noticiasPendentes[coluna] = [];
+        var file = document.getElementById('noticias-file-' + coluna);
+        if (file) file.value = '';
+        var thumbs = document.getElementById('noticias-thumbs-' + coluna);
+        if (thumbs) thumbs.innerHTML = '';
+        var btnPrev = document.getElementById('noticias-btn-preview-' + coluna);
+        if (btnPrev) { btnPrev.style.display = 'none'; btnPrev.innerHTML = '<i class="fa-solid fa-eye"></i> Ver slide'; }
+        var prev = document.getElementById('noticias-preview-slider-' + coluna);
+        if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
+        var txt = document.getElementById('noticias-texto-' + coluna);
+        if (txt) txt.value = '';
+    });
     noticiasCarregarLista();
 }
 
 function noticiasCarregarLista() {
     if (noticiasUnsub) noticiasUnsub();
-    var container = document.getElementById('noticias-lista');
     noticiasUnsub = dbFirestore.collection('noticiasSlides').orderBy('ordem', 'asc').onSnapshot(function(snap) {
         noticiasLista = [];
         snap.forEach(function(d) {
@@ -5937,27 +5939,31 @@ function noticiasCarregarLista() {
             x.id = d.id;
             noticiasLista.push(x);
         });
-        noticiasRenderLista();
+        noticiasColunas.forEach(noticiasRenderLista);
     }, function() {
-        if (container) container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Erro ao carregar os slides.</div>';
+        noticiasColunas.forEach(function(coluna) {
+            var container = document.getElementById('noticias-lista-' + coluna);
+            if (container) container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Erro ao carregar os slides.</div>';
+        });
     });
 }
 
-function noticiasRenderLista() {
-    var container = document.getElementById('noticias-lista');
+function noticiasRenderLista(coluna) {
+    var container = document.getElementById('noticias-lista-' + coluna);
     if (!container) return;
-    if (!noticiasLista.length) {
-        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-image" style="font-size:30px;display:block;margin-bottom:10px;color:#cbd5e1"></i>Nenhuma imagem cadastrada.<br>Adicione imagens ao lado para criar o slide.</div>';
+    var lista = noticiasLista.filter(function(n) { return n.coluna === coluna; });
+    if (!lista.length) {
+        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px"><i class="fa-solid fa-image" style="font-size:24px;display:block;margin-bottom:8px;color:#cbd5e1"></i>Nenhuma imagem nesta coluna.</div>';
         return;
     }
-    container.innerHTML = noticiasLista.map(function(n, i) {
+    container.innerHTML = lista.map(function(n, i) {
         var primeiro = i === 0;
-        var ultimo = i === noticiasLista.length - 1;
+        var ultimo = i === lista.length - 1;
         return '<div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#fff">' +
             '<img src="' + n.imagem + '" style="width:70px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0">' +
             '<div style="flex:1;min-width:0">' +
-            '<div style="font-size:12px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (n.titulo || 'Imagem ' + (i + 1)) + '</div>' +
-            '<div style="font-size:11px;color:#94a3b8">Posicao ' + (i + 1) + ' de ' + noticiasLista.length + '</div>' +
+            '<div style="font-size:12px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (n.texto || n.titulo || 'Imagem ' + (i + 1)) + '</div>' +
+            '<div style="font-size:11px;color:#94a3b8">Posicao ' + (i + 1) + ' de ' + lista.length + '</div>' +
             '</div>' +
             '<div style="display:flex;gap:4px">' +
             '<button class="btn-icon" title="Mover para cima" onclick="noticiasMover(\'' + n.id + '\', -1)"' + (primeiro ? ' disabled style="opacity:.3"' : '') + '><i class="fa-solid fa-arrow-up"></i></button>' +
@@ -5968,11 +5974,15 @@ function noticiasRenderLista() {
 }
 
 async function noticiasMover(id, delta) {
-    var i = noticiasLista.findIndex(function(n) { return n.id === id; });
+    var alvo = noticiasLista.find(function(n) { return n.id === id; });
+    if (!alvo) return;
+    var coluna = alvo.coluna || 'meio';
+    var lista = noticiasLista.filter(function(n) { return n.coluna === coluna; });
+    var i = lista.findIndex(function(n) { return n.id === id; });
     var j = i + delta;
-    if (i < 0 || j < 0 || j >= noticiasLista.length) return;
-    var a = noticiasLista[i];
-    var b = noticiasLista[j];
+    if (i < 0 || j < 0 || j >= lista.length) return;
+    var a = lista[i];
+    var b = lista[j];
     var batch = dbFirestore.batch();
     batch.update(dbFirestore.collection('noticiasSlides').doc(a.id), { ordem: b.ordem });
     batch.update(dbFirestore.collection('noticiasSlides').doc(b.id), { ordem: a.ordem });
@@ -5981,21 +5991,21 @@ async function noticiasMover(id, delta) {
 }
 
 async function noticiasExcluir(id) {
-    if (!confirm('Excluir esta imagem do slide de noticias?')) return;
+    if (!confirm('Excluir esta imagem?')) return;
     await dbFirestore.collection('noticiasSlides').doc(id).delete();
     if (window.noticiasSliderRefresh) window.noticiasSliderRefresh();
 }
 
-function noticiasSelecionarImagens(input) {
+function noticiasSelecionarImagens(input, coluna) {
     var files = input.files;
     if (!files || !files.length) return;
-    noticiasPendentes = [];
-    var thumbs = document.getElementById('noticias-thumbs');
+    noticiasPendentes[coluna] = [];
+    var thumbs = document.getElementById('noticias-thumbs-' + coluna);
     if (thumbs) thumbs.innerHTML = '';
     var remaining = files.length;
     Array.prototype.forEach.call(files, function(file) {
         noticiasCompressImage(file).then(function(dataUrl) {
-            noticiasPendentes.push(dataUrl);
+            noticiasPendentes[coluna].push(dataUrl);
             if (thumbs) {
                 var img = document.createElement('img');
                 img.src = dataUrl;
@@ -6004,19 +6014,15 @@ function noticiasSelecionarImagens(input) {
             }
             remaining--;
             if (remaining === 0) {
-                var pre = document.getElementById('noticias-pre-selecao');
-                if (pre) pre.style.display = '';
-                var btnPrev = document.getElementById('noticias-btn-preview');
+                var btnPrev = document.getElementById('noticias-btn-preview-' + coluna);
                 if (btnPrev) btnPrev.style.display = '';
-                var prev = document.getElementById('noticias-preview-slider');
+                var prev = document.getElementById('noticias-preview-slider-' + coluna);
                 if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
             }
         }).catch(function() {
             remaining--;
             if (remaining === 0) {
-                var pre = document.getElementById('noticias-pre-selecao');
-                if (pre) pre.style.display = '';
-                var btnPrev = document.getElementById('noticias-btn-preview');
+                var btnPrev = document.getElementById('noticias-btn-preview-' + coluna);
                 if (btnPrev) btnPrev.style.display = '';
             }
         });
@@ -6047,48 +6053,56 @@ function noticiasCompressImage(file) {
     });
 }
 
-async function noticiasSalvarImagens() {
-    if (!noticiasPendentes.length) return;
-    var n = noticiasPendentes.length;
+async function noticiasSalvarImagens(coluna) {
+    var pend = noticiasPendentes[coluna] || [];
+    if (!pend.length) { alert('Selecione imagens primeiro.'); return; }
+    var n = pend.length;
+    var txtEl = document.getElementById('noticias-texto-' + coluna);
+    var texto = txtEl ? txtEl.value.trim() : '';
     var metaRef = dbFirestore.collection('noticiasSlides').doc('_meta');
     await metaRef.set({ total: firebase.firestore.FieldValue.increment(n) }, { merge: true });
     var metaSnap = await metaRef.get();
     var total = metaSnap.exists && metaSnap.data().total ? metaSnap.data().total : n;
     var start = total - n;
     var batch = dbFirestore.batch();
-    noticiasPendentes.forEach(function(imagem, i) {
+    pend.forEach(function(imagem, i) {
         batch.set(dbFirestore.collection('noticiasSlides').doc(), {
             imagem: imagem,
             titulo: '',
+            texto: texto,
+            coluna: coluna,
             ordem: start + 1 + i,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
     });
     await batch.commit();
-    noticiasPendentes = [];
-    var file = document.getElementById('noticias-file');
+    noticiasPendentes[coluna] = [];
+    var file = document.getElementById('noticias-file-' + coluna);
     if (file) file.value = '';
-    var pre = document.getElementById('noticias-pre-selecao');
-    if (pre) pre.style.display = 'none';
-    var btnPrev = document.getElementById('noticias-btn-preview');
+    var btnPrev = document.getElementById('noticias-btn-preview-' + coluna);
     if (btnPrev) { btnPrev.style.display = 'none'; btnPrev.innerHTML = '<i class="fa-solid fa-eye"></i> Ver slide'; }
-    var thumbs = document.getElementById('noticias-thumbs');
+    var thumbs = document.getElementById('noticias-thumbs-' + coluna);
     if (thumbs) thumbs.innerHTML = '';
-    var prev = document.getElementById('noticias-preview-slider');
+    var prev = document.getElementById('noticias-preview-slider-' + coluna);
     if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
+    if (txtEl) txtEl.value = '';
     if (window.noticiasSliderRefresh) window.noticiasSliderRefresh();
-    alert('Imagens adicionadas ao slide!');
+    var nomeColuna = coluna === 'meio' ? 'central' : coluna;
+    alert('Imagens adicionadas a coluna ' + nomeColuna + '!');
 }
 
-function noticiasPreviewIniciar() {
-    var container = document.getElementById('noticias-preview-slider');
-    var btn = document.getElementById('noticias-btn-preview');
+function noticiasPreviewIniciar(coluna) {
+    var container = document.getElementById('noticias-preview-slider-' + coluna);
+    var btn = document.getElementById('noticias-btn-preview-' + coluna);
     if (!container) return;
-    if (!noticiasPendentes.length) return;
+    var pend = noticiasPendentes[coluna] || [];
+    if (!pend.length) return;
     if (container.style.display === 'none' || !container.innerHTML) {
         container.style.display = '';
-        var slides = noticiasPendentes.map(function(imagem, i) {
-            return { imagem: imagem, titulo: 'Imagem ' + (i + 1) };
+        var txtEl = document.getElementById('noticias-texto-' + coluna);
+        var texto = txtEl ? txtEl.value.trim() : '';
+        var slides = pend.map(function(imagem, i) {
+            return { imagem: imagem, titulo: '', texto: texto };
         });
         if (window.noticiasSliderRender) window.noticiasSliderRender(container, slides);
         if (btn) btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar slide';

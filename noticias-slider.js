@@ -4,9 +4,8 @@
  * renderiza um slider que faz translacao para a esquerda automaticamente.
  *
  * Alvo: qualquer elemento com o atributo data-noticias-slider.
- * Opcional: data-noticias-slider-replace="#seletor" esconde o elemento apontado
- * quando ha slides e o exibe novamente quando nao ha (usado no lugar do quadro
- * da logo/nome da instituicao na tela inicial).
+ * Opcional: data-noticias-coluna="esquerda|meio|direita" filtra os slides por coluna.
+ * data-noticias-slider-empty esconde o elemento pai quando nao ha slides.
  */
 (function() {
     if (window.__farnNoticiasSliderLoaded) return;
@@ -17,7 +16,9 @@
         '.farn-slider-track{display:flex;transition:transform .55s ease;will-change:transform}',
         '.farn-slide{flex:0 0 100%;min-width:100%;height:var(--farn-slider-h,260px);position:relative;overflow:hidden}',
         '.farn-slide img{width:100%;height:100%;object-fit:cover;display:block}',
-        '.farn-slide-titulo{position:absolute;left:0;right:0;bottom:0;padding:22px 16px 12px;color:#fff;font-size:14px;font-weight:700;background:linear-gradient(transparent,rgba(0,0,0,.75));text-align:left}',
+        '.farn-slide-caption{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.82));text-align:left}',
+        '.farn-slide-titulo{color:#fff;font-size:14px;font-weight:700;line-height:1.3}',
+        '.farn-slide-texto{color:#e2e8f0;font-size:12px;line-height:1.45;margin-top:4px}',
         '.farn-slider-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:36px;height:36px;border:none;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:.2s}',
         '.farn-slider-btn:hover{background:rgba(255,255,255,.45)}',
         '.farn-slider-prev{left:10px}',
@@ -62,9 +63,12 @@
         if (!slides || !slides.length) return;
         var html = '<div class="farn-slider"><div class="farn-slider-track">';
         slides.forEach(function(s, i) {
-            html += '<div class="farn-slide">' +
-                (s.titulo ? '<div class="farn-slide-titulo">' + esc(s.titulo) + '</div>' : '') +
-                '<img src="' + esc(s.imagem) + '" alt="' + (s.titulo ? esc(s.titulo) : 'Noticia') + '"></div>';
+            var cap = '';
+            if (s.titulo) cap += '<div class="farn-slide-titulo">' + esc(s.titulo) + '</div>';
+            if (s.texto) cap += '<div class="farn-slide-texto">' + esc(s.texto) + '</div>';
+            if (cap) cap = '<div class="farn-slide-caption">' + cap + '</div>';
+            html += '<div class="farn-slide">' + cap +
+                '<img src="' + esc(s.imagem) + '" alt="' + ((s.titulo || s.texto) ? esc(s.titulo || s.texto) : 'Noticia') + '"></div>';
         });
         html += '</div>' +
             '<button type="button" class="farn-slider-btn farn-slider-prev" aria-label="Anterior"><i class="fa-solid fa-chevron-left"></i></button>' +
@@ -113,16 +117,18 @@
         if (!targets.length) return;
         loadSlides().then(function(slides) {
             targets.forEach(function(t) {
+                var coluna = t.getAttribute('data-noticias-coluna');
+                var sl = coluna ? slides.filter(function(s) { return s.coluna === coluna; }) : slides;
                 var repl = t.getAttribute('data-noticias-slider-replace');
                 if (repl) {
                     var ref = document.querySelector(repl);
-                    if (ref) ref.style.display = slides.length ? 'none' : '';
+                    if (ref) ref.style.display = sl.length ? 'none' : '';
                 }
                 if (t.hasAttribute('data-noticias-slider-empty') && t.parentElement) {
-                    t.parentElement.style.display = slides.length ? '' : 'none';
+                    t.parentElement.style.display = sl.length ? '' : 'none';
                 }
-                t.style.display = slides.length ? '' : 'none';
-                renderSlider(t, slides);
+                t.style.display = sl.length ? '' : 'none';
+                renderSlider(t, sl);
             });
         });
     }

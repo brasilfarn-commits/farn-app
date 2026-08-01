@@ -225,6 +225,12 @@
             margin: 10px 0 8px;
         }
         .landing-section-head p { color: #b9d4bd; font-size: 14px; }
+        .noticias-colunas { display: flex; gap: 20px; align-items: flex-start; }
+        .noticias-coluna { flex: 1; min-width: 0; }
+        .noticias-coluna-central { flex: 2; }
+        @media (max-width: 900px) {
+            .noticias-colunas { flex-direction: column; }
+        }
 
         .landing-sobre {
             position: relative;
@@ -415,14 +421,24 @@
         </header>
 
         <!-- NOTICIAS -->
-        <section class="landing-noticias" id="landing-noticias" data-noticias-slider-empty>
+        <section class="landing-noticias" id="landing-noticias">
             <div class="landing-noticias-inner">
                 <div class="landing-section-head">
                     <span class="landing-eyebrow">Notícias</span>
                     <h2>Fique por dentro das novidades</h2>
                     <p>Notícias e comunicados da instituição.</p>
                 </div>
-                <div id="landing-noticias-slider" data-noticias-slider style="--farn-slider-h:480px"></div>
+                <div class="noticias-colunas">
+                    <div class="noticias-coluna noticias-coluna-lateral">
+                        <div data-noticias-slider data-noticias-coluna="esquerda" data-noticias-slider-empty style="--farn-slider-h:380px"></div>
+                    </div>
+                    <div class="noticias-coluna noticias-coluna-central">
+                        <div data-noticias-slider data-noticias-coluna="meio" data-noticias-slider-empty style="--farn-slider-h:560px"></div>
+                    </div>
+                    <div class="noticias-coluna noticias-coluna-lateral">
+                        <div data-noticias-slider data-noticias-coluna="direita" data-noticias-slider-empty style="--farn-slider-h:380px"></div>
+                    </div>
+                </div>
             </div>
         </section>
 

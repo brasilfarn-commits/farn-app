@@ -3640,6 +3640,52 @@ select.config-input option {
     gap: 16px;
 }
 
+.noticias-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.noticias-admin-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.noticias-admin-col-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.noticias-texto-input {
+    width: 100%;
+    min-height: 70px;
+    resize: vertical;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #334155;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+    .noticias-admin-grid { grid-template-columns: 1fr; }
+}
+
 .config-card {
     display: flex;
     flex-direction: column;
