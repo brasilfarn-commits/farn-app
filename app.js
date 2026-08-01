@@ -616,6 +616,15 @@ function formatPhone(input) {
     input.value = v;
 }
 
+function farnGerarLinkWhatsApp(whatsapp, texto) {
+    var num = (whatsapp || '').replace(/\D/g, '');
+    if (!num) return null;
+    if (num.length === 10 || num.length === 11) num = '55' + num;
+    else if (num.length === 12 && num[0] === '0') num = '55' + num.slice(1);
+    else if (num.length < 13) return null;
+    return 'https://wa.me/' + num + '?text=' + encodeURIComponent(texto);
+}
+
 function formatCPFDisplay(cpf) {
     const c = (cpf || '').replace(/\D/g, '');
     if (c.length !== 11) return cpf || '';
@@ -1511,6 +1520,12 @@ async function handleCandidatoSubmit(event) {
     backupCandidatos();
     showAdminSection('admin-pre-inscricao');
     renderList();
+    if (editingIndex === null && data.whatsapp) {
+        var linkWa = farnGerarLinkWhatsApp(data.whatsapp, 'Olá ' + (data.nome || 'Aluno') + ', seu cadastro na FARN foi realizado com sucesso! Aguarde a análise da equipe. Qualquer dúvida, entre em contato!');
+        if (linkWa && confirm('Cadastro de ' + data.nome + ' finalizado. Enviar confirmação pelo WhatsApp?')) {
+            window.open(linkWa, '_blank');
+        }
+    }
     return false;
 }
 
@@ -2087,6 +2102,13 @@ async function changeStatus(i, newStatus) {
     document.querySelectorAll('.status-dropdown-menu').forEach(d => d.classList.add('hidden'));
     renderAlunosList();
     renderList();
+    if (newStatus === 'Aprovado' && candidatos[i].whatsapp) {
+        var c = candidatos[i];
+        var linkWa = farnGerarLinkWhatsApp(c.whatsapp, 'Parabéns ' + c.nome + '! Seu cadastro na FARN foi APROVADO!\nAcesse o portal: https://farn-app.web.app\nCPF: ' + c.cpf + '\nSenha: ' + c.senha);
+        if (linkWa && confirm('Cadastro de ' + c.nome + ' aprovado. Enviar notificação de aprovação pelo WhatsApp?')) {
+            window.open(linkWa, '_blank');
+        }
+    }
 }
 
 function deleteCandidatoAlunos(i) {
