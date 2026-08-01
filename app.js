@@ -2973,10 +2973,7 @@ async function populatePcfTurmaSelect() {
     if (!select) return;
     const current = select.value;
     select.innerHTML = '<option value="">Selecione a turma...</option>';
-    const isGeral = currentUserData && currentUserData.cpf === ADMIN_CPF;
-    const tv = currentUserData ? (currentUserData.turmasVinculadas || []) : [];
-    const filtered = isGeral || tv.length === 0 ? turmas : turmas.filter(t => tv.includes(t.nome));
-    filtered.forEach(t => {
+    turmas.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.nome;
         opt.textContent = t.nome + (t.descricao ? ' - ' + t.descricao : '');
@@ -3302,13 +3299,11 @@ function renderUsuariosList() {
         }).join('');
         const tipoBadge = u.tipo === 'colaborador' ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px">Colaborador</span>' : u.tipo === 'visitante' ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px">Visitante</span>' : '';
         const statusBadge = u.ativo === false ? '<span style="color:#dc2626;font-size:11px;font-weight:600">Inativo</span>' : '<span style="color:#16a34a;font-size:11px;font-weight:600">Ativo</span>';
-        const turmaTags = (u.turmasVinculadas || []).map(t => `<span class="usuario-tag usuario-tag-turma">${t}</span>`).join('');
         return `<div class="usuario-row">
             <div class="usuario-info">
                 <div class="usuario-nome">${u.nome || ''} ${tipoBadge} ${statusBadge}</div>
                 <div class="usuario-cpf">CPF: ${formatCPFDisplay(u.cpf)}</div>
                 <div class="usuario-permissoes">${permTags}</div>
-                ${turmaTags ? `<div class="usuario-permissoes" style="margin-top:4px"><small style="color:#888">Turmas:</small> ${turmaTags}</div>` : ''}
             </div>
             <div class="usuario-actions">
                 <button class="btn-outline btn-sm" onclick="editUsuario('${u.docId}')"><i class="fa-solid fa-pen"></i></button>
@@ -3326,22 +3321,6 @@ function openUsuarioForm(docId) {
     document.querySelectorAll('.uf-perm-check').forEach(cb => cb.checked = false);
     const allCheck = document.getElementById('uf-perm-all');
     if (allCheck) allCheck.checked = false;
-    const turmasListEl = document.getElementById('uf-turmas-list');
-    if (turmasListEl) {
-        turmasListEl.innerHTML = turmas.map(t => `
-            <label class="permissao-item">
-                <input type="checkbox" class="uf-turma-check" value="${t.nome}">
-                <div class="permissao-card">
-                    <i class="fa-solid fa-people-group"></i>
-                    <span>${t.nome}</span>
-                    <small>${t.descricao || 'Turma'}</small>
-                </div>
-            </label>
-        `).join('');
-        if (turmas.length === 0) {
-            turmasListEl.innerHTML = '<small style="color:#888">Nenhuma turma cadastrada ainda</small>';
-        }
-    }
     if (docId) {
         const u = usuarios.find(u => u.docId === docId);
         if (u) {
@@ -3355,12 +3334,6 @@ function openUsuarioForm(docId) {
                 if (p.includes(cb.value)) cb.checked = true;
             });
             if (allCheck) allCheck.checked = document.querySelectorAll('.uf-perm-check:checked').length === document.querySelectorAll('.uf-perm-check').length;
-            const tv = u.turmasVinculadas || [];
-            if (tv.length > 0 && turmasListEl) {
-                turmasListEl.querySelectorAll('.uf-turma-check').forEach(cb => {
-                    if (tv.includes(cb.value)) cb.checked = true;
-                });
-            }
         }
     } else {
         document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#2563eb;margin-right:8px"></i> Novo Usuario';
@@ -3384,9 +3357,7 @@ async function handleSaveUsuario(event) {
     const permissoes = [];
     document.querySelectorAll('.uf-perm-check:checked').forEach(cb => permissoes.push(cb.value));
     if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
-    const turmasVinculadas = [];
-    document.querySelectorAll('.uf-turma-check:checked').forEach(cb => turmasVinculadas.push(cb.value));
-    const userData = { nome, cpf, senha, tipo, permissoes, turmasVinculadas, ativo: true };
+    const userData = { nome, cpf, senha, tipo, permissoes, ativo: true };
     try {
         if (editingUsuarioDocId) {
             await dbFirestore.collection(FB_USUARIOS).doc(editingUsuarioDocId).set(userData, { merge: true });
