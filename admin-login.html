@@ -383,5 +383,19 @@
             alCarregarInstituicao();
         })();
     </script>
+    <!-- Botao voltar pagina anterior -->
+    <style>
+        #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0a1c40;color:#fff;border:1px solid rgba(212,175,55,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}
+        #farn-btn-voltar:hover{transform:scale(1.08)}
+        #farn-btn-voltar:active{transform:scale(.94)}
+        @media(max-width:768px){#farn-btn-voltar{bottom:74px}}
+    </style>
+    <div id="farn-btn-voltar" onclick="farnVoltarPagina()" title="Voltar a pagina anterior"><i class="fa-solid fa-arrow-left"></i></div>
+    <script>
+    function farnVoltarPagina(){
+        if(window.history.length>1){window.history.back();}
+        else{window.location.href='index.html';}
+    }
+    </script>
 </body>
 </html>
