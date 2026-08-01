@@ -1742,10 +1742,14 @@
             }
             var lista = [];
             snap.forEach(function(d) { lista.push(d.data()); });
+            function paDataMillis(v) {
+                if (!v) return 0;
+                if (typeof v.toMillis === 'function') return v.toMillis();
+                var d = new Date(v);
+                return isNaN(d.getTime()) ? 0 : d.getTime();
+            }
             lista.sort(function(x, y) {
-                var tx = x.criadoEm && typeof x.criadoEm.toMillis === 'function' ? x.criadoEm.toMillis() : 0;
-                var ty = y.criadoEm && typeof y.criadoEm.toMillis === 'function' ? y.criadoEm.toMillis() : 0;
-                return ty - tx;
+                return paDataMillis(y.dataAgendamento) - paDataMillis(x.dataAgendamento);
             });
             var p = function(n) { return String(n).padStart(2, '0'); };
             var html = '';

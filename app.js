@@ -4102,6 +4102,13 @@ function tfmFormatarDataHora(ts) {
     return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
 
+function tfmAgDataMillis(v) {
+    if (!v) return 0;
+    if (typeof v.toMillis === 'function') return v.toMillis();
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
 function tfmPopulateAgendaInstrutor(sel) {
     if (!sel) return;
     let ops = '<option value="">Selecione o instrutor...</option>';
@@ -4593,7 +4600,9 @@ async function tfmCarregarLista() {
         snap.forEach(doc => {
             tfmAgendadosLista.push(Object.assign({ turmaDoc: doc.id }, doc.data()));
         });
-        tfmAgendadosLista.sort(function(a, b) { return String(a.turma || '').localeCompare(String(b.turma || '')); });
+        tfmAgendadosLista.sort(function(a, b) {
+            return tfmAgDataMillis(b.dataAgendamento) - tfmAgDataMillis(a.dataAgendamento);
+        });
         tfmFiltrarLista();
     } catch(e) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px;font-size:13px">Erro ao carregar agendamentos: ' + tfmEsc(e.message) + '</td></tr>';
