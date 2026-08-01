@@ -730,7 +730,11 @@ function applyUserPermissions() {
         'admin-chat-portais': p.includes('chat-portais') || p.includes('admin') || isGeral,
         'admin-apostilas': p.includes('apostilas') || p.includes('admin') || isGeral,
         'admin-disciplinas': p.includes('disciplinas') || p.includes('admin') || isGeral,
-        'admin-apontamento': p.includes('apontamento') || p.includes('admin') || isGeral
+        'admin-apontamento': p.includes('apontamento') || p.includes('admin') || isGeral,
+        'admin-formados': p.includes('formados') || isGeral,
+        'admin-tfm': p.includes('tfm') || isGeral,
+        'admin-noticias': p.includes('noticias') || isGeral,
+        'admin-galeria': p.includes('galeria') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -3322,7 +3326,11 @@ function renderUsuariosList() {
                 'portal-formado': '<span class="usuario-tag usuario-tag-portal">Portal Formado</span>',
                 'portal-aluno': '<span class="usuario-tag usuario-tag-portal">Portal Aluno</span>',
                 'portal-docente': '<span class="usuario-tag usuario-tag-portal">Portal Docente</span>',
-                'portal-coordenacao': '<span class="usuario-tag usuario-tag-portal">Portal Coordenacao</span>'
+                'portal-coordenacao': '<span class="usuario-tag usuario-tag-portal">Portal Coordenacao</span>',
+                'formados': '<span class="usuario-tag usuario-tag-pre">Formados</span>',
+                'tfm': '<span class="usuario-tag usuario-tag-instrutor">TFM</span>',
+                'noticias': '<span class="usuario-tag usuario-tag-admin">Noticias</span>',
+                'galeria': '<span class="usuario-tag usuario-tag-instrutor">Galeria</span>'
             };
             return labels[p] || '';
         }).join('');
