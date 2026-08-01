@@ -209,13 +209,6 @@
             background: linear-gradient(90deg, var(--gold, #d4af37), transparent);
         }
 
-        .landing-portais {
-            position: relative;
-            z-index: 1;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 48px 24px 56px;
-        }
         .landing-noticias {
             position: relative;
             z-index: 1;
@@ -232,67 +225,6 @@
             margin: 10px 0 8px;
         }
         .landing-section-head p { color: #b9d4bd; font-size: 14px; }
-        .landing-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 18px;
-        }
-        .landing-card {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            text-decoration: none;
-            padding: 26px 20px 22px;
-            border-radius: 16px;
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.12);
-            transition: .3s;
-            position: relative;
-            overflow: hidden;
-        }
-        .landing-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, var(--gold, #d4af37), transparent);
-            opacity: 0;
-            transition: .3s;
-        }
-        .landing-card:hover {
-            transform: translateY(-6px);
-            background: rgba(255,255,255,.09);
-            border-color: rgba(212,175,55,.5);
-            box-shadow: 0 18px 40px rgba(0,0,0,.35);
-        }
-        .landing-card:hover::after { opacity: 1; }
-        .landing-card-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: var(--gold-l, #f0d78c);
-            background: rgba(212,175,55,.12);
-            border: 1px solid rgba(212,175,55,.35);
-        }
-        .landing-card h3 { font-size: 16px; font-weight: 800; color: #fff; }
-        .landing-card p { font-size: 12.5px; line-height: 1.55; color: #b9d4bd; flex: 1; }
-        .landing-card-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--gold-l, #f0d78c);
-            margin-top: 4px;
-        }
-        .landing-card-btn i { transition: transform .25s; }
-        .landing-card:hover .landing-card-btn i { transform: translateX(4px); }
 
         .landing-sobre {
             position: relative;
@@ -397,7 +329,6 @@
         }
         @media (max-width: 480px) {
             .landing-header-inner { padding: 10px 16px; }
-            .landing-portais { padding: 40px 16px; }
             .landing-sobre-inner { padding: 40px 16px; }
             .landing-footer-inner { padding: 26px 16px 16px; flex-direction: column; align-items: flex-start; }
         }
@@ -452,7 +383,6 @@
                     </div>
                 </div>
                 <nav class="landing-nav">
-                    <a href="#landing-portais">Portais</a>
                     <a href="#landing-sobre">Instituição</a>
                     <a href="#landing-contato">Contato</a>
                 </nav>
@@ -491,46 +421,6 @@
                     <p>Notícias e comunicados da instituição.</p>
                 </div>
                 <div id="landing-noticias-slider" data-noticias-slider style="--farn-slider-h:320px"></div>
-            </div>
-        </section>
-
-        <section class="landing-portais" id="landing-portais">
-            <div class="landing-section-head">
-                <span class="landing-eyebrow">Acesso aos Portais</span>
-                <h2>Escolha o seu portal de acesso</h2>
-                <p>Selecione o portal no campo acima (topo da página), informe seu CPF e senha para entrar.</p>
-            </div>
-            <div class="landing-cards">
-                <a href="#landing-contato" onclick="landingSelecionarPortal('admin'); return false;" class="landing-card">
-                    <span class="landing-card-icon"><i class="fa-solid fa-user-shield"></i></span>
-                    <h3>Acesse aqui</h3>
-                    <p>Área restrita da administração da instituição.</p>
-                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
-                </a>
-                <a href="#landing-contato" onclick="landingSelecionarPortal('formado'); return false;" class="landing-card">
-                    <span class="landing-card-icon"><i class="fa-solid fa-graduation-cap"></i></span>
-                    <h3>Portal do Formado</h3>
-                    <p>Para quem já concluiu a formação e deseja manter o vínculo.</p>
-                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
-                </a>
-                <a href="#landing-contato" onclick="landingSelecionarPortal('aluno'); return false;" class="landing-card">
-                    <span class="landing-card-icon"><i class="fa-solid fa-user-graduate"></i></span>
-                    <h3>Portal do Aluno</h3>
-                    <p>Acompanhe notas, frequência, apostilas e materiais de estudo.</p>
-                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
-                </a>
-                <a href="#landing-contato" onclick="landingSelecionarPortal('docente'); return false;" class="landing-card">
-                    <span class="landing-card-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
-                    <h3>Portal do Docente</h3>
-                    <p>Espaço do professor para turmas, notas e acompanhamento.</p>
-                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
-                </a>
-                <a href="#landing-contato" onclick="landingSelecionarPortal('coordenacao'); return false;" class="landing-card">
-                    <span class="landing-card-icon"><i class="fa-solid fa-user-tie"></i></span>
-                    <h3>Portal da Coordenação</h3>
-                    <p>Gestão pedagógica e acompanhamento das turmas.</p>
-                    <span class="landing-card-btn">Entrar <i class="fa-solid fa-arrow-right"></i></span>
-                </a>
             </div>
         </section>
 
