@@ -361,6 +361,7 @@ function initFirebaseListeners() {
             if (firebaseReady) {
                 populateTurmaSelect();
                 populateProjetoSelect();
+                if (galeriaAdminVisivel()) galeriaAdminCarregarTurmas();
                 const fcProjeto = document.getElementById('fc-projeto');
                 if (fcProjeto && fcProjeto.value) {
                     fcProjetoOnTurmaChange();
@@ -413,6 +414,7 @@ function initFirebaseListeners() {
                 if (typeof renderProjetosList === 'function') renderProjetosList();
                 populateProjetoSelect();
                 populateTurmaSelect();
+                if (galeriaAdminVisivel()) galeriaAdminCarregarProjetos();
                 const fcProjeto = document.getElementById('fc-projeto');
                 if (fcProjeto && fcProjeto.value) {
                     fcProjetoOnTurmaChange();
@@ -6179,34 +6181,78 @@ function noticiasPreviewIniciar(coluna) {
 /* ===== GALERIA (ADMIN) ===== */
 var galeriaPendentes = [];
 
-function galeriaAdminInicializar() {
-    galeriaPendentes = [];
+function galeriaAdminVisivel() {
+    var s = document.getElementById('admin-galeria');
+    return s && s.style.display !== 'none';
+}
+
+function galeriaAdminProjetosUnicos(lista) {
+    var nomes = [];
+    lista.forEach(function(n) {
+        n = (n || '').trim();
+        if (n && nomes.indexOf(n) === -1) nomes.push(n);
+    });
+    return nomes.sort(function(a, b) { return a.localeCompare(b, 'pt-BR'); });
+}
+
+function galeriaAdminCarregarProjetos() {
+    var selProj = document.getElementById('galeria-selecao-projeto');
+    if (!selProj) return;
+    var atual = selProj.value;
+    var fontes = [];
+    projetos.forEach(function(p) { fontes.push(p.nome); });
+    turmas.forEach(function(t) { fontes.push(t.projeto); });
+    function aplicar() {
+        var nomes = galeriaAdminProjetosUnicos(fontes);
+        selProj.innerHTML = '<option value="">Projeto...</option>';
+        nomes.forEach(function(n) {
+            selProj.innerHTML += '<option value="' + n + '">' + n + '</option>';
+        });
+        if (atual) selProj.value = atual;
+    }
+    dbFirestore.collection('candidatos').get().then(function(snap) {
+        snap.forEach(function(doc) { fontes.push(doc.data().projeto); });
+        aplicar();
+    }).catch(function() { aplicar(); });
+}
+
+function galeriaAdminCarregarTurmas() {
     var selProj = document.getElementById('galeria-selecao-projeto');
     var selTurma = document.getElementById('galeria-selecao-turma');
+    if (!selProj || !selTurma) return;
+    var projetoNome = selProj.value;
+    var atualTurma = selTurma.value;
+    selTurma.innerHTML = '<option value="">Turma...</option>';
+    if (!projetoNome) { galeriaAdminCarregar(); return; }
+    var fontes = [];
+    turmas.filter(function(t) { return t.projeto === projetoNome; }).forEach(function(t) { fontes.push(t.nome); });
+    function aplicar() {
+        var nomes = galeriaAdminProjetosUnicos(fontes);
+        selTurma.innerHTML = '<option value="">Turma...</option>';
+        nomes.forEach(function(n) {
+            selTurma.innerHTML += '<option value="' + n + '">' + n + '</option>';
+        });
+        if (atualTurma) selTurma.value = atualTurma;
+        galeriaAdminCarregar();
+    }
+    dbFirestore.collection('candidatos').where('projeto', '==', projetoNome).get().then(function(snap) {
+        snap.forEach(function(doc) { fontes.push(doc.data().turma); });
+        aplicar();
+    }).catch(function() { aplicar(); });
+}
+
+function galeriaAdminInicializar() {
+    galeriaPendentes = [];
     var thumbs = document.getElementById('galeria-thumbs');
     var titulo = document.getElementById('galeria-titulo');
     if (thumbs) thumbs.innerHTML = '';
     if (titulo) titulo.value = '';
-    if (selProj) {
-        selProj.innerHTML = '<option value="">Projeto...</option>';
-        projetos.forEach(function(p) {
-            selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
-        });
-    }
-    if (selTurma) selTurma.innerHTML = '<option value="">Turma...</option>';
-    galeriaAdminCarregar();
+    galeriaAdminCarregarProjetos();
+    galeriaAdminCarregarTurmas();
 }
 
 function galeriaAdminOnProjetoChange() {
-    var projetoNome = document.getElementById('galeria-selecao-projeto').value;
-    var selTurma = document.getElementById('galeria-selecao-turma');
-    selTurma.innerHTML = '<option value="">Turma...</option>';
-    if (projetoNome) {
-        turmas.filter(function(t) { return t.projeto === projetoNome; }).forEach(function(t) {
-            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
-        });
-    }
-    galeriaAdminCarregar();
+    galeriaAdminCarregarTurmas();
 }
 
 function galeriaAdminOnTurmaChange() {
