@@ -265,9 +265,30 @@
         }
         .landing-news-left { min-width: 0; }
         .landing-news-left .landing-sobre-text {
+            display: flex;
+            align-items: center;
+            gap: 22px;
             text-align: left;
             max-width: none;
             margin: 0 0 30px;
+        }
+        .landing-sobre-logo {
+            width: 104px;
+            height: 104px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #fff;
+            padding: 4px;
+            border: 2px solid var(--gold, #d4af37);
+            box-shadow: 0 6px 16px rgba(0,0,0,.3);
+        }
+        @media (max-width: 560px) {
+            .landing-news-left .landing-sobre-text {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
         }
         .landing-news-right { min-width: 0; }
         .landing-news-right-inner { position: sticky; top: 18px; }
@@ -433,9 +454,12 @@
             <div class="landing-sobre-inner landing-news-grid">
                 <div class="landing-news-left">
                     <div class="landing-sobre-text">
-                        <span class="landing-eyebrow">Nossa Instituição</span>
-                        <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
-                        <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
+                        <img data-farn-logo src="logofarn.png.png" alt="BS Brasil" class="landing-sobre-logo">
+                        <div>
+                            <span class="landing-eyebrow">Nossa Instituição</span>
+                            <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
+                            <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
+                        </div>
                     </div>
                     <div class="landing-values">
                         <div class="landing-value">
