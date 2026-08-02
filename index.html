@@ -209,22 +209,6 @@
             background: linear-gradient(90deg, var(--gold, #d4af37), transparent);
         }
 
-        .landing-noticias {
-            position: relative;
-            z-index: 1;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 8px 24px 48px;
-        }
-        .landing-section-head { text-align: center; margin-bottom: 34px; }
-        .landing-section-head .landing-eyebrow::before { display: none; }
-        .landing-section-head h2 {
-            font-size: clamp(22px, 2.8vw, 32px);
-            font-weight: 800;
-            color: #fff;
-            margin: 10px 0 8px;
-        }
-        .landing-section-head p { color: #b9d4bd; font-size: 14px; }
         .landing-noticias-link { color: var(--gold, #d4af37); font-weight: 700; text-decoration: underline; }
         .landing-noticias-link:hover { color: var(--gold-l, #f0d78c); }
 
@@ -272,6 +256,34 @@
         }
         .landing-value h4 { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; }
         .landing-value p { font-size: 12.5px; color: #b9d4bd; line-height: 1.55; }
+
+        .landing-news-grid {
+            display: grid;
+            grid-template-columns: 1fr minmax(320px, 400px);
+            gap: 44px;
+            align-items: start;
+        }
+        .landing-news-left { min-width: 0; }
+        .landing-news-left .landing-sobre-text {
+            text-align: left;
+            max-width: none;
+            margin: 0 0 30px;
+        }
+        .landing-news-right { min-width: 0; }
+        .landing-news-right-inner { position: sticky; top: 18px; }
+        .landing-news-right-head { margin-bottom: 16px; }
+        .landing-news-right-head h2 {
+            font-size: clamp(18px, 2vw, 24px);
+            font-weight: 800;
+            color: #fff;
+            margin: 8px 0 6px;
+        }
+        .landing-news-right-head p { color: #b9d4bd; font-size: 13px; margin: 0; }
+
+        @media (max-width: 960px) {
+            .landing-news-grid { grid-template-columns: 1fr; gap: 34px; }
+            .landing-news-right-inner { position: static; }
+        }
 
         .landing-footer { position: relative; z-index: 1; }
         .landing-footer-inner {
@@ -416,40 +428,41 @@
             </div>
         </header>
 
-        <!-- NOTICIAS -->
-        <section class="landing-noticias" id="landing-noticias" data-noticias-slider-empty>
-            <div class="landing-noticias-inner">
-                <div class="landing-section-head">
-                    <span class="landing-eyebrow">Notícias</span>
-                    <h2>Fique por dentro das novidades</h2>
-                    <p>Notícias e comunicados da instituição. <a class="landing-noticias-link" href="noticias.html">Clique aqui</a></p>
-                </div>
-                <div id="landing-noticias-slider" data-noticias-slider style="--farn-slider-h:320px"></div>
-            </div>
-        </section>
-
+        <!-- INSTITUICAO + NOTICIAS -->
         <section class="landing-sobre" id="landing-sobre">
-            <div class="landing-sobre-inner">
-                <div class="landing-sobre-text">
-                    <span class="landing-eyebrow">Nossa Instituição</span>
-                    <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
-                    <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
+            <div class="landing-sobre-inner landing-news-grid">
+                <div class="landing-news-left">
+                    <div class="landing-sobre-text">
+                        <span class="landing-eyebrow">Nossa Instituição</span>
+                        <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
+                        <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
+                    </div>
+                    <div class="landing-values">
+                        <div class="landing-value">
+                            <i class="fa-solid fa-helmet-safety"></i>
+                            <h4>Disciplina</h4>
+                            <p>Rotina, hierarquia e compromisso como base do aprendizado.</p>
+                        </div>
+                        <div class="landing-value">
+                            <i class="fa-solid fa-hand-fist"></i>
+                            <h4>Coragem</h4>
+                            <p>Desenvolvimento físico, mental e emocional do aluno.</p>
+                        </div>
+                        <div class="landing-value">
+                            <i class="fa-solid fa-book-open"></i>
+                            <h4>Conhecimento</h4>
+                            <p>Conteúdo técnico, atualizado e aplicado a cada etapa.</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="landing-values">
-                    <div class="landing-value">
-                        <i class="fa-solid fa-helmet-safety"></i>
-                        <h4>Disciplina</h4>
-                        <p>Rotina, hierarquia e compromisso como base do aprendizado.</p>
-                    </div>
-                    <div class="landing-value">
-                        <i class="fa-solid fa-hand-fist"></i>
-                        <h4>Coragem</h4>
-                        <p>Desenvolvimento físico, mental e emocional do aluno.</p>
-                    </div>
-                    <div class="landing-value">
-                        <i class="fa-solid fa-book-open"></i>
-                        <h4>Conhecimento</h4>
-                        <p>Conteúdo técnico, atualizado e aplicado a cada etapa.</p>
+                <div class="landing-news-right" data-noticias-slider-empty>
+                    <div class="landing-news-right-inner">
+                        <div class="landing-news-right-head">
+                            <span class="landing-eyebrow">Notícias</span>
+                            <h2>Fique por dentro das novidades</h2>
+                            <p>Notícias e comunicados da instituição. <a class="landing-noticias-link" href="noticias.html">Clique aqui</a></p>
+                        </div>
+                        <div id="landing-noticias-slider" data-noticias-slider style="--farn-slider-h:240px"></div>
                     </div>
                 </div>
             </div>
