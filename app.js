@@ -5950,6 +5950,13 @@ var noticiasPendentes = { esquerda: [], meio: [], direita: [] };
 var noticiasLista = [];
 var noticiasUnsub = null;
 
+var NOTICIAS_MAX_VIDEO_MB = 50;
+var NOTICIAS_MAX_VIDEO_BYTES = NOTICIAS_MAX_VIDEO_MB * 1024 * 1024;
+var NOTICIAS_MAX_VIDEO_DURACAO = 120;
+var NOTICIAS_COM_PRIMIR_VIDEO_ACIMA_MB = 25;
+var NOTICIAS_VIDEO_LARGURA_MAX = 1280;
+var NOTICIAS_VIDEO_BITRATE = 2000000;
+
 function noticiasInicializar() {
     noticiasColunas.forEach(function(coluna) {
         noticiasPendentes[coluna] = [];
@@ -6045,12 +6052,24 @@ function noticiasSelecionarImagens(input, coluna) {
     var thumbs = document.getElementById('noticias-thumbs-' + coluna);
     if (thumbs) thumbs.innerHTML = '';
     var remaining = files.length;
+    var aviso = document.getElementById('noticias-thumbs-' + coluna);
     Array.prototype.forEach.call(files, function(file) {
         var ehVideo = file.type.indexOf('video/') === 0;
-        var process = ehVideo ? noticiasVideoThumb(file) : noticiasCompressImage(file);
+        var process = ehVideo ? noticiasValidarVideo(file).then(function(meta) {
+            var grande = file.size > NOTICIAS_COM_PRIMIR_VIDEO_ACIMA_MB * 1024 * 1024;
+            var alta = meta.w > NOTICIAS_VIDEO_LARGURA_MAX;
+            if (!grande && !alta) return { file: file, thumb: null };
+            return noticiasComprimirVideo(file, meta.w, meta.h).then(function(blob) {
+                return blob && blob.size < file.size ? { file: blob, thumb: null } : { file: file, thumb: null };
+            });
+        }).then(function(rs) {
+            return noticiasVideoThumb(rs.file).then(function(t) {
+                return { file: rs.file, thumb: t.thumb };
+            });
+        }) : noticiasCompressImage(file);
         process.then(function(rs) {
             if (ehVideo) {
-                noticiasPendentes[coluna].push({ tipo: 'video', file: file, thumb: rs.thumb });
+                noticiasPendentes[coluna].push({ tipo: 'video', file: rs.file, thumb: rs.thumb, nomeArquivo: file.name });
             } else {
                 noticiasPendentes[coluna].push({ tipo: 'imagem', dataUrl: rs });
             }
@@ -6076,8 +6095,15 @@ function noticiasSelecionarImagens(input, coluna) {
                 var prev = document.getElementById('noticias-preview-slider-' + coluna);
                 if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
             }
-        }).catch(function() {
+        }).catch(function(err) {
             remaining--;
+            var msg = (err && err.message) ? err.message : 'Falha ao processar arquivo.';
+            if (aviso) {
+                var wa = document.createElement('div');
+                wa.style.cssText = 'color:#dc2626;font-size:12px;font-weight:700;margin:6px 0;padding:6px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px';
+                wa.textContent = 'Ignorado: ' + file.name + ' - ' + msg;
+                aviso.appendChild(wa);
+            }
             if (remaining === 0) {
                 var btnPrev = document.getElementById('noticias-btn-preview-' + coluna);
                 if (btnPrev) btnPrev.style.display = '';
@@ -6110,6 +6136,99 @@ function noticiasVideoThumb(file) {
         };
         video.onerror = function() { URL.revokeObjectURL(url); reject(new Error('Video invalido')); };
         video.src = url;
+    });
+}
+
+function noticiasValidarVideo(file) {
+    return new Promise(function(resolve, reject) {
+        if (file.size > NOTICIAS_MAX_VIDEO_BYTES) {
+            reject(new Error('Video muito grande. Tamanho maximo de ' + NOTICIAS_MAX_VIDEO_MB + ' MB.'));
+            return;
+        }
+        var url = URL.createObjectURL(file);
+        var video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.onloadedmetadata = function() {
+            var dur = video.duration || 0;
+            URL.revokeObjectURL(url);
+            if (isFinite(dur) && dur > NOTICIAS_MAX_VIDEO_DURACAO) {
+                reject(new Error('Video com mais de ' + Math.round(NOTICIAS_MAX_VIDEO_DURACAO / 60) + ' minuto(s). Envie um video mais curto.'));
+                return;
+            }
+            resolve({ dur: isFinite(dur) ? dur : 0, w: video.videoWidth || 0, h: video.videoHeight || 0 });
+        };
+        video.onerror = function() { URL.revokeObjectURL(url); reject(new Error('Video invalido')); };
+        video.src = url;
+    });
+}
+
+function noticiasComprimirVideo(file, w, h) {
+    return new Promise(function(resolve, reject) {
+        if (!window.MediaRecorder || !document.createElement('canvas').captureStream) {
+            resolve(file);
+            return;
+        }
+        var escala = Math.min(1, NOTICIAS_VIDEO_LARGURA_MAX / (w || NOTICIAS_VIDEO_LARGURA_MAX));
+        var cw = Math.max(2, Math.round((w || NOTICIAS_VIDEO_LARGURA_MAX) * escala));
+        var ch = Math.max(2, Math.round((h || cw * 0.5625) * escala));
+        if (cw % 2) cw--;
+        if (ch % 2) ch--;
+        var url = URL.createObjectURL(file);
+        var video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
+        video.src = url;
+        var canvas = document.createElement('canvas');
+        canvas.width = cw;
+        canvas.height = ch;
+        var ctx = canvas.getContext('2d');
+        var chunks = [];
+        var recorder = null;
+        var stream = null;
+        var limpo = false;
+        function limpar() {
+            if (limpo) return;
+            limpo = true;
+            try { video.pause(); } catch (e) {}
+            try { URL.revokeObjectURL(url); } catch (e) {}
+        }
+        video.onerror = function() { limpar(); reject(new Error('Video invalido')); };
+        video.onloadeddata = function() {
+            try {
+                stream = canvas.captureStream(30);
+                var tipos = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+                var mime = tipos.find(function(t) { return window.MediaRecorder.isTypeSupported(t); }) || '';
+                recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: NOTICIAS_VIDEO_BITRATE });
+                recorder.ondataavailable = function(ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+                recorder.onstop = function() {
+                    limpar();
+                    var blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
+                    resolve(blob);
+                };
+                recorder.start(500);
+                video.play().catch(function() {});
+            } catch (e) { limpar(); reject(e); }
+        };
+        var raf = null;
+        function desenhar() {
+            if (limpo) return;
+            if (video.ended || (video.currentTime >= (video.duration || 0))) {
+                if (recorder && recorder.state === 'recording') { try { recorder.stop(); } catch (e) {} }
+                return;
+            }
+            try { ctx.drawImage(video, 0, 0, cw, ch); } catch (e) {}
+            raf = requestAnimationFrame(desenhar);
+        }
+        video.ontimeupdate = function() {
+            if (video.ended && recorder && recorder.state === 'recording') { try { recorder.stop(); } catch (e) {} }
+        };
+        video.onended = function() {
+            if (recorder && recorder.state === 'recording') { try { recorder.stop(); } catch (e) {} }
+        };
+        video.addEventListener('loadeddata', function() { raf = requestAnimationFrame(desenhar); });
     });
 }
 
@@ -6161,13 +6280,14 @@ async function noticiasSalvarImagens(coluna) {
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         };
         if (item.tipo === 'video') {
-            var ext = (item.file.name || 'video').split('.').pop() || 'mp4';
+            var nomeOriginal = item.nomeArquivo || item.file.name || 'video.mp4';
+            var ext = (item.file.type === 'video/webm' || (item.file.type || '').indexOf('webm') !== -1) ? 'webm' : (nomeOriginal.split('.').pop() || 'mp4');
             var ref = firebase.storage().ref('noticias/' + Date.now() + '_' + i + '.' + ext);
             await ref.put(item.file);
             var url = await ref.getDownloadURL();
             dados.videoUrl = url;
             dados.imagem = item.thumb || '';
-            dados.nomeArquivo = item.file.name || '';
+            dados.nomeArquivo = nomeOriginal;
         } else {
             dados.imagem = item.dataUrl;
         }
