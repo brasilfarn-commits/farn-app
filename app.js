@@ -466,7 +466,82 @@ function restaurarAllData() {
     input.click();
 }
 
+/* ===== INICIALIZACAO ===== */
 
+function migrateLocalStorage() {
+    try {
+        const lsCandidatos = localStorage.getItem('farn_candidatos');
+        const lsTurmas = localStorage.getItem('farn_turmas');
+        if (lsCandidatos) {
+            const parsed = JSON.parse(lsCandidatos);
+            if (parsed.length > candidatos.length) {
+                candidatos = parsed;
+                backupCandidatos();
+            }
+            localStorage.removeItem('farn_candidatos');
+        }
+        if (lsTurmas) {
+            const parsed = JSON.parse(lsTurmas);
+            if (parsed.length > turmas.length) {
+                turmas = parsed;
+                backupTurmas();
+            }
+            localStorage.removeItem('farn_turmas');
+        }
+    } catch(e) {}
+}
+
+function migrateIndexedDB() {
+    return new Promise((resolve) => {
+        try {
+            const request = indexedDB.open('FARN_DB', 2);
+            request.onsuccess = function(e) {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains('candidatos') && !database.objectStoreNames.contains('turmas')) {
+                    resolve();
+                    return;
+                }
+                let pending = 0;
+                const done = () => { pending--; if (pending <= 0) resolve(); };
+
+                if (database.objectStoreNames.contains('candidatos')) {
+                    pending++;
+                    const tx = database.transaction('candidatos', 'readonly');
+                    const store = tx.objectStore('candidatos');
+                    const req = store.getAll();
+                    req.onsuccess = () => {
+                        const data = req.result || [];
+                        if (data.length > candidatos.length) {
+                            candidatos = data;
+                            backupCandidatos();
+                        }
+                        done();
+                    };
+                    req.onerror = () => done();
+                }
+
+                if (database.objectStoreNames.contains('turmas')) {
+                    pending++;
+                    const tx = database.transaction('turmas', 'readonly');
+                    const store = tx.objectStore('turmas');
+                    const req = store.getAll();
+                    req.onsuccess = () => {
+                        const data = req.result || [];
+                        if (data.length > turmas.length) {
+                            turmas = data;
+                            backupTurmas();
+                        }
+                        done();
+                    };
+                    req.onerror = () => done();
+                }
+            };
+            request.onerror = () => resolve();
+        } catch(e) { resolve(); }
+    });
+}
+
+async function initFirebaseListeners() {
     return new Promise((resolve) => {
         let loaded = 0;
         const totalListeners = 5;
@@ -610,81 +685,6 @@ function restaurarAllData() {
         });
 
         setTimeout(() => { if (!firebaseReady) { firebaseReady = true; showFirebaseStatus(false); resolve(); } }, 8000);
-    });
-}
-
-/* ===== INICIALIZACAO ===== */
-
-function migrateLocalStorage() {
-    try {
-        const lsCandidatos = localStorage.getItem('farn_candidatos');
-        const lsTurmas = localStorage.getItem('farn_turmas');
-        if (lsCandidatos) {
-            const parsed = JSON.parse(lsCandidatos);
-            if (parsed.length > candidatos.length) {
-                candidatos = parsed;
-                backupCandidatos();
-            }
-            localStorage.removeItem('farn_candidatos');
-        }
-        if (lsTurmas) {
-            const parsed = JSON.parse(lsTurmas);
-            if (parsed.length > turmas.length) {
-                turmas = parsed;
-                backupTurmas();
-            }
-            localStorage.removeItem('farn_turmas');
-        }
-    } catch(e) {}
-}
-
-function migrateIndexedDB() {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open('FARN_DB', 2);
-            request.onsuccess = function(e) {
-                const database = e.target.result;
-                if (!database.objectStoreNames.contains('candidatos') && !database.objectStoreNames.contains('turmas')) {
-                    resolve();
-                    return;
-                }
-                let pending = 0;
-                const done = () => { pending--; if (pending <= 0) resolve(); };
-
-                if (database.objectStoreNames.contains('candidatos')) {
-                    pending++;
-                    const tx = database.transaction('candidatos', 'readonly');
-                    const store = tx.objectStore('candidatos');
-                    const req = store.getAll();
-                    req.onsuccess = () => {
-                        const data = req.result || [];
-                        if (data.length > candidatos.length) {
-                            candidatos = data;
-                            backupCandidatos();
-                        }
-                        done();
-                    };
-                    req.onerror = () => done();
-                }
-
-                if (database.objectStoreNames.contains('turmas')) {
-                    pending++;
-                    const tx = database.transaction('turmas', 'readonly');
-                    const store = tx.objectStore('turmas');
-                    const req = store.getAll();
-                    req.onsuccess = () => {
-                        const data = req.result || [];
-                        if (data.length > turmas.length) {
-                            turmas = data;
-                            backupTurmas();
-                        }
-                        done();
-                    };
-                    req.onerror = () => done();
-                }
-            };
-            request.onerror = () => resolve();
-        } catch(e) { resolve(); }
     });
 }
 
@@ -1754,6 +1754,7 @@ function renderList() {
             <td><div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon" title="Mudar Turma" onclick="mudarTurmaCandidato(${i})"><i class="fa-solid fa-arrows-left-right"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidato(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
                 ${(c.tipoPessoa || 'A') === 'F' && !c.remanejadoInstrutor ? `<button class="btn-icon" title="Remanejar como Instrutor" onclick="remanejarFormado(${i})" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>` : ''}
@@ -1893,6 +1894,101 @@ function printCandidato(i) {
         <script>window.onload=function(){window.print();}<\/script></body></html>`);
     w.document.close();
     });
+}
+
+function mudarTurmaCandidato(i) {
+    const c = candidatos[i]; if (!c) return;
+    
+    // Verifica se ha turmas disponiveis
+    const turmasProjeto = turmas.filter(t => t.projeto === c.projeto);
+    if (!turmasProjeto.length) {
+        alert('Nenhuma turma disponivel para este projeto.');
+        return;
+    }
+    
+    // Cria modal para selecionar nova turma
+    const modalHtml = `
+        <div class="modal-overlay" onclick="closeMudarTurmaModal(event)" id="mudar-turma-modal">
+            <div class="modal-card" style="max-width:480px">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-arrows-left-right" style="color:#16a34a;margin-right:8px"></i> Mudar Turma</h3>
+                    <button class="modal-close" onclick="closeMudarTurmaModal()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body" style="padding:24px">
+                    <div style="margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #16a34a">
+                        <div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:4px">Candidato</div>
+                        <div style="font-weight:600;color:#1a237e">${c.nome}</div>
+                        <div style="font-size:12px;color:#666">${formatCPFDisplay(c.cpf)}</div>
+                    </div>
+                    <div style="margin-bottom:16px;padding:12px;background:#fff3e0;border-radius:8px;border:1px solid #f59e0b">
+                        <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px">Turma Atual</div>
+                        <div style="font-weight:600;color:#1a237e">${c.turma || '---'}${c.turma ? ' - ' + getTurmaDescricao(c.turma) : ''}</div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:20px">
+                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:6px;display:block">Nova Turma *</label>
+                        <select id="nova-turma-select" class="config-input" style="width:100%;border-color:#16a34a" required>
+                            <option value="">Selecione a nova turma...</option>
+                            ${turmasProjeto.map(t => `<option value="${t.nome}"${t.nome === c.turma ? ' disabled' : ''}>${t.nome}${t.descricao ? ' - ' + t.descricao : ''}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="modal-actions" style="display:flex;gap:12px;justify-content:flex-end">
+                        <button class="btn-outline" onclick="closeMudarTurmaModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                        <button class="btn-primary" onclick="confirmarMudarTurma(${i})" style="white-space:nowrap"><i class="fa-solid fa-arrows-left-right"></i> Confirmar Mudanca</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove modal anterior se existir
+    const oldModal = document.getElementById('mudar-turma-modal');
+    if (oldModal) oldModal.remove();
+    
+    // Adiciona modal ao body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeMudarTurmaModal(e) {
+    const modal = document.getElementById('mudar-turma-modal');
+    if (modal && (!e || e.target === modal)) {
+        modal.remove();
+    }
+}
+
+async function confirmarMudarTurma(i) {
+    const c = candidatos[i]; if (!c) return;
+    const novaTurma = document.getElementById('nova-turma-select').value;
+    
+    if (!novaTurma) {
+        alert('Selecione uma turma.');
+        return;
+    }
+    
+    if (novaTurma === c.turma) {
+        alert('O candidato ja esta nesta turma.');
+        return;
+    }
+    
+    const btn = document.querySelector('#mudar-turma-modal .btn-primary');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; }
+    
+    try {
+        // Atualiza no Firestore
+        await dbFirestore.collection('candidatos').doc(String(c.id)).update({ turma: novaTurma });
+        
+        // Atualiza localmente
+        c.turma = novaTurma;
+        backupCandidatos();
+        renderList();
+        
+        closeMudarTurmaModal();
+        alert('Turma alterada com sucesso!');
+    } catch(e) {
+        console.error('Erro ao mudar turma:', e);
+        alert('Erro ao mudar turma: ' + e.message);
+    }
+    
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-arrows-left-right"></i> Confirmar Mudanca'; }
 }
 
 function gerarContratoBC(i) {
