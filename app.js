@@ -311,7 +311,162 @@ async function syncAllDatabases() {
     }
 }
 
-function initFirebaseListeners() {
+/* ===== BACKUP E RESTAURACAO ===== */
+
+const FB_BACKUP_ALL = ['candidatos','turmas','usuarios','parceiros','tfmAgendamentos','tfmAlunos','apontamentos','formados','recadastramentos','chatMensagens','aula','noticia'];
+
+async function backupAllData() {
+    if (!firebaseReady && !firebaseError) {
+        alert('Firebase nao conectado. Verifique a conexao.');
+        return;
+    }
+    const btn = document.getElementById('btn-backup-all');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Exportando...';
+    }
+    try {
+        const backup = {};
+        const timestamp = new Date().toISOString();
+        
+        for (const colName of FB_BACKUP_ALL) {
+            try {
+                const snap = await dbFirestore.collection(colName).get();
+                const docs = [];
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.criadoEm && typeof data.criadoEm.toDate === 'function') {
+                        data.criadoEm = data.criadoEm.toDate().toISOString();
+                    }
+                    if (data.dataAgendamento && typeof data.dataAgendamento.toDate === 'function') {
+                        data.dataAgendamento = data.dataAgendamento.toDate().toISOString();
+                    }
+                    docs.push({ id: doc.id, ...data });
+                });
+                backup[colName] = docs;
+            } catch(e) {
+                console.error('Erro backup colecao ' + colName + ':', e);
+                backup[colName] = [];
+            }
+        }
+        
+        backup._timestamp = timestamp;
+        backup._totalCollections = Object.keys(backup).filter(k => k !== '_timestamp' && k !== '_totalCollections').length;
+        
+        const jsonStr = JSON.stringify(backup, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'farn-backup-' + timestamp.replace(/[:.]/g, '-').substring(0, 19) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Backup Concluido!';
+        setTimeout(() => {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-download"></i> Fazer Backup'; }
+        }, 2000);
+        
+        console.log('Backup concluido: ' + backup._totalCollections + ' colecoes');
+        
+    } catch(e) {
+        console.error('Erro no backup:', e);
+        alert('Erro ao fazer backup: ' + e.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-download"></i> Fazer Backup'; }
+    }
+}
+
+function restaurarAllData() {
+    if (!firebaseReady && !firebaseError) {
+        alert('Firebase nao conectado. Verifique a conexao.');
+        return;
+    }
+    
+    if (!confirm('Esta operacao IRA SOBRESCREVER todos os dados no Firestore!\n\nRecomendacao: Faca um backup primeiro!\n\nDeseja continuar?')) {
+        return;
+    }
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const btn = document.getElementById('btn-restore-all');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Restaurando...';
+        }
+        
+        try {
+            const text = await file.text();
+            const backup = JSON.parse(text);
+            let restoredCount = 0;
+            let errorCount = 0;
+            
+            for (const colName of FB_BACKUP_ALL) {
+                if (!backup[colName] || !Array.isArray(backup[colName])) continue;
+                
+                try {
+                    // Limpar colecao existente
+                    const existingSnap = await dbFirestore.collection(colName).get();
+                    const batch = dbFirestore.batch();
+                    existingSnap.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    
+                    // Restaurar documentos
+                    const restoreBatch = dbFirestore.batch();
+                    let count = 0;
+                    for (const docData of backup[colName]) {
+                        const { id, ...data } = docData;
+                        if (id) {
+                            restoreBatch.set(dbFirestore.collection(colName).doc(id), data);
+                        } else {
+                            restoreBatch.add(dbFirestore.collection(colName), data);
+                        }
+                        count++;
+                    }
+                    await restoreBatch.commit();
+                    restoredCount += count;
+                    
+                } catch(e) {
+                    console.error('Erro restaurando ' + colName + ':', e);
+                    errorCount++;
+                }
+            }
+            
+            alert('Restauracao concluida!\n\nDocumentos restaurados: ' + restoredCount + '\nColecoes com erro: ' + errorCount + '\n\nRecarregue a pagina para atualizar os dados.');
+            
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Restaurado!';
+            setTimeout(() => {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Restaurar'; }
+            }, 2000);
+            
+            // Forcar recarregamento
+            setTimeout(() => {
+                if (confirm('Deseja recarregar a pagina para atualizar os dados?')) {
+                    location.reload();
+                }
+            }, 1000);
+            
+            console.log('Restauracao concluida: ' + restoredCount + ' documentos');
+            
+        } catch(e) {
+            console.error('Erro na restauracao:', e);
+            alert('Erro ao restaurar: ' + (e.message || 'Arquivo invalido'));
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Restaurar'; }
+        }
+    };
+    
+    input.click();
+}
+
+
     return new Promise((resolve) => {
         let loaded = 0;
         const totalListeners = 5;

@@ -1069,6 +1069,23 @@
                                     <span>Dados da Instituicao</span>
                                     <small>Razao social, CNPJ, logo, dados do administrador</small>
                                 </div>
+                                <!-- Novos botoes: Backup e Restaurar -->
+                                <div class="config-card" onclick="backupAllData()">
+                                    <i class="fa-solid fa-download"></i>
+                                    <span>Backup do Aplicativo</span>
+                                    <small>Exportar todos os dados do Firestore para JSON</small>
+                                    <button id="btn-backup-all" class="btn-primary" style="margin-top:12px" onclick="event.stopPropagation(); backupAllData()">
+                                        <i class="fa-solid fa-download"></i> Fazer Backup
+                                    </button>
+                                </div>
+                                <div class="config-card" onclick="restaurarAllData()">
+                                    <i class="fa-solid fa-upload"></i>
+                                    <span>Restaurar Aplicativo</span>
+                                    <small>Importar dados do Firestore a partir de arquivo JSON</small>
+                                    <button id="btn-restore-all" class="btn-primary" style="margin-top:12px" onclick="event.stopPropagation(); restaurarAllData()">
+                                        <i class="fa-solid fa-upload"></i> Restaurar
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
