@@ -119,6 +119,26 @@
         .pf-welcome p strong{color:var(--yellow-xl)}
         .pf-welcome .pf-matricula-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:7px 14px;font-size:12px;color:#fff;font-weight:700;margin-top:14px;backdrop-filter:blur(8px)}
 
+        /* Pedi Baixa */
+        .pf-baixa-banner{display:none;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.35);color:#b91c1c;border-radius:var(--radius-sm);padding:12px 16px;font-size:12px;font-weight:700;text-align:center;margin-bottom:16px}
+        .pf-pedi-baixa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;width:150px;height:150px;border-radius:50%;margin:28px auto 10px;background:linear-gradient(145deg,#ef4444,#b91c1c);border:4px solid rgba(255,255,255,.35);color:#fff;font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 30px rgba(220,38,38,.45);transition:.25s;line-height:1.3;font-family:inherit}
+        .pf-pedi-baixa-btn i{font-size:30px;margin-bottom:6px}
+        .pf-pedi-baixa-btn:hover{transform:scale(1.06);box-shadow:0 14px 40px rgba(220,38,38,.6)}
+        .pf-pedi-baixa-note{text-align:center;font-size:11px;color:var(--gray500);margin-bottom:8px}
+        .pf-baixa-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;align-items:center;justify-content:center;padding:20px}
+        .pf-baixa-overlay.show{display:flex}
+        .pf-baixa-card{background:#fff;border-radius:var(--radius);max-width:420px;width:100%;padding:28px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+        .pf-baixa-card h3{color:#b91c1c;font-size:16px;margin-bottom:12px;line-height:1.4}
+        .pf-baixa-card p{font-size:13px;color:var(--gray600);line-height:1.6;margin-bottom:18px}
+        .pf-baixa-input{width:100%;padding:13px 16px;background:var(--gray100);border:2px solid var(--gray200);border-radius:var(--radius-sm);color:var(--gray800);font-size:14px;text-align:center;letter-spacing:2px;margin-bottom:18px}
+        .pf-baixa-input:focus{outline:none;border-color:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.1)}
+        .pf-baixa-actions{display:flex;gap:10px}
+        .pf-baixa-actions button{flex:1;padding:12px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+        .pf-baixa-cancel{background:var(--gray200);color:var(--gray700)}
+        .pf-baixa-confirm{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff}
+        .pf-baixa-err{color:#b91c1c;font-size:12px;font-weight:700;margin-bottom:12px;display:none}
+        .pf-nome-baixa{color:#dc2626!important}
+
         /* Quick Stats */
         .pf-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
         .pf-stat-card{background:var(--white);border:none;border-radius:var(--radius);padding:18px;text-align:center;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
@@ -436,6 +456,10 @@
                             <div class="pf-stat-label">Apostilas</div>
                         </div>
                     </div>
+
+                    <div class="pf-baixa-banner" id="pf-baixa-banner"><i class="fa-solid fa-triangle-exclamation"></i> Voce solicitou a baixa do curso. Seu acesso ao portal esta bloqueado ate a administracao autorizar o retorno.</div>
+                    <button class="pf-pedi-baixa-btn" id="pf-pedi-baixa-btn" onclick="paPediBaixa()"><i class="fa-solid fa-power-off"></i>Pedi<br>Baixa</button>
+                    <p class="pf-pedi-baixa-note">Solicitar desligamento definitivo do curso</p>
                 </div>
 
                 <!-- NOTICIAS + CHAT/GALERIA LADO A LADO -->
@@ -720,6 +744,20 @@
         </div>
     </div>
 
+    <!-- MODAL PEDI BAIXA -->
+    <div class="pf-baixa-overlay" id="pf-baixa-overlay" onclick="if(event.target===this)paPediBaixaCancelar()">
+        <div class="pf-baixa-card">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> VOCE ESTA PRESTE A SE DESLIGAR DO CURSO DEFINITIVAMENTE</h3>
+            <p>Esta acao solicitara a baixa do seu cadastro no curso. Apos confirmar, voce nao podera mais acessar este portal ate que a administracao autorize o seu retorno.</p>
+            <input type="password" class="pf-baixa-input" id="pf-baixa-senha" placeholder="Digite sua senha para confirmar" onkeydown="if(event.key==='Enter')paPediBaixaConfirmar()">
+            <div class="pf-baixa-err" id="pf-baixa-err"></div>
+            <div class="pf-baixa-actions">
+                <button class="pf-baixa-cancel" onclick="paPediBaixaCancelar()">Cancelar</button>
+                <button class="pf-baixa-confirm" onclick="paPediBaixaConfirmar()"><i class="fa-solid fa-power-off"></i> Confirmar Baixa</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -784,6 +822,15 @@
             /* Verifica senha */
             if (dados.senha !== senha) {
                 errEl.textContent = 'Senha incorreta.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+
+            /* Verifica se solicitou baixa */
+            if (dados.pediuBaixa) {
+                errEl.textContent = 'Voce solicitou a baixa do curso. Seu acesso sera restabelecido somente apos autorizacao da administracao.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
@@ -945,6 +992,40 @@
         localStorage.removeItem('pa_lembrar_senha');
         paUser = null;
         location.href = 'index.html';
+    }
+
+    /* ===== PEDI BAIXA ===== */
+    function paPediBaixa() {
+        document.getElementById('pf-baixa-senha').value = '';
+        document.getElementById('pf-baixa-err').style.display = 'none';
+        document.getElementById('pf-baixa-overlay').classList.add('show');
+        setTimeout(function(){ document.getElementById('pf-baixa-senha').focus(); }, 100);
+    }
+
+    function paPediBaixaCancelar() {
+        document.getElementById('pf-baixa-overlay').classList.remove('show');
+    }
+
+    async function paPediBaixaConfirmar() {
+        var senha = document.getElementById('pf-baixa-senha').value;
+        var errEl = document.getElementById('pf-baixa-err');
+        errEl.style.display = 'none';
+        if (!senha) { errEl.textContent = 'Informe sua senha para confirmar.'; errEl.style.display = 'block'; return; }
+        if (!paUser || senha !== paUser.senha) { errEl.textContent = 'Senha incorreta.'; errEl.style.display = 'block'; return; }
+        try {
+            await dbFirestore.collection('candidatos').doc(paUser._docId).update({
+                pediuBaixa: true,
+                pediuBaixaEm: new Date().toISOString()
+            });
+            paUser.pediuBaixa = true;
+            paUser.pediuBaixaEm = new Date().toISOString();
+            document.getElementById('pf-baixa-overlay').classList.remove('show');
+            alert('Solicitacao de baixa enviada! Seu acesso ao portal esta bloqueado ate a administracao autorizar o seu retorno.');
+            paLogout();
+        } catch(e) {
+            errEl.textContent = 'Erro ao enviar solicitacao: ' + e.message;
+            errEl.style.display = 'block';
+        }
     }
 
     /* ===== BLOQUEIO REGIMENTO ===== */

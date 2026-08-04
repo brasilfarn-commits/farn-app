@@ -568,13 +568,48 @@ body {
 
 .sidebar {
     width: 260px;
+    max-width: 85vw;
     background: #ffffff;
     border-right: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
-    transition: all 0.3s;
-    z-index: 10;
+    transition: left 0.3s ease;
+    z-index: 100;
+    position: fixed;
+    top: 0;
+    left: -260px;
+    height: 100vh;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
 }
+
+.sidebar.open { left: 0; }
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 99;
+}
+
+.sidebar-overlay.show { display: block; }
+
+.sidebar-close {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 15px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sidebar-close:hover { background: #e2e8f0; color: #0f172a; }
 
 .sidebar-header {
     padding: 24px 20px;
@@ -729,7 +764,7 @@ body {
 }
 
 .btn-menu {
-    display: none;
+    display: block;
     background: none;
     border: none;
     color: #fff;
@@ -2344,15 +2379,6 @@ select.config-input option {
     .cadastro-usuario-grid { grid-template-columns: 1fr; }
     .users-search-bar { flex-direction: column; }
     .users-search-bar .config-input { max-width: 100% !important; }
-    .sidebar {
-        position: fixed;
-        left: -260px;
-        top: 0;
-        height: 100vh;
-        z-index: 100;
-    }
-    .sidebar.open { left: 0; }
-    .btn-menu { display: block; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .form-row { grid-template-columns: 1fr; }
     .form-row-3 { grid-template-columns: 1fr; }

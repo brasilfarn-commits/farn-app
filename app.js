@@ -1483,6 +1483,21 @@ function showAdminSection(sectionId, navEl) {
     if (navEl) navEl.classList.add('active');
     const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
+    closeAdminSidebar();
+}
+
+function toggleAdminSidebar() {
+    const sb = document.querySelector('#screen-admin .sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    const aberto = sb ? sb.classList.toggle('open') : false;
+    if (ov) ov.classList.toggle('show', aberto);
+}
+
+function closeAdminSidebar() {
+    const sb = document.querySelector('#screen-admin .sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    if (sb) sb.classList.remove('open');
+    if (ov) ov.classList.remove('show');
 }
 
 /* ===== FORM CANDIDATO ===== */
@@ -1740,9 +1755,10 @@ function renderList() {
     tbody.innerHTML = filtrados.map((c) => {
         const i = candidatos.indexOf(c);
         const sc = c.status === 'Aprovado' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
-        const nomeStyle = c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '';
+        const nomeStyle = c.pediuBaixa ? 'color:#dc2626;font-weight:700' : (c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '');
+        const baixaTag = c.pediuBaixa ? ' <span style="background:rgba(220,38,38,.12);color:#dc2626;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-power-off"></i> PEDI BAIXA</span>' : '';
         return `<tr>
-            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td>${c.nascimento || '-'}</td>
             <td>${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '-'}</td>
@@ -1757,6 +1773,7 @@ function renderList() {
                 <button class="btn-icon" title="Mudar Turma" onclick="mudarTurmaCandidato(${i})"><i class="fa-solid fa-arrows-left-right"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidato(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
+                ${c.pediuBaixa ? `<button class="btn-icon btn-success" title="Autorizar Retorno" onclick="autorizarBaixa(${i})" style="color:#16a34a"><i class="fa-solid fa-check"></i></button>` : ''}
                 ${(c.tipoPessoa || 'A') === 'F' && !c.remanejadoDocente ? `<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(${i})" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>` : ''}
                 ${c.remanejadoDocente ? `<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>` : ''}
             </div></td>
@@ -1775,7 +1792,7 @@ function viewCandidato(i) {
         ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #1e88e5;border-radius:8px" alt="Foto 3x4"></div>` : ''}
         <div class="detail-grid">
             <div class="detail-section-title">Dados Pessoais</div>
-            <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value"${c.atualizarCadastro ? ' style="color:#a5d6a7;font-weight:700"' : ''}>${c.nome}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:11px;color:#66bb6a"></i>' : ''}</span></div>
+            <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value"${c.pediuBaixa ? ' style="color:#dc2626;font-weight:700"' : (c.atualizarCadastro ? ' style="color:#a5d6a7;font-weight:700"' : '')}>${c.nome}${c.pediuBaixa ? ' <i class="fa-solid fa-power-off" style="font-size:11px;color:#dc2626"></i>' : ''}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:11px;color:#66bb6a"></i>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(c.cpf)}</span></div>
             <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${c.nascimento||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Idade</span><span class="detail-value">${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '---'}</span></div>
@@ -1822,10 +1839,32 @@ function viewCandidato(i) {
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
+            ${c.pediuBaixa ? `<div style="grid-column:1/-1;margin-top:12px;padding:16px;border:2px solid #dc2626;border-radius:10px;background:rgba(220,38,38,.06)"><p style="font-size:13px;color:#991b1b;margin-bottom:6px;font-weight:800"><i class="fa-solid fa-power-off"></i> ALUNO SOLICITOU BAIXA DO CURSO</p><p style="font-size:12px;color:#7f1d1d;margin-bottom:12px">Solicitado em ${c.pediuBaixaEm ? new Date(c.pediuBaixaEm).toLocaleString('pt-BR') : '---'}. O aluno esta com o acesso ao portal bloqueado.</p><button class="btn-primary" style="background:linear-gradient(135deg,#16a34a,#15803d)" onclick="autorizarBaixa(${i})"><i class="fa-solid fa-check"></i> Autorizar Retorno</button></div>` : ''}
             ${(c.tipoPessoa || 'A') === 'F' ? (c.remanejadoDocente ? `<div class="detail-item full" style="margin-top:8px"><span class="detail-label">Remanejamento</span><span class="detail-value" style="color:#1d4ed8;font-weight:700">Formado remanejado como Docente em ${c.remanejadoEm || '---'} por ${c.remanejadoPor || '---'}</span></div>` : `<div style="grid-column:1/-1;text-align:center;margin-top:14px;padding:16px;border:1px dashed #2563eb;border-radius:10px;background:rgba(37,99,235,.04)"><p style="font-size:13px;color:#475569;margin-bottom:10px;font-weight:600">Formado elegivel para entrar no corpo de docentes.</p><button class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" onclick="remanejarFormado(${i})"><i class="fa-solid fa-arrows-rotate"></i> Remanejar como Docente</button></div>`) : ''}
         </div>`;
     });
     openModal();
+}
+
+async function autorizarBaixa(i) {
+    const c = candidatos[i]; if (!c) return;
+    const senha = prompt('Digite a senha do administrador para autorizar o retorno do aluno:');
+    if (!senha) return;
+    if (senha !== ADMIN_SENHA) { alert('Senha incorreta! Autorizacao cancelada.'); return; }
+    try {
+        await dbFirestore.collection(FB_CANDIDATOS).doc(String(c.id)).update({
+            pediuBaixa: firebase.firestore.FieldValue.delete(),
+            pediuBaixaEm: firebase.firestore.FieldValue.delete()
+        });
+        delete c.pediuBaixa;
+        delete c.pediuBaixaEm;
+        renderList();
+        renderAlunosList();
+        closeModal();
+        alert('Retorno autorizado! O aluno pode acessar o portal novamente.');
+    } catch(e) {
+        alert('Erro ao autorizar retorno: ' + e.message);
+    }
 }
 
 function deleteCandidato(i) {
@@ -2291,15 +2330,17 @@ function renderAlunosList() {
         const i = idxMap[fi];
         const otherStatuses = allStatuses.filter(s => s.value !== c.status);
         const mat = c.matricula || generateMatricula(c.cpf);
-        const nomeStyle = c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '';
+        const nomeStyle = c.pediuBaixa ? 'color:#dc2626;font-weight:700' : (c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '');
         const isOnline = onlineCpfs.has(c.cpf);
         const onlineDot = isOnline ? ' <span class="online-dot" title="Online"></span>' : '';
+        const baixaTag = c.pediuBaixa ? ' <span style="background:rgba(220,38,38,.12);color:#dc2626;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-power-off"></i> PEDI BAIXA</span>' : '';
 
         const actionsHtml = `<div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
+                ${c.pediuBaixa ? `<button class="btn-icon btn-success" title="Autorizar Retorno" onclick="autorizarBaixa(${i})" style="color:#16a34a"><i class="fa-solid fa-check"></i></button>` : ''}
                 ${c.status === 'Aprovado' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
                 <div class="status-dropdown">
                     <button class="btn-icon btn-status" title="Alterar Status" onclick="toggleStatusDropdown(event, ${i})"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
@@ -2317,7 +2358,7 @@ function renderAlunosList() {
 
         if (isAprovados) {
             return `<tr>
-                <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+                <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
                 <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
                 <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
                 <td>${actionsHtml}</td>
@@ -2325,7 +2366,7 @@ function renderAlunosList() {
         }
 
         return `<tr>
-            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>

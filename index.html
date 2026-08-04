@@ -515,12 +515,14 @@
 
     <!-- TELA ADMIN -->
     <div id="screen-admin" class="screen">
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAdminSidebar()"></div>
         <div class="dashboard">
             <aside class="sidebar">
                 <div class="sidebar-header">
                     <img data-farn-logo src="logo-farn.png.png" alt="FARN" class="sidebar-logo">
                     <h3>FARN Admin</h3>
                     <span class="sidebar-version">v1.0</span>
+                    <button class="sidebar-close" onclick="closeAdminSidebar()" title="Fechar menu"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <nav class="sidebar-nav">
                     <a href="#" class="nav-item active" onclick="showAdminSection('admin-home', this)">
@@ -599,7 +601,7 @@
             <main class="main-content">
                 <div class="topbar">
                     <div class="topbar-left">
-                        <button class="btn-menu" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+                        <button class="btn-menu" onclick="toggleAdminSidebar()">
                             <i class="fa-solid fa-bars"></i>
                         </button>
                         <button class="btn-back" onclick="showAdminSection('admin-home', document.querySelector('.nav-item'))" title="Voltar ao Inicio">
