@@ -526,7 +526,7 @@ body {
 .role-icon.admin { background: linear-gradient(135deg, #2563eb, #3b82f6); }
 .role-icon.pre-inscricao { background: linear-gradient(135deg, #ca8a04, #eab308); }
 .role-icon.alunos { background: linear-gradient(135deg, #16a34a, #22c55e); }
-.role-icon.instrutores { background: linear-gradient(135deg, #dc2626, #ef4444); }
+.role-icon.docentes { background: linear-gradient(135deg, #dc2626, #ef4444); }
 
 .role-card h3 {
     font-size: 16px;
@@ -873,6 +873,29 @@ body {
     box-shadow: 0 4px 15px rgba(22,163,74,0.4);
 }
 
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #fff;
+    border: 1px solid #16a34a;
+    border-radius: 10px;
+    color: #16a34a;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    margin-right: 8px;
+}
+
+.btn-secondary:hover {
+    background: #f0fdf4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(22,163,74,0.2);
+}
+
 .btn-icon {
     background: none;
     border: 1px solid #e2e8f0;
@@ -985,7 +1008,7 @@ body {
 
 .badge.admin { background: rgba(37,99,235,0.1); color: #2563eb; }
 .badge.aluno { background: rgba(22,163,74,0.1); color: #16a34a; }
-.badge.instrutor { background: rgba(220,38,38,0.1); color: #dc2626; }
+.badge.docente { background: rgba(220,38,38,0.1); color: #dc2626; }
 .badge.green { background: rgba(22,163,74,0.1); color: #16a34a; }
 .badge.orange { background: rgba(202,138,4,0.1); color: #ca8a04; }
 .badge.red { background: rgba(220,38,38,0.1); color: #dc2626; }
@@ -1687,7 +1710,7 @@ select.config-input option {
 .login-role-btn[data-role="admin"].selected i { color: #2563eb; }
 .login-role-btn[data-role="pre-inscricao"].selected i { color: #ca8a04; }
 .login-role-btn[data-role="alunos"].selected i { color: #16a34a; }
-.login-role-btn[data-role="instrutores"].selected i { color: #dc2626; }
+.login-role-btn[data-role="docentes"].selected i { color: #dc2626; }
 
 /* ===== CADASTRO USUARIO ADMIN ===== */
 .cadastro-usuario-grid {
@@ -3592,7 +3615,7 @@ select.config-input option {
 
 .usuario-tag-pre { background: rgba(22,163,74,0.1); color: #16a34a; }
 .usuario-tag-admin { background: rgba(37,99,235,0.1); color: #2563eb; }
-.usuario-tag-instrutor { background: rgba(220,38,38,0.1); color: #dc2626; }
+.usuario-tag-docente { background: rgba(220,38,38,0.1); color: #dc2626; }
 .usuario-tag-portal { background: rgba(147,51,234,0.1); color: #9333ea; }
 
 .usuario-row {
@@ -4191,7 +4214,7 @@ select.config-input option {
     cursor: grabbing;
 }
 
-/* ===== INSTRUTOR - MULTIPLA ESCOLHA PROJETO E TURMA ===== */
+/* ===== DOCENTE - MULTIPLA ESCOLHA PROJETO E TURMA ===== */
 .intr-check-list {
     display: flex;
     flex-wrap: wrap;

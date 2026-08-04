@@ -1,442 +1,602 @@
 ﻿<!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Portal do Docente - FARN</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Portal do Docente</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const dbFirestore = firebase.firestore();
+    </script>
     <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; }
 
-        :root{
-            --green:#2563eb;--green-l:#3b82f6;--green-d:#1d4ed8;
-            --red:#dc2626;--red-l:#ef4444;
-            --blue:#2563eb;--blue-l:#3b82f6;
-            --yellow:#ca8a04;--yellow-l:#eab308;--yellow-xl:#facc15;
-            --white:#ffffff;--off:#f8fafc;--gray100:#f1f5f9;--gray200:#e2e8f0;--gray300:#cbd5e1;--gray400:#94a3b8;--gray500:#64748b;--gray600:#475569;--gray700:#334155;--gray800:#1e293b;--gray900:#0f172a;
-            --shadow:0 4px 24px rgba(0,0,0,.08);--shadow-lg:0 12px 40px rgba(0,0,0,.12);
-            --radius:16px;--radius-sm:12px;--radius-xs:8px;
-        }
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray100);color:var(--gray800);min-height:100vh;overflow:hidden}
-        ::-webkit-scrollbar{width:6px}
-        ::-webkit-scrollbar-track{background:var(--gray200)}
-        ::-webkit-scrollbar-thumb{background:var(--green);border-radius:3px}
-        ::-webkit-scrollbar-thumb:hover{background:var(--green-d)}
-
-        /* ===== LOGIN ===== */
-        #screen-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--green-d) 0%,var(--green) 30%,var(--blue) 60%,var(--yellow) 100%);position:relative;overflow:hidden}
+        /* ===== LOGIN SCREEN ===== */
+        #screen-login { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
         /* Login agora é centralizado na landing - esconder tela de login do portal */
         #screen-login { display: none !important; }
-        #screen-login::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);top:-250px;right:-150px;border-radius:50%}
-        #screen-login::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%);bottom:-200px;left:-100px;border-radius:50%}
-        .pf-login-card{background:rgba(255,255,255,.97);border:none;border-radius:28px;padding:44px 36px;width:100%;max-width:400px;position:relative;z-index:1;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-        .pf-login-logo{text-align:center;margin-bottom:32px}
-        .pf-login-logo img{width:90px;margin-bottom:14px}
-        .pf-login-logo h1{font-size:22px;color:var(--gray800);margin-bottom:4px;font-weight:800;letter-spacing:-.3px}
-        .pf-login-logo h1 span{color:var(--green)}
-        .pf-login-logo p{font-size:12px;color:var(--gray500);letter-spacing:.5px}
-        .pf-login-field{margin-bottom:16px}
-        .pf-login-field label{display:block;font-size:10px;color:var(--gray500);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-        .pf-login-field input{width:100%;padding:13px 16px;background:var(--gray100);border:2px solid var(--gray200);border-radius:var(--radius-sm);color:var(--gray800);font-size:14px;transition:.3s}
-        .pf-login-field input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
-        .pf-login-field input::placeholder{color:var(--gray400)}
-        .pf-login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:12px;color:var(--gray500)}
-        .pf-login-remember input[type=checkbox]{accent-color:var(--green)}
-        .pf-login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--green),var(--green-d));border:none;border-radius:var(--radius-sm);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.3s;letter-spacing:.3px;box-shadow:0 4px 16px rgba(37,99,235,.3)}
-        .pf-login-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,99,235,.4)}
-        .pf-login-btn:active:not(:disabled){transform:translateY(0)}
-        .pf-login-btn:disabled{opacity:.5;cursor:not-allowed}
-        .pf-login-error{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2);color:var(--red);border-radius:var(--radius-xs);padding:10px 14px;font-size:12px;text-align:center;margin-bottom:14px;display:none}
-        .pf-login-back{display:block;text-align:center;margin-top:16px;font-size:12px;color:var(--gray500);text-decoration:none;transition:.2s}
-        .pf-login-back:hover{color:var(--green)}
+        .pf-login-box { max-width:400px; width:100%; background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; padding:36px; text-align:center; }
+        .pf-login-box img { width:100px; height:100px; border-radius:50%; border:3px solid #16a34a; margin-bottom:16px; }
+        .pf-login-box h2 { color:#16a34a; font-size:20px; margin-bottom:4px; }
+        .pf-login-box p { color:#64748b; font-size:13px; margin-bottom:24px; }
+        .pf-login-box .pf-field { margin-bottom:14px; text-align:left; }
+        .pf-login-box .pf-field label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; font-weight:600; }
+        .pf-login-box .pf-field input { width:100%; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; color:#1e293b; font-size:14px; }
+        .pf-login-box .pf-field input:focus { border-color:#16a34a; outline:none; }
+        .pf-login-btn { width:100%; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:14px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:4px; }
+        .pf-login-btn:hover { box-shadow:0 4px 16px rgba(22,163,74,.4); }
+        .pf-login-btn:disabled { opacity:.5; cursor:not-allowed; }
+        .pf-login-error { color:#f44336; font-size:13px; margin-top:10px; display:none; }
+        .pf-login-footer { margin-top:16px; font-size:12px; color:#94a3b8; }
+        .pf-login-footer a { color:#16a34a; text-decoration:none; }
 
-        /* ===== PORTAL ===== */
-        #screen-portal{display:none;flex-direction:column;height:100vh}
-        #screen-portal.active{display:flex}
+        /* ===== PORTAL LAYOUT ===== */
+        #screen-portal { display:none; height:100vh; }
+        #screen-portal.active { display:grid; grid-template-columns:240px 1fr 320px; }
 
-        /* Top Bar */
-        .pf-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:linear-gradient(90deg,var(--green),var(--green-d));flex-shrink:0;position:relative;z-index:95;box-shadow:0 4px 20px rgba(37,99,235,.2)}
-        .pf-topbar-left{display:flex;align-items:center;gap:14px}
-        .pf-topbar-logo{height:40px;border-radius:10px;background:#fff;padding:4px 8px}
-        .pf-topbar-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.2px}
-        .pf-topbar-right{display:flex;align-items:center;gap:14px}
-        .pf-user-info{text-align:right}
-        .pf-user-name{font-size:13px;font-weight:600;color:#fff}
-        .pf-user-matricula{font-size:11px;color:var(--yellow-xl);font-weight:700}
-        .pf-user-cpf{font-size:10px;color:rgba(255,255,255,.6)}
-        .pf-user-avatar{width:40px;height:40px;background:linear-gradient(135deg,var(--yellow),var(--yellow-l));border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--gray800);font-weight:700;font-size:14px;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-        .pf-logout-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:.2s}
-        .pf-logout-btn:hover{background:rgba(220,38,38,.8);border-color:var(--red)}
+        /* ===== SIDEBAR ESQUERDO ===== */
+        .pf-sidebar { background:#ffffff; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; overflow-y:auto; }
+        .pf-sidebar-header { padding:20px; text-align:center; border-bottom:1px solid #e2e8f0; }
+        .pf-sidebar-header img { width:60px; height:60px; border-radius:50%; border:2px solid #16a34a; margin-bottom:8px; }
+        .pf-sidebar-header h3 { font-size:14px; color:#16a34a; font-weight:700; }
+        .pf-sidebar-header p { font-size:11px; color:#64748b; }
 
-        /* Layout */
-        .pf-body{display:flex;flex:1;overflow:hidden}
+        .pf-sidebar-nav { flex:1; padding:12px 0; }
+        .pf-nav-item { display:flex; align-items:center; gap:10px; padding:12px 20px; color:#64748b; font-size:13px; font-weight:500; cursor:pointer; transition:all .2s; border-left:3px solid transparent; }
+        .pf-nav-item:hover { background:#f1f5f9; color:#1e293b; }
+        .pf-nav-item.active { background:rgba(22,163,74,.08); color:#16a34a; border-left-color:#16a34a; font-weight:700; }
+        .pf-nav-item i { width:18px; text-align:center; font-size:14px; }
 
-        /* Sidebar */
-        .pf-sidebar{width:230px;background:var(--white);border-right:1px solid var(--gray200);padding:20px 0;display:flex;flex-direction:column;flex-shrink:0;position:relative;overflow:hidden}
-        .pf-sidebar::before{content:'';position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(180deg,rgba(37,99,235,.06),transparent);pointer-events:none}
-        .pf-nav-item{display:flex;align-items:center;gap:12px;padding:12px 22px;cursor:pointer;color:var(--gray500);font-size:13px;transition:.2s;border-left:3px solid transparent;position:relative;font-weight:500}
-        .pf-nav-item:hover{color:var(--gray700);background:var(--gray100)}
-        .pf-nav-item.active{color:var(--green);background:rgba(37,99,235,.06);border-left-color:var(--green);font-weight:700}
-        .pf-nav-item.active::after{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:linear-gradient(180deg,var(--green),var(--green-l));border-radius:0 2px 2px 0;box-shadow:0 0 8px rgba(37,99,235,.3)}
-        .pf-nav-item i{width:20px;text-align:center;font-size:15px}
-        .pf-nav-divider{height:1px;background:linear-gradient(90deg,transparent,var(--gray300),transparent);margin:12px 22px}
+        .pf-sidebar-footer { padding:16px 20px; border-top:1px solid #e2e8f0; }
+        .pf-sidebar-footer .pf-user { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .pf-sidebar-footer .pf-user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#16a34a,#15803d); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; }
+        .pf-sidebar-footer .pf-user-info { flex:1; }
+        .pf-sidebar-footer .pf-user-name { font-size:13px; font-weight:600; color:#1e293b; }
+        .pf-sidebar-footer .pf-user-cpf { font-size:11px; color:#94a3b8; }
+        .pf-logout-btn { width:100%; padding:8px; background:rgba(244,67,54,.1); border:1px solid rgba(244,67,54,.3); border-radius:8px; color:#f44336; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; }
+        .pf-logout-btn:hover { background:rgba(244,67,54,.2); }
 
-        /* Content */
-        .pf-content{flex:1;overflow-y:auto;padding:24px 28px;scroll-behavior:smooth;background:var(--gray100)}
+        /* ===== CENTRO ===== */
+        .pf-center { overflow-y:auto; padding:20px; scrollbar-width:thin; scrollbar-color:rgba(22,163,74,.3) transparent; }
+        .pf-center::-webkit-scrollbar { width:6px; }
+        .pf-center::-webkit-scrollbar-track { background:rgba(0,0,0,.03); }
+        .pf-center::-webkit-scrollbar-thumb { background:rgba(22,163,74,.3); border-radius:10px; }
+        .pf-center::-webkit-scrollbar-thumb:hover { background:rgba(22,163,74,.5); }
+        .pf-center-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
+        .pf-center-header i { font-size:20px; color:#16a34a; }
+        .pf-center-header h2 { font-size:18px; font-weight:700; }
+        .pf-center-header p { font-size:12px; color:#94a3b8; margin-left:auto; }
 
-        /* Sections */
-        .pf-section{display:none;animation:fadeUp .3s ease}
-        .pf-section.active{display:block}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .pf-section { display:none; }
+        .pf-section.active { display:block; }
+        .pf-section-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
+        .pf-section-header i { font-size:20px; color:#16a34a; }
+        .pf-section-header h2 { font-size:18px; font-weight:700; }
+        .pd-btn-nova { margin-left:auto; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:8px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
 
-        /* Carteira */
-        .pf-carteira-card{max-width:700px;margin:0 auto;position:relative;border-radius:8px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.2)}
-        .pf-carteira-bg{width:100%;display:block}
-        .pf-carteira-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;align-items:center;justify-content:center}
-        .pf-carteira-foto-box{position:absolute;top:38%;left:9%;width:17%;aspect-ratio:3/4;background:#f5f5f5;border:2px solid #8B6914;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-        .pf-carteira-foto-box img{width:100%;height:100%;object-fit:cover;display:none}
-        .pf-carteira-foto-box .fa-user{font-size:28px;color:#bbb}
-        .pf-carteira-dados-box{position:absolute;top:36%;left:29%;width:32%;display:flex;flex-direction:column;gap:7px}
-        .pf-carteira-dado{font-size:13px;line-height:1.4;color:#1e293b;display:flex;gap:4px;align-items:baseline}
-        .pf-cd-label{font-weight:700;color:#374151;font-size:10px;text-transform:uppercase;white-space:nowrap;min-width:58px}
-        .pf-cd-val{font-weight:600;font-size:13px}
-        .pf-cd-mat{color:#2563eb;font-family:'Courier New',monospace;font-size:14px;font-weight:800;letter-spacing:1px}
-        .pf-carteira-qr-box{position:absolute;top:52%;right:2%;width:18%;text-align:center}
-        .pf-carteira-qr-box img{width:100%;border-radius:4px;background:#fff;padding:2px}
-        .pf-carteira-title-overlay{position:absolute;top:3%;left:0;width:100%;text-align:center;color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;text-shadow:1px 1px 3px rgba(0,0,0,.6)}
-        .pf-carteira-inst-overlay{position:absolute;bottom:15%;left:9%;width:78%;text-align:center;color:#1a237e;font-size:9px;font-weight:700;letter-spacing:.5px}
-        .pf-carteira-aviso-overlay{position:absolute;bottom:11%;left:9%;width:78%;text-align:center;color:#555;font-size:7px;font-style:italic;letter-spacing:.3px}
-        @media(max-width:600px){
-            .pf-carteira-card{max-width:100%;transform:scale(.8);transform-origin:top center}
+        .pf-noticia-empty { text-align:center; padding:60px 20px; color:#94a3b8; }
+        .pf-noticia-empty i { font-size:40px; margin-bottom:10px; display:block; }
+        .pf-noticia-empty p { font-size:13px; }
+
+        .pf-em-construcao { text-align:center; padding:60px 20px; }
+        .pf-em-construcao i { font-size:50px; color:#eab308; margin-bottom:12px; }
+        .pf-em-construcao h3 { color:#ca8a04; font-size:18px; margin-bottom:6px; }
+        .pf-em-construcao p { color:#64748b; font-size:13px; }
+
+        /* Bem-vindo / stats */
+        .pf-welcome { background:linear-gradient(135deg,#16a34a,#15803d); border-radius:16px; padding:24px; margin-bottom:20px; color:#fff; }
+        .pf-welcome h2 { font-size:18px; margin-bottom:6px; }
+        .pf-welcome h2 span { color:#facc15; }
+        .pf-welcome p { font-size:13px; opacity:.9; line-height:1.6; }
+        .pf-stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+        .pf-stat-card { background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px; text-align:center; transition:all .2s; }
+        .pf-stat-card:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(22,163,74,.12); }
+        .pf-stat-card i { font-size:22px; color:#16a34a; margin-bottom:8px; }
+        .pf-stat-card .pf-stat-val { font-size:22px; font-weight:800; color:#1e293b; }
+        .pf-stat-card .pf-stat-label { font-size:10px; color:#94a3b8; text-transform:uppercase; font-weight:600; letter-spacing:.5px; margin-top:2px; }
+
+        /* Cards de dados (aulas / tfm / apontamento) */
+        .pd-card { background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:14px; transition:all .2s; }
+        .pd-card:hover { border-color:rgba(22,163,74,.3); box-shadow:0 4px 16px rgba(0,0,0,.04); }
+        .pd-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+        .pd-card-titulo { font-weight:700; font-size:14px; color:#1e293b; }
+        .pd-card-data { font-size:11px; color:#16a34a; font-weight:600; white-space:nowrap; }
+        .pd-card-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#64748b; }
+        .pd-card-meta span { display:flex; align-items:center; gap:4px; }
+        .pd-card-status { display:inline-flex; align-items:center; gap:4px; font-weight:600; }
+        .pd-card-conteudo { margin-top:10px; padding-top:10px; border-top:1px solid #f1f5f9; font-size:12px; color:#475569; line-height:1.5; }
+        .pd-card-conteudo i { color:#94a3b8; margin-right:5px; }
+
+        /* ===== LATERAL DIREITA - CHAT + GALERIA ===== */
+        .pf-right { background:#ffffff; border-left:1px solid #e2e8f0; display:flex; flex-direction:column; overflow:hidden; }
+        .pf-right-tabs { display:flex; border-bottom:1px solid #e2e8f0; }
+        .pf-right-tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:600; color:#94a3b8; cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; }
+        .pf-right-tab:hover { color:#1e293b; }
+        .pf-right-tab.active { color:#16a34a; border-bottom-color:#16a34a; }
+        .pf-right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#fff; }
+        .pf-right-content { flex:1; overflow-y:auto; }
+
+        /* CHAT */
+        .pf-chat-header { padding:14px 16px; border-bottom:1px solid #e5e7eb; background:#fff; }
+        .pf-chat-header h4 { font-size:13px; font-weight:700; color:#16a34a; }
+        .pf-chat-header p { font-size:11px; color:#94a3b8; }
+        .pf-chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; background:#fff; }
+        .pf-chat-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
+        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; color:#cbd5e1; }
+
+        .pf-chat-bubble { max-width:85%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; position:relative; }
+        .pf-chat-bubble.me { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+        .pf-chat-bubble.other { background:#f1f5f9; color:#1e293b; border:1px solid #e2e8f0; align-self:flex-start; border-bottom-left-radius:4px; }
+        .pf-chat-sender { font-size:10px; font-weight:700; margin-bottom:3px; }
+        .pf-chat-time { font-size:10px; color:rgba(255,255,255,.7); margin-top:3px; text-align:right; }
+        .pf-chat-bubble.other .pf-chat-time { color:#94a3b8; }
+        .pf-chat-edit-bar { display:none; padding:8px 12px; background:#f0fdf4; border-top:1px solid #16a34a; font-size:12px; color:#16a34a; align-items:center; gap:8px; }
+        .pf-chat-edit-bar.active { display:flex; }
+        .pf-chat-edit-cancel { background:none; border:1px solid #16a34a; color:#16a34a; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; margin-left:auto; }
+        .pf-chat-input { display:flex; gap:8px; padding:12px; border-top:1px solid #e5e7eb; background:#fff; align-items:center; }
+        .pf-chat-emoji-btn { background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer; padding:4px; border-radius:50%; transition:all .2s; }
+        .pf-chat-emoji-btn:hover { color:#16a34a; background:#f0fdf4; }
+        .pf-chat-emoji-panel { display:none; flex-wrap:wrap; gap:4px; padding:8px; border-top:1px solid #e5e7eb; max-height:120px; overflow-y:auto; background:#fff; }
+        .pf-chat-emoji-panel.active { display:flex; }
+        .pf-chat-emoji-panel span { font-size:20px; cursor:pointer; padding:4px; border-radius:6px; transition:background .2s; }
+        .pf-chat-emoji-panel span:hover { background:#f1f5f9; }
+        .pf-chat-input input { flex:1; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#1e293b; font-size:13px; }
+        .pf-chat-input input:focus { border-color:#16a34a; outline:none; background:#fff; }
+        .pf-chat-send { background:#16a34a; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
+        .pf-chat-send:hover { background:#15803d; }
+
+        /* GALERIA */
+        .pf-gallery-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
+        .pf-gallery-item { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; border:1px solid #e2e8f0; }
+        .pf-gallery-item img { width:100%; height:100%; object-fit:cover; transition:transform .3s; }
+        .pf-gallery-item:hover img { transform:scale(1.05); }
+        .pf-gallery-item .pf-gallery-date { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#cbd5e1; font-size:10px; padding:4px 6px; text-align:center; }
+        .pf-gallery-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
+        .pf-gallery-empty i { font-size:28px; margin-bottom:6px; display:block; }
+
+        /* MODAL FOTO */
+        .pf-photo-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.95); align-items:center; justify-content:center; padding:20px; }
+        .pf-photo-modal.active { display:flex; }
+        .pf-photo-modal img { max-width:90%; max-height:85vh; border-radius:12px; }
+        .pf-photo-modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.1); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; }
+        .pf-photo-modal-info { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#cbd5e1; padding:8px 16px; border-radius:8px; font-size:12px; text-align:center; }
+
+        /* ===== TOPBAR MOBILE ===== */
+        .pf-topbar{display:none;position:fixed;top:0;left:0;right:0;background:#ffffff;border-bottom:1px solid #e2e8f0;padding:10px 16px;align-items:center;gap:12px;z-index:150;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+        .pf-topbar-logo{width:34px;height:34px;border-radius:50%;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;background:#fff}
+        .pf-topbar-logo img{width:30px;height:30px;border-radius:50%}
+        .pf-topbar-title{font-size:14px;font-weight:700;color:#16a34a}
+        .pf-topbar-btn{background:none;border:none;color:#16a34a;font-size:20px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background .2s}
+        .pf-topbar-btn:active{background:rgba(22,163,74,.1)}
+
+        /* SIDEBAR DRAWER MOBILE */
+        .pf-sidebar-close{display:none;background:none;border:none;color:#64748b;font-size:16px;cursor:pointer;padding:4px 8px}
+        .pf-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300}
+
+        /* MOBILE */
+        @media(max-width:1024px) {
+            #screen-portal.active { grid-template-columns:1fr; grid-template-rows:1fr; }
+            #screen-portal.active ~ .pf-topbar { display:flex; }
+            .pf-sidebar { position:fixed; top:0; left:0; bottom:0; width:264px; z-index:400; transform:translateX(-100%); transition:transform .25s ease; box-shadow:none; }
+            .pf-sidebar.mobile-open { transform:translateX(0); box-shadow:0 0 40px rgba(0,0,0,.35); }
+            .pf-sidebar-header { position:relative; }
+            .pf-sidebar-close { display:block; position:absolute; top:12px; right:12px; }
+            .pf-sidebar-overlay.mobile-open { display:block; }
+            .pf-right { display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:200; background:#fff; flex-direction:column; border:none; }
+            .pf-right.mobile-open { display:flex; }
+            .pf-mobile-nav-close { display:flex; }
+            .pf-center { padding:70px 16px 24px; }
         }
-
-        /* Welcome */
-        .pf-welcome{background:linear-gradient(135deg,var(--green),var(--blue));border:none;border-radius:var(--radius);padding:32px;margin-bottom:24px;position:relative;overflow:hidden;color:#fff}
-        .pf-welcome::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,255,255,.15),transparent 70%);border-radius:50%;pointer-events:none}
-        .pf-welcome::after{content:'';position:absolute;bottom:-30px;left:30%;width:300px;height:100px;background:linear-gradient(90deg,rgba(234,179,8,.2),rgba(220,38,38,.15),transparent);border-radius:50%;pointer-events:none}
-        .pf-welcome h2{font-size:18px;color:#fff;margin-bottom:8px;font-weight:700;position:relative;z-index:1}
-        .pf-welcome h2 span{color:var(--yellow-xl)}
-        .pf-welcome p{font-size:13px;color:rgba(255,255,255,.85);line-height:1.6;position:relative;z-index:1}
-        .pf-welcome p strong{color:var(--yellow-xl)}
-        .pf-welcome .pf-matricula-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:7px 14px;font-size:12px;color:#fff;font-weight:700;margin-top:14px;backdrop-filter:blur(8px)}
-
-        /* Quick Stats */
-        .pf-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
-        .pf-stat-card{background:var(--white);border:none;border-radius:var(--radius);padding:18px;text-align:center;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
-        .pf-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;opacity:1;transition:.3s}
-        .pf-stat-card:nth-child(1)::before{background:linear-gradient(90deg,var(--green),var(--green-l))}
-        .pf-stat-card:nth-child(2)::before{background:linear-gradient(90deg,var(--blue),var(--blue-l))}
-        .pf-stat-card:nth-child(3)::before{background:linear-gradient(90deg,var(--yellow),var(--yellow-l))}
-        .pf-stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-        .pf-stat-card:nth-child(1) i{color:var(--green)}
-        .pf-stat-card:nth-child(2) i{color:var(--blue)}
-        .pf-stat-card:nth-child(3) i{color:var(--yellow)}
-        .pf-stat-card i{font-size:22px;margin-bottom:8px;display:block}
-        .pf-stat-card .pf-stat-val{font-size:22px;font-weight:800;color:var(--gray800);margin-bottom:2px}
-        .pf-stat-card .pf-stat-label{font-size:11px;color:var(--gray500);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-
-        /* News */
-        .pf-noticia-card{background:var(--white);border:none;border-left:4px solid var(--green);border-radius:var(--radius-sm);padding:18px;margin-bottom:14px;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
-        .pf-noticia-card:hover{transform:translateX(4px);box-shadow:var(--shadow-lg);border-left-color:var(--blue)}
-        .pf-noticia-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-        .pf-noticia-badge{background:linear-gradient(135deg,var(--yellow),var(--yellow-l));color:var(--gray800);font-size:10px;font-weight:700;padding:4px 10px;border-radius:var(--radius-xs);text-transform:uppercase;letter-spacing:.3px}
-        .pf-noticia-date{font-size:11px;color:var(--gray400)}
-        .pf-noticia-title{font-size:15px;font-weight:700;color:var(--gray800);margin-bottom:6px}
-        .pf-noticia-text{font-size:13px;color:var(--gray500);line-height:1.6}
-        .pf-noticia-img{width:100%;margin-top:12px;border-radius:var(--radius-sm);border:1px solid var(--gray200)}
-        .pf-noticia-empty{text-align:center;padding:48px 20px;color:var(--gray300)}
-        .pf-noticia-empty i{font-size:40px;margin-bottom:14px;display:block;color:var(--gray300)}
-        .pf-noticia-empty p{font-size:13px;color:var(--gray400)}
-
-        /* Right Panel (Chat/Galeria) */
-        .pf-noticias-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;height:calc(100vh - 170px)}
-        .pf-noticias-col{overflow-y:auto;padding-right:8px}
-        .pf-right-panel{background:var(--white);border:none;border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;position:sticky;top:0;box-shadow:var(--shadow)}
-        .pf-right-tabs{display:flex;border-bottom:2px solid var(--gray200);flex-shrink:0}
-        .pf-right-tab{flex:1;padding:12px;text-align:center;font-size:12px;font-weight:600;color:var(--gray400);cursor:pointer;transition:.2s;border-bottom:2px solid transparent;margin-bottom:-2px}
-        .pf-right-tab.active{color:var(--green);border-bottom-color:var(--green)}
-        .pf-right-tab:hover{color:var(--gray700)}
-        .pf-right-content{flex:1;overflow:hidden;display:none;min-height:0}
-        .pf-right-content.active{display:flex;flex-direction:column}
-
-        /* Galeria */
-        .pf-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px;overflow-y:auto}
-        .pf-gallery-item{position:relative;border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;aspect-ratio:1;border:2px solid var(--gray200);transition:.3s}
-        .pf-gallery-item:hover{border-color:var(--green);transform:scale(1.03);box-shadow:0 8px 24px rgba(37,99,235,.15)}
-        .pf-gallery-item img{width:100%;height:100%;object-fit:cover}
-        .pf-gallery-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:8px 10px;font-size:10px;color:#fff}
-        .pf-gallery-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray300);padding:20px;text-align:center}
-        .pf-gallery-empty i{font-size:32px;margin-bottom:10px;color:var(--gray300)}
-        .pf-gallery-empty p{font-size:12px;color:var(--gray400)}
-
-        /* Dados */
-        .pf-dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-        .pf-dados-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:16px;transition:.2s;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-        .pf-dados-editable{cursor:pointer;transition:.3s;border-color:var(--gray200)}
-        .pf-dados-editable:hover{border-color:var(--green);box-shadow:0 4px 16px rgba(37,99,235,.1);transform:translateY(-2px)}
-        .pf-dados-label{font-size:10px;color:var(--gray500);margin-bottom:5px;display:flex;align-items:center;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-        .pf-dados-val{font-size:14px;font-weight:600;color:var(--gray800);word-break:break-word}
-
-        /* Construcao */
-        .pf-section-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--gray200)}
-        .pf-section-header i{font-size:20px;color:var(--green)}
-        .pf-section-header h2{font-size:18px;font-weight:700;color:var(--gray800)}
-        .pf-em-construcao{text-align:center;padding:60px 20px;color:var(--gray300)}
-        .pf-em-construcao i{font-size:44px;margin-bottom:16px;display:block;color:var(--gray300)}
-        .pf-em-construcao h3{font-size:17px;color:var(--gray500);margin-bottom:6px;font-weight:600}
-        .pf-em-construcao p{font-size:13px;color:var(--gray400)}
-
-        /* Baixar App */
-        .pf-app-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:600px;margin:0 auto}
-        .pf-app-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
-        .pf-app-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;transform:scaleX(0);transition:.3s}
-        .pf-app-card:nth-child(1)::before{background:linear-gradient(90deg,var(--green),var(--green-l))}
-        .pf-app-card:nth-child(2)::before{background:linear-gradient(90deg,var(--blue),var(--blue-l))}
-        .pf-app-card:nth-child(3)::before{background:linear-gradient(90deg,var(--yellow),var(--yellow-l))}
-        .pf-app-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-        .pf-app-card:hover::before{transform:scaleX(1)}
-        .pf-app-card:nth-child(1) i{color:var(--green)}
-        .pf-app-card:nth-child(2) i{color:var(--blue)}
-        .pf-app-card:nth-child(3) i{color:var(--yellow)}
-        .pf-app-card i{font-size:32px;margin-bottom:12px;display:block}
-        .pf-app-card h4{font-size:14px;color:var(--gray800);margin-bottom:4px;font-weight:600}
-        .pf-app-card p{font-size:12px;color:var(--gray500)}
-
-        /* Apostila / Aula */
-        .pf-apostila-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;transition:.3s;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-        .pf-apostila-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
-        .pf-apostila-icon{width:50px;height:50px;background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(220,38,38,.04));border:1px solid rgba(220,38,38,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .pf-apostila-icon i{font-size:20px;color:var(--red)}
-        .pf-apostila-info{flex:1;min-width:0}
-        .pf-apostila-titulo{font-size:14px;font-weight:700;color:var(--gray800);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pf-apostila-desc{font-size:12px;color:var(--gray500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pf-apostila-meta{font-size:10px;color:var(--gray400);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
-        .pf-apostila-badge{background:rgba(37,99,235,.08);color:var(--green);font-size:10px;padding:3px 10px;border-radius:var(--radius-xs);font-weight:700;letter-spacing:.2px}
-
-        /* Photo modal */
-        .pf-photo-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
-        .pf-photo-modal.active{display:flex}
-        .pf-photo-modal img{max-width:90%;max-height:80vh;border-radius:var(--radius);object-fit:contain}
-        .pf-photo-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:var(--radius-sm);font-size:16px;cursor:pointer;z-index:1001;transition:.2s}
-        .pf-photo-modal-close:hover{background:rgba(255,255,255,.25)}
-        .pf-photo-modal-info{color:var(--gray400);font-size:12px;margin-top:12px}
-
-        /* ===== CHAT WHATSAPP ===== */
-        .chat-container{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}
-        .chat-header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--green);border-bottom:1px solid rgba(0,0,0,.06);flex-shrink:0}
-        .chat-header-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .chat-header-avatar i{color:#fff;font-size:18px}
-        .chat-header-info{flex:1}
-        .chat-header-name{color:#fff;font-size:15px;font-weight:600}
-        .chat-header-status{color:rgba(255,255,255,.7);font-size:12px}
-        .chat-messages{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:4px;background:var(--gray100);min-height:0;-webkit-overflow-scrolling:touch}
-        .chat-date-sep{text-align:center;margin:12px 0 6px}
-        .chat-date-sep span{background:var(--white);border:1px solid var(--gray200);color:var(--gray500);font-size:10.5px;padding:4px 12px;border-radius:var(--radius-xs);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.05)}
-        .chat-msg-wrap{display:flex;align-items:flex-end;gap:6px;max-width:85%;animation:chatSlide .2s ease}
-        .chat-msg-wrap.me{align-self:flex-end;flex-direction:row-reverse}
-        .chat-msg-wrap.other{align-self:flex-start}
-        .chat-msg-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--green-d));display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .chat-msg-avatar i{color:#fff;font-size:11px}
-        .chat-msg-bubble{padding:6px 8px 4px 10px;font-size:14px;line-height:1.4;word-wrap:break-word;position:relative}
-        .chat-msg-bubble.me{background:linear-gradient(135deg,var(--green),var(--green-d));border-radius:8px 8px 2px 8px;color:#fff}
-        .chat-msg-bubble.other{background:var(--white);border-radius:8px 8px 8px 2px;color:var(--gray800);border:1px solid var(--gray200);box-shadow:0 1px 4px rgba(0,0,0,.05)}
-        .chat-msg-bubble::after{content:'';position:absolute;bottom:0;width:12px;height:16px}
-        .chat-msg-bubble.me::after{right:-6px;background:linear-gradient(135deg,var(--green-d) 50%,transparent 50%)}
-        .chat-msg-bubble.other::after{left:-6px;background:linear-gradient(225deg,var(--white) 50%,transparent 50%)}
-        .chat-msg-text{white-space:pre-wrap}
-        .chat-msg-sender{font-size:10.5px;font-weight:700;color:var(--green);margin-bottom:2px}
-        .chat-msg-time{font-size:10px;color:rgba(255,255,255,.5);text-align:right;margin-top:1px;display:flex;align-items:center;justify-content:flex-end;gap:3px}
-        .chat-msg-wrap.other .chat-msg-time{color:var(--gray400)}
-        .chat-msg-time .check{color:rgba(255,255,255,.6);font-size:12px}
-        .chat-msg-wrap.other .chat-msg-time .check{color:var(--green)}
-        .chat-msg-edited{font-size:9px;color:rgba(255,255,255,.4);font-style:italic}
-        .chat-msg-wrap.other .chat-msg-edited{color:var(--gray400)}
-        .chat-msg-actions{display:flex;gap:2px;margin-top:3px;justify-content:flex-end}
-        .chat-msg-action{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;padding:2px 4px;border-radius:4px;font-size:10px;transition:.15s}
-        .chat-msg-action:hover{color:#fff;background:rgba(255,255,255,.1)}
-        .chat-msg-wrap.other .chat-msg-action{color:var(--gray400)}
-        .chat-msg-wrap.other .chat-msg-action:hover{color:var(--gray700);background:var(--gray100)}
-        .chat-input-area{display:flex;align-items:flex-end;gap:6px;padding:8px 10px;padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));background:var(--white);border-top:1px solid var(--gray200);flex-shrink:0}
-        .chat-input-wrap{flex:1;display:flex;align-items:flex-end;background:var(--gray100);border:1px solid var(--gray200);border-radius:10px;padding:4px 8px;min-height:42px}
-        .chat-input-wrap input{flex:1;background:transparent;border:none;color:var(--gray800);font-size:15px;padding:6px 4px;outline:none;min-width:0}
-        .chat-input-wrap input::placeholder{color:var(--gray400)}
-        .chat-emoji-btn{background:none;border:none;color:var(--gray400);font-size:22px;cursor:pointer;padding:6px;border-radius:50%;transition:.15s;flex-shrink:0}
-        .chat-emoji-btn:hover{color:var(--green)}
-        .chat-send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--green-d));border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0;box-shadow:0 4px 12px rgba(37,99,235,.3)}
-        .chat-send-btn:hover{transform:scale(1.05);box-shadow:0 6px 16px rgba(37,99,235,.4)}
-        .chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray400);padding:40px 20px;text-align:center}
-        .chat-empty i{font-size:48px;margin-bottom:16px;color:var(--green);opacity:.25}
-        .chat-empty p{font-size:14px;line-height:1.5}
-        .chat-edit-bar{display:none;align-items:center;gap:8px;padding:8px 14px;background:rgba(37,99,235,.06);border-top:1px solid rgba(37,99,235,.15);font-size:11px;color:var(--gray500);flex-shrink:0}
-        .chat-edit-bar.active{display:flex}
-        .chat-edit-bar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .chat-edit-bar button{background:none;border:none;color:var(--gray400);cursor:pointer;font-size:14px;padding:2px 4px}
-        .chat-edit-bar button:hover{color:var(--gray700)}
-        .chat-emoji-panel{display:none;flex-wrap:wrap;gap:4px;padding:10px 14px;border-top:1px solid var(--gray200);max-height:140px;overflow-y:auto;background:var(--white)}
-        .chat-emoji-panel.active{display:flex}
-        .chat-emoji-panel span{font-size:24px;cursor:pointer;padding:4px;border-radius:6px;transition:.15s}
-        .chat-emoji-panel span:hover{background:rgba(37,99,235,.08);transform:scale(1.2)}
-        @keyframes chatSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-        /* Mobile chat full screen */
-        @media(max-width:768px){
-            .chat-header{padding:10px 14px}
-            .chat-messages{padding:12px 8px}
-            .chat-input-area{padding:6px 8px}
-            .chat-msg-wrap{max-width:90%}
+        @media(min-width:1025px) {
+            .pf-mobile-nav-close { display:none; }
         }
-        @media(max-width:480px){
-            .chat-msg-wrap{max-width:92%}
-            .chat-msg-bubble{font-size:13.5px}
-        }
-
-        /* Notification Badge */
-        .pf-nav-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:20px;height:20px;background:linear-gradient(135deg,var(--red),var(--red-l));color:#fff;font-size:10px;font-weight:700;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;animation:badgePulse 2s infinite;box-shadow:0 2px 8px rgba(220,38,38,.3)}
-        .pf-nav-badge.hidden{display:none}
-        .pf-mobile-nav-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:linear-gradient(135deg,var(--red),var(--red-l));color:#fff;font-size:9px;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;animation:badgePulseMobile 2s infinite;box-shadow:0 2px 6px rgba(220,38,38,.3)}
-        .pf-mobile-nav-badge.hidden{display:none}
-        @keyframes badgePulse{0%,100%{transform:translateY(-50%) scale(1)}50%{transform:translateY(-50%) scale(1.1)}}
-        @keyframes badgePulseMobile{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-
-        /* Mobile Bottom Nav */
-        .pf-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--gray200);padding:6px 0;z-index:100;box-shadow:0 -4px 16px rgba(0,0,0,.06)}
-        .pf-mobile-nav-items{display:flex;justify-content:space-around}
-        .pf-mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 8px;color:var(--gray400);font-size:9px;font-weight:600;cursor:pointer;transition:.2s;border-radius:var(--radius-xs)}
-        .pf-mobile-nav-item i{font-size:18px}
-        .pf-mobile-nav-item.active{color:var(--green)}
-        .pf-mobile-nav-item:active{background:rgba(37,99,235,.06)}
-
-        @media(max-width:768px){
-            .pf-sidebar{display:none}
-            .pf-mobile-nav{display:block}
-            .pf-noticias-layout{grid-template-columns:1fr;height:100%}
-            .pf-noticias-col.hidden-mobile{display:none}
-            .pf-right-panel{position:relative;height:calc(100vh - 32px);border-radius:0;border:none;border-top:none;background:var(--gray100);overflow:hidden}
-            .pf-content{padding:16px 16px 80px;overflow:hidden}
-            .pf-stats-row{grid-template-columns:1fr}
-            .pf-topbar{padding:0 14px}
-            .pf-topbar-title{display:none}
-            .pf-user-info{display:none}
-            .pf-section.active#pf-section-chat{position:fixed;top:60px;left:0;right:0;bottom:0;z-index:90;background:var(--gray100)}
-        }
-    
     </style>
 </head>
 <body>
-    <!-- TELA DE LOGIN -->
+
+    <!-- LOGIN -->
     <div id="screen-login">
-        <div class="pf-login-card">
-            <div class="pf-login-logo">
-                <img src="logo-farn.png.png" alt="FARN" data-farn-logo>
-                <h1>FARN <span>Docente</span></h1>
-                <p>ACESSO RESTRITO AOS INSTRUTORES</p>
-            </div>
-            <div class="pf-login-error" id="pd-login-error"></div>
-            <div class="pf-login-field">
+        <div class="pf-login-box">
+            <img data-farn-logo src="logo-farn.png.png" alt="FARN">
+            <h2>Portal do Docente</h2>
+            <p>Entre com seu CPF e senha cadastrados</p>
+            <div class="pf-field">
                 <label>CPF</label>
-                <input type="text" id="pd-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+                <input type="text" id="pd-cpf" maxlength="14" placeholder="000.000.000-00" oninput="pdFormatCPF(this)">
             </div>
-            <div class="pf-login-field">
+            <div class="pf-field">
                 <label>Senha</label>
-                <input type="password" id="pd-senha" placeholder="Sua senha" onkeydown="if(event.key==='Enter')pdLogin()">
+                <input type="password" id="pd-senha" placeholder="Sua senha">
             </div>
-            <div class="pf-login-remember">
-                <input type="checkbox" id="pd-lembrar">
-                <label for="pd-lembrar">Lembrar minha senha</label>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                <input type="checkbox" id="pd-lembrar" style="accent-color:#16a34a;width:16px;height:16px">
+                <label for="pd-lembrar" style="font-size:13px;color:#64748b;cursor:pointer">Lembrar usuario e senha</label>
             </div>
             <button class="pf-login-btn" id="pd-login-btn" onclick="pdLogin()">
                 <i class="fa-solid fa-right-to-bracket"></i> Entrar
             </button>
-            <a class="pf-login-back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+            <div class="pf-login-error" id="pd-login-error"></div>
+            <div class="pf-login-footer">
+                <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+            </div>
         </div>
     </div>
 
     <!-- PORTAL -->
     <div id="screen-portal">
-        <header class="pf-topbar">
-            <div class="pf-topbar-left">
-                <img src="logo-farn.png.png" alt="FARN" class="pf-topbar-logo" data-farn-logo>
-                <span class="pf-topbar-title">Portal do Docente</span>
+
+        <!-- SIDEBAR ESQUERDO -->
+        <aside class="pf-sidebar">
+            <div class="pf-sidebar-header">
+                <img data-farn-logo src="logo-farn.png.png" alt="FARN">
+                <h3>Portal do Docente</h3>
+                <p>FARN - BRASIL</p>
+                <button class="pf-sidebar-close" onclick="pdCloseSidebar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="pf-topbar-right">
-                <div class="pf-user-info">
-                    <div class="pf-user-name" id="pd-user-name">Docente</div>
-                    <div class="pf-user-matricula" id="pd-user-matricula">Instrutor</div>
-                    <div class="pf-user-cpf" id="pd-user-cpf"></div>
+            <nav class="pf-sidebar-nav">
+                <div class="pf-nav-item active" onclick="pdShowSection('inicio', this)">
+                    <i class="fa-solid fa-house"></i><span>Inicio</span>
                 </div>
-                <div class="pf-user-avatar" id="pd-user-avatar">D</div>
-                <button class="pf-logout-btn" onclick="pdSair()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</button>
-            </div>
-        </header>
-        <div class="pf-body">
-            <nav class="pf-sidebar">
-                <div class="pf-nav-item active" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-house"></i> Inicio</div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-newspaper"></i> Noticias</div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-images"></i> Galeria</div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-comments"></i> Chat</div>
-                <div class="pf-nav-divider"></div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-dumbbell"></i> TFM</div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
-                <div class="pf-nav-divider"></div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-file-lines"></i> Declaracoes</div>
-                <div class="pf-nav-item" onclick="mostrarConstrucao(this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
+                <div class="pf-nav-item" onclick="pdShowSection('aulas', this)">
+                    <i class="fa-solid fa-chalkboard"></i><span>Aulas</span>
+                </div>
+                <div class="pf-nav-item" onclick="pdShowSection('tfm', this)">
+                    <i class="fa-solid fa-dumbbell"></i><span>TFM</span>
+                </div>
+                <div class="pf-nav-item" onclick="pdShowSection('apontamento', this)">
+                    <i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span>
+                </div>
+                <div class="pf-nav-item" onclick="pdShowSection('chat', this)">
+                    <i class="fa-solid fa-comments"></i><span>Chat</span>
+                </div>
+                <div class="pf-nav-item" onclick="pdShowSection('galeria', this)">
+                    <i class="fa-solid fa-images"></i><span>Galeria</span>
+                </div>
             </nav>
-            <main class="pf-content">
-                <div class="pf-section active">
-                    <div class="pf-em-construcao">
-                        <i class="fa-solid fa-wrench"></i>
-                        <h3>Em construcao</h3>
-                        <p>O Portal do Docente estara disponivel em breve.</p>
+            <div class="pf-sidebar-footer">
+                <div class="pf-user">
+                    <div class="pf-user-avatar" id="pd-user-avatar">--</div>
+                    <div class="pf-user-info">
+                        <div class="pf-user-name" id="pd-user-name">---</div>
+                        <div class="pf-user-cpf" id="pd-user-cpf">CPF: ---</div>
                     </div>
                 </div>
-            </main>
+                <button class="pf-logout-btn" onclick="pdLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+            </div>
+        </aside>
+
+        <!-- CENTRO -->
+        <main class="pf-center">
+
+            <!-- INICIO -->
+            <div id="pf-section-inicio" class="pf-section active">
+                <div class="pf-center-header">
+                    <i class="fa-solid fa-house"></i>
+                    <div><h2>Inicio</h2></div>
+                </div>
+                <div class="pf-welcome">
+                    <h2>Bem-vindo, <span id="pd-welcome-nome">Docente</span></h2>
+                    <p>Aqui voce pode acompanhar suas <strong>Aulas</strong>, <strong>TFMs</strong> e <strong>Apontamentos</strong>.</p>
+                </div>
+                <div class="pf-stats-row">
+                    <div class="pf-stat-card"><i class="fa-solid fa-chalkboard"></i><div class="pf-stat-val" id="pd-stat-aulas">0</div><div class="pf-stat-label">Aulas</div></div>
+                    <div class="pf-stat-card"><i class="fa-solid fa-dumbbell"></i><div class="pf-stat-val" id="pd-stat-tfm">0</div><div class="pf-stat-label">TFMs</div></div>
+                    <div class="pf-stat-card"><i class="fa-solid fa-calendar-check"></i><div class="pf-stat-val" id="pd-stat-proximos">0</div><div class="pf-stat-label">Proximos 7 dias</div></div>
+                </div>
+            </div>
+
+            <!-- AULAS -->
+            <div id="pf-section-aulas" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-chalkboard"></i>
+                    <h2>Minhas Aulas</h2>
+                </div>
+                <div id="pd-aulas-container">
+                    <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando aulas...</p></div>
+                </div>
+            </div>
+
+            <!-- TFM -->
+            <div id="pf-section-tfm" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-dumbbell"></i>
+                    <h2>Meus TFMs</h2>
+                </div>
+                <div id="pd-tfm-container">
+                    <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando TFMs...</p></div>
+                </div>
+            </div>
+
+            <!-- APONTAMENTO -->
+            <div id="pf-section-apontamento" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <h2>Apontamento</h2>
+                </div>
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-clipboard-check" style="color:#ca8a04;margin-right:8px"></i> Apontamento de Presenca</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Selecao Projeto + Turma -->
+                        <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
+                                <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
+                            </div>
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
+                                    <select id="apt-selecao-projeto" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoProjetoChange()">
+                                        <option value="">Selecione o projeto...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
+                                    <select id="apt-selecao-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoChange()">
+                                        <option value="">Selecione a turma...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                        <div id="apt-conteudo" style="display:none">
+                            <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
+                                <button class="btn-primary" onclick="apontamentoAbrirModal()">
+                                    <i class="fa-solid fa-qrcode"></i> Apontar Aluno
+                                </button>
+                            </div>
+                            <!-- Filtros -->
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#f0fdf4;border-radius:10px;border:1px solid #e2e8f0">
+                                <div class="form-group" style="flex:1;min-width:140px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data Inicio</label>
+                                    <input type="date" id="apt-filtro-data-inicio" class="config-input" style="width:100%">
+                                </div>
+                                <div class="form-group" style="flex:1;min-width:140px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data Fim</label>
+                                    <input type="date" id="apt-filtro-data-fim" class="config-input" style="width:100%">
+                                </div>
+                                <div class="form-group" style="flex:1;min-width:160px;margin:0">
+                                    <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Matricula / Nome</label>
+                                    <input type="text" id="apt-filtro-matricula" class="config-input" style="width:100%" placeholder="Buscar...">
+                                </div>
+                                <button class="btn-primary" onclick="apontamentoFiltrar()" style="white-space:nowrap;margin:0">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                                </button>
+                                <button class="btn-outline" onclick="apontamentoLimparFiltros()" style="white-space:nowrap;margin:0">
+                                    <i class="fa-solid fa-eraser"></i> Limpar
+                                </button>
+                            </div>
+                            <!-- Resumo -->
+                            <div id="apt-resumo" style="display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+                                <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-registros" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                    <div style="font-size:11px;color:#475569">Registros</div>
+                                </div>
+                                <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-presentes" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                    <div style="font-size:11px;color:#475569">Presentes</div>
+                                </div>
+                                <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-faltas" style="font-size:22px;font-weight:800;color:#f44336">0</div>
+                                    <div style="font-size:11px;color:#475569">Faltas</div>
+                                </div>
+                                <div style="background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
+                                    <div id="apt-resumo-justificadas" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
+                                    <div style="font-size:11px;color:#475569">Justificadas</div>
+                                </div>
+                            </div>
+                            <!-- Excluir Lista -->
+                            <div id="apt-excluir-area" style="display:none;margin-bottom:16px;padding:14px 16px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:10px;align-items:center;gap:12px;flex-wrap:wrap">
+                                <i class="fa-solid fa-trash" style="color:#dc2626;font-size:16px"></i>
+                                <span style="font-size:13px;font-weight:600;color:#1e293b">Excluir lista de apontamento:</span>
+                                <select id="apt-excluir-select" class="config-input" style="flex:1;min-width:250px;max-width:400px">
+                                    <option value="">Selecione a lista...</option>
+                                </select>
+                                <button class="btn-danger" onclick="apontamentoExcluirLista()" style="white-space:nowrap;margin:0">
+                                    <i class="fa-solid fa-trash"></i> Excluir
+                                </button>
+                            </div>
+                            <!-- Lista -->
+                            <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#475569">
+                                <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#64748b;margin-bottom:16px"></i>
+                                <h3 style="color:#475569;margin-bottom:8px">Nenhum apontamento registrado</h3>
+                                <p style="color:#475569">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
+                            </div>
+                            <div id="apontamento-historico-lista" style="display:none"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONSTRUCAO (para secoes futuras) -->
+            <div id="pf-section-construcao" class="pf-section">
+                <div class="pf-em-construcao">
+                    <i class="fa-solid fa-hard-hat"></i>
+                    <h3>Em Construcao</h3>
+                    <p>Esta funcionalidade esta sendo desenvolvida.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- LATERAL DIREITA -->
+        <aside class="pf-right" id="pf-right">
+            <div class="pf-right-tabs">
+                <div class="pf-right-tab active" onclick="pdRightTab('chat', this)">
+                    <i class="fa-solid fa-comments"></i> Chat
+                </div>
+                <div class="pf-right-tab" onclick="pdRightTab('galeria', this)">
+                    <i class="fa-solid fa-images"></i> Galeria
+                </div>
+                <button class="pf-mobile-nav-close" onclick="pdRightCloseMobile()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- PAINEL CHAT -->
+            <div id="pf-right-chat" class="pf-right-panel" style="display:flex">
+                <div class="pf-chat-header">
+                    <h4><i class="fa-solid fa-headset" style="margin-right:4px"></i> Chat com a Administracao</h4>
+                    <p>Tire duvidas e envie mensagens</p>
+                </div>
+                <div class="pf-chat-messages" id="pd-chat-messages">
+                    <div class="pf-chat-empty">
+                        <i class="fa-solid fa-comment-dots"></i>
+                        <p>Envie sua mensagem para a equipe FARN</p>
+                    </div>
+                </div>
+                <div class="pf-chat-emoji-panel" id="pd-chat-emoji-panel"></div>
+                <div class="pf-chat-input">
+                    <button class="pf-chat-emoji-btn" onclick="pdChatToggleEmoji(event)" title="Emojis"><i class="fa-regular fa-face-smile"></i></button>
+                    <input type="text" id="pd-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')pdChatSend()">
+                    <button class="pf-chat-send" onclick="pdChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+            <!-- PAINEL GALERIA -->
+            <div id="pf-right-galeria" class="pf-right-panel" style="display:none">
+                <div class="pf-chat-header">
+                    <h4><i class="fa-solid fa-images" style="margin-right:4px"></i> Galeria de Fotos</h4>
+                    <p>Fotos atualizadas pelo administrador</p>
+                </div>
+                <div class="pf-right-content">
+                    <div class="pf-gallery-grid" id="pd-gallery-grid">
+                        <div class="pf-gallery-empty">
+                            <i class="fa-solid fa-images"></i>
+                            <p>Nenhuma foto ainda</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- TOPBAR MOBILE -->
+    <div class="pf-topbar" id="pf-topbar">
+        <button class="pf-topbar-btn" onclick="pdToggleSidebar()" title="Menu"><i class="fa-solid fa-bars"></i></button>
+        <div class="pf-topbar-logo"><img data-farn-logo src="logo-farn.png.png" alt="FARN"></div>
+        <div class="pf-topbar-title">Portal do Docente</div>
+    </div>
+
+    <!-- OVERLAY SIDEBAR -->
+    <div class="pf-sidebar-overlay" id="pd-sidebar-overlay" onclick="pdCloseSidebar()"></div>
+    <div id="pf-photo-modal" class="pf-photo-modal" onclick="pdClosePhoto()">
+        <button class="pf-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
+        <img id="pf-photo-modal-img" src="">
+        <div class="pf-photo-modal-info" id="pf-photo-modal-info"></div>
+    </div>
+
+    <!-- MODAL APONTAMENTO -->
+    <div id="modal-apontamento-overlay" class="modal-overlay hidden" onclick="apontamentoFecharModal(event)">
+        <div class="modal-content" style="max-width:800px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-qrcode" style="color:#ca8a04;margin-right:8px"></i> Apontar Aluno</h3>
+                <button class="modal-close" onclick="apontamentoFecharModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- Selecao Turma / Disciplina / Aula -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+                    <div class="form-group">
+                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma *</label>
+                        <select id="apt-turma" class="config-input" onchange="apontamentoOnTurmaChange()">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Disciplina *</label>
+                        <select id="apt-disciplina" class="config-input" onchange="apontamentoOnDisciplinaChange()">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Aula *</label>
+                        <select id="apt-aula" class="config-input" onchange="apontamentoOnAulaChange()">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Scanner QR Code -->
+                <div id="apt-scanner-area" style="display:none;margin-bottom:16px;border:2px solid #f57f17;border-radius:12px;overflow:hidden;position:relative">
+                    <div id="apt-qr-reader" style="width:100%;min-height:300px;max-height:400px"></div>
+                    <div style="position:absolute;top:8px;right:8px;z-index:10">
+                        <button class="btn-primary btn-sm" onclick="apontamentoPararScanner()" style="background:#f44336">
+                            <i class="fa-solid fa-stop"></i> Parar
+                        </button>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:#f0fdf4;font-size:12px;color:#475569">
+                        <i class="fa-solid fa-camera" style="color:#ca8a04"></i> Aponte o QR Code do aluno para registrar presenca
+                    </div>
+                </div>
+                <div style="text-align:center;margin-bottom:16px" id="apt-scan-btn-area">
+                    <button class="btn-primary" id="apt-btn-scan" onclick="apontamentoIniciarScanner()" disabled>
+                        <i class="fa-solid fa-camera"></i> Iniciar Camera para QR Code
+                    </button>
+                </div>
+                <!-- Digitar Matricula Manualmente -->
+                <div id="apt-manual-area" style="text-align:center;margin-bottom:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">
+                    <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:8px"><i class="fa-solid fa-keyboard" style="color:#2563eb;margin-right:6px"></i> Ou digite a matricula do aluno:</div>
+                    <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="apt-matricula-input" placeholder="Ex: ACD12345" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;width:200px;outline:none;background:#fff;color:#1e293b" onkeypress="if(event.key==='Enter')apontamentoBuscarMatricula()">
+                        <button class="btn-primary" onclick="apontamentoBuscarMatricula()" style="background:#2563eb;gap:6px"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                    </div>
+                </div>
+                <!-- Lista de Presenca -->
+                <div id="apt-presenca-area" style="display:none">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <h4 style="margin:0;color:#1e293b"><i class="fa-solid fa-list-check" style="color:#16a34a;margin-right:6px"></i> Lista de Presenca</h4>
+                        <span id="apt-presenca-count" style="font-size:12px;color:#475569"></span>
+                    </div>
+                    <div id="apt-presenca-lista"></div>
+                    <div style="margin-top:16px;text-align:right">
+                        <button class="btn-outline" onclick="apontamentoFecharModal()" style="margin-right:8px"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                        <button class="btn-primary" onclick="apontamentoSalvar()"><i class="fa-solid fa-save"></i> Salvar Apontamento</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="pf-mobile-nav">
-        <div class="pf-mobile-nav-items">
-            <div class="pf-mobile-nav-item active" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-house"></i><span>Inicio</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-newspaper"></i><span>Noticias</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-images"></i><span>Galeria</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-comments"></i><span>Chat</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-dumbbell"></i><span>TFM</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-id-card"></i><span>Carteira</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-file-lines"></i><span>Declaracoes</span></div>
-            <div class="pf-mobile-nav-item" onclick="mostrarConstrucaoMobile(this)"><i class="fa-solid fa-book-open"></i><span>Apostilas</span></div>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
-        var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
-        if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
-        var dbFirestore = firebase.firestore();
+        /* ===== ESTADO ===== */
+        var pdUser = null;
+        var pdChatUnsub = null;
+        var pdGalleryUnsub = null;
+        var pdEmojiList = ['😀','😂','😊','😍','🤔','👍','👏','🙏','❤️','🔥','🎉','😎','🥇','💪','👋','✌️'];
 
-        function mascaraCPF(el) {
-            var v = el.value.replace(/\D/g, '').substring(0, 11);
-            v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-            el.value = v;
+        /* ===== FORMATACAO ===== */
+        function pdFormatCPF(input) {
+            var v = input.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            input.value = v;
         }
 
-        function pdMostrarErro(msg) {
-            var errEl = document.getElementById('pd-login-error');
-            errEl.textContent = msg;
-            errEl.style.display = 'block';
-        }
-
+        /* ===== LOGIN ===== */
         async function pdLogin() {
             var cpf = document.getElementById('pd-cpf').value.replace(/\D/g, '');
             var senha = document.getElementById('pd-senha').value;
+            var errEl = document.getElementById('pd-login-error');
             var btn = document.getElementById('pd-login-btn');
 
-            document.getElementById('pd-login-error').style.display = 'none';
-            if (!cpf || cpf.length !== 11) { pdMostrarErro('CPF invalido.'); return; }
-            if (!senha) { pdMostrarErro('Informe sua senha.'); return; }
+            errEl.style.display = 'none';
+            if (!cpf || cpf.length !== 11) { errEl.textContent = 'CPF invalido.'; errEl.style.display = 'block'; return; }
+            if (!senha) { errEl.textContent = 'Informe sua senha.'; errEl.style.display = 'block'; return; }
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
@@ -457,13 +617,14 @@
                     return;
                 }
 
-                var snap = await dbFirestore.collection('instrutores')
+                var snap = await dbFirestore.collection('docentes')
                     .where('cpf', '==', cpf)
                     .limit(1)
                     .get();
 
                 if (snap.empty) {
-                    pdMostrarErro('CPF nao encontrado entre os instrutores.');
+                    errEl.textContent = 'CPF nao encontrado entre os docentes.';
+                    errEl.style.display = 'block';
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
                     return;
@@ -473,14 +634,16 @@
                 var dados = doc.data();
 
                 if (!dados.senha) {
-                    pdMostrarErro('Senha de acesso nao cadastrada. Contate a administracao.');
+                    errEl.textContent = 'Senha de acesso nao cadastrada. Contate a administracao.';
+                    errEl.style.display = 'block';
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
                     return;
                 }
 
                 if (dados.senha !== senha) {
-                    pdMostrarErro('Senha incorreta.');
+                    errEl.textContent = 'Senha incorreta.';
+                    errEl.style.display = 'block';
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
                     return;
@@ -501,7 +664,8 @@
                 pdEntrar(docente);
             } catch(e) {
                 console.error('Erro login docente:', e);
-                pdMostrarErro('Erro ao acessar. Tente novamente.');
+                errEl.textContent = 'Erro ao acessar. Tente novamente.';
+                errEl.style.display = 'block';
             }
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
@@ -516,83 +680,1144 @@
             var inicial = (guerra || nome).split(' ').filter(Boolean).slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
             document.getElementById('pd-user-avatar').textContent = inicial || 'D';
             document.getElementById('pd-user-name').textContent = guerra ? guerra + ' ' + nome.split(' ')[0] : nome.split(' ')[0];
-            var matEl = document.getElementById('pd-user-matricula');
-            matEl.textContent = docente.isAdmin ? 'Administrador | Acesso total' : (docente.matricula ? 'Instrutor | Mat: ' + docente.matricula : 'Instrutor');
             var cpfDisp = docente.cpf || '';
             if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             document.getElementById('pd-user-cpf').textContent = 'CPF: ' + cpfDisp;
-        }
 
-        function pdSair() {
-            sessionStorage.removeItem('pd_sessao');
-            localStorage.removeItem('pd_lembrar_cpf');
-            localStorage.removeItem('pd_lembrar_senha');
-            document.getElementById('screen-portal').classList.remove('active');
-            location.href = 'index.html';
+            var welcomeNome = document.getElementById('pd-welcome-nome');
+            if (welcomeNome) welcomeNome.textContent = guerra ? guerra + ' ' + nome.split(' ')[0] : nome.split(' ')[0];
+
+            pdLoadDashboardStats();
+            pdLoadAulas();
+            pdLoadTfmAgendamentos();
+            pdLoadApontamentos();
+            pdLoadGallery();
+            pdChatLoadMessages();
+            pdChatInitEmoji();
         }
 
         function pdAutoLogin() {
-            var sessao = sessionStorage.getItem('pd_sessao');
-            if (sessao) {
-                try {
-                    pdEntrar(JSON.parse(sessao));
-                    return;
-                } catch(e) {}
-            }
             var cpfSalvo = localStorage.getItem('pd_lembrar_cpf');
             var senhaSalva = localStorage.getItem('pd_lembrar_senha');
             if (cpfSalvo && senhaSalva) {
                 document.getElementById('pd-cpf').value = cpfSalvo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
                 document.getElementById('pd-senha').value = senhaSalva;
                 document.getElementById('pd-lembrar').checked = true;
+                pdLogin();
             }
         }
 
         function pdAdminAutoAccess() {
             var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
             if (adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-docente'))) {
-                var adminDoc = { nome: adminData.nome || 'Administrador Geral', cpf: adminData.cpf || '05004959471', guerra: '', matricula: '', isAdmin: true };
-                pdEntrar(adminDoc);
+                var adminDocente = { nome: adminData.nome || 'Administrador Geral', cpf: adminData.cpf || '05004959471', guerra: '', matricula: '', isAdmin: true };
+                sessionStorage.setItem('pd_sessao', JSON.stringify(adminDocente));
+                document.getElementById('screen-portal').classList.add('active');
+                var initials = (adminDocente.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+                document.getElementById('pd-user-avatar').textContent = initials;
+                document.getElementById('pd-user-name').textContent = adminDocente.nome;
+                var cpfDisp = adminDocente.cpf;
+                if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                document.getElementById('pd-user-cpf').textContent = 'CPF: ' + cpfDisp;
+                pdLoadDashboardStats();
+                pdLoadAulas();
+                pdLoadTfmAgendamentos();
+                pdLoadApontamentos();
+                pdLoadGallery();
+                pdChatLoadMessages();
+                pdChatInitEmoji();
             }
         }
 
-        function mostrarConstrucao(item){
-            document.querySelectorAll('.pf-nav-item').forEach(function(i){ i.classList.remove('active'); });
-            item.classList.add('active');
-        }
-        function mostrarConstrucaoMobile(item){
-            document.querySelectorAll('.pf-mobile-nav-item').forEach(function(i){ i.classList.remove('active'); });
-            item.classList.add('active');
+        function pdLogout() {
+            if (pdChatUnsub) { pdChatUnsub(); pdChatUnsub = null; }
+            if (pdGalleryUnsub) { pdGalleryUnsub(); pdGalleryUnsub = null; }
+            document.getElementById('screen-portal').classList.remove('active');
+            localStorage.removeItem('pd_lembrar_cpf');
+            localStorage.removeItem('pd_lembrar_senha');
+            sessionStorage.removeItem('pd_sessao');
+            pdUser = null;
+            location.href = 'index.html';
         }
 
-        pdAutoLogin();
+        /* ===== NAVEGACAO ===== */
+        function pdShowSection(section, el) {
+            document.querySelectorAll('.pf-section').forEach(function(s){ s.classList.remove('active'); });
+            document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
+            if (el) el.classList.add('active');
+            pdCloseSidebar();
+
+            if (section === 'chat' || section === 'galeria') {
+                document.getElementById('pf-section-inicio').classList.add('active');
+                if (window.innerWidth <= 1024) document.getElementById('pf-right').classList.add('mobile-open');
+                if (section === 'chat') pdRightTab('chat', document.querySelector('.pf-right-tab'));
+                else pdRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
+                return;
+            }
+
+            var target = document.getElementById('pf-section-' + section);
+            if (target) target.classList.add('active');
+            else document.getElementById('pf-section-construcao').classList.add('active');
+
+            if (section === 'inicio') pdLoadDashboardStats();
+            if (section === 'aulas') pdLoadAulas();
+            if (section === 'tfm') pdLoadTfmAgendamentos();
+            if (section === 'apontamento') pdLoadApontamentos();
+        }
+
+        function pdToggleSidebar() {
+            var sb = document.querySelector('.pf-sidebar');
+            var ov = document.getElementById('pd-sidebar-overlay');
+            if (sb) sb.classList.toggle('mobile-open');
+            if (ov) ov.classList.toggle('mobile-open');
+        }
+
+        function pdCloseSidebar() {
+            var sb = document.querySelector('.pf-sidebar');
+            var ov = document.getElementById('pd-sidebar-overlay');
+            if (sb) sb.classList.remove('mobile-open');
+            if (ov) ov.classList.remove('mobile-open');
+        }
+
+        function pdRightCloseMobile() {
+            var right = document.getElementById('pf-right');
+            if (right) right.classList.remove('mobile-open');
+            document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
+            var first = document.querySelector('.pf-nav-item');
+            if (first) first.classList.add('active');
+        }
+
+        function pdRightTab(tab, el) {
+            document.querySelectorAll('.pf-right-tab').forEach(function(t){ t.classList.remove('active'); });
+            if (el) el.classList.add('active');
+            document.getElementById('pf-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
+            document.getElementById('pf-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
+        }
+
+        /* ===== ESC ===== */
+        function pdEsc(val) {
+            if (val == null) return '';
+            return String(val)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        /* ===== DASHBOARD STATS ===== */
+        function pdLoadDashboardStats() {
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+
+            Promise.all([dbFirestore.collection('aulas').get(), dbFirestore.collection('tfmAgendamentos').get()]).then(function(results) {
+                var aulasDocs = [];
+                var tfmDocs = [];
+                results[0].forEach(function(doc) {
+                    var d = doc.data();
+                    if (docente.isAdmin || pdPertenceDocente(d, docente.nome)) aulasDocs.push(doc);
+                });
+                results[1].forEach(function(doc) {
+                    var d = doc.data();
+                    if (docente.isAdmin || pdPertenceDocente(d, docente.nome)) tfmDocs.push(doc);
+                });
+                var aulasCount = aulasDocs.length;
+                var tfmCount = tfmDocs.length;
+
+                document.getElementById('pd-stat-aulas').textContent = aulasCount;
+                document.getElementById('pd-stat-tfm').textContent = tfmCount;
+
+                var agora = Date.now();
+                var seteDias = 7 * 24 * 60 * 60 * 1000;
+                var proximos = 0;
+
+                aulasDocs.forEach(function(doc) {
+                    var d = doc.data();
+                    if (d.data) {
+                        var dt = new Date(d.data).getTime();
+                        if (dt >= agora && dt <= agora + seteDias) proximos++;
+                    }
+                });
+                tfmDocs.forEach(function(doc) {
+                    var d = doc.data();
+                    if (d.dataAgendamento) {
+                        var dt = d.dataAgendamento.toMillis ? d.dataAgendamento.toMillis() : new Date(d.dataAgendamento).getTime();
+                        if (dt >= agora && dt <= agora + seteDias) proximos++;
+                    }
+                });
+                document.getElementById('pd-stat-proximos').textContent = proximos;
+            }).catch(function(e) {
+                console.error('Erro stats:', e);
+            });
+        }
+
+        /* ===== AULAS ===== */
+        function pdLoadAulas() {
+            var container = document.getElementById('pd-aulas-container');
+            if (!container) return;
+
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+
+            dbFirestore.collection('aulas').get().then(function(snap) {
+                var docs = [];
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    if (docente.isAdmin || pdPertenceDocente(d, docente.nome)) docs.push(doc);
+                });
+                docs.sort(function(a, b) {
+                    var da = a.data().data || '';
+                    var db2 = b.data().data || '';
+                    return db2.localeCompare(da);
+                });
+                if (docs.length === 0) {
+                    container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Nenhuma aula cadastrada para voce.</p></div>';
+                    return;
+                }
+                var html = '';
+                docs.forEach(function(doc) {
+                    var d = doc.data();
+                    var dataStr = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
+                    var horaStr = d.hora || '';
+                    html += '<div class="pd-card">' +
+                        '<div class="pd-card-header">' +
+                        '<div class="pd-card-titulo">' + pdEsc(d.disciplina || 'Sem disciplina') + '</div>' +
+                        '<div class="pd-card-data">' + pdEsc(dataStr) + ' ' + pdEsc(horaStr) + '</div>' +
+                        '</div>' +
+                        '<div class="pd-card-meta">' +
+                        '<span><i class="fa-solid fa-chalkboard-user"></i> ' + pdEsc(d.docente || '-') + '</span>' +
+                        '<span><i class="fa-solid fa-building"></i> ' + pdEsc(d.projeto || '-') + '</span>' +
+                        '<span><i class="fa-solid fa-users"></i> ' + pdEsc(d.turma || '-') + '</span>' +
+                        '</div>' +
+                        (d.conteudo ? '<div class="pd-card-conteudo"><i class="fa-solid fa-book"></i><strong>Conteudo:</strong> ' + pdEsc(d.conteudo) + '</div>' : '') +
+                        '</div>';
+                });
+                container.innerHTML = html;
+            }).catch(function(e) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
+            });
+        }
+
+        /* ===== TFM AGENDAMENTOS ===== */
+        function pdLoadTfmAgendamentos() {
+            var container = document.getElementById('pd-tfm-container');
+            if (!container) return;
+
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+
+            dbFirestore.collection('tfmAgendamentos').get().then(function(snap) {
+                var docs = [];
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    if (docente.isAdmin || pdPertenceDocente(d, docente.nome)) docs.push(doc);
+                });
+                docs.sort(function(a, b) {
+                    var da = a.data().dataAgendamento ? (a.data().dataAgendamento.toMillis ? a.data().dataAgendamento.toMillis() : new Date(a.data().dataAgendamento).getTime()) : 0;
+                    var db2 = b.data().dataAgendamento ? (b.data().dataAgendamento.toMillis ? b.data().dataAgendamento.toMillis() : new Date(b.data().dataAgendamento).getTime()) : 0;
+                    return db2 - da;
+                });
+                if (docs.length === 0) {
+                    container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Nenhum TFM agendado para voce.</p></div>';
+                    return;
+                }
+                var html = '';
+                docs.forEach(function(doc) {
+                    var d = doc.data();
+                    var dt = d.dataAgendamento ? (d.dataAgendamento.toMillis ? new Date(d.dataAgendamento.toMillis()) : new Date(d.dataAgendamento)) : new Date();
+                    var dataStr = dt ? dt.toLocaleDateString('pt-BR') : '';
+                    var horaStr = d.hora || '';
+                    var status = d.status || 'Pendente';
+                    var statusColor = status === 'Aprovado' ? '#16a34a' : status === 'Rejeitado' ? '#dc2626' : '#ca8a04';
+                    html += '<div class="pd-card">' +
+                        '<div class="pd-card-header">' +
+                        '<div class="pd-card-titulo">' + pdEsc(d.projeto || 'Sem projeto') + '</div>' +
+                        '<div class="pd-card-data">' + pdEsc(dataStr) + ' ' + pdEsc(horaStr) + '</div>' +
+                        '</div>' +
+                        '<div class="pd-card-meta">' +
+                        '<span><i class="fa-solid fa-user-tie"></i> ' + pdEsc(d.docente || '-') + '</span>' +
+                        '<span class="pd-card-status" style="color:' + statusColor + '"><i class="fa-solid fa-circle"></i> ' + pdEsc(status) + '</span>' +
+                        '</div>' +
+                        (d.observacoes ? '<div class="pd-card-conteudo"><i class="fa-solid fa-info"></i>' + pdEsc(d.observacoes) + '</div>' : '') +
+                        '</div>';
+                });
+                container.innerHTML = html;
+            }).catch(function(e) {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar TFMs.</p></div>';
+            });
+        }
+
+        /* ===== APONTAMENTO (estrutura do admin, filtrando as aulas do docente logado) ===== */
+        const ADMIN_SENHA = '212121';
+        var aptScanner = null;
+        var aptPresencas = {};
+        var aptAlunosNaTurma = [];
+        var aptHistoricoCache = [];
+        var pdAptProjetos = [];
+        var pdAptTurmas = [];
+        var pdAptAulaIds = [];
+        var pdAptAulaNomes = [];
+        var pdAptTurmaSet = {};
+        var pdAptTurmasAula = [];
+        var pdAptDocente = null;
+        var pdAptAdmin = false;
+        var pdAptCarregando = false;
+        var pdAptBasePronta = false;
+
+        /* Compara nome do docente de forma tolerante (ignora caixa e espacos) */
+        function pdPertenceDocente(d, nome) {
+            if (!d) return false;
+            var n = (nome || '').trim().toLowerCase();
+            return (d.docente || '').trim().toLowerCase() === n || (d.instrutor || '').trim().toLowerCase() === n;
+        }
+
+        /* Turma pertence ao docente logado? (aceita aulas com turma em caixa/espacos diferentes) */
+        function pdAptTurmaDoDocente(turmaNome) {
+            if (pdAptAdmin) return true;
+            return !!(pdAptTurmaSet && (pdAptTurmaSet[turmaNome] || pdAptTurmaSet[(turmaNome || '').trim().toLowerCase()]));
+        }
+
+        function pdLoadApontamentos() {
+            if (pdAptBasePronta) {
+                apontamentoPopularSelecaoProjeto();
+                apontamentoOnSelecaoChange();
+                return;
+            }
+            pdAptCarregarBase();
+        }
+
+        function pdAptCarregarBase() {
+            if (pdAptCarregando) return;
+            pdAptCarregando = true;
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) { pdAptCarregando = false; return; }
+            var docente = JSON.parse(sessao);
+            pdAptDocente = docente;
+            pdAptAdmin = !!docente.isAdmin;
+
+            var tarefas = [];
+
+            /* Aulas do docente logado (docente ou instrutor == nome), ou todas se for admin */
+            tarefas.push(dbFirestore.collection('aulas').get().then(function(snap) {
+                pdAptAulaIds = [];
+                pdAptAulaNomes = [];
+                pdAptTurmaSet = {};
+                pdAptTurmasAula = [];
+                snap.forEach(function(doc) {
+                    var a = doc.data();
+                    if (!pdAptAdmin && !pdPertenceDocente(a, pdAptDocente.nome)) return;
+                    pdAptAulaIds.push(doc.id);
+                    if (a.nome && pdAptAulaNomes.indexOf(a.nome) === -1) pdAptAulaNomes.push(a.nome);
+                    if (a.conteudo && pdAptAulaNomes.indexOf(a.conteudo) === -1) pdAptAulaNomes.push(a.conteudo);
+                    if (a.turma) {
+                        pdAptTurmaSet[a.turma.trim().toLowerCase()] = true;
+                        pdAptTurmaSet[a.turma] = true;
+                        var jaTem = pdAptTurmasAula.some(function(x) { return x.turma === a.turma && x.projeto === (a.projeto || ''); });
+                        if (!jaTem) pdAptTurmasAula.push({ turma: a.turma, projeto: a.projeto || '' });
+                    }
+                });
+            }));
+
+            /* Turmas cadastradas */
+            tarefas.push(dbFirestore.collection('turmas').get().then(function(snap) {
+                pdAptTurmas = [];
+                snap.forEach(function(doc) {
+                    if (doc.id !== '_index') {
+                        var d = doc.data();
+                        d.id = parseInt(doc.id) || doc.id;
+                        pdAptTurmas.push(d);
+                    }
+                });
+            }));
+
+            /* Projetos (colecao parceiros) */
+            tarefas.push(dbFirestore.collection('parceiros').get().then(function(snap) {
+                pdAptProjetos = [];
+                snap.forEach(function(doc) {
+                    if (doc.id !== '_index') {
+                        var d = doc.data();
+                        d.docId = doc.id;
+                        pdAptProjetos.push(d);
+                    }
+                });
+            }));
+
+            Promise.all(tarefas).then(function() {
+                pdAptCarregando = false;
+                pdAptBasePronta = true;
+                apontamentoPopularSelecaoProjeto();
+                apontamentoInicializar();
+            }).catch(function(e) {
+                console.error('Erro ao carregar base de apontamento:', e);
+                pdAptCarregando = false;
+            });
+        }
+
+        function apontamentoInicializar() {
+            apontamentoPopularSelecaoProjeto();
+            const conteudo = document.getElementById('apt-conteudo');
+            if (conteudo) conteudo.style.display = 'none';
+        }
+
+        function apontamentoPopularSelecaoProjeto() {
+            const sel = document.getElementById('apt-selecao-projeto');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+            pdAptProjetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+                sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
+            });
+        }
+
+        function apontamentoOnSelecaoProjetoChange() {
+            const projetoNome = document.getElementById('apt-selecao-projeto').value;
+            const selTurma = document.getElementById('apt-selecao-turma');
+            selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+            if (projetoNome) {
+                const turmasDoProjeto = pdAptTurmas.filter(t => t.projeto === projetoNome);
+                const adicionadas = {};
+                turmasDoProjeto.forEach(t => {
+                    if (pdAptTurmaDoDocente(t.nome)) {
+                        selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+                        adicionadas[t.nome.trim().toLowerCase()] = true;
+                    }
+                });
+                pdAptTurmasAula.forEach(function(ta) {
+                    if (ta.projeto !== projetoNome) return;
+                    if (pdAptAdmin || adicionadas[ta.turma.trim().toLowerCase()]) return;
+                    selTurma.innerHTML += '<option value="' + ta.turma + '">' + ta.turma + '</option>';
+                    adicionadas[ta.turma.trim().toLowerCase()] = true;
+                });
+            }
+            apontamentoOnSelecaoChange();
+        }
+
+        function apontamentoOnSelecaoChange() {
+            const projeto = document.getElementById('apt-selecao-projeto').value;
+            const turma = document.getElementById('apt-selecao-turma').value;
+            const conteudo = document.getElementById('apt-conteudo');
+            if (projeto && turma) {
+                conteudo.style.display = '';
+                apontamentoPopularFiltroTurma();
+                apontamentoFiltrar();
+            } else {
+                conteudo.style.display = 'none';
+            }
+        }
+
+        async function apontamentoAbrirModal() {
+            aptPresencas = {};
+            const turmaSelecionada = document.getElementById('apt-selecao-turma').value;
+            const projetoSelecionado = document.getElementById('apt-selecao-projeto').value;
+            document.getElementById('apt-turma').innerHTML = '<option value="">Carregando...</option>';
+            document.getElementById('apt-disciplina').innerHTML = '<option value="">Selecione...</option>';
+            document.getElementById('apt-aula').innerHTML = '<option value="">Selecione...</option>';
+            document.getElementById('apt-presenca-area').style.display = 'none';
+            document.getElementById('apt-scanner-area').style.display = 'none';
+            document.getElementById('apt-scan-btn-area').style.display = 'block';
+            const btnScan = document.getElementById('apt-btn-scan');
+            if (btnScan) btnScan.disabled = true;
+            const selTurma = document.getElementById('apt-turma');
+            selTurma.innerHTML = '<option value="">Selecione a turma</option>';
+            const adicionadasModal = {};
+            pdAptTurmas.forEach(t => {
+                if (t.projeto === projetoSelecionado) {
+                    if (pdAptTurmaDoDocente(t.nome)) {
+                        selTurma.innerHTML += '<option value="' + t.nome + '"' + (t.nome === turmaSelecionada ? ' selected' : '') + '>' + t.nome + '</option>';
+                        adicionadasModal[t.nome.trim().toLowerCase()] = true;
+                    }
+                }
+            });
+            pdAptTurmasAula.forEach(function(ta) {
+                if (ta.projeto !== projetoSelecionado) return;
+                if (pdAptAdmin || adicionadasModal[ta.turma.trim().toLowerCase()]) return;
+                selTurma.innerHTML += '<option value="' + ta.turma + '"' + (ta.turma === turmaSelecionada ? ' selected' : '') + '>' + ta.turma + '</option>';
+                adicionadasModal[ta.turma.trim().toLowerCase()] = true;
+            });
+            const selDisc = document.getElementById('apt-disciplina');
+            selDisc.innerHTML = '<option value="">Selecione a disciplina</option>';
+            document.getElementById('modal-apontamento-overlay').classList.remove('hidden');
+            if (turmaSelecionada) {
+                apontamentoOnTurmaChange();
+            }
+        }
+
+        function apontamentoFecharModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            apontamentoPararScanner();
+            document.getElementById('modal-apontamento-overlay').classList.add('hidden');
+        }
+
+        function apontamentoOnTurmaChange() {
+            document.getElementById('apt-aula').innerHTML = '<option value="">Selecione...</option>';
+            document.getElementById('apt-presenca-area').style.display = 'none';
+            const turma = document.getElementById('apt-turma').value;
+            const projeto = document.getElementById('apt-selecao-projeto').value;
+            const selDisc = document.getElementById('apt-disciplina');
+            selDisc.innerHTML = '<option value="">Carregando...</option>';
+            if (!turma) { selDisc.innerHTML = '<option value="">Selecione a disciplina</option>'; return; }
+            dbFirestore.collection('disciplinas').where('turma', '==', turma).get().then(snap => {
+                selDisc.innerHTML = '<option value="">Selecione a disciplina</option>';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    selDisc.innerHTML += '<option value="' + doc.id + '">' + d.nome + '</option>';
+                });
+                if (snap.empty) selDisc.innerHTML = '<option value="">Nenhuma disciplina encontrada</option>';
+            }).catch(() => { selDisc.innerHTML = '<option value="">Erro ao carregar</option>'; });
+        }
+
+        function apontamentoOnDisciplinaChange() {
+            document.getElementById('apt-presenca-area').style.display = 'none';
+            const selDisc = document.getElementById('apt-disciplina');
+            const discName = selDisc.options[selDisc.selectedIndex] ? selDisc.options[selDisc.selectedIndex].text : '';
+            const selAula = document.getElementById('apt-aula');
+            selAula.innerHTML = '<option value="">Carregando...</option>';
+            if (!discName || discName === 'Selecione a disciplina') { selAula.innerHTML = '<option value="">Selecione...</option>'; return; }
+            dbFirestore.collection('aulas').where('disciplina', '==', discName).get().then(snap => {
+                selAula.innerHTML = '<option value="">Selecione a aula</option>';
+                snap.forEach(doc => {
+                    const a = doc.data();
+                    if (!pdAptAdmin && pdAptAulaIds.indexOf(doc.id) === -1) return;
+                    const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                    selAula.innerHTML += '<option value="' + doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
+                });
+                if (snap.empty) selAula.innerHTML = '<option value="">Nenhuma aula encontrada</option>';
+            }).catch(() => { selAula.innerHTML = '<option value="">Erro ao carregar</option>'; });
+        }
+
+        function apontamentoAtualizarAulas() {
+        }
+
+        function apontamentoOnAulaChange() {
+            const btnScan = document.getElementById('apt-btn-scan');
+            const presencaArea = document.getElementById('apt-presenca-area');
+            presencaArea.style.display = 'none';
+            btnScan.disabled = true;
+            aptPresencas = {};
+            const turma = document.getElementById('apt-turma').value;
+            if (!turma) return;
+            const turmaNorm = (turma || '').trim().toLowerCase();
+
+            const processar = function(snap) {
+                aptAlunosNaTurma = [];
+                snap.forEach(doc => {
+                    const c = doc.data();
+                    if (c.ativo === false) return;
+                    aptAlunosNaTurma.push({ cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '' });
+                    aptPresencas[c.cpf] = { cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '', status: 'Falta', obs: '' };
+                });
+                apontamentoRenderLista();
+                if (aptAlunosNaTurma.length) {
+                    btnScan.disabled = false;
+                } else {
+                    alert('Nenhum aluno encontrado para a turma: ' + turma);
+                }
+            };
+
+            dbFirestore.collection('candidatos').where('turma', '==', turma).get().then(snap => {
+                if (!snap.empty) { processar(snap); return; }
+                return dbFirestore.collection('candidatos').get().then(snap2 => {
+                    const docs = [];
+                    snap2.forEach(doc => {
+                        const c = doc.data();
+                        if ((c.turma || '').trim().toLowerCase() === turmaNorm) docs.push(doc);
+                    });
+                    processar({ forEach: function(fn) { docs.forEach(fn); } });
+                });
+            }).catch(err => {
+                console.error('Erro ao carregar alunos:', err);
+            });
+        }
+
+        function apontamentoIniciarScanner() {
+            const turma = document.getElementById('apt-turma').value;
+            if (!turma) { alert('Selecione a turma primeiro'); return; }
+            if (!aptAlunosNaTurma.length) { alert('Nenhum aluno encontrado para esta turma'); return; }
+            document.getElementById('apt-scanner-area').style.display = 'block';
+            document.getElementById('apt-scan-btn-area').style.display = 'none';
+            if (aptScanner) {
+                try { aptScanner.stop().then(() => aptScanner.clear()); } catch(e) {}
+                aptScanner = null;
+            }
+            aptScanner = new Html5Qrcode('apt-qr-reader');
+            aptScanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    const size = Math.floor(minEdge * 0.7);
+                    return { width: size, height: size };
+                }, disableFlip: false, aspectRatio: 1.0 },
+                apontamentoOnQrSuccess,
+                function() {}
+            ).catch(function(err) {
+                console.error('Erro ao iniciar camera (environment):', err);
+                aptScanner.start(
+                    { facingMode: 'user' },
+                    { fps: 10, qrbox: function(viewfinderWidth, viewfinderHeight) {
+                        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                        const size = Math.floor(minEdge * 0.7);
+                        return { width: size, height: size };
+                    }, disableFlip: false, aspectRatio: 1.0 },
+                    apontamentoOnQrSuccess,
+                    function() {}
+                ).catch(function(err2) {
+                    console.error('Erro ao iniciar camera (user):', err2);
+                    alert('Nao foi possivel acessar a camera. Verifique as permissoes do navegador.\n\nDetalhes: ' + err2);
+                    document.getElementById('apt-scanner-area').style.display = 'none';
+                    document.getElementById('apt-scan-btn-area').style.display = 'block';
+                });
+            });
+        }
+
+        function apontamentoPararScanner() {
+            if (aptScanner) {
+                try { aptScanner.stop().then(() => aptScanner.clear()); } catch(e) {}
+                aptScanner = null;
+            }
+            document.getElementById('apt-scanner-area').style.display = 'none';
+            document.getElementById('apt-scan-btn-area').style.display = 'block';
+        }
+
+        function apontamentoOnQrSuccess(decodedText) {
+            const matricula = decodedText.trim().toUpperCase();
+            let encontrado = apontamentoBuscarAlunoPorMatricula(matricula);
+            if (!encontrado) {
+                alert('Aluno com matricula ' + matricula + ' nao encontrado nesta turma');
+                return;
+            }
+            apontamentoMarcarPresente(encontrado);
+        }
+
+        function apontamentoBuscarMatricula() {
+            const input = document.getElementById('apt-matricula-input');
+            const matricula = input.value.trim().toUpperCase();
+            if (!matricula) { alert('Digite uma matricula'); return; }
+            let encontrado = apontamentoBuscarAlunoPorMatricula(matricula);
+            if (!encontrado) {
+                alert('Aluno com matricula ' + matricula + ' nao encontrado nesta turma');
+                return;
+            }
+            apontamentoMarcarPresente(encontrado);
+            input.value = '';
+            input.focus();
+        }
+
+        function apontamentoBuscarAlunoPorMatricula(matricula) {
+            for (const cpf in aptPresencas) {
+                if (aptPresencas[cpf].matricula.toUpperCase() === matricula) {
+                    return aptPresencas[cpf];
+                }
+            }
+            return aptAlunosNaTurma.find(c => (c.matricula || '').toUpperCase() === matricula) || null;
+        }
+
+        function apontamentoMarcarPresente(aluno) {
+            if (!aluno.cpf) {
+                aptPresencas['temp_' + Date.now()] = { matricula: aluno.matricula || '', nome: aluno.nome || '', cpf: aluno.cpf || '', status: 'Presente', obs: '' };
+            } else {
+                if (!aptPresencas[aluno.cpf]) {
+                    aptPresencas[aluno.cpf] = { matricula: aluno.matricula || '', nome: aluno.nome || '', cpf: aluno.cpf || '', status: 'Presente', obs: '' };
+                }
+                if (!aluno.status || aluno.status === 'Falta' || aluno.status === 'Justificada') {
+                    aptPresencas[aluno.cpf].status = 'Presente';
+                }
+            }
+            apontamentoRenderLista();
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#4caf50;color:#fff;padding:12px 20px;border-radius:8px;z-index:99999;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+            toast.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px"></i> ' + (aluno.nome || aluno.matricula || 'Aluno') + ' — Presente';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function apontamentoRenderLista() {
+            const area = document.getElementById('apt-presenca-area');
+            const lista = document.getElementById('apt-presenca-lista');
+            const count = document.getElementById('apt-presenca-count');
+            area.style.display = 'block';
+            const todos = Object.values(aptPresencas);
+            const presentes = todos.filter(p => p.status === 'Presente').length;
+            const faltas = todos.filter(p => p.status === 'Falta').length;
+            const justificadas = todos.filter(p => p.status === 'Justificada').length;
+            count.textContent = presentes + ' presente(s) / ' + faltas + ' falta(s) / ' + justificadas + ' justificada(s) / ' + todos.length + ' total';
+            lista.innerHTML = '<div class="data-table" style="width:100%"><table style="width:100%;border-collapse:collapse"><thead><tr>' +
+                '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Matricula</th>' +
+                '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Nome</th>' +
+                '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px;width:260px">Status</th>' +
+                '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Observacao</th>' +
+                '</tr></thead><tbody>' +
+                todos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map(p => {
+                    const statusClass = p.status === 'Presente' ? 'green' : p.status === 'Falta' ? 'red' : p.status === 'Justificada' ? 'orange' : 'gray';
+                    return '<tr style="border-bottom:1px solid #222">' +
+                        '<td style="padding:8px;font-size:13px;color:#ccc;font-weight:600">' + (p.matricula || '-') + '</td>' +
+                        '<td style="padding:8px;font-size:13px;color:#ccc">' + (p.nome || '-') + '</td>' +
+                        '<td style="padding:8px;text-align:center">' +
+                            '<div style="display:flex;gap:4px;justify-content:center">' +
+                                '<button onclick="apontamentoSetStatus(\'' + p.cpf + '\',\'Presente\')" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (p.status === 'Presente' ? '#4caf50' : '#333') + ';background:' + (p.status === 'Presente' ? 'rgba(76,175,80,0.2)' : 'transparent') + ';color:' + (p.status === 'Presente' ? '#4caf50' : '#888') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-check"></i> P</button>' +
+                                '<button onclick="apontamentoSetStatus(\'' + p.cpf + '\',\'Falta\')" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (p.status === 'Falta' ? '#f44336' : '#333') + ';background:' + (p.status === 'Falta' ? 'rgba(244,67,54,0.2)' : 'transparent') + ';color:' + (p.status === 'Falta' ? '#f44336' : '#888') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-xmark"></i> F</button>' +
+                                '<button onclick="apontamentoSetStatus(\'' + p.cpf + '\',\'Justificada\')" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (p.status === 'Justificada' ? '#ff9800' : '#333') + ';background:' + (p.status === 'Justificada' ? 'rgba(255,152,0,0.2)' : 'transparent') + ';color:' + (p.status === 'Justificada' ? '#ff9800' : '#888') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-circle-info"></i> J</button>' +
+                            '</div></td>' +
+                        '<td style="padding:8px"><input type="text" class="config-input" style="font-size:12px;padding:6px 8px" placeholder="Observacao..." value="' + (p.obs || '').replace(/"/g, '&quot;') + '" onchange="apontamentoSetObs(\'' + p.cpf + '\', this.value)"></td>' +
+                    '</tr>';
+                }).join('') +
+                '</tbody></table></div>';
+        }
+
+        function apontamentoSetStatus(cpf, status) {
+            if (aptPresencas[cpf]) {
+                aptPresencas[cpf].status = aptPresencas[cpf].status === status ? '' : status;
+                apontamentoRenderLista();
+            }
+        }
+
+        function apontamentoSetObs(cpf, obs) {
+            if (aptPresencas[cpf]) aptPresencas[cpf].obs = obs;
+        }
+
+        async function apontamentoSalvar() {
+            const turma = document.getElementById('apt-turma').value;
+            const disciplinaId = document.getElementById('apt-disciplina').value;
+            const aulaId = document.getElementById('apt-aula').value;
+            if (!turma || !aulaId) { alert('Selecione turma e aula'); return; }
+            const todos = Object.values(aptPresencas);
+            if (!todos.length) { alert('Nenhum aluno na lista'); return; }
+            const selAula = document.getElementById('apt-aula');
+            const aulaNome = selAula.options[selAula.selectedIndex] ? selAula.options[selAula.selectedIndex].text : '';
+            const selDisc = document.getElementById('apt-disciplina');
+            const disciplinaNome = selDisc.options[selDisc.selectedIndex] ? selDisc.options[selDisc.selectedIndex].text : '';
+            const projeto = document.getElementById('apt-selecao-projeto').value || '';
+            const criadoPor = pdAptDocente ? (pdAptDocente.nome || '') : '';
+            const dados = {
+                turma: turma,
+                aula: aulaNome,
+                aulaId: aulaId,
+                alunos: todos,
+                criadoEm: new Date().toISOString(),
+                criadoPor: criadoPor,
+                docente: criadoPor
+            };
+            try {
+                const aptRef = await dbFirestore.collection('apontamentos').add(dados);
+                const aptId = aptRef.id;
+
+                let dataAula = '';
+                try {
+                    const aulaDoc = await dbFirestore.collection('aulas').doc(aulaId).get();
+                    if (aulaDoc.exists) dataAula = aulaDoc.data().data || '';
+                } catch (e) {}
+
+                const batch = dbFirestore.batch();
+                todos.forEach(aluno => {
+                    const ref = dbFirestore.collection('presencasAlunos').doc();
+                    batch.set(ref, {
+                        cpf: aluno.cpf || '',
+                        nome: aluno.nome || '',
+                        matricula: aluno.matricula || '',
+                        turma: turma,
+                        projeto: projeto,
+                        disciplina: disciplinaNome,
+                        aula: aulaNome,
+                        dataAula: dataAula,
+                        status: aluno.status || '',
+                        obs: aluno.obs || '',
+                        criadoEm: new Date().toISOString(),
+                        criadoPor: criadoPor,
+                        apontamentoId: aptId
+                    });
+                });
+                await batch.commit();
+
+                apontamentoPararScanner();
+                document.getElementById('modal-apontamento-overlay').classList.add('hidden');
+                alert('Apontamento salvo com sucesso!');
+                apontamentoFiltrar();
+            } catch (e) {
+                console.error('Erro ao salvar apontamento:', e);
+                alert('Erro ao salvar: ' + e.message);
+            }
+        }
+
+        async function apontamentoCarregarHistorico() {
+            try {
+                const snap = await dbFirestore.collection('apontamentos').orderBy('criadoEm', 'desc').limit(200).get();
+                aptHistoricoCache = [];
+                if (pdAptAdmin) {
+                    snap.forEach(doc => {
+                        aptHistoricoCache.push({ docId: doc.id, ...doc.data() });
+                    });
+                } else {
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const okAulaId = d.aulaId && pdAptAulaIds.indexOf(d.aulaId) !== -1;
+                        const okAulaNome = d.aula && pdAptAulaNomes.indexOf(d.aula) !== -1;
+                        if (okAulaId || okAulaNome) {
+                            aptHistoricoCache.push({ docId: doc.id, ...d });
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Erro ao carregar historico:', e);
+            }
+        }
+
+        function apontamentoPopularFiltroTurma() {
+        }
+
+        function apontamentoLimparFiltros() {
+            document.getElementById('apt-filtro-data-inicio').value = '';
+            document.getElementById('apt-filtro-data-fim').value = '';
+            document.getElementById('apt-filtro-matricula').value = '';
+            apontamentoFiltrar();
+        }
+
+        async function apontamentoFiltrar() {
+            await apontamentoCarregarHistorico();
+            const turmaFiltro = document.getElementById('apt-selecao-turma').value;
+            const dataInicio = document.getElementById('apt-filtro-data-inicio').value;
+            const dataFim = document.getElementById('apt-filtro-data-fim').value;
+            const matriculaBusca = document.getElementById('apt-filtro-matricula').value.trim().toLowerCase();
+            let registros = aptHistoricoCache;
+            if (turmaFiltro) {
+                registros = registros.filter(r => r.turma === turmaFiltro);
+            }
+            if (dataInicio) {
+                registros = registros.filter(r => (r.dataAula || r.criadoEm || '').substring(0, 10) >= dataInicio);
+            }
+            if (dataFim) {
+                registros = registros.filter(r => (r.dataAula || r.criadoEm || '').substring(0, 10) <= dataFim);
+            }
+            if (matriculaBusca) {
+                registros = registros.filter(r => {
+                    if (!r.alunos) return false;
+                    return r.alunos.some(a => (a.matricula || '').toLowerCase().includes(matriculaBusca) || (a.nome || '').toLowerCase().includes(matriculaBusca));
+                });
+            }
+            apontamentoRenderHistorico(registros);
+        }
+
+        function apontamentoRenderHistorico(registros) {
+            const empty = document.getElementById('apontamento-historico-empty');
+            const lista = document.getElementById('apontamento-historico-lista');
+            const resumo = document.getElementById('apt-resumo');
+            if (!lista) return;
+            if (!registros.length) {
+                empty.style.display = 'block';
+                lista.style.display = 'none';
+                resumo.style.display = 'none';
+                return;
+            }
+            empty.style.display = 'none';
+            lista.style.display = 'block';
+            resumo.style.display = 'flex';
+            let totalPresentes = 0, totalFaltas = 0, totalJustificadas = 0;
+            registros.forEach(r => {
+                (r.alunos || []).forEach(a => {
+                    if (a.status === 'Presente') totalPresentes++;
+                    else if (a.status === 'Falta') totalFaltas++;
+                    else if (a.status === 'Justificada') totalJustificadas++;
+                });
+            });
+            document.getElementById('apt-resumo-registros').textContent = registros.length;
+            document.getElementById('apt-resumo-presentes').textContent = totalPresentes;
+            document.getElementById('apt-resumo-faltas').textContent = totalFaltas;
+            document.getElementById('apt-resumo-justificadas').textContent = totalJustificadas;
+            lista.innerHTML = registros.map((r, ri) => {
+                const dataFmt = r.dataAula ? new Date(r.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                const horaFmt = r.horaAula || '-';
+                const criadoEmFmt = r.criadoEm ? new Date(r.criadoEm).toLocaleString('pt-BR') : '-';
+                const alunos = r.alunos || [];
+                const presCount = alunos.filter(a => a.status === 'Presente').length;
+                const faltaCount = alunos.filter(a => a.status === 'Falta').length;
+                const justCount = alunos.filter(a => a.status === 'Justificada').length;
+                const rows = alunos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map((a, ai) => {
+                    const stColor = a.status === 'Presente' ? '#16a34a' : a.status === 'Falta' ? '#dc2626' : a.status === 'Justificada' ? '#ca8a04' : '#64748b';
+                    const stIcon = a.status === 'Presente' ? 'fa-check' : a.status === 'Falta' ? 'fa-xmark' : a.status === 'Justificada' ? 'fa-circle-info' : 'fa-question';
+                    const recId = r.docId || '';
+                    return '<tr style="border-bottom:1px solid #e2e8f0">' +
+                        '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:#16a34a;font-family:Courier New,monospace;white-space:nowrap">' + (a.matricula || '-') + '</td>' +
+                        '<td style="padding:8px 12px;font-size:13px;color:#1e293b">' + (a.nome || '-') + '</td>' +
+                        '<td style="padding:8px 12px;text-align:center"><span style="color:' + stColor + ';font-weight:700;font-size:13px"><i class="fa-solid ' + stIcon + '" style="margin-right:4px"></i>' + (a.status || '-') + '</span></td>' +
+                        '<td style="padding:8px 12px;font-size:12px;color:#64748b">' + (a.obs || '-') + '</td>' +
+                        '<td style="padding:8px 12px;text-align:center">' +
+                            '<button class="btn-icon" style="font-size:11px;padding:4px 6px" title="Editar" onclick="apontamentoEditarAluno(\'' + recId + '\',' + ai + ')"><i class="fa-solid fa-pen"></i></button>' +
+                        '</td>' +
+                    '</tr>';
+                }).join('');
+                const cardId = 'apt-card-' + ri;
+                return '<div class="apt-card" id="' + cardId + '" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:16px;overflow:hidden">' +
+                    '<div style="padding:12px 16px;background:#f0fdf4;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none" onclick="apontamentoToggleCard(\'' + cardId + '\')">' +
+                        '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+                            '<i class="fa-solid fa-chevron-down" style="color:#666;font-size:12px;transition:transform 0.2s;transform:rotate(-90deg)" id="apt-arrow-' + ri + '"></i>' +
+                            '<span style="background:rgba(245,127,23,0.2);color:#f57f17;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700">' + (r.turma || '-') + '</span>' +
+                            '<span style="color:#ccc;font-size:13px"><i class="fa-solid fa-book" style="color:#f57f17;margin-right:4px"></i>' + (r.disciplina || '-') + '</span>' +
+                            '<span style="color:#aaa;font-size:12px"><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + dataFmt + ' ' + horaFmt + '</span>' +
+                            '<span style="color:#666;font-size:11px">Aula: ' + (r.aula || '-') + '</span>' +
+                        '</div>' +
+                        '<div style="display:flex;gap:8px;font-size:12px;align-items:center">' +
+                            '<span style="color:#4caf50;font-weight:700">' + presCount + ' P</span>' +
+                            '<span style="color:#f44336;font-weight:700">' + faltaCount + ' F</span>' +
+                            '<span style="color:#ff9800;font-weight:700">' + justCount + ' J</span>' +
+                            '<span style="color:#666">/ ' + alunos.length + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="apt-card-body" style="overflow-x:auto;display:none">' +
+                        '<table style="width:100%;border-collapse:collapse">' +
+                            '<thead><tr>' +
+                                '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;min-width:140px">Matricula</th>' +
+                                '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px">Nome</th>' +
+                                '<th style="text-align:center;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;width:140px">Status</th>' +
+                                '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px">Observacao</th>' +
+                                '<th style="text-align:center;padding:8px 12px;border-bottom:1px solid #2a2a3a;color:#aaa;font-size:11px;width:60px">Acoes</th>' +
+                            '</tr></thead>' +
+                            '<tbody>' + rows + '</tbody>' +
+                        '</table>' +
+                    '</div>' +
+                    '<div class="apt-card-footer" style="padding:8px 16px;font-size:10px;color:#555;border-top:1px solid #2a2a3a;display:none">Registrado por: ' + (r.criadoPor || '-') + ' em ' + criadoEmFmt + '</div>' +
+                '</div>';
+            }).join('');
+
+            const excluirArea = document.getElementById('apt-excluir-area');
+            const excluirSelect = document.getElementById('apt-excluir-select');
+            if (excluirArea && excluirSelect) {
+                if (registros.length > 0) {
+                    excluirArea.style.display = 'flex';
+                    excluirSelect.innerHTML = '<option value="">Selecione a lista...</option>';
+                    registros.forEach(r => {
+                        const dataFmt = r.dataAula ? new Date(r.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data';
+                        const aulaLabel = r.aula || '---';
+                        const label = aulaLabel + ' - ' + dataFmt + ' | ' + (r.turma || '---') + ' | ' + (r.disciplina || '---');
+                        excluirSelect.innerHTML += '<option value="' + r.docId + '">' + label + '</option>';
+                    });
+                } else {
+                    excluirArea.style.display = 'none';
+                }
+            }
+        }
+
+        async function apontamentoExcluirLista() {
+            const select = document.getElementById('apt-excluir-select');
+            const docId = select.value;
+            if (!docId) { alert('Selecione uma lista para excluir.'); return; }
+            const label = select.options[select.selectedIndex].text;
+            if (!confirm('Tem certeza que deseja excluir esta lista?\n\n' + label + '\n\nEsta acao nao pode ser desfeita.')) return;
+            try {
+                const aptDoc = await dbFirestore.collection('apontamentos').doc(docId).get();
+                const aptData = aptDoc.exists ? aptDoc.data() : {};
+                await dbFirestore.collection('apontamentos').doc(docId).delete();
+
+                const presSnap1 = await dbFirestore.collection('presencasAlunos').where('apontamentoId', '==', docId).get();
+                const batch1 = dbFirestore.batch();
+                presSnap1.forEach(doc => batch1.delete(doc.ref));
+                if (!presSnap1.empty) await batch1.commit();
+
+                if (aptData.turma || aptData.aula) {
+                    let q = dbFirestore.collection('presencasAlunos');
+                    if (aptData.turma) q = q.where('turma', '==', aptData.turma);
+                    const presSnap2 = await q.get();
+                    const batch2 = dbFirestore.batch();
+                    let count = 0;
+                    presSnap2.forEach(doc => {
+                        const pd = doc.data();
+                        if (aptData.aula && pd.aula === aptData.aula) {
+                            batch2.delete(doc.ref);
+                            count++;
+                        }
+                    });
+                    if (count > 0) await batch2.commit();
+                }
+
+                alert('Lista excluida com sucesso!');
+                apontamentoFiltrar();
+            } catch (e) {
+                alert('Erro ao excluir: ' + e.message);
+            }
+        }
+
+        function apontamentoToggleCard(cardId) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+            const body = card.querySelector('.apt-card-body');
+            const footer = card.querySelector('.apt-card-footer');
+            const ri = cardId.replace('apt-card-', '');
+            const arrow = document.getElementById('apt-arrow-' + ri);
+            if (!body) return;
+            const isHidden = body.style.display === 'none';
+            body.style.display = isHidden ? '' : 'none';
+            if (footer) footer.style.display = isHidden ? '' : 'none';
+            if (arrow) arrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+        }
+
+        function apontamentoEditarAluno(recId, alunoIdx) {
+            const senha = prompt('Digite a senha do administrador para editar:');
+            if (!senha) return;
+            if (senha !== ADMIN_SENHA) { alert('Senha incorreta!'); return; }
+            const reg = aptHistoricoCache.find(r => r.docId === recId);
+            if (!reg || !reg.alunos || !reg.alunos[alunoIdx]) return;
+            const a = reg.alunos[alunoIdx];
+            const novoStatus = prompt('Status atual: ' + a.status + '\n\nDigite o novo status:\n1 = Presente\n2 = Falta\n3 = Justificada', a.status === 'Presente' ? '1' : a.status === 'Falta' ? '2' : '3');
+            if (novoStatus === null) return;
+            const statusMap = { '1': 'Presente', '2': 'Falta', '3': 'Justificada' };
+            const statusFinal = statusMap[novoStatus.trim()];
+            if (!statusFinal) { alert('Opcao invalida.'); return; }
+            const novaObs = prompt('Observacao atual: ' + (a.obs || 'Nenhuma') + '\n\nDigite a nova observacao (deixe vazio para manter):', a.obs || '');
+            if (novaObs === null) return;
+            a.status = statusFinal;
+            a.obs = novaObs.trim() || a.obs;
+
+            const promisses = [];
+
+            if (recId) {
+                promisses.push(dbFirestore.collection('apontamentos').doc(recId).update({ alunos: reg.alunos }));
+            }
+
+            if (a.cpf) {
+                promisses.push(
+                    dbFirestore.collection('presencasAlunos').where('cpf', '==', a.cpf).get().then(function(snap) {
+                        snap.forEach(function(doc) {
+                            var pd = doc.data();
+                            if (pd.aula === (reg.aula || '') && pd.turma === (reg.turma || '')) {
+                                doc.ref.update({ status: statusFinal, obs: a.obs });
+                            }
+                        });
+                    })
+                );
+            }
+
+            Promise.all(promisses).then(function() {
+                apontamentoFiltrar();
+                alert('Alteracao salva com sucesso!');
+            }).catch(function(e) { alert('Erro ao salvar: ' + e.message); });
+        }
+
+        /* ===== GALERIA ===== */
+        function pdLoadGallery() {
+            var grid = document.getElementById('pd-gallery-grid');
+            pdGalleryUnsub = dbFirestore.collection('galeriaAlunos').orderBy('data', 'desc').onSnapshot(function(snap) {
+                if (snap.empty) {
+                    grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+                    return;
+                }
+                grid.innerHTML = '';
+                snap.forEach(function(doc) {
+                    var g = doc.data();
+                    var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
+                    var item = document.createElement('div');
+                    item.className = 'pf-gallery-item';
+                    item.innerHTML = '<img src="' + g.url + '" alt="Foto">' +
+                        '<div class="pf-gallery-date">' + dateStr + '</div>';
+                    item.onclick = function() { pdOpenPhoto(g.url, dateStr); };
+                    grid.appendChild(item);
+                });
+            }, function() {
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria.</p></div>';
+            });
+        }
+
+        function pdOpenPhoto(url, info) {
+            document.getElementById('pf-photo-modal').classList.add('active');
+            document.getElementById('pf-photo-modal-img').src = url;
+            document.getElementById('pf-photo-modal-info').textContent = info || '';
+        }
+
+        function pdClosePhoto() {
+            document.getElementById('pf-photo-modal').classList.remove('active');
+        }
+
+        /* ===== CHAT ===== */
+        function pdChatInitEmoji() {
+            var panel = document.getElementById('pd-chat-emoji-panel');
+            if (!panel) return;
+            panel.innerHTML = '';
+            pdEmojiList.forEach(function(e) {
+                var s = document.createElement('span');
+                s.textContent = e;
+                s.onclick = function() {
+                    var input = document.getElementById('pd-chat-input');
+                    input.value += e;
+                    input.focus();
+                };
+                panel.appendChild(s);
+            });
+        }
+
+        function pdChatToggleEmoji(event) {
+            var panel = document.getElementById('pd-chat-emoji-panel');
+            if (event) event.stopPropagation();
+            if (panel) panel.classList.toggle('active');
+        }
+
+        function pdChatLoadMessages() {
+            var container = document.getElementById('pd-chat-messages');
+            if (!container) return;
+            pdChatUnsub = dbFirestore.collection('mensagens')
+                .orderBy('data', 'desc')
+                .limit(50)
+                .onSnapshot(function(snap) {
+                    var items = [];
+                    snap.forEach(function(doc) { items.push(doc.data()); });
+                    items.reverse();
+                    if (items.length === 0) {
+                        container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
+                        return;
+                    }
+                    container.innerHTML = '';
+                    var sessao = sessionStorage.getItem('pd_sessao');
+                    var meuNome = '';
+                    if (sessao) {
+                        try { meuNome = JSON.parse(sessao).nome || ''; } catch(e) {}
+                    }
+                    items.forEach(function(m) {
+                        var bubble = document.createElement('div');
+                        var isMe = m.nome === meuNome;
+                        bubble.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
+                        var time = m.data ? new Date(m.data.toMillis ? m.data.toMillis() : m.data).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+                        bubble.innerHTML =
+                            (!isMe ? '<div class="pf-chat-sender">' + pdEsc(m.nome || '') + '</div>' : '') +
+                            '<div>' + pdEsc(m.texto || m.mensagem || '') + '</div>' +
+                            '<div class="pf-chat-time">' + time + '</div>';
+                        container.appendChild(bubble);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                }, function() {
+                    container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar chat.</p></div>';
+                });
+        }
+
+        function pdChatSend() {
+            var input = document.getElementById('pd-chat-input');
+            var texto = (input.value || '').trim();
+            if (!texto) return;
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+            dbFirestore.collection('mensagens').add({
+                nome: docente.nome || 'Docente',
+                texto: texto,
+                data: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function() {
+                input.value = '';
+            }).catch(function(e) {
+                console.error('Erro ao enviar:', e);
+            });
+        }
+
+        /* Auto login se houver credenciais salvas */
+        if (document.getElementById('pd-cpf')) pdAutoLogin();
         pdAdminAutoAccess();
-        /* Se não há sessão nem credenciais salvas E não é admin, redirecionar para landing */
+        /* Se não há credenciais salvas E não é admin, redirecionar para landing */
         var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
         var isAdmin = adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-docente'));
-        if (!isAdmin && !sessionStorage.getItem('pd_sessao') && !localStorage.getItem('pd_lembrar_cpf')) {
+        if (!isAdmin && !localStorage.getItem('pd_lembrar_cpf') && !localStorage.getItem('pd_lembrar_senha')) {
             location.replace('index.html');
         }
+
         /* Carregar logo da instituicao */
         dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(doc){
             if(doc.exists && doc.data().logo){
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
             }
         }).catch(function(){});
-    </script>
-    <!-- Botao voltar pagina anterior -->
-    <style>
-        #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0a1c40;color:#fff;border:1px solid rgba(212,175,55,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}
-        #farn-btn-voltar:hover{transform:scale(1.08)}
-        #farn-btn-voltar:active{transform:scale(.94)}
-        @media(max-width:768px){#farn-btn-voltar{bottom:74px}}
-    </style>
-    <div id="farn-btn-voltar" onclick="farnVoltarPagina()" title="Voltar a pagina anterior"><i class="fa-solid fa-arrow-left"></i></div>
-    <script>
-    function farnVoltarPagina(){
-        if(window.history.length>1){window.history.back();}
-        else{window.location.href='index.html';}
-    }
     </script>
 </body>
 </html>

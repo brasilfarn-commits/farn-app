@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FARN - Migracao de Docentes</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI',Arial,sans-serif; background:#f1f5f9; color:#1e293b; padding:24px; }
+        .box { max-width:720px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:28px; }
+        h2 { color:#16a34a; font-size:20px; margin-bottom:6px; }
+        h2 i { margin-right:8px; }
+        p.sub { color:#64748b; font-size:13px; margin-bottom:20px; line-height:1.6; }
+        .aviso { background:#fef3c7; border:1px solid #fcd34d; color:#92400e; border-radius:10px; padding:12px 14px; font-size:12px; line-height:1.6; margin-bottom:18px; }
+        .btn { display:inline-block; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:12px 22px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; }
+        .btn:hover { box-shadow:0 4px 14px rgba(22,163,74,.4); }
+        .btn:disabled { opacity:.5; cursor:not-allowed; }
+        .btn.segundo { background:#fff; color:#16a34a; border:1px solid #16a34a; margin-left:8px; }
+        .log { margin-top:18px; background:#0f172a; color:#cbd5e1; border-radius:10px; padding:14px; font-family:Consolas,monospace; font-size:12px; max-height:380px; overflow-y:auto; white-space:pre-wrap; }
+        .log .ok { color:#4caf50; }
+        .log .erro { color:#f87171; }
+        .log .info { color:#60a5fa; }
+        .resumo { margin-top:18px; display:none; background:#f0fdf4; border:1px solid #16a34a; border-radius:10px; padding:14px 16px; font-size:13px; line-height:1.8; color:#166534; }
+        .resumo b { color:#15803d; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2><i class="fa-solid fa-user-shield"></i>Migracao de Dados</h2>
+        <p class="sub">Migra as contas antigas de <b>Instrutores</b> para o cadastro de <b>Docentes</b> usado no Portal do Docente e no admin.</p>
+        <div class="aviso">
+            <b>Atencao:</b> esta pagina le dados da colecao antiga <code>instrutores</code> e grava na colecao <code>docentes</code>, mantendo o mesmo documento id. Tambem ajusta o campo <code>instrutor</code> para <code>docente</code> nas colecoes <code>aulas</code>, <code>tfmAgendamentos</code>, <code>apontamentos</code> e <code>disciplinas</code>, alem de atualizar permissos <code>instrutor/instrutores</code> para <code>docente/docentes</code> em <code>usuarios</code> e o campo <code>remanejadoInstrutor</code> em <code>candidatos</code>. A colecao <code>instrutores</code> original nao e apagada (fica como backup).
+        </div>
+        <button class="btn" id="btn-migrar" onclick="migrarTudo()"><i class="fa-solid fa-arrows-rotate"></i> Iniciar Migracao</button>
+        <button class="btn segundo" id="btn-voltar" onclick="location.href='index.html'">Voltar ao Admin</button>
+        <div class="log" id="log">Aguardando inicio...</div>
+        <div class="resumo" id="resumo"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const del = firebase.firestore.FieldValue.delete();
+
+        const log = document.getElementById('log');
+        const resumo = document.getElementById('resumo');
+        const btnMigrar = document.getElementById('btn-migrar');
+        const resumoItens = [];
+        let erroGeral = false;
+
+        function logar(texto, tipo) {
+            const linha = document.createElement('div');
+            linha.className = tipo || 'info';
+            linha.textContent = texto;
+            log.appendChild(linha);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function rodarBatch(ops) {
+            for (let i = 0; i < ops.length; i += 450) {
+                const batch = db.batch();
+                ops.slice(i, i + 450).forEach(op => op(batch));
+                await batch.commit();
+            }
+        }
+
+        async function migrarContas() {
+            logar('>>> 1/4 Copiando contas de instrutores para docentes...', 'info');
+            const snap = await db.collection('instrutores').get();
+            if (snap.empty) {
+                logar('Nenhum documento em instrutores.', 'ok');
+                resumoItens.push('Contas copiadas: 0');
+                return;
+            }
+            let copiadas = 0, ignoradas = 0, existentes = 0;
+            for (const doc of snap.docs) {
+                if (doc.id === '_index') continue;
+                const data = doc.data();
+                if (!data.cpf) { ignoradas++; continue; }
+                const ja = await db.collection('docentes').where('cpf', '==', data.cpf).limit(1).get();
+                if (!ja.empty) { existentes++; continue; }
+                await db.collection('docentes').doc(doc.id).set(data);
+                copiadas++;
+            }
+            logar('Contas copiadas: ' + copiadas + ' | ja existentes em docentes: ' + existentes + ' | sem cpf: ' + ignoradas, 'ok');
+            resumoItens.push('Contas copiadas: ' + copiadas);
+        }
+
+        async function migrarCamposColecao(nomeColecao) {
+            const snap = await db.collection(nomeColecao).get();
+            const ops = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data && 'instrutor' in data) {
+                    ops.push(b => {
+                        const ref = db.collection(nomeColecao).doc(doc.id);
+                        b.update(ref, { docente: data.instrutor, instrutor: del });
+                    });
+                }
+            });
+            if (ops.length) {
+                await rodarBatch(ops);
+                logar('  ' + nomeColecao + ': campo instrutor -> docente em ' + ops.length + ' registro(s)', 'ok');
+            } else {
+                logar('  ' + nomeColecao + ': nenhum registro com campo instrutor', 'info');
+            }
+            return ops.length;
+        }
+
+        async function migrarCampos() {
+            logar('>>> 2/4 Ajustando campo instrutor -> docente nas colecoes...', 'info');
+            const total = [];
+            for (const c of ['aulas', 'tfmAgendamentos', 'apontamentos', 'disciplinas']) {
+                total.push(await migrarCamposColecao(c));
+            }
+            const soma = total.reduce((a, b) => a + b, 0);
+            resumoItens.push('Campo instrutor -> docente: ' + soma + ' registros');
+        }
+
+        async function migrarCandidatos() {
+            logar('>>> 3/4 Ajustando remanejadoInstrutor -> remanejadoDocente em candidatos...', 'info');
+            const snap = await db.collection('candidatos').get();
+            const ops = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data && data.remanejadoInstrutor) {
+                    ops.push(b => {
+                        const ref = db.collection('candidatos').doc(doc.id);
+                        b.update(ref, { remanejadoDocente: data.remanejadoInstrutor, remanejadoInstrutor: del });
+                    });
+                }
+            });
+            if (ops.length) {
+                await rodarBatch(ops);
+                logar('candidatos: remanejadoInstrutor -> remanejadoDocente em ' + ops.length + ' registro(s)', 'ok');
+            } else {
+                logar('candidatos: nenhum registro com remanejadoInstrutor', 'info');
+            }
+            resumoItens.push('Remanejamento em candidatos: ' + ops.length + ' registros');
+        }
+
+        async function migrarPermissoes() {
+            logar('>>> 4/4 Atualizando permissoes instrutor/instrutores -> docente/docentes em usuarios...', 'info');
+            const snap = await db.collection('usuarios').get();
+            const ops = [];
+            const mapa = { instrutor: 'docente', instrutores: 'docentes', Instrutor: 'Docente', Instrutores: 'Docentes' };
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data && Array.isArray(data.permissoes) && data.permissoes.some(p => p === 'instrutor' || p === 'instrutores')) {
+                    const novas = data.permissoes.map(p => mapa[p] || p);
+                    ops.push(b => {
+                        const ref = db.collection('usuarios').doc(doc.id);
+                        b.update(ref, { permissoes: novas });
+                    });
+                }
+            });
+            if (ops.length) {
+                await rodarBatch(ops);
+                logar('usuarios: permissoes atualizadas em ' + ops.length + ' registro(s)', 'ok');
+            } else {
+                logar('usuarios: nenhum registro com permissao antiga', 'info');
+            }
+            resumoItens.push('Permissoes de usuarios: ' + ops.length + ' registros');
+        }
+
+        async function migrarTudo() {
+            if (btnMigrar.disabled) return;
+            btnMigrar.disabled = true;
+            btnMigrar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Migrando...';
+            log.innerHTML = '';
+            resumo.style.display = 'none';
+            resumoItens.length = 0;
+            erroGeral = false;
+            try {
+                await migrarContas();
+                await migrarCampos();
+                await migrarCandidatos();
+                await migrarPermissoes();
+                logar('MIGRACAO CONCLUIDA COM SUCESSO!', 'ok');
+                resumo.innerHTML = '<b>Migracao concluida!</b><br>' + resumoItens.map(i => '&bull; ' + i).join('<br>') + '<br><br>As contas antigas continuam em <code>instrutores</code> como backup. Acesse o admin em <b>Docentes</b> para conferir.';
+                resumo.style.display = 'block';
+            } catch (e) {
+                erroGeral = true;
+                logar('ERRO: ' + (e && e.message ? e.message : e), 'erro');
+            }
+            btnMigrar.disabled = false;
+            btnMigrar.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Iniciar Migracao';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</body>
+</html>

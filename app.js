@@ -658,7 +658,7 @@ async function initFirebaseListeners() {
             checkReady();
         });
 
-        dbFirestore.collection('instrutores').onSnapshot((snap) => {
+        dbFirestore.collection('docentes').onSnapshot((snap) => {
             const result = [];
             snap.forEach(doc => {
                 if (doc.id !== '_index') {
@@ -667,20 +667,20 @@ async function initFirebaseListeners() {
                     result.push(data);
                 }
             });
-            instrutores = result;
-            if (firebaseReady && typeof instrutorListar === 'function') instrutorListar();
-            if (typeof tfmPopulateAgendaInstrutor === 'function') {
-                const selAg = document.getElementById('tfm-agenda-instrutor');
+            docentes = result;
+            if (firebaseReady && typeof docenteListar === 'function') docenteListar();
+            if (typeof tfmPopulateAgendaDocente === 'function') {
+                const selAg = document.getElementById('tfm-agenda-docente');
                 const conteudoTfm = document.getElementById('tfm-conteudo');
                 if (selAg && conteudoTfm && conteudoTfm.style.display !== 'none') {
                     const atual = selAg.value;
-                    tfmPopulateAgendaInstrutor(selAg);
+                    tfmPopulateAgendaDocente(selAg);
                     selAg.value = atual;
                 }
             }
             checkReady();
         }, (error) => {
-            console.error('Erro Firestore instrutores:', error);
+            console.error('Erro Firestore docentes:', error);
             checkReady();
         });
 
@@ -824,7 +824,7 @@ async function handleLogin(event) {
 
     if (selectedLoginRole === 'admin') {
         if (cpf === ADMIN_CPF && password === ADMIN_SENHA) {
-            currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+            currentUserData = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
             saveLastLogin(cpf);
             if (document.getElementById('remember-me').checked) saveCredentials(cpf, password);
             enterAdminPanel();
@@ -872,7 +872,7 @@ function applyUserPermissions() {
         'admin-home': true,
         'admin-pre-inscricao': p.includes('pre-inscricao') || isGeral,
         'admin-alunos': p.includes('alunos') || isGeral,
-        'admin-instrutores': p.includes('instrutores') || isGeral,
+        'admin-docentes': p.includes('docentes') || isGeral,
         'admin-formados': p.includes('formados') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
         'admin-projetos': p.includes('projetos') || isGeral,
@@ -1028,7 +1028,7 @@ async function landingLogin(event) {
         // Primeiro verifica se é admin na coleção usuarios (inclui admin geral hardcoded)
         var adminUser = null;
         if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-            adminUser = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+            adminUser = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
         } else {
             var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
             snap.forEach(function(doc) {
@@ -1105,7 +1105,7 @@ async function landingLoginPortalPerm(cpf, senha, portal) {
 async function landingLoginAdmin(cpf, senha) {
     var user = null;
     if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-        user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+        user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
     } else {
         var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
         snap.forEach(function(doc) {
@@ -1155,8 +1155,8 @@ async function landingLoginDocente(cpf, senha) {
         location.href = 'portal-docente.html';
         return true;
     }
-    var snap = await dbFirestore.collection('instrutores').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF não encontrado entre os instrutores.'); return false; }
+    var snap = await dbFirestore.collection('docentes').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF não encontrado entre os docentes.'); return false; }
     var u = snap.docs[0].data();
     if (!u.senha) { landingShowLoginError('Senha de acesso não cadastrada. Contate a administração.'); return false; }
     if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
@@ -1481,7 +1481,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-instrutores': 'Instrutores', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
 }
 
@@ -1757,8 +1757,8 @@ function renderList() {
                 <button class="btn-icon" title="Mudar Turma" onclick="mudarTurmaCandidato(${i})"><i class="fa-solid fa-arrows-left-right"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidato(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
-                ${(c.tipoPessoa || 'A') === 'F' && !c.remanejadoInstrutor ? `<button class="btn-icon" title="Remanejar como Instrutor" onclick="remanejarFormado(${i})" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>` : ''}
-                ${c.remanejadoInstrutor ? `<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> INSTRUTOR</span>` : ''}
+                ${(c.tipoPessoa || 'A') === 'F' && !c.remanejadoDocente ? `<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(${i})" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>` : ''}
+                ${c.remanejadoDocente ? `<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>` : ''}
             </div></td>
         </tr>`;
     }).join('');
@@ -1822,7 +1822,7 @@ function viewCandidato(i) {
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
-            ${(c.tipoPessoa || 'A') === 'F' ? (c.remanejadoInstrutor ? `<div class="detail-item full" style="margin-top:8px"><span class="detail-label">Remanejamento</span><span class="detail-value" style="color:#1d4ed8;font-weight:700">Formado remanejado como Instrutor em ${c.remanejadoEm || '---'} por ${c.remanejadoPor || '---'}</span></div>` : `<div style="grid-column:1/-1;text-align:center;margin-top:14px;padding:16px;border:1px dashed #2563eb;border-radius:10px;background:rgba(37,99,235,.04)"><p style="font-size:13px;color:#475569;margin-bottom:10px;font-weight:600">Formado elegivel para entrar no corpo de instrutores.</p><button class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" onclick="remanejarFormado(${i})"><i class="fa-solid fa-arrows-rotate"></i> Remanejar como Instrutor</button></div>`) : ''}
+            ${(c.tipoPessoa || 'A') === 'F' ? (c.remanejadoDocente ? `<div class="detail-item full" style="margin-top:8px"><span class="detail-label">Remanejamento</span><span class="detail-value" style="color:#1d4ed8;font-weight:700">Formado remanejado como Docente em ${c.remanejadoEm || '---'} por ${c.remanejadoPor || '---'}</span></div>` : `<div style="grid-column:1/-1;text-align:center;margin-top:14px;padding:16px;border:1px dashed #2563eb;border-radius:10px;background:rgba(37,99,235,.04)"><p style="font-size:13px;color:#475569;margin-bottom:10px;font-weight:600">Formado elegivel para entrar no corpo de docentes.</p><button class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" onclick="remanejarFormado(${i})"><i class="fa-solid fa-arrows-rotate"></i> Remanejar como Docente</button></div>`) : ''}
         </div>`;
     });
     openModal();
@@ -3563,25 +3563,25 @@ function renderUsuariosList() {
             const labels = {
                 'pre-inscricao': '<span class="usuario-tag usuario-tag-pre">Pre-Inscricao</span>',
                 'alunos': '<span class="usuario-tag usuario-tag-pre">Alunos</span>',
-                'turmas': '<span class="usuario-tag usuario-tag-instrutor">Turmas</span>',
-                'instrutores': '<span class="usuario-tag usuario-tag-instrutor">Instrutores</span>',
+                'turmas': '<span class="usuario-tag usuario-tag-docente">Turmas</span>',
+                'docentes': '<span class="usuario-tag usuario-tag-docente">Docentes</span>',
                 'relatorios': '<span class="usuario-tag usuario-tag-admin">Relatorios</span>',
                 'projetos': '<span class="usuario-tag usuario-tag-pre">Projetos</span>',
                 'usuarios': '<span class="usuario-tag usuario-tag-admin">Usuarios</span>',
                 'config': '<span class="usuario-tag usuario-tag-admin">Config</span>',
                 'recadastramento': '<span class="usuario-tag usuario-tag-pre">Recadastramento</span>',
-                'chat-portais': '<span class="usuario-tag usuario-tag-instrutor">Chat</span>',
+                'chat-portais': '<span class="usuario-tag usuario-tag-docente">Chat</span>',
                 'apostilas': '<span class="usuario-tag usuario-tag-pre">Apostilas</span>',
-                'disciplinas': '<span class="usuario-tag usuario-tag-instrutor">Disciplinas</span>',
+                'disciplinas': '<span class="usuario-tag usuario-tag-docente">Disciplinas</span>',
                 'apontamento': '<span class="usuario-tag usuario-tag-admin">Apontamento</span>',
                 'portal-formado': '<span class="usuario-tag usuario-tag-portal">Portal Formado</span>',
                 'portal-aluno': '<span class="usuario-tag usuario-tag-portal">Portal Aluno</span>',
                 'portal-docente': '<span class="usuario-tag usuario-tag-portal">Portal Docente</span>',
                 'portal-coordenacao': '<span class="usuario-tag usuario-tag-portal">Portal Coordenacao</span>',
                 'formados': '<span class="usuario-tag usuario-tag-pre">Formados</span>',
-                'tfm': '<span class="usuario-tag usuario-tag-instrutor">TFM</span>',
+                'tfm': '<span class="usuario-tag usuario-tag-docente">TFM</span>',
                 'noticias': '<span class="usuario-tag usuario-tag-admin">Noticias</span>',
-                'galeria': '<span class="usuario-tag usuario-tag-instrutor">Galeria</span>'
+                'galeria': '<span class="usuario-tag usuario-tag-docente">Galeria</span>'
             };
             return labels[p] || '';
         }).join('');
@@ -3898,7 +3898,9 @@ function apontamentoOnAulaChange() {
     aptPresencas = {};
     const turma = document.getElementById('apt-turma').value;
     if (!turma) return;
-    dbFirestore.collection('candidatos').where('turma', '==', turma).get().then(snap => {
+    const turmaNorm = (turma || '').trim().toLowerCase();
+
+    const processar = function(snap) {
         aptAlunosNaTurma = [];
         snap.forEach(doc => {
             const c = doc.data();
@@ -3912,6 +3914,18 @@ function apontamentoOnAulaChange() {
         } else {
             alert('Nenhum aluno encontrado para a turma: ' + turma);
         }
+    };
+
+    dbFirestore.collection('candidatos').where('turma', '==', turma).get().then(snap => {
+        if (!snap.empty) { processar(snap); return; }
+        return dbFirestore.collection('candidatos').get().then(snap2 => {
+            const docs = [];
+            snap2.forEach(doc => {
+                const c = doc.data();
+                if ((c.turma || '').trim().toLowerCase() === turmaNorm) docs.push(doc);
+            });
+            processar({ forEach: function(fn) { docs.forEach(fn); } });
+        });
     }).catch(err => {
         console.error('Erro ao carregar alunos:', err);
     });
@@ -4397,10 +4411,10 @@ function tfmAgDataMillis(v) {
     return isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
-function tfmPopulateAgendaInstrutor(sel) {
+function tfmPopulateAgendaDocente(sel) {
     if (!sel) return;
-    let ops = '<option value="">Selecione o instrutor...</option>';
-    (instrutores || []).slice().sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); }).forEach(function(i) {
+    let ops = '<option value="">Selecione o docente...</option>';
+    (docentes || []).slice().sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); }).forEach(function(i) {
         let label = i.nome || '';
         if (i.guerra) label += ' (' + i.guerra + ')';
         ops += '<option value="' + tfmEsc(i.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(label) + '</option>';
@@ -4604,7 +4618,7 @@ function tfmDadosAgendados() {
         if (d) dataProva = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
     if (!dataProva) dataProva = new Date().toISOString().slice(0, 10);
-    return { dataProva: dataProva, instrutor: (ag && ag.instrutor) || '' };
+    return { dataProva: dataProva, docente: (ag && ag.docente) || '' };
 }
 
 async function tfmSalvar(cpf) {
@@ -4620,7 +4634,7 @@ async function tfmSalvar(cpf) {
         turma: al.turma || '',
         projeto: al.projeto || '',
         dataProva: ag.dataProva,
-        instrutor: ag.instrutor,
+        docente: ag.docente,
         flexoes: v.flexoes,
         abdominais: v.abdominais,
         corridaSeg: v.corridaSeg,
@@ -4656,7 +4670,7 @@ async function tfmSalvarTodos() {
                 turma: al.turma || '',
                 projeto: al.projeto || '',
                 dataProva: ag.dataProva,
-                instrutor: ag.instrutor,
+                docente: ag.docente,
                 flexoes: v.flexoes,
                 abdominais: v.abdominais,
                 corridaSeg: v.corridaSeg,
@@ -4785,14 +4799,14 @@ async function tfmExcluirSalvo(cpf) {
 
 function tfmPreencherAgenda() {
     const elData = document.getElementById('tfm-agenda-data');
-    const elInst = document.getElementById('tfm-agenda-instrutor');
+    const elInst = document.getElementById('tfm-agenda-docente');
     const elObs = document.getElementById('tfm-agenda-obs');
     const btnCanc = document.getElementById('tfm-agenda-btn-cancelar');
     const statusEl = document.getElementById('tfm-agenda-status');
     if (!elData) return;
     const ag = tfmAgendamentoTurma;
 
-    tfmPopulateAgendaInstrutor(elInst);
+    tfmPopulateAgendaDocente(elInst);
 
     let dt = null;
     if (ag && ag.dataAgendamento) {
@@ -4804,15 +4818,15 @@ function tfmPreencherAgenda() {
     }
     elData.value = dt ? dt.toISOString().slice(0, 16) : '';
 
-    if (ag && ag.instrutor && elInst) {
-        const opt = elInst.querySelector('option[value="' + String(ag.instrutor).replace(/"/g, '&quot;') + '"]');
-        if (opt) elInst.value = ag.instrutor;
+    if (ag && ag.docente && elInst) {
+        const opt = elInst.querySelector('option[value="' + String(ag.docente).replace(/"/g, '&quot;') + '"]');
+        if (opt) elInst.value = ag.docente;
         else {
             const optNovo = document.createElement('option');
-            optNovo.value = ag.instrutor;
-            optNovo.textContent = ag.instrutor;
+            optNovo.value = ag.docente;
+            optNovo.textContent = ag.docente;
             elInst.appendChild(optNovo);
-            elInst.value = ag.instrutor;
+            elInst.value = ag.docente;
         }
     }
     if (elObs) elObs.value = (ag && ag.observacao) || '';
@@ -4836,13 +4850,13 @@ async function tfmSalvarAgendamentoTurma() {
     const turma = document.getElementById('tfm-selecao-turma').value;
     if (!projeto || !turma) { alert('Selecione o projeto e a turma.'); return; }
     const elData = document.getElementById('tfm-agenda-data');
-    const elInst = document.getElementById('tfm-agenda-instrutor');
+    const elInst = document.getElementById('tfm-agenda-docente');
     const elObs = document.getElementById('tfm-agenda-obs');
     const dataVal = elData ? elData.value : '';
     if (!dataVal) { alert('Informe a data e hora do TFM.'); return; }
     const dt = new Date(dataVal);
     if (isNaN(dt.getTime())) { alert('Data/hora invalida.'); return; }
-    const instrutor = elInst ? elInst.value : '';
+    const docente = elInst ? elInst.value : '';
     const observacao = elObs ? elObs.value.trim() : '';
     try {
         const ref = tfmAgendamentoSelecionadoId
@@ -4852,11 +4866,11 @@ async function tfmSalvarAgendamentoTurma() {
             projeto: projeto,
             turma: turma,
             dataAgendamento: firebase.firestore.Timestamp.fromDate(dt),
-            instrutor: instrutor,
+            docente: docente,
             observacao: observacao,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
-        tfmAgendamentoTurma = { projeto: projeto, turma: turma, dataAgendamento: firebase.firestore.Timestamp.fromDate(dt), instrutor: instrutor, observacao: observacao };
+        tfmAgendamentoTurma = { projeto: projeto, turma: turma, dataAgendamento: firebase.firestore.Timestamp.fromDate(dt), docente: docente, observacao: observacao };
         tfmAgendamentoSelecionadoId = ref.id;
         tfmAgendadosLista = [];
         tfmPreencherAgenda();
@@ -4910,7 +4924,7 @@ function tfmFiltrarLista() {
         return !termo ||
             String(a.turma || '').toLowerCase().indexOf(termo) !== -1 ||
             String(a.projeto || '').toLowerCase().indexOf(termo) !== -1 ||
-            String(a.instrutor || '').toLowerCase().indexOf(termo) !== -1 ||
+            String(a.docente || '').toLowerCase().indexOf(termo) !== -1 ||
             String(a.observacao || '').toLowerCase().indexOf(termo) !== -1;
     });
     const countEl = document.getElementById('tfm-lista-count');
@@ -4934,7 +4948,7 @@ function tfmRenderLista(resultados) {
             '<td>' + tfmEsc(a.projeto || '-') + '</td>' +
             '<td style="font-weight:600">' + tfmEsc(a.turma || '-') + '</td>' +
             '<td style="font-size:12px;color:#16a34a;font-weight:700">' + tfmEsc(dt) + '</td>' +
-            '<td>' + tfmEsc(a.instrutor || '-') + '</td>' +
+            '<td>' + tfmEsc(a.docente || '-') + '</td>' +
             '<td style="font-size:12px;color:#64748b">' + tfmEsc(a.observacao || '-') + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon" title="Editar agendamento" onclick="tfmAbrirNovoAgendamento(\'' + docEsc + '\')"><i class="fa-solid fa-pen"></i></button>' +
@@ -5027,17 +5041,17 @@ function tfmAbrirNovoAgendamento(turmaDoc) {
         }
         selData.value = dt ? dt.toISOString().slice(0, 16) : '';
     }
-    const selInst = document.getElementById('tfm-novo-instrutor');
-    tfmPopulateAgendaInstrutor(selInst);
-    if (selInst && editar && editar.instrutor) {
-        const opt = selInst.querySelector('option[value="' + String(editar.instrutor).replace(/"/g, '&quot;') + '"]');
-        if (opt) selInst.value = editar.instrutor;
+    const selInst = document.getElementById('tfm-novo-docente');
+    tfmPopulateAgendaDocente(selInst);
+    if (selInst && editar && editar.docente) {
+        const opt = selInst.querySelector('option[value="' + String(editar.docente).replace(/"/g, '&quot;') + '"]');
+        if (opt) selInst.value = editar.docente;
         else {
             const optNovo = document.createElement('option');
-            optNovo.value = editar.instrutor;
-            optNovo.textContent = editar.instrutor;
+            optNovo.value = editar.docente;
+            optNovo.textContent = editar.docente;
             selInst.appendChild(optNovo);
-            selInst.value = editar.instrutor;
+            selInst.value = editar.docente;
         }
     }
     const elObs = document.getElementById('tfm-novo-obs');
@@ -5075,7 +5089,7 @@ async function tfmSalvarNovoAgendamento() {
     const projeto = document.getElementById('tfm-novo-projeto').value;
     const turma = document.getElementById('tfm-novo-turma').value;
     const dataVal = document.getElementById('tfm-novo-data').value;
-    const instrutor = document.getElementById('tfm-novo-instrutor').value;
+    const docente = document.getElementById('tfm-novo-docente').value;
     const observacao = document.getElementById('tfm-novo-obs').value.trim();
     if (!projeto) { alert('Selecione o projeto.'); return; }
     if (!turma) { alert('Selecione a turma.'); return; }
@@ -5090,7 +5104,7 @@ async function tfmSalvarNovoAgendamento() {
             projeto: projeto,
             turma: turma,
             dataAgendamento: firebase.firestore.Timestamp.fromDate(dt),
-            instrutor: instrutor,
+            docente: docente,
             observacao: observacao,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -5108,11 +5122,11 @@ function tfmExportarCSV() {
     if (!tfmAlunos.length) { alert('Nenhuma turma selecionada.'); return; }
     const turma = document.getElementById('tfm-selecao-turma').value;
     const projeto = document.getElementById('tfm-selecao-projeto').value;
-    let csv = 'Nome;CPF;Matricula;Projeto;Turma;Data Prova;Instrutor;Flexoes (1min);Abdominais (1min);Corrida (seg);Desloc. Concluiu;Resultado\n';
+    let csv = 'Nome;CPF;Matricula;Projeto;Turma;Data Prova;Docente;Flexoes (1min);Abdominais (1min);Corrida (seg);Desloc. Concluiu;Resultado\n';
     tfmAlunos.forEach(al => {
         const e = tfmExistentes[al.cpf] || {};
         const cpf = formatCPFDisplay(al.cpf || '');
-        csv += '"' + String(al.nome || '').replace(/"/g, '""') + '";"' + cpf + '";"' + String(al.matricula || '').replace(/"/g, '""') + '";"' + String(projeto || '').replace(/"/g, '""') + '";"' + String(turma || '').replace(/"/g, '""') + '";"' + (e.dataProva || '') + '";"' + String(e.instrutor || '').replace(/"/g, '""') + '";' + (e.flexoes != null ? e.flexoes : '') + ';' + (e.abdominais != null ? e.abdominais : '') + ';' + (e.corridaSeg != null ? e.corridaSeg : '') + ';"' + (e.deslocamentoConcluiu || '') + '";"' + (e.resultado || 'Pendente') + '"\n';
+        csv += '"' + String(al.nome || '').replace(/"/g, '""') + '";"' + cpf + '";"' + String(al.matricula || '').replace(/"/g, '""') + '";"' + String(projeto || '').replace(/"/g, '""') + '";"' + String(turma || '').replace(/"/g, '""') + '";"' + (e.dataProva || '') + '";"' + String(e.docente || '').replace(/"/g, '""') + '";' + (e.flexoes != null ? e.flexoes : '') + ';' + (e.abdominais != null ? e.abdominais : '') + ';' + (e.corridaSeg != null ? e.corridaSeg : '') + ';"' + (e.deslocamentoConcluiu || '') + '";"' + (e.resultado || 'Pendente') + '"\n';
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -5148,7 +5162,7 @@ async function apostAbrirModal(disciplinaId) {
                 '<div style="font-size:12px;color:#64748b;display:flex;gap:10px;flex-wrap:wrap">' +
                     '<span><i class="fa-solid fa-folder-open" style="margin-right:4px"></i>' + (d.projeto || '-') + '</span>' +
                     '<span><i class="fa-solid fa-users" style="margin-right:4px"></i>' + (d.turma || 'Todas as turmas') + '</span>' +
-                    (d.instrutor ? '<span><i class="fa-solid fa-chalkboard-user" style="margin-right:4px"></i>' + d.instrutor + '</span>' : '') +
+                    (d.docente ? '<span><i class="fa-solid fa-chalkboard-user" style="margin-right:4px"></i>' + d.docente + '</span>' : '') +
                 '</div>';
         }
         document.getElementById('apost-file').value = '';
@@ -5264,7 +5278,7 @@ async function apostilasLoadList() {
             var apost = apostilas[d.id] || null;
             var temApostila = !!(apost && apost.url);
             var turmaHtml = d.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + d.turma + '</span>' : '<span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
-            var instrutorHtml = d.instrutor ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.instrutor + '</span>' : '';
+            var docenteHtml = d.docente ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.docente + '</span>' : '';
             var statusApost = temApostila
                 ? '<span style="background:rgba(76,175,80,.15);color:#4caf50;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-file-pdf" style="margin-right:3px"></i>Com apostila</span>'
                 : '<span style="background:rgba(245,158,11,.12);color:#f59e0b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-circle-plus" style="margin-right:3px"></i>Sem apostila</span>';
@@ -5277,7 +5291,7 @@ async function apostilasLoadList() {
                 '<div style="flex:1;min-width:0">' +
                     '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (d.nome || 'Disciplina') + '</div>' +
                     '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
-                        '<span>' + (d.projeto || '') + '</span>' + turmaHtml + instrutorHtml + statusApost +
+                        '<span>' + (d.projeto || '') + '</span>' + turmaHtml + docenteHtml + statusApost +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
@@ -5333,18 +5347,18 @@ async function discLoadTurmas() {
     });
 }
 
-async function discLoadInstrutores() {
-    var sel = document.getElementById('disc-instrutor');
+async function discLoadDocentes() {
+    var sel = document.getElementById('disc-docente');
     if (!sel) return;
     try {
-        var snap = await dbFirestore.collection('instrutores').orderBy('nome').get();
-        sel.innerHTML = '<option value="">Selecione o instrutor...</option>';
+        var snap = await dbFirestore.collection('docentes').orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione o docente...</option>';
         snap.forEach(function(doc) {
             var i = doc.data();
             sel.innerHTML += '<option value="' + i.nome + '">' + i.nome + (i.guerra ? ' (' + i.guerra + ')' : '') + '</option>';
         });
     } catch(e) {
-        sel.innerHTML = '<option value="">Erro ao carregar instrutores</option>';
+        sel.innerHTML = '<option value="">Erro ao carregar docentes</option>';
     }
 }
 
@@ -5374,7 +5388,7 @@ async function discSave() {
     var nome = document.getElementById('disc-nome').value.trim();
     var projeto = document.getElementById('disc-projeto').value;
     var turma = document.getElementById('disc-turma').value.trim();
-    var instrutor = document.getElementById('disc-instrutor').value.trim();
+    var docente = document.getElementById('disc-docente').value.trim();
     var btn = document.getElementById('disc-save-btn');
 
     if (!nome) { discShowMsg('Informe o nome da disciplina.', 'err'); return; }
@@ -5388,7 +5402,7 @@ async function discSave() {
             nome: nome,
             projeto: projeto,
             turma: turma,
-            instrutor: instrutor
+            docente: docente
         };
 
         if (discEditingId) {
@@ -5404,7 +5418,7 @@ async function discSave() {
 
         document.getElementById('disc-nome').value = '';
         document.getElementById('disc-turma').value = '';
-        document.getElementById('disc-instrutor').value = '';
+        document.getElementById('disc-docente').value = '';
         discLoadList();
     } catch(e) {
         console.error('Erro ao salvar disciplina:', e);
@@ -5419,7 +5433,7 @@ async function discLoadList() {
     if (!container) return;
     discLoadProjetos();
     discLoadTurmas();
-    discLoadInstrutores();
+    discLoadDocentes();
     try {
         var snap = await dbFirestore.collection('disciplinas').orderBy('data', 'desc').get();
         if (snap.empty) {
@@ -5431,14 +5445,14 @@ async function discLoadList() {
             var d = doc.data();
             var dateStr = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
             var turmaHtml = d.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + d.turma + '</span>' : '<span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
-            var instrutorHtml = d.instrutor ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.instrutor + '</span>' : '';
+            var docenteHtml = d.docente ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.docente + '</span>' : '';
             var card = document.createElement('div');
             card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
             card.innerHTML = '<div style="width:42px;height:42px;background:rgba(156,39,176,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-graduation-cap" style="color:#9c27b0;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:0">' +
                     '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (d.nome || 'Disciplina') + '</div>' +
                     '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
-                        '<span>' + (d.projeto || '') + '</span>' + turmaHtml + instrutorHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') +
+                        '<span>' + (d.projeto || '') + '</span>' + turmaHtml + docenteHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
@@ -5464,7 +5478,7 @@ async function discEdit(docId) {
         discOnProjetoChange();
         setTimeout(function() {
             document.getElementById('disc-turma').value = d.turma || '';
-            document.getElementById('disc-instrutor').value = d.instrutor || '';
+            document.getElementById('disc-docente').value = d.docente || '';
         }, 100);
         var btn = document.getElementById('disc-save-btn');
         if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Disciplina';
@@ -5495,7 +5509,7 @@ async function aulaLoadDisciplinas() {
         sel.innerHTML = '<option value="">Selecione a disciplina...</option>';
         snap.forEach(function(doc) {
             var d = doc.data();
-            sel.innerHTML += '<option value="' + d.nome + '" data-projeto="' + (d.projeto || '') + '" data-turma="' + (d.turma || '') + '" data-instrutor="' + (d.instrutor || '') + '">' + d.nome + ' (' + (d.projeto || '') + ')</option>';
+            sel.innerHTML += '<option value="' + d.nome + '" data-projeto="' + (d.projeto || '') + '" data-turma="' + (d.turma || '') + '" data-docente="' + (d.docente || '') + '">' + d.nome + ' (' + (d.projeto || '') + ')</option>';
         });
     } catch(e) {
         sel.innerHTML = '<option value="">Erro ao carregar disciplinas</option>';
@@ -5508,13 +5522,13 @@ function aulaOnDisciplinaChange() {
     if (!opt || !opt.value) return;
     var projeto = opt.getAttribute('data-projeto') || '';
     var turma = opt.getAttribute('data-turma') || '';
-    var instrutor = opt.getAttribute('data-instrutor') || '';
+    var docente = opt.getAttribute('data-docente') || '';
     if (projeto) document.getElementById('aula-projeto').value = projeto;
     if (turma) {
         aulaOnProjetoChange();
         setTimeout(function() { document.getElementById('aula-turma').value = turma; }, 100);
     }
-    if (instrutor) document.getElementById('aula-instrutor').value = instrutor;
+    if (docente) document.getElementById('aula-docente').value = docente;
 }
 
 async function aulaLoadProjetos() {
@@ -5541,18 +5555,18 @@ function aulaLoadTurmas() {
     });
 }
 
-async function aulaLoadInstrutores() {
-    var sel = document.getElementById('aula-instrutor');
+async function aulaLoadDocentes() {
+    var sel = document.getElementById('aula-docente');
     if (!sel) return;
     try {
-        var snap = await dbFirestore.collection('instrutores').orderBy('nome').get();
-        sel.innerHTML = '<option value="">Selecione o instrutor...</option>';
+        var snap = await dbFirestore.collection('docentes').orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione o docente...</option>';
         snap.forEach(function(doc) {
             var i = doc.data();
             sel.innerHTML += '<option value="' + i.nome + '">' + i.nome + (i.guerra ? ' (' + i.guerra + ')' : '') + '</option>';
         });
     } catch(e) {
-        sel.innerHTML = '<option value="">Erro ao carregar instrutores</option>';
+        sel.innerHTML = '<option value="">Erro ao carregar docentes</option>';
     }
 }
 
@@ -5582,7 +5596,7 @@ async function aulaSave() {
     var disciplina = document.getElementById('aula-disciplina').value;
     var projeto = document.getElementById('aula-projeto').value;
     var turma = document.getElementById('aula-turma').value.trim();
-    var instrutor = document.getElementById('aula-instrutor').value.trim();
+    var docente = document.getElementById('aula-docente').value.trim();
     var data = document.getElementById('aula-data').value;
     var horario = document.getElementById('aula-horario').value.trim();
     var conteudo = document.getElementById('aula-conteudo').value.trim();
@@ -5600,7 +5614,7 @@ async function aulaSave() {
             disciplina: disciplina,
             projeto: projeto,
             turma: turma,
-            instrutor: instrutor,
+            docente: docente,
             data: data,
             horario: horario,
             conteudo: conteudo
@@ -5620,7 +5634,7 @@ async function aulaSave() {
         document.getElementById('aula-disciplina').value = '';
         document.getElementById('aula-projeto').value = '';
         document.getElementById('aula-turma').innerHTML = '<option value="">Todas as turmas</option>';
-        document.getElementById('aula-instrutor').value = '';
+        document.getElementById('aula-docente').value = '';
         document.getElementById('aula-data').value = '';
         document.getElementById('aula-horario').value = '';
         document.getElementById('aula-conteudo').value = '';
@@ -5639,7 +5653,7 @@ async function aulaLoadList() {
     aulaLoadDisciplinas();
     aulaLoadProjetos();
     aulaLoadTurmas();
-    aulaLoadInstrutores();
+    aulaLoadDocentes();
     try {
         var snap = await dbFirestore.collection('aulas').orderBy('data', 'desc').get();
         if (snap.empty) {
@@ -5651,14 +5665,14 @@ async function aulaLoadList() {
             var a = doc.data();
             var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
             var turmaHtml = a.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '<span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
-            var instrutorHtml = a.instrutor ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
+            var docenteHtml = a.docente ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.docente + '</span>' : '';
             var card = document.createElement('div');
             card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
             card.innerHTML = '<div style="width:42px;height:42px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-chalkboard" style="color:#2563eb;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:0">' +
                     '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
                     '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
-                        '<span>' + (a.projeto || '') + '</span>' + turmaHtml + instrutorHtml + (dateStr ? '<span><i class="fa-solid fa-calendar-day" style="margin-right:2px"></i>' + dateStr + '</span>' : '') + (a.horario ? '<span><i class="fa-solid fa-clock" style="margin-right:2px"></i>' + a.horario + '</span>' : '') +
+                        '<span>' + (a.projeto || '') + '</span>' + turmaHtml + docenteHtml + (dateStr ? '<span><i class="fa-solid fa-calendar-day" style="margin-right:2px"></i>' + dateStr + '</span>' : '') + (a.horario ? '<span><i class="fa-solid fa-clock" style="margin-right:2px"></i>' + a.horario + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
@@ -5684,7 +5698,7 @@ async function aulaEdit(docId) {
         aulaOnProjetoChange();
         setTimeout(function() {
             document.getElementById('aula-turma').value = a.turma || '';
-            document.getElementById('aula-instrutor').value = a.instrutor || '';
+            document.getElementById('aula-docente').value = a.docente || '';
         }, 100);
         document.getElementById('aula-data').value = a.data || '';
         document.getElementById('aula-horario').value = a.horario || '';
@@ -5707,9 +5721,9 @@ async function aulaDelete(docId) {
     }
 }
 
-/* ===== INSTRUTORES ===== */
-let instrutores = [];
-let editingInstrutorId = null;
+/* ===== DOCENTES ===== */
+let docentes = [];
+let editingDocenteId = null;
 
 function mascaraCPF(el) {
     var v = el.value.replace(/\D/g, '').substring(0, 11);
@@ -5725,15 +5739,15 @@ function mascaraFone(el) {
     el.value = v;
 }
 
-function instrutorAbrirModal(id) {
-    editingInstrutorId = id || null;
-    instrutorLimparForm();
-    instrutorPopulateSelects();
-    var titleEl = document.getElementById('instrutor-form-title');
+function docenteAbrirModal(id) {
+    editingDocenteId = id || null;
+    docenteLimparForm();
+    docentePopulateSelects();
+    var titleEl = document.getElementById('docente-form-title');
     if (id) {
-        var inst = instrutores.find(i => i.id === id);
+        var inst = docentes.find(i => i.id === id);
         if (!inst) return;
-        titleEl.innerHTML = '<i class="fa-solid fa-pen" style="color:#ff9800;margin-right:8px"></i> Editar Instrutor';
+        titleEl.innerHTML = '<i class="fa-solid fa-pen" style="color:#ff9800;margin-right:8px"></i> Editar Docente';
         document.getElementById('intr-id').value = inst.id;
         document.getElementById('intr-nome').value = inst.nome || '';
         document.getElementById('intr-guerra').value = inst.guerra || '';
@@ -5772,22 +5786,22 @@ function instrutorAbrirModal(id) {
         document.getElementById('intr-calca').value = inst.calca || '';
         document.getElementById('intr-camisa').value = inst.camisa || '';
         document.getElementById('intr-calcado').value = inst.calcado || '';
-        instrutorPopulateSelects(inst.projeto || [], inst.turma || []);
+        docentePopulateSelects(inst.projeto || [], inst.turma || []);
         calcularIdadeCampo('intr-nascimento', 'intr-idade');
-        instrutorPopulateDisciplinas(inst.disciplinas || []);
+        docentePopulateDisciplinas(inst.disciplinas || []);
     } else {
-        titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Instrutor';
-        instrutorPopulateDisciplinas([]);
+        titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Docente';
+        docentePopulateDisciplinas([]);
     }
-    document.getElementById('modal-instrutor-overlay').classList.remove('hidden');
+    document.getElementById('modal-docente-overlay').classList.remove('hidden');
 }
 
-function instrutorFecharModal(event) {
+function docenteFecharModal(event) {
     if (event && event.target !== event.currentTarget) return;
-    document.getElementById('modal-instrutor-overlay').classList.add('hidden');
+    document.getElementById('modal-docente-overlay').classList.add('hidden');
 }
 
-function instrutorLimparForm() {
+function docenteLimparForm() {
     document.getElementById('intr-id').value = '';
     document.getElementById('intr-origem').value = '';
     document.getElementById('intr-aviso-remanejamento').style.display = 'none';
@@ -5803,8 +5817,8 @@ function instrutorLimparForm() {
         var el = document.getElementById(id);
         if (el) el.value = 'Nao';
     });
-    instrutorPopulateSelects();
-    instrutorPopulateDisciplinas([]);
+    docentePopulateSelects();
+    docentePopulateDisciplinas([]);
 }
 
 /* ===== FORMADOS ===== */
@@ -5862,8 +5876,8 @@ function renderFormadosList() {
     tbody.innerHTML = lista.map(function(c) {
         var i = candidatos.indexOf(c);
         var statusBadge = c.status === 'Aprovado' ? '<span class="badge green">Aprovado</span>' : '<span class="badge pendente">' + (c.status || '-') + '</span>';
-        var remanejado = c.remanejadoInstrutor
-            ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> INSTRUTOR</span>'
+        var remanejado = c.remanejadoDocente
+            ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>'
             : '<span style="color:#94a3b8;font-size:11px">---</span>';
         return '<tr>' +
             '<td style="font-weight:600">' + (c.nome || '-') + '</td>' +
@@ -5875,12 +5889,12 @@ function renderFormadosList() {
             '<td>' + remanejado + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(' + i + ')"><i class="fa-solid fa-eye"></i></button>' +
-                (!c.remanejadoInstrutor ? '<button class="btn-icon" title="Remanejar como Instrutor" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
+                (!c.remanejadoDocente ? '<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
             '</div></td></tr>';
     }).join('');
 }
 
-function instrutorPopulateSelects(projetosSelecionados, turmasSelecionadas) {
+function docentePopulateSelects(projetosSelecionados, turmasSelecionadas) {
     var containerProj = document.getElementById('intr-projetos-checks');
     if (!containerProj) return;
     var projArr = Array.isArray(projetosSelecionados) ? projetosSelecionados : (projetosSelecionados ? [projetosSelecionados] : []);
@@ -5888,15 +5902,15 @@ function instrutorPopulateSelects(projetosSelecionados, turmasSelecionadas) {
     containerProj.innerHTML = '';
     projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
         var checked = projArr.indexOf(p.nome) !== -1 ? 'checked' : '';
-        containerProj.innerHTML += '<label class="intr-check-item"><input type="checkbox" class="intr-proj-check" value="' + p.nome + '" ' + checked + ' onchange="instrutorOnProjetoChange()"> ' + p.nome + '</label>';
+        containerProj.innerHTML += '<label class="intr-check-item"><input type="checkbox" class="intr-proj-check" value="' + p.nome + '" ' + checked + ' onchange="docenteOnProjetoChange()"> ' + p.nome + '</label>';
     });
-    instrutorOnProjetoChange(turmaArr);
+    docenteOnProjetoChange(turmaArr);
 }
 
-function instrutorOnProjetoChange(turmasSelecionadas) {
+function docenteOnProjetoChange(turmasSelecionadas) {
     var containerTurma = document.getElementById('intr-turmas-checks');
     if (!containerTurma) return;
-    var projsSelecionados = instrutorGetSelectedProjetos();
+    var projsSelecionados = docenteGetSelectedProjetos();
     var turmaArr = (turmasSelecionadas && Array.isArray(turmasSelecionadas)) ? turmasSelecionadas : [];
     containerTurma.innerHTML = '';
     var turmasFiltradas = projsSelecionados.length ? turmas.filter(t => projsSelecionados.indexOf(t.projeto) !== -1) : turmas;
@@ -5906,11 +5920,11 @@ function instrutorOnProjetoChange(turmasSelecionadas) {
     });
 }
 
-function instrutorGetSelectedProjetos() {
+function docenteGetSelectedProjetos() {
     return Array.from(document.querySelectorAll('.intr-proj-check:checked')).map(function(cb) { return cb.value; });
 }
 
-function instrutorGetSelectedTurmas() {
+function docenteGetSelectedTurmas() {
     return Array.from(document.querySelectorAll('.intr-turma-check:checked')).map(function(cb) { return cb.value; });
 }
 
@@ -5918,21 +5932,21 @@ async function remanejarFormado(i) {
     var c = candidatos[i];
     if (!c) return;
     if ((c.tipoPessoa || 'A') !== 'F') { alert('Somente cadastros do tipo Formado (A) podem ser remanejados.'); return; }
-    if (c.remanejadoInstrutor) { alert('Este formado ja foi remanejado como instrutor.'); return; }
-    var senha = prompt('Digite a senha do administrador para remanejar o formado como instrutor:');
+    if (c.remanejadoDocente) { alert('Este formado ja foi remanejado como docente.'); return; }
+    var senha = prompt('Digite a senha do administrador para remanejar o formado como docente:');
     if (!senha) return;
     if (senha !== ADMIN_SENHA) { alert('Senha incorreta! Remanejamento cancelado.'); return; }
-    var jaExiste = instrutores.find(x => x.cpf === c.cpf);
-    if (jaExiste) { alert('Ja existe um instrutor cadastrado com este CPF.'); return; }
-    instrutorAbrirRemanejado(c);
+    var jaExiste = docentes.find(x => x.cpf === c.cpf);
+    if (jaExiste) { alert('Ja existe um docente cadastrado com este CPF.'); return; }
+    docenteAbrirRemanejado(c);
 }
 
-function instrutorAbrirRemanejado(c) {
-    editingInstrutorId = null;
-    instrutorLimparForm();
+function docenteAbrirRemanejado(c) {
+    editingDocenteId = null;
+    docenteLimparForm();
     document.getElementById('intr-origem').value = c.id || '';
     document.getElementById('intr-aviso-remanejamento').style.display = 'block';
-    document.getElementById('instrutor-form-title').innerHTML = '<i class="fa-solid fa-arrows-rotate" style="color:#2563eb;margin-right:8px"></i> Remanejar Formado como Instrutor';
+    document.getElementById('docente-form-title').innerHTML = '<i class="fa-solid fa-arrows-rotate" style="color:#2563eb;margin-right:8px"></i> Remanejar Formado como Docente';
     document.getElementById('intr-nome').value = c.nome || '';
     document.getElementById('intr-guerra').value = '';
     document.getElementById('intr-cpf').value = c.cpf || '';
@@ -5970,13 +5984,13 @@ function instrutorAbrirRemanejado(c) {
     document.getElementById('intr-calca').value = c.calca || '';
     document.getElementById('intr-camisa').value = c.camisa || '';
     document.getElementById('intr-calcado').value = c.calcado || '';
-    instrutorPopulateSelects(c.projeto, c.turma);
+    docentePopulateSelects(c.projeto, c.turma);
     calcularIdadeCampo('intr-nascimento', 'intr-idade');
-    instrutorPopulateDisciplinas([]);
-    document.getElementById('modal-instrutor-overlay').classList.remove('hidden');
+    docentePopulateDisciplinas([]);
+    document.getElementById('modal-docente-overlay').classList.remove('hidden');
 }
 
-function instrutorPopulateDisciplinas(selectedArr) {
+function docentePopulateDisciplinas(selectedArr) {
     var container = document.getElementById('intr-disciplinas-checks');
     if (!container) return;
     container.innerHTML = '';
@@ -5991,11 +6005,11 @@ function instrutorPopulateDisciplinas(selectedArr) {
     });
 }
 
-function instrutorGetSelectedDisciplinas() {
+function docenteGetSelectedDisciplinas() {
     return Array.from(document.querySelectorAll('.intr-disc-check:checked')).map(function(cb) { return cb.value; });
 }
 
-async function instrutorSalvar(e) {
+async function docenteSalvar(e) {
     e.preventDefault();
     var nome = document.getElementById('intr-nome').value.trim();
     var guerra = document.getElementById('intr-guerra').value.trim();
@@ -6003,7 +6017,7 @@ async function instrutorSalvar(e) {
     if (!nome || !guerra || !cpf) { alert('Preencha Nome Completo, Nome de Guerra e CPF'); return; }
     var genero = document.getElementById('intr-genero').value;
     var senha = document.getElementById('intr-senha').value.trim();
-    if (!senha) { alert('Preencha a senha de acesso do instrutor.'); return; }
+    if (!senha) { alert('Preencha a senha de acesso do docente.'); return; }
     if (senha.length < 4) { alert('Senha deve ter minimo 4 caracteres.'); return; }
     var dados = {
         nome: nome,
@@ -6014,8 +6028,8 @@ async function instrutorSalvar(e) {
         fone: document.getElementById('intr-fone').value.trim(),
         email: document.getElementById('intr-email').value.trim(),
         senha: senha,
-        projeto: instrutorGetSelectedProjetos(),
-        turma: instrutorGetSelectedTurmas(),
+        projeto: docenteGetSelectedProjetos(),
+        turma: docenteGetSelectedTurmas(),
         nascimento: document.getElementById('intr-nascimento').value,
         dataInscricao: document.getElementById('intr-data-inscricao').value,
         estadoCivil: document.getElementById('intr-estado-civil').value,
@@ -6045,28 +6059,28 @@ async function instrutorSalvar(e) {
         calca: document.getElementById('intr-calca').value,
         camisa: document.getElementById('intr-camisa').value,
         calcado: document.getElementById('intr-calcado').value,
-        disciplinas: instrutorGetSelectedDisciplinas(),
+        disciplinas: docenteGetSelectedDisciplinas(),
         atualizadoEm: new Date().toISOString()
     };
     var origemCandidato = document.getElementById('intr-origem').value;
     try {
-        if (editingInstrutorId) {
-            await dbFirestore.collection('instrutores').doc(editingInstrutorId).update(dados);
-            var idx = instrutores.findIndex(i => i.id === editingInstrutorId);
-            if (idx !== -1) Object.assign(instrutores[idx], dados);
-            alert('Instrutor atualizado com sucesso!');
+        if (editingDocenteId) {
+            await dbFirestore.collection('docentes').doc(editingDocenteId).update(dados);
+            var idx = docentes.findIndex(i => i.id === editingDocenteId);
+            if (idx !== -1) Object.assign(docentes[idx], dados);
+            alert('Docente atualizado com sucesso!');
         } else {
-            var dup = instrutores.find(i => i.cpf === cpf);
-            if (dup) { alert('Ja existe instrutor com este CPF'); return; }
+            var dup = docentes.find(i => i.cpf === cpf);
+            if (dup) { alert('Ja existe docente com este CPF'); return; }
             dados.criadoEm = new Date().toISOString();
-            var ref = await dbFirestore.collection('instrutores').add(dados);
+            var ref = await dbFirestore.collection('docentes').add(dados);
             dados.id = ref.id;
-            instrutores.push(dados);
+            docentes.push(dados);
             if (origemCandidato) {
                 dados.remanejadoDe = origemCandidato;
                 dados.remanejadoEm = new Date().toISOString();
                 dados.remanejadoPor = currentUserData ? currentUserData.nome : 'Administrador';
-                // Envia copia integral do cadastro do formado para o banco de instrutores
+                // Envia copia integral do cadastro do formado para o banco de docentes
                 var candSnap = await dbFirestore.collection('candidatos').doc(String(origemCandidato)).get();
                 var copiaCadastro = {};
                 if (candSnap.exists) {
@@ -6079,43 +6093,43 @@ async function instrutorSalvar(e) {
                 copiaCadastro.remanejadoEm = dados.remanejadoEm;
                 copiaCadastro.remanejadoPor = dados.remanejadoPor;
                 copiaCadastro.copiaCadastroFormado = true;
-                await dbFirestore.collection('instrutores').doc(ref.id).update(copiaCadastro);
+                await dbFirestore.collection('docentes').doc(ref.id).update(copiaCadastro);
                 var candIdx = candidatos.findIndex(function(c) { return String(c.id) === String(origemCandidato); });
                 if (candIdx !== -1) {
-                    candidatos[candIdx].remanejadoInstrutor = true;
+                    candidatos[candIdx].remanejadoDocente = true;
                     candidatos[candIdx].remanejadoEm = dados.remanejadoEm;
                     candidatos[candIdx].remanejadoPor = dados.remanejadoPor;
                     if (candidatos[candIdx].id) {
-                        await dbFirestore.collection('candidatos').doc(String(candidatos[candIdx].id)).update({ remanejadoInstrutor: true, remanejadoEm: dados.remanejadoEm, remanejadoPor: dados.remanejadoPor });
+                        await dbFirestore.collection('candidatos').doc(String(candidatos[candIdx].id)).update({ remanejadoDocente: true, remanejadoEm: dados.remanejadoEm, remanejadoPor: dados.remanejadoPor });
                     }
                     backupCandidatos();
                 }
             }
-            alert('Instrutor cadastrado com sucesso!' + (origemCandidato ? ' Formado remanejado e ativado como instrutor.' : ''));
+            alert('Docente cadastrado com sucesso!' + (origemCandidato ? ' Formado remanejado e ativado como docente.' : ''));
         }
-        instrutorFecharModal();
-        instrutorListar();
+        docenteFecharModal();
+        docenteListar();
         renderList();
         document.getElementById('modal-overlay').classList.add('hidden');
     } catch (e) {
-        console.error('Erro ao salvar instrutor:', e);
-        alert('Erro ao salvar instrutor: ' + e.message);
+        console.error('Erro ao salvar docente:', e);
+        alert('Erro ao salvar docente: ' + e.message);
     }
 }
 
-function instrutorListar() {
-    var tbody = document.getElementById('instrutores-table-body');
-    var empty = document.getElementById('instrutores-empty');
-    var lista = document.getElementById('instrutores-lista');
+function docenteListar() {
+    var tbody = document.getElementById('docentes-table-body');
+    var empty = document.getElementById('docentes-empty');
+    var lista = document.getElementById('docentes-lista');
     if (!tbody) return;
-    if (!instrutores.length) {
+    if (!docentes.length) {
         if (empty) empty.style.display = 'block';
         if (lista) lista.style.display = 'none';
         return;
     }
     if (empty) empty.style.display = 'none';
     if (lista) lista.style.display = 'block';
-    tbody.innerHTML = instrutores.map(function(i) {
+    tbody.innerHTML = docentes.map(function(i) {
         var cpfFmt = i.cpf ? i.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-';
         var discHtml = (i.disciplinas || []).map(function(d) { return '<span class="badge blue" style="font-size:10px;margin:1px">' + d + '</span>'; }).join(' ');
         return '<tr>' +
@@ -6128,31 +6142,31 @@ function instrutorListar() {
             '<td>' + (i.fone || '-') + '</td>' +
             '<td>' + (i.email || '-') + '</td>' +
             '<td><div class="actions-cell">' +
-                '<button class="btn-icon" title="Editar" onclick="instrutorAbrirModal(\'' + i.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
-                '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="instrutorExcluir(\'' + i.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
-                '<button class="btn-icon" title="Imprimir" onclick="instrutorImprimir(\'' + i.id + '\')" style="color:#4caf50"><i class="fa-solid fa-print"></i></button>' +
+                '<button class="btn-icon" title="Editar" onclick="docenteAbrirModal(\'' + i.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="docenteExcluir(\'' + i.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                '<button class="btn-icon" title="Imprimir" onclick="docenteImprimir(\'' + i.id + '\')" style="color:#4caf50"><i class="fa-solid fa-print"></i></button>' +
             '</div></td></tr>';
     }).join('');
 }
 
-async function instrutorExcluir(id) {
-    if (!confirm('Excluir este instrutor?')) return;
+async function docenteExcluir(id) {
+    if (!confirm('Excluir este docente?')) return;
     try {
-        await dbFirestore.collection('instrutores').doc(id).delete();
-        instrutores = instrutores.filter(i => i.id !== id);
-        instrutorListar();
+        await dbFirestore.collection('docentes').doc(id).delete();
+        docentes = docentes.filter(i => i.id !== id);
+        docenteListar();
     } catch (e) {
-        console.error('Erro ao excluir instrutor:', e);
-        alert('Erro ao excluir instrutor: ' + e.message);
+        console.error('Erro ao excluir docente:', e);
+        alert('Erro ao excluir docente: ' + e.message);
     }
 }
 
-function instrutorImprimir(id) {
-    var i = instrutores.find(x => x.id === id);
+function docenteImprimir(id) {
+    var i = docentes.find(x => x.id === id);
     if (!i) return;
     var cpfFmt = i.cpf ? i.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-';
     var discHtml = (i.disciplinas || []).join(', ') || '-';
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Instrutor - ' + (i.nome || '') + '</title><style>' +
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Docente - ' + (i.nome || '') + '</title><style>' +
         'body{font-family:Arial,sans-serif;padding:40px;color:#333}' +
         'h2{color:#1a237e;border-bottom:2px solid #1a237e;padding-bottom:8px}' +
         '.field{margin:10px 0;display:flex;gap:8px}' +
@@ -6161,7 +6175,7 @@ function instrutorImprimir(id) {
         '.disc-tag{display:inline-block;background:#e3f2fd;color:#1565c0;padding:3px 10px;border-radius:4px;margin:2px;font-size:13px}' +
         '@media print{body{padding:20px}}' +
         '</style></head><body>' +
-        '<h2><i class="fa-solid fa-chalkboard-user"></i> Ficha do Instrutor</h2>' +
+        '<h2><i class="fa-solid fa-chalkboard-user"></i> Ficha do Docente</h2>' +
         '<div class="field"><span class="label">Nome Completo:</span><span class="val">' + (i.nome || '-') + '</span></div>' +
         '<div class="field"><span class="label">Nome de Guerra:</span><span class="val">' + (i.guerra || '-') + '</span></div>' +
         '<div class="field"><span class="label">CPF:</span><span class="val">' + cpfFmt + '</span></div>' +
@@ -6175,22 +6189,22 @@ function instrutorImprimir(id) {
     win.document.close();
 }
 
-async function instrutoresInicializar() {
-    if (instrutores.length) {
-        instrutorListar();
+async function docentesInicializar() {
+    if (docentes.length) {
+        docenteListar();
         return;
     }
     try {
-        var snap = await dbFirestore.collection('instrutores').get();
-        instrutores = [];
+        var snap = await dbFirestore.collection('docentes').get();
+        docentes = [];
         snap.forEach(function(doc) {
             var data = doc.data();
             data.id = doc.id;
-            instrutores.push(data);
+            docentes.push(data);
         });
-        instrutorListar();
+        docenteListar();
     } catch (e) {
-        console.error('Erro ao carregar instrutores:', e);
+        console.error('Erro ao carregar docentes:', e);
     }
 }
 

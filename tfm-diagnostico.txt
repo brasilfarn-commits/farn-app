@@ -1,0 +1,7 @@
+
+=== DIAGNOSTICO TFM ADMINISTRADOR ===
+
+Chrome iniciado ✓
+
+Conectado ao CDP ✓
+ERRO FATAL: ws.on is not a function

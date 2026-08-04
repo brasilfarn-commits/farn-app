@@ -330,7 +330,7 @@
             try {
                 var user = null;
                 if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-                    user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'instrutor', 'usuarios'] };
+                    user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
                 } else {
                     var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
                     snap.forEach(function(doc) {

@@ -631,7 +631,7 @@
                     </div>
 
                     <h3 style="font-size:16px;color:var(--green);margin:24px 0 14px"><i class="fa-solid fa-calendar-check"></i> Meu TFM Agendado</h3>
-                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Veja aqui a data e hora do seu teste agendado pelo instrutor.</p>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Veja aqui a data e hora do seu teste agendado pelo docente.</p>
                     <div id="pf-tfm-agendamento">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
@@ -1697,7 +1697,7 @@
             count++;
             var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
             var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
-            var instrutorHtml = a.instrutor ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.instrutor + '</span>' : '';
+            var docenteHtml = a.docente ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.docente + '</span>' : '';
 
             var presKey = (a.disciplina || '') + '||' + (a.data || '');
             var presKey2 = (a.conteudo || a.disciplina || '') + '||' + (a.data || '');
@@ -1724,7 +1724,7 @@
                     '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +
                     '<div class="pf-apostila-meta">' +
                         (dateStr ? '<span><i class="fa-solid fa-calendar-days" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
-                        turmaHtml + instrutorHtml +
+                        turmaHtml + docenteHtml +
                     '</div>' +
                 '</div>';
             container.appendChild(card);
@@ -1776,7 +1776,7 @@
                 }
                 var dtStr = dt ? p(dt.getDate()) + '/' + p(dt.getMonth() + 1) + '/' + dt.getFullYear() + ' as ' + p(dt.getHours()) + ':' + p(dt.getMinutes()) : 'Data a definir';
                 var obs = a.observacao ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-circle-info"></i> ' + paEsc(a.observacao) + '</div>' : '';
-                var inst = a.instrutor ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-chalkboard-user"></i> Instrutor: ' + paEsc(a.instrutor) + '</div>' : '';
+                var inst = a.docente ? '<div style="margin-top:10px;font-size:12px;color:#475569;line-height:1.5"><i class="fa-solid fa-chalkboard-user"></i> Docente: ' + paEsc(a.docente) + '</div>' : '';
                 var rotulo = lista.length > 1 ? '<div style="font-size:11px;color:#15803d;font-weight:700;margin-bottom:4px">AGENDAMENTO ' + (idx + 1) + ' DE ' + lista.length + '</div>' : '';
                 html += '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;padding:18px;margin-bottom:10px">' +
                     rotulo +
@@ -2330,8 +2330,8 @@
         var cargos = [
             { nome: 'Aluno', desc: 'Corpo discente matriculado nos cursos regulares ou especiais.' },
             { nome: 'Monitor (Representante de Turma)', desc: 'Aluno destacado para auxiliar na coordenacao imediata de sua respectiva turma.' },
-            { nome: 'Auxiliar de Instrutor', desc: 'Membro graduado responsavel pelo apoio logistico e didatico durante as instrucoes.' },
-            { nome: 'Instrutor', desc: 'Profissional habilitado responsavel pela ministracao de aulas teoricas e praticas.' },
+            { nome: 'Auxiliar de Docente', desc: 'Membro graduado responsavel pelo apoio logistico e didatico durante as instrucoes.' },
+            { nome: 'Docente', desc: 'Profissional habilitado responsavel pela ministracao de aulas teoricas e praticas.' },
             { nome: 'Coordenador', desc: 'Responsavel pela supervisao direta das atividades de ensino e escalas de instrucao.' },
             { nome: 'Comandante de Divisao', desc: 'Oficiais superiores responsaveis pelas diretorias de area (Pedagogico, Servicos, Suprimentos).' },
             { nome: 'Comandante Geral (Diretor Geral / Proprietario)', desc: 'Autoridade maxima administrativa, juridica e operacional da instituicao.' }
@@ -2347,9 +2347,9 @@
         h += paRegCapitulo('III', 'DAS ATRIBUICOES E COMPETENCIAS', [
             { art: 'Art. 4', txt: 'Ao Comandante Geral compete a administracao global, assinatura de certificados, parcerias institucionais e a tomada de decisoes soberanas sobre o destino da FARN.' },
             { art: 'Art. 5', txt: 'Aos Comandantes de Divisao compete gerenciar suas respectivas pastas (Pedagogica, Servicos e Suprimentos), reportando as novidades diretamente ao Comandante Geral.' },
-            { art: 'Art. 6', txt: 'Ao Coordenador compete fiscalizar o cumprimento do cronograma de ensino e o comportamento dos instrutores e alunos.' },
-            { art: 'Art. 7', txt: 'Aos Instrutores e Auxiliares compete a execucao tecnica das materias, zelo pela seguranca dos alunos e manutencao da ordem nos locais de instrucao.' },
-            { art: 'Art. 8', txt: 'Ao Monitor compete servir de elo de ligacao entre a turma e o corpo de instrutores/coordenacao, zelando pela pontualidade e apresentacao da sua fracao.' },
+            { art: 'Art. 6', txt: 'Ao Coordenador compete fiscalizar o cumprimento do cronograma de ensino e o comportamento dos docentes e alunos.' },
+            { art: 'Art. 7', txt: 'Aos Docentes e Auxiliares compete a execucao tecnica das materias, zelo pela seguranca dos alunos e manutencao da ordem nos locais de instrucao.' },
+            { art: 'Art. 8', txt: 'Ao Monitor compete servir de elo de ligacao entre a turma e o corpo de docentes/coordenacao, zelando pela pontualidade e apresentacao da sua fracao.' },
             { art: 'Art. 9', txt: 'Ao Aluno compete cumprir integralmente o plano de curso, as ordens emanadas de seus superiores e zelar pela reputacao da FARN.' }
         ]);
 
@@ -2444,7 +2444,7 @@
         var anexo = [
             { tit: 'CIENCIA DAS NORMAS:', txt: 'Tomei pleno conhecimento das normas, termos e condicoes estabelecidas neste Regimento Interno e Codigo de Etica, obrigando-me a cumpri-los integralmente, sob pena das sancoes disciplinares previstas.' },
             { tit: 'APTIDAO FISICA E MENTAL:', txt: 'Declaro gozar de plena saude fisica e mental, estando apto a realizar os esfogos, exercicios e simulacoes inerentes a rotina de formacao paramilitar e tecnicas de resgate.' },
-            { tit: 'RISCOS ATINENTES A ATIVIDADE:', txt: 'Estou ciente de que as instrucoes envolvem atividades praticas operacionais de campo e simulacoes de risco controlado, assumindo a responsabilidade pelo cumprimento rigoroso das ordens de seguranca dadas pelos instrutores.' },
+            { tit: 'RISCOS ATINENTES A ATIVIDADE:', txt: 'Estou ciente de que as instrucoes envolvem atividades praticas operacionais de campo e simulacoes de risco controlado, assumindo a responsabilidade pelo cumprimento rigoroso das ordens de seguranca dadas pelos docentes.' },
             { tit: 'DIREITO DE IMAGEM:', txt: 'Autorizo, a titulo gratuito, o uso de minha imagem e voz captadas durante as instrucoes, formaturas e eventos oficiais da FARN, para fins de divulgacao institucional, pedagogica ou em redes sociais oficiais da instituicao.' }
         ];
         anexo.forEach(function(a, i) {

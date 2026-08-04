@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FARN - Recriar Docentes</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI',Arial,sans-serif; background:#f1f5f9; color:#1e293b; padding:24px; }
+        .box { max-width:760px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:28px; }
+        h2 { color:#16a34a; font-size:20px; margin-bottom:6px; }
+        p.sub { color:#64748b; font-size:13px; margin-bottom:20px; line-height:1.6; }
+        .aviso { background:#e0f2fe; border:1px solid #7dd3fc; color:#0c4a6e; border-radius:10px; padding:12px 14px; font-size:12px; line-height:1.6; margin-bottom:18px; }
+        .btn { display:inline-block; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:12px 22px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; }
+        .btn:hover { box-shadow:0 4px 14px rgba(22,163,74,.4); }
+        .btn:disabled { opacity:.5; cursor:not-allowed; }
+        .log { margin-top:18px; background:#0f172a; color:#cbd5e1; border-radius:10px; padding:14px; font-family:Consolas,monospace; font-size:12px; max-height:380px; overflow-y:auto; white-space:pre-wrap; }
+        .log .ok { color:#4caf50; }
+        .log .erro { color:#f87171; }
+        .log .info { color:#60a5fa; }
+        .resumo { margin-top:18px; display:none; background:#f0fdf4; border:1px solid #16a34a; border-radius:10px; padding:14px 16px; font-size:13px; line-height:1.8; color:#166534; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2><i class="fa-solid fa-user-tie"></i> Recriar Docentes a partir dos Formados</h2>
+        <p class="sub">Recria na colecao <b>docentes</b> os registros de docentes que foram remanejados de formados (marcados com <code>remanejadoDocente</code>/<code>remanejadoInstrutor</code> na colecao <b>candidatos</b>).</p>
+        <div class="aviso">
+            <b>Orientacao:</b> rode este passo <b>depois</b> da restauracao principal (restaurar-dados.html). O sistema tambem envia o login do administrador no portal do docente automaticamente (CPF 05004959471), entao ele nao precisa constar aqui.
+        </div>
+
+        <button class="btn" id="btn" onclick="confirmar()"><i class="fa-solid fa-wand-magic-sparkles"></i> Recriar Docentes</button>
+
+        <div class="log" id="log">Aguardando... Clique em Recriar Docentes.</div>
+        <div class="resumo" id="resumo"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const log = document.getElementById('log');
+        const resumo = document.getElementById('resumo');
+        const btn = document.getElementById('btn');
+
+        function logar(texto, tipo) {
+            const linha = document.createElement('div');
+            linha.className = tipo || 'info';
+            linha.textContent = texto;
+            log.appendChild(linha);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function montarDadosDocente(c) {
+            const cpf = c.cpf ? String(c.cpf).replace(/\D/g, '') : '';
+            return {
+                nome: c.nome || '',
+                guerra: '',
+                cpf: cpf,
+                genero: c.genero || '',
+                matricula: c.matricula || '',
+                fone: c.whatsapp || c.fone || '',
+                email: c.email || '',
+                senha: c.senha || (cpf ? cpf.substring(0, 6) : ''),
+                projeto: c.projeto ? [c.projeto] : [],
+                turma: c.turma ? [c.turma] : [],
+                nascimento: c.nascimento || '',
+                dataInscricao: c.dataInscricao || '',
+                estadoCivil: c.estadoCivil || '',
+                nacionalidade: c.nacionalidade || '',
+                naturalidade: c.naturalidade || '',
+                tituloEleitor: c.tituloEleitor || '',
+                profissao: c.profissao || '',
+                mae: c.mae || '',
+                pai: c.pai || '',
+                endereco: c.endereco || '',
+                numero: c.numero || '',
+                bairro: c.bairro || '',
+                cidade: c.cidade || '',
+                estado: c.estado || '',
+                localVotacao: c.localVotacao || '',
+                altura: c.altura || '',
+                peso: c.peso || '',
+                fatorRh: c.fatorRh || '',
+                hipertensao: c.hipertensao || 'Nao',
+                diabetes: c.diabetes || 'Nao',
+                deficiencia: c.deficiencia || 'Nao',
+                tatuagem: c.tatuagem || 'Nao',
+                cirurgia: c.cirurgia || 'Nao',
+                alcool: c.alcool || 'Nao',
+                medicamento: c.medicamento || '',
+                cansaco: c.cansaco || 'Nao',
+                calca: c.calca || '',
+                camisa: c.camisa || '',
+                calcado: c.calcado || '',
+                disciplinas: [],
+                criadoEm: new Date().toISOString(),
+                atualizadoEm: new Date().toISOString(),
+                remanejadoDe: c.id !== undefined && c.id !== null ? String(c.id) : '',
+                remanejadoEm: c.remanejadoEm || new Date().toISOString(),
+                remanejadoPor: c.remanejadoPor || 'Administrador'
+            };
+        }
+
+        async function confirmar() {
+            if (!confirm('Recriar os docentes a partir dos formados remanejados?\n\nA colecao docentes sera preenchida automaticamente (sem apagar registros existentes).')) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+            log.innerHTML = '';
+            resumo.style.display = 'none';
+
+            try {
+                const candSnap = await db.collection('candidatos').get();
+                const remanejados = [];
+                candSnap.forEach(doc => {
+                    if (doc.id === '_index') return;
+                    const d = doc.data() || {};
+                    if (d.remanejadoDocente === true || d.remanejadoInstrutor === true) {
+                        d.id = doc.id;
+                        remanejados.push(d);
+                    }
+                });
+
+                logar('Formados remanejados encontrados: ' + remanejados.length + '.', 'info');
+
+                if (!remanejados.length) {
+                    logar('Nenhum formado remanejado encontrado em candidatos. Nada a fazer.', 'erro');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Recriar Docentes';
+                    return;
+                }
+
+                const docSnap = await db.collection('docentes').get();
+                const cpfsExistentes = new Set();
+                docSnap.forEach(doc => {
+                    if (doc.id === '_index') return;
+                    const d = doc.data() || {};
+                    if (d.cpf) cpfsExistentes.add(String(d.cpf).replace(/\D/g, ''));
+                });
+
+                let criados = 0;
+                for (const c of remanejados) {
+                    const cpf = c.cpf ? String(c.cpf).replace(/\D/g, '') : '';
+                    if (cpfsExistentes.has(cpf)) {
+                        logar('Ja existe docente com CPF ' + cpf + ' (' + (c.nome || '') + ') — ignorado.', 'info');
+                        continue;
+                    }
+                    const dados = montarDadosDocente(c);
+                    const ref = await db.collection('docentes').add(dados);
+                    dados.id = ref.id;
+                    cpfsExistentes.add(cpf);
+
+                    const copiaCadastro = {};
+                    Object.keys(c).forEach(k => { if (k !== 'id') copiaCadastro['cadastroFormado_' + k] = c[k]; });
+                    copiaCadastro.remanejadoDe = dados.remanejadoDe;
+                    copiaCadastro.remanejadoEm = dados.remanejadoEm;
+                    copiaCadastro.remanejadoPor = dados.remanejadoPor;
+                    copiaCadastro.copiaCadastroFormado = true;
+                    await db.collection('docentes').doc(ref.id).update(copiaCadastro);
+
+                    if (c.id) {
+                        await db.collection('candidatos').doc(String(c.id)).update({
+                            remanejadoDocente: true,
+                            remanejadoEm: dados.remanejadoEm,
+                            remanejadoPor: dados.remanejadoPor
+                        });
+                    }
+                    criados++;
+                    logar('Docente criado: ' + (c.nome || cpf) + ' (CPF ' + cpf + ').', 'ok');
+                }
+
+                logar('CONCLUIDO: ' + criados + ' docente(s) criado(s).', 'ok');
+                resumo.innerHTML = '<b>Docentes recriados com sucesso!</b><br>' + criados + ' docente(s) adicionado(s) a colecao docentes.<br><br>Agora o portal do docente ja aceita o login desses docentes. Aulas e disciplinas ainda precisam ser cadastradas manualmente no admin.';
+                resumo.style.display = 'block';
+            } catch (e) {
+                logar('ERRO: ' + (e && e.message ? e.message : e), 'erro');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Recriar Docentes';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</body>
+</html>

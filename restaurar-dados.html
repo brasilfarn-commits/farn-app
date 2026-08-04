@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FARN - Restaurar Backup</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI',Arial,sans-serif; background:#f1f5f9; color:#1e293b; padding:24px; }
+        .box { max-width:760px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:28px; }
+        h2 { color:#16a34a; font-size:20px; margin-bottom:6px; }
+        p.sub { color:#64748b; font-size:13px; margin-bottom:20px; line-height:1.6; }
+        .aviso { background:#fef3c7; border:1px solid #fcd34d; color:#92400e; border-radius:10px; padding:12px 14px; font-size:12px; line-height:1.6; margin-bottom:18px; }
+        .aviso.vermelho { background:#fee2e2; border-color:#fca5a5; color:#991b1b; }
+        .btn { display:inline-block; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:12px 22px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; }
+        .btn:hover { box-shadow:0 4px 14px rgba(22,163,74,.4); }
+        .btn:disabled { opacity:.5; cursor:not-allowed; }
+        .btn.perigo { background:linear-gradient(135deg,#dc2626,#b91c1c); margin-left:8px; }
+        .file-wrap { margin:14px 0; padding:18px; border:2px dashed #16a34a; border-radius:12px; text-align:center; background:#f0fdf4; }
+        .file-wrap input { font-size:13px; }
+        .info-arquivo { margin-top:10px; font-size:12px; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; display:none; }
+        .info-arquivo b { color:#15803d; }
+        .log { margin-top:18px; background:#0f172a; color:#cbd5e1; border-radius:10px; padding:14px; font-family:Consolas,monospace; font-size:12px; max-height:380px; overflow-y:auto; white-space:pre-wrap; }
+        .log .ok { color:#4caf50; }
+        .log .erro { color:#f87171; }
+        .log .info { color:#60a5fa; }
+        .resumo { margin-top:18px; display:none; background:#f0fdf4; border:1px solid #16a34a; border-radius:10px; padding:14px 16px; font-size:13px; line-height:1.8; color:#166534; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2><i class="fa-solid fa-rotate-left"></i> Restaurar Backup de Dados</h2>
+        <p class="sub">Restaura no Firestore os cadastros (alunos, turmas, usuarios, projetos, TFMs e apontamentos) a partir de um arquivo de backup <b>farn-backup-*.json</b>.</p>
+        <div class="aviso vermelho">
+            <b>Atencao:</b> esta operacao <b>sobrescreve</b> os dados atuais no Firestore com o conteudo do arquivo selecionado. Use o backup <b>mais recente e completo</b> (ex.: <code>farn-backup-2026-08-03T21-42-47.json</code>, com 58 candidatos). Nao use os arquivos pequenos de 08-04.
+        </div>
+
+        <div class="file-wrap">
+            <label><b>Selecione o arquivo de backup (.json):</b></label><br>
+            <input type="file" id="file-input" accept=".json,application/json" onchange="verArquivo()">
+            <div class="info-arquivo" id="info-arquivo"></div>
+        </div>
+
+        <button class="btn" id="btn-restaurar" onclick="confirmarRestaurar()" disabled><i class="fa-solid fa-upload"></i> Restaurar Agora</button>
+
+        <div class="log" id="log">Aguardando selecao do arquivo...</div>
+        <div class="resumo" id="resumo"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const log = document.getElementById('log');
+        const resumo = document.getElementById('resumo');
+        const btn = document.getElementById('btn-restaurar');
+        let backupSelecionado = null;
+
+        function logar(texto, tipo) {
+            const linha = document.createElement('div');
+            linha.className = tipo || 'info';
+            linha.textContent = texto;
+            log.appendChild(linha);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function verArquivo() {
+            const input = document.getElementById('file-input');
+            const info = document.getElementById('info-arquivo');
+            const arquivo = input.files && input.files[0];
+            if (!arquivo) { btn.disabled = true; info.style.display = 'none'; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    backupSelecionado = backup;
+                    const colecoes = Object.keys(backup).filter(k => !k.startsWith('_') && Array.isArray(backup[k]) && backup[k].length > 0);
+                    if (!colecoes.length) { alert('Arquivo sem dados para restaurar (colecoes vazias).'); btn.disabled = true; info.style.display = 'none'; return; }
+                    let html = '<b>Arquivo:</b> ' + arquivo.name + '<br><b>Conteudo:</b><br>';
+                    colecoes.forEach(c => { html += '&bull; ' + c + ': ' + backup[c].length + ' registro(s)<br>'; });
+                    info.innerHTML = html;
+                    info.style.display = 'block';
+                    btn.disabled = false;
+                    log.innerHTML = '';
+                    logar('Arquivo lido. Clique em Restaurar Agora para gravar no Firestore.', 'info');
+                } catch (err) {
+                    alert('Arquivo invalido: ' + err.message);
+                    btn.disabled = true;
+                    info.style.display = 'none';
+                }
+            };
+            reader.readAsText(arquivo);
+        }
+
+        async function apagarColecao(nome) {
+            const snap = await db.collection(nome).get();
+            const docs = [];
+            snap.forEach(doc => docs.push(doc.ref));
+            for (let i = 0; i < docs.length; i += 400) {
+                const batch = db.batch();
+                docs.slice(i, i + 400).forEach(ref => batch.delete(ref));
+                await batch.commit();
+            }
+            return docs.length;
+        }
+
+        async function restaurarColecao(nome, docs) {
+            const dados = docs.filter(d => d && typeof d === 'object');
+            for (let i = 0; i < dados.length; i += 400) {
+                const batch = db.batch();
+                const lote = dados.slice(i, i + 400);
+                lote.forEach(docData => {
+                    const copia = Object.assign({}, docData);
+                    const id = copia.id !== undefined && copia.id !== null ? String(copia.id) : null;
+                    delete copia.id;
+                    delete copia._id;
+                    const ref = id ? db.collection(nome).doc(id) : db.collection(nome).doc();
+                    batch.set(ref, copia);
+                });
+                await batch.commit();
+            }
+            return dados.length;
+        }
+
+        async function confirmarRestaurar() {
+            if (!backupSelecionado) return;
+            if (!confirm('ISSO SOBRESCREVERA TODOS OS DADOS no Firestore com o arquivo selecionado!\n\nDeseja continuar?')) return;
+            if (!confirm('Ultima confirmacao: os dados atuais do Firestore serao substituidos. Continuar?')) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Restaurando...';
+            log.innerHTML = '';
+            resumo.style.display = 'none';
+
+            const itens = [];
+            const colecoes = Object.keys(backupSelecionado).filter(k => !k.startsWith('_') && Array.isArray(backupSelecionado[k]) && backupSelecionado[k].length > 0);
+
+            try {
+                for (const col of colecoes) {
+                    logar('>>> Restaurando ' + col + ' (' + backupSelecionado[col].length + ' registros)...', 'info');
+                    const apagados = await apagarColecao(col);
+                    const escritos = await restaurarColecao(col, backupSelecionado[col]);
+                    logar(col + ': ' + apagados + ' apagado(s), ' + escritos + ' restaurado(s).', 'ok');
+                    itens.push(col + ': ' + escritos + ' registros');
+                }
+                logar('RESTAURACAO CONCLUIDA COM SUCESSO!', 'ok');
+                resumo.innerHTML = '<b>Restauracao concluida!</b><br>' + itens.join('<br>') + '<br><br>Agora abra o admin (index.html) e verifique os cadastros. Recarregue a pagina (F5) para atualizar os dados.';
+                resumo.style.display = 'block';
+            } catch (e) {
+                logar('ERRO: ' + (e && e.message ? e.message : e), 'erro');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-upload"></i> Restaurar Agora';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</body>
+</html>
