@@ -520,7 +520,7 @@
                     .get();
                 if (!snapC.empty) {
                     var cand = snapC.docs[0].data();
-                    if ((cand.tipoPessoa || 'A') === 'F' && cand.status === 'Aprovado' && cand.senha === senha) {
+                    if ((cand.tipoPessoa || 'A') === 'F' && cand.status === 'Ativo' && cand.senha === senha) {
                         pfUser = cand;
                         pfUser._docId = snapC.docs[0].id;
                         pfUser._origem = 'candidatos';
@@ -536,7 +536,7 @@
                 return;
             }
 
-            if (pfUser.status !== 'Ativo' && pfUser.status !== 'Aprovado') {
+            if (pfUser.status !== 'Ativo') {
                 errEl.textContent = 'Seu cadastro ainda nao foi ativado. Aguarde aprovacao da administracao.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
@@ -828,10 +828,10 @@
         if (!pfUser) return;
         var el = document.getElementById('pf-cert-content');
         var html = '';
-        if (pfUser.status === 'Ativo' || pfUser.status === 'Aprovado') {
+        if (pfUser.status === 'Ativo') {
             html = '<div style="text-align:center;padding:20px">' +
                 '<div style="font-size:50px;color:#16a34a;margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>' +
-                '<h3 style="color:#16a34a;margin-bottom:8px">Certificado Aprovado</h3>' +
+                '<h3 style="color:#16a34a;margin-bottom:8px">Certificado Ativo</h3>' +
                 '<p style="color:#64748b;font-size:13px;margin-bottom:16px">Emissao: ' + (pfUser.dataCertificado || '---') + '</p>';
             if (pfUser.certificadoFrente) html += '<div style="max-width:400px;margin:0 auto"><img src="' + pfUser.certificadoFrente + '" style="width:100%;border-radius:10px;border:1px solid #e2e8f0"></div>';
             html += '</div>';

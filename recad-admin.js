@@ -315,7 +315,7 @@ async function recadMoverParaFormados(docId, r, matricula) {
         novoFormado.cpf = cpf;
         novoFormado.matricula = matricula || r.matricula || '';
         novoFormado.tipoPessoa = 'F';
-        novoFormado.status = 'Aprovado';
+        novoFormado.status = 'Ativo';
         novoFormado.origem = 'recadastramento';
         novoFormado.ativadoEm = new Date();
         novoFormado.ativadoPor = (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) ? currentUserData.nome : 'Administrador';

@@ -846,9 +846,9 @@
                 return;
             }
 
-            /* Verifica se esta aprovado */
-            if (dados.status !== 'Aprovado') {
-                errEl.textContent = 'Seu cadastro ainda nao foi aprovado. Somente alunos com status Aprovado podem acessar o portal.';
+            /* Verifica se esta ativo */
+            if (dados.status !== 'Ativo') {
+                errEl.textContent = 'Seu cadastro ainda nao foi ativado. Somente alunos com status Ativo podem acessar o portal.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
@@ -2583,8 +2583,8 @@
 
     async function paAceitarRegimento() {
         if (!paUser) return;
-        if (paUser.status !== 'Aprovado') {
-            alert('Seu cadastro precisa estar com status Aprovado para aceitar o Regimento.');
+        if (paUser.status !== 'Ativo') {
+            alert('Seu cadastro precisa estar com status Ativo para aceitar o Regimento.');
             return;
         }
         var btn = document.getElementById('pf-regimento-aceitar');

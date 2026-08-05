@@ -1137,7 +1137,7 @@ async function landingLoginFormado(cpf, senha) {
     var cand = snapC.docs[0].data();
     if ((cand.tipoPessoa || 'A') !== 'F') { landingShowLoginError('CPF ou senha inválidos.'); return false; }
     if (cand.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    if (cand.status !== 'Aprovado') { landingShowLoginError('Seu cadastro ainda não foi aprovado. Aguarde aprovação da administração.'); return false; }
+    if (cand.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Aguarde aprovação da administração.'); return false; }
     localStorage.setItem('pf_lembrar_cpf', cpf);
     localStorage.setItem('pf_lembrar_senha', senha);
     location.href = 'portal-formado.html';
@@ -1150,7 +1150,7 @@ async function landingLoginAluno(cpf, senha) {
     var u = snap.docs[0].data();
     if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
     if (u.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
-    if (u.status !== 'Aprovado') { landingShowLoginError('Seu cadastro ainda não foi aprovado. Somente alunos com status Aprovado podem acessar.'); return false; }
+    if (u.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo podem acessar.'); return false; }
     if (!u.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
     localStorage.setItem('pa_lembrar_cpf', cpf);
     localStorage.setItem('pa_lembrar_senha', senha);
@@ -1606,7 +1606,7 @@ async function editCandidato(index) {
         }
     }
     const senhaWrapper = document.getElementById('senha-field-wrapper');
-    if (c.status === 'Aprovado') {
+    if (c.status === 'Ativo') {
         senhaWrapper.style.display = '';
         document.getElementById('fc-senha').value = c.senha || (c.cpf ? c.cpf.substring(0, 6) : '');
         document.getElementById('fc-senha').required = true;
@@ -1766,7 +1766,7 @@ function renderList() {
     if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
     tbody.innerHTML = filtrados.map((c) => {
         const i = candidatos.indexOf(c);
-        const sc = c.status === 'Aprovado' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
+        const sc = c.status === 'Ativo' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
         const nomeStyle = c.pediuBaixa ? 'color:#dc2626;font-weight:700' : (c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '');
         const baixaTag = c.pediuBaixa ? ' <span style="background:rgba(220,38,38,.12);color:#dc2626;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-power-off"></i> PEDI BAIXA</span>' : '';
         return `<tr>
@@ -1850,7 +1850,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Inscricao</span><span class="detail-value">${c.dataInscricao || '---'}</span></div>
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
-            ${c.status === 'Aprovado' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
+            ${c.status === 'Ativo' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
             ${c.pediuBaixa ? `<div style="grid-column:1/-1;margin-top:12px;padding:16px;border:2px solid #dc2626;border-radius:10px;background:rgba(220,38,38,.06)"><p style="font-size:13px;color:#991b1b;margin-bottom:6px;font-weight:800"><i class="fa-solid fa-power-off"></i> ALUNO SOLICITOU BAIXA DO CURSO</p><p style="font-size:12px;color:#7f1d1d;margin-bottom:12px">Solicitado em ${c.pediuBaixaEm ? new Date(c.pediuBaixaEm).toLocaleString('pt-BR') : '---'}. O aluno esta com o acesso ao portal bloqueado.</p><button class="btn-primary" style="background:linear-gradient(135deg,#16a34a,#15803d)" onclick="autorizarBaixa(${i})"><i class="fa-solid fa-check"></i> Autorizar Retorno</button></div>` : ''}
             ${(c.tipoPessoa || 'A') === 'F' ? (c.remanejadoDocente ? `<div class="detail-item full" style="margin-top:8px"><span class="detail-label">Remanejamento</span><span class="detail-value" style="color:#1d4ed8;font-weight:700">Formado remanejado como Docente em ${c.remanejadoEm || '---'} por ${c.remanejadoPor || '---'}</span></div>` : `<div style="grid-column:1/-1;text-align:center;margin-top:14px;padding:16px;border:1px dashed #2563eb;border-radius:10px;background:rgba(37,99,235,.04)"><p style="font-size:13px;color:#475569;margin-bottom:10px;font-weight:600">Formado elegivel para entrar no corpo de docentes.</p><button class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" onclick="remanejarFormado(${i})"><i class="fa-solid fa-arrows-rotate"></i> Remanejar como Docente</button></div>`) : ''}
         </div>`;
@@ -1940,7 +1940,7 @@ function printCandidato(i) {
         <h2>Turma</h2>
         ${mat ? `<div class="row"><div class="col"><div class="label">Matricula</div><div class="val" style="color:#e65100;font-size:18px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</div></div></div>` : ''}
         <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}${c.turma ? '<br><small style="color:#666;font-size:6px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</div></div><div class="col"><div class="label">Projeto</div><div class="val" style="color:#e65100;font-weight:700">${c.projeto||'---'}</div></div></div>
-        ${c.status === 'Aprovado' && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
+        ${c.status === 'Ativo' && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
         ${c.dataHoraCadastro ? `<div class="row"><div class="col"><div class="label">Data/Hora 1o Cadastro</div><div class="val" style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro}</div></div></div>` : ''}
         <script>window.onload=function(){window.print();}<\/script></body></html>`);
     w.document.close();
@@ -2205,7 +2205,7 @@ async function importExcelFile(event) {
 
             if (!data.nome || !data.cpf) { erros++; continue; }
 
-            if (data.status === 'Aprovado' && !data.senha) {
+            if (data.status === 'Ativo' && !data.senha) {
                 data.senha = data.cpf.substring(0, 6);
             }
 
@@ -2250,7 +2250,7 @@ function filterList() {
 let currentAlunosTab = 'aprovados';
 
 const STATUS_MAP = {
-    'aprovados': 'Aprovado',
+    'aprovados': 'Ativo',
     'pendentes': 'Pendente',
     'reprovados': 'Rejeitado',
     'segunda-chamada': 'Segunda Chamada'
@@ -2310,7 +2310,7 @@ function renderAlunosList() {
     const isAprovados = currentAlunosTab === 'aprovados';
 
     const allByTurma = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && (!turmaFiltro || c.turma === turmaFiltro));
-    document.getElementById('tab-count-aprovados').textContent = allByTurma.filter(c => c.status === 'Aprovado').length;
+    document.getElementById('tab-count-aprovados').textContent = allByTurma.filter(c => c.status === 'Ativo').length;
     document.getElementById('tab-count-pendentes').textContent = allByTurma.filter(c => c.status === 'Pendente').length;
     document.getElementById('tab-count-reprovados').textContent = allByTurma.filter(c => c.status === 'Rejeitado').length;
     document.getElementById('tab-count-segunda-chamada').textContent = allByTurma.filter(c => c.status === 'Segunda Chamada').length;
@@ -2333,7 +2333,7 @@ function renderAlunosList() {
 
     const allStatuses = [
         { value: 'Pendente', label: 'Pendente', icon: 'fa-clock', color: '#16a34a', tab: 'pendentes' },
-        { value: 'Aprovado', label: 'Aprovado', icon: 'fa-check-circle', color: '#4caf50', tab: 'aprovados' },
+        { value: 'Ativo', label: 'Ativo', icon: 'fa-check-circle', color: '#4caf50', tab: 'aprovados' },
         { value: 'Rejeitado', label: 'Reprovado', icon: 'fa-times-circle', color: '#f44336', tab: 'reprovados' },
         { value: 'Segunda Chamada', label: '2a Chamada', icon: 'fa-rotate', color: '#2196f3', tab: 'segunda-chamada' }
     ];
@@ -2353,7 +2353,7 @@ function renderAlunosList() {
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
                 ${c.pediuBaixa ? `<button class="btn-icon btn-success" title="Autorizar Retorno" onclick="autorizarBaixa(${i})" style="color:#16a34a"><i class="fa-solid fa-check"></i></button>` : ''}
-                ${c.status === 'Aprovado' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
+                ${c.status === 'Ativo' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
                 <div class="status-dropdown">
                     <button class="btn-icon btn-status" title="Alterar Status" onclick="toggleStatusDropdown(event, ${i})"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
                     <div class="status-dropdown-menu hidden" id="status-dd-${i}">
@@ -2403,17 +2403,17 @@ document.addEventListener('click', () => {
 async function changeStatus(i, newStatus) {
     if (!candidatos[i]) return;
     candidatos[i].status = newStatus;
-    if (newStatus === 'Aprovado' && candidatos[i].cpf) {
+    if (newStatus === 'Ativo' && candidatos[i].cpf) {
         candidatos[i].senha = candidatos[i].cpf.substring(0, 6);
     }
     backupCandidatos();
     document.querySelectorAll('.status-dropdown-menu').forEach(d => d.classList.add('hidden'));
     renderAlunosList();
     renderList();
-    if (newStatus === 'Aprovado' && candidatos[i].whatsapp) {
+    if (newStatus === 'Ativo' && candidatos[i].whatsapp) {
         var c = candidatos[i];
-        var linkWa = farnGerarLinkWhatsApp(c.whatsapp, 'Parabéns ' + c.nome + '! Seu cadastro na FARN foi APROVADO!\nAcesse o portal: https://farn-app.web.app\nCPF: ' + c.cpf + '\nSenha: ' + c.senha);
-        if (linkWa && confirm('Cadastro de ' + c.nome + ' aprovado. Enviar notificação de aprovação pelo WhatsApp?')) {
+        var linkWa = farnGerarLinkWhatsApp(c.whatsapp, 'Parabéns ' + c.nome + '! Seu cadastro na FARN foi ATIVADO!\nAcesse o portal: https://farn-app.web.app\nCPF: ' + c.cpf + '\nSenha: ' + c.senha);
+        if (linkWa && confirm('Cadastro de ' + c.nome + ' ativado. Enviar notificação de ativação pelo WhatsApp?')) {
             window.open(linkWa, '_blank');
         }
     }
@@ -2487,8 +2487,8 @@ async function relatorioRegimento() {
         const aceites = [];
         snap.forEach(doc => aceites.push(doc.data()));
 
-        /* Base: apenas alunos ATIVOS do formulario (status Aprovado e nao formados) */
-        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Aprovado');
+        /* Base: apenas alunos ATIVOS do formulario (status Ativo e nao formados) */
+        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo');
         const aprovadosCpf = {};
         aprovados.forEach(c => { if (c.cpf) aprovadosCpf[c.cpf] = true; });
         const aceitesAtivos = aceites.filter(a => aprovadosCpf[a.cpf]);
@@ -2516,7 +2516,7 @@ async function relatorioRegimento() {
             </div>
             <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
                 <div style="font-size:24px;font-weight:700;color:#1e293b">${totalAprovados}</div>
-                <div style="font-size:11px;color:#475569;font-weight:600">Total de Aprovados</div>
+                <div style="font-size:11px;color:#475569;font-weight:600">Total de Ativos</div>
             </div>`;
 
         regimentoRenderTab('aceitaram');
@@ -2601,8 +2601,8 @@ function exportarRegimentoCSV() {
 }
 
 function relatorioUniforme() {
-    const aprovados = candidatos.filter(c => c.status === 'Aprovado');
-    if (!aprovados.length) { alert('Nenhum aluno aprovado para gerar relatorio.'); return; }
+    const aprovados = candidatos.filter(c => c.status === 'Ativo');
+    if (!aprovados.length) { alert('Nenhum aluno ativo para gerar relatorio.'); return; }
     aprovados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - Relatorio de Uniforme</title><style>
@@ -2644,7 +2644,7 @@ function relatorioUniforme() {
         <div class="report-title">Relatorio de Medidas de Uniforme</div>
         <div class="info-bar">
             <span>Data: ${new Date().toLocaleDateString('pt-BR')}</span>
-            <span>Total de Aprovados: ${aprovados.length}</span>
+            <span>Total de Ativos: ${aprovados.length}</span>
         </div>
         <table>
             <thead>
@@ -2760,7 +2760,7 @@ function getCamposSelecionados() {
 function getValorCampo(c, key) {
     if (key === 'matricula') return c.matricula || generateMatricula(c.cpf) || '---';
     if (key === 'cpf') return formatCPFDisplay(c.cpf) || '---';
-    if (key === 'senha') return c.status === 'Aprovado' && c.senha ? c.senha : '---';
+    if (key === 'senha') return c.status === 'Ativo' && c.senha ? c.senha : '---';
     return c[key] || '---';
 }
 
@@ -3958,6 +3958,7 @@ function apontamentoOnAulaChange() {
         snap.forEach(doc => {
             const c = doc.data();
             if (c.ativo === false) return;
+            if (c.status !== 'Ativo') return;
             aptAlunosNaTurma.push({ cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '' });
             aptPresencas[c.cpf] = { cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '', status: 'Falta', obs: '' };
         });
@@ -3965,7 +3966,7 @@ function apontamentoOnAulaChange() {
         if (aptAlunosNaTurma.length) {
             btnScan.disabled = false;
         } else {
-            alert('Nenhum aluno encontrado para a turma: ' + turma);
+            alert('Nenhum aluno ativo encontrado para a turma: ' + turma);
         }
     };
 
@@ -4514,7 +4515,7 @@ async function tfmOnSelecaoChange() {
     if (!projeto || !turma) { conteudo.style.display = 'none'; tfmRenderSalvos(); return; }
     conteudo.style.display = '';
 
-    tfmAlunos = candidatos.filter(c => c.status === 'Aprovado' && c.ativo !== false && c.turma === turma)
+    tfmAlunos = candidatos.filter(c => c.status === 'Ativo' && c.ativo !== false && c.turma === turma)
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     tfmExistentes = {};
@@ -5915,7 +5916,7 @@ function renderFormadosList() {
     var turma = selTurma ? selTurma.value : '';
     var projetosConcluidos = projetos.filter(function(p) { return p.status === 'Concluido'; });
     var lista = candidatos.filter(function(c) {
-        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Aprovado') return false;
+        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return false;
         var proj = projetos.find(function(p) { return p.nome === c.projeto; });
         if (!proj || proj.status !== 'Concluido') return false;
         return (!projeto || c.projeto === projeto) &&
@@ -5934,7 +5935,7 @@ function renderFormadosList() {
     if (listaEl) listaEl.style.display = 'block';
     tbody.innerHTML = lista.map(function(c) {
         var i = candidatos.indexOf(c);
-        var statusBadge = c.status === 'Aprovado' ? '<span class="badge green">Aprovado</span>' : '<span class="badge pendente">' + (c.status || '-') + '</span>';
+        var statusBadge = c.status === 'Ativo' ? '<span class="badge green">Ativo</span>' : '<span class="badge pendente">' + (c.status || '-') + '</span>';
         var remanejado = c.remanejadoDocente
             ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>'
             : '<span style="color:#94a3b8;font-size:11px">---</span>';

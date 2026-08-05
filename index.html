@@ -713,7 +713,7 @@
                     <div id="alunos-conteudo" style="display:none">
                         <div class="alunos-tabs">
                             <button class="alunos-tab active" data-tab="aprovados" onclick="switchAlunosTab('aprovados', this)">
-                                <i class="fa-solid fa-check-circle"></i> Aprovados <span class="tab-count" id="tab-count-aprovados">0</span>
+                                <i class="fa-solid fa-check-circle"></i> Ativos <span class="tab-count" id="tab-count-aprovados">0</span>
                             </button>
                             <button class="alunos-tab" data-tab="pendentes" onclick="switchAlunosTab('pendentes', this)">
                                 <i class="fa-solid fa-clock"></i> Pendentes <span class="tab-count" id="tab-count-pendentes">0</span>
@@ -882,7 +882,7 @@
                                     <label style="color:#334155;font-size:12px;font-weight:600"><i class="fa-solid fa-filter" style="color:#dc2626;margin-right:4px"></i>Status:</label>
                                     <select id="relatorio-status-filter" class="config-input" style="padding:6px 10px;font-size:12px;min-width:160px">
                                         <option value="Todos">Todos os Status</option>
-                                        <option value="Aprovado" selected>Aprovado</option>
+                                        <option value="Ativo" selected>Ativo</option>
                                         <option value="Pendente">Pendente</option>
                                         <option value="Rejeitado">Rejeitado</option>
                                         <option value="Segunda Chamada">Segunda Chamada</option>
@@ -1690,7 +1690,7 @@
                                     <select id="pre-filter" class="config-input" style="max-width:180px" onchange="filterList()">
                                         <option value="">Todos os status</option>
                                         <option value="Pendente">Pendente</option>
-                                        <option value="Aprovado">Aprovado</option>
+                                        <option value="Ativo">Ativo</option>
                                         <option value="Rejeitado">Rejeitado</option>
                                     </select>
                                 </div>
