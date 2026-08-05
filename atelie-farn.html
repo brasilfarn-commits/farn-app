@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ateliê FARN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(59,130,246,.18) 0%, transparent 38%),
+                radial-gradient(circle at 85% 60%, rgba(212,175,55,.10) 0%, transparent 30%),
+                linear-gradient(160deg, #0a1c40 0%, #122c5e 40%, #1a3a7a 70%, #0e2547 100%);
+            color: #e8f2e9;
+        }
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 50;
+            background: rgba(5, 18, 40, .92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(212,175,55,.25);
+        }
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-brand-logo {
+            width: 44px; height: 44px; object-fit: contain; border-radius: 50%;
+            background: #fff; padding: 2px; border: 2px solid #d4af37;
+        }
+        .header-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .header-brand-text strong { font-size: 16px; font-weight: 800; letter-spacing: .5px; color: #fff; }
+        .header-brand-text span { font-size: 11px; color: #b9d4bd; }
+        .header-user { display: flex; align-items: center; gap: 12px; }
+        .header-user-info { text-align: right; }
+        .header-user-name { font-size: 12px; font-weight: 600; color: #e8f2e9; }
+        .header-user-role { font-size: 10px; color: #d4af37; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+        .header-user-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #d4af37, #ca8a04);
+            display: flex; align-items: center; justify-content: center;
+            color: #0a1c40; font-weight: 700; font-size: 13px;
+        }
+        .btn-logout {
+            background: rgba(220,38,38,.2); border: 1px solid rgba(220,38,38,.4);
+            color: #f87171; padding: 8px 14px; border-radius: 8px;
+            font-size: 11px; font-weight: 600; cursor: pointer; transition: .2s;
+        }
+        .btn-logout:hover { background: rgba(220,38,38,.4); }
+        .main-content {
+            padding: 100px 24px 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .atelie-card {
+            text-align: center;
+            max-width: 520px;
+            width: 100%;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(212,175,55,.30);
+            border-radius: 20px;
+            padding: 56px 40px;
+            backdrop-filter: blur(8px);
+        }
+        .atelie-card i { font-size: 60px; color: #d4af37; margin-bottom: 18px; display: block; }
+        .atelie-card h1 { font-size: 34px; font-weight: 800; letter-spacing: .5px; color: #fff; margin-bottom: 6px; }
+        .atelie-card h2 { font-size: 18px; font-weight: 700; color: #d4af37; margin-bottom: 14px; }
+        .atelie-card p { font-size: 14px; color: #b9d4bd; line-height: 1.6; margin-bottom: 26px; }
+        .atelie-card .btn-voltar {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #e8f2e9; text-decoration: none; font-size: 14px; font-weight: 600;
+            padding: 12px 24px; border-radius: 12px;
+            border: 1px solid rgba(212,175,55,.40);
+            background: rgba(212,175,55,.12); transition: .25s;
+        }
+        .atelie-card .btn-voltar:hover { background: rgba(212,175,55,.25); color: #f0d78c; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="header-brand-logo">
+                <div class="header-brand-text">
+                    <strong>Ateliê FARN</strong>
+                    <span>Área restrita</span>
+                </div>
+            </div>
+            <div class="header-user">
+                <div class="header-user-info">
+                    <div class="header-user-name" id="header-user-name">---</div>
+                    <div class="header-user-role" id="header-user-role">Usuário</div>
+                </div>
+                <div class="header-user-avatar" id="header-user-avatar">--</div>
+                <button class="btn-logout" onclick="atelieLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="atelie-card">
+            <i class="fa-solid fa-palette"></i>
+            <h1>Ateliê FARN</h1>
+            <h2>Em construção</h2>
+            <p>Esta página do Ateliê FARN está sendo preparada com muito carinho. Em breve novas funcionalidades estarão disponíveis para todos os usuários cadastrados.</p>
+            <a class="btn-voltar" href="atelie.html"><i class="fa-solid fa-arrow-left"></i> Sair do Ateliê</a>
+        </div>
+    </main>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+        // Verifica login
+        window.addEventListener('DOMContentLoaded', function() {
+            var user = localStorage.getItem('atelie_user');
+            if (!user) { location.href = 'atelie.html'; return; }
+            var u = JSON.parse(user);
+            document.getElementById('header-user-name').textContent = u.nome || 'Usuário';
+            document.getElementById('header-user-role').textContent = u.admin ? 'Administrador' : 'Usuário';
+            var avatar = document.getElementById('header-user-avatar');
+            if (u.nome) {
+                var partes = u.nome.trim().split(' ');
+                avatar.textContent = (partes[0][0] + (partes[1] ? partes[1][0] : '')).toUpperCase();
+            }
+        });
+
+        function atelieLogout() {
+            localStorage.removeItem('atelie_user');
+            location.href = 'atelie.html';
+        }
+    </script>
+</body>
+</html>
