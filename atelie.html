@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ateliê - FARN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(59,130,246,.18) 0%, transparent 38%),
+                radial-gradient(circle at 85% 60%, rgba(212,175,55,.10) 0%, transparent 30%),
+                linear-gradient(160deg, #0a1c40 0%, #122c5e 40%, #1a3a7a 70%, #0e2547 100%);
+            color: #e8f2e9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .atelie-card {
+            text-align: center;
+            max-width: 520px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(212,175,55,.30);
+            border-radius: 20px;
+            padding: 56px 40px;
+            backdrop-filter: blur(8px);
+        }
+        .atelie-card i {
+            font-size: 60px;
+            color: #d4af37;
+            margin-bottom: 18px;
+            display: block;
+        }
+        .atelie-card h1 {
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: .5px;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .atelie-card h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #d4af37;
+            margin-bottom: 14px;
+        }
+        .atelie-card p {
+            font-size: 14px;
+            color: #b9d4bd;
+            line-height: 1.6;
+            margin-bottom: 26px;
+        }
+        .atelie-card .btn-voltar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #e8f2e9;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(212,175,55,.40);
+            background: rgba(212,175,55,.12);
+            transition: .25s;
+        }
+        .atelie-card .btn-voltar:hover {
+            background: rgba(212,175,55,.25);
+            color: #f0d78c;
+        }
+    </style>
+</head>
+<body>
+    <div class="atelie-card">
+        <i class="fa-solid fa-palette"></i>
+        <h1>Ateliê</h1>
+        <h2>Em construção</h2>
+        <p>Esta página do Ateliê está sendo preparada com muito carinho. Em breve novas funcionalidades estarão disponíveis.</p>
+        <a class="btn-voltar" href="index.html"><i class="fa-solid fa-arrow-left"></i> Voltar ao início</a>
+    </div>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>

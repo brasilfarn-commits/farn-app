@@ -97,6 +97,113 @@
             transition: .25s;
         }
         .landing-nav a:hover { background: rgba(255,255,255,.09); color: var(--gold-l, #f0d78c); }
+        .landing-btn-atelie {
+            border: 1px solid rgba(212,175,55,.40);
+            background: rgba(212,175,55,.12);
+            border-radius: 9px;
+        }
+        .landing-btn-atelie:hover { background: rgba(212,175,55,.25) !important; }
+        .landing-btn-atelie i { margin-right: 4px; }
+
+        /* ===== MENU LATERAL MOBILE ===== */
+        .landing-menu-btn {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 60;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(212,175,55,.35);
+            background: rgba(10,28,64,.92);
+            color: #e8f2e9;
+            border-radius: 10px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.35);
+            backdrop-filter: blur(6px);
+        }
+        .landing-menu-btn:hover { background: rgba(212,175,55,.18); color: #f0d78c; }
+        .landing-drawer-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 64;
+            background: rgba(0,0,0,.55);
+            opacity: 0;
+            transition: opacity .25s;
+        }
+        .landing-drawer-overlay.open { display: block; opacity: 1; }
+        .landing-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: min(300px, 84vw);
+            z-index: 65;
+            background: linear-gradient(180deg, #0a1c40 0%, #122c5e 100%);
+            border-right: 1px solid rgba(212,175,55,.25);
+            padding: 18px 0;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(-100%);
+            transition: transform .28s ease;
+        }
+        .landing-drawer.open { transform: translateX(0); }
+        .landing-drawer-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 18px 18px;
+            border-bottom: 1px solid rgba(212,175,55,.25);
+            margin-bottom: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .landing-drawer-logo {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            padding: 2px;
+            border: 1px solid var(--gold, #d4af37);
+        }
+        .landing-drawer-close {
+            margin-left: auto;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,.08);
+            color: #cfe6d2;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .landing-drawer-close:hover { background: rgba(255,255,255,.16); color: #fff; }
+        .landing-drawer-nav { display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
+        .landing-drawer-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #cfe6d2;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 13px 14px;
+            border-radius: 10px;
+            transition: .2s;
+        }
+        .landing-drawer-nav a:hover { background: rgba(255,255,255,.08); color: #f0d78c; }
+        .landing-drawer-nav a i { width: 20px; text-align: center; color: #d4af37; }
+        .landing-drawer-atelie { border: 1px solid rgba(212,175,55,.35); background: rgba(212,175,55,.10); margin-top: 6px; }
+        @media (max-width: 860px) {
+            .landing-menu-btn { display: flex; }
+            .landing-header-inner { padding-left: 60px; }
+        }
 
         /* ===== LOGIN DO ACESSE AQUI NO HEADER ===== */
         .landing-login {
@@ -410,6 +517,7 @@
     <!-- PAGINA INSTITUCIONAL (LANDING) -->
     <div id="screen-login" class="screen landing-screen active">
         <header class="landing-header">
+            <button class="landing-menu-btn" onclick="landingToggleMenu()" aria-label="Abrir menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
             <div class="landing-header-inner">
                 <div class="landing-brand">
                     <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="landing-brand-logo">
@@ -422,6 +530,7 @@
                     <a href="noticias.html">Notícias</a>
                     <a href="#landing-sobre">Instituição</a>
                     <a href="#landing-contato">Contato</a>
+                    <a href="atelie.html" class="landing-btn-atelie"><i class="fa-solid fa-palette"></i> Ateliê</a>
                 </nav>
                 <form class="landing-login" onsubmit="landingLogin(event)" autocomplete="off">
                     <div class="landing-login-field landing-login-portal-field">
@@ -448,6 +557,22 @@
                 </form>
             </div>
         </header>
+
+        <!-- MENU LATERAL MOBILE -->
+        <div class="landing-drawer-overlay" id="landing-drawer-overlay" onclick="landingCloseMenu()"></div>
+        <aside class="landing-drawer" id="landing-drawer" aria-hidden="true">
+            <div class="landing-drawer-head">
+                <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="landing-drawer-logo">
+                <strong>FARN</strong>
+                <button class="landing-drawer-close" onclick="landingCloseMenu()" aria-label="Fechar menu"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <nav class="landing-drawer-nav">
+                <a href="noticias.html"><i class="fa-solid fa-newspaper"></i> Notícias</a>
+                <a href="#landing-sobre"><i class="fa-solid fa-building-columns"></i> Instituição</a>
+                <a href="#landing-contato"><i class="fa-solid fa-envelope"></i> Contato</a>
+                <a href="atelie.html" class="landing-drawer-atelie"><i class="fa-solid fa-palette"></i> Ateliê</a>
+            </nav>
+        </aside>
 
         <!-- INSTITUICAO + NOTICIAS -->
         <section class="landing-sobre" id="landing-sobre">
@@ -590,6 +715,10 @@
                         <i class="fa-solid fa-images"></i>
                         <span>Galeria</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-atelie', this)">
+                        <i class="fa-solid fa-palette"></i>
+                        <span>Atelie</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -681,6 +810,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item:nth-child(15)')); noticiasInicializar()">
                                 <i class="fa-solid fa-newspaper"></i>
                                 <span>Noticias</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-atelie', document.querySelector('.nav-item:nth-child(17)'));">
+                                <i class="fa-solid fa-palette"></i>
+                                <span>Atelie</span>
                             </div>
                         </div>
                     </div>
@@ -2335,6 +2468,23 @@
                                         <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Selecione projeto e turma acima.</div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ATELIE -->
+                <div id="admin-atelie" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-palette" style="color:#dc2626;margin-right:8px"></i> Atelie</h3>
+                            <small>Area de gestao do atelie.</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="empty-state" style="padding:60px 20px;text-align:center">
+                                <i class="fa-solid fa-person-digging" style="font-size:52px;color:#dc2626;margin-bottom:14px;opacity:.85"></i>
+                                <h4 style="color:#1e293b;font-size:18px;font-weight:800;margin:0 0 8px">Em construcao</h4>
+                                <p style="color:#64748b;font-size:14px;margin:0">Esta secao do Atelie esta sendo preparada. Em breve novas funcionalidades estarao disponiveis.</p>
                             </div>
                         </div>
                     </div>
