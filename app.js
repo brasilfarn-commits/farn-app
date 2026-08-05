@@ -1018,6 +1018,36 @@ function landingSelecionarPortal(portal) {
     landingFocarLogin();
 }
 
+function landingToggleMenu() {
+    var overlay = document.getElementById('landing-drawer-overlay');
+    var drawer = document.getElementById('landing-drawer');
+    var btn = document.querySelector('.landing-menu-btn');
+    if (!overlay || !drawer) return;
+    var abrir = !drawer.classList.contains('open');
+    if (abrir) {
+        overlay.classList.add('open');
+        drawer.classList.add('open');
+        drawer.setAttribute('aria-hidden', 'false');
+        if (btn) { btn.setAttribute('aria-expanded', 'true'); btn.innerHTML = '<i class="fa-solid fa-xmark"></i>'; }
+        document.body.style.overflow = 'hidden';
+    } else {
+        landingCloseMenu();
+    }
+}
+
+function landingCloseMenu() {
+    var overlay = document.getElementById('landing-drawer-overlay');
+    var drawer = document.getElementById('landing-drawer');
+    var btn = document.querySelector('.landing-menu-btn');
+    if (overlay) overlay.classList.remove('open');
+    if (drawer) {
+        drawer.classList.remove('open');
+        drawer.setAttribute('aria-hidden', 'true');
+    }
+    if (btn) { btn.setAttribute('aria-expanded', 'false'); btn.innerHTML = '<i class="fa-solid fa-bars"></i>'; }
+    document.body.style.overflow = '';
+}
+
 async function landingLogin(event) {
     if (event) event.preventDefault();
     var cpf = document.getElementById('landing-login-cpf').value.replace(/\D/g, '');
@@ -1493,7 +1523,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
