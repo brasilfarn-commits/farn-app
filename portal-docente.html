@@ -262,6 +262,9 @@
                 <div class="pf-nav-item" onclick="pdShowSection('apontamento', this)">
                     <i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span>
                 </div>
+                <div class="pf-nav-item" onclick="pdShowSection('apostilasextras', this)">
+                    <i class="fa-solid fa-book-open"></i><span>Apostilas Extras</span>
+                </div>
                 <div class="pf-nav-item" onclick="pdShowSection('chat', this)">
                     <i class="fa-solid fa-comments"></i><span>Chat</span>
                 </div>
@@ -425,6 +428,20 @@
                 </div>
             </div>
 
+            <!-- APOSTILAS EXTRAS -->
+            <div id="pf-section-apostilasextras" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-book-open"></i>
+                    <h2>Apostilas Extras</h2>
+                    <button class="pd-btn-nova" onclick="pdApostExtraAbrirModal()">
+                        <i class="fa-solid fa-file-pdf"></i> Anexar Apostila em PDF
+                    </button>
+                </div>
+                <div id="pd-apost-extra-list">
+                    <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando apostilas...</p></div>
+                </div>
+            </div>
+
             <!-- CONSTRUCAO (para secoes futuras) -->
             <div id="pf-section-construcao" class="pf-section">
                 <div class="pf-em-construcao">
@@ -565,6 +582,37 @@
                         <button class="btn-outline" onclick="apontamentoFecharModal()" style="margin-right:8px"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                         <button class="btn-primary" onclick="apontamentoSalvar()"><i class="fa-solid fa-save"></i> Salvar Apontamento</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL APOSTILA EXTRA -->
+    <div id="pd-apost-extra-modal" class="modal-overlay hidden" onclick="pdApostExtraFecharModal(event)">
+        <div class="modal-content" style="max-width:520px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-pdf" style="color:#16a34a;margin-right:8px"></i> Anexar Apostila Extra</h3>
+                <button class="modal-close" onclick="pdApostExtraFecharModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Arquivo PDF *</label>
+                    <input type="file" id="pd-apost-extra-file" accept=".pdf,application/pdf" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:#1e293b;font-size:13px">
+                </div>
+                <div class="form-group">
+                    <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Titulo de exibicao</label>
+                    <input type="text" id="pd-apost-extra-titulo" class="config-input" placeholder="Nome da apostila (opcional - padrao: nome do arquivo)">
+                </div>
+                <div class="form-group">
+                    <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:8px;display:block">Exibir no Portal do Aluno para as turmas:</label>
+                    <div id="pd-apost-extra-modal-turmas" style="padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:flex;flex-wrap:wrap;gap:4px">
+                        <span style="font-size:12px;color:#94a3b8">Carregando turmas...</span>
+                    </div>
+                </div>
+                <div id="pd-apost-extra-msg" style="display:none;margin-bottom:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                    <button class="btn-outline" onclick="pdApostExtraFecharModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                    <button class="btn-primary" id="pd-apost-extra-save-btn" onclick="pdApostExtraSalvar()"><i class="fa-solid fa-upload"></i> Anexar</button>
                 </div>
             </div>
         </div>
@@ -763,6 +811,7 @@
             if (section === 'aulas') pdLoadAulas();
             if (section === 'tfm') pdLoadTfmAgendamentos();
             if (section === 'apontamento') pdLoadApontamentos();
+            if (section === 'apostilasextras') pdLoadApostExtras();
         }
 
         function pdToggleSidebar() {
@@ -1800,6 +1849,239 @@
             }).catch(function(e) {
                 console.error('Erro ao enviar:', e);
             });
+        }
+
+        /* ===== APOSTILAS EXTRAS ===== */
+        var pdApostExtras = [];
+        var pdApostExtrasTurmas = [];
+        var pdApostExtraUnsub = null;
+
+        function pdApostExtraMsg(texto, tipo) {
+            var el = document.getElementById('pd-apost-extra-msg');
+            if (!el) return;
+            el.textContent = texto;
+            el.style.display = 'block';
+            el.style.background = tipo === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+            el.style.border = '1px solid ' + (tipo === 'ok' ? 'rgba(76,175,80,.3)' : 'rgba(244,67,54,.3)');
+            el.style.color = tipo === 'ok' ? '#4caf50' : '#f44336';
+        }
+
+        async function pdApostExtraCarregarTurmas() {
+            pdApostExtrasTurmas = [];
+            try {
+                var snap = await dbFirestore.collection('turmas').get();
+                snap.forEach(function(doc) {
+                    if (doc.id === '_index') return;
+                    var d = doc.data();
+                    if (d.nome && pdApostExtrasTurmas.indexOf(d.nome) === -1) pdApostExtrasTurmas.push(d.nome);
+                });
+                pdApostExtrasTurmas.sort();
+            } catch(e) {
+                console.error('Erro ao carregar turmas:', e);
+            }
+            var selTurmas = document.getElementById('pd-apost-extra-modal-turmas');
+            if (selTurmas) {
+                selTurmas.innerHTML = pdApostExtrasTurmas.length
+                    ? pdApostExtrasTurmas.map(function(t) {
+                        return '<label style="display:inline-flex;align-items:center;gap:6px;margin:4px 12px 4px 0;font-size:13px;color:#475569;cursor:pointer">' +
+                            '<input type="checkbox" value="' + pdEsc(t) + '" style="accent-color:#16a34a;width:16px;height:16px">' + pdEsc(t) + '</label>';
+                    }).join('')
+                    : '<span style="font-size:12px;color:#94a3b8">Nenhuma turma cadastrada.</span>';
+            }
+        }
+
+        function pdLoadApostExtras() {
+            var container = document.getElementById('pd-apost-extra-list');
+            if (!container) return;
+            if (pdApostExtraUnsub) { pdApostExtraUnsub(); pdApostExtraUnsub = null; }
+            pdApostExtraCarregarTurmas();
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando apostilas...</p></div>';
+            pdApostExtraUnsub = dbFirestore.collection('apostilasAlunos').where('tipo', '==', 'extra').onSnapshot(function(snap) {
+                pdApostExtras = [];
+                snap.forEach(function(doc) {
+                    var a = doc.data();
+                    a._id = doc.id;
+                    pdApostExtras.push(a);
+                });
+                pdApostExtras.sort(function(x, y) {
+                    var dx = x.criadoEm ? (x.criadoEm.toMillis ? x.criadoEm.toMillis() : new Date(x.criadoEm).getTime()) : 0;
+                    var dy = y.criadoEm ? (y.criadoEm.toMillis ? y.criadoEm.toMillis() : new Date(y.criadoEm).getTime()) : 0;
+                    return dy - dx;
+                });
+                if (pdApostExtras.length === 0) {
+                    container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-file-pdf"></i><p>Nenhuma apostila extra anexada ainda.</p></div>';
+                    return;
+                }
+                container.innerHTML = '';
+                pdApostExtras.forEach(function(a) {
+                    container.appendChild(pdApostExtraCard(a));
+                });
+            }, function(e) {
+                console.error('Erro ao carregar apostilas extras:', e);
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar apostilas.</p></div>';
+            });
+        }
+
+        function pdApostExtraCard(a) {
+            var card = document.createElement('div');
+            card.style.cssText = 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:14px';
+            var dateStr = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : '';
+            var docenteStr = a.docente || a.criadoPor || '';
+            var turmaChips = (a.turmas || []).map(function(t) {
+                return '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600">' + pdEsc(t) + '</span>';
+            }).join('');
+            var checkboxes = pdApostExtrasTurmas.map(function(t) {
+                var checked = (a.turmas || []).indexOf(t) !== -1;
+                return '<label style="display:inline-flex;align-items:center;gap:6px;margin:4px 12px 4px 0;font-size:12px;color:#475569;cursor:pointer">' +
+                    '<input type="checkbox" ' + (checked ? 'checked' : '') + ' data-turma="' + pdEsc(t) + '" style="accent-color:#16a34a;width:15px;height:15px">' + pdEsc(t) + '</label>';
+            }).join('');
+            card.innerHTML =
+                '<div style="display:flex;align-items:flex-start;gap:12px">' +
+                    '<div style="width:44px;height:44px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-pdf" style="color:#dc2626;font-size:19px"></i></div>' +
+                    '<div style="flex:1;min-width:0">' +
+                        '<div style="font-size:14px;font-weight:700;color:#1e293b;word-break:break-word">' + pdEsc(a.titulo || 'Apostila') + '</div>' +
+                        '<div style="font-size:11px;color:#64748b;margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">' +
+                            (dateStr ? '<span><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
+                            (docenteStr ? '<span><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + pdEsc(docenteStr) + '</span>' : '') +
+                        '</div>' +
+                        (turmaChips ? '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">' + turmaChips + '</div>' : '') +
+                    '</div>' +
+                    '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                        '<button title="Imprimir" style="background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);color:#16a34a;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:14px" onclick="pdApostExtraImprimir(\'' + a._id + '\')"><i class="fa-solid fa-print"></i></button>' +
+                        '<button title="Excluir" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:14px" onclick="pdApostExtraExcluir(\'' + a._id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9">' +
+                    '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px"><i class="fa-solid fa-users" style="margin-right:4px"></i>Exibir no Portal do Aluno para as turmas:</div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:4px">' + (checkboxes || '<span style="font-size:12px;color:#94a3b8">Nenhuma turma cadastrada.</span>') + '</div>' +
+                '</div>';
+            card.querySelectorAll('input[type="checkbox"][data-turma]').forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    pdApostExtraToggleTurma(a._id, cb.getAttribute('data-turma'), cb.checked);
+                });
+            });
+            return card;
+        }
+
+        function pdApostExtraAbrirModal() {
+            pdApostExtraCarregarTurmas();
+            document.getElementById('pd-apost-extra-file').value = '';
+            document.getElementById('pd-apost-extra-titulo').value = '';
+            var msg = document.getElementById('pd-apost-extra-msg');
+            if (msg) msg.style.display = 'none';
+            document.getElementById('pd-apost-extra-modal').classList.remove('hidden');
+        }
+
+        function pdApostExtraFecharModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('pd-apost-extra-modal').classList.add('hidden');
+        }
+
+        function pdApostExtraLerBase64(file) {
+            return new Promise(function(resolve, reject) {
+                var fr = new FileReader();
+                fr.onload = function() { resolve(String(fr.result).split(',')[1] || ''); };
+                fr.onerror = function() { reject(new Error('Falha ao ler o arquivo.')); };
+                fr.readAsDataURL(file);
+            });
+        }
+
+        async function pdApostExtraSalvar() {
+            var inputFile = document.getElementById('pd-apost-extra-file');
+            var file = inputFile.files[0];
+            if (!file) { pdApostExtraMsg('Selecione um arquivo PDF para anexar.', 'err'); return; }
+            if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') {
+                pdApostExtraMsg('Somente arquivos PDF sao aceitos.', 'err'); return;
+            }
+            if (file.size > 500 * 1024) {
+                pdApostExtraMsg('O PDF deve ter no maximo 500 KB (armazenamento embutido).', 'err'); return;
+            }
+            var titulo = document.getElementById('pd-apost-extra-titulo').value.trim() || file.name.replace(/\.pdf$/i, '');
+            var turmas = Array.prototype.slice.call(document.querySelectorAll('#pd-apost-extra-modal-turmas input:checked')).map(function(cb) { return cb.value; });
+            if (!turmas.length) { pdApostExtraMsg('Selecione ao menos uma turma para exibir a apostila.', 'err'); return; }
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) { pdApostExtraMsg('Sessao expirada. Faca login novamente.', 'err'); return; }
+            var docente = JSON.parse(sessao);
+            var btn = document.getElementById('pd-apost-extra-save-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+            try {
+                var pdfBase64 = await pdApostExtraLerBase64(file);
+                await dbFirestore.collection('apostilasAlunos').add({
+                    tipo: 'extra',
+                    titulo: titulo,
+                    observacao: '',
+                    descricao: '',
+                    url: '',
+                    pdfBase64: pdfBase64,
+                    pdfNome: file.name,
+                    turmas: turmas,
+                    turma: '',
+                    projeto: '',
+                    disciplinaId: '',
+                    disciplinaNome: '',
+                    docente: docente.nome || '',
+                    docenteCpf: docente.cpf || '',
+                    criadoPor: docente.nome || '',
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    data: new Date().toISOString(),
+                    visivel: true
+                });
+                pdApostExtraFecharModal();
+                pdApostExtraMsg('Apostila anexada com sucesso!', 'ok');
+            } catch(e) {
+                console.error('Erro ao anexar apostila:', e);
+                pdApostExtraMsg('Erro: ' + e.message, 'err');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-upload"></i> Anexar';
+        }
+
+        function pdApostExtraToggleTurma(docId, turma, checked) {
+            if (!docId || !turma) return;
+            var op = checked
+                ? firebase.firestore.FieldValue.arrayUnion(turma)
+                : firebase.firestore.FieldValue.arrayRemove(turma);
+            dbFirestore.collection('apostilasAlunos').doc(docId).update({ turmas: op }).catch(function(e) {
+                console.error('Erro ao atualizar turmas:', e);
+            });
+        }
+
+        function pdApostExtraUrlDoc(a) {
+            if (a.pdfBase64) return 'data:application/pdf;base64,' + a.pdfBase64;
+            return a.url || '';
+        }
+
+        function pdApostExtraImprimir(docId) {
+            var a = null;
+            for (var i = 0; i < pdApostExtras.length; i++) {
+                if (pdApostExtras[i]._id === docId) { a = pdApostExtras[i]; break; }
+            }
+            if (!a) return;
+            var src = pdApostExtraUrlDoc(a);
+            if (!src) { alert('Apostila sem arquivo.'); return; }
+            var iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+            iframe.src = src;
+            iframe.onload = function() {
+                try {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                } catch(e) {
+                    window.open(src, '_blank');
+                }
+            };
+            document.body.appendChild(iframe);
+            setTimeout(function() { try { iframe.remove(); } catch(e) {} }, 120000);
+        }
+
+        async function pdApostExtraExcluir(docId) {
+            if (!confirm('Excluir esta apostila extra?')) return;
+            try {
+                await dbFirestore.collection('apostilasAlunos').doc(docId).delete();
+            } catch(e) {
+                alert('Erro ao excluir: ' + e.message);
+            }
         }
 
         /* Auto login se houver credenciais salvas */
