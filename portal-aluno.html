@@ -336,9 +336,27 @@
         .pf-mobile-nav-item.active{color:var(--green)}
         .pf-mobile-nav-item:active{background:rgba(22,163,74,.06)}
 
+        /* Mobile Hamburger & Drawer */
+        .pf-menu-btn{display:none;position:fixed;top:10px;left:10px;z-index:110;width:40px;height:40px;border:1px solid rgba(22,163,74,.3);background:var(--green);color:#fff;border-radius:10px;cursor:pointer;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px rgba(22,163,74,.4);transition:.2s}
+        .pf-menu-btn:hover{background:var(--green-d);transform:scale(1.05)}
+        .pa-drawer-overlay{display:none;position:fixed;inset:0;z-index:115;background:rgba(0,0,0,.5);opacity:0;transition:opacity .25s}
+        .pa-drawer-overlay.open{display:block;opacity:1}
+        .pa-drawer{position:fixed;top:0;left:0;bottom:0;width:min(300px,84vw);z-index:120;background:var(--white);border-right:1px solid var(--gray200);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s ease;box-shadow:0 12px 40px rgba(0,0,0,.15)}
+        .pa-drawer.open{transform:translateX(0)}
+        .pa-drawer-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--gray200);color:var(--green);font-weight:700;font-size:15px}
+        .pa-drawer-logo{width:32px;height:32px;object-fit:contain;border-radius:50%;background:#fff;padding:2px;border:1px solid var(--green)}
+        .pa-drawer-close{margin-left:auto;width:32px;height:32px;border:none;border-radius:8px;background:var(--gray100);color:var(--gray500);font-size:15px;cursor:pointer}
+        .pa-drawer-close:hover{background:var(--gray200);color:var(--gray700)}
+        .pa-drawer-nav{display:flex;flex-direction:column;gap:2px;padding:12px 12px 0}
+        .pa-drawer-nav a{display:flex;align-items:center;gap:12px;color:var(--gray700);text-decoration:none;font-size:14px;font-weight:600;padding:13px 14px;border-radius:10px;transition:.2s}
+        .pa-drawer-nav a:hover{background:rgba(22,163,74,.08);color:var(--green)}
+        .pa-drawer-nav a i{width:20px;text-align:center;color:var(--green)}
+
         @media(max-width:768px){
+            .pf-menu-btn{display:flex}
+            .pf-topbar-left{padding-left:54px}
             .pf-sidebar{display:none}
-            .pf-mobile-nav{display:block}
+            .pf-mobile-nav{display:none}
             .pf-noticias-layout{grid-template-columns:1fr;height:auto}
             .pf-noticias-col.hidden-mobile{display:none}
             .pf-noticias-col{height:calc(100vh - 170px);overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
@@ -390,6 +408,7 @@
 
         <!-- TOP BAR -->
         <div class="pf-topbar">
+            <button class="pf-menu-btn" onclick="paToggleMenu()" aria-label="Abrir menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
             <div class="pf-topbar-left">
                 <img class="pf-topbar-logo" data-farn-logo src="logo-farn.png.png" alt="FARN">
                 <span class="pf-topbar-title">Portal do Aluno</span>
@@ -404,6 +423,30 @@
                 <button class="pf-logout-btn" onclick="paLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
             </div>
         </div>
+
+        <!-- MOBILE DRAWER -->
+        <div class="pa-drawer-overlay" id="pa-drawer-overlay" onclick="paCloseMenu()"></div>
+        <aside class="pa-drawer" id="pa-drawer" aria-hidden="true">
+            <div class="pa-drawer-head">
+                <img data-farn-logo src="logo-farn.png.png" alt="FARN" class="pa-drawer-logo">
+                <strong>Portal do Aluno</strong>
+                <button class="pa-drawer-close" onclick="paCloseMenu()" aria-label="Fechar menu"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <nav class="pa-drawer-nav">
+                <a href="#" onclick="paShowSection('inicio',this); paCloseMenu(); return false;"><i class="fa-solid fa-house"></i> Início</a>
+                <a href="#" onclick="paShowSection('noticias',this); paCloseMenu(); return false;"><i class="fa-solid fa-newspaper"></i> Notícias</a>
+                <a href="#" onclick="paShowSection('galeria',this); paCloseMenu(); return false;"><i class="fa-solid fa-images"></i> Galeria</a>
+                <a href="#" onclick="paShowSection('chat',this); paCloseMenu(); return false;"><i class="fa-solid fa-comments"></i> Chat</a>
+                <a href="#" onclick="paShowSection('aulas',this); paCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
+                <a href="#" onclick="paShowSection('tfm',this); paCloseMenu(); return false;"><i class="fa-solid fa-dumbbell"></i> TFM</a>
+                <a href="#" onclick="paShowSection('apontamento',this); paCloseMenu(); return false;"><i class="fa-solid fa-clipboard-check"></i> Apontamento</a>
+                <a href="#" onclick="paShowSection('carteira',this); paCloseMenu(); return false;"><i class="fa-solid fa-id-card"></i> Carteira</a>
+                <a href="#" onclick="paShowSection('decl',this); paCloseMenu(); return false;"><i class="fa-solid fa-file-lines"></i> Declarações</a>
+                <a href="#" onclick="paShowSection('apostila',this); paCloseMenu(); return false;"><i class="fa-solid fa-book-open"></i> Apostilas</a>
+                <a href="#" onclick="paShowSection('dados',this); paCloseMenu(); return false;"><i class="fa-solid fa-user"></i> Meus Dados</a>
+                <a href="#" onclick="paShowSection('app',this); paCloseMenu(); return false;"><i class="fa-solid fa-mobile-screen"></i> Baixar App</a>
+            </nav>
+        </aside>
 
         <div class="pf-body">
 
@@ -677,22 +720,6 @@
                 </div>
 
             </div>
-        </div>
-    </div>
-
-    <!-- MOBILE BOTTOM NAV -->
-    <div class="pf-mobile-nav">
-        <div class="pf-mobile-nav-items">
-            <div class="pf-mobile-nav-item active" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i><span>Inicio</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i><span>Noticias</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i><span>Galeria</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i><span>Chat</span><span id="pf-chat-mobile-badge" class="pf-mobile-nav-badge hidden">0</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i><span>Aulas</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('tfm',this)"><i class="fa-solid fa-dumbbell"></i><span>TFM</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i><span>Carteira</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i><span>Declaracoes</span></div>
-            <div class="pf-mobile-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i><span>Apostilas</span></div>
         </div>
     </div>
 
@@ -1117,27 +1144,53 @@
             if (statCards[2]) statCards[2].textContent = count;
         });
     }
+/* ===== NAVEGACAO ===== */
 
-    /* ===== NAVEGACAO ===== */
+    function paToggleMenu() {
+        var overlay = document.getElementById('pa-drawer-overlay');
+        var drawer = document.getElementById('pa-drawer');
+        var btn = document.querySelector('.pf-menu-btn');
+        if (!overlay || !drawer) return;
+        var abrir = !drawer.classList.contains('open');
+        if (abrir) {
+            overlay.classList.add('open');
+            drawer.classList.add('open');
+            drawer.setAttribute('aria-hidden', 'false');
+            if (btn) { btn.setAttribute('aria-expanded', 'true'); btn.innerHTML = '<i class="fa-solid fa-xmark"></i>'; }
+            document.body.style.overflow = 'hidden';
+        } else {
+            paCloseMenu();
+        }
+    }
+
+    function paCloseMenu() {
+        var overlay = document.getElementById('pa-drawer-overlay');
+        var drawer = document.getElementById('pa-drawer');
+        var btn = document.querySelector('.pf-menu-btn');
+        if (overlay) overlay.classList.remove('open');
+        if (drawer) {
+            drawer.classList.remove('open');
+            drawer.setAttribute('aria-hidden', 'true');
+        }
+        if (btn) { btn.setAttribute('aria-expanded', 'false'); btn.innerHTML = '<i class="fa-solid fa-bars"></i>'; }
+        document.body.style.overflow = '';
+    }
+
     function paShowSection(section, el) {
         document.querySelectorAll('.pf-section').forEach(function(s){ s.classList.remove('active'); });
         document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
         if (el) el.classList.add('active');
         var newsCol = document.querySelector('.pf-noticias-col');
         if (newsCol) newsCol.classList.remove('hidden-mobile');
-        var mobNav = document.querySelector('.pf-mobile-nav');
-        if (mobNav) mobNav.style.display = '';
 
         if (section === 'galeria') {
             document.getElementById('pf-section-noticias').classList.add('active');
             if (newsCol) newsCol.classList.add('hidden-mobile');
-            if (mobNav) mobNav.style.display = 'none';
             paRightTab('galeria');
             return;
         }
 
         if (section === 'chat') {
-            if (mobNav) mobNav.style.display = 'none';
             chatStart();
             var target = document.getElementById('pf-section-chat');
             if (target) target.classList.add('active');
@@ -1664,6 +1717,20 @@
     });
 
     /* ===== APOSTILAS ===== */
+    function paAbrirApostila(a) {
+        if (!a) return;
+        if (a.pdfBase64) {
+            var win = window.open('', '_blank');
+            if (!win) return;
+            var doc = win.document;
+            doc.open();
+            doc.write('<html><head><title>' + (a.titulo || 'Apostila') + '</title></head><body style="margin:0"><iframe src="data:application/pdf;base64,' + a.pdfBase64 + '" style="width:100vw;height:100vh;border:0"></iframe></body></html>');
+            doc.close();
+            return;
+        }
+        window.open(a.url, '_blank');
+    }
+
     function paLoadApostilas() {
         if (!paUser) return;
         var container = document.getElementById('pf-apostila-list');
@@ -1687,13 +1754,16 @@
             });
             container.innerHTML = '';
             items.forEach(function(a) {
-                if (a.turma && paUser.turma && a.turma !== paUser.turma) return;
+                if (a.turmas && Array.isArray(a.turmas)) {
+                    if (paUser.turma && a.turmas.indexOf(paUser.turma) === -1) return;
+                } else if (a.turma && paUser.turma && a.turma !== paUser.turma) return;
                 var card = document.createElement('div');
                 card.className = 'pf-apostila-card';
-                card.onclick = function() { window.open(a.url, '_blank'); };
+                card.onclick = function() { paAbrirApostila(a); };
                 var dateStr = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : '';
                 var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
                 var projetoHtml = a.projeto ? '<span class="pf-apostila-badge" style="background:rgba(33,136,255,.15);color:#2188ff">' + a.projeto + '</span>' : '';
+                var docenteHtml = a.docente ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>Docente: ' + a.docente + '</span>' : '';
                 var obsHtml = (a.observacao || a.descricao) ? '<div class="pf-apostila-desc full">' + (a.observacao || a.descricao) + '</div>' : '';
                 var ferramentasHtml = a.ferramentas ? '<div class="pf-apostila-info-row"><span class="pf-apostila-info-label"><i class="fa-solid fa-toolbox" style="margin-right:3px"></i>Ferramentas:</span><span class="pf-apostila-info-val">' + a.ferramentas + '</span></div>' : '';
                 var metodoHtml = a.metodoAvaliacao ? '<div class="pf-apostila-info-row"><span class="pf-apostila-info-label"><i class="fa-solid fa-clipboard-check" style="margin-right:3px"></i>Metodo de avaliacao:</span><span class="pf-apostila-info-val">' + a.metodoAvaliacao + '</span></div>' : '';
@@ -1703,7 +1773,7 @@
                         obsHtml +
                         ferramentasHtml +
                         metodoHtml +
-                        '<div class="pf-apostila-meta">' + projetoHtml + turmaHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') + '</div>' +
+                        '<div class="pf-apostila-meta">' + projetoHtml + turmaHtml + docenteHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') + '</div>' +
                     '</div>';
                 container.appendChild(card);
             });
