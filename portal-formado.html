@@ -508,7 +508,27 @@
                 .limit(1)
                 .get();
 
-            if (snap.empty) {
+            if (!snap.empty) {
+                var doc = snap.docs[0];
+                pfUser = doc.data();
+                pfUser._docId = doc.id;
+                pfUser._origem = 'recadastramentos';
+            } else {
+                var snapC = await dbFirestore.collection('candidatos')
+                    .where('cpf', '==', cpf)
+                    .limit(1)
+                    .get();
+                if (!snapC.empty) {
+                    var cand = snapC.docs[0].data();
+                    if ((cand.tipoPessoa || 'A') === 'F' && cand.status === 'Aprovado' && cand.senha === senha) {
+                        pfUser = cand;
+                        pfUser._docId = snapC.docs[0].id;
+                        pfUser._origem = 'candidatos';
+                    }
+                }
+            }
+
+            if (!pfUser) {
                 errEl.textContent = 'CPF ou senha invalidos.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
@@ -516,11 +536,7 @@
                 return;
             }
 
-            var doc = snap.docs[0];
-            pfUser = doc.data();
-            pfUser._docId = doc.id;
-
-            if (pfUser.status !== 'Ativo') {
+            if (pfUser.status !== 'Ativo' && pfUser.status !== 'Aprovado') {
                 errEl.textContent = 'Seu cadastro ainda nao foi ativado. Aguarde aprovacao da administracao.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
@@ -767,16 +783,8 @@
         if (!senha) { errorEl.textContent = 'Informe sua senha atual.'; errorEl.style.display = 'block'; return; }
 
         /* Verifica senha */
-        var cpf = (pfUser.cpf || '').replace(/\D/g, '');
-        try {
-            var snap = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
-            if (snap.empty || snap.docs[0].data().senha !== senha) {
-                errorEl.textContent = 'Senha incorreta.';
-                errorEl.style.display = 'block';
-                return;
-            }
-        } catch(e) {
-            errorEl.textContent = 'Erro ao verificar senha.';
+        if (senha !== pfUser.senha) {
+            errorEl.textContent = 'Senha incorreta.';
             errorEl.style.display = 'block';
             return;
         }
@@ -804,7 +812,8 @@
         }
 
         try {
-            await dbFirestore.collection('recadastramentos').doc(pfUser._docId).update(dados);
+            var col = pfUser._origem === 'candidatos' ? dbFirestore.collection('candidatos') : dbFirestore.collection('recadastramentos');
+            await col.doc(pfUser._docId).update(dados);
             Object.assign(pfUser, dados);
             pfLoadDados();
             pfCloseEditModal();
@@ -819,7 +828,7 @@
         if (!pfUser) return;
         var el = document.getElementById('pf-cert-content');
         var html = '';
-        if (pfUser.status === 'Ativo') {
+        if (pfUser.status === 'Ativo' || pfUser.status === 'Aprovado') {
             html = '<div style="text-align:center;padding:20px">' +
                 '<div style="font-size:50px;color:#16a34a;margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>' +
                 '<h3 style="color:#16a34a;margin-bottom:8px">Certificado Aprovado</h3>' +

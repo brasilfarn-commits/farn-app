@@ -46,6 +46,7 @@ function showFirebaseStatus(ok) {
 function candidatoToDoc(c) {
     const copy = Object.assign({}, c);
     delete copy.photoDataUrl;
+    Object.keys(copy).forEach(k => { if (copy[k] === undefined) delete copy[k]; });
     return copy;
 }
 
@@ -1123,9 +1124,20 @@ async function landingLoginAdmin(cpf, senha) {
 
 async function landingLoginFormado(cpf, senha) {
     var snap = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).where('senha', '==', senha).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
-    var u = snap.docs[0].data();
-    if (u.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Aguarde aprovação da administração.'); return false; }
+    if (!snap.empty) {
+        var u = snap.docs[0].data();
+        if (u.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Aguarde aprovação da administração.'); return false; }
+        localStorage.setItem('pf_lembrar_cpf', cpf);
+        localStorage.setItem('pf_lembrar_senha', senha);
+        location.href = 'portal-formado.html';
+        return true;
+    }
+    var snapC = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+    if (snapC.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    var cand = snapC.docs[0].data();
+    if ((cand.tipoPessoa || 'A') !== 'F') { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    if (cand.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
+    if (cand.status !== 'Aprovado') { landingShowLoginError('Seu cadastro ainda não foi aprovado. Aguarde aprovação da administração.'); return false; }
     localStorage.setItem('pf_lembrar_cpf', cpf);
     localStorage.setItem('pf_lembrar_senha', senha);
     location.href = 'portal-formado.html';
@@ -1672,8 +1684,8 @@ async function handleCandidatoSubmit(event) {
     data.tipoPessoa = tipoRadio ? tipoRadio.value : 'A';
     data.matricula = generateMatricula(data.cpf);
     data.status = editingIndex !== null ? candidatos[editingIndex].status : 'Pendente';
-    data.dataCadastro = editingIndex !== null ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
-    data.dataHoraCadastro = editingIndex !== null ? candidatos[editingIndex].dataHoraCadastro : new Date().toLocaleString('pt-BR');
+    data.dataCadastro = (editingIndex !== null && candidatos[editingIndex].dataCadastro) ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
+    data.dataHoraCadastro = (editingIndex !== null && candidatos[editingIndex].dataHoraCadastro) ? candidatos[editingIndex].dataHoraCadastro : new Date().toLocaleString('pt-BR');
     data.dataInscricao = document.getElementById('fc-data-inscricao').value || '';
     if (editingIndex !== null && candidatos[editingIndex].atualizarCadastro) {
         data.atualizarCadastro = true;
@@ -3252,7 +3264,7 @@ function populateProjetoSelect() {
     if (!select) return;
     const current = select.value;
     select.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.nome;
         opt.textContent = p.nome + (p.responsavel ? ' - ' + p.responsavel : '');
@@ -5869,7 +5881,7 @@ function formadosInicializar() {
     if (!selProj) return;
     var currentProj = selProj.value;
     selProj.innerHTML = '<option value="">Todos os projetos</option>';
-    projetos.forEach(function(p) {
+    projetos.filter(function(p) { return p.status === 'Concluido'; }).forEach(function(p) {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
     });
     if (currentProj) selProj.value = currentProj;
@@ -5883,7 +5895,10 @@ function formadosOnFiltroChange() {
     var projeto = selProj.value;
     var current = selTurma.value;
     selTurma.innerHTML = '<option value="">Todas as turmas</option>';
-    var turmasFiltradas = projeto ? turmas.filter(function(t) { return t.projeto === projeto; }) : turmas;
+    var projetosConcluidos = projetos.filter(function(p) { return p.status === 'Concluido'; });
+    var turmasFiltradas = projeto
+        ? turmas.filter(function(t) { return t.projeto === projeto; })
+        : turmas.filter(function(t) { return projetosConcluidos.some(function(p) { return p.nome === t.projeto; }); });
     turmasFiltradas.forEach(function(t) {
         selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
     });
@@ -5898,9 +5913,12 @@ function renderFormadosList() {
     var selTurma = document.getElementById('formados-filtro-turma');
     var projeto = selProj ? selProj.value : '';
     var turma = selTurma ? selTurma.value : '';
+    var projetosConcluidos = projetos.filter(function(p) { return p.status === 'Concluido'; });
     var lista = candidatos.filter(function(c) {
-        return (c.tipoPessoa || 'A') === 'F' && c.status === 'Aprovado' &&
-            (!projeto || c.projeto === projeto) &&
+        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Aprovado') return false;
+        var proj = projetos.find(function(p) { return p.nome === c.projeto; });
+        if (!proj || proj.status !== 'Concluido') return false;
+        return (!projeto || c.projeto === projeto) &&
             (!turma || c.turma === turma);
     });
     var badge = document.getElementById('formados-count-badge');
@@ -5930,6 +5948,7 @@ function renderFormadosList() {
             '<td>' + remanejado + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(' + i + ')"><i class="fa-solid fa-eye"></i></button>' +
+                '<button class="btn-icon" title="Editar" onclick="editCandidato(' + i + ')"><i class="fa-solid fa-pen"></i></button>' +
                 (!c.remanejadoDocente ? '<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
             '</div></td></tr>';
     }).join('');
@@ -6054,7 +6073,7 @@ async function docenteSalvar(e) {
     e.preventDefault();
     var nome = document.getElementById('intr-nome').value.trim();
     var guerra = document.getElementById('intr-guerra').value.trim();
-    var cpf = document.getElementById('intr-cpf').value.trim();
+    var cpf = document.getElementById('intr-cpf').value.trim().replace(/\D/g, '');
     if (!nome || !guerra || !cpf) { alert('Preencha Nome Completo, Nome de Guerra e CPF'); return; }
     var genero = document.getElementById('intr-genero').value;
     var senha = document.getElementById('intr-senha').value.trim();
