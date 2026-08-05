@@ -195,22 +195,64 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
             try {
-                // Verifica admin hardcoded
+                var user = null;
+
+                // 1) Admin geral (hardcoded)
                 if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-                    localStorage.setItem('atelie_user', JSON.stringify({ nome: 'Administrador Geral', cpf: ADMIN_CPF, admin: true }));
-                    location.href = 'atelie-farn.html';
+                    user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, perfil: 'admin', admin: true };
+                }
+
+                // 2) Coleção usuarios (administradores, coordenadores e usuários do sistema)
+                if (!user) {
+                    var snapU = await db.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+                    snapU.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha && u.ativo !== false) {
+                            user = { nome: u.nome, cpf: u.cpf, perfil: 'usuario', admin: false };
+                        }
+                    });
+                }
+
+                // 3) Coleção docentes
+                if (!user) {
+                    var snapD = await db.collection('docentes').where('cpf', '==', cpf).limit(1).get();
+                    snapD.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha) {
+                            user = { nome: u.nome, cpf: u.cpf, perfil: 'docente', admin: false };
+                        }
+                    });
+                }
+
+                // 4) Coleção candidatos (alunos ativos e formados com tipoPessoa 'F')
+                if (!user) {
+                    var snapC = await db.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+                    snapC.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha && u.ativo !== false && u.status === 'Ativo') {
+                            var tipo = (u.tipoPessoa || 'A');
+                            var perfil = tipo === 'F' ? 'formado' : 'aluno';
+                            user = { nome: u.nome, cpf: u.cpf, perfil: perfil, admin: false };
+                        }
+                    });
+                }
+
+                // 5) Coleção recadastramentos (formados recadastrados)
+                if (!user) {
+                    var snapR = await db.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
+                    snapR.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha && u.status === 'Ativo') {
+                            user = { nome: u.nome, cpf: u.cpf, perfil: 'formado', admin: false };
+                        }
+                    });
+                }
+
+                if (!user) {
+                    showAtelieError('CPF ou senha inválidos, ou cadastro não ativado.');
                     return;
                 }
-                // Verifica na coleção usuarios (qualquer usuário ativo com senha correta)
-                var snap = await db.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-                if (snap.empty) { showAtelieError('Usuário não encontrado.'); return; }
-                var user = null;
-                snap.forEach(function(doc) {
-                    var u = doc.data();
-                    if (u.senha === senha && u.ativo !== false) user = u;
-                });
-                if (!user) { showAtelieError('Senha incorreta ou usuário inativo.'); return; }
-                localStorage.setItem('atelie_user', JSON.stringify({ nome: user.nome, cpf: user.cpf, admin: false }));
+                localStorage.setItem('atelie_user', JSON.stringify(user));
                 location.href = 'atelie-farn.html';
             } catch (e) {
                 console.error('Erro login ateliê:', e);

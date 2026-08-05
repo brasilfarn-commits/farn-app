@@ -127,7 +127,8 @@
             if (!user) { location.href = 'atelie.html'; return; }
             var u = JSON.parse(user);
             document.getElementById('header-user-name').textContent = u.nome || 'Usuário';
-            document.getElementById('header-user-role').textContent = u.admin ? 'Administrador' : 'Usuário';
+            var perfis = { admin: 'Administrador', docente: 'Docente', aluno: 'Aluno', formado: 'Formado', usuario: 'Usuário' };
+            document.getElementById('header-user-role').textContent = perfis[u.perfil] || perfis.usuario;
             var avatar = document.getElementById('header-user-avatar');
             if (u.nome) {
                 var partes = u.nome.trim().split(' ');
