@@ -243,6 +243,73 @@
         .pf-apostila-meta{font-size:10px;color:var(--gray400);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
         .pf-apostila-badge{background:rgba(22,163,74,.08);color:var(--green);font-size:10px;padding:3px 10px;border-radius:var(--radius-xs);font-weight:700;letter-spacing:.2px}
 
+        /* ===== SECAO DE AVALIACAO ===== */
+        .pf-av-banner{background:linear-gradient(135deg,#166534,#0d9488);border:none;border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;position:relative;overflow:hidden;color:#fff;display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:var(--shadow-lg)}
+        .pf-av-banner::before{content:'';position:absolute;top:-50px;right:-30px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);border-radius:50%;pointer-events:none}
+        .pf-av-banner-icon{width:60px;height:60px;border-radius:18px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;backdrop-filter:blur(4px)}
+        .pf-av-banner-info{flex:1;min-width:200px;position:relative;z-index:1}
+        .pf-av-banner-info h3{font-size:17px;font-weight:800;margin-bottom:4px;color:#fff}
+        .pf-av-banner-info p{font-size:12px;color:rgba(255,255,255,.85)}
+        .pf-av-status{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:30px;font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;position:relative;z-index:1;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35)}
+        .pf-av-status .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;animation:pulseDot 1.6s infinite}
+        @keyframes pulseDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.65}}
+
+        .pf-av-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-bottom:20px}
+        .pf-av-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:.3s;box-shadow:var(--shadow)}
+        .pf-av-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+        .pf-av-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+        .pf-av-card.c1::before{background:linear-gradient(90deg,#2563eb,#3b82f6)}
+        .pf-av-card.c2::before{background:linear-gradient(90deg,#16a34a,#22c55e)}
+        .pf-av-card.c3::before{background:linear-gradient(90deg,#ca8a04,#eab308)}
+        .pf-av-card.c4::before{background:linear-gradient(90deg,#ea580c,#f97316)}
+        .pf-av-card-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+        .pf-av-card-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+        .pf-av-card-title{font-size:15px;font-weight:800;color:var(--gray800)}
+        .pf-av-card-sub{font-size:10px;color:var(--gray500);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+        .pf-av-ring-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+        .pf-av-ring{width:112px;height:112px;border-radius:50%;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+        .pf-av-ring::before{content:'';position:absolute;inset:12px;border-radius:50%;background:#fff}
+        .pf-av-ring-val{position:relative;z-index:1;font-size:27px;font-weight:800;color:var(--gray800);line-height:1;text-align:center}
+        .pf-av-ring-val small{display:block;font-size:10px;color:var(--gray400);font-weight:700;margin-top:2px}
+        .pf-av-stats{flex:1;display:flex;flex-direction:column;gap:9px;min-width:120px}
+        .pf-av-stat-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray600)}
+        .pf-av-stat-row b{color:var(--gray800);font-size:13px;white-space:nowrap}
+        .pf-av-stat-row .bar{flex:1;height:7px;background:var(--gray100);border-radius:4px;overflow:hidden;min-width:30px}
+        .pf-av-stat-row .bar i{display:block;height:100%;border-radius:4px;transition:width .6s}
+        .pf-av-mini-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800}
+        .pf-av-card-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--gray100);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+        .pf-av-num{font-size:18px;font-weight:800;color:var(--gray800)}
+
+        .pf-av-final{background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:var(--radius);padding:26px;color:#fff;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;margin-bottom:20px}
+        .pf-av-final::before{content:'';position:absolute;top:-70px;right:-40px;width:260px;height:260px;background:radial-gradient(circle,rgba(22,163,74,.28),transparent 70%);border-radius:50%}
+        .pf-av-final-title{font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4ade80;margin-bottom:22px;position:relative;z-index:1}
+        .pf-av-final-title i{margin-right:7px}
+        .pf-av-final-grid{display:grid;grid-template-columns:auto repeat(3,1fr);gap:16px;align-items:center;position:relative;z-index:1}
+        .pf-av-final-ring{width:134px;height:134px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+        .pf-av-final-ring-val{position:relative;z-index:1;font-size:32px;font-weight:800;color:var(--gray800);line-height:1;text-align:center}
+        .pf-av-final-ring-val small{display:block;font-size:10px;color:var(--gray400);font-weight:700;margin-top:2px;text-transform:uppercase}
+        .pf-av-final-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px;text-align:center}
+        .pf-av-final-item .lb{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;font-weight:700}
+        .pf-av-final-item .vl{font-size:26px;font-weight:800}
+
+        .pf-av-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+        .pf-av-dcard{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+        .pf-av-dcard h4{font-size:13px;font-weight:800;color:var(--gray800);margin-bottom:12px}
+        .pf-av-dcard h4 i{margin-right:6px}
+        .pf-av-chips{display:flex;flex-direction:column;gap:8px}
+        .pf-av-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--gray100);border:1px solid var(--gray200);border-radius:10px;font-size:11px;color:var(--gray600)}
+        .pf-av-chip .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--gray700)}
+        .pf-av-chip .dt{color:var(--gray400);font-size:10px;white-space:nowrap}
+        .pf-av-chip .nota{font-weight:800;font-size:12px;white-space:nowrap}
+
+        .pf-av-empty{text-align:center;padding:50px 20px;color:var(--gray300)}
+        .pf-av-empty i{font-size:44px;margin-bottom:14px;display:block}
+        .pf-av-empty p{font-size:13px;color:var(--gray400)}
+        @media(max-width:768px){
+            .pf-av-final-grid{grid-template-columns:1fr;justify-items:center;text-align:center}
+            .pf-av-ring-wrap{justify-content:center}
+        }
+
         /* Photo modal */
         .pf-photo-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
         .pf-photo-modal.active{display:flex}
@@ -443,6 +510,7 @@
                 <a href="#" onclick="paShowSection('carteira',this); paCloseMenu(); return false;"><i class="fa-solid fa-id-card"></i> Carteira</a>
                 <a href="#" onclick="paShowSection('decl',this); paCloseMenu(); return false;"><i class="fa-solid fa-file-lines"></i> Declarações</a>
                 <a href="#" onclick="paShowSection('apostila',this); paCloseMenu(); return false;"><i class="fa-solid fa-book-open"></i> Apostilas</a>
+                <a href="#" onclick="paShowSection('avaliacao',this); paCloseMenu(); return false;"><i class="fa-solid fa-chart-simple"></i> Avaliacao</a>
                 <a href="#" onclick="paShowSection('dados',this); paCloseMenu(); return false;"><i class="fa-solid fa-user"></i> Meus Dados</a>
                 <a href="#" onclick="paShowSection('app',this); paCloseMenu(); return false;"><i class="fa-solid fa-mobile-screen"></i> Baixar App</a>
             </nav>
@@ -463,6 +531,7 @@
                 <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
                 <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
                 <div class="pf-nav-item" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i> Declaracoes</div>
+                <div class="pf-nav-item" onclick="paShowSection('avaliacao',this)"><i class="fa-solid fa-chart-simple"></i> Avaliacao</div>
                 <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
             </div>
@@ -710,6 +779,21 @@
                     </div>
                 </div>
 
+                <!-- AVALIACAO -->
+                <div class="pf-section" id="pf-section-avaliacao">
+                    <div class="pf-av-banner">
+                        <div class="pf-av-banner-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                        <div class="pf-av-banner-info">
+                            <h3>Minhas Avaliacoes</h3>
+                            <p>Acompanhe seu apontamento, comportamento e notas das avaliacoes Teorica, Pratica e Final.</p>
+                        </div>
+                        <div class="pf-av-status" id="pf-av-status"><span class="dot" style="background:#4ade80"></span><span id="pf-av-status-text">Em andamento</span></div>
+                    </div>
+                    <div id="pf-av-content">
+                        <div class="pf-av-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliacoes...</p></div>
+                    </div>
+                </div>
+
                 <!-- CONSTRUCAO (fallback) -->
                 <div class="pf-section" id="pf-section-construcao">
                     <div class="pf-em-construcao">
@@ -803,6 +887,9 @@
     var paDisciplinas=[];
     var paPortalLiberado=false;
     var paRegimentoBloqueio=false;
+    var paAvAulas={ todas:[], teorica:[], pratica:[] };
+    var paAvPresencas=[];
+    var paAvAvaliacao=null;
 
     /* ===== FORMATACAO ===== */
     function paFormatCPF(input) {
@@ -957,6 +1044,7 @@
                 paLoadApostilas();
                 paLoadAulas();
                 paLoadStats();
+                paLoadAvaliacao();
                 chatInitEmoji();
             }
 
@@ -1002,6 +1090,7 @@
             paLoadApostilas();
             paLoadAulas();
             paLoadStats();
+            paLoadAvaliacao();
             if (typeof chatInitEmoji === 'function') chatInitEmoji();
         }
     }
@@ -1205,6 +1294,7 @@
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
         if (section === 'tfm') { paLoadTfmAgendamento(); paLoadTfmResultado(); }
+        if (section === 'avaliacao') { paLoadAvaliacao(); }
     }
 
     function paCheckHash() {
@@ -2156,6 +2246,238 @@
         }).catch(function(e) {
             listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
         });
+    }
+
+    /* ===== SECAO DE AVALIACAO ===== */
+    function paAvNum(n) {
+        var v = Number(n);
+        if (isNaN(v)) return '0,0';
+        return v.toFixed(1).replace('.', ',');
+    }
+
+    function paAvDrawRing(canvas, pct, color) {
+        if (!canvas) return;
+        var size = canvas.width;
+        var ctx = canvas.getContext('2d');
+        var cx = size / 2, cy = size / 2;
+        var stroke = Math.max(9, Math.round(size * 0.11));
+        var r = (size - stroke) / 2 - 2;
+        ctx.clearRect(0, 0, size, size);
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = '#eef1f5';
+        ctx.lineWidth = stroke;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        var p = Math.max(0, Math.min(100, pct));
+        var start = -Math.PI / 2;
+        var end = start + (p / 100) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, start, end);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = stroke;
+        ctx.stroke();
+    }
+
+    function paAvCor(valor) {
+        if (valor >= 7) return '#22c55e';
+        if (valor >= 5) return '#fbbf24';
+        return '#ef4444';
+    }
+
+    function paAvCalcular() {
+        var r = { totalAulas: paAvAulas.todas.length, pres: 0, fal: 0, just: 0, pct: 0, nota: 0, foP: 0, foN: 0, pontos: 0, teor: 0, prat: 0, mTeorManual: 0, mPratManual: 0, mediaFinal: 0, mediaSala: 0, mediaCertificada: 0 };
+        var myProj = (paUser.projeto || '').trim();
+        var myTurma = (paUser.turma || '').trim();
+        (paAvPresencas || []).forEach(function(p) {
+            if (p.turma !== myTurma || p.projeto !== myProj) return;
+            if (p.status === 'Presente') r.pres++;
+            else if (p.status === 'Falta') r.fal++;
+            else if (p.status === 'Justificada') r.just++;
+        });
+        if (r.totalAulas) {
+            r.pct = Math.min(100, Math.round(((r.pres + r.just) / r.totalAulas) * 100));
+            r.nota = Math.min(10, Math.round(((r.pres + r.just) / r.totalAulas) * 100) / 10);
+        }
+        r.foP = (paAvAvaliacao.foPositivos || []).length;
+        r.foN = (paAvAvaliacao.foNegativos || []).length;
+        r.pontos = Math.floor(r.foP / 10) - Math.floor(r.foN / 5);
+        r.teor = paAvMedia('teorica');
+        r.prat = paAvMedia('pratica');
+        var mt = parseFloat(String(paAvAvaliacao.mediaTeoricaManual || '').replace(',', '.'));
+        var mp = parseFloat(String(paAvAvaliacao.mediaPraticaManual || '').replace(',', '.'));
+        r.mTeorManual = isNaN(mt) ? 0 : mt;
+        r.mPratManual = isNaN(mp) ? 0 : mp;
+        r.mediaFinal = (r.mTeorManual + r.mPratManual) / 2;
+        r.mediaSala = (r.nota + r.pontos + r.teor + r.prat) / 4;
+        r.mediaCertificada = (r.mediaFinal + r.mediaSala) / 2;
+        return r;
+    }
+
+    function paAvMedia(tipo) {
+        var notas = tipo === 'teorica' ? (paAvAvaliacao.notasTeoricas || {}) : (paAvAvaliacao.notasPraticas || {});
+        var aulas = tipo === 'teorica' ? paAvAulas.teorica : paAvAulas.pratica;
+        var soma = 0, qtd = 0;
+        aulas.forEach(function(a) {
+            var n = parseFloat(notas[a._id]);
+            if (!isNaN(n) && n >= 0) { soma += n; qtd++; }
+        });
+        return qtd ? Math.round((soma / qtd) * 10) / 10 : 0;
+    }
+
+    function paAvChipsNotas(tipo) {
+        var notas = tipo === 'teorica' ? (paAvAvaliacao.notasTeoricas || {}) : (paAvAvaliacao.notasPraticas || {});
+        var aulas = tipo === 'teorica' ? paAvAulas.teorica : paAvAulas.pratica;
+        if (!aulas.length) return '<div class="pf-av-empty" style="padding:20px"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula com AV ' + (tipo === 'teorica' ? 'Teorica' : 'Pratica') + ' cadastrada.</p></div>';
+        var html = '<div class="pf-av-chips">';
+        aulas.forEach(function(a) {
+            var n = notas[a._id];
+            var notaVal = n !== undefined && n !== null && n !== '' ? parseFloat(n) : null;
+            var cor = notaVal === null ? '#94a3b8' : paAvCor(notaVal);
+            var txt = notaVal === null ? '—' : paAvNum(notaVal);
+            var data = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+            html += '<div class="pf-av-chip"><i class="fa-solid fa-book-open" style="color:' + (tipo === 'teorica' ? '#ca8a04' : '#ea580c') + '"></i><span class="nm">' + (a.disciplina || '---') + (a.nome ? ' &bull; ' + a.nome : '') + '</span><span class="dt">' + data + '</span><span class="nota" style="color:' + cor + '">' + txt + '</span></div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function paAvChipsFO() {
+        var pos = (paAvAvaliacao.foPositivos || []);
+        var neg = (paAvAvaliacao.foNegativos || []);
+        function chips(lista, positivo) {
+            if (!lista.length) return '<div style="font-size:11px;color:#94a3b8;margin-top:4px">Nenhum registro.</div>';
+            var html = '<div class="pf-av-chips">';
+            lista.forEach(function(item) {
+                var data = item.data ? String(item.data) : '';
+                html += '<div class="pf-av-chip"><i class="fa-solid ' + (positivo ? 'fa-plus-circle' : 'fa-minus-circle') + '" style="color:' + (positivo ? '#16a34a' : '#dc2626') + '"></i><span class="nm">' + (item.obs || 'Sem observacao') + '</span><span class="dt">' + data + '</span><span class="nota" style="color:' + (positivo ? '#16a34a' : '#dc2626') + '">' + (positivo ? 'FO+' : 'FO-') + '</span></div>';
+            });
+            html += '</div>';
+            return html;
+        }
+        return '<div style="display:flex;flex-direction:column;gap:14px"><div><div style="font-size:11px;font-weight:800;color:#16a34a;margin-bottom:6px">Fatos Observados Positivos (FO+)</div>' + chips(pos, true) + '</div><div><div style="font-size:11px;font-weight:800;color:#dc2626;margin-bottom:6px">Fatos Observados Negativos (FO-)</div>' + chips(neg, false) + '</div></div>';
+    }
+
+    function paAvRender() {
+        var content = document.getElementById('pf-av-content');
+        if (!content || !paUser) return;
+        var r = paAvCalcular();
+        var semDados = r.totalAulas === 0 && r.foP === 0 && r.foN === 0 && r.teor === 0 && r.prat === 0;
+        if (semDados) {
+            content.innerHTML = '<div class="pf-av-empty"><i class="fa-solid fa-chart-simple"></i><p>Ainda nao ha avaliacoes registradas para o seu curso.</p></div>';
+            return;
+        }
+        var cApo = paAvCor(r.pct);
+        var cComp = paAvCor(r.pontos);
+        var cTeor = paAvCor(r.teor);
+        var cPrat = paAvCor(r.prat);
+        var statusEl = document.getElementById('pf-av-status-text');
+        var statusDot = document.querySelector('#pf-av-status .dot');
+        if (r.mediaCertificada >= 7) { statusEl.textContent = 'Aprovado'; if (statusDot) statusDot.style.background = '#4ade80'; }
+        else if (r.mediaCertificada >= 5) { statusEl.textContent = 'Em andamento'; if (statusDot) statusDot.style.background = '#fde047'; }
+        else if (r.mediaCertificada > 0) { statusEl.textContent = 'Atencao'; if (statusDot) statusDot.style.background = '#f87171'; }
+        else { statusEl.textContent = 'Em andamento'; if (statusDot) statusDot.style.background = '#4ade80'; }
+
+        var html =
+        '<div class="pf-av-grid">' +
+            '<div class="pf-av-card c1">' +
+                '<div class="pf-av-card-head"><div class="pf-av-card-icon" style="background:rgba(37,99,235,.12);color:#2563eb"><i class="fa-solid fa-clipboard-check"></i></div><div><div class="pf-av-card-title">Apontamento</div><div class="pf-av-card-sub">Presenca nas aulas</div></div></div>' +
+                '<div class="pf-av-ring-wrap"><div class="pf-av-ring"><canvas id="pf-av-ring-apo" width="112" height="112"></canvas><div class="pf-av-ring-val">' + r.pct + '%<small>presenca</small></div></div><div class="pf-av-stats">' +
+                    '<div class="pf-av-stat-row"><b>' + r.totalAulas + '</b><span>Aulas</span></div>' +
+                    '<div class="pf-av-stat-row"><b style="color:#16a34a">' + r.pres + '</b><span>Presencas</span></div>' +
+                    '<div class="pf-av-stat-row"><b style="color:#dc2626">' + r.fal + '</b><span>Faltas</span></div>' +
+                    '<div class="pf-av-stat-row"><b style="color:#ca8a04">' + r.just + '</b><span>Justificadas</span></div>' +
+                '</div></div>' +
+                '<div class="pf-av-card-foot"><span class="pf-av-mini-badge" style="background:rgba(37,99,235,.1);color:#2563eb">Nota AV</span><span class="pf-av-num" style="color:#2563eb">' + paAvNum(r.nota) + '</span></div>' +
+            '</div>' +
+            '<div class="pf-av-card c2">' +
+                '<div class="pf-av-card-head"><div class="pf-av-card-icon" style="background:rgba(22,163,74,.12);color:#16a34a"><i class="fa-solid fa-shield-halved"></i></div><div><div class="pf-av-card-title">Comportamento</div><div class="pf-av-card-sub">Fatos observados</div></div></div>' +
+                '<div class="pf-av-ring-wrap"><div class="pf-av-ring"><canvas id="pf-av-ring-comp" width="112" height="112"></canvas><div class="pf-av-ring-val">' + (r.pontos >= 0 ? '+' : '') + r.pontos + '<small>pontos</small></div></div><div class="pf-av-stats">' +
+                    '<div class="pf-av-stat-row"><b style="color:#16a34a">' + r.foP + '</b><span>FO+ positivos</span><div class="bar"><i style="width:' + Math.min(100, r.foP * 10) + '%;background:#16a34a"></i></div></div>' +
+                    '<div class="pf-av-stat-row"><b style="color:#dc2626">' + r.foN + '</b><span>FO- negativos</span><div class="bar"><i style="width:' + Math.min(100, r.foN * 20) + '%;background:#dc2626"></i></div></div>' +
+                    '<div class="pf-av-stat-row" style="font-size:10px;color:#94a3b8"><span>10 FO+ = +1pt &bull; 5 FO- = -1pt</span></div>' +
+                '</div></div>' +
+                '<div class="pf-av-card-foot"><span class="pf-av-mini-badge" style="background:rgba(22,163,74,.1);color:#16a34a">Saldo</span><span class="pf-av-num" style="color:' + cComp + '">' + (r.pontos >= 0 ? '+' : '') + r.pontos + '</span></div>' +
+            '</div>' +
+            '<div class="pf-av-card c3">' +
+                '<div class="pf-av-card-head"><div class="pf-av-card-icon" style="background:rgba(202,138,4,.12);color:#ca8a04"><i class="fa-solid fa-book"></i></div><div><div class="pf-av-card-title">Avaliacao Teorica</div><div class="pf-av-card-sub">Media das provas</div></div></div>' +
+                '<div class="pf-av-ring-wrap"><div class="pf-av-ring"><canvas id="pf-av-ring-teor" width="112" height="112"></canvas><div class="pf-av-ring-val">' + paAvNum(r.teor) + '<small>/ 10</small></div></div><div class="pf-av-stats">' +
+                    '<div class="pf-av-stat-row"><b>' + paAvAulas.teorica.length + '</b><span>Aulas com AV</span></div>' +
+                    '<div class="pf-av-stat-row"><b>' + Object.keys(paAvAvaliacao.notasTeoricas || {}).length + '</b><span>Notas lancadas</span></div>' +
+                    (r.mTeorManual > 0 ? '<div class="pf-av-stat-row"><b>' + paAvNum(r.mTeorManual) + '</b><span>Media manual</span></div>' : '') +
+                '</div></div>' +
+                '<div class="pf-av-card-foot"><span class="pf-av-mini-badge" style="background:rgba(202,138,4,.1);color:#ca8a04">Nota</span><span class="pf-av-num" style="color:' + cTeor + '">' + paAvNum(r.teor) + '</span></div>' +
+            '</div>' +
+            '<div class="pf-av-card c4">' +
+                '<div class="pf-av-card-head"><div class="pf-av-card-icon" style="background:rgba(234,88,12,.12);color:#ea580c"><i class="fa-solid fa-user-shield"></i></div><div><div class="pf-av-card-title">Avaliacao Pratica</div><div class="pf-av-card-sub">Media das praticas</div></div></div>' +
+                '<div class="pf-av-ring-wrap"><div class="pf-av-ring"><canvas id="pf-av-ring-prat" width="112" height="112"></canvas><div class="pf-av-ring-val">' + paAvNum(r.prat) + '<small>/ 10</small></div></div><div class="pf-av-stats">' +
+                    '<div class="pf-av-stat-row"><b>' + paAvAulas.pratica.length + '</b><span>Aulas com AV</span></div>' +
+                    '<div class="pf-av-stat-row"><b>' + Object.keys(paAvAvaliacao.notasPraticas || {}).length + '</b><span>Notas lancadas</span></div>' +
+                    (r.mPratManual > 0 ? '<div class="pf-av-stat-row"><b>' + paAvNum(r.mPratManual) + '</b><span>Media manual</span></div>' : '') +
+                '</div></div>' +
+                '<div class="pf-av-card-foot"><span class="pf-av-mini-badge" style="background:rgba(234,88,12,.1);color:#ea580c">Nota</span><span class="pf-av-num" style="color:' + cPrat + '">' + paAvNum(r.prat) + '</span></div>' +
+            '</div>' +
+        '</div>' +
+
+        '<div class="pf-av-final">' +
+            '<div class="pf-av-final-title"><i class="fa-solid fa-medal"></i> AV Final Certificada</div>' +
+            '<div class="pf-av-final-grid">' +
+                '<div class="pf-av-final-ring"><canvas id="pf-av-ring-final" width="134" height="134"></canvas><div class="pf-av-final-ring-val">' + paAvNum(r.mediaCertificada) + '<small>/ 10</small></div></div>' +
+                '<div class="pf-av-final-item"><div class="lb">Media Final</div><div class="vl" style="color:' + paAvCor(r.mediaFinal) + '">' + paAvNum(r.mediaFinal) + '</div></div>' +
+                '<div class="pf-av-final-item"><div class="lb">Media de Sala</div><div class="vl" style="color:' + paAvCor(r.mediaSala) + '">' + paAvNum(r.mediaSala) + '</div></div>' +
+                '<div class="pf-av-final-item"><div class="lb">Media Certificada</div><div class="vl" style="color:#4ade80">' + paAvNum(r.mediaCertificada) + '</div></div>' +
+            '</div>' +
+        '</div>' +
+
+        '<div class="pf-av-details">' +
+            '<div class="pf-av-dcard"><h4><i class="fa-solid fa-book" style="color:#ca8a04"></i> Notas das Aulas Teoricas</h4>' + paAvChipsNotas('teorica') + '</div>' +
+            '<div class="pf-av-dcard"><h4><i class="fa-solid fa-user-shield" style="color:#ea580c"></i> Notas das Aulas Praticas</h4>' + paAvChipsNotas('pratica') + '</div>' +
+            '<div class="pf-av-dcard"><h4><i class="fa-solid fa-shield-halved" style="color:#16a34a"></i> Fatos Observados</h4>' + paAvChipsFO() + '</div>' +
+        '</div>';
+
+        content.innerHTML = html;
+        paAvDrawRing(document.getElementById('pf-av-ring-apo'), r.pct, cApo);
+        paAvDrawRing(document.getElementById('pf-av-ring-comp'), r.pontos >= 0 ? Math.min(100, r.pontos * 10) : 0, cComp);
+        paAvDrawRing(document.getElementById('pf-av-ring-teor'), r.teor * 10, cTeor);
+        paAvDrawRing(document.getElementById('pf-av-ring-prat'), r.prat * 10, cPrat);
+        paAvDrawRing(document.getElementById('pf-av-ring-final'), Math.max(0, Math.min(100, r.mediaCertificada * 10)), '#4ade80');
+    }
+
+    async function paLoadAvaliacao() {
+        var content = document.getElementById('pf-av-content');
+        if (!content || !paUser) return;
+        content.innerHTML = '<div class="pf-av-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliacoes...</p></div>';
+        var cpf = paUser.cpf || '';
+        try {
+            var myProj = (paUser.projeto || '').trim();
+            var myTurma = (paUser.turma || '').trim();
+            paAvAulas = { todas: [], teorica: [], pratica: [] };
+            paAvPresencas = [];
+            var aulasSnap = await dbFirestore.collection('aulas').get();
+            aulasSnap.forEach(function(doc) {
+                var a = doc.data();
+                a._id = doc.id;
+                if (a.projeto === myProj && a.turma === myTurma) {
+                    paAvAulas.todas.push(a);
+                    if (a.avTeorica === 'Sim') paAvAulas.teorica.push(a);
+                    if (a.avPratica === 'Sim') paAvAulas.pratica.push(a);
+                }
+            });
+            paAvAulas.todas.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+            paAvAulas.teorica.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+            paAvAulas.pratica.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+            if (cpf) {
+                var presSnap = await dbFirestore.collection('presencasAlunos').where('cpf', '==', cpf).get();
+                presSnap.forEach(function(doc) { paAvPresencas.push(doc.data()); });
+                var avDoc = await dbFirestore.collection('avaliacoesAlunos').doc(cpf).get();
+                if (avDoc.exists) paAvAvaliacao = avDoc.data();
+            }
+            if (!paAvAvaliacao) paAvAvaliacao = { cpf: cpf, foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '' };
+            paAvRender();
+        } catch (e) {
+            console.error('Erro ao carregar avaliacao do aluno:', e);
+            content.innerHTML = '<div class="pf-av-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar avaliacoes.</p></div>';
+        }
     }
 
     /* ===== DECLARACAO PDF ===== */
