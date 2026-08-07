@@ -5,3 +5,6 @@
 # Firebase
 .firebase/
 firebase-debug.log
+
+# Fotos da carteira (LOCALSERV) - ficam somente no dispositivo
+fotos-carteira/
