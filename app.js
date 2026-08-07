@@ -4188,6 +4188,7 @@ function apontamentoFOEscolher(positivo) {
     aptFoTipo = positivo;
     document.getElementById('apt-fo-opcoes').style.display = 'none';
     document.getElementById('apt-fo-form').style.display = 'block';
+    document.getElementById('apt-fo-qtd').value = 1;
     document.getElementById('apt-fo-lbl').textContent = (positivo ? 'FO+ — Fato Observado Positivo' : 'FO- — Fato Observado Negativo') + ' — observacao (opcional):';
     document.getElementById('apt-fo-confirmar').innerHTML = '<i class="fa-solid fa-check"></i> Registrar FO' + (positivo ? '+' : '-');
 }
@@ -4200,6 +4201,7 @@ function apontamentoFOVoltar() {
 function apontamentoFOConfirmar() {
     if (!aptFoTarget || aptFoTipo === null) { apontamentoFOCancelar(); return; }
     const obs = document.getElementById('apt-fo-obs').value.trim();
+    const qtd = Math.max(1, Math.min(50, parseInt(document.getElementById('apt-fo-qtd').value, 10) || 1));
     const cpf = aptFoTarget.cpf;
     const chave = aptFoTipo ? 'foPositivos' : 'foNegativos';
     const item = { data: new Date().toLocaleDateString('pt-BR'), obs: obs, em: new Date().toISOString(), origem: 'apontamento' };
@@ -4207,7 +4209,7 @@ function apontamentoFOConfirmar() {
     dbFirestore.collection('avaliacoesAlunos').doc(cpf).get().then(function(doc) {
         const dados = doc.exists ? doc.data() : {};
         const lista = dados[chave] || [];
-        lista.push(item);
+        for (let i = 0; i < qtd; i++) lista.push(Object.assign({}, item));
         const update = {};
         update[chave] = lista;
         update.nome = aptFoTarget.nome || dados.nome || '';
@@ -4215,7 +4217,7 @@ function apontamentoFOConfirmar() {
         update.atualizadoEm = firebase.firestore.FieldValue.serverTimestamp();
         return dbFirestore.collection('avaliacoesAlunos').doc(cpf).set(update, { merge: true });
     }).then(function() {
-        doneEl.textContent = 'FO' + (aptFoTipo ? '+' : '-') + ' registrado na AV de Comportamento!';
+        doneEl.textContent = qtd + ' FO' + (aptFoTipo ? '+' : '-') + ' registrado(s) na AV de Comportamento!';
         doneEl.style.color = '#16a34a';
         doneEl.style.display = 'block';
         document.getElementById('apt-fo-form').style.display = 'none';

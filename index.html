@@ -3039,6 +3039,10 @@
                     <button class="btn-primary" onclick="apontamentoFOEscolher(false)" style="background:#dc2626"><i class="fa-solid fa-minus"></i> FO-</button>
                 </div>
                 <div id="apt-fo-form" style="display:none">
+                    <div class="form-group">
+                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Quantidade</label>
+                        <input type="number" id="apt-fo-qtd" class="config-input" value="1" min="1" max="50" style="width:100%">
+                    </div>
                     <textarea id="apt-fo-obs" class="config-input" rows="3" style="width:100%" placeholder="Descreva o fato observado (opcional)"></textarea>
                     <div style="display:flex;gap:10px;margin-top:14px">
                         <button class="btn-outline" onclick="apontamentoFOVoltar()" style="flex:1"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
