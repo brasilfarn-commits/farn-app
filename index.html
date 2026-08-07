@@ -2351,6 +2351,16 @@
                             <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Conteudo / Assunto</label>
                             <input type="text" id="aula-conteudo" class="config-input" placeholder="Breve descricao do conteudo da aula">
                         </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Terá AV Teórica</label>
+                                <select id="aula-av-teorica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Terá AV Prática</label>
+                                <select id="aula-av-pratica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
+                            </div>
+                        </div>
                         <button class="btn-primary" id="aula-save-btn" onclick="aulaSave()" style="height:42px">
                             <i class="fa-solid fa-check"></i> Cadastrar Aula
                         </button>

@@ -5686,6 +5686,8 @@ async function aulaSave() {
     var data = document.getElementById('aula-data').value;
     var horario = document.getElementById('aula-horario').value.trim();
     var conteudo = document.getElementById('aula-conteudo').value.trim();
+    var avTeorica = document.getElementById('aula-av-teorica').value;
+    var avPratica = document.getElementById('aula-av-pratica').value;
     var btn = document.getElementById('aula-save-btn');
 
     if (!disciplina) { aulaShowMsg('Selecione a disciplina.', 'err'); return; }
@@ -5703,7 +5705,9 @@ async function aulaSave() {
             docente: docente,
             data: data,
             horario: horario,
-            conteudo: conteudo
+            conteudo: conteudo,
+            avTeorica: avTeorica,
+            avPratica: avPratica
         };
 
         if (aulaEditingId) {
@@ -5724,6 +5728,8 @@ async function aulaSave() {
         document.getElementById('aula-data').value = '';
         document.getElementById('aula-horario').value = '';
         document.getElementById('aula-conteudo').value = '';
+        document.getElementById('aula-av-teorica').value = '';
+        document.getElementById('aula-av-pratica').value = '';
         aulaLoadList();
     } catch(e) {
         console.error('Erro ao salvar aula:', e);
@@ -5759,6 +5765,8 @@ async function aulaLoadList() {
                     '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
                     '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
                         '<span>' + (a.projeto || '') + '</span>' + turmaHtml + docenteHtml + (dateStr ? '<span><i class="fa-solid fa-calendar-day" style="margin-right:2px"></i>' + dateStr + '</span>' : '') + (a.horario ? '<span><i class="fa-solid fa-clock" style="margin-right:2px"></i>' + a.horario + '</span>' : '') +
+                        (a.avTeorica === 'Sim' ? '<span style="background:rgba(168,85,247,.12);color:#9333ea;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-file-lines" style="margin-right:3px"></i>AV Teórica</span>' : '') +
+                        (a.avPratica === 'Sim' ? '<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-flask" style="margin-right:3px"></i>AV Prática</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
@@ -5789,6 +5797,8 @@ async function aulaEdit(docId) {
         document.getElementById('aula-data').value = a.data || '';
         document.getElementById('aula-horario').value = a.horario || '';
         document.getElementById('aula-conteudo').value = a.conteudo || '';
+        document.getElementById('aula-av-teorica').value = a.avTeorica || '';
+        document.getElementById('aula-av-pratica').value = a.avPratica || '';
         var btn = document.getElementById('aula-save-btn');
         if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Aula';
         window.scrollTo({ top: 0, behavior: 'smooth' });
