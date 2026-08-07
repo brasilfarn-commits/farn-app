@@ -4117,6 +4117,7 @@ function apontamentoMarcarPresente(aluno) {
     toast.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px"></i> ' + (aluno.nome || aluno.matricula || 'Aluno') + ' — Presente';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2000);
+    apontamentoFOAbrir(aluno);
 }
 
 function apontamentoRenderLista() {
@@ -4161,6 +4162,78 @@ function apontamentoSetStatus(cpf, status) {
 
 function apontamentoSetObs(cpf, obs) {
     if (aptPresencas[cpf]) aptPresencas[cpf].obs = obs;
+}
+
+// ===== FO+ / FO- NO APONTAMENTO =====
+let aptFoTarget = null;
+let aptFoTipo = null;
+
+function apontamentoFOAbrir(aluno) {
+    if (!aluno || !aluno.cpf) return;
+    aptFoTarget = aluno;
+    aptFoTipo = null;
+    const overlay = document.getElementById('modal-apt-fo-overlay');
+    if (!overlay) return;
+    document.getElementById('apt-fo-aluno').textContent = (aluno.nome || 'Aluno') + (aluno.matricula ? ' — ' + aluno.matricula : '');
+    document.getElementById('apt-fo-lbl').textContent = 'Registrar Fato Observado para a AV de Comportamento?';
+    document.getElementById('apt-fo-opcoes').style.display = 'flex';
+    document.getElementById('apt-fo-form').style.display = 'none';
+    document.getElementById('apt-fo-feito').style.display = 'none';
+    document.getElementById('apt-fo-obs').value = '';
+    overlay.classList.remove('hidden');
+    setTimeout(() => { try { document.getElementById('apt-fo-obs').focus(); } catch(e){} }, 150);
+}
+
+function apontamentoFOEscolher(positivo) {
+    aptFoTipo = positivo;
+    document.getElementById('apt-fo-opcoes').style.display = 'none';
+    document.getElementById('apt-fo-form').style.display = 'block';
+    document.getElementById('apt-fo-lbl').textContent = (positivo ? 'FO+ — Fato Observado Positivo' : 'FO- — Fato Observado Negativo') + ' — observacao (opcional):';
+    document.getElementById('apt-fo-confirmar').innerHTML = '<i class="fa-solid fa-check"></i> Registrar FO' + (positivo ? '+' : '-');
+}
+
+function apontamentoFOVoltar() {
+    document.getElementById('apt-fo-form').style.display = 'none';
+    document.getElementById('apt-fo-opcoes').style.display = 'flex';
+}
+
+function apontamentoFOConfirmar() {
+    if (!aptFoTarget || aptFoTipo === null) { apontamentoFOCancelar(); return; }
+    const obs = document.getElementById('apt-fo-obs').value.trim();
+    const cpf = aptFoTarget.cpf;
+    const chave = aptFoTipo ? 'foPositivos' : 'foNegativos';
+    const item = { data: new Date().toLocaleDateString('pt-BR'), obs: obs, em: new Date().toISOString(), origem: 'apontamento' };
+    const doneEl = document.getElementById('apt-fo-feito');
+    dbFirestore.collection('avaliacoesAlunos').doc(cpf).get().then(function(doc) {
+        const dados = doc.exists ? doc.data() : {};
+        const lista = dados[chave] || [];
+        lista.push(item);
+        const update = {};
+        update[chave] = lista;
+        update.nome = aptFoTarget.nome || dados.nome || '';
+        update.matricula = aptFoTarget.matricula || dados.matricula || '';
+        update.atualizadoEm = firebase.firestore.FieldValue.serverTimestamp();
+        return dbFirestore.collection('avaliacoesAlunos').doc(cpf).set(update, { merge: true });
+    }).then(function() {
+        doneEl.textContent = 'FO' + (aptFoTipo ? '+' : '-') + ' registrado na AV de Comportamento!';
+        doneEl.style.color = '#16a34a';
+        doneEl.style.display = 'block';
+        document.getElementById('apt-fo-form').style.display = 'none';
+        setTimeout(apontamentoFOCancelar, 1500);
+    }).catch(function(e) {
+        console.error('Erro ao salvar FO:', e);
+        doneEl.textContent = 'Erro ao salvar: ' + e.message;
+        doneEl.style.color = '#dc2626';
+        doneEl.style.display = 'block';
+    });
+}
+
+function apontamentoFOCancelar(event) {
+    if (event && event.target && event.target.id !== 'modal-apt-fo-overlay') return;
+    aptFoTarget = null;
+    aptFoTipo = null;
+    const el = document.getElementById('modal-apt-fo-overlay');
+    if (el) el.classList.add('hidden');
 }
 
 async function apontamentoSalvar() {
