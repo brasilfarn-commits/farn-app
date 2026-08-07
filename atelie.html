@@ -3,149 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ateliê - Login</title>
+    <title>Ateliê FARN - Vitrine de Vendas</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', 'Segoe UI', sans-serif;
             min-height: 100vh;
             background:
-                radial-gradient(circle at 15% 20%, rgba(59,130,246,.18) 0%, transparent 38%),
-                radial-gradient(circle at 85% 60%, rgba(212,175,55,.10) 0%, transparent 30%),
-                linear-gradient(160deg, #0a1c40 0%, #122c5e 40%, #1a3a7a 70%, #0e2547 100%);
+                radial-gradient(circle at 15% 20%, rgba(34,197,94,.14) 0%, transparent 38%),
+                radial-gradient(circle at 85% 60%, rgba(251,191,36,.10) 0%, transparent 30%),
+                linear-gradient(160deg, #0b3d1f 0%, #125227 40%, #1a6b33 70%, #0b2e18 100%);
             color: #e8f2e9;
+        }
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(6, 44, 22, .88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(251,191,36,.25);
+        }
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-brand-logo {
+            width: 44px; height: 44px; object-fit: contain; border-radius: 50%;
+            background: #fff; padding: 2px; border: 2px solid #fbbf24;
+        }
+        .header-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .header-brand-text strong { font-size: 16px; font-weight: 800; letter-spacing: .5px; color: #fff; }
+        .header-brand-text span { font-size: 11px; color: #b9d4bd; }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .btn-restrito {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.35);
+            color: #fde047; padding: 8px 14px; border-radius: 9px;
+            font-size: 12px; font-weight: 600; text-decoration: none; transition: .2s;
+        }
+        .btn-restrito:hover { background: rgba(251,191,36,.22); }
+        .btn-voltar {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15);
+            color: #cfe6d2; padding: 8px 14px; border-radius: 9px;
+            font-size: 12px; font-weight: 600; text-decoration: none; transition: .2s;
+        }
+        .btn-voltar:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+        .hero {
+            text-align: center;
+            padding: 48px 24px 30px;
+        }
+        .hero i { font-size: 54px; color: #fbbf24; margin-bottom: 14px; }
+        .hero h1 { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: .5px; }
+        .hero p { font-size: 14px; color: #b9d4bd; margin-top: 8px; max-width: 560px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+
+        .vitrine {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 60px;
+        }
+        .vitrine-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+        .vitrine-search { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
+        .vitrine-search i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px; }
+        .vitrine-search input {
+            width: 100%; padding: 12px 14px 12px 40px;
+            background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.15);
+            border-radius: 12px; color: #fff; font-size: 14px; outline: none;
+        }
+        .vitrine-search input:focus { border-color: #fbbf24; }
+        .vitrine-search input::placeholder { color: #6a8a72; }
+        .vitrine-count { font-size: 12px; color: #b9d4bd; }
+
+        .vitrine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        .produto-card {
+            background: rgba(255,255,255,.055);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 16px;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            transition: transform .25s, box-shadow .25s, border-color .25s;
         }
-        .atelie-login-card {
-            width: 100%;
-            max-width: 400px;
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(212,175,55,.30);
-            border-radius: 20px;
-            padding: 40px 32px;
-            backdrop-filter: blur(8px);
+        .produto-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(251,191,36,.45);
+            box-shadow: 0 12px 32px rgba(0,0,0,.35);
         }
-        .atelie-login-header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .atelie-login-header i {
-            font-size: 56px;
-            color: #d4af37;
-            margin-bottom: 16px;
-            display: block;
-        }
-        .atelie-login-header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: .5px;
-            color: #fff;
-            margin-bottom: 6px;
-        }
-        .atelie-login-header p {
-            font-size: 13px;
-            color: #b9d4bd;
-        }
-        .form-group { margin-bottom: 20px; }
-        .form-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #b9d4bd;
-            margin-bottom: 8px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(0,0,0,.25);
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 14px;
-            transition: .25s;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #d4af37;
-            box-shadow: 0 0 0 3px rgba(212,175,55,.2);
-        }
-        .form-group input::placeholder { color: #6a8a72; }
-        .btn-login {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #d4af37, #ca8a04);
-            border: none;
-            border-radius: 10px;
-            color: #0a1c40;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
+        .produto-img {
+            height: 170px;
+            background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: .25s;
-            letter-spacing: .3px;
+            padding: 14px;
+            overflow: hidden;
         }
-        .btn-login:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(212,175,55,.4);
+        .produto-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .produto-img .sem-img { color: #cbd5e1; font-size: 40px; }
+        .produto-body { padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .produto-categoria {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+            color: #fde047; background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3);
+            padding: 3px 10px; border-radius: 20px; align-self: flex-start;
         }
-        .btn-login:disabled { opacity: .6; cursor: not-allowed; }
-        .error-msg {
-            display: none;
-            background: rgba(220,38,38,.15);
-            border: 1px solid rgba(220,38,54,.3);
-            color: #f87171;
-            border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 13px;
+        .produto-titulo { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.4; }
+        .produto-descricao { font-size: 12px; color: #b9d4bd; line-height: 1.5; }
+        .produto-preco { font-size: 17px; font-weight: 800; color: #fbbf24; }
+        .btn-comprar {
+            margin-top: auto;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            background: linear-gradient(135deg, #fbbf24, #ca8a04);
+            color: #0b3d1f; font-size: 14px; font-weight: 800;
+            padding: 13px 18px; border-radius: 12px; text-decoration: none;
+            transition: .2s;
+        }
+        .btn-comprar:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(251,191,36,.35); }
+        .btn-comprar .ml-flag { font-size: 10px; font-weight: 700; opacity: .75; }
+
+        .vitrine-empty {
             text-align: center;
-            margin-bottom: 16px;
+            padding: 70px 20px;
+            background: rgba(255,255,255,.04);
+            border: 1px dashed rgba(255,255,255,.2);
+            border-radius: 16px;
         }
-        .error-msg.show { display: block; }
-        .footer-note {
-            margin-top: 24px;
+        .vitrine-empty i { font-size: 46px; color: #fbbf24; margin-bottom: 14px; }
+        .vitrine-empty h3 { color: #fff; font-size: 18px; margin-bottom: 6px; }
+        .vitrine-empty p { color: #b9d4bd; font-size: 13px; }
+
+        .footer {
+            border-top: 1px solid rgba(251,191,36,.2);
+            background: rgba(6, 44, 22, .7);
+            padding: 22px 24px;
             text-align: center;
             font-size: 12px;
-            color: #6a8a72;
+            color: #b9d4bd;
         }
-        .footer-note a { color: #d4af37; text-decoration: none; }
-        .footer-note a:hover { text-decoration: underline; }
+        .footer a { color: #fde047; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .header-inner { padding: 10px 16px; }
+            .header-brand-text span { display: none; }
+            .btn-voltar span { display: none; }
+            .hero { padding: 34px 18px 24px; }
+            .hero h1 { font-size: 26px; }
+            .vitrine { padding: 0 16px 50px; }
+            .vitrine-controls { flex-direction: column; align-items: stretch; }
+            .vitrine-search { max-width: none; }
+        }
     </style>
 </head>
 <body>
-    <div class="atelie-login-card">
-        <div class="atelie-login-header">
-            <i class="fa-solid fa-palette"></i>
-            <h1>Ateliê</h1>
-            <p>Área restrita - Acesso para cadastrados</p>
-        </div>
-        <div class="error-msg" id="atelie-error"></div>
-        <form id="atelie-login-form" onsubmit="atelieLogin(event)">
-            <div class="form-group">
-                <label>CPF</label>
-                <input type="text" id="atelie-cpf" placeholder="000.000.000-00" maxlength="14" autocomplete="off" oninput="formatCpfAtelie(this)" required>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="header-brand-logo">
+                <div class="header-brand-text">
+                    <strong>Ateliê FARN</strong>
+                    <span>Vitrine de vendas</span>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Senha</label>
-                <input type="password" id="atelie-senha" placeholder="Sua senha" autocomplete="current-password" required>
+            <div class="header-actions">
+                <a href="index.html" class="btn-voltar"><i class="fa-solid fa-house"></i><span> Início</span></a>
+                <a href="atelie-login.html" class="btn-restrito"><i class="fa-solid fa-lock"></i> Área restrita</a>
             </div>
-            <button type="submit" class="btn-login" id="atelie-btn">
-                <span>Entrar</span>
-                <i class="fa-solid fa-right-to-bracket"></i>
-            </button>
-        </form>
-        <div class="footer-note">
-            <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Voltar ao início</a>
         </div>
+    </header>
+
+    <div class="hero">
+        <i class="fa-solid fa-palette"></i>
+        <h1>Ateliê FARN</h1>
+        <p>Produtos selecionados para você, com preços exclusivos. Ao comprar pela nossa vitrine, você apoia a instituição.</p>
     </div>
+
+    <main class="vitrine">
+        <div class="vitrine-controls">
+            <div class="vitrine-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="vitrine-busca" placeholder="Buscar produto..." oninput="vitrineFiltrar()">
+            </div>
+            <div class="vitrine-count" id="vitrine-count"></div>
+        </div>
+        <div id="vitrine-grid" class="vitrine-grid">
+            <div class="vitrine-empty">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <h3>Carregando produtos...</h3>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p><i class="fa-solid fa-shield-halved"></i> Compras seguras pelo <a href="https://www.mercadolivre.com.br" target="_blank" rel="noopener">Mercado Livre</a>. A FARN pode receber comissão por vendas realizadas por esta vitrine.</p>
+    </footer>
+
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -162,106 +231,82 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const ADMIN_CPF = '05004959471';
-        const ADMIN_SENHA = '212121';
+        var produtos = [];
+        var unsub = null;
 
-        function formatCpfAtelie(input) {
-            var v = input.value.replace(/\D/g, '');
-            if (v.length > 11) v = v.slice(0, 11);
-            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
-            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
-            input.value = v;
+        function vitrineCarregar() {
+            if (unsub) { unsub(); unsub = null; }
+            var grid = document.getElementById('vitrine-grid');
+            if (!grid) return;
+            unsub = db.collection('atelieProdutos').where('ativo', '==', true).onSnapshot(function(snap) {
+                produtos = [];
+                snap.forEach(function(doc) {
+                    var p = doc.data();
+                    p._id = doc.id;
+                    produtos.push(p);
+                });
+                produtos.sort(function(a, b) {
+                    var ta = a.criadoEm ? (a.criadoEm.toMillis ? a.criadoEm.toMillis() : new Date(a.criadoEm).getTime()) : 0;
+                    var tb = b.criadoEm ? (b.criadoEm.toMillis ? b.criadoEm.toMillis() : new Date(b.criadoEm).getTime()) : 0;
+                    return tb - ta;
+                });
+                vitrineFiltrar();
+            }, function(e) {
+                console.error('Erro ao carregar vitrine:', e);
+                grid.innerHTML = '<div class="vitrine-empty"><i class="fa-solid fa-triangle-exclamation"></i><h3>Erro ao carregar</h3><p>Tente novamente em instantes.</p></div>';
+            });
         }
 
-        function showAtelieError(msg) {
-            var el = document.getElementById('atelie-error');
-            el.textContent = msg;
-            el.classList.add('show');
-        }
-
-        function hideAtelieError() {
-            var el = document.getElementById('atelie-error');
-            el.classList.remove('show');
-        }
-
-        async function atelieLogin(event) {
-            event.preventDefault();
-            hideAtelieError();
-            var cpf = document.getElementById('atelie-cpf').value.replace(/\D/g, '');
-            var senha = document.getElementById('atelie-senha').value;
-            var btn = document.getElementById('atelie-btn');
-            if (!cpf || !senha) { showAtelieError('Informe o CPF e a senha.'); return; }
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
-            try {
-                var user = null;
-
-                // 1) Admin geral (hardcoded)
-                if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-                    user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, perfil: 'admin', admin: true };
-                }
-
-                // 2) Coleção usuarios (administradores, coordenadores e usuários do sistema)
-                if (!user) {
-                    var snapU = await db.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-                    snapU.forEach(function(doc) {
-                        var u = doc.data();
-                        if (u.senha === senha && u.ativo !== false) {
-                            user = { nome: u.nome, cpf: u.cpf, perfil: 'usuario', admin: false };
-                        }
-                    });
-                }
-
-                // 3) Coleção docentes
-                if (!user) {
-                    var snapD = await db.collection('docentes').where('cpf', '==', cpf).limit(1).get();
-                    snapD.forEach(function(doc) {
-                        var u = doc.data();
-                        if (u.senha === senha) {
-                            user = { nome: u.nome, cpf: u.cpf, perfil: 'docente', admin: false };
-                        }
-                    });
-                }
-
-                // 4) Coleção candidatos (alunos ativos e formados com tipoPessoa 'F')
-                if (!user) {
-                    var snapC = await db.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
-                    snapC.forEach(function(doc) {
-                        var u = doc.data();
-                        if (u.senha === senha && u.ativo !== false && u.status === 'Ativo') {
-                            var tipo = (u.tipoPessoa || 'A');
-                            var perfil = tipo === 'F' ? 'formado' : 'aluno';
-                            user = { nome: u.nome, cpf: u.cpf, perfil: perfil, admin: false };
-                        }
-                    });
-                }
-
-                // 5) Coleção recadastramentos (formados recadastrados)
-                if (!user) {
-                    var snapR = await db.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
-                    snapR.forEach(function(doc) {
-                        var u = doc.data();
-                        if (u.senha === senha && u.status === 'Ativo') {
-                            user = { nome: u.nome, cpf: u.cpf, perfil: 'formado', admin: false };
-                        }
-                    });
-                }
-
-                if (!user) {
-                    showAtelieError('CPF ou senha inválidos, ou cadastro não ativado.');
-                    return;
-                }
-                localStorage.setItem('atelie_user', JSON.stringify(user));
-                location.href = 'atelie-farn.html';
-            } catch (e) {
-                console.error('Erro login ateliê:', e);
-                showAtelieError('Falha de conexão. Tente novamente.');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Entrar</span><i class="fa-solid fa-right-to-bracket"></i>';
+        function vitrineFiltrar() {
+            var busca = (document.getElementById('vitrine-busca').value || '').toLowerCase().trim();
+            var grid = document.getElementById('vitrine-grid');
+            var count = document.getElementById('vitrine-count');
+            if (!grid) return;
+            var lista = busca ? produtos.filter(function(p) {
+                return ((p.titulo || '') + ' ' + (p.categoria || '') + ' ' + (p.descricao || '')).toLowerCase().indexOf(busca) !== -1;
+            }) : produtos;
+            if (count) count.textContent = lista.length + ' produto' + (lista.length === 1 ? '' : 's');
+            if (!lista.length) {
+                grid.innerHTML = '<div class="vitrine-empty" style="grid-column:1/-1"><i class="fa-solid fa-box-open"></i><h3>' + (busca ? 'Nenhum resultado' : 'Vitrine vazia') + '</h3><p>' + (busca ? 'Nenhum produto encontrado para "' + busca + '".' : 'Em breve novos produtos estarão disponíveis.') + '</p></div>';
+                return;
             }
+            grid.innerHTML = '';
+            lista.forEach(function(p) {
+                grid.appendChild(vitrineCard(p));
+            });
         }
+
+        function vitrineCard(p) {
+            var card = document.createElement('a');
+            card.href = p.link || '#';
+            card.target = '_blank';
+            card.rel = 'noopener';
+            card.className = 'produto-card';
+            var img = p.imagem
+                ? '<img src="' + p.imagem + '" alt="' + escVitrine(p.titulo) + '" loading="lazy" onerror="this.outerHTML=\'<i class=&quot;fa-solid fa-image sem-img&quot;></i>\'">'
+                : '<i class="fa-solid fa-image sem-img"></i>';
+            var categoria = p.categoria ? '<span class="produto-categoria">' + escVitrine(p.categoria) + '</span>' : '';
+            var descricao = p.descricao ? '<p class="produto-descricao">' + escVitrine(p.descricao) + '</p>' : '';
+            var preco = p.preco ? '<div class="produto-preco">' + escVitrine(p.preco) + '</div>' : '';
+            card.innerHTML =
+                '<div class="produto-img">' + img + '</div>' +
+                '<div class="produto-body">' +
+                    categoria +
+                    '<div class="produto-titulo">' + escVitrine(p.titulo || 'Produto') + '</div>' +
+                    descricao +
+                    preco +
+                    '<span class="btn-comprar"><i class="fa-solid fa-cart-shopping"></i> Comprar <span class="ml-flag">NO MERCADO LIVRE</span></span>' +
+                '</div>';
+            return card;
+        }
+
+        function escVitrine(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        window.addEventListener('DOMContentLoaded', vitrineCarregar);
     </script>
 </body>
 </html>

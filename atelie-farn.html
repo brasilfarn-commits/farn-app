@@ -115,7 +115,7 @@
             <h1>Ateliê FARN</h1>
             <h2>Em construção</h2>
             <p>Esta página do Ateliê FARN está sendo preparada com muito carinho. Em breve novas funcionalidades estarão disponíveis para todos os usuários cadastrados.</p>
-            <a class="btn-voltar" href="atelie.html"><i class="fa-solid fa-arrow-left"></i> Sair do Ateliê</a>
+            <a class="btn-voltar" href="atelie.html"><i class="fa-solid fa-store"></i> Ver vitrine</a>
         </div>
     </main>
 
@@ -124,7 +124,7 @@
         // Verifica login
         window.addEventListener('DOMContentLoaded', function() {
             var user = localStorage.getItem('atelie_user');
-            if (!user) { location.href = 'atelie.html'; return; }
+            if (!user) { location.href = 'atelie-login.html'; return; }
             var u = JSON.parse(user);
             document.getElementById('header-user-name').textContent = u.nome || 'Usuário';
             var perfis = { admin: 'Administrador', docente: 'Docente', aluno: 'Aluno', formado: 'Formado', usuario: 'Usuário' };
@@ -138,7 +138,7 @@
 
         function atelieLogout() {
             localStorage.removeItem('atelie_user');
-            location.href = 'atelie.html';
+            location.href = 'atelie-login.html';
         }
     </script>
 </body>

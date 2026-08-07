@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ateliê - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(34,197,94,.16) 0%, transparent 38%),
+                radial-gradient(circle at 85% 60%, rgba(251,191,36,.12) 0%, transparent 30%),
+                linear-gradient(160deg, #0b3d1f 0%, #125227 40%, #1a6b33 70%, #0b2e18 100%);
+            color: #e8f2e9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .atelie-login-card {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(251,191,36,.30);
+            border-radius: 20px;
+            padding: 40px 32px;
+            backdrop-filter: blur(8px);
+        }
+        .atelie-login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .atelie-login-header i {
+            font-size: 56px;
+            color: #fbbf24;
+            margin-bottom: 16px;
+            display: block;
+        }
+        .atelie-login-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: .5px;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .atelie-login-header p {
+            font-size: 13px;
+            color: #b9d4bd;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #b9d4bd;
+            margin-bottom: 8px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0,0,0,.25);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            transition: .25s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251,191,36,.2);
+        }
+        .form-group input::placeholder { color: #6a8a72; }
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #fbbf24, #ca8a04);
+            border: none;
+            border-radius: 10px;
+            color: #0b3d1f;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: .25s;
+            letter-spacing: .3px;
+        }
+        .btn-login:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(251,191,36,.4);
+        }
+        .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+        .error-msg {
+            display: none;
+            background: rgba(220,38,38,.15);
+            border: 1px solid rgba(220,38,54,.3);
+            color: #f87171;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .error-msg.show { display: block; }
+        .footer-note {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: #6a8a72;
+        }
+        .footer-note a { color: #fbbf24; text-decoration: none; }
+        .footer-note a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="atelie-login-card">
+        <div class="atelie-login-header">
+            <i class="fa-solid fa-palette"></i>
+            <h1>Ateliê</h1>
+            <p>Área restrita - Acesso para cadastrados</p>
+        </div>
+        <div class="error-msg" id="atelie-error"></div>
+        <form id="atelie-login-form" onsubmit="atelieLogin(event)">
+            <div class="form-group">
+                <label>CPF</label>
+                <input type="text" id="atelie-cpf" placeholder="000.000.000-00" maxlength="14" autocomplete="off" oninput="formatCpfAtelie(this)" required>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="atelie-senha" placeholder="Sua senha" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn-login" id="atelie-btn">
+                <span>Entrar</span>
+                <i class="fa-solid fa-right-to-bracket"></i>
+            </button>
+        </form>
+        <div class="footer-note">
+            <a href="atelie.html"><i class="fa-solid fa-store"></i> Voltar à vitrine</a>
+        </div>
+    </div>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const ADMIN_CPF = '05004959471';
+        const ADMIN_SENHA = '212121';
+
+        function formatCpfAtelie(input) {
+            var v = input.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            input.value = v;
+        }
+
+        function showAtelieError(msg) {
+            var el = document.getElementById('atelie-error');
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function hideAtelieError() {
+            var el = document.getElementById('atelie-error');
+            el.classList.remove('show');
+        }
+
+        async function atelieLogin(event) {
+            event.preventDefault();
+            hideAtelieError();
+            var cpf = document.getElementById('atelie-cpf').value.replace(/\D/g, '');
+            var senha = document.getElementById('atelie-senha').value;
+            var btn = document.getElementById('atelie-btn');
+            if (!cpf || !senha) { showAtelieError('Informe o CPF e a senha.'); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
+            try {
+                var user = null;
+
+                // 1) Admin geral (hardcoded)
+                if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
+                    user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, perfil: 'admin', admin: true };
+                }
+
+                // 2) Coleção usuarios (administradores, coordenadores e usuários do sistema)
+                if (!user) {
+                    var snapU = await db.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+                    snapU.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha && u.ativo !== false) {
+                            user = { nome: u.nome, cpf: u.cpf, perfil: 'usuario', admin: false };
+                        }
+                    });
+                }
+
+                // 3) Coleção docentes
+                if (!user) {
+                    var snapD = await db.collection('docentes').where('cpf', '==', cpf).limit(1).get();
+                    snapD.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha) {
+                            user = { nome: u.nome, cpf: u.cpf, perfil: 'docente', admin: false };
+                        }
+                    });
+                }
+
+                // 4) Coleção candidatos (alunos ativos e formados com tipoPessoa 'F')
+                if (!user) {
+                    var snapC = await db.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+                    snapC.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha && u.ativo !== false && u.status === 'Ativo') {
+                            var tipo = (u.tipoPessoa || 'A');
+                            var perfil = tipo === 'F' ? 'formado' : 'aluno';
+                            user = { nome: u.nome, cpf: u.cpf, perfil: perfil, admin: false };
+                        }
+                    });
+                }
+
+                // 5) Coleção recadastramentos (formados recadastrados)
+                if (!user) {
+                    var snapR = await db.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
+                    snapR.forEach(function(doc) {
+                        var u = doc.data();
+                        if (u.senha === senha && u.status === 'Ativo') {
+                            user = { nome: u.nome, cpf: u.cpf, perfil: 'formado', admin: false };
+                        }
+                    });
+                }
+
+                if (!user) {
+                    showAtelieError('CPF ou senha inválidos, ou cadastro não ativado.');
+                    return;
+                }
+                localStorage.setItem('atelie_user', JSON.stringify(user));
+                location.href = 'atelie-farn.html';
+            } catch (e) {
+                console.error('Erro login ateliê:', e);
+                showAtelieError('Falha de conexão. Tente novamente.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Entrar</span><i class="fa-solid fa-right-to-bracket"></i>';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -863,6 +863,7 @@ function enterAdminPanel() {
     configInstituicaoCarregarHome();
     migrarDataInscricao();
     if (typeof chatPortaisStartNotifListener === 'function') chatPortaisStartNotifListener();
+    if (typeof atelieProdutosCarregar === 'function') atelieProdutosCarregar();
 }
 
 function applyUserPermissions() {
@@ -890,7 +891,8 @@ function applyUserPermissions() {
         'admin-formados': p.includes('formados') || isGeral,
         'admin-tfm': p.includes('tfm') || isGeral,
         'admin-noticias': p.includes('noticias') || isGeral,
-        'admin-galeria': p.includes('galeria') || isGeral
+        'admin-galeria': p.includes('galeria') || isGeral,
+        'admin-atelie': isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -6854,4 +6856,199 @@ function galeriaAdminExcluir(id) {
     dbFirestore.collection('galeriaAlunos').doc(id).delete().then(function() {
         galeriaAdminCarregar();
     });
+}
+
+/* ===== ATELIE - LOJA DE VENDAS ===== */
+var atelieProdutos = [];
+var atelieProdutosUnsub = null;
+var atelieProdutoEditando = null;
+
+function atelieProdutoMsg(texto, tipo) {
+    var el = document.getElementById('atelie-produto-msg');
+    if (!el) return;
+    el.textContent = texto;
+    el.style.display = 'block';
+    el.style.background = tipo === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+    el.style.border = '1px solid ' + (tipo === 'ok' ? 'rgba(76,175,80,.3)' : 'rgba(244,67,54,.3)');
+    el.style.color = tipo === 'ok' ? '#4caf50' : '#f44336';
+}
+
+function atelieProdutosCarregar() {
+    if (atelieProdutosUnsub) { atelieProdutosUnsub(); atelieProdutosUnsub = null; }
+    var container = document.getElementById('atelie-produtos-lista');
+    if (!container) return;
+    atelieProdutosUnsub = dbFirestore.collection('atelieProdutos').orderBy('criadoEm', 'desc').onSnapshot(function(snap) {
+        atelieProdutos = [];
+        snap.forEach(function(doc) {
+            var p = doc.data();
+            p._id = doc.id;
+            atelieProdutos.push(p);
+        });
+        atelieProdutosRender();
+    }, function(e) {
+        console.error('Erro ao carregar produtos do Atelie:', e);
+        container.innerHTML = '<div class="empty-state" style="padding:40px 20px;text-align:center"><i class="fa-solid fa-triangle-exclamation" style="font-size:30px;color:#dc2626"></i><p style="color:#64748b;margin-top:10px">Erro ao carregar produtos.</p></div>';
+    });
+}
+
+function atelieProdutosRender() {
+    var container = document.getElementById('atelie-produtos-lista');
+    if (!container) return;
+    if (atelieProdutos.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:40px 20px;text-align:center"><i class="fa-solid fa-bag-shopping" style="font-size:34px;color:#dc2626"></i><h4 style="color:#1e293b;font-size:16px;font-weight:800;margin:10px 0 6px">Nenhum produto cadastrado</h4><p style="color:#64748b;font-size:13px;margin:0">Clique em "Novo Produto" para adicionar o primeiro item a sua vitrine.</p></div>';
+        return;
+    }
+    container.innerHTML = '';
+    atelieProdutos.forEach(function(p) {
+        container.appendChild(atelieProdutoCard(p));
+    });
+}
+
+function atelieProdutoCard(p) {
+    var card = document.createElement('div');
+    card.style.cssText = 'display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:10px;flex-wrap:wrap';
+    var img = p.imagem ? '<div style="width:54px;height:54px;border-radius:10px;overflow:hidden;background:#f1f5f9;flex-shrink:0;display:flex;align-items:center;justify-content:center"><img src="' + p.imagem + '" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display=\'none\'"><i class="fa-solid fa-image" style="color:#cbd5e1;font-size:18px"></i></div>' : '<div style="width:54px;height:54px;border-radius:10px;background:rgba(220,38,38,.06);flex-shrink:0;display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-bag-shopping" style="color:#dc2626;font-size:20px"></i></div>';
+    var ativoTag = p.ativo === false
+        ? '<span style="background:rgba(244,67,54,.12);color:#f44336;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600">Inativo</span>'
+        : '<span style="background:rgba(76,175,80,.12);color:#16a34a;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600">Ativo</span>';
+    var categoria = p.categoria ? '<span style="background:rgba(100,116,139,.1);color:#475569;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600">' + escHTML(p.categoria) + '</span>' : '';
+    var preco = p.preco ? '<span style="font-size:13px;font-weight:700;color:#16a34a">' + escHTML(p.preco) + '</span>' : '';
+    var linkHost = '';
+    try { if (p.link) linkHost = new URL(p.link).hostname.replace('www.', ''); } catch(e) {}
+    card.innerHTML =
+        img +
+        '<div style="flex:1;min-width:200px">' +
+            '<div style="font-size:14px;font-weight:700;color:#1e293b;word-break:break-word">' + escHTML(p.titulo || 'Sem titulo') + '</div>' +
+            '<div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + ativoTag + categoria + preco + '</div>' +
+            '<div style="font-size:11px;color:#94a3b8;margin-top:4px">' + (linkHost ? '<i class="fa-solid fa-link"></i> ' + escHTML(linkHost) + (p.link.indexOf('mercadolivre.com') !== -1 ? ' - link do Mercado Livre' : '') : 'sem link') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0">' +
+            '<button title="Ativar/Inativar" style="background:' + (p.ativo === false ? 'rgba(76,175,80,.15)' : 'rgba(100,116,139,.12)') + ';border:1px solid ' + (p.ativo === false ? 'rgba(76,175,80,.3)' : 'rgba(100,116,139,.25)') + ';color:' + (p.ativo === false ? '#16a34a' : '#64748b') + ';width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:13px" onclick="atelieProdutoToggleAtivo(\'' + p._id + '\')"><i class="fa-solid fa-' + (p.ativo === false ? 'eye' : 'eye-slash') + '"></i></button>' +
+            '<button title="Editar" style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);color:#2563eb;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:13px" onclick="atelieProdutoAbrirModal(\'' + p._id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+            '<button title="Excluir" style="background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.25);color:#f44336;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:13px" onclick="atelieProdutoExcluir(\'' + p._id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+        '</div>';
+    return card;
+}
+
+function atelieProdutoAbrirModal(id) {
+    atelieProdutoEditando = null;
+    document.getElementById('atelie-produto-modal-titulo').textContent = 'Novo Produto';
+    document.getElementById('atelie-produto-titulo').value = '';
+    document.getElementById('atelie-produto-preco').value = '';
+    document.getElementById('atelie-produto-categoria').value = '';
+    document.getElementById('atelie-produto-link').value = '';
+    document.getElementById('atelie-produto-imagem').value = '';
+    document.getElementById('atelie-produto-descricao').value = '';
+    var prev = document.getElementById('atelie-produto-img-preview');
+    if (prev) { prev.style.display = 'none'; prev.src = ''; }
+    var msg = document.getElementById('atelie-produto-msg');
+    if (msg) msg.style.display = 'none';
+    if (id) {
+        var p = atelieProdutos.find(function(x) { return x._id === id; });
+        if (p) {
+            atelieProdutoEditando = id;
+            document.getElementById('atelie-produto-modal-titulo').textContent = 'Editar Produto';
+            document.getElementById('atelie-produto-titulo').value = p.titulo || '';
+            document.getElementById('atelie-produto-preco').value = p.preco || '';
+            document.getElementById('atelie-produto-categoria').value = p.categoria || '';
+            document.getElementById('atelie-produto-link').value = p.link || '';
+            document.getElementById('atelie-produto-imagem').value = p.imagem || '';
+            document.getElementById('atelie-produto-descricao').value = p.descricao || '';
+            atelieProdutoImgPreview();
+        }
+    }
+    document.getElementById('atelie-produto-save-btn').innerHTML = '<i class="fa-solid fa-check"></i> Salvar Produto';
+    document.getElementById('modal-atelie-produto-overlay').classList.remove('hidden');
+}
+
+function atelieProdutoFecharModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('modal-atelie-produto-overlay').classList.add('hidden');
+}
+
+function atelieProdutoLinkPreview() {
+    var link = document.getElementById('atelie-produto-link').value;
+    if (link && link.indexOf('mercadolivre.com') !== -1) {
+        atelieProdutoMsg('Link do Mercado Livre identificado. Lembre-se: use o link de afiliado gerado no portal para receber comissao.', 'ok');
+    } else if (link) {
+        atelieProdutoMsg('Atencao: o link nao parece ser do Mercado Livre. Cole o link de afiliado gerado no portal do ML.', 'err');
+    } else {
+        var msg = document.getElementById('atelie-produto-msg');
+        if (msg) msg.style.display = 'none';
+    }
+}
+
+function atelieProdutoImgPreview() {
+    var url = document.getElementById('atelie-produto-imagem').value;
+    var prev = document.getElementById('atelie-produto-img-preview');
+    if (!prev) return;
+    if (url) { prev.src = url; prev.style.display = 'block'; }
+    else { prev.style.display = 'none'; prev.src = ''; }
+}
+
+async function atelieProdutoSalvar(event) {
+    if (event) event.preventDefault();
+    var titulo = document.getElementById('atelie-produto-titulo').value.trim();
+    var link = document.getElementById('atelie-produto-link').value.trim();
+    if (!titulo || !link) { atelieProdutoMsg('Preencha o titulo e o link do produto.', 'err'); return; }
+    var dados = {
+        titulo: titulo,
+        preco: document.getElementById('atelie-produto-preco').value.trim(),
+        categoria: document.getElementById('atelie-produto-categoria').value.trim(),
+        link: link,
+        imagem: document.getElementById('atelie-produto-imagem').value.trim(),
+        descricao: document.getElementById('atelie-produto-descricao').value.trim()
+    };
+    var btn = document.getElementById('atelie-produto-save-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+    try {
+        if (atelieProdutoEditando) {
+            dados.ativo = true;
+            await dbFirestore.collection('atelieProdutos').doc(atelieProdutoEditando).update(dados);
+            atelieProdutoMsg('Produto atualizado com sucesso!', 'ok');
+        } else {
+            dados.ativo = true;
+            dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+            dados.criadoPor = currentUserData ? (currentUserData.nome || '') : '';
+            await dbFirestore.collection('atelieProdutos').add(dados);
+            atelieProdutoMsg('Produto adicionado com sucesso!', 'ok');
+        }
+        setTimeout(function() {
+            atelieProdutoFecharModal();
+        }, 900);
+    } catch(e) {
+        console.error('Erro ao salvar produto:', e);
+        atelieProdutoMsg('Erro: ' + e.message, 'err');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvar Produto';
+}
+
+function atelieProdutoToggleAtivo(id) {
+    var p = atelieProdutos.find(function(x) { return x._id === id; });
+    if (!p) return;
+    var novo = p.ativo === false;
+    dbFirestore.collection('atelieProdutos').doc(id).update({ ativo: novo }).catch(function(e) {
+        console.error('Erro ao alternar visibilidade:', e);
+    });
+}
+
+function atelieProdutoExcluir(id) {
+    if (!confirm('Excluir este produto da vitrine?')) return;
+    dbFirestore.collection('atelieProdutos').doc(id).delete().then(function() {
+    }).catch(function(e) {
+        console.error('Erro ao excluir produto:', e);
+        alert('Erro ao excluir produto.');
+    });
+}
+
+function atelieLojaAbrirPreview() {
+    window.open('atelie.html', '_blank', 'noopener');
+}
+
+function escHTML(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

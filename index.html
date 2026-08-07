@@ -2483,15 +2483,27 @@
                 <div id="admin-atelie" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-palette" style="color:#dc2626;margin-right:8px"></i> Atelie</h3>
-                            <small>Area de gestao do atelie.</small>
+                            <h3><i class="fa-solid fa-palette" style="color:#dc2626;margin-right:8px"></i> Atelie - Loja de Vendas</h3>
+                            <small>Cadastre produtos do Mercado Livre com seu link de afiliado. Eles aparecem automaticamente na pagina publica do Atelie.</small>
                         </div>
                         <div class="card-body">
-                            <div class="empty-state" style="padding:60px 20px;text-align:center">
-                                <i class="fa-solid fa-person-digging" style="font-size:52px;color:#dc2626;margin-bottom:14px;opacity:.85"></i>
-                                <h4 style="color:#1e293b;font-size:18px;font-weight:800;margin:0 0 8px">Em construcao</h4>
-                                <p style="color:#64748b;font-size:14px;margin:0">Esta secao do Atelie esta sendo preparada. Em breve novas funcionalidades estarao disponiveis.</p>
+                            <div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start">
+                                <i class="fa-solid fa-circle-info" style="color:#b45309;font-size:18px;margin-top:2px;flex-shrink:0"></i>
+                                <div style="font-size:13px;color:#78350f;line-height:1.55">
+                                    <strong>Como receber comissoes do Mercado Livre:</strong>
+                                    <ol style="margin:6px 0 0 18px;padding:0">
+                                        <li>Acesse <a href="https://www.mercadolivre.com.br/l/afiliados-home" target="_blank" rel="noopener" style="color:#b45309;font-weight:700">o portal de afiliados do Mercado Livre</a> e ative sua conta (voce recebe os ganhos na sua conta Mercado Pago).</li>
+                                        <li>No portal, use o <strong>"Gerador de Links"</strong>: cole o link do produto que deseja vender e clique em <strong>Gerar</strong>.</li>
+                                        <li>Copie o <strong>link de afiliado</strong> gerado e cole no campo "Link do produto" abaixo.</li>
+                                        <li>Quando alguem comprar pela sua vitrine, a comissao cai direto na sua conta Mercado Pago (minimo R$ 30, pago em ate 60 dias).</li>
+                                    </ol>
+                                </div>
                             </div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+                                <button class="btn-primary" onclick="atelieProdutoAbrirModal()"><i class="fa-solid fa-plus"></i> Novo Produto</button>
+                                <button class="btn-outline btn-sm" onclick="atelieLojaAbrirPreview()" title="Abrir a pagina publica do Atelie em nova aba"><i class="fa-solid fa-store"></i> Ver vitrine publica</button>
+                            </div>
+                            <div id="atelie-produtos-lista"><div class="empty-state" style="padding:40px 20px;text-align:center"><i class="fa-solid fa-spinner fa-spin" style="font-size:30px;color:#dc2626"></i><p style="color:#64748b;margin-top:10px">Carregando produtos...</p></div></div>
                         </div>
                     </div>
                 </div>
@@ -2519,6 +2531,35 @@
     </div>
 
     <!-- PORTAL DO FORMADO -->
+    <!-- MODAL PRODUTO ATELIE -->
+    <div id="modal-atelie-produto-overlay" class="modal-overlay hidden" onclick="atelieProdutoFecharModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:640px;max-height:92vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-bag-shopping" style="color:#dc2626;margin-right:8px"></i> <span id="atelie-produto-modal-titulo">Novo Produto</span></h3>
+                <button class="modal-close" onclick="atelieProdutoFecharModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="atelie-produto-form" onsubmit="return atelieProdutoSalvar(event)">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                        <div class="form-group full" style="grid-column:1/-1"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Titulo do produto *</label><input type="text" id="atelie-produto-titulo" class="config-input" placeholder="Ex: Curso de Primeiros Socorros" required></div>
+                        <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Preco exibido</label><input type="text" id="atelie-produto-preco" class="config-input" placeholder="Ex: R$ 89,90 ou 12x R$ 9,90"></div>
+                        <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Categoria</label><input type="text" id="atelie-produto-categoria" class="config-input" placeholder="Ex: Curso, Uniforme, Kit"></div>
+                        <div class="form-group full" style="grid-column:1/-1"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Link do produto (link de afiliado do Mercado Livre) *</label><input type="url" id="atelie-produto-link" class="config-input" placeholder="https://www.mercadolivre.com.br/..." required oninput="atelieProdutoLinkPreview()">
+                            <div style="font-size:11px;color:#94a3b8;margin-top:4px">Cole o link de afiliado gerado no "Gerador de Links" do portal de afiliados do ML para receber comissao.</div></div>
+                        <div class="form-group full" style="grid-column:1/-1"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">URL da imagem do produto</label><input type="url" id="atelie-produto-imagem" class="config-input" placeholder="https://... (opcional - imagem do anuncio do ML)" oninput="atelieProdutoImgPreview()">
+                            <div style="margin-top:8px"><img id="atelie-produto-img-preview" src="" alt="Preview" style="max-width:120px;max-height:120px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;display:none"></div></div>
+                        <div class="form-group full" style="grid-column:1/-1"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Descricao</label><textarea id="atelie-produto-descricao" class="config-input" rows="3" style="resize:vertical" placeholder="Breve descricao (opcional)"></textarea></div>
+                    </div>
+                    <div id="atelie-produto-msg" style="display:none;margin-bottom:12px;padding:10px;border-radius:8px;font-size:13px"></div>
+                    <div class="modal-footer" style="padding:0;margin-top:16px;border:none">
+                        <button type="button" class="btn-outline" onclick="atelieProdutoFecharModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                        <button type="submit" class="btn-primary" id="atelie-produto-save-btn"><i class="fa-solid fa-check"></i> Salvar Produto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DETALHES -->
     <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal(event)">
         <div class="modal-content">
