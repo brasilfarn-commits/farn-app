@@ -725,6 +725,10 @@
                         <i class="fa-solid fa-palette"></i>
                         <span>Atelie</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-avaliacao', this)">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <span>Seção de Avaliação</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -820,6 +824,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-atelie', document.querySelector('.nav-item:nth-child(17)'));">
                                 <i class="fa-solid fa-palette"></i>
                                 <span>Atelie</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-avaliacao', document.querySelector('.nav-item:nth-child(18)'));">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                                <span>Seção de Avaliação</span>
                             </div>
                         </div>
                     </div>
@@ -2514,6 +2522,21 @@
                                 <button class="btn-outline btn-sm" onclick="atelieLojaAbrirPreview()" title="Abrir a pagina publica do Atelie em nova aba"><i class="fa-solid fa-store"></i> Ver vitrine publica</button>
                             </div>
                             <div id="atelie-produtos-lista"><div class="empty-state" style="padding:40px 20px;text-align:center"><i class="fa-solid fa-spinner fa-spin" style="font-size:30px;color:#dc2626"></i><p style="color:#64748b;margin-top:10px">Carregando produtos...</p></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECAO DE AVALIACAO -->
+                <div id="admin-avaliacao" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-clipboard-check" style="color:#16a34a;margin-right:8px"></i> Seção de Avaliação</h3>
+                            <small>Ficha de avaliação por aluno ativo: AV Apontamento, AV Comportamento (FO+/FO-), AV Teórica, AV Prática e AV Final.</small>
+                        </div>
+                        <div class="card-body" style="text-align:center;padding:40px 20px">
+                            <i class="fa-solid fa-file-circle-check" style="font-size:48px;color:#16a34a;margin-bottom:14px;display:block"></i>
+                            <p style="font-size:14px;color:#475569;margin-bottom:20px;line-height:1.6">A Seção de Avaliação abre em uma janela própria, onde você seleciona o projeto e a turma e avalia cada aluno ativo com as 5 avaliações.</p>
+                            <button class="btn-primary" onclick="window.open('secao-avaliacao.html','_blank')" style="padding:12px 24px;font-size:14px"><i class="fa-solid fa-external-link-alt"></i> Abrir Seção de Avaliação</button>
                         </div>
                     </div>
                 </div>

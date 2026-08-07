@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seção de Avaliação - FARN</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0b3d1f; color: #e2e8f0; min-height: 100vh; }
+
+        .header {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(6, 44, 22, .92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(251,191,36,.25);
+        }
+        .header-inner {
+            max-width: 1200px; margin: 0 auto; padding: 12px 24px;
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-brand-logo {
+            width: 44px; height: 44px; object-fit: contain; border-radius: 50%;
+            background: #fff; padding: 2px; border: 2px solid #fbbf24;
+        }
+        .header-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .header-brand-text strong { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: .5px; }
+        .header-brand-text span { font-size: 11px; color: #b9d4bd; }
+        .btn-voltar {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15);
+            color: #cfe6d2; padding: 8px 14px; border-radius: 9px;
+            font-size: 12px; font-weight: 600; text-decoration: none; transition: .2s;
+        }
+        .btn-voltar:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        .filtros {
+            display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 14px; padding: 16px; margin-bottom: 20px;
+        }
+        .filtros .fg { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
+        .filtros label { font-size: 11px; font-weight: 700; color: #fde047; text-transform: uppercase; letter-spacing: .5px; }
+        .filtros select {
+            width: 100%; padding: 10px 12px; background: rgba(0,0,0,.3);
+            border: 1px solid rgba(255,255,255,.18); border-radius: 10px;
+            color: #fff; font-size: 14px; outline: none;
+        }
+        .filtros select:focus { border-color: #fbbf24; }
+        .filtros select option { background: #0b3d1f; color: #fff; }
+        .filtro-count { font-size: 12px; color: #b9d4bd; padding-bottom: 10px; white-space: nowrap; }
+
+        .alunos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+        .aluno-card {
+            background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px;
+            transition: transform .2s, border-color .2s;
+        }
+        .aluno-card:hover { transform: translateY(-3px); border-color: rgba(251,191,36,.45); }
+        .aluno-card .nome { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.35; }
+        .aluno-card .meta { font-size: 12px; color: #b9d4bd; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .aluno-card .badge {
+            background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3);
+            color: #fde047; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+        }
+        .btn-ficha {
+            margin-top: auto;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            background: linear-gradient(135deg, #fbbf24, #ca8a04); color: #0b3d1f;
+            font-size: 12px; font-weight: 800; padding: 9px 12px; border-radius: 9px;
+            border: none; cursor: pointer; transition: .2s; text-decoration: none;
+        }
+        .btn-ficha:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(251,191,36,.35); }
+
+        .empty {
+            text-align: center; padding: 60px 20px; color: #b9d4bd; font-size: 14px;
+            background: rgba(255,255,255,.04); border: 1px dashed rgba(255,255,255,.2); border-radius: 14px;
+        }
+        .empty i { font-size: 40px; color: #fbbf24; margin-bottom: 12px; display: block; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #0e4a24; border: 1px solid rgba(255,255,255,.15); border-radius: 18px;
+            width: 100%; max-width: 900px; max-height: 92vh; display: flex; flex-direction: column;
+            box-shadow: 0 30px 80px rgba(0,0,0,.5); overflow: hidden;
+        }
+        .modal-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.12);
+        }
+        .modal-head .aluno { font-size: 15px; font-weight: 800; color: #fff; }
+        .modal-head .aluno small { display: block; font-size: 11px; color: #b9d4bd; font-weight: 400; margin-top: 3px; }
+        .modal-close {
+            background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); color: #fff;
+            width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 15px;
+            display: flex; align-items: center; justify-content: center; transition: .2s;
+        }
+        .modal-close:hover { background: rgba(220,38,38,.8); }
+
+        .tabs { display: flex; gap: 6px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,.12); overflow-x: auto; }
+        .tab {
+            padding: 8px 14px; border-radius: 9px; border: 1px solid transparent;
+            background: rgba(255,255,255,.05); color: #b9d4bd; font-size: 12px; font-weight: 700;
+            cursor: pointer; white-space: nowrap; transition: .2s;
+        }
+        .tab:hover { color: #fff; }
+        .tab.active { background: rgba(251,191,36,.15); border-color: rgba(251,191,36,.4); color: #fde047; }
+
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .aba { display: none; }
+        .aba.active { display: block; }
+
+        .av-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .av-stat {
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 12px; padding: 14px; text-align: center;
+        }
+        .av-stat .valor { font-size: 26px; font-weight: 800; color: #fde047; }
+        .av-stat .rotulo { font-size: 11px; color: #b9d4bd; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+
+        .av-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+        .av-card h4 { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 10px; }
+        .av-card h4 i { margin-right: 6px; color: #fbbf24; }
+
+        .av-bar {
+            width: 100%; height: 26px; background: rgba(0,0,0,.35); border-radius: 8px; overflow: hidden; position: relative;
+        }
+        .av-bar-fill { height: 100%; border-radius: 8px; transition: width .5s; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 800; color: #0b3d1f; min-width: 34px; }
+        .av-bar-rotulo { display: flex; justify-content: space-between; font-size: 11px; color: #b9d4bd; margin-bottom: 4px; }
+
+        table.av-tabela { width: 100%; border-collapse: collapse; }
+        table.av-tabela th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #fde047; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.15); }
+        table.av-tabela td { padding: 9px 10px; font-size: 13px; color: #dbe7dd; border-bottom: 1px solid rgba(255,255,255,.08); vertical-align: middle; }
+        table.av-tabela tr:last-child td { border-bottom: none; }
+        .av-nota-input {
+            width: 90px; padding: 8px 10px; background: rgba(0,0,0,.3);
+            border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: #fff;
+            font-size: 14px; font-weight: 700; text-align: center; outline: none;
+        }
+        .av-nota-input:focus { border-color: #fbbf24; }
+
+        .btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; transition: .2s; }
+        .btn-verde { background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.4); color: #4ade80; }
+        .btn-verde:hover { background: rgba(34,197,94,.3); }
+        .btn-vermelho { background: rgba(239,68,68,.18); border-color: rgba(239,68,68,.4); color: #f87171; }
+        .btn-vermelho:hover { background: rgba(239,68,68,.3); }
+        .btn-pequeno { padding: 5px 8px; font-size: 11px; }
+
+        .av-pill {
+            display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
+            padding: 4px 10px; border-radius: 20px;
+        }
+        .av-pill-verde { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.35); }
+        .av-pill-vermelha { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.35); }
+        .av-pill-amarela { background: rgba(251,191,36,.15); color: #fde047; border: 1px solid rgba(251,191,36,.35); }
+
+        .fo-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .fo-item {
+            display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+            background: rgba(0,0,0,.2); border-radius: 9px; font-size: 12px; color: #dbe7dd;
+        }
+        .fo-item .fo-data { color: #b9d4bd; font-size: 11px; white-space: nowrap; }
+        .fo-item .fo-obs { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .media-destaque {
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3);
+            border-radius: 12px; padding: 14px 18px; margin-top: 12px;
+        }
+        .media-destaque .rotulo { font-size: 12px; color: #fde047; font-weight: 700; }
+        .media-destaque .valor { font-size: 22px; font-weight: 800; color: #fff; }
+
+        @media (max-width: 600px) {
+            .header-inner { padding: 10px 16px; }
+            .header-brand-text span { display: none; }
+            .btn-voltar span { display: none; }
+            .wrap { padding: 16px; }
+            .alunos-grid { grid-template-columns: 1fr; }
+            .filtros { flex-direction: column; align-items: stretch; }
+            .tabs { padding: 10px 14px; }
+            .modal-overlay { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="header-brand-logo">
+                <div class="header-brand-text">
+                    <strong>Seção de Avaliação</strong>
+                    <span>Fichas de avaliação por aluno ativo</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="index.html" class="btn-voltar"><i class="fa-solid fa-house"></i><span> Voltar ao início</span></a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="filtros">
+            <div class="fg">
+                <label>Projeto</label>
+                <select id="av-projeto" onchange="avOnProjetoChange()"><option value="">Selecione o projeto...</option></select>
+            </div>
+            <div class="fg">
+                <label>Turma</label>
+                <select id="av-turma" onchange="avOnTurmaChange()"><option value="">Selecione a turma...</option></select>
+            </div>
+            <div class="filtro-count" id="av-contador"></div>
+        </div>
+
+        <div id="alunos-grid" class="alunos-grid"></div>
+        <div class="empty" id="alunos-empty" style="display:none">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <p id="alunos-empty-texto">Selecione um projeto e uma turma para ver os alunos ativos.</p>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="ficha-overlay" onclick="avFecharFicha(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-head">
+                <div class="aluno">
+                    <span id="ficha-nome">Aluno</span>
+                    <small id="ficha-meta"></small>
+                </div>
+                <button class="modal-close" onclick="avFecharFicha()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="tabs">
+                <button class="tab active" id="tab-apontamento" onclick="avTrocarAba('apontamento')"><i class="fa-solid fa-clipboard-user"></i> AV Apontamento</button>
+                <button class="tab" id="tab-comportamento" onclick="avTrocarAba('comportamento')"><i class="fa-solid fa-scale-balanced"></i> AV Comportamento</button>
+                <button class="tab" id="tab-teorica" onclick="avTrocarAba('teorica')"><i class="fa-solid fa-file-lines"></i> AV Teórica</button>
+                <button class="tab" id="tab-pratica" onclick="avTrocarAba('pratica')"><i class="fa-solid fa-flask"></i> AV Prática</button>
+                <button class="tab" id="tab-final" onclick="avTrocarAba('final')"><i class="fa-solid fa-graduation-cap"></i> AV Final</button>
+            </div>
+            <div class="modal-body">
+                <div class="aba active" id="aba-apontamento"></div>
+                <div class="aba" id="aba-comportamento"></div>
+                <div class="aba" id="aba-teorica"></div>
+                <div class="aba" id="aba-pratica"></div>
+                <div class="aba" id="aba-final"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_CPF_AV = '05004959471';
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        var avProjeto = '';
+        var avTurma = '';
+        var avAlunos = [];
+        var avAulasCache = null;
+        var avAlunoAtual = null;
+        var avAvaliacao = null;
+        var avPresencas = [];
+        var avAbaAtual = 'apontamento';
+
+        function avNum(n) {
+            var v = Number(n);
+            if (isNaN(v)) return '0,0';
+            return v.toFixed(1).replace('.', ',');
+        }
+
+        function avBar(pct, cor, texto) {
+            var p = Math.max(0, Math.min(100, pct));
+            return '<div class="av-bar"><div class="av-bar-fill" style="width:' + p + '%;background:' + cor + '">' + texto + '</div></div>';
+        }
+
+        function avInit() {
+            var userData = null;
+            try { userData = JSON.parse(localStorage.getItem('farn_user_data')); } catch (e) {}
+            var isAdmin = userData && (userData.cpf === ADMIN_CPF_AV || (userData.permissoes || []).indexOf('admin') >= 0 || (userData.permissoes || []).indexOf('avaliacao') >= 0);
+            if (!isAdmin) { location.href = 'index.html'; return; }
+            avPopularProjetos();
+        }
+
+        async function avPopularProjetos() {
+            var sel = document.getElementById('av-projeto');
+            sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+            try {
+                var snap = await db.collection('parceiros').orderBy('nome').get();
+                snap.forEach(function(doc) {
+                    var p = doc.data();
+                    if (p.status === 'Em Andamento') {
+                        var op = document.createElement('option');
+                        op.value = p.nome;
+                        op.textContent = p.nome;
+                        sel.appendChild(op);
+                    }
+                });
+            } catch (e) { console.error('Erro ao carregar projetos:', e); }
+        }
+
+        async function avOnProjetoChange() {
+            avProjeto = document.getElementById('av-projeto').value;
+            var selTurma = document.getElementById('av-turma');
+            selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+            avAlunos = [];
+            avAulasCache = null;
+            if (!avProjeto) { avRenderAlunos(); return; }
+            try {
+                var snap = await db.collection('turmas').get();
+                var turmas = [];
+                snap.forEach(function(doc) { var t = doc.data(); if (t.projeto === avProjeto) turmas.push(t); });
+                turmas.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+                turmas.forEach(function(t) {
+                    var op = document.createElement('option');
+                    op.value = t.nome;
+                    op.textContent = t.nome;
+                    selTurma.appendChild(op);
+                });
+            } catch (e) { console.error('Erro ao carregar turmas:', e); }
+            avRenderAlunos();
+        }
+
+        async function avOnTurmaChange() {
+            avTurma = document.getElementById('av-turma').value;
+            avAulasCache = null;
+            if (!avTurma) { avAlunos = []; avRenderAlunos(); return; }
+            try {
+                var snap = await db.collection('candidatos').get();
+                avAlunos = [];
+                snap.forEach(function(doc) {
+                    var c = doc.data();
+                    if ((c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.ativo !== false && c.turma === avTurma && c.projeto === avProjeto) {
+                        avAlunos.push({ cpf: c.cpf, nome: c.nome, matricula: c.matricula, turma: c.turma, projeto: c.projeto });
+                    }
+                });
+                avAlunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+            } catch (e) { console.error('Erro ao carregar alunos:', e); }
+            avRenderAlunos();
+        }
+
+        function avRenderAlunos() {
+            var grid = document.getElementById('alunos-grid');
+            var empty = document.getElementById('alunos-empty');
+            var emptyTexto = document.getElementById('alunos-empty-texto');
+            var contador = document.getElementById('av-contador');
+            if (!avTurma) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                emptyTexto.textContent = 'Selecione um projeto e uma turma para ver os alunos ativos.';
+                contador.textContent = '';
+                return;
+            }
+            if (!avAlunos.length) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                emptyTexto.textContent = 'Nenhum aluno ativo nesta turma.';
+                contador.textContent = '';
+                return;
+            }
+            empty.style.display = 'none';
+            contador.textContent = avAlunos.length + ' aluno(s) ativo(s)';
+            grid.innerHTML = '';
+            avAlunos.forEach(function(a) {
+                var card = document.createElement('div');
+                card.className = 'aluno-card';
+                card.innerHTML =
+                    '<div class="nome">' + escHtml(a.nome) + '</div>' +
+                    '<div class="meta">' +
+                        '<span class="badge"><i class="fa-solid fa-layer-group"></i> ' + escHtml(a.turma) + '</span>' +
+                        '<span><i class="fa-solid fa-id-card"></i> ' + escHtml(a.matricula || '') + '</span>' +
+                    '</div>' +
+                    '<button class="btn-ficha" onclick="avAbrirFicha(\'' + a.cpf.replace(/'/g, '') + '\')"><i class="fa-solid fa-clipboard-check"></i> Ficha de Avaliação</button>';
+                grid.appendChild(card);
+            });
+        }
+
+        function escHtml(str) {
+            return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function avAcharAluno(cpf) {
+            for (var i = 0; i < avAlunos.length; i++) if (avAlunos[i].cpf === cpf) return avAlunos[i];
+            return null;
+        }
+
+        async function avCarregarAulas() {
+            if (avAulasCache) return avAulasCache;
+            avAulasCache = { todas: [], teorica: [], pratica: [] };
+            try {
+                var snap = await db.collection('aulas').get();
+                snap.forEach(function(doc) {
+                    var a = doc.data();
+                    a._id = doc.id;
+                    if (a.projeto === avProjeto && a.turma === avTurma) {
+                        avAulasCache.todas.push(a);
+                        if (a.avTeorica === 'Sim') avAulasCache.teorica.push(a);
+                        if (a.avPratica === 'Sim') avAulasCache.pratica.push(a);
+                    }
+                });
+                avAulasCache.todas.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+                avAulasCache.teorica.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+                avAulasCache.pratica.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+            } catch (e) { console.error('Erro ao carregar aulas:', e); }
+            return avAulasCache;
+        }
+
+        async function avCarregarPresencas(cpf) {
+            avPresencas = [];
+            try {
+                var snap = await db.collection('presencasAlunos').where('cpf', '==', cpf).get();
+                snap.forEach(function(doc) { avPresencas.push(doc.data()); });
+            } catch (e) { console.error('Erro ao carregar presenças:', e); }
+        }
+
+        async function avCarregarAvaliacao(cpf) {
+            avAvaliacao = null;
+            try {
+                var doc = await db.collection('avaliacoesAlunos').doc(cpf).get();
+                if (doc.exists) avAvaliacao = doc.data();
+            } catch (e) { console.error('Erro ao carregar avaliação:', e); }
+            if (!avAvaliacao) {
+                avAvaliacao = {
+                    cpf: cpf,
+                    foPositivos: [],
+                    foNegativos: [],
+                    notasTeoricas: {},
+                    notasPraticas: {},
+                    mediaTeoricaManual: '',
+                    mediaPraticaManual: ''
+                };
+            }
+        }
+
+        async function avSalvarAvaliacao() {
+            var dados = {
+                cpf: avAvaliacao.cpf,
+                nome: avAlunoAtual.nome,
+                matricula: avAlunoAtual.matricula,
+                projeto: avProjeto,
+                turma: avTurma,
+                foPositivos: avAvaliacao.foPositivos || [],
+                foNegativos: avAvaliacao.foNegativos || [],
+                notasTeoricas: avAvaliacao.notasTeoricas || {},
+                notasPraticas: avAvaliacao.notasPraticas || {},
+                mediaTeoricaManual: avAvaliacao.mediaTeoricaManual || '',
+                mediaPraticaManual: avAvaliacao.mediaPraticaManual || '',
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            try {
+                await db.collection('avaliacoesAlunos').doc(avAvaliacao.cpf).set(dados, { merge: true });
+            } catch (e) { console.error('Erro ao salvar avaliação:', e); }
+        }
+
+        function avCalcularApontamento() {
+            var aulas = (avAulasCache && avAulasCache.todas) || [];
+            var totalAulas = aulas.length;
+            var pres = 0, fal = 0, just = 0;
+            avPresencas.forEach(function(p) {
+                if (p.turma !== avTurma || p.projeto !== avProjeto) return;
+                if (p.status === 'Presente') pres++;
+                else if (p.status === 'Falta') fal++;
+                else if (p.status === 'Justificada') just++;
+            });
+            var pct = totalAulas ? Math.min(100, Math.round(((pres + just) / totalAulas) * 100)) : 0;
+            var nota = totalAulas ? Math.min(10, Math.round(((pres + just) / totalAulas) * 100) / 10) : 0;
+            return { totalAulas: totalAulas, pres: pres, fal: fal, just: just, pct: pct, nota: nota };
+        }
+
+        function avCalcularComportamento() {
+            var foP = (avAvaliacao.foPositivos || []).length;
+            var foN = (avAvaliacao.foNegativos || []).length;
+            var pontos = Math.floor(foP / 10) - Math.floor(foN / 5);
+            return { foP: foP, foN: foN, pontos: pontos };
+        }
+
+        function avCalcularMedia(tipo) {
+            var notas = tipo === 'teorica' ? (avAvaliacao.notasTeoricas || {}) : (avAvaliacao.notasPraticas || {});
+            var aulas = tipo === 'teorica' ? (avAulasCache.teorica || []) : (avAulasCache.pratica || []);
+            var soma = 0, qtd = 0;
+            aulas.forEach(function(a) {
+                var n = parseFloat(notas[a._id]);
+                if (!isNaN(n) && n >= 0) { soma += n; qtd++; }
+            });
+            return qtd ? Math.round((soma / qtd) * 10) / 10 : 0;
+        }
+
+        function avCalcularFinal() {
+            var mTeoricaManual = parseFloat((avAvaliacao.mediaTeoricaManual || '').replace(',', '.'));
+            var mPraticaManual = parseFloat((avAvaliacao.mediaPraticaManual || '').replace(',', '.'));
+            if (isNaN(mTeoricaManual)) mTeoricaManual = 0;
+            if (isNaN(mPraticaManual)) mPraticaManual = 0;
+            var mediaFinal = (mTeoricaManual + mPraticaManual) / 2;
+            var ap = avCalcularApontamento().nota;
+            var comp = avCalcularComportamento().pontos;
+            var teor = avCalcularMedia('teorica');
+            var prat = avCalcularMedia('pratica');
+            var mediaSala = (ap + comp + teor + prat) / 4;
+            var mediaCertificada = (mediaFinal + mediaSala) / 2;
+            return {
+                mTeoricaManual: mTeoricaManual, mPraticaManual: mPraticaManual,
+                mediaFinal: mediaFinal, ap: ap, comp: comp, teor: teor, prat: prat,
+                mediaSala: mediaSala, mediaCertificada: mediaCertificada
+            };
+        }
+
+        async function avAbrirFicha(cpf) {
+            var a = avAcharAluno(cpf);
+            if (!a) return;
+            avAlunoAtual = a;
+            document.getElementById('ficha-overlay').classList.add('open');
+            document.getElementById('ficha-nome').textContent = a.nome;
+            document.getElementById('ficha-meta').textContent = 'Matrícula: ' + (a.matricula || '—') + '  •  Turma: ' + a.turma + '  •  Projeto: ' + a.projeto;
+            await avCarregarAulas();
+            await avCarregarPresencas(cpf);
+            await avCarregarAvaliacao(cpf);
+            avTrocarAba('apontamento');
+        }
+
+        function avFecharFicha(ev) {
+            if (ev && ev.target.id !== 'ficha-overlay') return;
+            document.getElementById('ficha-overlay').classList.remove('open');
+            avAlunoAtual = null;
+            avAvaliacao = null;
+            avPresencas = [];
+        }
+
+        function avTrocarAba(nome) {
+            avAbaAtual = nome;
+            var abas = ['apontamento', 'comportamento', 'teorica', 'pratica', 'final'];
+            abas.forEach(function(n) {
+                document.getElementById('tab-' + n).classList.toggle('active', n === nome);
+                document.getElementById('aba-' + n).classList.toggle('active', n === nome);
+            });
+            if (nome === 'apontamento') avRenderApontamento();
+            else if (nome === 'comportamento') avRenderComportamento();
+            else if (nome === 'teorica') avRenderNotas('teorica');
+            else if (nome === 'pratica') avRenderNotas('pratica');
+            else avRenderFinal();
+        }
+
+        function avRenderApontamento() {
+            var r = avCalcularApontamento();
+            var cor = r.pct >= 75 ? '#22c55e' : (r.pct >= 50 ? '#fbbf24' : '#ef4444');
+            var html =
+                '<div class="av-grid">' +
+                    '<div class="av-stat"><div class="valor">' + r.totalAulas + '</div><div class="rotulo">Aulas Cadastradas</div></div>' +
+                    '<div class="av-stat"><div class="valor" style="color:#4ade80">' + r.pres + '</div><div class="rotulo">Presenças</div></div>' +
+                    '<div class="av-stat"><div class="valor" style="color:#f87171">' + r.fal + '</div><div class="rotulo">Faltas</div></div>' +
+                    '<div class="av-stat"><div class="valor" style="color:#fde047">' + r.just + '</div><div class="rotulo">Justificadas</div></div>' +
+                '</div>' +
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-chart-column"></i> Gráfico de Presença</h4>' +
+                    '<div class="av-bar-rotulo"><span>Presença</span><span>' + r.pct + '%</span></div>' +
+                    avBar(r.pct, cor, r.pct + '%') +
+                    '<div class="media-destaque">' +
+                        '<span class="rotulo">Nota de Apontamento (para a AV Final)</span>' +
+                        '<span class="valor">' + avNum(r.nota) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<p style="font-size:11px;color:#b9d4bd"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>O total de aulas cadastradas equivale a 100%. Cada presença eleva o gráfico; cada falta o reduz. Presenças e faltas justificadas contam como presença.</p>';
+            document.getElementById('aba-apontamento').innerHTML = html;
+        }
+
+        function avRenderComportamento() {
+            var r = avCalcularComportamento();
+            var saldoCor = r.pontos >= 0 ? '#22c55e' : '#ef4444';
+            var html =
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-plus-circle"></i> Fato Observado Positivo (FO+)</h4>' +
+                    '<button class="btn btn-verde" onclick="avAddFO(true)"><i class="fa-solid fa-plus"></i> Registrar FO+</button>' +
+                    avRenderFOLista(avAvaliacao.foPositivos || [], true) +
+                '</div>' +
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-minus-circle"></i> Fato Observado Negativo (FO-)</h4>' +
+                    '<button class="btn btn-vermelho" onclick="avAddFO(false)"><i class="fa-solid fa-plus"></i> Registrar FO-</button>' +
+                    avRenderFOLista(avAvaliacao.foNegativos || [], false) +
+                '</div>' +
+                '<div class="av-grid">' +
+                    '<div class="av-stat"><div class="valor" style="color:#4ade80">' + r.foP + '</div><div class="rotulo">Total FO+</div></div>' +
+                    '<div class="av-stat"><div class="valor" style="color:#f87171">' + r.foN + '</div><div class="rotulo">Total FO-</div></div>' +
+                    '<div class="av-stat"><div class="valor" style="color:' + saldoCor + '">' + (r.pontos >= 0 ? '+' : '') + r.pontos + '</div><div class="rotulo">Pontos (AV Final)</div></div>' +
+                '</div>' +
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-chart-column"></i> Gráfico de Comportamento</h4>' +
+                    '<div class="av-bar-rotulo"><span>FO+ (verde)</span><span>' + r.foP + '</span></div>' +
+                    avBar(r.foP * 10, '#22c55e', r.foP) +
+                    '<div style="height:8px"></div>' +
+                    '<div class="av-bar-rotulo"><span>FO- (vermelho)</span><span>' + r.foN + '</span></div>' +
+                    avBar(r.foN * 20, '#ef4444', r.foN) +
+                '</div>' +
+                '<p style="font-size:11px;color:#b9d4bd"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>A cada 10 FO+ soma-se 1 ponto positivo na AV Final. A cada 5 FO- desconta-se 1 ponto.</p>';
+            document.getElementById('aba-comportamento').innerHTML = html;
+        }
+
+        function avRenderFOLista(lista, positivo) {
+            if (!lista.length) return '<div style="font-size:12px;color:#b9d4bd;margin-top:10px">Nenhum registro ainda.</div>';
+            var html = '<div class="fo-lista">';
+            lista.forEach(function(item, idx) {
+                var data = item.data || '';
+                html += '<div class="fo-item">' +
+                    '<span class="av-pill ' + (positivo ? 'av-pill-verde' : 'av-pill-vermelha') + '">' + (positivo ? 'FO+' : 'FO-') + '</span>' +
+                    (data ? '<span class="fo-data"><i class="fa-solid fa-calendar-day"></i> ' + escHtml(data) + '</span>' : '') +
+                    (item.obs ? '<span class="fo-obs">' + escHtml(item.obs) + '</span>' : '') +
+                    '<button class="btn btn-vermelho btn-pequeno" onclick="avRemoverFO(' + positivo + ',' + idx + ')" title="Excluir"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function avAddFO(positivo) {
+            var data = prompt((positivo ? 'Fato Observado Positivo (FO+):' : 'Fato Observado Negativo (FO-):') + '\nInforme a data (ex: 07/08/2026) ou deixe em branco:');
+            if (data === null) return;
+            data = data.trim();
+            var obs = prompt('Observação (opcional):');
+            if (obs === null) obs = '';
+            obs = obs.trim();
+            var chave = positivo ? 'foPositivos' : 'foNegativos';
+            if (!avAvaliacao[chave]) avAvaliacao[chave] = [];
+            avAvaliacao[chave].push({ data: data, obs: obs, em: new Date().toISOString() });
+            avSalvarAvaliacao();
+            avRenderComportamento();
+        }
+
+        function avRemoverFO(positivo, idx) {
+            var chave = positivo ? 'foPositivos' : 'foNegativos';
+            if (!avAvaliacao[chave]) return;
+            avAvaliacao[chave].splice(idx, 1);
+            avSalvarAvaliacao();
+            avRenderComportamento();
+        }
+
+        function avRenderNotas(tipo) {
+            var aulas = tipo === 'teorica' ? (avAulasCache.teorica || []) : (avAulasCache.pratica || []);
+            var notas = tipo === 'teorica' ? (avAvaliacao.notasTeoricas || {}) : (avAvaliacao.notasPraticas || {});
+            var media = avCalcularMedia(tipo);
+            var cor = media >= 7 ? '#22c55e' : (media >= 5 ? '#fbbf24' : '#ef4444');
+            var html = '';
+            if (!aulas.length) {
+                html += '<div class="av-card"><p style="font-size:13px;color:#b9d4bd"><i class="fa-solid fa-circle-info" style="margin-right:4px;color:#fbbf24"></i>Nenhuma aula cadastrada com AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + ' (Sim) para esta turma.</p></div>';
+            } else {
+                html += '<div class="av-card"><h4><i class="fa-solid fa-list-check"></i> Aulas com AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '</h4>' +
+                    '<table class="av-tabela"><thead><tr><th>Data</th><th>Disciplina</th><th>Conteúdo</th><th>Nota (0 a 10)</th></tr></thead><tbody>';
+                aulas.forEach(function(a) {
+                    var data = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+                    html += '<tr>' +
+                        '<td>' + data + '</td>' +
+                        '<td>' + escHtml(a.disciplina || '') + '</td>' +
+                        '<td>' + escHtml(a.conteudo || '') + '</td>' +
+                        '<td><input type="number" step="0.1" min="0" max="10" class="av-nota-input" value="' + (notas[a._id] != null ? notas[a._id] : '') + '" onchange="avSalvarNota(\'' + tipo + '\',\'' + a._id + '\',this)" placeholder="—"></td>' +
+                    '</tr>';
+                });
+                html += '</tbody></table></div>';
+            }
+            html +=
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-chart-column"></i> Gráfico da Média</h4>' +
+                    '<div class="av-bar-rotulo"><span>Média ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '</span><span>' + avNum(media) + '</span></div>' +
+                    avBar(media * 10, cor, avNum(media)) +
+                    '<div class="media-destaque">' +
+                        '<span class="rotulo">Média ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + ' (somadas e divididas)</span>' +
+                        '<span class="valor">' + avNum(media) + '</span>' +
+                    '</div>' +
+                '</div>';
+            document.getElementById('aba-' + tipo).innerHTML = html;
+        }
+
+        async function avSalvarNota(tipo, aulaId, el) {
+            var valor = el.value.trim();
+            var chave = tipo === 'teorica' ? 'notasTeoricas' : 'notasPraticas';
+            if (!avAvaliacao[chave]) avAvaliacao[chave] = {};
+            if (valor === '') delete avAvaliacao[chave][aulaId];
+            else {
+                var n = parseFloat(valor.replace(',', '.'));
+                if (isNaN(n) || n < 0 || n > 10) { el.value = ''; alert('Informe uma nota entre 0 e 10.'); return; }
+                avAvaliacao[chave][aulaId] = Math.round(n * 10) / 10;
+            }
+            await avSalvarAvaliacao();
+            avRenderNotas(tipo);
+            if (avAbaAtual === 'final') avRenderFinal();
+        }
+
+        function avRenderFinal() {
+            var r = avCalcularFinal();
+            function miniCard(rotulo, valor, cor) {
+                return '<div class="av-stat"><div class="valor" style="color:' + (cor || '#fde047') + '">' + valor + '</div><div class="rotulo">' + rotulo + '</div></div>';
+            }
+            var html =
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-sliders"></i> Médias da AV Teórica e AV Prática</h4>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+                        '<div>' +
+                            '<label style="font-size:11px;font-weight:700;color:#fde047;display:block;margin-bottom:5px">Média Teórica</label>' +
+                            '<input type="number" step="0.1" min="0" max="10" class="av-nota-input" style="width:100%" value="' + (avAvaliacao.mediaTeoricaManual !== '' ? avAvaliacao.mediaTeoricaManual : '') + '" placeholder="' + avNum(r.teor) + ' (auto)" onchange="avSalvarCampoManual(\'mediaTeoricaManual\',this)">' +
+                            '<small style="color:#b9d4bd;font-size:11px;display:block;margin-top:4px">Auto: ' + avNum(r.teor) + ' (média das notas teóricas)</small>' +
+                        '</div>' +
+                        '<div>' +
+                            '<label style="font-size:11px;font-weight:700;color:#fde047;display:block;margin-bottom:5px">Média Prática</label>' +
+                            '<input type="number" step="0.1" min="0" max="10" class="av-nota-input" style="width:100%" value="' + (avAvaliacao.mediaPraticaManual !== '' ? avAvaliacao.mediaPraticaManual : '') + '" placeholder="' + avNum(r.prat) + ' (auto)" onchange="avSalvarCampoManual(\'mediaPraticaManual\',this)">' +
+                            '<small style="color:#b9d4bd;font-size:11px;display:block;margin-top:4px">Auto: ' + avNum(r.prat) + ' (média das notas práticas)</small>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="media-destaque">' +
+                        '<span class="rotulo">MÉDIA FINAL (teórica + prática ÷ 2)</span>' +
+                        '<span class="valor">' + avNum(r.mediaFinal) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-chart-pie"></i> Pontos das Avaliações</h4>' +
+                    '<div class="av-grid">' +
+                        miniCard('AV Apontamento', avNum(r.ap), '#4ade80') +
+                        miniCard('AV Comportamento', (r.comp >= 0 ? '+' : '') + r.comp, r.comp >= 0 ? '#4ade80' : '#f87171') +
+                        miniCard('AV Teórica', avNum(r.teor), '#fde047') +
+                        miniCard('AV Prática', avNum(r.prat), '#fde047') +
+                    '</div>' +
+                    '<div class="media-destaque">' +
+                        '<span class="rotulo">MÉDIA DE SALA (soma dos pontos ÷ 4)</span>' +
+                        '<span class="valor">' + avNum(r.mediaSala) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="media-destaque" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)">' +
+                    '<span class="rotulo">MÉDIA CERTIFICADA (AV Final + Média de Sala ÷ 2)</span>' +
+                    '<span class="valor">' + avNum(r.mediaCertificada) + '</span>' +
+                '</div>' +
+                '<p style="font-size:11px;color:#b9d4bd;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática automaticamente; você pode digitá-los manualmente se preferir.</p>';
+            document.getElementById('aba-final').innerHTML = html;
+        }
+
+        async function avSalvarCampoManual(campo, el) {
+            var valor = el.value.trim();
+            if (valor !== '') {
+                var n = parseFloat(valor.replace(',', '.'));
+                if (isNaN(n) || n < 0 || n > 10) { el.value = ''; alert('Informe um valor entre 0 e 10.'); return; }
+                avAvaliacao[campo] = Math.round(n * 10) / 10;
+            } else {
+                avAvaliacao[campo] = '';
+            }
+            await avSalvarAvaliacao();
+            avRenderFinal();
+        }
+
+        document.addEventListener('DOMContentLoaded', avInit);
+    </script>
+</body>
+</html>
