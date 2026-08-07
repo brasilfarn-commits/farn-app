@@ -4001,6 +4001,22 @@ function apontamentoOnAulaChange() {
         } else {
             alert('Nenhum aluno ativo encontrado para a turma: ' + turma);
         }
+        const cpfs = Object.keys(aptPresencas).filter(c => c && c.indexOf('temp_') !== 0);
+        const carregarTotaisFO = function(fila) {
+            const lote = fila.splice(0, 10);
+            if (!lote.length) { apontamentoRenderLista(); return; }
+            dbFirestore.collection('avaliacoesAlunos').where('cpf', 'in', lote).get().then(function(snap) {
+                snap.forEach(function(doc) {
+                    const d = doc.data();
+                    if (aptPresencas[d.cpf]) {
+                        aptPresencas[d.cpf].foP = (d.foPositivos || []).length;
+                        aptPresencas[d.cpf].foN = (d.foNegativos || []).length;
+                    }
+                });
+                carregarTotaisFO(fila);
+            }).catch(function() { carregarTotaisFO(fila); });
+        };
+        carregarTotaisFO(cpfs.slice());
     };
 
     dbFirestore.collection('candidatos').where('turma', '==', turma).get().then(snap => {
@@ -4117,7 +4133,16 @@ function apontamentoMarcarPresente(aluno) {
     toast.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px"></i> ' + (aluno.nome || aluno.matricula || 'Aluno') + ' — Presente';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2000);
-    apontamentoFOAbrir(aluno);
+    if (!aluno.cpf) {
+        const aviso = document.createElement('div');
+        aviso.style.cssText = 'position:fixed;top:60px;right:20px;background:#dc2626;color:#fff;padding:12px 20px;border-radius:8px;z-index:99999;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+        aviso.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="margin-right:8px"></i> ' + (aluno.nome || aluno.matricula || 'Aluno') + ' sem CPF cadastrado — nao e possivel registrar FO';
+        document.body.appendChild(aviso);
+        setTimeout(() => aviso.remove(), 4000);
+    } else {
+        apontamentoPararScanner();
+        apontamentoFOAbrir(aluno);
+    }
 }
 
 function apontamentoRenderLista() {
@@ -4133,6 +4158,7 @@ function apontamentoRenderLista() {
     lista.innerHTML = '<div class="data-table" style="width:100%"><table style="width:100%;border-collapse:collapse"><thead><tr>' +
         '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Matrícula</th>' +
         '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Nome</th>' +
+        '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px;width:130px">FO</th>' +
         '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px;width:260px">Status</th>' +
         '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Observação</th>' +
         '</tr></thead><tbody>' +
@@ -4141,6 +4167,7 @@ function apontamentoRenderLista() {
             return '<tr style="border-bottom:1px solid #222">' +
                 '<td style="padding:8px;font-size:13px;color:#ccc;font-weight:600">' + (p.matricula || '-') + '</td>' +
                 '<td style="padding:8px;font-size:13px;color:#ccc">' + (p.nome || '-') + '</td>' +
+                '<td style="padding:8px;text-align:center">' + apontamentoFOBadge(p) + '</td>' +
                 '<td style="padding:8px;text-align:center">' +
                     '<div style="display:flex;gap:4px;justify-content:center">' +
                         '<button onclick="apontamentoSetStatus(\'' + p.cpf + '\',\'Presente\')" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (p.status === 'Presente' ? '#4caf50' : '#333') + ';background:' + (p.status === 'Presente' ? 'rgba(76,175,80,0.2)' : 'transparent') + ';color:' + (p.status === 'Presente' ? '#4caf50' : '#888') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-check"></i> P</button>' +
@@ -4151,6 +4178,16 @@ function apontamentoRenderLista() {
             '</tr>';
         }).join('') +
         '</tbody></table></div>';
+}
+
+function apontamentoFOBadge(p) {
+    const foP = p.foP || 0, foN = p.foN || 0;
+    if (!foP && !foN) return '<span style="font-size:12px;color:#555">—</span>';
+    let html = '<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">';
+    if (foP) html += '<span style="background:rgba(22,163,74,0.2);color:#4ade80;border:1px solid #16a34a;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap">FO+ ' + foP + '</span>';
+    if (foN) html += '<span style="background:rgba(220,38,38,0.2);color:#f87171;border:1px solid #dc2626;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap">FO- ' + foN + '</span>';
+    html += '</div>';
+    return html;
 }
 
 function apontamentoSetStatus(cpf, status) {
@@ -4212,11 +4249,17 @@ function apontamentoFOConfirmar() {
         for (let i = 0; i < qtd; i++) lista.push(Object.assign({}, item));
         const update = {};
         update[chave] = lista;
+        update.cpf = cpf;
         update.nome = aptFoTarget.nome || dados.nome || '';
         update.matricula = aptFoTarget.matricula || dados.matricula || '';
         update.atualizadoEm = firebase.firestore.FieldValue.serverTimestamp();
         return dbFirestore.collection('avaliacoesAlunos').doc(cpf).set(update, { merge: true });
     }).then(function() {
+        if (aptPresencas[cpf]) {
+            if (aptFoTipo) aptPresencas[cpf].foP = (aptPresencas[cpf].foP || 0) + qtd;
+            else aptPresencas[cpf].foN = (aptPresencas[cpf].foN || 0) + qtd;
+        }
+        apontamentoRenderLista();
         doneEl.textContent = qtd + ' FO' + (aptFoTipo ? '+' : '-') + ' registrado(s) na AV de Comportamento!';
         doneEl.style.color = '#16a34a';
         doneEl.style.display = 'block';
