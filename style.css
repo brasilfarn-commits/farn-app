@@ -2185,6 +2185,7 @@ select.config-input option {
 .alunos-tab[data-tab="turmas"].active { background: linear-gradient(135deg, #2e7d32, #43a047); box-shadow: 0 2px 10px rgba(46,125,50,0.3); }
 .alunos-tab[data-tab="disciplinas"].active { background: linear-gradient(135deg, #ca8a04, #eab308); box-shadow: 0 2px 10px rgba(202,138,4,0.3); }
 .alunos-tab[data-tab="aprovados"].active { background: linear-gradient(135deg, #2e7d32, #43a047); box-shadow: 0 2px 10px rgba(46,125,50,0.3); }
+.alunos-tab[data-tab="inativo-falta"].active { background: linear-gradient(135deg, #ef6c00, #fb8c00); box-shadow: 0 2px 10px rgba(239,108,0,0.3); }
 .alunos-tab[data-tab="pendentes"].active { background: linear-gradient(135deg, #ca8a04, #eab308); box-shadow: 0 2px 10px rgba(202,138,4,0.3); }
 .alunos-tab[data-tab="reprovados"].active { background: linear-gradient(135deg, #c62828, #e53935); box-shadow: 0 2px 10px rgba(198,40,40,0.3); }
 .alunos-tab[data-tab="segunda-chamada"].active { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 2px 10px rgba(37,99,235,0.3); }

@@ -991,8 +991,8 @@
             }
 
             /* Verifica se esta ativo */
-            if (dados.status !== 'Ativo') {
-                errEl.textContent = 'Seu cadastro ainda nao foi ativado. Somente alunos com status Ativo podem acessar o portal.';
+            if (dados.status !== 'Ativo' && dados.status !== 'Inativo por Falta') {
+                errEl.textContent = 'Seu cadastro ainda nao foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar o portal.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
@@ -1989,9 +1989,9 @@
             var card = document.createElement('div');
             card.className = 'pf-apostila-card';
             card.style.cursor = 'default';
-            card.innerHTML = '<div class="pf-apostila-icon" style="background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.12)"><i class="fa-solid fa-chalkboard-user" style="color:var(--blue)"></i></div>' +
+            card.innerHTML = '<div class="pf-apostila-icon" style="background:' + (pres ? 'rgba(22,163,74,.08)' : 'rgba(37,99,235,.06)') + ';border-color:' + (pres ? 'rgba(22,163,74,.18)' : 'rgba(37,99,235,.12)') + '"><i class="fa-solid ' + (pres ? 'fa-clipboard-check' : 'fa-chalkboard-user') + '" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + '"></i></div>' +
                 '<div class="pf-apostila-info">' +
-                    '<div class="pf-apostila-titulo">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + statusBadge + '</div>' +
+                    '<div class="pf-apostila-titulo" style="color:' + (pres ? '#16a34a' : 'inherit') + '">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + statusBadge + '</div>' +
                     '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +
                     '<div class="pf-apostila-meta">' +
                         (dateStr ? '<span><i class="fa-solid fa-calendar-days" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
@@ -2419,7 +2419,7 @@
                 html += '<div class="pf-noticia-card" style="border-left:3px solid ' + statusColor + ';padding:14px 16px;margin-bottom:10px">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">';
                 html += '<div style="flex:1;min-width:200px">';
-                html += '<div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px"><i class="fa-solid fa-book" style="color:var(--blue);margin-right:6px"></i>' + (a.disciplina || '---') + '</div>';
+                html += '<div style="font-size:15px;font-weight:700;color:#16a34a;margin-bottom:6px"><i class="fa-solid fa-clipboard-check" style="color:#16a34a;margin-right:6px"></i>' + (a.disciplina || '---') + ' <span style="font-size:10px;font-weight:700;color:#16a34a;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25);padding:2px 8px;border-radius:20px;vertical-align:middle">Apontada</span></div>';
                 html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-chalkboard" style="margin-right:4px"></i>' + (a.aula || '---') + '</div>';
                 html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>' + dataFmt + '</div>';
                 html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-users" style="margin-right:4px"></i>' + (a.turma || '---') + ' &bull; ' + (a.projeto || '---') + '</div>';
@@ -3166,7 +3166,7 @@
 
     async function paAceitarRegimento() {
         if (!paUser) return;
-        if (paUser.status !== 'Ativo') {
+        if (paUser.status !== 'Ativo' && paUser.status !== 'Inativo por Falta') {
             alert('Seu cadastro precisa estar com status Ativo para aceitar o Regimento.');
             return;
         }

@@ -693,6 +693,9 @@
                             <button class="alunos-tab active" data-tab="aprovados" onclick="switchAlunosTab('aprovados', this)">
                                 <i class="fa-solid fa-check-circle"></i> Ativos <span class="tab-count" id="tab-count-aprovados">0</span>
                             </button>
+                            <button class="alunos-tab" data-tab="inativo-falta" onclick="switchAlunosTab('inativo-falta', this)">
+                                <i class="fa-solid fa-user-slash"></i> Inativo por Falta <span class="tab-count" id="tab-count-inativo-falta">0</span>
+                            </button>
                             <button class="alunos-tab" data-tab="pendentes" onclick="switchAlunosTab('pendentes', this)">
                                 <i class="fa-solid fa-clock"></i> Pendentes <span class="tab-count" id="tab-count-pendentes">0</span>
                             </button>
@@ -854,18 +857,8 @@
                             <button class="modal-close" onclick="fecharModalMontarRelatorio()"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                         <div class="modal-body">
-                            <p style="color:#475569;margin-bottom:12px;font-size:13px">Selecione os campos que deseja incluir no relatorio:</p>
+                            <p style="color:#475569;margin-bottom:12px;font-size:13px">Selecione os campos que deseja incluir no relatorio (apenas alunos ativos):</p>
                             <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-                                <div style="display:flex;align-items:center;gap:6px">
-                                    <label style="color:#334155;font-size:12px;font-weight:600"><i class="fa-solid fa-filter" style="color:#dc2626;margin-right:4px"></i>Status:</label>
-                                    <select id="relatorio-status-filter" class="config-input" style="padding:6px 10px;font-size:12px;min-width:160px">
-                                        <option value="Todos">Todos os Status</option>
-                                        <option value="Ativo" selected>Ativo</option>
-                                        <option value="Pendente">Pendente</option>
-                                        <option value="Rejeitado">Rejeitado</option>
-                                        <option value="Segunda Chamada">Segunda Chamada</option>
-                                    </select>
-                                </div>
                                 <button type="button" class="btn-outline btn-sm" onclick="marcarTodosCampos(true)" style="font-size:11px"><i class="fa-solid fa-check-double"></i> Marcar Todos</button>
                                 <button type="button" class="btn-outline btn-sm" onclick="marcarTodosCampos(false)" style="font-size:11px"><i class="fa-solid fa-xmark"></i> Desmarcar Todos</button>
                             </div>

@@ -2,6 +2,7 @@ const ADMIN_CPF = '05004959471';
 const ADMIN_SENHA = '212121';
 let selectedLoginRole = 'admin';
 let editingIndex = null;
+let editingFormadoMode = false;
 let candidatos = [];
 let turmas = [];
 let uploadedFiles = [];
@@ -925,6 +926,7 @@ function handleLogout() {
     document.documentElement.classList.remove('farn-admin-session');
     document.body.classList.add('landing-mode');
     editingIndex = null;
+    editingFormadoMode = false;
     currentUserData = null;
     clearLoginState();
     landingCarregarInstituicao();
@@ -1159,18 +1161,23 @@ async function landingLoginFormado(cpf, senha) {
     var snap = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).where('senha', '==', senha).limit(1).get();
     if (!snap.empty) {
         var u = snap.docs[0].data();
-        if (u.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Aguarde aprovação da administração.'); return false; }
         localStorage.setItem('pf_lembrar_cpf', cpf);
         localStorage.setItem('pf_lembrar_senha', senha);
         location.href = 'portal-formado.html';
         return true;
     }
-    var snapC = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
-    if (snapC.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
-    var cand = snapC.docs[0].data();
-    if ((cand.tipoPessoa || 'A') !== 'F') { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    var snapC = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).get();
+    var cand = null;
+    var candDoc = null;
+    snapC.forEach(function(doc) {
+        var d = doc.data();
+        if ((d.tipoPessoa || 'A') === 'F') {
+            cand = d;
+            candDoc = doc;
+        }
+    });
+    if (!cand) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
     if (cand.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    if (cand.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Aguarde aprovação da administração.'); return false; }
     localStorage.setItem('pf_lembrar_cpf', cpf);
     localStorage.setItem('pf_lembrar_senha', senha);
     location.href = 'portal-formado.html';
@@ -1183,7 +1190,7 @@ async function landingLoginAluno(cpf, senha) {
     var u = snap.docs[0].data();
     if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
     if (u.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
-    if (u.status !== 'Ativo') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo podem acessar.'); return false; }
+    if (u.status !== 'Ativo' && u.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar.'); return false; }
     if (!u.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
     localStorage.setItem('pa_lembrar_cpf', cpf);
     localStorage.setItem('pa_lembrar_senha', senha);
@@ -1569,6 +1576,7 @@ const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','
 
 async function openFormCandidato() {
     editingIndex = null;
+    editingFormadoMode = false;
     resetFormCandidato();
     await populateTurmaSelect();
     populateProjetoSelect();
@@ -1662,11 +1670,22 @@ async function editCandidato(index) {
             btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro';
         }
     }
+    editingFormadoMode = (c.tipoPessoa || 'A') === 'F';
+    if (editingFormadoMode) {
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-graduate" style="color:#2563eb;margin-right:8px"></i> Editar Formado - ' + c.nome;
+        const titleEl = document.getElementById('admin-page-title');
+        if (titleEl) titleEl.textContent = 'Editar Formado';
+    }
     showAdminSection('admin-form-candidato');
+    if (editingFormadoMode) {
+        const titleEl = document.getElementById('admin-page-title');
+        if (titleEl) titleEl.textContent = 'Editar Formado';
+    }
 }
 
 function resetFormCandidato() {
     editingIndex = null;
+    editingFormadoMode = false;
     formFields.forEach(id => { const el = document.getElementById(id); if (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; } });
     document.getElementById('senha-field-wrapper').style.display = 'none';
     document.getElementById('fc-senha').required = false;
@@ -1737,8 +1756,15 @@ async function handleCandidatoSubmit(event) {
     }
 
     backupCandidatos();
-    showAdminSection('admin-pre-inscricao');
-    renderList();
+    if (editingFormadoMode) {
+        editingFormadoMode = false;
+        showAdminSection('admin-formados');
+        if (typeof formadosInicializar === 'function') formadosInicializar();
+        renderFormadosList();
+    } else {
+        showAdminSection('admin-pre-inscricao');
+        renderList();
+    }
     if (editingIndex === null && data.whatsapp) {
         var linkWa = farnGerarLinkWhatsApp(data.whatsapp, 'Olá ' + (data.nome || 'Aluno') + ', seu cadastro na FARN foi realizado com sucesso! Aguarde a análise da equipe. Qualquer dúvida, entre em contato!');
         if (linkWa && confirm('Cadastro de ' + data.nome + ' finalizado. Enviar confirmação pelo WhatsApp?')) {
@@ -2284,6 +2310,7 @@ let currentAlunosTab = 'aprovados';
 
 const STATUS_MAP = {
     'aprovados': 'Ativo',
+    'inativo-falta': 'Inativo por Falta',
     'pendentes': 'Pendente',
     'reprovados': 'Rejeitado',
     'segunda-chamada': 'Segunda Chamada'
@@ -2320,6 +2347,8 @@ function alunosOnSelecaoChange() {
     if (projeto && turma) {
         conteudo.style.display = '';
         renderAlunosList();
+        const cpfsAtivos = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.turma === turma).map(c => c.cpf);
+        if (cpfsAtivos.length) verificarInativosPorFalta(cpfsAtivos);
     } else {
         conteudo.style.display = 'none';
     }
@@ -2340,10 +2369,11 @@ function renderAlunosList() {
     const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
     const filtered = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
-    const isAprovados = currentAlunosTab === 'aprovados';
+    const isAprovados = currentAlunosTab === 'aprovados' || currentAlunosTab === 'inativo-falta';
 
     const allByTurma = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && (!turmaFiltro || c.turma === turmaFiltro));
     document.getElementById('tab-count-aprovados').textContent = allByTurma.filter(c => c.status === 'Ativo').length;
+    document.getElementById('tab-count-inativo-falta').textContent = allByTurma.filter(c => c.status === 'Inativo por Falta').length;
     document.getElementById('tab-count-pendentes').textContent = allByTurma.filter(c => c.status === 'Pendente').length;
     document.getElementById('tab-count-reprovados').textContent = allByTurma.filter(c => c.status === 'Rejeitado').length;
     document.getElementById('tab-count-segunda-chamada').textContent = allByTurma.filter(c => c.status === 'Segunda Chamada').length;
@@ -2367,6 +2397,7 @@ function renderAlunosList() {
     const allStatuses = [
         { value: 'Pendente', label: 'Pendente', icon: 'fa-clock', color: '#16a34a', tab: 'pendentes' },
         { value: 'Ativo', label: 'Ativo', icon: 'fa-check-circle', color: '#4caf50', tab: 'aprovados' },
+        { value: 'Inativo por Falta', label: 'Inativo por Falta', icon: 'fa-user-slash', color: '#f97316', tab: 'inativo-falta' },
         { value: 'Rejeitado', label: 'Reprovado', icon: 'fa-times-circle', color: '#f44336', tab: 'reprovados' },
         { value: 'Segunda Chamada', label: '2a Chamada', icon: 'fa-rotate', color: '#2196f3', tab: 'segunda-chamada' }
     ];
@@ -2634,7 +2665,7 @@ function exportarRegimentoCSV() {
 }
 
 function relatorioUniforme() {
-    const aprovados = candidatos.filter(c => c.status === 'Ativo');
+    const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo');
     if (!aprovados.length) { alert('Nenhum aluno ativo para gerar relatorio.'); return; }
     aprovados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     const w = window.open('', '_blank');
@@ -2801,12 +2832,9 @@ function gerarRelatorioPersonalizado() {
     const campos = getCamposSelecionados();
     if (!campos.length) { alert('Selecione pelo menos um campo para gerar o relatorio.'); return; }
     if (!candidatos.length) { alert('Nenhum candidato cadastrado.'); return; }
-    const statusFilter = document.getElementById('relatorio-status-filter').value;
     fecharModalMontarRelatorio();
-    let lista = candidatos.slice();
-    if (statusFilter && statusFilter !== 'Todos') {
-        lista = lista.filter(c => c.status === statusFilter);
-    }
+    let lista = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo');
+    if (!lista.length) { alert('Nenhum aluno ativo para gerar relatorio.'); return; }
     lista.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - Relatorio de Alunos</title><style>
@@ -2838,9 +2866,9 @@ function gerarRelatorioPersonalizado() {
             <div class="title-line">FARN - BRASIL - BS.BRASIL - COMMAND BRASIL</div>
             <div class="info-line">CNPJ: 43.327.929/0001-32 | Telefone: (81) 98403-1538</div>
         </div>
-        <div class="report-title">Relatorio de Alunos ${statusFilter !== 'Todos' ? '- ' + statusFilter : ''}</div>
+        <div class="report-title">Relatorio de Alunos - Ativos</div>
         <div class="info-bar">
-            <span>Data: ${new Date().toLocaleDateString('pt-BR')} ${statusFilter !== 'Todos' ? '| Status: ' + statusFilter : '| Todos os Status'}</span>
+            <span>Data: ${new Date().toLocaleDateString('pt-BR')} | Status: Ativo</span>
             <span>Campos: ${campos.length} | Total: ${lista.length} aluno(s)</span>
         </div>
         <table>
@@ -4336,9 +4364,51 @@ async function apontamentoSalvar() {
         document.getElementById('modal-apontamento-overlay').classList.add('hidden');
         alert('Apontamento salvo com sucesso!');
         apontamentoFiltrar();
+        verificarInativosPorFalta(todos.map(a => a.cpf));
     } catch (e) {
         console.error('Erro ao salvar apontamento:', e);
         alert('Erro ao salvar: ' + e.message);
+    }
+}
+
+// ===== INATIVO POR FALTA (3 ou mais faltas) =====
+
+async function verificarInativosPorFalta(cpfs) {
+    if (!dbFirestore || !cpfs || !cpfs.length) return;
+    const lista = cpfs.filter(Boolean);
+    if (!lista.length) return;
+    const faltas = {};
+    for (let i = 0; i < lista.length; i += 10) {
+        const lote = lista.slice(i, i + 10);
+        try {
+            const snap = await dbFirestore.collection('presencasAlunos').where('cpf', 'in', lote).get();
+            snap.forEach(doc => {
+                const d = doc.data();
+                const k = (d.cpf || '').replace(/\D/g, '');
+                if (k && d.status === 'Falta') faltas[k] = (faltas[k] || 0) + 1;
+            });
+        } catch (e) { console.error('Erro ao contar faltas:', e); }
+    }
+    const batch = dbFirestore.batch();
+    let mudou = false;
+    candidatos.forEach((c, i) => {
+        const k = (c.cpf || '').replace(/\D/g, '');
+        if (!k || !faltas[k]) return;
+        if ((c.tipoPessoa || 'A') === 'F' || c.remanejadoDocente) return;
+        if (c.status === 'Ativo' && faltas[k] >= 3) {
+            candidatos[i].status = 'Inativo por Falta';
+            if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { status: 'Inativo por Falta', inativoPorFaltaEm: new Date().toISOString(), inativoPorFaltaMotivo: '3 ou mais faltas' });
+            mudou = true;
+        } else if (c.status === 'Inativo por Falta' && faltas[k] < 3) {
+            candidatos[i].status = 'Ativo';
+            if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { status: 'Ativo', inativoPorFaltaEm: firebase.firestore.FieldValue.delete(), inativoPorFaltaMotivo: firebase.firestore.FieldValue.delete() });
+            mudou = true;
+        }
+    });
+    if (mudou) {
+        try { await batch.commit(); } catch (e) { console.error('Erro ao atualizar status inativo por falta:', e); }
+        renderAlunosList();
+        renderList();
     }
 }
 
@@ -5866,6 +5936,14 @@ async function aulaLoadList() {
     aulaLoadTurmas();
     aulaLoadDocentes();
     try {
+        var apontadasAulas = {};
+        try {
+            var aptSnap = await dbFirestore.collection('apontamentos').get();
+            aptSnap.forEach(function(aptDoc) {
+                var ap = aptDoc.data();
+                if (ap.aulaId) apontadasAulas[ap.aulaId] = true;
+            });
+        } catch (e) { console.error('Erro ao carregar apontamentos (aulas):', e); }
         var snap = await dbFirestore.collection('aulas').orderBy('data', 'desc').get();
         if (snap.empty) {
             container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-chalkboard" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma aula cadastrada.</p></div>';
@@ -5874,14 +5952,15 @@ async function aulaLoadList() {
         container.innerHTML = '';
         snap.forEach(function(doc) {
             var a = doc.data();
+            var apontada = !!apontadasAulas[doc.id];
             var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
             var turmaHtml = a.turma ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + a.turma + '</span>' : '<span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Todas</span>';
             var docenteHtml = a.docente ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.docente + '</span>' : '';
             var card = document.createElement('div');
-            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
-            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-chalkboard" style="color:#2563eb;font-size:18px"></i></div>' +
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid ' + (apontada ? '#16a34a' : '#e2e8f0') + ';border-radius:10px;margin-bottom:8px' + (apontada ? ';background:rgba(22,163,74,.05)' : '');
+            card.innerHTML = '<div style="width:42px;height:42px;background:' + (apontada ? 'rgba(22,163,74,.12)' : 'rgba(37,99,235,.1)') + ';border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-clipboard-check" style="color:' + (apontada ? '#16a34a' : '#2563eb') + ';font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:0">' +
-                    '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                    '<div style="font-size:13px;font-weight:700;color:' + (apontada ? '#16a34a' : '#1e293b') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + (apontada ? ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.25);vertical-align:middle"><i class="fa-solid fa-check"></i> Apontada</span>' : '') + '</div>' +
                     '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
                         '<span>' + (a.projeto || '') + '</span>' + turmaHtml + docenteHtml + (dateStr ? '<span><i class="fa-solid fa-calendar-day" style="margin-right:2px"></i>' + dateStr + '</span>' : '') + (a.horario ? '<span><i class="fa-solid fa-clock" style="margin-right:2px"></i>' + a.horario + '</span>' : '') +
                         (a.avTeorica === 'Sim' ? '<span style="background:rgba(168,85,247,.12);color:#9333ea;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-file-lines" style="margin-right:3px"></i>AV Teórica</span>' : '') +

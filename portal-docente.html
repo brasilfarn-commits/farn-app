@@ -324,6 +324,7 @@
                 <div id="pd-tfm-container">
                     <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando TFMs...</p></div>
                 </div>
+                <div id="pd-tfm-avaliacao" style="display:none"></div>
             </div>
 
             <!-- APONTAMENTO -->
@@ -1020,12 +1021,314 @@
                         '<span class="pd-card-status" style="color:' + statusColor + '"><i class="fa-solid fa-circle"></i> ' + pdEsc(status) + '</span>' +
                         '</div>' +
                         (d.observacoes ? '<div class="pd-card-conteudo"><i class="fa-solid fa-info"></i>' + pdEsc(d.observacoes) + '</div>' : '') +
+                        '<div style="margin-top:12px;text-align:right"><button onclick="pdTfmAbrirAvaliacao(\'' + doc.id + '\')" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fa-solid fa-stopwatch"></i> Avaliar TFM</button></div>' +
                         '</div>';
                 });
                 container.innerHTML = html;
             }).catch(function(e) {
                 container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar TFMs.</p></div>';
             });
+        }
+
+        /* ===== AVALIACAO DO TFM PELO DOCENTE ===== */
+        var pdTfmAtual = null;
+        var pdTfmAtualId = null;
+        var pdTfmAlunos = [];
+        var pdTfmExistentes = {};
+
+        function pdTfmFormatCPF(cpf) {
+            var c = (cpf || '').replace(/\D/g, '');
+            if (c.length !== 11) return cpf || '';
+            return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+
+        function pdTfmCalcularIdade(dataNascimento) {
+            if (!dataNascimento) return '';
+            var nasc = new Date(dataNascimento + (dataNascimento.length === 10 ? 'T00:00:00' : ''));
+            if (isNaN(nasc.getTime())) return '';
+            var hoje = new Date();
+            var anos = hoje.getFullYear() - nasc.getFullYear();
+            var m = hoje.getMonth() - nasc.getMonth();
+            if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) anos--;
+            return anos >= 0 ? anos : '';
+        }
+
+        function pdTfmCalcularAptidao(al, v) {
+            if (!v) v = {};
+            var genero = (al.genero || '').toLowerCase();
+            var idade = pdTfmCalcularIdade(al.nascimento);
+            if (genero !== 'masculino' && genero !== 'feminino') {
+                return { avaliado: false, apto: false, motivo: 'Informe o genero de nascimento do aluno.' };
+            }
+            if (idade === '') {
+                return { avaliado: false, apto: false, motivo: 'Informe a data de nascimento do aluno.' };
+            }
+            var lim;
+            if (genero === 'masculino') {
+                if (idade <= 29) lim = { A: 25, B: 35, C: 30 };
+                else if (idade <= 39) lim = { A: 20, B: 30, C: 40 };
+                else lim = { A: 15, B: 25, C: 50 };
+            } else {
+                if (idade <= 29) lim = { A: 18, B: 28, C: 40 };
+                else if (idade <= 39) lim = { A: 14, B: 24, C: 50 };
+                else lim = { A: 10, B: 18, C: 60 };
+            }
+            var A = v.flexoes, B = v.abdominais, C = v.corridaSeg, D = v.deslocamentoConcluiu;
+            if (A == null || B == null || C == null || !D) {
+                return { avaliado: false, apto: false, motivo: 'Preencha as questoes A, B, C e D.' };
+            }
+            var falhas = [];
+            if (A < lim.A) falhas.push('A) minimo ' + lim.A + ' flexoes (fez ' + A + ')');
+            if (B < lim.B) falhas.push('B) minimo ' + lim.B + ' abdominais (fez ' + B + ')');
+            if (C > lim.C) falhas.push('C) maximo ' + lim.C + 's (fez ' + C + 's)');
+            if (D !== 'Sim') falhas.push('D) deslocamento deve ser Sim');
+            return {
+                avaliado: true,
+                apto: falhas.length === 0,
+                idade: idade,
+                faixa: idade <= 29 ? 'Ate 29 anos' : (idade <= 39 ? '30 a 39 anos' : '40 anos ou +'),
+                genero: al.genero,
+                motivo: falhas.length ? falhas.join('; ') : 'Todos os criterios atendidos'
+            };
+        }
+
+        async function pdTfmAbrirAvaliacao(agId) {
+            var container = document.getElementById('pd-tfm-container');
+            var area = document.getElementById('pd-tfm-avaliacao');
+            if (!container || !area) return;
+            area.style.display = 'block';
+            container.style.display = 'none';
+            area.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando alunos...</p></div>';
+            try {
+                var docAg = await dbFirestore.collection('tfmAgendamentos').doc(agId).get();
+                if (!docAg.exists) { pdTfmVoltar(); alert('Agendamento nao encontrado.'); return; }
+                pdTfmAtual = docAg.data();
+                pdTfmAtualId = agId;
+                var turma = pdTfmAtual.turma || '';
+
+                var alunos = [];
+                try {
+                    var snap = await dbFirestore.collection('candidatos').where('turma', '==', turma).get();
+                    snap.forEach(function(d) {
+                        var c = d.data();
+                        if (c.status === 'Ativo' && c.ativo !== false && (c.tipoPessoa || 'A') !== 'F') alunos.push(c);
+                    });
+                } catch (e) {}
+                pdTfmAlunos = alunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+
+                pdTfmExistentes = {};
+                try {
+                    var snap2 = await dbFirestore.collection('tfmAlunos').where('agendamentoId', '==', agId).get();
+                    snap2.forEach(function(d) {
+                        var dd = d.data();
+                        if (dd.cpf) pdTfmExistentes[dd.cpf] = dd;
+                    });
+                } catch (e) {}
+
+                pdTfmRenderAvaliacao();
+            } catch (e) {
+                console.error('Erro ao abrir avaliacao TFM:', e);
+                alert('Erro ao carregar avaliacao: ' + e.message);
+                pdTfmVoltar();
+            }
+        }
+
+        function pdTfmRenderAvaliacao() {
+            var area = document.getElementById('pd-tfm-avaliacao');
+            if (!area) return;
+            var ag = pdTfmAtual || {};
+            var dataFmt = '';
+            if (ag.dataAgendamento) {
+                var dt = ag.dataAgendamento.toMillis ? new Date(ag.dataAgendamento.toMillis()) : new Date(ag.dataAgendamento);
+                if (!isNaN(dt.getTime())) dataFmt = dt.toLocaleDateString('pt-BR') + (ag.hora ? ' ' + ag.hora : '');
+            }
+            var rows = '';
+            if (!pdTfmAlunos.length) {
+                rows = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">Nenhum aluno ativo encontrado nesta turma.</td></tr>';
+            } else {
+                pdTfmAlunos.forEach(function(al) {
+                    var cpf = al.cpf || '';
+                    var e = pdTfmExistentes[cpf] || {};
+                    var res = e.resultado || 'Pendente';
+                    rows += '<tr data-cpf="' + cpf + '">' +
+                        '<td style="min-width:180px"><div style="font-weight:600;font-size:13px;color:#1e293b">' + pdEsc(al.nome || '') + '</div><div style="font-size:11px;color:#64748b">Mat: ' + pdEsc(al.matricula || '-') + ' | CPF: ' + pdTfmFormatCPF(cpf) + '</div></td>' +
+                        '<td><input type="number" min="0" class="config-input small" style="width:80px" id="pd-tfm-flex-' + cpf + '" value="' + (e.flexoes != null ? e.flexoes : '') + '" placeholder="0" oninput="pdTfmOnChange(\'' + cpf + '\')"></td>' +
+                        '<td><input type="number" min="0" class="config-input small" style="width:80px" id="pd-tfm-abd-' + cpf + '" value="' + (e.abdominais != null ? e.abdominais : '') + '" placeholder="0" oninput="pdTfmOnChange(\'' + cpf + '\')"></td>' +
+                        '<td><input type="number" min="0" class="config-input small" style="width:80px" id="pd-tfm-cor-' + cpf + '" value="' + (e.corridaSeg != null ? e.corridaSeg : '') + '" placeholder="seg" oninput="pdTfmOnChange(\'' + cpf + '\')"></td>' +
+                        '<td><select class="config-input small" style="width:90px" id="pd-tfm-desc-' + cpf + '" onchange="pdTfmOnChange(\'' + cpf + '\')">' +
+                        '<option value="">Concluiu?</option>' +
+                        '<option value="Sim"' + (e.deslocamentoConcluiu === 'Sim' ? ' selected' : '') + '>Sim</option>' +
+                        '<option value="Nao"' + (e.deslocamentoConcluiu === 'Nao' ? ' selected' : '') + '>Nao</option>' +
+                        '</select></td>' +
+                        '<td><select class="config-input small" style="width:90px" id="pd-tfm-res-' + cpf + '" onchange="pdTfmOnChange(\'' + cpf + '\')">' +
+                        '<option value="Pendente"' + (res === 'Pendente' ? ' selected' : '') + '>Pendente</option>' +
+                        '<option value="Apto"' + (res === 'Apto' ? ' selected' : '') + '>Apto</option>' +
+                        '<option value="Inapto"' + (res === 'Inapto' ? ' selected' : '') + '>Inapto</option>' +
+                        '</select></td>' +
+                        '<td id="pd-tfm-badge-' + cpf + '" style="text-align:center"><span style="background:#f1f5f9;color:#64748b;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700">INCOMPLETO</span></td>' +
+                        '<td><button onclick="pdTfmSalvar(\'' + cpf + '\')" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fa-solid fa-floppy-disk"></i> Salvar</button></td>' +
+                        '</tr>';
+                });
+            }
+            var header = '<div style="padding:18px 20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:16px">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">' +
+                '<div style="display:flex;align-items:center;gap:8px">' +
+                '<i class="fa-solid fa-stopwatch" style="color:#16a34a;font-size:16px"></i>' +
+                '<span style="color:#16a34a;font-weight:700;font-size:14px">Avaliacao do TFM - ' + pdEsc(ag.projeto || '') + ' - ' + pdEsc(ag.turma || '') + '</span>' +
+                '</div>' +
+                '<button onclick="pdTfmVoltar()" style="background:#fff;border:1px solid #16a34a;color:#16a34a;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fa-solid fa-arrow-left"></i> Voltar</button>' +
+                '</div>' +
+                '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#475569">' +
+                '<span><i class="fa-solid fa-calendar-day"></i> ' + dataFmt + '</span>' +
+                '<span><i class="fa-solid fa-user-tie"></i> ' + pdEsc(ag.docente || '') + '</span>' +
+                (ag.observacoes ? '<span><i class="fa-solid fa-info"></i> ' + pdEsc(ag.observacoes) + '</span>' : '') +
+                '</div>' +
+                '</div>';
+            var protocolo = '<div style="padding:14px 18px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px">' +
+                '<div style="font-weight:700;color:#16a34a;font-size:13px;margin-bottom:10px"><i class="fa-solid fa-book"></i> Protocolo</div>' +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:11px;color:#475569">' +
+                '<div><b>A)</b> Flexao de bracos (1min)</div>' +
+                '<div><b>B)</b> Abdominal remador (1min)</div>' +
+                '<div><b>C)</b> Corrida (seg, menor melhor)</div>' +
+                '<div><b>D)</b> Deslocamento 20kg/50m (Sim/Nao)</div>' +
+                '</div>' +
+                '</div>';
+            area.innerHTML = header + protocolo +
+                '<div style="overflow-x:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px">' +
+                '<table class="data-table">' +
+                '<thead><tr>' +
+                '<th>Aluno</th><th>A) Flexoes</th><th>B) Abdominais</th><th>C) Corrida (seg)</th><th>D) Concluiu?</th><th>Resultado</th><th>Aptidao (auto)</th><th>Acoes</th>' +
+                '</tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+                '</div>' +
+                '<div style="margin-top:16px;text-align:right"><button onclick="pdTfmSalvarTodos()" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer"><i class="fa-solid fa-floppy-disk"></i> Salvar Todos</button></div>';
+            pdTfmAlunos.forEach(function(al) { pdTfmAtualizarBadge(al.cpf); });
+        }
+
+        function pdTfmColetar(cpf) {
+            function num(id) {
+                var el = document.getElementById(id);
+                if (!el) return null;
+                var v = String(el.value || '').trim();
+                if (v === '') return null;
+                var n = Number(v);
+                return isNaN(n) ? null : n;
+            }
+            function str(id) {
+                var el = document.getElementById(id);
+                return el ? String(el.value || '').trim() : '';
+            }
+            return {
+                flexoes: num('pd-tfm-flex-' + cpf),
+                abdominais: num('pd-tfm-abd-' + cpf),
+                corridaSeg: num('pd-tfm-cor-' + cpf),
+                deslocamentoConcluiu: str('pd-tfm-desc-' + cpf),
+                resultado: str('pd-tfm-res-' + cpf) || 'Pendente'
+            };
+        }
+
+        function pdTfmValoresPreenchidos(v) {
+            return v.flexoes != null || v.abdominais != null || v.corridaSeg != null || v.deslocamentoConcluiu || v.resultado !== 'Pendente';
+        }
+
+        function pdTfmOnChange(cpf) {
+            pdTfmAtualizarBadge(cpf);
+        }
+
+        function pdTfmAtualizarBadge(cpf) {
+            var al = null;
+            for (var i = 0; i < pdTfmAlunos.length; i++) {
+                if (pdTfmAlunos[i].cpf === cpf) { al = pdTfmAlunos[i]; break; }
+            }
+            if (!al) return;
+            var v = pdTfmColetar(cpf);
+            var badgeEl = document.getElementById('pd-tfm-badge-' + cpf);
+            if (!badgeEl) return;
+            var ap = pdTfmCalcularAptidao(al, v);
+            if (!ap.avaliado) {
+                badgeEl.innerHTML = '<span style="background:#f1f5f9;color:#64748b;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700">INCOMPLETO</span>';
+            } else {
+                badgeEl.innerHTML = ap.apto
+                    ? '<span style="background:rgba(22,163,74,.12);color:#16a34a;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700"><i class="fa-solid fa-check"></i> APTO</span>'
+                    : '<span style="background:rgba(220,38,38,.12);color:#dc2626;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700"><i class="fa-solid fa-xmark"></i> INAPTO</span>';
+            }
+        }
+
+        function pdTfmDadosAgendados() {
+            var ag = pdTfmAtual || {};
+            var dataProva = '';
+            if (ag.dataAgendamento) {
+                var dt = ag.dataAgendamento.toMillis ? new Date(ag.dataAgendamento.toMillis()) : new Date(ag.dataAgendamento);
+                if (!isNaN(dt.getTime())) dataProva = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+            }
+            if (!dataProva) dataProva = new Date().toISOString().slice(0, 10);
+            return { dataProva: dataProva, docente: ag.docente || '' };
+        }
+
+        async function pdTfmSalvarRegistro(al, v) {
+            var ag = pdTfmDadosAgendados();
+            var resDocId = pdTfmAtualId + '__' + al.cpf;
+            var dados = {
+                cpf: al.cpf,
+                nome: al.nome || '',
+                matricula: al.matricula || '',
+                turma: al.turma || (pdTfmAtual ? pdTfmAtual.turma || '' : ''),
+                projeto: al.projeto || (pdTfmAtual ? pdTfmAtual.projeto || '' : ''),
+                dataProva: ag.dataProva,
+                docente: ag.docente,
+                agendamentoId: pdTfmAtualId,
+                flexoes: v.flexoes,
+                abdominais: v.abdominais,
+                corridaSeg: v.corridaSeg,
+                deslocamentoConcluiu: v.deslocamentoConcluiu,
+                resultado: v.resultado,
+                dataResultado: new Date().toISOString()
+            };
+            await dbFirestore.collection('tfmAlunos').doc(resDocId).set(dados, { merge: true });
+            pdTfmExistentes[al.cpf] = dados;
+            return dados;
+        }
+
+        async function pdTfmSalvar(cpf) {
+            var al = null;
+            for (var i = 0; i < pdTfmAlunos.length; i++) {
+                if (pdTfmAlunos[i].cpf === cpf) { al = pdTfmAlunos[i]; break; }
+            }
+            if (!al) { alert('Aluno nao encontrado.'); return; }
+            var v = pdTfmColetar(cpf);
+            if (!pdTfmValoresPreenchidos(v)) { alert('Preencha ao menos um resultado do teste para salvar.'); return; }
+            try {
+                await pdTfmSalvarRegistro(al, v);
+                alert('TFM de ' + (al.nome || cpf) + ' salvo com sucesso!');
+            } catch (e) {
+                alert('Erro ao salvar: ' + e.message);
+            }
+        }
+
+        async function pdTfmSalvarTodos() {
+            if (!pdTfmAlunos.length) { alert('Nenhum aluno nesta turma.'); return; }
+            var salvos = 0;
+            var erros = [];
+            for (var i = 0; i < pdTfmAlunos.length; i++) {
+                var al = pdTfmAlunos[i];
+                var v = pdTfmColetar(al.cpf);
+                if (!pdTfmValoresPreenchidos(v)) continue;
+                try {
+                    await pdTfmSalvarRegistro(al, v);
+                    salvos++;
+                } catch (e) {
+                    erros.push(al.nome || al.cpf);
+                }
+            }
+            alert(salvos ? (salvos + ' registro(s) salvo(s) com sucesso!' + (erros.length ? '\nErros: ' + erros.join(', ') : '')) : 'Nenhum aluno com valores preenchidos.');
+        }
+
+        function pdTfmVoltar() {
+            var container = document.getElementById('pd-tfm-container');
+            var area = document.getElementById('pd-tfm-avaliacao');
+            if (area) { area.style.display = 'none'; area.innerHTML = ''; }
+            if (container) { container.style.display = ''; pdLoadTfmAgendamentos(); }
         }
 
         /* ===== APONTAMENTO (estrutura do admin, filtrando as aulas do docente logado) ===== */
@@ -1629,9 +1932,47 @@
                 document.getElementById('modal-apontamento-overlay').classList.add('hidden');
                 alert('Apontamento salvo com sucesso!');
                 apontamentoFiltrar();
+                pdVerificarInativosPorFalta(todos.map(a => a.cpf));
             } catch (e) {
                 console.error('Erro ao salvar apontamento:', e);
                 alert('Erro ao salvar: ' + e.message);
+            }
+        }
+
+        async function pdVerificarInativosPorFalta(cpfs) {
+            if (!dbFirestore || !cpfs || !cpfs.length) return;
+            const lista = cpfs.filter(Boolean);
+            if (!lista.length) return;
+            const faltas = {};
+            for (let i = 0; i < lista.length; i += 10) {
+                const lote = lista.slice(i, i + 10);
+                try {
+                    const snap = await dbFirestore.collection('presencasAlunos').where('cpf', 'in', lote).get();
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const k = (d.cpf || '').replace(/\D/g, '');
+                        if (k && d.status === 'Falta') faltas[k] = (faltas[k] || 0) + 1;
+                    });
+                } catch (e) { console.error('Erro ao contar faltas:', e); }
+            }
+            const batch = dbFirestore.batch();
+            let mudou = false;
+            const candidatosSnap = await dbFirestore.collection('candidatos').get();
+            candidatosSnap.forEach(doc => {
+                const c = doc.data();
+                const k = (c.cpf || '').replace(/\D/g, '');
+                if (!k || !faltas[k]) return;
+                if ((c.tipoPessoa || 'A') === 'F' || c.remanejadoDocente) return;
+                if (c.status === 'Ativo' && faltas[k] >= 3) {
+                    batch.update(doc.ref, { status: 'Inativo por Falta', inativoPorFaltaEm: new Date().toISOString(), inativoPorFaltaMotivo: '3 ou mais faltas' });
+                    mudou = true;
+                } else if (c.status === 'Inativo por Falta' && faltas[k] < 3) {
+                    batch.update(doc.ref, { status: 'Ativo', inativoPorFaltaEm: firebase.firestore.FieldValue.delete(), inativoPorFaltaMotivo: firebase.firestore.FieldValue.delete() });
+                    mudou = true;
+                }
+            });
+            if (mudou) {
+                try { await batch.commit(); } catch (e) { console.error('Erro ao atualizar status inativo por falta:', e); }
             }
         }
 

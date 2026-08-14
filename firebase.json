@@ -1,6 +1,7 @@
 {
   "hosting": {
     "public": ".",
+    "maxReleases": 5,
     "headers": [
       {
         "source": "**/*.html",
