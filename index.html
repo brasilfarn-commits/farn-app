@@ -615,9 +615,12 @@
                         <div class="landing-news-right-head">
                             <span class="landing-eyebrow">Notícias</span>
                             <h2>Fique por dentro das novidades</h2>
-                            <p>Notícias e comunicados da instituição. <a class="landing-noticias-link" href="noticias.html">Clique aqui</a></p>
                         </div>
-                        <div id="landing-noticias-slider" data-noticias-slider style="--farn-slider-h:240px"></div>
+                        <div style="text-align:center;padding:40px 20px">
+                            <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#f59e0b"></i>
+                            <h3 style="font-size:18px;color:#e8f2e9;margin-bottom:8px">Em Construção</h3>
+                            <p style="font-size:13px;color:#94a3b8">Esta seção está sendo desenvolvida e estará disponível em breve.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -713,9 +716,9 @@
                         <i class="fa-solid fa-graduation-cap"></i>
                         <span>Disciplinas</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-noticias', this); noticiasInicializar()">
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-noticias', this); blogInicializar()">
                         <i class="fa-solid fa-newspaper"></i>
-                        <span>Noticias</span>
+                        <span>Blog</span>
                     </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-galeria', this); galeriaAdminInicializar()">
                         <i class="fa-solid fa-images"></i>
@@ -767,6 +770,10 @@
                         <p class="admin-home-subtitle" id="admin-home-fantasia">Força Auxiliar de Resgate Nacional</p>
                         <div class="admin-home-divider"></div>
                         <p class="admin-home-desc">Sistema de Gestão Educacional</p>
+                        <div style="text-align:center;margin:22px 0 6px">
+                            <div id="portais-status" style="font-size:12px;color:rgba(255,255,255,.75);margin-bottom:10px;letter-spacing:.5px"></div>
+                            <button id="btn-portais" onclick="togglePortais()" style="display:inline-flex;align-items:center;gap:8px;padding:11px 26px;border-radius:12px;border:1px solid #16a34a;background:#16a34a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:.25s;letter-spacing:.3px"><i class="fa-solid fa-power-off"></i> Carregando...</button>
+                        </div>
                         <div id="admin-home-inst-info" style="display:none;text-align:center;margin-bottom:20px;padding:12px 20px;background:rgba(255,255,255,.08);border-radius:10px;border:1px solid rgba(255,255,255,.1)">
                             <div id="admin-home-cnpj" style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px"></div>
                             <div id="admin-home-fone" style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px"></div>
@@ -817,9 +824,9 @@
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Disciplinas</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item:nth-child(15)')); noticiasInicializar()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item:nth-child(15)')); blogInicializar()">
                                 <i class="fa-solid fa-newspaper"></i>
-                                <span>Noticias</span>
+                                <span>Blog</span>
                             </div>
                             <div class="admin-home-card" onclick="showAdminSection('admin-atelie', document.querySelector('.nav-item:nth-child(17)'));">
                                 <i class="fa-solid fa-palette"></i>
@@ -1333,15 +1340,19 @@
                 </div>
                 <div id="admin-tfm" class="admin-section">
                     <div class="card full-width">
-                        <div class="card-header">
+                        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
                             <h3><i class="fa-solid fa-dumbbell" style="color:#16a34a;margin-right:8px"></i> TFM do Aluno - Teste Fisico Motor</h3>
+                            <button class="btn-primary" onclick="tfmSincronizarDocente()" style="white-space:nowrap"><i class="fa-solid fa-rotate"></i> Sincronizar com Docente</button>
                         </div>
                         <div class="card-body">
                             <!-- Protocolo dos testes -->
                             <div style="padding:18px 20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                                    <i class="fa-solid fa-stopwatch" style="color:#16a34a;font-size:16px"></i>
-                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Protocolo de Avaliacao</span>
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+                                    <div style="display:flex;align-items:center;gap:8px">
+                                        <i class="fa-solid fa-stopwatch" style="color:#16a34a;font-size:16px"></i>
+                                        <span style="color:#16a34a;font-weight:700;font-size:14px">Protocolo de Avaliacao</span>
+                                    </div>
+                                    <button class="btn-outline" onclick="tfmAbrirEditarRegras()" style="white-space:nowrap"><i class="fa-solid fa-sliders"></i> editar regras tfm 1</button>
                                 </div>
                                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
                                     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
@@ -1379,6 +1390,7 @@
                                     <table class="data-table">
                                         <thead>
                                             <tr>
+                                                <th>Nome</th>
                                                 <th>Projeto</th>
                                                 <th>Turma</th>
                                                 <th>Data/Hora Agendada</th>
@@ -2383,64 +2395,12 @@
                     <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-newspaper" style="color:#dc2626;margin-right:8px"></i> Noticias</h3>
-                            <small>Em cada coluna da pagina de noticias, anexe uma imagem e escreva o texto da noticia. A coluna central e maior.</small>
                         </div>
                         <div class="card-body">
-                            <div class="noticias-admin-grid">
-                                <div class="noticias-admin-col">
-                                    <div class="noticias-admin-col-titulo"><i class="fa-solid fa-align-left"></i> Coluna Esquerda</div>
-                                    <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:0">
-                                        <i class="fa-solid fa-upload"></i> Selecionar imagens
-                                        <input type="file" id="noticias-file-esquerda" accept="image/*,video/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'esquerda')">
-                                    </label>
-                                    <small style="color:#94a3b8;font-size:11px">Imagens ou vídeos (o vídeo será enviado ao armazenamento).</small>
-                                    <textarea id="noticias-texto-esquerda" class="noticias-texto-input" placeholder="Texto da noticia (aparece sobre a imagem)"></textarea>
-                                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                        <button class="btn-outline" onclick="noticiasPreviewIniciar('esquerda')" id="noticias-btn-preview-esquerda" style="display:none;padding:8px 14px;font-size:12px"><i class="fa-solid fa-eye"></i> Ver slide</button>
-                                        <button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="noticiasSalvarImagens('esquerda')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
-                                    </div>
-                                    <div id="noticias-preview-slider-esquerda" style="display:none;margin-top:14px"></div>
-                                    <div id="noticias-thumbs-esquerda" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
-                                    <div id="noticias-lista-esquerda" style="margin-top:12px">
-                                        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
-                                    </div>
-                                </div>
-                                <div class="noticias-admin-col">
-                                    <div class="noticias-admin-col-titulo"><i class="fa-solid fa-align-center"></i> Coluna Central</div>
-                                    <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:0">
-                                        <i class="fa-solid fa-upload"></i> Selecionar imagens
-                                        <input type="file" id="noticias-file-meio" accept="image/*,video/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'meio')">
-                                    </label>
-                                    <small style="color:#94a3b8;font-size:11px">Imagens ou vídeos (o vídeo será enviado ao armazenamento).</small>
-                                    <textarea id="noticias-texto-meio" class="noticias-texto-input" placeholder="Texto da noticia (aparece sobre a imagem)"></textarea>
-                                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                        <button class="btn-outline" onclick="noticiasPreviewIniciar('meio')" id="noticias-btn-preview-meio" style="display:none;padding:8px 14px;font-size:12px"><i class="fa-solid fa-eye"></i> Ver slide</button>
-                                        <button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="noticiasSalvarImagens('meio')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
-                                    </div>
-                                    <div id="noticias-preview-slider-meio" style="display:none;margin-top:14px"></div>
-                                    <div id="noticias-thumbs-meio" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
-                                    <div id="noticias-lista-meio" style="margin-top:12px">
-                                        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
-                                    </div>
-                                </div>
-                                <div class="noticias-admin-col">
-                                    <div class="noticias-admin-col-titulo"><i class="fa-solid fa-align-right"></i> Coluna Direita</div>
-                                    <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:0">
-                                        <i class="fa-solid fa-upload"></i> Selecionar imagens
-                                        <input type="file" id="noticias-file-direita" accept="image/*,video/*" multiple style="display:none" onchange="noticiasSelecionarImagens(this, 'direita')">
-                                    </label>
-                                    <small style="color:#94a3b8;font-size:11px">Imagens ou vídeos (o vídeo será enviado ao armazenamento).</small>
-                                    <textarea id="noticias-texto-direita" class="noticias-texto-input" placeholder="Texto da noticia (aparece sobre a imagem)"></textarea>
-                                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                        <button class="btn-outline" onclick="noticiasPreviewIniciar('direita')" id="noticias-btn-preview-direita" style="display:none;padding:8px 14px;font-size:12px"><i class="fa-solid fa-eye"></i> Ver slide</button>
-                                        <button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="noticiasSalvarImagens('direita')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
-                                    </div>
-                                    <div id="noticias-preview-slider-direita" style="display:none;margin-top:14px"></div>
-                                    <div id="noticias-thumbs-direita" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
-                                    <div id="noticias-lista-direita" style="margin-top:12px">
-                                        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
-                                    </div>
-                                </div>
+                            <div style="text-align:center;padding:60px 20px;color:#94a3b8">
+                                <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#f59e0b"></i>
+                                <h3 style="font-size:18px;color:#334155;margin-bottom:8px">Em Construcao</h3>
+                                <p style="font-size:13px;color:#94a3b8">Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
                             </div>
                         </div>
                     </div>
@@ -2451,41 +2411,66 @@
                     <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-images" style="color:#2563eb;margin-right:8px"></i> Galeria</h3>
-                            <small>Anexe fotos para a galeria do portal do aluno, vinculadas a um projeto e turma.</small>
+                            <button class="btn-primary" onclick="galeriaAbrirModalAlbum()"><i class="fa-solid fa-plus"></i> Criar Album</button>
                         </div>
                         <div class="card-body">
-                            <div class="config-grid" style="grid-template-columns:1fr 1fr;align-items:start;gap:16px">
-                                <div class="config-card" style="padding:16px;align-items:stretch">
-                                    <i class="fa-solid fa-upload" style="font-size:20px"></i>
-                                    <span style="font-size:13px">Adicionar fotos a galeria</span>
-                                    <small>Selecione o projeto e a turma que verao as fotos, escolha as imagens e salve.</small>
-                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-                                        <select id="galeria-selecao-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminOnProjetoChange()">
-                                            <option value="">Projeto...</option>
-                                        </select>
-                                        <select id="galeria-selecao-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminOnTurmaChange()">
-                                            <option value="">Turma...</option>
-                                        </select>
-                                    </div>
-                                    <input type="text" id="galeria-titulo" class="config-input" placeholder="Legenda / titulo (opcional)" style="width:100%;margin-top:8px">
-                                    <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;border-radius:8px;margin:12px 0 0;align-self:flex-start">
-                                        <i class="fa-solid fa-images"></i> Selecionar imagens
-                                        <input type="file" id="galeria-file" accept="image/*" multiple style="display:none" onchange="galeriaAdminSelecionarImagens(this)">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                                <select id="galeria-selecao-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminCarregar()">
+                                    <option value="">Filtrar por projeto...</option>
+                                </select>
+                                <select id="galeria-selecao-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminCarregar()">
+                                    <option value="">Filtrar por turma...</option>
+                                </select>
+                            </div>
+                            <div id="galeria-lista-albuns" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+                                <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;grid-column:1/-1">Nenhum album encontrado.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL CRIAR/EDITAR ALBUM -->
+                <div id="galeria-modal-album" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);overflow-y:auto;padding:20px" onclick="if(event.target===this)galeriaFecharModalAlbum()">
+                    <div style="background:#fff;border-radius:16px;max-width:600px;margin:0 auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                            <h3 style="margin:0;font-size:18px"><i class="fa-solid fa-images" style="color:#2563eb;margin-right:8px"></i> <span id="galeria-modal-titulo">Criar Album</span></h3>
+                            <button onclick="galeriaFecharModalAlbum()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <input type="hidden" id="galeria-album-edit-id" value="">
+                        <div style="display:grid;gap:12px">
+                            <input type="text" id="galeria-album-nome" class="config-input" placeholder="Nome do album" style="width:100%">
+                            <input type="date" id="galeria-album-data-evento" class="config-input" style="width:100%">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                <select id="galeria-album-projeto" class="config-input" style="width:100%" onchange="galeriaAlbumFiltrarTurmas()">
+                                    <option value="">Projeto...</option>
+                                </select>
+                                <select id="galeria-album-turma" class="config-input" style="width:100%">
+                                    <option value="">Turma...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;display:block">Exibir album nos portais:</label>
+                                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px">
+                                        <input type="checkbox" class="galeria-album-portal" value="aluno" checked> Portal do Aluno
                                     </label>
-                                    <div id="galeria-thumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
-                                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-                                        <button class="btn-primary" style="padding:8px 14px;font-size:12px;margin:0" onclick="galeriaAdminSalvar()"><i class="fa-solid fa-floppy-disk"></i> Salvar fotos</button>
-                                    </div>
-                                </div>
-                                <div class="config-card" style="padding:16px;align-items:stretch">
-                                    <i class="fa-solid fa-layer-group" style="font-size:20px"></i>
-                                    <span style="font-size:13px">Fotos da galeria</span>
-                                    <small>Fotos cadastradas para o projeto/turma selecionado. Clique na lixeira para remover.</small>
-                                    <div id="galeria-lista" style="margin-top:12px">
-                                        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Selecione projeto e turma acima.</div>
-                                    </div>
+                                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 10px">
+                                        <input type="checkbox" class="galeria-album-portal" value="formado" checked> Portal do Formado
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#fefce8;border:1px solid #fef08a;border-radius:6px;padding:6px 10px">
+                                        <input type="checkbox" class="galeria-album-portal" value="docente" checked> Portal do Docente
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#fdf4ff;border:1px solid #e9d5ff;border-radius:6px;padding:6px 10px">
+                                        <input type="checkbox" class="galeria-album-portal" value="coordenacao" checked> Portal da Coordenacao
+                                    </label>
                                 </div>
                             </div>
+                            <label class="btn-primary" id="galeria-album-btn-fotos" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:10px 16px;font-size:13px;border-radius:8px;align-self:flex-start">
+                                <i class="fa-solid fa-images"></i> Adicionar fotos
+                                <input type="file" id="galeria-album-files" accept="image/*" multiple style="display:none" onchange="galeriaAlbumSelecionarImagens(this)">
+                            </label>
+                            <div id="galeria-album-thumbs" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+                            <button class="btn-primary" onclick="galeriaAlbumSalvar()" style="align-self:flex-start"><i class="fa-solid fa-floppy-disk"></i> <span id="galeria-album-btn-texto">Salvar Album</span></button>
                         </div>
                     </div>
                 </div>
@@ -3119,6 +3104,10 @@
             <div class="modal-body">
                 <div class="form-grid">
                     <div class="form-group" style="grid-column:span 2">
+                        <label>Nome do Agendamento *</label>
+                        <input type="text" id="tfm-novo-nome" class="config-input" placeholder="Ex: TFM 1 - Turma Alpha - Março 2024">
+                    </div>
+                    <div class="form-group" style="grid-column:span 2">
                         <label>Projeto *</label>
                         <select id="tfm-novo-projeto" class="config-input" onchange="tfmNovoOnProjetoChange()">
                             <option value="">Selecione o projeto...</option>
@@ -3144,6 +3133,18 @@
                         <label>Observacao</label>
                         <input type="text" id="tfm-novo-obs" class="config-input" placeholder="Ex: Chegar 15 min antes, levar documento com foto...">
                     </div>
+                    <div class="form-group" style="grid-column:span 2">
+                        <label style="display:flex;align-items:center;justify-content:space-between">
+                            Questoes e Regras
+                            <button type="button" class="btn-primary" style="padding:6px 12px;font-size:11px" onclick="tfmNovoAdicionarQuestao()"><i class="fa-solid fa-plus"></i> Adicionar Questao</button>
+                        </label>
+                        <div id="tfm-novo-questoes" style="display:flex;flex-direction:column;gap:12px;margin-top:10px">
+                        </div>
+                        <div id="tfm-novo-questoes-empty" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px;background:#f8fafc;border-radius:8px;border:1px dashed #cbd5e1;margin-top:10px">
+                            <i class="fa-solid fa-list-check" style="font-size:20px;margin-bottom:6px;display:block"></i>
+                            Nenhuma questao adicionada. Clique em "Adicionar Questao" para comecar.
+                        </div>
+                    </div>
                     <div class="form-group" style="grid-column:span 2;display:none" id="tfm-novo-aviso">
                         <div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.5">
                             <i class="fa-solid fa-circle-info"></i> Esta turma ja possui um agendamento. Salvar substituira o agendamento atual.
@@ -3154,6 +3155,79 @@
             <div class="modal-footer">
                 <button class="btn-outline" onclick="tfmFecharNovoAgendamento()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                 <button class="btn-primary" onclick="tfmSalvarNovoAgendamento()"><i class="fa-solid fa-calendar-check"></i> Salvar Agendamento</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-tfm-regras-overlay" class="modal-overlay hidden" onclick="tfmFecharEditarRegras(event)">
+        <div class="modal-content" style="max-width:820px;max-height:92vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-sliders" style="color:#16a34a;margin-right:8px"></i> Editar Regras do TFM 1</h3>
+                <button class="modal-close" onclick="tfmFecharEditarRegras()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="margin:0 0 14px;font-size:12px;color:#475569;line-height:1.6">
+                    <i class="fa-solid fa-circle-info" style="color:#16a34a"></i>
+                    Defina os limites por faixa etaria e genero usados no calculo de aptidao.
+                    <b>A)</b> minimo de flexoes em 1 min - <b>B)</b> minimo de abdominais em 1 min - <b>C)</b> tempo maximo em segundos (menor tempo e melhor).
+                </p>
+                <div style="overflow-x:auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Faixa</th>
+                                <th>Idade ate</th>
+                                <th>A) Flex. Masc</th>
+                                <th>B) Abd. Masc</th>
+                                <th>C) Corr. Masc (s)</th>
+                                <th>A) Flex. Fem</th>
+                                <th>B) Abd. Fem</th>
+                                <th>C) Corr. Fem (s)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" id="tfm-regra-faixa-0" class="config-input" style="width:110px" value="Ate 29 anos"></td>
+                                <td><input type="number" min="0" id="tfm-regra-limite-0" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-A-0" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-B-0" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-C-0" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-A-0" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-B-0" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-C-0" class="config-input" style="width:70px"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" id="tfm-regra-faixa-1" class="config-input" style="width:110px" value="30 a 39 anos"></td>
+                                <td><input type="number" min="0" id="tfm-regra-limite-1" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-A-1" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-B-1" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-C-1" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-A-1" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-B-1" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-C-1" class="config-input" style="width:70px"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" id="tfm-regra-faixa-2" class="config-input" style="width:110px" value="40 anos ou +"></td>
+                                <td><input type="number" min="0" id="tfm-regra-limite-2" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-A-2" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-B-2" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-m-C-2" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-A-2" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-B-2" class="config-input" style="width:70px"></td>
+                                <td><input type="number" min="0" id="tfm-regra-f-C-2" class="config-input" style="width:70px"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top:14px">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;cursor:pointer">
+                        <input type="checkbox" id="tfm-regra-exige-d" style="width:16px;height:16px;cursor:pointer"> Exigir a questao D (Deslocamento 20kg/50m) para a aptidao
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="tfmFecharEditarRegras()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                <button class="btn-primary" onclick="tfmSalvarRegras()"><i class="fa-solid fa-floppy-disk"></i> Salvar Regras</button>
             </div>
         </div>
     </div>

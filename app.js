@@ -713,6 +713,7 @@ async function initApp() {
         populateProjetoSelect();
         configInstituicaoCarregarHome();
         renderList();
+        carregarEstadoPortais();
         if (restoreFormState()) {
             showAdminSection('admin-form-candidato', document.querySelector('.nav-item:nth-child(2)'));
             await populateTurmaSelect();
@@ -865,6 +866,50 @@ function enterAdminPanel() {
     migrarDataInscricao();
     if (typeof chatPortaisStartNotifListener === 'function') chatPortaisStartNotifListener();
     if (typeof atelieProdutosCarregar === 'function') atelieProdutosCarregar();
+    carregarEstadoPortais();
+}
+
+/* ===== PORTAL LIGA/DESLIGA (MANUTENCAO) ===== */
+let portaisManutencao = false;
+
+async function carregarEstadoPortais() {
+    try {
+        const snap = await dbFirestore.collection('config').doc('portais').get();
+        portaisManutencao = snap.exists ? (snap.data().manutencao === true) : false;
+    } catch (e) {
+        portaisManutencao = false;
+    }
+    atualizarBotaoPortais();
+}
+
+function atualizarBotaoPortais() {
+    const btn = document.getElementById('btn-portais');
+    const statusEl = document.getElementById('portais-status');
+    if (!btn) return;
+    if (portaisManutencao) {
+        btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Ligar portais';
+        btn.style.background = '#dc2626';
+        btn.style.borderColor = '#dc2626';
+        if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-circle" style="color:#fbbf24"></i> Portais DESLIGADOS - manutencao ativa';
+    } else {
+        btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Desligar portais';
+        btn.style.background = '#16a34a';
+        btn.style.borderColor = '#16a34a';
+        if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-circle" style="color:#22c55e"></i> Portais LIGADOS - acesso liberado';
+    }
+}
+
+async function togglePortais() {
+    if (!currentUserData) return;
+    const novo = !portaisManutencao;
+    try {
+        await dbFirestore.collection('config').doc('portais').set({ manutencao: novo }, { merge: true });
+        portaisManutencao = novo;
+        atualizarBotaoPortais();
+        alert(novo ? 'Portais desligados. Os usuarios verao a mensagem de manutencao.' : 'Portais ligados. Acesso liberado aos portais.');
+    } catch (e) {
+        alert('Erro ao salvar o estado dos portais: ' + e.message);
+    }
 }
 
 function applyUserPermissions() {
@@ -4841,6 +4886,32 @@ function tfmValoresPreenchidos(v) {
     return v.flexoes != null || v.abdominais != null || v.corridaSeg != null || v.deslocamentoConcluiu || v.resultado !== 'Pendente';
 }
 
+function tfmRegrasPadrao() {
+    return {
+        faixas: [
+            { limite: 29, rotulo: 'Ate 29 anos', masculino: { A: 25, B: 35, C: 30 }, feminino: { A: 18, B: 28, C: 40 } },
+            { limite: 39, rotulo: '30 a 39 anos', masculino: { A: 20, B: 30, C: 40 }, feminino: { A: 14, B: 24, C: 50 } },
+            { limite: 99, rotulo: '40 anos ou +', masculino: { A: 15, B: 25, C: 50 }, feminino: { A: 10, B: 18, C: 60 } }
+        ],
+        exigeDeslocamento: true
+    };
+}
+
+function tfmObterRegras() {
+    try {
+        const raw = localStorage.getItem('tfmRegras1');
+        if (raw) {
+            const r = JSON.parse(raw);
+            if (r && Array.isArray(r.faixas) && r.faixas.length === 3) return r;
+        }
+    } catch (e) {}
+    return tfmRegrasPadrao();
+}
+
+function tfmSalvarRegrasNoLocal(regras) {
+    localStorage.setItem('tfmRegras1', JSON.stringify(regras));
+}
+
 function tfmCalcularAptidao(al, v) {
     if (!v) v = {};
     const genero = (al.genero || '').toLowerCase();
@@ -4851,33 +4922,218 @@ function tfmCalcularAptidao(al, v) {
     if (idade === '') {
         return { avaliado: false, apto: false, motivo: 'Informe a data de nascimento do aluno.' };
     }
-    let lim;
-    if (genero === 'masculino') {
-        if (idade <= 29) lim = { A: 25, B: 35, C: 30 };
-        else if (idade <= 39) lim = { A: 20, B: 30, C: 40 };
-        else lim = { A: 15, B: 25, C: 50 };
-    } else {
-        if (idade <= 29) lim = { A: 18, B: 28, C: 40 };
-        else if (idade <= 39) lim = { A: 14, B: 24, C: 50 };
-        else lim = { A: 10, B: 18, C: 60 };
+    const regras = tfmObterRegras();
+    let faixaSel = null;
+    for (const f of regras.faixas) {
+        if (idade <= f.limite) { faixaSel = f; break; }
     }
+    if (!faixaSel) faixaSel = regras.faixas[regras.faixas.length - 1];
+    const lim = faixaSel[genero];
     const A = v.flexoes, B = v.abdominais, C = v.corridaSeg, D = v.deslocamentoConcluiu;
-    if (A == null || B == null || C == null || !D) {
+    if (A == null || B == null || C == null || (regras.exigeDeslocamento && !D)) {
         return { avaliado: false, apto: false, motivo: 'Preencha as questoes A, B, C e D.' };
     }
     const falhas = [];
     if (A < lim.A) falhas.push('A) minimo ' + lim.A + ' flexoes (fez ' + A + ')');
     if (B < lim.B) falhas.push('B) minimo ' + lim.B + ' abdominais (fez ' + B + ')');
     if (C > lim.C) falhas.push('C) maximo ' + lim.C + 's (fez ' + C + 's)');
-    if (D !== 'Sim') falhas.push('D) deslocamento deve ser Sim');
+    if (regras.exigeDeslocamento && D !== 'Sim') falhas.push('D) deslocamento deve ser Sim');
     return {
         avaliado: true,
         apto: falhas.length === 0,
         idade: idade,
-        faixa: idade <= 29 ? 'Ate 29 anos' : (idade <= 39 ? '30 a 39 anos' : '40 anos ou +'),
+        faixa: faixaSel.rotulo,
         genero: al.genero,
         motivo: falhas.length ? falhas.join('; ') : 'Todos os criterios atendidos'
     };
+}
+
+function tfmRegraEl(id) {
+    return document.getElementById(id);
+}
+
+function tfmAbrirEditarRegras() {
+    const regras = tfmObterRegras();
+    const padrao = tfmRegrasPadrao();
+    for (let i = 0; i < 3; i++) {
+        const f = regras.faixas[i] || padrao.faixas[i];
+        if (tfmRegraEl('tfm-regra-faixa-' + i)) tfmRegraEl('tfm-regra-faixa-' + i).value = f.rotulo || '';
+        if (tfmRegraEl('tfm-regra-limite-' + i)) tfmRegraEl('tfm-regra-limite-' + i).value = f.limite;
+        if (tfmRegraEl('tfm-regra-m-A-' + i)) tfmRegraEl('tfm-regra-m-A-' + i).value = f.masculino.A;
+        if (tfmRegraEl('tfm-regra-m-B-' + i)) tfmRegraEl('tfm-regra-m-B-' + i).value = f.masculino.B;
+        if (tfmRegraEl('tfm-regra-m-C-' + i)) tfmRegraEl('tfm-regra-m-C-' + i).value = f.masculino.C;
+        if (tfmRegraEl('tfm-regra-f-A-' + i)) tfmRegraEl('tfm-regra-f-A-' + i).value = f.feminino.A;
+        if (tfmRegraEl('tfm-regra-f-B-' + i)) tfmRegraEl('tfm-regra-f-B-' + i).value = f.feminino.B;
+        if (tfmRegraEl('tfm-regra-f-C-' + i)) tfmRegraEl('tfm-regra-f-C-' + i).value = f.feminino.C;
+    }
+    const cb = tfmRegraEl('tfm-regra-exige-d');
+    if (cb) cb.checked = regras.exigeDeslocamento !== false;
+    const overlay = tfmRegraEl('modal-tfm-regras-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+}
+
+function tfmFecharEditarRegras(event) {
+    if (event && event.target && event.target.id !== 'modal-tfm-regras-overlay') return;
+    const overlay = tfmRegraEl('modal-tfm-regras-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+async function tfmSalvarRegras() {
+    const regras = tfmRegrasPadrao();
+    const num = (el) => {
+        const n = parseInt(el ? el.value : '', 10);
+        return isNaN(n) ? null : n;
+    };
+    for (let i = 0; i < 3; i++) {
+        const faixaEl = tfmRegraEl('tfm-regra-faixa-' + i);
+        const limiteEl = tfmRegraEl('tfm-regra-limite-' + i);
+        if (!faixaEl || !limiteEl) { alert('Elemento de regra nao encontrado.'); return; }
+        const lim = num(limiteEl);
+        if (lim === null || lim < 0) { alert('Informe um limite de idade valido na faixa ' + (i + 1) + '.'); return; }
+        const mA = num(tfmRegraEl('tfm-regra-m-A-' + i));
+        const mB = num(tfmRegraEl('tfm-regra-m-B-' + i));
+        const mC = num(tfmRegraEl('tfm-regra-m-C-' + i));
+        const fA = num(tfmRegraEl('tfm-regra-f-A-' + i));
+        const fB = num(tfmRegraEl('tfm-regra-f-B-' + i));
+        const fC = num(tfmRegraEl('tfm-regra-f-C-' + i));
+        if (mA === null || mB === null || mC === null || fA === null || fB === null || fC === null) {
+            alert('Preencha todos os limites A, B e C da faixa ' + (i + 1) + ' (masculino e feminino).');
+            return;
+        }
+        regras.faixas[i] = {
+            limite: lim,
+            rotulo: (faixaEl.value || '').trim() || ('Faixa ' + (i + 1)),
+            masculino: { A: mA, B: mB, C: mC },
+            feminino: { A: fA, B: fB, C: fC }
+        };
+    }
+    regras.faixas.sort((a, b) => a.limite - b.limite);
+    const cb = tfmRegraEl('tfm-regra-exige-d');
+    regras.exigeDeslocamento = cb ? cb.checked : true;
+    tfmSalvarRegrasNoLocal(regras);
+    tfmFecharEditarRegras();
+    alert('Regras do TFM 1 atualizadas!');
+    await tfmSincronizarRegistros();
+}
+
+async function tfmSincronizarRegistros() {
+    try {
+        const snap = await dbFirestore.collection('tfmAlunos').get();
+        const docs = [];
+        snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
+        if (!docs.length) { alert('Nenhum registro de TFM encontrado para sincronizar.'); return; }
+
+        const candMap = {};
+        try {
+            const snapCand = await dbFirestore.collection('candidatos').get();
+            snapCand.forEach(d => { candMap[d.data().cpf] = d.data(); });
+        } catch (e) {}
+
+        const pendentes = [];
+        let atualizados = 0;
+        const lotes = [];
+        let lote = [];
+        for (const doc of docs) {
+            const d = doc.data;
+            const cand = candMap[d.cpf] || {};
+            const al = {
+                nascimento: d.nascimento || cand.nascimento || '',
+                genero: d.genero || cand.genero || ''
+            };
+            const v = {
+                flexoes: d.flexoes != null ? d.flexoes : null,
+                abdominais: d.abdominais != null ? d.abdominais : null,
+                corridaSeg: d.corridaSeg != null ? d.corridaSeg : null,
+                deslocamentoConcluiu: d.deslocamentoConcluiu || ''
+            };
+            const auto = tfmCalcularAptidao(al, v);
+            if (!auto.avaliado) { pendentes.push(d.cpf || d.id); continue; }
+            const novo = auto.apto ? 'Apto' : 'Inapto';
+            if (novo.toUpperCase() !== String(d.resultado || '').toUpperCase()) {
+                lote.push({ id: doc.id, resultado: novo });
+            }
+            if (lote.length >= 400) { lotes.push(lote); lote = []; }
+        }
+        if (lote.length) lotes.push(lote);
+
+        const erros = [];
+        for (const l of lotes) {
+            const batch = dbFirestore.batch();
+            for (const item of l) {
+                batch.update(dbFirestore.collection('tfmAlunos').doc(item.id), { resultado: item.resultado });
+            }
+            try {
+                await batch.commit();
+                atualizados += l.length;
+            } catch (e) {
+                erros.push(e.message);
+            }
+        }
+
+        let msg = 'Sincronizacao concluida!\nRegistros atualizados com as novas regras: ' + atualizados +
+            '\nRegistros sem avaliacao completa (mantidos como estavam): ' + pendentes.length;
+        if (erros.length) msg += '\nErros ao gravar: ' + erros.join('; ');
+        alert(msg);
+        if (typeof tfmOnSelecaoChange === 'function') tfmOnSelecaoChange();
+    } catch (e) {
+        alert('Erro ao sincronizar os registros: ' + e.message);
+    }
+}
+
+async function tfmSincronizarDocente() {
+    if (!tfmAlunos.length) { alert('Nenhuma turma selecionada para sincronizar.'); return; }
+    const turma = tfmAlunos[0].turma || '';
+    const antes = Object.assign({}, tfmExistentes);
+    const novos = {};
+    try {
+        const snap = tfmAgendamentoSelecionadoId
+            ? await dbFirestore.collection('tfmAlunos').where('agendamentoId', '==', tfmAgendamentoSelecionadoId).get()
+            : await dbFirestore.collection('tfmAlunos').where('turma', '==', turma).get();
+        snap.forEach(doc => {
+            const dd = doc.data();
+            if (dd.cpf) novos[dd.cpf] = Object.assign({ docId: doc.id }, dd);
+        });
+    } catch (e) {
+        alert('Erro ao buscar os dados do docente: ' + e.message);
+        return;
+    }
+    const recarregados = Object.keys(novos).length;
+    tfmAlunos.forEach(al => {
+        const cpf = al.cpf;
+        const antigo = antes[cpf] || {};
+        const novo = novos[cpf] || {};
+        const campos = [
+            ['tfm-flexoes-' + cpf, 'flexoes'],
+            ['tfm-abdominais-' + cpf, 'abdominais'],
+            ['tfm-corrida-' + cpf, 'corridaSeg']
+        ];
+        campos.forEach(par => {
+            const el = document.getElementById(par[0]);
+            if (!el) return;
+            const atual = String(el.value || '').trim();
+            const antigoVal = antigo[par[1]] != null ? String(antigo[par[1]]) : '';
+            const novoVal = novo[par[1]] != null ? String(novo[par[1]]) : '';
+            if (atual === antigoVal || atual === '') el.value = novoVal;
+        });
+        const descEl = document.getElementById('tfm-desloc-concluiu-' + cpf);
+        if (descEl) {
+            const atual = descEl.value;
+            const antigoVal = antigo.deslocamentoConcluiu || '';
+            const novoVal = novo.deslocamentoConcluiu || '';
+            if (atual === antigoVal || atual === '') descEl.value = novoVal;
+        }
+        const resEl = document.getElementById('tfm-resultado-' + cpf);
+        if (resEl) {
+            const atual = resEl.value;
+            const antigoVal = antigo.resultado || 'Pendente';
+            const novoVal = novo.resultado || 'Pendente';
+            if (atual === antigoVal) resEl.value = novoVal;
+        }
+    });
+    tfmExistentes = novos;
+    tfmAtualizarResumo();
+    alert('Sincronizacao com o docente concluida!\nRegistros encontrados: ' + recarregados +
+        (recarregados === 0 ? '\nO docente ainda nao salvou resultados para esta turma/agendamento.' : ''));
 }
 
 function tfmDadosAgendados() {
@@ -4908,6 +5164,8 @@ async function tfmSalvar(cpf) {
         matricula: al.matricula || '',
         turma: al.turma || '',
         projeto: al.projeto || '',
+        nascimento: al.nascimento || '',
+        genero: al.genero || '',
         dataProva: ag.dataProva,
         docente: ag.docente,
         flexoes: v.flexoes,
@@ -4944,6 +5202,8 @@ async function tfmSalvarTodos() {
                 matricula: al.matricula || '',
                 turma: al.turma || '',
                 projeto: al.projeto || '',
+                nascimento: al.nascimento || '',
+                genero: al.genero || '',
                 dataProva: ag.dataProva,
                 docente: ag.docente,
                 flexoes: v.flexoes,
@@ -5197,6 +5457,7 @@ function tfmFiltrarLista() {
     const termo = (input ? input.value : '').trim().toLowerCase();
     const resultados = tfmAgendadosLista.filter(function(a) {
         return !termo ||
+            String(a.nome || '').toLowerCase().indexOf(termo) !== -1 ||
             String(a.turma || '').toLowerCase().indexOf(termo) !== -1 ||
             String(a.projeto || '').toLowerCase().indexOf(termo) !== -1 ||
             String(a.docente || '').toLowerCase().indexOf(termo) !== -1 ||
@@ -5211,7 +5472,7 @@ function tfmRenderLista(resultados) {
     const tbody = document.getElementById('tfm-lista-body');
     if (!tbody) return;
     if (!resultados.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM agendado. Clique em "Novo Agendamento de TFM" para agendar uma turma.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM agendado. Clique em "Novo Agendamento de TFM" para agendar uma turma.</td></tr>';
         return;
     }
     tbody.innerHTML = resultados.map(function(a) {
@@ -5220,6 +5481,7 @@ function tfmRenderLista(resultados) {
         const projetoEsc = String(a.projeto || '').replace(/'/g, "\\'");
         const docEsc = String(a.turmaDoc || '').replace(/'/g, "\\'");
         return '<tr>' +
+            '<td style="font-weight:600;color:#1e293b">' + tfmEsc(a.nome || '-') + '</td>' +
             '<td>' + tfmEsc(a.projeto || '-') + '</td>' +
             '<td style="font-weight:600">' + tfmEsc(a.turma || '-') + '</td>' +
             '<td style="font-size:12px;color:#16a34a;font-weight:700">' + tfmEsc(dt) + '</td>' +
@@ -5297,6 +5559,8 @@ function tfmAbrirNovoAgendamento(turmaDoc) {
     }
     const selTurma = document.getElementById('tfm-novo-turma');
     if (selTurma) selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    const nomeEl = document.getElementById('tfm-novo-nome');
+    if (nomeEl) nomeEl.value = (editar && editar.nome) || '';
     if (editar) {
         if (selProj) selProj.value = editar.projeto;
         tfmNovoOnProjetoChange();
@@ -5335,6 +5599,11 @@ function tfmAbrirNovoAgendamento(turmaDoc) {
     if (aviso) aviso.style.display = editar ? '' : 'none';
     const titulo = document.getElementById('tfm-novo-titulo');
     if (titulo) titulo.textContent = editar ? 'Editar Agendamento de TFM' : 'Novo Agendamento de TFM';
+    tfmNovoQuestoes = [];
+    if (editar && editar.questoes && Array.isArray(editar.questoes)) {
+        tfmNovoQuestoes = editar.questoes.map(function(q) { return Object.assign({}, q); });
+    }
+    tfmNovoRenderQuestoes();
     const overlay = document.getElementById('modal-tfm-novo-overlay');
     if (overlay) overlay.classList.remove('hidden');
 }
@@ -5352,6 +5621,77 @@ function tfmNovoOnProjetoChange() {
     if (aviso) aviso.style.display = 'none';
 }
 
+let tfmNovoQuestoes = [];
+let tfmNovoQuestaoId = 0;
+
+function tfmNovoAdicionarQuestao() {
+    const id = String.fromCharCode(65 + tfmNovoQuestoes.length);
+    tfmNovoQuestoes.push({
+        id: id,
+        nome: '',
+        tipo: 'minimo',
+        masculino: { ate29: '', '30_39': '', '40mais': '' },
+        feminino: { ate29: '', '30_39': '', '40mais': '' }
+    });
+    tfmNovoRenderQuestoes();
+}
+
+function tfmNovoRemoverQuestao(index) {
+    tfmNovoQuestoes.splice(index, 1);
+    tfmNovoQuestoes.forEach(function(q, i) { q.id = String.fromCharCode(65 + i); });
+    tfmNovoRenderQuestoes();
+}
+
+function tfmNovoRenderQuestoes() {
+    const container = document.getElementById('tfm-novo-questoes');
+    const empty = document.getElementById('tfm-novo-questoes-empty');
+    if (!container) return;
+    if (empty) empty.style.display = tfmNovoQuestoes.length ? 'none' : '';
+    if (!tfmNovoQuestoes.length) { container.innerHTML = ''; return; }
+    let html = '';
+    tfmNovoQuestoes.forEach(function(q, i) {
+        const tipoOptions = '<option value="minimo"' + (q.tipo === 'minimo' ? ' selected' : '') + '>Minimo (mais = melhor)</option><option value="maximo"' + (q.tipo === 'maximo' ? ' selected' : '') + '>Maximo (menos = melhor)</option>';
+        html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;position:relative">' +
+            '<button type="button" onclick="tfmNovoRemoverQuestao(' + i + ')" style="position:absolute;top:10px;right:10px;background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px" title="Remover questao"><i class="fa-solid fa-xmark"></i></button>' +
+            '<div style="font-weight:700;color:#16a34a;font-size:13px;margin-bottom:10px"><i class="fa-solid fa-tag"></i> Questao ' + q.id + '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+            '<div><label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Nome da Questao *</label><input type="text" class="config-input" id="tfm-q-nome-' + i + '" value="' + tfmEsc(q.nome) + '" placeholder="Ex: Flexao de bracos" style="width:100%;font-size:12px"></div>' +
+            '<div><label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Tipo *</label><select class="config-input" id="tfm-q-tipo-' + i + '" style="width:100%;font-size:12px">' + tipoOptions + '</select></div>' +
+            '</div>' +
+            '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0">' +
+            '<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:8px">Regras por faixa etaria e genero</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:11px">' +
+            '<div style="color:#64748b;font-weight:600">Faixa</div><div style="color:#64748b;font-weight:600">Masc ate 29</div><div style="color:#64748b;font-weight:600">Masc 30-39</div><div style="color:#64748b;font-weight:600">Masc 40+</div><div style="color:#64748b;font-weight:600">Fem ate 29</div><div style="color:#64748b;font-weight:600">Fem 30-39</div><div style="color:#64748b;font-weight:600">Fem 40+</div>' +
+            '<div style="color:#475569;padding:6px 0">Ate 29</div>' +
+            '<input type="number" class="config-input" id="tfm-q-m29-' + i + '" value="' + tfmEsc(q.masculino.ate29) + '" placeholder="0" style="width:100%;font-size:11px;padding:5px">' +
+            '<input type="number" class="config-input" id="tfm-q-m39-' + i + '" value="' + tfmEsc(q.masculino['30_39']) + '" placeholder="0" style="width:100%;font-size:11px;padding:5px">' +
+            '<input type="number" class="config-input" id="tfm-q-m40-' + i + '" value="' + tfmEsc(q.masculino['40mais']) + '" placeholder="0" style="width:100%;font-size:11px;padding:5px">' +
+            '<input type="number" class="config-input" id="tfm-q-f29-' + i + '" value="' + tfmEsc(q.feminino.ate29) + '" placeholder="0" style="width:100%;font-size:11px;padding:5px">' +
+            '<input type="number" class="config-input" id="tfm-q-f39-' + i + '" value="' + tfmEsc(q.feminino['30_39']) + '" placeholder="0" style="width:100%;font-size:11px;padding:5px">' +
+            '<input type="number" class="config-input" id="tfm-q-f40-' + i + '" value="' + tfmEsc(q.feminino['40mais']) + '" placeholder="0" style="width:100%;font-size:11px;padding:5px">' +
+            '</div>' +
+            '</div></div>';
+    });
+    container.innerHTML = html;
+}
+
+function tfmNovoColetarQuestoes() {
+    const questoes = [];
+    tfmNovoQuestoes.forEach(function(q, i) {
+        const nome = (document.getElementById('tfm-q-nome-' + i) || {}).value || '';
+        const tipo = (document.getElementById('tfm-q-tipo-' + i) || {}).value || 'minimo';
+        const num = function(id) { const el = document.getElementById(id); return el ? el.value : ''; };
+        questoes.push({
+            id: q.id,
+            nome: nome.trim(),
+            tipo: tipo,
+            masculino: { ate29: num('tfm-q-m29-' + i), '30_39': num('tfm-q-m39-' + i), '40mais': num('tfm-q-m40-' + i) },
+            feminino: { ate29: num('tfm-q-f29-' + i), '30_39': num('tfm-q-f39-' + i), '40mais': num('tfm-q-f40-' + i) }
+        });
+    });
+    return questoes;
+}
+
 function tfmFecharNovoAgendamento(event) {
     if (event && event.target && event.target.id !== 'modal-tfm-novo-overlay') return;
     const overlay = document.getElementById('modal-tfm-novo-overlay');
@@ -5361,11 +5701,14 @@ function tfmFecharNovoAgendamento(event) {
 }
 
 async function tfmSalvarNovoAgendamento() {
+    const nome = (document.getElementById('tfm-novo-nome') || {}).value || '';
     const projeto = document.getElementById('tfm-novo-projeto').value;
     const turma = document.getElementById('tfm-novo-turma').value;
     const dataVal = document.getElementById('tfm-novo-data').value;
     const docente = document.getElementById('tfm-novo-docente').value;
     const observacao = document.getElementById('tfm-novo-obs').value.trim();
+    const questoes = tfmNovoColetarQuestoes();
+    if (!nome.trim()) { alert('Informe o nome do agendamento.'); return; }
     if (!projeto) { alert('Selecione o projeto.'); return; }
     if (!turma) { alert('Selecione a turma.'); return; }
     if (!dataVal) { alert('Informe a data e hora do TFM.'); return; }
@@ -5376,11 +5719,13 @@ async function tfmSalvarNovoAgendamento() {
             ? dbFirestore.collection('tfmAgendamentos').doc(tfmNovoAgendamentoDocId)
             : dbFirestore.collection('tfmAgendamentos').doc();
         await ref.set({
+            nome: nome.trim(),
             projeto: projeto,
             turma: turma,
             dataAgendamento: firebase.firestore.Timestamp.fromDate(dt),
             docente: docente,
             observacao: observacao,
+            questoes: questoes,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
         tfmNovoTurmaOriginal = null;
@@ -6899,8 +7244,163 @@ function noticiasPreviewIniciar(coluna) {
     }
 }
 
-/* ===== GALERIA (ADMIN) ===== */
-var galeriaPendentes = [];
+/* ===== BLOG NOTICIAS (ADMIN) ===== */
+var blogLista = [];
+var blogUnsub = null;
+
+function blogInicializar() {
+    blogLimparForm();
+    blogCarregarLista();
+}
+
+function blogPreviewImagem(input) {
+    var preview = document.getElementById('blog-imagem-preview');
+    if (!input.files || !input.files[0]) { preview.innerHTML = ''; return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        preview.innerHTML = '<img src="' + e.target.result + '" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #e2e8f0">';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function blogLimparForm() {
+    document.getElementById('blog-edit-id').value = '';
+    document.getElementById('blog-titulo').value = '';
+    document.getElementById('blog-subtitulo').value = '';
+    document.getElementById('blog-conteudo').value = '';
+    document.getElementById('blog-layout').value = 'hero';
+    document.getElementById('blog-categoria').value = '';
+    document.getElementById('blog-destaque').checked = false;
+    document.getElementById('blog-ativo').checked = true;
+    document.getElementById('blog-imagem').value = '';
+    document.getElementById('blog-imagem-preview').innerHTML = '';
+    document.getElementById('blog-form-titulo').textContent = 'Novo Post';
+}
+
+async function blogSalvar() {
+    var titulo = (document.getElementById('blog-titulo').value || '').trim();
+    var subtitulo = (document.getElementById('blog-subtitulo').value || '').trim();
+    var conteudo = (document.getElementById('blog-conteudo').value || '').trim();
+    var layout = document.getElementById('blog-layout').value;
+    var categoria = document.getElementById('blog-categoria').value;
+    var destaque = document.getElementById('blog-destaque').checked;
+    var ativo = document.getElementById('blog-ativo').checked;
+    var editId = document.getElementById('blog-edit-id').value;
+    if (!titulo || !conteudo) { alert('Preencha titulo e conteudo.'); return; }
+
+    var dados = {
+        titulo: titulo,
+        subtitulo: subtitulo,
+        texto: conteudo,
+        layout: layout,
+        categoria: categoria,
+        destaque: destaque,
+        ativo: ativo,
+        data: new Date().toISOString(),
+        atualizadoEm: new Date().toISOString()
+    };
+
+    try {
+        var fileInput = document.getElementById('blog-imagem');
+        if (fileInput.files && fileInput.files[0]) {
+            var file = fileInput.files[0];
+            var compressed = await noticiasCompressImage(file, 1200, 800);
+            var nomeArq = 'blog/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+            var snap = await firebase.storage().ref().child(nomeArq).put(compressed);
+            dados.imagem = await snap.ref.getDownloadURL();
+        }
+
+        if (editId) {
+            await dbFirestore.collection('noticiasAlunos').doc(editId).update(dados);
+            alert('Post atualizado com sucesso!');
+        } else {
+            dados.criadoEm = new Date().toISOString();
+            dados.ordem = Date.now();
+            await dbFirestore.collection('noticiasAlunos').doc().set(dados);
+            alert('Post publicado com sucesso!');
+        }
+        blogLimparForm();
+        blogCarregarLista();
+    } catch (e) {
+        console.error('Erro ao salvar blog:', e);
+        alert('Erro ao salvar: ' + e.message);
+    }
+}
+
+function blogCarregarLista() {
+    if (blogUnsub) blogUnsub();
+    blogUnsub = dbFirestore.collection('noticiasAlunos').orderBy('ordem', 'desc').onSnapshot(function(snap) {
+        blogLista = [];
+        snap.forEach(function(d) {
+            var x = d.data();
+            x.id = d.id;
+            blogLista.push(x);
+        });
+        blogRenderLista();
+    }, function() {
+        document.getElementById('blog-lista').innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Erro ao carregar posts.</div>';
+    });
+}
+
+function blogRenderLista() {
+    var container = document.getElementById('blog-lista');
+    if (!container) return;
+    if (!blogLista.length) {
+        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:12px"><i class="fa-solid fa-newspaper" style="font-size:24px;display:block;margin-bottom:8px;color:#cbd5e1"></i>Nenhum post criado ainda.</div>';
+        return;
+    }
+    var layoutIcons = { hero: 'fa-panorama', lateral: 'fa-table-columns', 'lateral-invertido': 'fa-table-columns', '2colunas': 'fa-columns', '3colunas': 'fa-grip', texto: 'fa-align-left', compacto: 'fa-square' };
+    var layoutNomes = { hero: 'Hero', lateral: 'Lateral', 'lateral-invertido': 'Lat.Invert.', '2colunas': '2 Colunas', '3colunas': '3 Colunas', texto: 'Texto', compacto: 'Compacto' };
+    container.innerHTML = blogLista.map(function(n) {
+        var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR') : '';
+        var thumb = n.imagem ? '<img src="' + n.imagem + '" style="width:56px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0">' : '<div style="width:56px;height:40px;background:#f1f5f9;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#94a3b8"><i class="fa-solid fa-image"></i></div>';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#fff">' +
+            thumb +
+            '<div style="flex:1;min-width:0">' +
+                '<div style="font-size:12px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (n.titulo || 'Sem titulo') + '</div>' +
+                '<div style="display:flex;gap:6px;align-items:center;margin-top:2px">' +
+                    '<span style="font-size:10px;color:#94a3b8">' + dateStr + '</span>' +
+                    '<span style="font-size:9px;padding:1px 5px;background:#f1f5f9;border-radius:4px;color:#64748b"><i class="fa-solid ' + (layoutIcons[n.layout] || 'fa-square') + '" style="margin-right:2px"></i>' + (layoutNomes[n.layout] || n.layout) + '</span>' +
+                    (n.destaque ? '<span style="font-size:9px;padding:1px 5px;background:#fef3c7;border-radius:4px;color:#92400e">Destaque</span>' : '') +
+                    (n.ativo === false ? '<span style="font-size:9px;padding:1px 5px;background:#fee2e2;border-radius:4px;color:#991b1b">Rascunho</span>' : '') +
+                '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:4px">' +
+                '<button class="btn-icon" title="Editar" onclick="blogEditar(\'' + n.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="blogExcluir(\'' + n.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+            '</div></div>';
+    }).join('');
+}
+
+function blogEditar(id) {
+    var post = blogLista.find(function(n) { return n.id === id; });
+    if (!post) return;
+    document.getElementById('blog-edit-id').value = id;
+    document.getElementById('blog-titulo').value = post.titulo || '';
+    document.getElementById('blog-subtitulo').value = post.subtitulo || '';
+    document.getElementById('blog-conteudo').value = post.texto || '';
+    document.getElementById('blog-layout').value = post.layout || 'hero';
+    document.getElementById('blog-categoria').value = post.categoria || '';
+    document.getElementById('blog-destaque').checked = !!post.destaque;
+    document.getElementById('blog-ativo').checked = post.ativo !== false;
+    document.getElementById('blog-form-titulo').textContent = 'Editando Post';
+    if (post.imagem) {
+        document.getElementById('blog-imagem-preview').innerHTML = '<img src="' + post.imagem + '" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #e2e8f0">';
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function blogExcluir(id) {
+    if (!confirm('Excluir este post permanentemente?')) return;
+    try {
+        await dbFirestore.collection('noticiasAlunos').doc(id).delete();
+        alert('Post excluido!');
+        blogCarregarLista();
+    } catch (e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+/* ===== GALERIA - ALBUNS (ADMIN) ===== */
+var galeriaAlbumPendentes = [];
 
 function galeriaAdminVisivel() {
     var s = document.getElementById('admin-galeria');
@@ -6917,77 +7417,137 @@ function galeriaAdminProjetosUnicos(lista) {
 }
 
 function galeriaAdminCarregarProjetos() {
-    var selProj = document.getElementById('galeria-selecao-projeto');
-    if (!selProj) return;
-    var atual = selProj.value;
-    var fontes = [];
-    projetos.forEach(function(p) { fontes.push(p.nome); });
-    turmas.forEach(function(t) { fontes.push(t.projeto); });
-    function aplicar() {
-        var nomes = galeriaAdminProjetosUnicos(fontes);
-        selProj.innerHTML = '<option value="">Projeto...</option>';
-        nomes.forEach(function(n) {
-            selProj.innerHTML += '<option value="' + n + '">' + n + '</option>';
-        });
-        if (atual) selProj.value = atual;
-    }
-    dbFirestore.collection('candidatos').get().then(function(snap) {
-        snap.forEach(function(doc) { fontes.push(doc.data().projeto); });
-        aplicar();
-    }).catch(function() { aplicar(); });
+    var selects = ['galeria-selecao-projeto', 'galeria-album-projeto'];
+    selects.forEach(function(id) {
+        var sel = document.getElementById(id);
+        if (!sel) return;
+        var atual = sel.value;
+        var fontes = [];
+        projetos.forEach(function(p) { fontes.push(p.nome); });
+        turmas.forEach(function(t) { fontes.push(t.projeto); });
+        function aplicar() {
+            var nomes = galeriaAdminProjetosUnicos(fontes);
+            var placeholder = id === 'galeria-selecao-projeto' ? 'Filtrar por projeto...' : 'Projeto...';
+            sel.innerHTML = '<option value="">' + placeholder + '</option>';
+            nomes.forEach(function(n) {
+                sel.innerHTML += '<option value="' + n + '">' + n + '</option>';
+            });
+            if (atual) sel.value = atual;
+        }
+        dbFirestore.collection('candidatos').get().then(function(snap) {
+            snap.forEach(function(doc) { fontes.push(doc.data().projeto); });
+            aplicar();
+        }).catch(function() { aplicar(); });
+    });
 }
 
 function galeriaAdminCarregarTurmas() {
-    var selProj = document.getElementById('galeria-selecao-projeto');
-    var selTurma = document.getElementById('galeria-selecao-turma');
-    if (!selProj || !selTurma) return;
-    var projetoNome = selProj.value;
-    var atualTurma = selTurma.value;
-    selTurma.innerHTML = '<option value="">Turma...</option>';
-    if (!projetoNome) { galeriaAdminCarregar(); return; }
-    var fontes = [];
-    turmas.filter(function(t) { return t.projeto === projetoNome; }).forEach(function(t) { fontes.push(t.nome); });
-    function aplicar() {
-        var nomes = galeriaAdminProjetosUnicos(fontes);
-        selTurma.innerHTML = '<option value="">Turma...</option>';
-        nomes.forEach(function(n) {
-            selTurma.innerHTML += '<option value="' + n + '">' + n + '</option>';
-        });
-        if (atualTurma) selTurma.value = atualTurma;
-        galeriaAdminCarregar();
-    }
-    dbFirestore.collection('candidatos').where('projeto', '==', projetoNome).get().then(function(snap) {
-        snap.forEach(function(doc) { fontes.push(doc.data().turma); });
-        aplicar();
-    }).catch(function() { aplicar(); });
+    var selects = ['galeria-selecao-turma', 'galeria-album-turma'];
+    selects.forEach(function(id) {
+        var sel = document.getElementById(id);
+        if (!sel) return;
+        var atual = sel.value;
+        var fontes = [];
+        turmas.forEach(function(t) { fontes.push(t.nome); });
+        function aplicar() {
+            var nomes = galeriaAdminProjetosUnicos(fontes);
+            var placeholder = id === 'galeria-selecao-turma' ? 'Filtrar por turma...' : 'Turma...';
+            sel.innerHTML = '<option value="">' + placeholder + '</option>';
+            nomes.forEach(function(n) {
+                sel.innerHTML += '<option value="' + n + '">' + n + '</option>';
+            });
+            if (atual) sel.value = atual;
+        }
+        dbFirestore.collection('candidatos').get().then(function(snap) {
+            snap.forEach(function(doc) { fontes.push(doc.data().turma); });
+            aplicar();
+        }).catch(function() { aplicar(); });
+    });
 }
 
 function galeriaAdminInicializar() {
-    galeriaPendentes = [];
-    var thumbs = document.getElementById('galeria-thumbs');
-    var titulo = document.getElementById('galeria-titulo');
-    if (thumbs) thumbs.innerHTML = '';
-    if (titulo) titulo.value = '';
+    galeriaAlbumPendentes = [];
     galeriaAdminCarregarProjetos();
     galeriaAdminCarregarTurmas();
-}
-
-function galeriaAdminOnProjetoChange() {
-    galeriaAdminCarregarTurmas();
-}
-
-function galeriaAdminOnTurmaChange() {
     galeriaAdminCarregar();
 }
 
-function galeriaAdminSelecionarImagens(input) {
-    var thumbs = document.getElementById('galeria-thumbs');
+function galeriaAlbumFiltrarTurmas() {
+    var selProj = document.getElementById('galeria-album-projeto');
+    var selTurma = document.getElementById('galeria-album-turma');
+    if (!selProj || !selTurma) return;
+    var projetoNome = selProj.value;
+    var atual = selTurma.value;
+    selTurma.innerHTML = '<option value="">Turma...</option>';
+    var fontes = [];
+    if (projetoNome) {
+        turmas.filter(function(t) { return t.projeto === projetoNome; }).forEach(function(t) { fontes.push(t.nome); });
+    } else {
+        turmas.forEach(function(t) { fontes.push(t.nome); });
+    }
+    var nomes = galeriaAdminProjetosUnicos(fontes);
+    nomes.forEach(function(n) {
+        selTurma.innerHTML += '<option value="' + n + '">' + n + '</option>';
+    });
+    if (atual) selTurma.value = atual;
+}
+
+function galeriaAbrirModalAlbum() {
+    galeriaAlbumPendentes = [];
+    document.getElementById('galeria-album-edit-id').value = '';
+    document.getElementById('galeria-modal-titulo').textContent = 'Criar Album';
+    document.getElementById('galeria-album-btn-texto').textContent = 'Salvar Album';
+    document.getElementById('galeria-album-btn-fotos').style.display = '';
+    document.getElementById('galeria-album-nome').value = '';
+    document.getElementById('galeria-album-data-evento').value = '';
+    document.getElementById('galeria-album-thumbs').innerHTML = '';
+    document.getElementById('galeria-album-files').value = '';
+    document.querySelectorAll('.galeria-album-portal').forEach(function(cb) { cb.checked = true; });
+    galeriaAdminCarregarProjetos();
+    galeriaAdminCarregarTurmas();
+    document.getElementById('galeria-modal-album').style.display = 'block';
+}
+
+function galeriaAbrirEditarAlbum(albumId) {
+    dbFirestore.collection('galeriaAlbums').doc(albumId).get().then(function(doc) {
+        if (!doc.exists) { alert('Album nao encontrado.'); return; }
+        var a = doc.data();
+        galeriaAlbumPendentes = [];
+        document.getElementById('galeria-album-edit-id').value = albumId;
+        document.getElementById('galeria-modal-titulo').textContent = 'Editar Album';
+        document.getElementById('galeria-album-btn-texto').textContent = 'Salvar Alteracoes';
+        document.getElementById('galeria-album-btn-fotos').style.display = 'none';
+        document.getElementById('galeria-album-nome').value = a.nome || '';
+        document.getElementById('galeria-album-data-evento').value = a.dataEvento || '';
+        document.getElementById('galeria-album-thumbs').innerHTML = '<span style="font-size:11px;color:#64748b">Fotos existentes mantidas. Adicione novas fotos se desejar.</span>';
+        document.getElementById('galeria-album-files').value = '';
+        var portais = a.portais || ['aluno', 'formado', 'docente', 'coordenacao'];
+        document.querySelectorAll('.galeria-album-portal').forEach(function(cb) { cb.checked = portais.indexOf(cb.value) !== -1; });
+        galeriaAdminCarregarProjetos();
+        setTimeout(function() {
+            document.getElementById('galeria-album-projeto').value = a.projeto || '';
+            galeriaAlbumFiltrarTurmas();
+            setTimeout(function() {
+                document.getElementById('galeria-album-turma').value = a.turma || '';
+            }, 200);
+        }, 300);
+        document.getElementById('galeria-modal-album').style.display = 'block';
+    });
+}
+
+function galeriaFecharModalAlbum() {
+    document.getElementById('galeria-modal-album').style.display = 'none';
+    galeriaAlbumPendentes = [];
+}
+
+function galeriaAlbumSelecionarImagens(input) {
+    var thumbs = document.getElementById('galeria-album-thumbs');
     if (thumbs) thumbs.innerHTML = '';
-    galeriaPendentes = [];
+    galeriaAlbumPendentes = [];
     if (!input || !input.files || !input.files.length) return;
     Array.prototype.forEach.call(input.files, function(file) {
         noticiasCompressImage(file).then(function(dataUrl) {
-            galeriaPendentes.push(dataUrl);
+            galeriaAlbumPendentes.push(dataUrl);
             if (thumbs) {
                 var img = document.createElement('img');
                 img.src = dataUrl;
@@ -6998,70 +7558,130 @@ function galeriaAdminSelecionarImagens(input) {
     });
 }
 
-async function galeriaAdminSalvar() {
-    var projeto = document.getElementById('galeria-selecao-projeto').value;
-    var turma = document.getElementById('galeria-selecao-turma').value;
-    var titulo = document.getElementById('galeria-titulo') ? document.getElementById('galeria-titulo').value.trim() : '';
-    if (!projeto || !turma) { alert('Selecione o projeto e a turma.'); return; }
-    if (!galeriaPendentes.length) { alert('Selecione as imagens primeiro.'); return; }
-    var batch = dbFirestore.batch();
-    galeriaPendentes.forEach(function(dataUrl) {
-        batch.set(dbFirestore.collection('galeriaAlunos').doc(), {
-            url: dataUrl,
-            titulo: titulo,
-            projeto: projeto,
-            turma: turma,
-            data: firebase.firestore.FieldValue.serverTimestamp(),
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    });
-    await batch.commit();
-    galeriaPendentes = [];
-    var thumbs = document.getElementById('galeria-thumbs');
-    if (thumbs) thumbs.innerHTML = '';
-    var file = document.getElementById('galeria-file');
-    if (file) file.value = '';
-    alert('Fotos adicionadas a galeria!');
-    galeriaAdminCarregar();
+async function galeriaAlbumSalvar() {
+    var editId = document.getElementById('galeria-album-edit-id').value;
+    var nome = document.getElementById('galeria-album-nome').value.trim();
+    var dataEvento = document.getElementById('galeria-album-data-evento').value;
+    var projeto = document.getElementById('galeria-album-projeto').value;
+    var turma = document.getElementById('galeria-album-turma').value;
+    var portais = [];
+    document.querySelectorAll('.galeria-album-portal:checked').forEach(function(cb) { portais.push(cb.value); });
+    if (!nome) { alert('Digite o nome do album.'); return; }
+    if (!projeto || !turma) { alert('Selecione projeto e turma.'); return; }
+    if (!portais.length) { alert('Selecione pelo menos um portal.'); return; }
+    try {
+        var albumRef;
+        if (editId) {
+            albumRef = dbFirestore.collection('galeriaAlbums').doc(editId);
+            var dadosUpdate = { nome: nome, dataEvento: dataEvento, projeto: projeto, turma: turma, portais: portais };
+            if (galeriaAlbumPendentes.length) {
+                var batch = dbFirestore.batch();
+                galeriaAlbumPendentes.forEach(function(dataUrl) {
+                    batch.set(albumRef.collection('fotos').doc(), { url: dataUrl, data: firebase.firestore.FieldValue.serverTimestamp() });
+                });
+                await batch.commit();
+                var snapFotos = await albumRef.collection('fotos').orderBy('data', 'asc').limit(1).get();
+                if (!snapFotos.empty) { dadosUpdate.capa = snapFotos.docs[0].data().url; }
+                var snapTotal = await albumRef.collection('fotos').get();
+                dadosUpdate.totalFotos = snapTotal.size;
+            }
+            await albumRef.update(dadosUpdate);
+            alert('Album atualizado!');
+        } else {
+            if (!galeriaAlbumPendentes.length) { alert('Adicione pelo menos uma foto.'); return; }
+            albumRef = dbFirestore.collection('galeriaAlbums').doc();
+            await albumRef.set({
+                nome: nome, dataEvento: dataEvento, projeto: projeto, turma: turma, portais: portais,
+                capa: galeriaAlbumPendentes[0], totalFotos: galeriaAlbumPendentes.length,
+                data: firebase.firestore.FieldValue.serverTimestamp(),
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            var batch2 = dbFirestore.batch();
+            galeriaAlbumPendentes.forEach(function(dataUrl) {
+                batch2.set(albumRef.collection('fotos').doc(), { url: dataUrl, data: firebase.firestore.FieldValue.serverTimestamp() });
+            });
+            await batch2.commit();
+            alert('Album criado com sucesso!');
+        }
+        galeriaFecharModalAlbum();
+        galeriaAdminCarregar();
+    } catch (e) {
+        console.error('Erro ao salvar album:', e);
+        alert('Erro ao salvar album: ' + e.message);
+    }
 }
 
 function galeriaAdminCarregar() {
-    var container = document.getElementById('galeria-lista');
+    var container = document.getElementById('galeria-lista-albuns');
     if (!container) return;
     var projeto = document.getElementById('galeria-selecao-projeto').value;
     var turma = document.getElementById('galeria-selecao-turma').value;
-    if (!projeto || !turma) {
-        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Selecione projeto e turma acima.</div>';
-        return;
-    }
-    container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>';
-    dbFirestore.collection('galeriaAlunos').orderBy('data', 'desc').get().then(function(snap) {
+    container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;grid-column:1/-1"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>';
+    dbFirestore.collection('galeriaAlbums').orderBy('data', 'desc').get().then(function(snap) {
         var arr = [];
         snap.forEach(function(doc) {
-            var g = doc.data();
-            g.id = doc.id;
-            if (g.projeto && g.projeto !== projeto) return;
-            if (g.turma && g.turma !== turma) return;
-            arr.push(g);
+            var a = doc.data();
+            a.id = doc.id;
+            if (projeto && a.projeto && a.projeto !== projeto) return;
+            if (turma && a.turma && a.turma !== turma) return;
+            arr.push(a);
         });
         if (!arr.length) {
-            container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Nenhuma foto para este projeto/turma.</div>';
+            container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;grid-column:1/-1">Nenhum album encontrado.</div>';
             return;
         }
-        container.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px">' + arr.map(function(g) {
-            return '<div style="position:relative;width:90px;flex:none">' +
-                '<img src="' + g.url + '" style="width:90px;height:68px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0">' +
-                '<button onclick="galeriaAdminExcluir(\'' + g.id + '\')" title="Excluir" style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:6px;width:20px;height:20px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-trash"></i></button>' +
-                '</div>';
-        }).join('') + '</div>';
+        container.innerHTML = '';
+        var promises = arr.map(function(a) {
+            if (a.capa) return Promise.resolve(a);
+            return dbFirestore.collection('galeriaAlbums').doc(a.id).collection('fotos').orderBy('data', 'asc').limit(1).get().then(function(snap) {
+                if (!snap.empty) { a.capa = snap.docs[0].data().url; }
+                return a;
+            }).catch(function() { return a; });
+        });
+        Promise.all(promises).then(function(results) {
+            container.innerHTML = '';
+            results.forEach(function(a) {
+                var dateStr = a.dataEvento || (a.data ? new Date(a.data.seconds ? a.data.seconds * 1000 : a.data).toLocaleDateString('pt-BR') : '');
+                var portais = a.portais || [];
+                var portalIcons = { aluno: '🎓', formado: '🏆', docente: '📚', coordenacao: '📋' };
+                var portaisHtml = portais.map(function(p) { return '<span style="font-size:10px;background:#e2e8f0;border-radius:4px;padding:2px 5px">' + (portalIcons[p] || '') + ' ' + p + '</span>'; }).join(' ');
+                var capaHtml = a.capa
+                    ? '<img src="' + a.capa + '" style="width:100%;height:140px;object-fit:cover;display:block">'
+                    : '<div style="background:linear-gradient(135deg,#2563eb,#16a34a);padding:20px;text-align:center;color:#fff;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center"><i class="fa-solid fa-images" style="font-size:28px;margin-bottom:8px"></i><div style="font-size:11px;opacity:.8">' + (a.totalFotos || 0) + ' fotos</div></div>';
+                var card = document.createElement('div');
+                card.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;transition:.2s';
+                card.onmouseover = function() { card.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'; };
+                card.onmouseout = function() { card.style.boxShadow = 'none'; };
+                card.innerHTML =
+                    capaHtml +
+                    '<div style="padding:12px">' +
+                        '<div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px">' + a.nome + '</div>' +
+                        '<div style="font-size:11px;color:#64748b">' + a.projeto + ' - ' + a.turma + '</div>' +
+                        (dateStr ? '<div style="font-size:10px;color:#2563eb;margin-top:2px"><i class="fa-solid fa-calendar-days"></i> ' + dateStr + '</div>' : '') +
+                        '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">' + portaisHtml + '</div>' +
+                        '<div style="display:flex;gap:6px;margin-top:10px">' +
+                            '<button onclick="galeriaAbrirEditarAlbum(\'' + a.id + '\')" style="flex:1;padding:6px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;cursor:pointer"><i class="fa-solid fa-pen"></i> Editar</button>' +
+                            '<button onclick="galeriaAdminExcluirAlbum(\'' + a.id + '\')" style="flex:1;padding:6px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;font-size:11px;cursor:pointer"><i class="fa-solid fa-trash"></i> Excluir</button>' +
+                        '</div>' +
+                    '</div>';
+                container.appendChild(card);
+            });
+        });
     }).catch(function() {
-        container.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px;font-size:13px">Erro ao carregar fotos.</div>';
+        container.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px;font-size:13px;grid-column:1/-1">Erro ao carregar albuns.</div>';
     });
 }
 
-function galeriaAdminExcluir(id) {
-    if (!confirm('Remover esta foto da galeria?')) return;
-    dbFirestore.collection('galeriaAlunos').doc(id).delete().then(function() {
+function galeriaAdminExcluirAlbum(id) {
+    if (!confirm('Excluir este album e todas as suas fotos?')) return;
+    var fotosRef = dbFirestore.collection('galeriaAlbums').doc(id).collection('fotos');
+    fotosRef.get().then(function(snap) {
+        var batch = dbFirestore.batch();
+        snap.forEach(function(doc) { batch.delete(doc.ref); });
+        return batch.commit();
+    }).then(function() {
+        return dbFirestore.collection('galeriaAlbums').doc(id).delete();
+    }).then(function() {
         galeriaAdminCarregar();
     });
 }

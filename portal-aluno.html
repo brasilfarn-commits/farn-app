@@ -154,46 +154,116 @@
         .pf-stat-card .pf-stat-val{font-size:22px;font-weight:800;color:var(--gray800);margin-bottom:2px}
         .pf-stat-card .pf-stat-label{font-size:11px;color:var(--gray500);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
 
-        /* News */
-        .pf-noticia-card{background:var(--white);border:none;border-left:4px solid var(--green);border-radius:var(--radius-sm);padding:18px;margin-bottom:14px;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
-        .pf-noticia-card:hover{transform:translateX(4px);box-shadow:var(--shadow-lg);border-left-color:var(--blue)}
-        .pf-noticia-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-        .pf-noticia-badge{background:linear-gradient(135deg,var(--yellow),var(--yellow-l));color:var(--gray800);font-size:10px;font-weight:700;padding:4px 10px;border-radius:var(--radius-xs);text-transform:uppercase;letter-spacing:.3px}
-        .pf-noticia-date{font-size:11px;color:var(--gray400)}
-        .pf-noticia-title{font-size:15px;font-weight:700;color:var(--gray800);margin-bottom:6px}
-        .pf-noticia-text{font-size:13px;color:var(--gray500);line-height:1.6}
-        .pf-noticia-img{width:100%;margin-top:12px;border-radius:var(--radius-sm);border:1px solid var(--gray200)}
+        /* News / Blog */
+        .pf-blog-post{margin-bottom:24px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:.3s;background:#000}
+        .pf-blog-post:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.25)}
+        .pf-blog-hero{position:relative;min-height:260px;cursor:pointer}
+        .pf-blog-hero img{width:100%;height:260px;object-fit:cover;display:block}
+        .pf-blog-hero-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:24px 20px 18px}
+        .pf-blog-hero-cat{display:inline-block;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;background:rgba(22,163,74,.85);color:#fff}
+        .pf-blog-hero-title{font-size:20px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:4px}
+        .pf-blog-hero-sub{font-size:13px;color:rgba(255,255,255,.7)}
+        .pf-blog-lateral{display:grid;grid-template-columns:1fr 1fr;min-height:220px;cursor:pointer}
+        .pf-blog-lateral-inv{display:grid;grid-template-columns:1fr 1fr;min-height:220px;cursor:pointer}
+        .pf-blog-lateral-inv .pf-blog-lat-img{order:2}
+        .pf-blog-lateral-inv .pf-blog-lat-text{order:1}
+        .pf-blog-lat-img{overflow:hidden}
+        .pf-blog-lat-img img{width:100%;height:100%;object-fit:cover;min-height:220px}
+        .pf-blog-lat-text{padding:20px;display:flex;flex-direction:column;justify-content:center;background:#111}
+        .pf-blog-lat-cat{display:inline-block;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;width:fit-content;background:rgba(22,163,74,.85);color:#fff}
+        .pf-blog-lat-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.3}
+        .pf-blog-lat-sub{font-size:12px;color:#94a3b8;line-height:1.5}
+        .pf-blog-2col{display:grid;grid-template-columns:280px 1fr;min-height:200px;cursor:pointer}
+        .pf-blog-2col-img{overflow:hidden}
+        .pf-blog-2col-img img{width:100%;height:100%;object-fit:cover;min-height:200px}
+        .pf-blog-2col-text{padding:20px;display:flex;flex-direction:column;justify-content:center;background:#111}
+        .pf-blog-3col{cursor:pointer}
+        .pf-blog-3col-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+        .pf-blog-3col-grid img{width:100%;height:160px;object-fit:cover;transition:.3s}
+        .pf-blog-3col-grid img:hover{opacity:.85}
+        .pf-blog-3col-text{padding:16px 20px;background:#111}
+        .pf-blog-texto{padding:24px;background:#111;cursor:pointer}
+        .pf-blog-compacto{display:flex;gap:14px;padding:14px;background:#111;cursor:pointer;align-items:center}
+        .pf-blog-compacto-img{width:100px;height:72px;border-radius:8px;overflow:hidden;flex:none}
+        .pf-blog-compacto-img img{width:100%;height:100%;object-fit:cover}
+        .pf-blog-compacto-text{flex:1;min-width:0}
+        .pf-blog-cat-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;background:rgba(22,163,74,.85);color:#fff}
+        .pf-blog-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+        .pf-blog-sub{font-size:12px;color:#94a3b8;margin-bottom:6px}
+        .pf-blog-date{font-size:11px;color:#64748b}
+        .pf-blog-destaque-badge{position:absolute;top:12px;right:12px;background:rgba(245,158,11,.9);color:#fff;font-size:9px;font-weight:700;padding:4px 10px;border-radius:20px;z-index:2;text-transform:uppercase}
         .pf-noticia-empty{text-align:center;padding:48px 20px;color:var(--gray300)}
         .pf-noticia-empty i{font-size:40px;margin-bottom:14px;display:block;color:var(--gray300)}
         .pf-noticia-empty p{font-size:13px;color:var(--gray400)}
-
-        /* Quadros de noticias com fundo preto */
-        #pf-noticias-list .pf-noticia-card{background:#000;border:1px solid #222;border-left:4px solid var(--green)}
-        #pf-noticias-list .pf-noticia-title{color:#fff}
-        #pf-noticias-list .pf-noticia-text{color:#cbd5e1}
-        #pf-noticias-list .pf-noticia-date{color:#94a3b8}
-        #pf-noticias-list .pf-noticia-img{border-color:#333}
+        .pf-blog-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;overflow-y:auto}
+        .pf-blog-modal.active{display:block}
+        .pf-blog-modal-inner{max-width:700px;margin:40px auto;background:#111;border-radius:var(--radius);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+        .pf-blog-modal-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:var(--radius-sm);font-size:16px;cursor:pointer;z-index:1001;transition:.2s}
+        .pf-blog-modal-close:hover{background:rgba(255,255,255,.25)}
+        .pf-blog-modal-body{padding:28px 24px}
+        .pf-blog-modal-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;line-height:1.3}
+        .pf-blog-modal-sub{font-size:14px;color:#94a3b8;margin-bottom:16px;line-height:1.5}
+        .pf-blog-modal-content{font-size:14px;color:#cbd5e1;line-height:1.8;white-space:pre-wrap}
+        .pf-blog-modal-img{width:100%;max-height:400px;object-fit:cover}
 
         /* Right Panel (Chat/Galeria) */
-        .pf-noticias-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;height:calc(100vh - 170px)}
-        .pf-noticias-col{overflow-y:auto;padding-right:8px}
-        .pf-right-panel{background:var(--white);border:none;border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;position:sticky;top:0;box-shadow:var(--shadow)}
+        .pf-noticias-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;min-height:calc(100vh - 170px)}
+        .pf-noticias-col{padding-right:8px}
+        .pf-right-panel{background:#0a0a0a;border:1px solid #262626;border-radius:var(--radius);display:flex;flex-direction:column;overflow:visible;position:sticky;top:80px;box-shadow:var(--shadow)}
         .pf-right-tabs{display:flex;border-bottom:2px solid var(--gray200);flex-shrink:0}
         .pf-right-tab{flex:1;padding:12px;text-align:center;font-size:12px;font-weight:600;color:var(--gray400);cursor:pointer;transition:.2s;border-bottom:2px solid transparent;margin-bottom:-2px}
         .pf-right-tab.active{color:var(--green);border-bottom-color:var(--green)}
         .pf-right-tab:hover{color:var(--gray700)}
-        .pf-right-content{flex:1;overflow:hidden;display:none;min-height:0}
+        .pf-right-content{flex:1;overflow-y:auto;display:none;min-height:0}
         .pf-right-content.active{display:flex;flex-direction:column}
+        .pf-right-content.active .pf-gallery-grid{flex:1;overflow:visible}
 
-        /* Galeria */
-        .pf-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px;overflow-y:auto}
-        .pf-gallery-item{position:relative;border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;aspect-ratio:1;border:2px solid var(--gray200);transition:.3s}
-        .pf-gallery-item:hover{border-color:var(--green);transform:scale(1.03);box-shadow:0 8px 24px rgba(22,163,74,.15)}
-        .pf-gallery-item img{width:100%;height:100%;object-fit:cover}
-        .pf-gallery-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:8px 10px;font-size:10px;color:#fff}
-        .pf-gallery-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray300);padding:20px;text-align:center}
-        .pf-gallery-empty i{font-size:32px;margin-bottom:10px;color:var(--gray300)}
-        .pf-gallery-empty p{font-size:12px;color:var(--gray400)}
+        /* Galeria Instagram-style */
+        .pf-gallery-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:0;overflow:visible}
+        .pf-gallery-card{background:#181818;border:1px solid #262626;border-radius:10px;transition:.3s;position:relative}
+        .pf-gallery-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.3);transform:translateY(-2px)}
+        .pf-gallery-card-header{display:flex;align-items:center;gap:3px;padding:4px 5px;border-radius:10px 10px 0 0}
+        .pf-gallery-card-avatar{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-size:5px;font-weight:700;flex-shrink:0}
+        .pf-gallery-card-user{flex:1;min-width:0}
+        .pf-gallery-card-name{font-size:7px;font-weight:600;color:#e8f2e9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .pf-gallery-card-date{font-size:5px;color:#737373}
+        .pf-gallery-card-img{width:100%;cursor:pointer;aspect-ratio:1;background:#111;border-radius:0;overflow:hidden}
+        .pf-gallery-card-img img{width:100%;height:100%;object-fit:cover;display:block}
+        .pf-gallery-card-body{padding:3px 5px 2px}
+        .pf-gallery-card-title{font-size:7px;color:#e8f2e9;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .pf-gallery-card-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:var(--gray300);text-align:center;grid-column:1/-1}
+        .pf-gallery-card-empty i{font-size:28px;margin-bottom:8px;color:var(--gray300)}
+        .pf-gallery-card-empty p{font-size:11px;color:var(--gray400)}
+        @media(max-width:1100px){.pf-gallery-grid{grid-template-columns:repeat(7,1fr)}}
+        @media(max-width:800px){.pf-gallery-grid{grid-template-columns:repeat(5,1fr)}}
+        @media(max-width:500px){.pf-gallery-grid{grid-template-columns:repeat(3,1fr)}}
+
+        /* Interacoes (curtidas + comentarios) */
+        .pf-interact-bar{display:flex;align-items:center;gap:3px;padding:2px 5px;background:#181818;border-top:1px solid #262626}
+        .pf-interact-btn{display:flex;align-items:center;gap:1px;background:none;border:none;color:#a3a3a3;font-size:7px;cursor:pointer;padding:2px 3px;border-radius:4px;transition:.2s;font-family:inherit}
+        .pf-interact-btn:hover{background:rgba(255,255,255,.08)}
+        .pf-interact-btn.liked{color:#ef4444}
+        .pf-interact-btn i{font-size:8px;transition:.15s}
+        .pf-interact-btn.liked i{animation:pfHeartPop .3s ease}
+
+        .pf-comments-section{position:absolute;top:100%;left:0;right:0;z-index:10;padding:0 7px 5px;background:#1a1a1a;border:1px solid #262626;border-top:none;border-radius:0 0 10px 10px;display:none;max-height:180px;overflow-y:auto}
+        .pf-comments-section.open{display:block}
+        .pf-comments-list{max-height:100px;overflow-y:auto;margin-bottom:3px;padding:0}
+        .pf-comment-item{display:flex;gap:4px;padding:3px 0;border-bottom:1px solid #262626}
+        .pf-comment-avatar{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;flex-shrink:0}
+        .pf-comment-body{flex:1;min-width:0}
+        .pf-comment-name{font-size:7px;font-weight:700;color:#e8f2e9}
+        .pf-comment-text{font-size:8px;color:#a3a3a3;margin-top:1px;word-break:break-word}
+        .pf-comment-date{font-size:6px;color:#525252;margin-top:1px}
+        .pf-comment-actions{display:inline-flex;gap:2px;margin-left:4px;vertical-align:middle}
+        .pf-comment-action-btn{background:none;border:none;color:#525252;font-size:6px;cursor:pointer;padding:2px 3px;border-radius:3px;transition:.15s;line-height:1}
+        .pf-comment-action-btn:hover{color:#e8f2e9;background:rgba(255,255,255,.1)}
+        .pf-comment-action-del:hover{color:#ef4444}
+        .pf-comment-input-wrap{display:flex;gap:3px}
+        .pf-comment-input{flex:1;padding:4px 6px;background:#0a0a0a;border:1px solid #262626;border-radius:6px;color:#e8f2e9;font-size:8px;font-family:inherit;outline:none}
+        .pf-comment-input::placeholder{color:#525252}
+        .pf-comment-send{padding:4px 6px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:8px;cursor:pointer;font-weight:600;transition:.2s;font-family:inherit}
+        .pf-comment-send:hover{background:#15803d}
 
         /* Dados */
         .pf-dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
@@ -311,12 +381,19 @@
         }
 
         /* Photo modal */
-        .pf-photo-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+        .pf-photo-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
         .pf-photo-modal.active{display:flex}
-        .pf-photo-modal img{max-width:90%;max-height:80vh;border-radius:var(--radius);object-fit:contain}
+        .pf-photo-modal img{max-width:90%;max-height:70vh;border-radius:var(--radius);object-fit:contain}
         .pf-photo-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:var(--radius-sm);font-size:16px;cursor:pointer;z-index:1001;transition:.2s}
         .pf-photo-modal-close:hover{background:rgba(255,255,255,.25)}
-        .pf-photo-modal-info{color:var(--gray400);font-size:12px;margin-top:12px}
+        .pf-photo-modal-info{color:var(--gray400);font-size:12px;margin-top:8px;text-align:center;max-width:90%}
+        .pf-photo-modal-panel{width:90%;max-width:500px;margin-top:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;max-height:35vh;overflow:hidden;display:flex;flex-direction:column}
+        .pf-photo-panel-bar{display:flex;align-items:center;gap:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px}
+        .pf-photo-panel-comments{flex:1;overflow-y:auto;margin-bottom:8px;max-height:180px}
+        .pf-photo-panel-input{display:flex;gap:6px}
+        .pf-photo-panel-input input{flex:1;padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;font-size:12px;font-family:inherit;outline:none}
+        .pf-photo-panel-input input::placeholder{color:rgba(255,255,255,.4)}
+        .pf-photo-panel-input button{padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 
         /* ===== CHAT WHATSAPP ===== */
         .chat-container{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}
@@ -442,6 +519,17 @@
 </head>
 <body>
 
+    <!-- OVERLAY MANUTENCAO -->
+    <div id="portais-manutencao" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;background:linear-gradient(135deg,#14532d 0%,#166534 40%,#1e3a8a 100%);align-items:center;justify-content:center;padding:24px;text-align:center;font-family:'Segoe UI',system-ui,sans-serif">
+        <div style="background:#fff;border-radius:20px;padding:42px 32px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35)">
+            <div style="width:72px;height:72px;margin:0 auto 18px;background:linear-gradient(135deg,#facc15,#ca8a04);border-radius:50%;display:flex;align-items:center;justify-content:center">
+                <i class="fa-solid fa-screwdriver-wrench" style="font-size:30px;color:#fff"></i>
+            </div>
+            <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;font-weight:800">Em Manutenção</h2>
+            <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6">Estamos em manutenção. Voltaremos em breve!</p>
+        </div>
+    </div>
+
     <!-- TELA LOGIN -->
     <div id="screen-login">
         <div class="pf-login-card">
@@ -501,7 +589,7 @@
             </div>
             <nav class="pa-drawer-nav">
                 <a href="#" onclick="paShowSection('inicio',this); paCloseMenu(); return false;"><i class="fa-solid fa-house"></i> Início</a>
-                <a href="#" onclick="paShowSection('noticias',this); paCloseMenu(); return false;"><i class="fa-solid fa-newspaper"></i> Notícias</a>
+                <a href="#" onclick="paShowSection('noticias',this); paCloseMenu(); return false;"><i class="fa-solid fa-newspaper"></i> Blog</a>
                 <a href="#" onclick="paShowSection('galeria',this); paCloseMenu(); return false;"><i class="fa-solid fa-images"></i> Galeria</a>
                 <a href="#" onclick="paShowSection('chat',this); paCloseMenu(); return false;"><i class="fa-solid fa-comments"></i> Chat</a>
                 <a href="#" onclick="paShowSection('aulas',this); paCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
@@ -521,7 +609,7 @@
             <!-- SIDEBAR -->
             <div class="pf-sidebar">
                 <div class="pf-nav-item active" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i> Inicio</div>
-                <div class="pf-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i> Noticias</div>
+                <div class="pf-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i> Blog</div>
                 <div class="pf-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
                 <div class="pf-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i> Chat<span id="pf-chat-badge" class="pf-nav-badge hidden">0</span></div>
                 <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
@@ -555,7 +643,7 @@
                         <div class="pf-stat-card" onclick="paShowSection('noticias', document.querySelectorAll('.pf-nav-item')[1])">
                             <i class="fa-solid fa-newspaper"></i>
                             <div class="pf-stat-val">--</div>
-                            <div class="pf-stat-label">Noticias</div>
+                            <div class="pf-stat-label">Blog</div>
                         </div>
                         <div class="pf-stat-card" onclick="paShowSection('aulas', document.querySelectorAll('.pf-nav-item')[5])">
                             <i class="fa-solid fa-chalkboard"></i>
@@ -574,26 +662,25 @@
                     <p class="pf-pedi-baixa-note">Solicitar desligamento definitivo do curso</p>
                 </div>
 
-                <!-- NOTICIAS + CHAT/GALERIA LADO A LADO -->
+                <!-- NOTICIAS -->
                 <div class="pf-section" id="pf-section-noticias">
-                    <div class="pf-noticias-layout">
-                        <div class="pf-noticias-col">
-                            <div id="pf-noticias-slider" data-noticias-slider style="--farn-slider-h:200px;margin-bottom:16px"></div>
-                            <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-newspaper"></i> Noticias</h3>
-                            <div id="pf-noticias-list">
-                                <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
-                            </div>
-                        </div>
-                        <div class="pf-right-panel">
-                            <div class="pf-right-tabs">
-                                <div class="pf-right-tab active" onclick="paRightTab('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
-                            </div>
-                            <div class="pf-right-content active" id="pf-right-galeria">
-                                <div class="pf-gallery-grid" id="pf-gallery-grid">
-                                    <div class="pf-gallery-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div style="text-align:center;padding:80px 20px;color:#94a3b8">
+                        <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#f59e0b"></i>
+                        <h3 style="font-size:18px;color:#fff;margin-bottom:8px">Em Construcao</h3>
+                        <p style="font-size:13px;color:#94a3b8">A secao de noticias esta sendo desenvolvida e estara disponivel em breve.</p>
+                    </div>
+                </div>
+
+                <!-- GALERIA -->
+                <div class="pf-section" id="pf-section-galeria">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                        <h3 style="font-size:18px;color:#fff;margin:0">
+                            <span id="pf-galeria-voltar" style="display:none;cursor:pointer;margin-right:8px" onclick="paGaleriaVoltar()"><i class="fa-solid fa-arrow-left"></i></span>
+                            <i class="fa-solid fa-images" style="margin-right:8px"></i> <span id="pf-galeria-titulo">Galeria</span>
+                        </h3>
+                    </div>
+                    <div class="pf-gallery-grid" id="pf-gallery-grid">
+                        <div class="pf-gallery-card-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
                 </div>
 
@@ -677,7 +764,10 @@
 
                 <!-- AULAS -->
                 <div class="pf-section" id="pf-section-aulas">
-                    <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-chalkboard"></i> Aulas</h3>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                        <h3 style="font-size:16px;color:var(--green);margin:0"><i class="fa-solid fa-chalkboard"></i> Aulas</h3>
+                        <button onclick="paLoadAulas()" style="background:#fff;border:1px solid var(--green);color:var(--green);padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                    </div>
                     <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as aulas do seu projeto e turma.</p>
                     <div id="pf-aula-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
@@ -838,10 +928,27 @@
     </div>
 
     <!-- MODAL FOTO -->
-    <div id="pf-photo-modal" class="pf-photo-modal" onclick="paClosePhoto()">
-        <button class="pf-photo-modal-close"><i class="fa-solid fa-xmark"></i></button>
-        <img id="pf-photo-modal-img" src="">
+    <div id="pf-photo-modal" class="pf-photo-modal" onclick="if(event.target===this)paClosePhoto()">
+        <button class="pf-photo-modal-close" onclick="paClosePhoto()"><i class="fa-solid fa-xmark"></i></button>
+        <img id="pf-photo-modal-img" src="" onclick="event.stopPropagation()">
         <div class="pf-photo-modal-info" id="pf-photo-modal-info"></div>
+        <div class="pf-photo-modal-panel" id="pf-photo-modal-panel" onclick="event.stopPropagation()">
+            <div class="pf-photo-panel-bar">
+                <button class="pf-interact-btn" id="pf-photo-like-btn" onclick="paPhotoToggleLike()"><i class="fa-solid fa-heart"></i> <span id="pf-photo-like-count">0</span></button>
+                <button class="pf-interact-btn" onclick="document.getElementById('pf-photo-comment-input').focus()"><i class="fa-solid fa-comment"></i> <span id="pf-photo-comment-count">0</span></button>
+            </div>
+            <div class="pf-photo-panel-comments" id="pf-photo-comments-list"></div>
+            <div class="pf-photo-panel-input">
+                <input type="text" id="pf-photo-comment-input" placeholder="Escreva um comentario..." onkeydown="if(event.key==='Enter')paPhotoSendComment()">
+                <button onclick="paPhotoSendComment()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BLOG - LEITURA COMPLETA -->
+    <div id="pf-blog-modal" class="pf-blog-modal" onclick="if(event.target===this)paCloseBlog()">
+        <button class="pf-blog-modal-close" onclick="paCloseBlog()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="pf-blog-modal-inner" id="pf-blog-modal-inner"></div>
     </div>
 
     <!-- MODAL EDITAR DADOS -->
@@ -885,6 +992,33 @@
         </div>
     </div>
 
+    <!-- MODAL INATIVO POR FALTA -->
+    <div id="pf-inativo-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);overflow-y:auto;padding:20px" onclick="if(event.target===this)pfInativoFechar()">
+        <div style="background:#fff;border-radius:16px;max-width:700px;margin:0 auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:20px 24px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <div style="font-size:18px;font-weight:700;color:#fff"><i class="fa-solid fa-triangle-exclamation"></i> Atencao: Pendencia de Faltas</div>
+                    <div style="font-size:12px;color:#fecaca;margin-top:2px">Voce esta com status <b>Inativo por Falta</b></div>
+                </div>
+                <button onclick="pfInativoFechar()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="padding:20px 24px">
+                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;margin-bottom:18px">
+                    <p style="font-size:13px;color:#991b1b;line-height:1.6">
+                        <b>Atencao!</b> Voce esta em debito com as justificativas das faltas nas aulas abaixo. 
+                        Para regularizar sua situacao, escreva uma justificativa para cada aula faltada e confirme com sua senha.
+                    </p>
+                </div>
+                <div id="pf-inativo-lista" style="max-height:50vh;overflow-y:auto"></div>
+                <div id="pf-inativo-err" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:12px;margin-top:14px;display:none"></div>
+                <div style="display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0">
+                    <button onclick="pfInativoFechar()" style="flex:1;padding:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;font-size:13px;cursor:pointer">Fechar</button>
+                    <button onclick="pfInativoSalvar()" id="pf-inativo-salvar-btn" style="flex:1;padding:10px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-check"></i> Confirmar Justificativas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL PEDI BAIXA -->
     <div class="pf-baixa-overlay" id="pf-baixa-overlay" onclick="if(event.target===this)paPediBaixaCancelar()">
         <div class="pf-baixa-card">
@@ -906,6 +1040,19 @@
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
     var dbFirestore=firebase.firestore();
+
+    /* ===== MANUTENCAO DOS PORTAIS ===== */
+    async function paChecarManutencaoPortais() {
+        try {
+            var snap = await dbFirestore.collection('config').doc('portais').get();
+            if (snap.exists && snap.data().manutencao === true) {
+                var ov = document.getElementById('portais-manutencao');
+                if (ov) ov.style.display = 'flex';
+            }
+        } catch (e) {}
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', paChecarManutencaoPortais);
+    else paChecarManutencaoPortais();
 
     /* ===== ESTADO ===== */
     var paUser=null;
@@ -1078,6 +1225,11 @@
                 chatInitEmoji();
             }
 
+            /* Se inativo por falta, abre modal de justificativas apos carregar */
+            if (paUser.status === 'Inativo por Falta') {
+                setTimeout(function() { pfInativoAbrir(); }, 800);
+            }
+
         } catch(e) {
             console.error('Erro login aluno:', e);
             errEl.textContent = 'Erro ao acessar. Tente novamente.';
@@ -1085,6 +1237,130 @@
         }
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+    }
+
+    /* ===== INATIVO POR FALTA - MODAL JUSTIFICATIVAS ===== */
+    var pfInativoFaltas = [];
+    var pfInativoFiltros = [];
+
+    async function pfInativoAbrir() {
+        if (!paUser || paUser.status !== 'Inativo por Falta') return;
+        var modal = document.getElementById('pf-inativo-modal');
+        var lista = document.getElementById('pf-inativo-lista');
+        var errEl = document.getElementById('pf-inativo-err');
+        errEl.style.display = 'none';
+        lista.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8"><i class="fa-solid fa-spinner fa-spin" style="font-size:20px"></i><p style="margin-top:8px;font-size:13px">Carregando suas faltas...</p></div>';
+        modal.style.display = 'block';
+
+        try {
+            var snap = await dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).get();
+            pfInativoFiltros = [];
+            snap.forEach(function(doc) {
+                var p = doc.data();
+                if (p.status === 'Falta') {
+                    p._docId = doc.id;
+                    pfInativoFiltros.push(p);
+                }
+            });
+
+            if (pfInativoFiltros.length === 0) {
+                lista.innerHTML = '<div style="text-align:center;padding:30px;color:#16a34a"><i class="fa-solid fa-circle-check" style="font-size:28px"></i><p style="margin-top:8px;font-size:14px;font-weight:600">Nenhuma falta registrada!</p><p style="font-size:12px;color:#64748b;margin-top:4px">Situacao ja regularizada.</p></div>';
+                return;
+            }
+
+            pfInativoFiltros.sort(function(a, b) {
+                return (a.dataAula || '').localeCompare(b.dataAula || '');
+            });
+
+            var html = '';
+            pfInativoFiltros.forEach(function(p, i) {
+                var dataFmt = '';
+                if (p.dataAula) {
+                    try { dataFmt = new Date(p.dataAula + 'T12:00:00').toLocaleDateString('pt-BR'); } catch(e) { dataFmt = p.dataAula; }
+                }
+                var jaTemObs = (p.obs && p.obs.trim()) ? true : false;
+                html += '<div style="background:#fafafa;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:10px">' +
+                    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+                        '<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px"><i class="fa-solid fa-times-circle"></i> FALTA</span>' +
+                        '<span style="font-size:12px;color:#64748b;font-weight:600">' + (p.disciplina || p.aula || 'Aula') + '</span>' +
+                        '<span style="font-size:11px;color:#94a3b8;margin-left:auto">' + dataFmt + '</span>' +
+                    '</div>' +
+                    '<textarea id="pf-inativo-obs-' + i + '" placeholder="' + (jaTemObs ? 'Justificativa ja registrada: ' + paEsc(p.obs) : 'Digite sua justificativa para esta falta...') + '" ' + (jaTemObs ? '' : '') + ' style="width:100%;min-height:60px;padding:10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#1e293b;resize:vertical;font-family:inherit">' + (jaTemObs ? paEsc(p.obs) : '') + '</textarea>' +
+                    (jaTemObs ? '<div style="font-size:10px;color:#16a34a;margin-top:4px"><i class="fa-solid fa-check"></i> Justificativa ja registrada para esta falta</div>' : '') +
+                '</div>';
+            });
+            html += '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:10px">' +
+                '<label style="font-size:12px;color:#0369a1;font-weight:600;display:block;margin-bottom:6px"><i class="fa-solid fa-lock"></i> Confirme com sua senha</label>' +
+                '<input type="password" id="pf-inativo-senha" placeholder="Digite sua senha para confirmar" style="width:100%;padding:10px;background:#fff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;color:#1e293b">' +
+            '</div>';
+            lista.innerHTML = html;
+        } catch(e) {
+            console.error('Erro ao carregar faltas:', e);
+            lista.innerHTML = '<div style="text-align:center;padding:30px;color:#dc2626"><i class="fa-solid fa-triangle-exclamation" style="font-size:20px"></i><p style="margin-top:8px;font-size:13px">Erro ao carregar faltas. Tente novamente.</p></div>';
+        }
+    }
+
+    function pfInativoFechar() {
+        document.getElementById('pf-inativo-modal').style.display = 'none';
+    }
+
+    async function pfInativoSalvar() {
+        var errEl = document.getElementById('pf-inativo-err');
+        var btn = document.getElementById('pf-inativo-salvar-btn');
+        errEl.style.display = 'none';
+
+        var senha = document.getElementById('pf-inativo-senha');
+        if (!senha || !senha.value.trim()) {
+            errEl.textContent = 'Digite sua senha para confirmar.';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (senha.value.trim() !== paUser.senha) {
+            errEl.textContent = 'Senha incorreta. Tente novamente.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        var obsCount = 0;
+        var updates = [];
+        pfInativoFiltros.forEach(function(p, i) {
+            var el = document.getElementById('pf-inativo-obs-' + i);
+            var texto = el ? el.value.trim() : '';
+            if (texto) {
+                obsCount++;
+                updates.push({ docId: p._docId, obs: texto });
+            }
+        });
+
+        if (obsCount === 0) {
+            errEl.textContent = 'Escreva pelo menos uma justificativa antes de confirmar.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+
+        try {
+            for (var j = 0; j < updates.length; j += 10) {
+                var lote = updates.slice(j, j + 10);
+                var batch = dbFirestore.batch();
+                lote.forEach(function(u) {
+                    var ref = dbFirestore.collection('presencasAlunos').doc(u.docId);
+                    batch.update(ref, { obs: u.obs });
+                });
+                await batch.commit();
+            }
+            btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Justificativas salvas!';
+            btn.style.background = '#16a34a';
+            setTimeout(function() { pfInativoFechar(); }, 1200);
+        } catch(e) {
+            console.error('Erro ao salvar justificativas:', e);
+            errEl.textContent = 'Erro ao salvar: ' + e.message;
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Justificativas';
+        }
     }
 
     function paAutoLogin() {
@@ -1128,10 +1404,14 @@
     function paLogout() {
         if (chatUnsub) { chatUnsub(); chatUnsub = null; }
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
+        if (paGalleryUnsub2) { paGalleryUnsub2(); paGalleryUnsub2 = null; }
         if (paNoticiasUnsub) { paNoticiasUnsub(); paNoticiasUnsub = null; }
         if (paAptUnsub) { paAptUnsub(); paAptUnsub = null; }
         if (paAulasUnsub) { paAulasUnsub(); paAulasUnsub = null; }
         if (paAptAulasUnsub) { paAptAulasUnsub(); paAptAulasUnsub = null; }
+        paPhotoCloseInteractions();
+        for (var k in paInteractCache) { if (paInteractCache[k]._unsub) { try{ paInteractCache[k]._unsub(); }catch(e){} } }
+        paInteractCache = {};
         paPresencasCache = {};
         document.getElementById('screen-portal').classList.remove('active');
         localStorage.removeItem('pa_lembrar_cpf');
@@ -1303,9 +1583,8 @@
         if (newsCol) newsCol.classList.remove('hidden-mobile');
 
         if (section === 'galeria') {
-            document.getElementById('pf-section-noticias').classList.add('active');
-            if (newsCol) newsCol.classList.add('hidden-mobile');
-            paRightTab('galeria');
+            document.getElementById('pf-section-galeria').classList.add('active');
+            paLoadGallery();
             return;
         }
 
@@ -1350,27 +1629,142 @@
     /* ===== NOTICIAS ===== */
     function paLoadNoticias() {
         var container = document.getElementById('pf-noticias-list');
-        paNoticiasUnsub = dbFirestore.collection('noticiasAlunos').orderBy('data', 'desc').onSnapshot(function(snap) {
-            if (snap.empty) {
-                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Nenhuma noticia publicada ainda.</p></div>';
-                return;
-            }
-            container.innerHTML = '';
-            snap.forEach(function(doc) {
-                var n = doc.data();
-                var card = document.createElement('div');
-                card.className = 'pf-noticia-card';
-                var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR') : '';
-                var badgeHtml = n.destaque ? '<span class="pf-noticia-badge">DESTAQUE</span>' : '';
-                var imgHtml = n.imagem ? '<img src="' + n.imagem + '" class="pf-noticia-img" alt="Noticia">' : '';
-                card.innerHTML = '<div class="pf-noticia-header">' + badgeHtml + '<span class="pf-noticia-date">' + dateStr + '</span></div>' +
-                    '<div class="pf-noticia-title">' + (n.titulo || '') + '</div>' +
-                    '<div class="pf-noticia-text">' + (n.texto || '') + '</div>' + imgHtml;
-                container.appendChild(card);
-            });
+        if (paNoticiasUnsub) paNoticiasUnsub();
+        var query = dbFirestore.collection('noticiasAlunos').orderBy('ordem', 'desc');
+        if (paBlogFilterVal === 'destaque') {
+            query = dbFirestore.collection('noticiasAlunos').where('destaque', '==', true).orderBy('ordem', 'desc');
+        }
+        paNoticiasUnsub = query.onSnapshot(function(snap) {
+            paRenderBlog(container, snap);
         }, function() {
-            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Erro ao carregar noticias.</p></div>';
+            dbFirestore.collection('noticiasAlunos').orderBy('data', 'desc').onSnapshot(function(snap2) {
+                paRenderBlog(container, snap2);
+            }, function() {
+                container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Erro ao carregar noticias.</p></div>';
+            });
         });
+    }
+
+    function paRenderBlog(container, snap) {
+        if (snap.empty) {
+            container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Nenhuma noticia publicada ainda.</p></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(function(doc) {
+            var n = doc.data();
+            if (n.ativo === false) return;
+            var layout = n.layout || 'hero';
+            var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+            var catHtml = n.categoria ? '<span class="pf-blog-' + (layout === 'hero' ? 'hero-cat' : layout === 'lateral' || layout === 'lateral-invertido' ? 'lat-cat' : 'cat-badge') + '">' + n.categoria + '</span>' : '';
+            var destaqueBadge = n.destaque ? '<span class="pf-blog-destaque-badge"><i class="fa-solid fa-star" style="margin-right:3px"></i> Destaque</span>' : '';
+            var excerpt = (n.texto || '').substring(0, 180) + ((n.texto || '').length > 180 ? '...' : '');
+            var interactBar = paBuildInteractBar('noticiasAlunos', doc.id);
+
+            var card = document.createElement('div');
+            card.className = 'pf-blog-post';
+
+            if (layout === 'hero' && n.imagem) {
+                card.innerHTML = destaqueBadge +
+                    '<div class="pf-blog-hero" onclick="paOpenBlog(\'' + doc.id + '\')">' +
+                        '<img src="' + n.imagem + '" alt="' + (n.titulo || '') + '">' +
+                        '<div class="pf-blog-hero-overlay">' + catHtml +
+                            '<div class="pf-blog-hero-title">' + (n.titulo || '') + '</div>' +
+                            '<div class="pf-blog-hero-sub">' + (n.subtitulo || excerpt) + '</div>' +
+                            '<div class="pf-blog-date" style="margin-top:6px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                        '</div>' +
+                    '</div>' + interactBar;
+            } else if (layout === 'lateral' && n.imagem) {
+                card.innerHTML = destaqueBadge +
+                    '<div class="pf-blog-lateral" onclick="paOpenBlog(\'' + doc.id + '\')">' +
+                        '<div class="pf-blog-lat-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-lat-text">' + catHtml +
+                            '<div class="pf-blog-lat-title">' + (n.titulo || '') + '</div>' +
+                            '<div class="pf-blog-lat-sub">' + (n.subtitulo || excerpt) + '</div>' +
+                            '<div class="pf-blog-date" style="margin-top:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                        '</div>' +
+                    '</div>' + interactBar;
+            } else if (layout === 'lateral-invertido' && n.imagem) {
+                card.innerHTML = destaqueBadge +
+                    '<div class="pf-blog-lateral-inv" onclick="paOpenBlog(\'' + doc.id + '\')">' +
+                        '<div class="pf-blog-lat-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-lat-text">' + catHtml +
+                            '<div class="pf-blog-lat-title">' + (n.titulo || '') + '</div>' +
+                            '<div class="pf-blog-lat-sub">' + (n.subtitulo || excerpt) + '</div>' +
+                            '<div class="pf-blog-date" style="margin-top:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                        '</div>' +
+                    '</div>' + interactBar;
+            } else if (layout === '2colunas' && n.imagem) {
+                card.innerHTML = destaqueBadge +
+                    '<div class="pf-blog-2col" onclick="paOpenBlog(\'' + doc.id + '\')">' +
+                        '<div class="pf-blog-2col-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-2col-text">' + catHtml +
+                            '<div class="pf-blog-title">' + (n.titulo || '') + '</div>' +
+                            '<div class="pf-blog-sub">' + (n.subtitulo || excerpt) + '</div>' +
+                            '<div class="pf-blog-date"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                        '</div>' +
+                    '</div>' + interactBar;
+            } else if (layout === '3colunas' && n.imagem) {
+                card.innerHTML = destaqueBadge +
+                    '<div class="pf-blog-3col" onclick="paOpenBlog(\'' + doc.id + '\')">' +
+                        '<div class="pf-blog-3col-grid"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-3col-text">' + catHtml +
+                            '<div class="pf-blog-title">' + (n.titulo || '') + '</div>' +
+                            '<div class="pf-blog-sub">' + (n.subtitulo || excerpt) + '</div>' +
+                            '<div class="pf-blog-date"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                        '</div>' +
+                    '</div>' + interactBar;
+            } else if (layout === 'compacto' && n.imagem) {
+                card.innerHTML = destaqueBadge +
+                    '<div class="pf-blog-compacto" onclick="paOpenBlog(\'' + doc.id + '\')">' +
+                        '<div class="pf-blog-compacto-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-compacto-text">' + catHtml +
+                            '<div class="pf-blog-title" style="font-size:14px">' + (n.titulo || '') + '</div>' +
+                            '<div class="pf-blog-date"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                        '</div>' +
+                    '</div>' + interactBar;
+            } else {
+                card.innerHTML = destaqueBadge +
+                    '<div class="pf-blog-texto" onclick="paOpenBlog(\'' + doc.id + '\')">' + catHtml +
+                        '<div class="pf-blog-title">' + (n.titulo || '') + '</div>' +
+                        '<div class="pf-blog-sub">' + (n.subtitulo || excerpt) + '</div>' +
+                        '<div class="pf-blog-date" style="margin-top:6px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                    '</div>' + interactBar;
+            }
+            container.appendChild(card);
+            paLoadInteracoes('noticiasAlunos', doc.id);
+        });
+    }
+
+    function paOpenBlog(id) {
+        var ref = dbFirestore.collection('noticiasAlunos').doc(id);
+        ref.get().then(function(doc) {
+            if (!doc.exists) return;
+            var n = doc.data();
+            var inner = document.getElementById('pf-blog-modal-inner');
+            var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+            var catHtml = n.categoria ? '<span class="pf-blog-cat-badge" style="margin-bottom:12px;display:inline-block">' + n.categoria + '</span>' : '';
+            var imgHtml = n.imagem ? '<img class="pf-blog-modal-img" src="' + n.imagem + '" alt="' + (n.titulo || '') + '">' : '';
+            inner.innerHTML = imgHtml +
+                '<div class="pf-blog-modal-body">' + catHtml +
+                    '<div class="pf-blog-modal-title">' + (n.titulo || '') + '</div>' +
+                    '<div class="pf-blog-modal-sub">' + (n.subtitulo || '') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;margin-bottom:16px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
+                    '<div class="pf-blog-modal-content">' + (n.texto || '') + '</div>' +
+                '</div>';
+            document.getElementById('pf-blog-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+    function paCloseBlog() {
+        document.getElementById('pf-blog-modal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    var paBlogFilterVal = '';
+    function paBlogFilter(f) {
+        paBlogFilterVal = f;
+        paLoadNoticias();
     }
 
     /* ===== MEUS DADOS ===== */
@@ -1919,8 +2313,12 @@
             paPresencasCache = {};
             snap.forEach(function(doc) {
                 var p = doc.data();
-                var key = (p.aula || '') + '||' + (p.dataAula || '');
+                var key = (p.dataAula || '') + '||' + (p.disciplina || p.aula || '');
                 paPresencasCache[key] = p;
+                var key2 = (p.dataAula || '') + '||' + (p.aula || '');
+                paPresencasCache[key2] = p;
+                var key3 = (p.dataAula || '') + '||' + (p.disciplina || '');
+                paPresencasCache[key3] = p;
             });
             paRenderAulas(container, myProjeto, myTurma);
         }, function() {});
@@ -1970,13 +2368,30 @@
             var turmaHtml = a.turma ? '<span class="pf-apostila-badge">' + a.turma + '</span>' : '';
             var docenteHtml = a.docente ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.docente + '</span>' : '';
 
-            var presKey = (a.disciplina || '') + '||' + (a.data || '');
-            var presKey2 = (a.conteudo || a.disciplina || '') + '||' + (a.data || '');
-            var pres = paPresencasCache[presKey] || paPresencasCache[presKey2] || null;
+            var pres = null;
+            var dateStr = a.data || '';
+            for (var k in paPresencasCache) {
+                var pp = paPresencasCache[k];
+                if (pp.dataAula === a.data || pp.dataAula === dateStr) {
+                    pres = pp;
+                    break;
+                }
+            }
             if (!pres) {
-                for (var k in paPresencasCache) {
-                    var pp = paPresencasCache[k];
-                    if (pp.dataAula === a.data && (pp.aula || '').indexOf(a.disciplina || '') !== -1) { pres = pp; break; }
+                for (var k2 in paPresencasCache) {
+                    var pp2 = paPresencasCache[k2];
+                    if (pp2.dataAula && a.data && pp2.dataAula.substring(0, 10) === a.data.substring(0, 10)) {
+                        var discP = (pp2.disciplina || '').toLowerCase();
+                        var discA = (a.disciplina || '').toLowerCase();
+                        var contA = (a.conteudo || '').toLowerCase();
+                        var aulaP = (pp2.aula || '').toLowerCase();
+                        if (discP === discA || discA.indexOf(discP) !== -1 || discP.indexOf(discA) !== -1 ||
+                            aulaP.indexOf(discA) !== -1 || discA.indexOf(aulaP) !== -1 ||
+                            aulaP.indexOf(contA) !== -1 || contA.indexOf(aulaP) !== -1) {
+                            pres = pp2;
+                            break;
+                        }
+                    }
                 }
             }
             var statusBadge = '';
@@ -1989,9 +2404,18 @@
             var card = document.createElement('div');
             card.className = 'pf-apostila-card';
             card.style.cursor = 'default';
-            card.innerHTML = '<div class="pf-apostila-icon" style="background:' + (pres ? 'rgba(22,163,74,.08)' : 'rgba(37,99,235,.06)') + ';border-color:' + (pres ? 'rgba(22,163,74,.18)' : 'rgba(37,99,235,.12)') + '"><i class="fa-solid ' + (pres ? 'fa-clipboard-check' : 'fa-chalkboard-user') + '" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + '"></i></div>' +
+            if (pres) {
+                card.style.border = '2px solid rgba(22,163,74,.35)';
+                card.style.background = 'rgba(22,163,74,.04)';
+                card.style.boxShadow = '0 2px 12px rgba(22,163,74,.1)';
+            }
+            card.innerHTML = '<div class="pf-apostila-icon" style="background:' + (pres ? 'rgba(22,163,74,.12)' : 'rgba(37,99,235,.06)') + ';border-color:' + (pres ? 'rgba(22,163,74,.25)' : 'rgba(37,99,235,.12)') + '"><i class="fa-solid ' + (pres ? 'fa-clipboard-check' : 'fa-chalkboard-user') + '" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + ';font-size:18px"></i></div>' +
                 '<div class="pf-apostila-info">' +
-                    '<div class="pf-apostila-titulo" style="color:' + (pres ? '#16a34a' : 'inherit') + '">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + statusBadge + '</div>' +
+                    '<div class="pf-apostila-titulo" style="color:' + (pres ? '#16a34a' : 'inherit') + '">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                    '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px">' +
+                    statusBadge +
+                    (pres ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.1);color:#16a34a;border:1px solid rgba(22,163,74,.25)"><i class="fa-solid fa-check-double"></i> Apontado</span>' : '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.25)"><i class="fa-solid fa-clock"></i> Aguardando</span>') +
+                    '</div>' +
                     '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +
                     '<div class="pf-apostila-meta">' +
                         (dateStr ? '<span><i class="fa-solid fa-calendar-days" style="margin-right:3px"></i>' + dateStr + '</span>' : '') +
@@ -2109,44 +2533,380 @@
         });
     }
 
-    /* ===== GALERIA ===== */
+    /* ===== INTERACOES: CURTIDAS + COMENTARIOS ===== */
+    var paInteractCache = {};
+
+    function paInteractKey(collection, docId) { return collection + '||' + docId; }
+
+    function paBuildInteractBar(collection, docId) {
+        if (!paUser) return '';
+        var key = paInteractKey(collection, docId);
+        var data = paInteractCache[key] || { curtidas: 0, comentarios: 0, euCurti: false };
+        var heartClass = data.euCurti ? 'pf-interact-btn liked' : 'pf-interact-btn';
+        return '<div class="pf-interact-bar">' +
+            '<button class="' + heartClass + '" onclick="event.stopPropagation();paToggleCurtida(\'' + collection + '\',\'' + docId + '\')"><i class="fa-solid fa-heart"></i> <span data-likes="' + key + '">' + data.curtidas + '</span></button>' +
+            '<button class="pf-interact-btn pf-comment-toggle" data-combtn="' + key + '" onclick="event.stopPropagation();paToggleComments(\'' + collection + '\',\'' + docId + '\',this)"><i class="fa-solid fa-comment"></i> <span data-coms="' + key + '">' + data.comentarios + '</span> <i class="fa-solid fa-chevron-down pf-com-arrow" data-comarrow="' + key + '" style="font-size:8px;margin-left:2px;transition:transform .2s"></i></button>' +
+            '</div>' +
+            '<div class="pf-comments-section" data-comsec="' + key + '">' +
+                '<div class="pf-comments-list" data-comlist="' + key + '"></div>' +
+                '<div class="pf-comment-input-wrap">' +
+                    '<input class="pf-comment-input" type="text" placeholder="Escreva um comentario..." onkeydown="if(event.key===\'Enter\')paSendComment(\'' + collection + '\',\'' + docId + '\',this)">' +
+                    '<button class="pf-comment-send" onclick="var inp=this.previousElementSibling;paSendComment(\'' + collection + '\',\'' + docId + '\',inp)">Enviar</button>' +
+                '</div>' +
+            '</div>';
+    }
+
+    function paLoadInteracoes(collection, docId) {
+        var key = paInteractKey(collection, docId);
+        if (paInteractCache[key] && paInteractCache[key]._unsub) return;
+        paInteractCache[key] = paInteractCache[key] || { curtidas: 0, comentarios: 0, euCurti: false };
+
+        var cpf = (paUser && paUser.cpf || '').replace(/\D/g, '');
+        dbFirestore.collection(collection).doc(docId).collection('curtidas').doc(cpf).get().then(function(snap) {
+            paInteractCache[key].euCurti = snap.exists;
+            paInteractCache[key]._curtidaLoaded = true;
+            paUpdateInteractUI(key);
+        }).catch(function(){});
+
+        var countCurtidas = 0;
+        var unsubCurtidas = dbFirestore.collection(collection).doc(docId).collection('curtidas').onSnapshot(function(snap) {
+            paInteractCache[key].curtidas = snap.size;
+            var myDoc = snap.docs.find(function(d){ return d.id === cpf; });
+            paInteractCache[key].euCurti = !!myDoc;
+            paUpdateInteractUI(key);
+        }, function(){});
+        var unsubComentarios = dbFirestore.collection(collection).doc(docId).collection('comentarios').orderBy('data', 'asc').onSnapshot(function(snap) {
+            paInteractCache[key].comentarios = snap.size;
+            paInteractCache[key]._comentariosDocs = snap.docs.map(function(d){ var x = d.data(); x._id = d.id; return x; });
+            paUpdateInteractUI(key);
+            var list = document.querySelector('[data-comlist="' + key + '"]');
+            if (list) paRenderComments(list, snap.docs, collection, docId);
+        }, function(){});
+
+        paInteractCache[key]._unsub = function() { unsubCurtidas(); unsubComentarios(); };
+    }
+
+    function paUpdateInteractUI(key) {
+        var data = paInteractCache[key];
+        if (!data) return;
+        var likesEl = document.querySelector('[data-likes="' + key + '"]');
+        if (likesEl) likesEl.textContent = data.curtidas;
+        var comsEl = document.querySelector('[data-coms="' + key + '"]');
+        if (comsEl) comsEl.textContent = data.comentarios;
+        var btns = document.querySelectorAll('[data-likes="' + key + '"]');
+        btns.forEach(function(el) {
+            var btn = el.closest('.pf-interact-btn');
+            if (btn) { if (data.euCurti) btn.classList.add('liked'); else btn.classList.remove('liked'); }
+        });
+    }
+
+    function paRenderComments(listEl, docs, collection, docId) {
+        listEl.innerHTML = '';
+        var myCpf = (paUser && paUser.cpf || '').replace(/\D/g, '');
+        if (!docs || !docs.length) { listEl.innerHTML = '<div style="text-align:center;padding:8px;font-size:10px;color:#525252">Nenhum comentario ainda</div>'; return; }
+        docs.forEach(function(d) {
+            var c = d.data();
+            var nome = c.nome || c.cpf || 'Aluno';
+            var initials = nome.split(' ').map(function(w){ return w[0]; }).slice(0, 2).join('').toUpperCase();
+            var dateStr = c.data ? new Date(c.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+            var isMeu = c.cpf === myCpf;
+            var actionsHtml = isMeu ? '<span class="pf-comment-actions">' +
+                '<button class="pf-comment-action-btn" onclick="paEditComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\',\'' + (c.texto || '').replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="pf-comment-action-btn pf-comment-action-del" onclick="paDeleteComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                '</span>' : '';
+            var item = document.createElement('div');
+            item.className = 'pf-comment-item';
+            item.setAttribute('data-comment-id', d.id);
+            item.innerHTML = '<div class="pf-comment-avatar">' + initials + '</div>' +
+                '<div class="pf-comment-body"><div class="pf-comment-name">' + nome + actionsHtml + '</div>' +
+                '<div class="pf-comment-text">' + (c.texto || '') + '</div>' +
+                '<div class="pf-comment-date">' + dateStr + '</div></div>';
+            listEl.appendChild(item);
+        });
+        listEl.scrollTop = listEl.scrollHeight;
+    }
+
+    async function paEditComment(collection, docId, commentId, oldText) {
+        var newText = prompt('Editar comentario:', oldText);
+        if (newText === null || !newText.trim()) return;
+        try {
+            await dbFirestore.collection(collection).doc(docId).collection('comentarios').doc(commentId).update({ texto: newText.trim() });
+        } catch (e) { console.error('Erro ao editar comentario:', e); }
+    }
+
+    async function paDeleteComment(collection, docId, commentId) {
+        if (!confirm('Excluir este comentario?')) return;
+        try {
+            await dbFirestore.collection(collection).doc(docId).collection('comentarios').doc(commentId).delete();
+        } catch (e) { console.error('Erro ao excluir comentario:', e); }
+    }
+
+    async function paToggleCurtida(collection, docId) {
+        if (!paUser) return;
+        var cpf = (paUser.cpf || '').replace(/\D/g, '');
+        var ref = dbFirestore.collection(collection).doc(docId).collection('curtidas').doc(cpf);
+        try {
+            var snap = await ref.get();
+            if (snap.exists) {
+                await ref.delete();
+            } else {
+                await ref.set({ cpf: cpf, nome: paUser.nome || '', data: new Date().toISOString() });
+            }
+        } catch (e) { console.error('Erro ao curtir:', e); }
+    }
+
+    async function paSendComment(collection, docId, inputEl) {
+        if (!paUser || !inputEl) return;
+        var texto = (inputEl.value || '').trim();
+        if (!texto) return;
+        inputEl.value = '';
+        try {
+            await dbFirestore.collection(collection).doc(docId).collection('comentarios').add({
+                cpf: (paUser.cpf || '').replace(/\D/g, ''),
+                nome: paUser.nome || 'Aluno',
+                texto: texto,
+                data: new Date().toISOString()
+            });
+            var wrap = inputEl.closest('.pf-comments-section');
+            if (wrap) wrap.classList.remove('open');
+            var card = inputEl.closest('.pf-gallery-card') || inputEl.closest('.pf-noticia-card') || inputEl.closest('.pf-blog-post');
+            if (card) {
+                var arrow = card.querySelector('.pf-com-arrow');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+            paOpenCommentsKey = null;
+        } catch (e) { console.error('Erro ao comentar:', e); }
+    }
+
+    var paOpenCommentsKey = null;
+    function paToggleComments(collection, docId, btnEl) {
+        var key = paInteractKey(collection, docId);
+        var card = btnEl ? btnEl.closest('.pf-gallery-card') || btnEl.closest('.pf-noticia-card') || btnEl.closest('.pf-blog-post') : null;
+        var sec = card ? card.querySelector('.pf-comments-section') : document.querySelector('[data-comsec="' + key + '"]');
+        if (!sec) return;
+        var wasOpen = sec.classList.contains('open');
+        if (paOpenCommentsKey && paOpenCommentsKey !== key) {
+            var prev = document.querySelector('[data-comsec="' + paOpenCommentsKey + '"]');
+            if (!prev) {
+                document.querySelectorAll('.pf-comments-section.open').forEach(function(s) {
+                    if (s !== sec) s.classList.remove('open');
+                });
+            } else if (prev !== sec) {
+                prev.classList.remove('open');
+            }
+            document.querySelectorAll('.pf-com-arrow').forEach(function(a) {
+                if (a.getAttribute('data-comarrow') !== key) a.style.transform = 'rotate(0deg)';
+            });
+        }
+        if (wasOpen) {
+            sec.classList.remove('open');
+            paOpenCommentsKey = null;
+            var arrow = sec.parentElement ? sec.parentElement.querySelector('.pf-com-arrow') : null;
+            if (!arrow && card) arrow = card.querySelector('.pf-com-arrow');
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+        } else {
+            sec.classList.add('open');
+            paOpenCommentsKey = key;
+            var arrow2 = sec.parentElement ? sec.parentElement.querySelector('.pf-com-arrow') : null;
+            if (!arrow2 && card) arrow2 = card.querySelector('.pf-com-arrow');
+            if (arrow2) arrow2.style.transform = 'rotate(180deg)';
+        }
+    }
+
+    /* ===== MODAL FOTO: CURTIDAS + COMENTARIOS ===== */
+    var paPhotoCurrentKey = null;
+    var paPhotoUnsubs = [];
+
+    function paPhotoOpenInteractions(collection, docId) {
+        paPhotoCloseInteractions();
+        var key = collection + '||' + docId;
+        paPhotoCurrentKey = key;
+        var cpf = (paUser && paUser.cpf || '').replace(/\D/g, '');
+
+        dbFirestore.collection(collection).doc(docId).collection('curtidas').doc(cpf).get().then(function(snap) {
+            var btn = document.getElementById('pf-photo-like-btn');
+            var count = document.getElementById('pf-photo-like-count');
+            if (snap.exists) { btn.classList.add('liked'); } else { btn.classList.remove('liked'); }
+        }).catch(function(){});
+
+        var u1 = dbFirestore.collection(collection).doc(docId).collection('curtidas').onSnapshot(function(snap) {
+            document.getElementById('pf-photo-like-count').textContent = snap.size;
+            var myDoc = snap.docs.find(function(d){ return d.id === cpf; });
+            var btn = document.getElementById('pf-photo-like-btn');
+            if (myDoc) btn.classList.add('liked'); else btn.classList.remove('liked');
+        }, function(){});
+        var u2 = dbFirestore.collection(collection).doc(docId).collection('comentarios').orderBy('data', 'asc').onSnapshot(function(snap) {
+            document.getElementById('pf-photo-comment-count').textContent = snap.size;
+            var list = document.getElementById('pf-photo-comments-list');
+            list.innerHTML = '';
+            var myCpf = (paUser && paUser.cpf || '').replace(/\D/g, '');
+            if (!snap.size) { list.innerHTML = '<div style="text-align:center;padding:14px;font-size:11px;color:rgba(255,255,255,.4)">Nenhum comentario ainda</div>'; return; }
+            snap.forEach(function(d) {
+                var c = d.data();
+                var nome = c.nome || c.cpf || 'Aluno';
+                var initials = nome.split(' ').map(function(w){ return w[0]; }).slice(0, 2).join('').toUpperCase();
+                var dateStr = c.data ? new Date(c.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                var isMeu = c.cpf === myCpf;
+                var actionsHtml = isMeu ? '<span class="pf-comment-actions">' +
+                    '<button class="pf-comment-action-btn" onclick="event.stopPropagation();paEditComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\',\'' + (c.texto || '').replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button class="pf-comment-action-btn pf-comment-action-del" onclick="event.stopPropagation();paDeleteComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                    '</span>' : '';
+                var item = document.createElement('div');
+                item.className = 'pf-comment-item';
+                item.setAttribute('data-comment-id', d.id);
+                item.innerHTML = '<div class="pf-comment-avatar">' + initials + '</div>' +
+                    '<div class="pf-comment-body"><div class="pf-comment-name">' + nome + actionsHtml + '</div>' +
+                    '<div class="pf-comment-text">' + (c.texto || '') + '</div>' +
+                    '<div class="pf-comment-date">' + dateStr + '</div></div>';
+                list.appendChild(item);
+            });
+            list.scrollTop = list.scrollHeight;
+        }, function(){});
+        paPhotoUnsubs = [u1, u2];
+    }
+
+    function paPhotoCloseInteractions() {
+        paPhotoUnsubs.forEach(function(u){ try{ u(); }catch(e){} });
+        paPhotoUnsubs = [];
+        paPhotoCurrentKey = null;
+    }
+
+    async function paPhotoToggleLike() {
+        if (!paPhotoCurrentKey || !paUser) return;
+        var parts = paPhotoCurrentKey.split('||');
+        await paToggleCurtida(parts[0], parts[1]);
+    }
+
+    function paPhotoSendComment() {
+        if (!paPhotoCurrentKey || !paUser) return;
+        var input = document.getElementById('pf-photo-comment-input');
+        var parts = paPhotoCurrentKey.split('||');
+        paSendComment(parts[0], parts[1], input);
+    }
+
+    /* ===== GALERIA - ALBUNS ===== */
+    var paGalleryDocs = [];
+    var paGalleryAlbuns = [];
+    var paGalleryAlbumAtual = null;
+    var paGalleryUnsub2 = null;
+
     function paLoadGallery() {
         var grid = document.getElementById('pf-gallery-grid');
         var myProjeto = (paUser && paUser.projeto || '').trim();
         var myTurma = (paUser && paUser.turma || '').trim();
-        paGalleryUnsub = dbFirestore.collection('galeriaAlunos').orderBy('data', 'desc').onSnapshot(function(snap) {
+        paGalleryAlbumAtual = null;
+        document.getElementById('pf-galeria-voltar').style.display = 'none';
+        document.getElementById('pf-galeria-titulo').textContent = 'Galeria';
+        if (paGalleryUnsub2) { paGalleryUnsub2(); paGalleryUnsub2 = null; }
+        paGalleryUnsub2 = dbFirestore.collection('galeriaAlbums').orderBy('data', 'desc').onSnapshot(function(snap) {
+            console.log('galeriaAlbums snapshot:', snap.size, 'albums');
             if (snap.empty) {
-                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+                grid.innerHTML = '<div class="pf-gallery-card-empty"><i class="fa-solid fa-images"></i><p>Nenhum album ainda</p></div>';
+                return;
+            }
+            var allAlbuns = [];
+            snap.forEach(function(doc) {
+                var a = doc.data();
+                a.id = doc.id;
+                var portais = a.portais || [];
+                if (portais.length && portais.indexOf('aluno') === -1) return;
+                if (a.projeto && myProjeto && a.projeto !== myProjeto) return;
+                if (a.turma && myTurma && a.turma !== myTurma) return;
+                allAlbuns.push(a);
+            });
+            if (!allAlbuns.length) {
+                grid.innerHTML = '<div class="pf-gallery-card-empty"><i class="fa-solid fa-images"></i><p>Nenhum album encontrado</p></div>';
+                return;
+            }
+            paGalleryAlbuns = allAlbuns;
+            var promises = allAlbuns.map(function(a) {
+                if (a.capa) return Promise.resolve(a);
+                return dbFirestore.collection('galeriaAlbums').doc(a.id).collection('fotos').orderBy('data', 'asc').limit(1).get().then(function(snap2) {
+                    if (!snap2.empty) a.capa = snap2.docs[0].data().url;
+                    return a;
+                }).catch(function() { return a; });
+            });
+            Promise.all(promises).then(function(results) {
+                grid.innerHTML = '';
+                results.forEach(function(a) {
+                    var dateStr = a.dataEvento || (a.data ? new Date(a.data.seconds ? a.data.seconds * 1000 : a.data).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }) : '');
+                    var card = document.createElement('div');
+                    card.className = 'pf-gallery-card';
+                    card.style.cursor = 'pointer';
+                    card.onclick = function() { paAbrirAlbum(a.id, a.nome); };
+                    var capaHtml = a.capa
+                        ? '<img src="' + a.capa + '" loading="lazy">'
+                        : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%"><i class="fa-solid fa-images" style="font-size:32px;margin-bottom:6px"></i><div style="font-size:10px;opacity:.8">' + (a.totalFotos || 0) + ' fotos</div></div>';
+                    card.innerHTML =
+                        '<div class="pf-gallery-card-img">' + capaHtml + '</div>' +
+                        '<div class="pf-gallery-card-body">' +
+                            '<div class="pf-gallery-card-title"><strong>' + a.nome + '</strong></div>' +
+                            '<div style="font-size:7px;color:#737373;margin-top:2px">' + a.projeto + ' - ' + a.turma + '</div>' +
+                            (dateStr ? '<div style="font-size:7px;color:#60a5fa;margin-top:2px"><i class="fa-solid fa-calendar-days"></i> ' + dateStr + '</div>' : '') +
+                        '</div>';
+                    grid.appendChild(card);
+                });
+            });
+    }, function(err) {
+        console.error('Erro ao carregar galeria:', err);
+        grid.innerHTML = '<div class="pf-gallery-card-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+    });
+    }
+
+    function paAbrirAlbum(albumId, albumNome) {
+        paGalleryAlbumAtual = albumId;
+        var grid = document.getElementById('pf-gallery-grid');
+        document.getElementById('pf-galeria-voltar').style.display = 'inline';
+        document.getElementById('pf-galeria-titulo').textContent = albumNome;
+        grid.innerHTML = '<div class="pf-gallery-card-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando fotos...</p></div>';
+        if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
+        paGalleryUnsub = dbFirestore.collection('galeriaAlbums').doc(albumId).collection('fotos').orderBy('data', 'asc').onSnapshot(function(snap) {
+            if (snap.empty) {
+                grid.innerHTML = '<div class="pf-gallery-card-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto neste album</p></div>';
                 return;
             }
             grid.innerHTML = '';
             var count = 0;
+            paGalleryDocs = [];
             snap.forEach(function(doc) {
                 var g = doc.data();
-                if (g.projeto && myProjeto && g.projeto !== myProjeto) return;
-                if (g.turma && myTurma && g.turma !== myTurma) return;
                 count++;
-                var item = document.createElement('div');
-                item.className = 'pf-gallery-item';
-                item.onclick = function() { paOpenPhoto(g.url); };
-                var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
-                item.innerHTML = '<img src="' + g.url + '" alt="' + (g.titulo||'') + '">' +
-                    '<div class="pf-gallery-date">' + (g.titulo || '') + (dateStr ? ' - ' + dateStr : '') + '</div>';
-                grid.appendChild(item);
+                paGalleryDocs.push({ id: doc.id, data: g });
+                var dateStr = g.data ? new Date(g.data.seconds ? g.data.seconds * 1000 : g.data).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }) : '';
+                var card = document.createElement('div');
+                card.className = 'pf-gallery-card';
+                card.innerHTML =
+                    '<div class="pf-gallery-card-img" onclick="paOpenPhoto(\'' + g.url + '\',\'' + doc.id + '\')">' +
+                        '<img src="' + g.url + '" loading="lazy">' +
+                    '</div>';
+                grid.appendChild(card);
             });
-            if (!count) grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+            if (!count) grid.innerHTML = '<div class="pf-gallery-card-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto neste album</p></div>';
         }, function() {
-            grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+            grid.innerHTML = '<div class="pf-gallery-card-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar fotos</p></div>';
         });
     }
 
+    function paGaleriaVoltar() {
+        if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
+        paLoadGallery();
+    }
+
     /* ===== FOTO MODAL ===== */
-    function paOpenPhoto(src) {
+    var paPhotoCurrentId = null;
+    function paOpenPhoto(src, docId) {
         document.getElementById('pf-photo-modal-img').src = src;
         document.getElementById('pf-photo-modal').classList.add('active');
+        document.getElementById('pf-photo-comment-input').value = '';
+        if (docId && paGalleryAlbumAtual) {
+            paPhotoCurrentId = docId;
+            paPhotoOpenInteractions('galeriaAlbums/' + paGalleryAlbumAtual + '/fotos', docId);
+        }
     }
     function paClosePhoto() {
         document.getElementById('pf-photo-modal').classList.remove('active');
+        paPhotoCloseInteractions();
+        paPhotoCurrentId = null;
     }
 
     /* ===== BAIXAR APP ===== */

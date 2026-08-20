@@ -22,6 +22,19 @@
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const dbFirestore = firebase.firestore();
+
+        /* ===== MANUTENCAO DOS PORTAIS ===== */
+        async function pdChecarManutencaoPortais() {
+            try {
+                const snap = await dbFirestore.collection('config').doc('portais').get();
+                if (snap.exists && snap.data().manutencao === true) {
+                    const ov = document.getElementById('portais-manutencao');
+                    if (ov) ov.style.display = 'flex';
+                }
+            } catch (e) {}
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pdChecarManutencaoPortais);
+        else pdChecarManutencaoPortais();
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -161,14 +174,18 @@
         .pf-chat-send { background:#16a34a; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
         .pf-chat-send:hover { background:#15803d; }
 
-        /* GALERIA */
+        /* GALERIA - ALBUNS */
         .pf-gallery-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
-        .pf-gallery-item { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; border:1px solid #e2e8f0; }
-        .pf-gallery-item img { width:100%; height:100%; object-fit:cover; transition:transform .3s; }
-        .pf-gallery-item:hover img { transform:scale(1.05); }
-        .pf-gallery-item .pf-gallery-date { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#cbd5e1; font-size:10px; padding:4px 6px; text-align:center; }
+        .pf-gallery-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; transition:.2s; }
+        .pf-gallery-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.1); }
+        .pf-gallery-card-img { width:100%; cursor:pointer; aspect-ratio:1; background:#f1f5f9; overflow:hidden; }
+        .pf-gallery-card-img img { width:100%; height:100%; object-fit:cover; display:block; }
+        .pf-gallery-card-body { padding:8px 10px; }
+        .pf-gallery-card-title { font-size:12px; font-weight:600; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .pf-gallery-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
         .pf-gallery-empty i { font-size:28px; margin-bottom:6px; display:block; }
+        .pf-gallery-back { cursor:pointer; color:#2563eb; font-size:13px; margin-bottom:10px; display:none; }
+        .pf-gallery-back:hover { text-decoration:underline; }
 
         /* MODAL FOTO */
         .pf-photo-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.95); align-items:center; justify-content:center; padding:20px; }
@@ -209,6 +226,17 @@
     </style>
 </head>
 <body>
+
+    <!-- OVERLAY MANUTENCAO -->
+    <div id="portais-manutencao" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;background:linear-gradient(135deg,#14532d 0%,#166534 40%,#1e3a8a 100%);align-items:center;justify-content:center;padding:24px;text-align:center;font-family:'Segoe UI',system-ui,sans-serif">
+        <div style="background:#fff;border-radius:20px;padding:42px 32px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35)">
+            <div style="width:72px;height:72px;margin:0 auto 18px;background:linear-gradient(135deg,#facc15,#ca8a04);border-radius:50%;display:flex;align-items:center;justify-content:center">
+                <i class="fa-solid fa-screwdriver-wrench" style="font-size:30px;color:#fff"></i>
+            </div>
+            <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;font-weight:800">Em Manutenção</h2>
+            <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6">Estamos em manutenção. Voltaremos em breve!</p>
+        </div>
+    </div>
 
     <!-- LOGIN -->
     <div id="screen-login">
@@ -492,10 +520,11 @@
                     <p>Fotos atualizadas pelo administrador</p>
                 </div>
                 <div class="pf-right-content">
+                    <div class="pf-gallery-back" id="pd-gallery-back" onclick="pdGaleriaVoltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</div>
                     <div class="pf-gallery-grid" id="pd-gallery-grid">
                         <div class="pf-gallery-empty">
                             <i class="fa-solid fa-images"></i>
-                            <p>Nenhuma foto ainda</p>
+                            <p>Nenhum album ainda</p>
                         </div>
                     </div>
                 </div>
@@ -811,6 +840,7 @@
         function pdLogout() {
             if (pdChatUnsub) { pdChatUnsub(); pdChatUnsub = null; }
             if (pdGalleryUnsub) { pdGalleryUnsub(); pdGalleryUnsub = null; }
+            if (pdGalleryUnsub2) { pdGalleryUnsub2(); pdGalleryUnsub2 = null; }
             document.getElementById('screen-portal').classList.remove('active');
             localStorage.removeItem('pd_lembrar_cpf');
             localStorage.removeItem('pd_lembrar_senha');
@@ -914,8 +944,13 @@
                 aulasDocs.forEach(function(doc) {
                     var d = doc.data();
                     if (d.data) {
-                        var dt = new Date(d.data).getTime();
-                        if (dt >= agora && dt <= agora + seteDias) proximos++;
+                        try {
+                            var dt = new Date(d.data + (d.data.length === 10 ? 'T12:00:00' : ''));
+                            if (!isNaN(dt.getTime())) {
+                                var dtMs = dt.getTime();
+                                if (dtMs >= agora && dtMs <= agora + seteDias) proximos++;
+                            }
+                        } catch (e) {}
                     }
                 });
                 tfmDocs.forEach(function(doc) {
@@ -940,6 +975,8 @@
             if (!sessao) return;
             var docente = JSON.parse(sessao);
 
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block"></i>Carregando aulas...</div>';
+
             dbFirestore.collection('aulas').get().then(function(snap) {
                 var docs = [];
                 snap.forEach(function(doc) {
@@ -955,20 +992,30 @@
                     container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Nenhuma aula cadastrada para voce.</p></div>';
                     return;
                 }
-                var html = '';
+                var html = '<div style="margin-bottom:12px;text-align:right"><button onclick="pdLoadAulas()" style="background:#fff;border:1px solid #16a34a;color:#16a34a;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button></div>';
                 docs.forEach(function(doc) {
                     var d = doc.data();
-                    var dataStr = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
-                    var horaStr = d.hora || '';
+                    var dataStr = '';
+                    if (d.data) {
+                        try {
+                            var dt = new Date(d.data + (d.data.length === 10 ? 'T12:00:00' : ''));
+                            if (!isNaN(dt.getTime())) dataStr = dt.toLocaleDateString('pt-BR');
+                        } catch (e) { dataStr = d.data; }
+                    }
+                    var horaStr = d.horario || d.hora || '';
+                    var tags = '';
+                    if (d.avTeorica === 'Sim') tags += '<span style="background:rgba(168,85,247,.12);color:#9333ea;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-file-lines" style="margin-right:3px"></i>AV Teorica</span> ';
+                    if (d.avPratica === 'Sim') tags += '<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-flask" style="margin-right:3px"></i>AV Pratica</span>';
                     html += '<div class="pd-card">' +
                         '<div class="pd-card-header">' +
                         '<div class="pd-card-titulo">' + pdEsc(d.disciplina || 'Sem disciplina') + '</div>' +
-                        '<div class="pd-card-data">' + pdEsc(dataStr) + ' ' + pdEsc(horaStr) + '</div>' +
+                        '<div class="pd-card-data"><i class="fa-solid fa-calendar-day" style="margin-right:4px"></i>' + pdEsc(dataStr) + (horaStr ? ' <i class="fa-solid fa-clock" style="margin:0 4px"></i>' + pdEsc(horaStr) : '') + '</div>' +
                         '</div>' +
                         '<div class="pd-card-meta">' +
                         '<span><i class="fa-solid fa-chalkboard-user"></i> ' + pdEsc(d.docente || '-') + '</span>' +
                         '<span><i class="fa-solid fa-building"></i> ' + pdEsc(d.projeto || '-') + '</span>' +
                         '<span><i class="fa-solid fa-users"></i> ' + pdEsc(d.turma || '-') + '</span>' +
+                        (tags ? '<span>' + tags + '</span>' : '') +
                         '</div>' +
                         (d.conteudo ? '<div class="pd-card-conteudo"><i class="fa-solid fa-book"></i><strong>Conteudo:</strong> ' + pdEsc(d.conteudo) + '</div>' : '') +
                         '</div>';
@@ -1011,13 +1058,15 @@
                     var horaStr = d.hora || '';
                     var status = d.status || 'Pendente';
                     var statusColor = status === 'Aprovado' ? '#16a34a' : status === 'Rejeitado' ? '#dc2626' : '#ca8a04';
+                    var nomeAg = d.nome || d.projeto || 'Sem nome';
                     html += '<div class="pd-card">' +
                         '<div class="pd-card-header">' +
-                        '<div class="pd-card-titulo">' + pdEsc(d.projeto || 'Sem projeto') + '</div>' +
+                        '<div class="pd-card-titulo">' + pdEsc(nomeAg) + '</div>' +
                         '<div class="pd-card-data">' + pdEsc(dataStr) + ' ' + pdEsc(horaStr) + '</div>' +
                         '</div>' +
                         '<div class="pd-card-meta">' +
                         '<span><i class="fa-solid fa-user-tie"></i> ' + pdEsc(d.docente || '-') + '</span>' +
+                        '<span><i class="fa-solid fa-layer-group"></i> ' + pdEsc(d.turma || '-') + '</span>' +
                         '<span class="pd-card-status" style="color:' + statusColor + '"><i class="fa-solid fa-circle"></i> ' + pdEsc(status) + '</span>' +
                         '</div>' +
                         (d.observacoes ? '<div class="pd-card-conteudo"><i class="fa-solid fa-info"></i>' + pdEsc(d.observacoes) + '</div>' : '') +
@@ -1053,6 +1102,25 @@
             return anos >= 0 ? anos : '';
         }
 
+        function pdTfmRegras() {
+            var padrao = {
+                faixas: [
+                    { limite: 29, rotulo: 'Ate 29 anos', masculino: { A: 25, B: 35, C: 30 }, feminino: { A: 18, B: 28, C: 40 } },
+                    { limite: 39, rotulo: '30 a 39 anos', masculino: { A: 20, B: 30, C: 40 }, feminino: { A: 14, B: 24, C: 50 } },
+                    { limite: 99, rotulo: '40 anos ou +', masculino: { A: 15, B: 25, C: 50 }, feminino: { A: 10, B: 18, C: 60 } }
+                ],
+                exigeDeslocamento: true
+            };
+            try {
+                var raw = localStorage.getItem('tfmRegras1');
+                if (raw) {
+                    var r = JSON.parse(raw);
+                    if (r && Array.isArray(r.faixas) && r.faixas.length === 3) return r;
+                }
+            } catch (e) {}
+            return padrao;
+        }
+
         function pdTfmCalcularAptidao(al, v) {
             if (!v) v = {};
             var genero = (al.genero || '').toLowerCase();
@@ -1063,30 +1131,27 @@
             if (idade === '') {
                 return { avaliado: false, apto: false, motivo: 'Informe a data de nascimento do aluno.' };
             }
-            var lim;
-            if (genero === 'masculino') {
-                if (idade <= 29) lim = { A: 25, B: 35, C: 30 };
-                else if (idade <= 39) lim = { A: 20, B: 30, C: 40 };
-                else lim = { A: 15, B: 25, C: 50 };
-            } else {
-                if (idade <= 29) lim = { A: 18, B: 28, C: 40 };
-                else if (idade <= 39) lim = { A: 14, B: 24, C: 50 };
-                else lim = { A: 10, B: 18, C: 60 };
+            var regras = pdTfmRegras();
+            var faixaSel = null;
+            for (var i = 0; i < regras.faixas.length; i++) {
+                if (idade <= regras.faixas[i].limite) { faixaSel = regras.faixas[i]; break; }
             }
+            if (!faixaSel) faixaSel = regras.faixas[regras.faixas.length - 1];
+            var lim = faixaSel[genero];
             var A = v.flexoes, B = v.abdominais, C = v.corridaSeg, D = v.deslocamentoConcluiu;
-            if (A == null || B == null || C == null || !D) {
+            if (A == null || B == null || C == null || (regras.exigeDeslocamento && !D)) {
                 return { avaliado: false, apto: false, motivo: 'Preencha as questoes A, B, C e D.' };
             }
             var falhas = [];
             if (A < lim.A) falhas.push('A) minimo ' + lim.A + ' flexoes (fez ' + A + ')');
             if (B < lim.B) falhas.push('B) minimo ' + lim.B + ' abdominais (fez ' + B + ')');
             if (C > lim.C) falhas.push('C) maximo ' + lim.C + 's (fez ' + C + 's)');
-            if (D !== 'Sim') falhas.push('D) deslocamento deve ser Sim');
+            if (regras.exigeDeslocamento && D !== 'Sim') falhas.push('D) deslocamento deve ser Sim');
             return {
                 avaliado: true,
                 apto: falhas.length === 0,
                 idade: idade,
-                faixa: idade <= 29 ? 'Ate 29 anos' : (idade <= 39 ? '30 a 39 anos' : '40 anos ou +'),
+                faixa: faixaSel.rotulo,
                 genero: al.genero,
                 motivo: falhas.length ? falhas.join('; ') : 'Todos os criterios atendidos'
             };
@@ -1142,6 +1207,10 @@
                 var dt = ag.dataAgendamento.toMillis ? new Date(ag.dataAgendamento.toMillis()) : new Date(ag.dataAgendamento);
                 if (!isNaN(dt.getTime())) dataFmt = dt.toLocaleDateString('pt-BR') + (ag.hora ? ' ' + ag.hora : '');
             }
+            var nomeAg = ag.nome || ag.projeto || 'TFM';
+            var questoes = ag.questoes || [];
+            var qLabels = { 'A': 'A) Flexoes', 'B': 'B) Abdominais', 'C': 'C) Corrida (seg)', 'D': 'D) Concluiu?' };
+            questoes.forEach(function(q) { if (q.id && q.nome) qLabels[q.id] = q.id + ') ' + q.nome; });
             var rows = '';
             if (!pdTfmAlunos.length) {
                 rows = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">Nenhum aluno ativo encontrado nesta turma.</td></tr>';
@@ -1174,23 +1243,24 @@
                 '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">' +
                 '<div style="display:flex;align-items:center;gap:8px">' +
                 '<i class="fa-solid fa-stopwatch" style="color:#16a34a;font-size:16px"></i>' +
-                '<span style="color:#16a34a;font-weight:700;font-size:14px">Avaliacao do TFM - ' + pdEsc(ag.projeto || '') + ' - ' + pdEsc(ag.turma || '') + '</span>' +
+                '<span style="color:#16a34a;font-weight:700;font-size:14px">Avaliacao - ' + pdEsc(nomeAg) + '</span>' +
                 '</div>' +
                 '<button onclick="pdTfmVoltar()" style="background:#fff;border:1px solid #16a34a;color:#16a34a;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fa-solid fa-arrow-left"></i> Voltar</button>' +
                 '</div>' +
                 '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#475569">' +
                 '<span><i class="fa-solid fa-calendar-day"></i> ' + dataFmt + '</span>' +
                 '<span><i class="fa-solid fa-user-tie"></i> ' + pdEsc(ag.docente || '') + '</span>' +
+                '<span><i class="fa-solid fa-layer-group"></i> ' + pdEsc(ag.turma || '') + '</span>' +
                 (ag.observacoes ? '<span><i class="fa-solid fa-info"></i> ' + pdEsc(ag.observacoes) + '</span>' : '') +
                 '</div>' +
                 '</div>';
             var protocolo = '<div style="padding:14px 18px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px">' +
                 '<div style="font-weight:700;color:#16a34a;font-size:13px;margin-bottom:10px"><i class="fa-solid fa-book"></i> Protocolo</div>' +
                 '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:11px;color:#475569">' +
-                '<div><b>A)</b> Flexao de bracos (1min)</div>' +
-                '<div><b>B)</b> Abdominal remador (1min)</div>' +
-                '<div><b>C)</b> Corrida (seg, menor melhor)</div>' +
-                '<div><b>D)</b> Deslocamento 20kg/50m (Sim/Nao)</div>' +
+                '<div><b>' + pdEsc(qLabels['A'] || 'A) Flexoes') + '</b></div>' +
+                '<div><b>' + pdEsc(qLabels['B'] || 'B) Abdominais') + '</b></div>' +
+                '<div><b>' + pdEsc(qLabels['C'] || 'C) Corrida (seg, menor melhor)') + '</b></div>' +
+                '<div><b>' + pdEsc(qLabels['D'] || 'D) Deslocamento 20kg/50m (Sim/Nao)') + '</b></div>' +
                 '</div>' +
                 '</div>';
             area.innerHTML = header + protocolo +
@@ -2228,28 +2298,100 @@
             }).catch(function(e) { alert('Erro ao salvar: ' + e.message); });
         }
 
-        /* ===== GALERIA ===== */
+        /* ===== GALERIA - ALBUNS ===== */
+        var pdGalleryAlbuns = [];
+        var pdGalleryAlbumAtual = null;
+        var pdGalleryUnsub2 = null;
+
         function pdLoadGallery() {
             var grid = document.getElementById('pd-gallery-grid');
-            pdGalleryUnsub = dbFirestore.collection('galeriaAlunos').orderBy('data', 'desc').onSnapshot(function(snap) {
+            var back = document.getElementById('pd-gallery-back');
+            pdGalleryAlbumAtual = null;
+            if (back) back.style.display = 'none';
+            if (pdGalleryUnsub2) { pdGalleryUnsub2(); pdGalleryUnsub2 = null; }
+            if (pdGalleryUnsub) { pdGalleryUnsub(); pdGalleryUnsub = null; }
+            pdGalleryUnsub2 = dbFirestore.collection('galeriaAlbums').orderBy('data', 'desc').onSnapshot(function(snap) {
                 if (snap.empty) {
-                    grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+                    grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhum album ainda</p></div>';
+                    return;
+                }
+                var allAlbuns = [];
+                snap.forEach(function(doc) {
+                    var a = doc.data();
+                    a.id = doc.id;
+                    var portais = a.portais || [];
+                    if (portais.length && portais.indexOf('docente') === -1) return;
+                    allAlbuns.push(a);
+                });
+                if (!allAlbuns.length) {
+                    grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhum album encontrado</p></div>';
+                    return;
+                }
+                pdGalleryAlbuns = allAlbuns;
+                var promises = allAlbuns.map(function(a) {
+                    if (a.capa) return Promise.resolve(a);
+                    return dbFirestore.collection('galeriaAlbums').doc(a.id).collection('fotos').orderBy('data', 'asc').limit(1).get().then(function(snap2) {
+                        if (!snap2.empty) a.capa = snap2.docs[0].data().url;
+                        return a;
+                    }).catch(function() { return a; });
+                });
+                Promise.all(promises).then(function(results) {
+                    grid.innerHTML = '';
+                    results.forEach(function(a) {
+                        var dateStr = a.dataEvento || (a.data ? new Date(a.data.seconds ? a.data.seconds * 1000 : a.data).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }) : '');
+                        var card = document.createElement('div');
+                        card.className = 'pf-gallery-card';
+                        card.style.cursor = 'pointer';
+                        card.onclick = function() { pdAbrirAlbum(a.id, a.nome); };
+                        var capaHtml = a.capa
+                            ? '<img src="' + a.capa + '" loading="lazy">'
+                            : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff"><i class="fa-solid fa-images" style="font-size:32px;margin-bottom:6px"></i><div style="font-size:11px;opacity:.8">' + (a.totalFotos || 0) + ' fotos</div></div>';
+                        card.innerHTML =
+                            '<div class="pf-gallery-card-img">' + capaHtml + '</div>' +
+                            '<div class="pf-gallery-card-body">' +
+                                '<div class="pf-gallery-card-title"><strong>' + a.nome + '</strong></div>' +
+                                '<div style="font-size:10px;color:#64748b;margin-top:2px">' + a.projeto + ' - ' + a.turma + '</div>' +
+                                (dateStr ? '<div style="font-size:10px;color:#2563eb;margin-top:2px"><i class="fa-solid fa-calendar-days"></i> ' + dateStr + '</div>' : '') +
+                            '</div>';
+                        grid.appendChild(card);
+                    });
+                });
+            }, function() {
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+            });
+        }
+
+        function pdAbrirAlbum(albumId, albumNome) {
+            pdGalleryAlbumAtual = albumId;
+            var grid = document.getElementById('pd-gallery-grid');
+            var back = document.getElementById('pd-gallery-back');
+            if (back) back.style.display = 'block';
+            grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando fotos...</p></div>';
+            if (pdGalleryUnsub) { pdGalleryUnsub(); pdGalleryUnsub = null; }
+            pdGalleryUnsub = dbFirestore.collection('galeriaAlbums').doc(albumId).collection('fotos').orderBy('data', 'asc').onSnapshot(function(snap) {
+                if (snap.empty) {
+                    grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto neste album</p></div>';
                     return;
                 }
                 grid.innerHTML = '';
                 snap.forEach(function(doc) {
                     var g = doc.data();
-                    var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
-                    var item = document.createElement('div');
-                    item.className = 'pf-gallery-item';
-                    item.innerHTML = '<img src="' + g.url + '" alt="Foto">' +
-                        '<div class="pf-gallery-date">' + dateStr + '</div>';
-                    item.onclick = function() { pdOpenPhoto(g.url, dateStr); };
-                    grid.appendChild(item);
+                    var card = document.createElement('div');
+                    card.className = 'pf-gallery-card';
+                    card.innerHTML =
+                        '<div class="pf-gallery-card-img" onclick="pdOpenPhoto(\'' + g.url + '\')">' +
+                            '<img src="' + g.url + '" loading="lazy">' +
+                        '</div>';
+                    grid.appendChild(card);
                 });
             }, function() {
-                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria.</p></div>';
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar fotos</p></div>';
             });
+        }
+
+        function pdGaleriaVoltar() {
+            if (pdGalleryUnsub) { pdGalleryUnsub(); pdGalleryUnsub = null; }
+            pdLoadGallery();
         }
 
         function pdOpenPhoto(url, info) {

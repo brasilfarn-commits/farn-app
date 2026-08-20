@@ -21,6 +21,19 @@
         };
         firebase.initializeApp(firebaseConfig);
         const dbFirestore = firebase.firestore();
+
+        /* ===== MANUTENCAO DOS PORTAIS ===== */
+        async function pfChecarManutencaoPortais() {
+            try {
+                const snap = await dbFirestore.collection('config').doc('portais').get();
+                if (snap.exists && snap.data().manutencao === true) {
+                    const ov = document.getElementById('portais-manutencao');
+                    if (ov) ov.style.display = 'flex';
+                }
+            } catch (e) {}
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pfChecarManutencaoPortais);
+        else pfChecarManutencaoPortais();
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -224,14 +237,18 @@
         .pf-chat-send { background:#16a34a; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
         .pf-chat-send:hover { background:#15803d; }
 
-        /* GALERIA */
+        /* GALERIA - ALBUNS */
         .pf-gallery-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
-        .pf-gallery-item { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; border:1px solid #e2e8f0; }
-        .pf-gallery-item img { width:100%; height:100%; object-fit:cover; transition:transform .3s; }
-        .pf-gallery-item:hover img { transform:scale(1.05); }
-        .pf-gallery-item .pf-gallery-date { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#cbd5e1; font-size:10px; padding:4px 6px; text-align:center; }
+        .pf-gallery-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; transition:.2s; }
+        .pf-gallery-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.1); }
+        .pf-gallery-card-img { width:100%; cursor:pointer; aspect-ratio:1; background:#f1f5f9; overflow:hidden; }
+        .pf-gallery-card-img img { width:100%; height:100%; object-fit:cover; display:block; }
+        .pf-gallery-card-body { padding:8px 10px; }
+        .pf-gallery-card-title { font-size:12px; font-weight:600; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .pf-gallery-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
         .pf-gallery-empty i { font-size:28px; margin-bottom:6px; display:block; }
+        .pf-gallery-back { cursor:pointer; color:#16a34a; font-size:13px; margin-bottom:10px; display:none; }
+        .pf-gallery-back:hover { text-decoration:underline; }
 
         /* MODAL FOTO */
         .pf-photo-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.95); align-items:center; justify-content:center; padding:20px; }
@@ -272,6 +289,17 @@
     </style>
 </head>
 <body>
+
+    <!-- OVERLAY MANUTENCAO -->
+    <div id="portais-manutencao" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;background:linear-gradient(135deg,#14532d 0%,#166534 40%,#1e3a8a 100%);align-items:center;justify-content:center;padding:24px;text-align:center;font-family:'Segoe UI',system-ui,sans-serif">
+        <div style="background:#fff;border-radius:20px;padding:42px 32px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35)">
+            <div style="width:72px;height:72px;margin:0 auto 18px;background:linear-gradient(135deg,#facc15,#ca8a04);border-radius:50%;display:flex;align-items:center;justify-content:center">
+                <i class="fa-solid fa-screwdriver-wrench" style="font-size:30px;color:#fff"></i>
+            </div>
+            <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;font-weight:800">Em Manutenção</h2>
+            <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6">Estamos em manutenção. Voltaremos em breve!</p>
+        </div>
+    </div>
 
     <!-- LOGIN -->
     <div id="screen-login">
@@ -485,10 +513,11 @@
                     <p>Fotos atualizadas pelo administrador</p>
                 </div>
                 <div class="pf-right-content">
+                    <div class="pf-gallery-back" id="pf-gallery-back" onclick="pfGaleriaVoltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</div>
                     <div class="pf-gallery-grid" id="pf-gallery-grid">
                         <div class="pf-gallery-empty">
                             <i class="fa-solid fa-images"></i>
-                            <p>Nenhuma foto ainda</p>
+                            <p>Nenhum album ainda</p>
                         </div>
                     </div>
                 </div>
@@ -663,6 +692,7 @@
     function pfLogout() {
         if (pfChatUnsub) { pfChatUnsub(); pfChatUnsub = null; }
         if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
+        if (pfGalleryUnsub2) { pfGalleryUnsub2(); pfGalleryUnsub2 = null; }
         if (pfNoticiasUnsub) { pfNoticiasUnsub(); pfNoticiasUnsub = null; }
         document.getElementById('screen-portal').classList.remove('active');
         localStorage.removeItem('pf_lembrar_cpf');
@@ -1069,28 +1099,100 @@
         }
     });
 
-    /* ===== GALERIA ===== */
+    /* ===== GALERIA - ALBUNS ===== */
+    var pfGalleryAlbuns = [];
+    var pfGalleryAlbumAtual = null;
+    var pfGalleryUnsub2 = null;
+
     function pfLoadGallery() {
         var grid = document.getElementById('pf-gallery-grid');
-        pfGalleryUnsub = dbFirestore.collection('galeriaFormados').orderBy('data', 'desc').onSnapshot(function(snap) {
+        var back = document.getElementById('pf-gallery-back');
+        pfGalleryAlbumAtual = null;
+        if (back) back.style.display = 'none';
+        if (pfGalleryUnsub2) { pfGalleryUnsub2(); pfGalleryUnsub2 = null; }
+        if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
+        pfGalleryUnsub2 = dbFirestore.collection('galeriaAlbums').orderBy('data', 'desc').onSnapshot(function(snap) {
             if (snap.empty) {
-                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto ainda</p></div>';
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhum album ainda</p></div>';
+                return;
+            }
+            var allAlbuns = [];
+            snap.forEach(function(doc) {
+                var a = doc.data();
+                a.id = doc.id;
+                var portais = a.portais || [];
+                if (portais.length && portais.indexOf('formado') === -1) return;
+                allAlbuns.push(a);
+            });
+            if (!allAlbuns.length) {
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhum album encontrado</p></div>';
+                return;
+            }
+            pfGalleryAlbuns = allAlbuns;
+            var promises = allAlbuns.map(function(a) {
+                if (a.capa) return Promise.resolve(a);
+                return dbFirestore.collection('galeriaAlbums').doc(a.id).collection('fotos').orderBy('data', 'asc').limit(1).get().then(function(snap2) {
+                    if (!snap2.empty) a.capa = snap2.docs[0].data().url;
+                    return a;
+                }).catch(function() { return a; });
+            });
+            Promise.all(promises).then(function(results) {
+                grid.innerHTML = '';
+                results.forEach(function(a) {
+                    var dateStr = a.dataEvento || (a.data ? new Date(a.data.seconds ? a.data.seconds * 1000 : a.data).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }) : '');
+                    var card = document.createElement('div');
+                    card.className = 'pf-gallery-card';
+                    card.style.cursor = 'pointer';
+                    card.onclick = function() { pfAbrirAlbum(a.id, a.nome); };
+                    var capaHtml = a.capa
+                        ? '<img src="' + a.capa + '" loading="lazy">'
+                        : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:linear-gradient(135deg,#16a34a,#0d9488);color:#fff"><i class="fa-solid fa-images" style="font-size:32px;margin-bottom:6px"></i><div style="font-size:11px;opacity:.8">' + (a.totalFotos || 0) + ' fotos</div></div>';
+                    card.innerHTML =
+                        '<div class="pf-gallery-card-img">' + capaHtml + '</div>' +
+                        '<div class="pf-gallery-card-body">' +
+                            '<div class="pf-gallery-card-title"><strong>' + a.nome + '</strong></div>' +
+                            '<div style="font-size:10px;color:#64748b;margin-top:2px">' + a.projeto + ' - ' + a.turma + '</div>' +
+                            (dateStr ? '<div style="font-size:10px;color:#16a34a;margin-top:2px"><i class="fa-solid fa-calendar-days"></i> ' + dateStr + '</div>' : '') +
+                        '</div>';
+                    grid.appendChild(card);
+                });
+            });
+        }, function() {
+            grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+        });
+    }
+
+    function pfAbrirAlbum(albumId, albumNome) {
+        pfGalleryAlbumAtual = albumId;
+        var grid = document.getElementById('pf-gallery-grid');
+        var back = document.getElementById('pf-gallery-back');
+        if (back) back.style.display = 'block';
+        grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando fotos...</p></div>';
+        if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
+        pfGalleryUnsub = dbFirestore.collection('galeriaAlbums').doc(albumId).collection('fotos').orderBy('data', 'asc').onSnapshot(function(snap) {
+            if (snap.empty) {
+                grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Nenhuma foto neste album</p></div>';
                 return;
             }
             grid.innerHTML = '';
             snap.forEach(function(doc) {
                 var g = doc.data();
-                var item = document.createElement('div');
-                item.className = 'pf-gallery-item';
-                item.onclick = function() { pfOpenPhoto(g.url); };
-                var dateStr = g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '';
-                item.innerHTML = '<img src="' + g.url + '" alt="' + (g.titulo||'') + '">' +
-                    '<div class="pf-gallery-date">' + (g.titulo || '') + (dateStr ? ' - ' + dateStr : '') + '</div>';
-                grid.appendChild(item);
+                var card = document.createElement('div');
+                card.className = 'pf-gallery-card';
+                card.innerHTML =
+                    '<div class="pf-gallery-card-img" onclick="pfOpenPhoto(\'' + g.url + '\')">' +
+                        '<img src="' + g.url + '" loading="lazy">' +
+                    '</div>';
+                grid.appendChild(card);
             });
         }, function() {
-            grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar galeria</p></div>';
+            grid.innerHTML = '<div class="pf-gallery-empty"><i class="fa-solid fa-images"></i><p>Erro ao carregar fotos</p></div>';
         });
+    }
+
+    function pfGaleriaVoltar() {
+        if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
+        pfLoadGallery();
     }
 
     /* ===== FOTO MODAL ===== */

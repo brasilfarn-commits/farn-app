@@ -88,6 +88,17 @@
 </head>
 <body>
 
+    <!-- OVERLAY MANUTENCAO -->
+    <div id="portais-manutencao" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;background:linear-gradient(135deg,#14532d 0%,#166534 40%,#1e3a8a 100%);align-items:center;justify-content:center;padding:24px;text-align:center;font-family:'Segoe UI',system-ui,sans-serif">
+        <div style="background:#fff;border-radius:20px;padding:42px 32px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35)">
+            <div style="width:72px;height:72px;margin:0 auto 18px;background:linear-gradient(135deg,#facc15,#ca8a04);border-radius:50%;display:flex;align-items:center;justify-content:center">
+                <i class="fa-solid fa-screwdriver-wrench" style="font-size:30px;color:#fff"></i>
+            </div>
+            <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;font-weight:800">Em Manutenção</h2>
+            <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6">Estamos em manutenção. Voltaremos em breve!</p>
+        </div>
+    </div>
+
     <!-- TELA LOGIN -->
     <div id="screen-login">
         <div class="pf-login-card">
@@ -154,6 +165,19 @@
         var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
         if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
         var dbFirestore=firebase.firestore();
+
+        /* ===== MANUTENCAO DOS PORTAIS ===== */
+        async function pcChecarManutencaoPortais() {
+            try {
+                var snap = await dbFirestore.collection('config').doc('portais').get();
+                if (snap.exists && snap.data().manutencao === true) {
+                    var ov = document.getElementById('portais-manutencao');
+                    if (ov) ov.style.display = 'flex';
+                }
+            } catch (e) {}
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pcChecarManutencaoPortais);
+        else pcChecarManutencaoPortais();
 
         /* ===== ESTADO ===== */
         var pcUser=null;
