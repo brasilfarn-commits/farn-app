@@ -1342,18 +1342,56 @@
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
 
         try {
+            /* Atualiza presencasAlunos: obs + status Justificada */
             for (var j = 0; j < updates.length; j += 10) {
                 var lote = updates.slice(j, j + 10);
                 var batch = dbFirestore.batch();
                 lote.forEach(function(u) {
                     var ref = dbFirestore.collection('presencasAlunos').doc(u.docId);
-                    batch.update(ref, { obs: u.obs });
+                    batch.update(ref, { obs: u.obs, status: 'Justificada' });
                 });
                 await batch.commit();
             }
-            btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Justificativas salvas!';
+
+            /* Sincroniza com apontamentos do admin */
+            for (var k = 0; k < updates.length; k++) {
+                var u = updates[k];
+                var falta = pfInativoFiltros.find(function(f) { return f._docId === u.docId; });
+                if (falta && falta.apontamentoId) {
+                    try {
+                        var aptRef = await dbFirestore.collection('apontamentos').doc(falta.apontamentoId).get();
+                        if (aptRef.exists) {
+                            var aptData = aptRef.data();
+                            var alunos = aptData.alunos || [];
+                            var alterou = false;
+                            for (var a = 0; a < alunos.length; a++) {
+                                if (alunos[a].cpf === paUser.cpf && alunos[a].status === 'Falta') {
+                                    alunos[a].status = 'Justificada';
+                                    alunos[a].obs = u.obs;
+                                    alterou = true;
+                                }
+                            }
+                            if (alterou) {
+                                await dbFirestore.collection('apontamentos').doc(falta.apontamentoId).update({ alunos: alunos });
+                            }
+                        }
+                    } catch (e) { console.error('Erro ao sincronizar apontamento:', e); }
+                }
+            }
+
+            /* Reativa aluno */
+            if (paUser && paUser._docId) {
+                await dbFirestore.collection('candidatos').doc(paUser._docId).update({
+                    status: 'Ativo',
+                    inativoPorFaltaEm: firebase.firestore.FieldValue.delete(),
+                    inativoPorFaltaMotivo: firebase.firestore.FieldValue.delete()
+                });
+                paUser.status = 'Ativo';
+            }
+
+            btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Justificativas salvas e situacao regularizada!';
             btn.style.background = '#16a34a';
-            setTimeout(function() { pfInativoFechar(); }, 1200);
+            setTimeout(function() { pfInativoFechar(); }, 2000);
         } catch(e) {
             console.error('Erro ao salvar justificativas:', e);
             errEl.textContent = 'Erro ao salvar: ' + e.message;

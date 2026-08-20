@@ -714,6 +714,7 @@ async function initApp() {
         configInstituicaoCarregarHome();
         renderList();
         carregarEstadoPortais();
+        apontamentoCarregarHistorico();
         if (restoreFormState()) {
             showAdminSection('admin-form-candidato', document.querySelector('.nav-item:nth-child(2)'));
             await populateTurmaSelect();
@@ -2709,6 +2710,359 @@ function exportarRegimentoCSV() {
     link.click();
 }
 
+// ===== MODAL SELECAO CARTEIRA/CERTIFICADO =====
+var relDocTipo = '';
+var relDocModoSel = '';
+
+function relDocAbrir(tipo) {
+    relDocTipo = tipo;
+    relDocModoSel = '';
+    var modal = document.getElementById('modal-rel-doc');
+    var titulo = document.getElementById('rel-doc-titulo');
+    var desc = document.getElementById('rel-doc-desc');
+    var cpfArea = document.getElementById('rel-doc-cpf-area');
+    var turmaArea = document.getElementById('rel-doc-turma-area');
+    var errEl = document.getElementById('rel-doc-err');
+    var cpfInput = document.getElementById('rel-doc-cpf');
+    var turmaSel = document.getElementById('rel-doc-turma-sel');
+
+    cpfArea.style.display = 'none';
+    turmaArea.style.display = 'none';
+    errEl.style.display = 'none';
+    cpfInput.value = '';
+    document.getElementById('rel-doc-btn-ind').style.borderColor = '#e2e8f0';
+    document.getElementById('rel-doc-btn-ind').style.background = '#f8fafc';
+    document.getElementById('rel-doc-btn-ind').querySelector('i').style.color = '#64748b';
+    document.getElementById('rel-doc-btn-turma').style.borderColor = '#e2e8f0';
+    document.getElementById('rel-doc-btn-turma').style.background = '#f8fafc';
+    document.getElementById('rel-doc-btn-turma').querySelector('i').style.color = '#64748b';
+
+    if (tipo === 'carteira-aluno') {
+        titulo.innerHTML = '<i class="fa-solid fa-id-card" style="color:#16a34a;margin-right:8px"></i> Carteira de Aluno';
+        desc.textContent = 'Gere a carteira de identificacao de aluno individual ou para uma turma inteira.';
+    } else if (tipo === 'certificado-formado') {
+        titulo.innerHTML = '<i class="fa-solid fa-award" style="color:#2563eb;margin-right:8px"></i> Certificado de Formado';
+        desc.textContent = 'Gere o certificado de formacao individual ou para uma turma inteira.';
+    } else if (tipo === 'carteira-formado') {
+        titulo.innerHTML = '<i class="fa-solid fa-id-card-clip" style="color:#7c3aed;margin-right:8px"></i> Carteira de Formado';
+        desc.textContent = 'Gere a carteira de formado individual ou para uma turma inteira.';
+    }
+
+    turmaSel.innerHTML = '<option value="">Carregando...</option>';
+    modal.classList.remove('hidden');
+
+    var turmas = new Set();
+    var fonte = tipo === 'certificado-formado' || tipo === 'carteira-formado'
+        ? candidatos.filter(function(c) { return (c.tipoPessoa || 'A') === 'F'; })
+        : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+    fonte.forEach(function(c) { if (c.turma) turmas.add(c.turma); });
+    turmaSel.innerHTML = '<option value="">Selecione a turma...</option>';
+    Array.from(turmas).sort().forEach(function(t) {
+        turmaSel.innerHTML += '<option value="' + t + '">' + t + '</option>';
+    });
+}
+
+function relDocFechar() {
+    document.getElementById('modal-rel-doc').classList.add('hidden');
+}
+
+function relDocModo(modo) {
+    relDocModoSel = modo;
+    var cpfArea = document.getElementById('rel-doc-cpf-area');
+    var turmaArea = document.getElementById('rel-doc-turma-area');
+    var btnInd = document.getElementById('rel-doc-btn-ind');
+    var btnTurma = document.getElementById('rel-doc-btn-turma');
+    document.getElementById('rel-doc-err').style.display = 'none';
+
+    if (modo === 'individual') {
+        cpfArea.style.display = 'block';
+        turmaArea.style.display = 'none';
+        btnInd.style.borderColor = '#16a34a'; btnInd.style.background = '#f0fdf4';
+        btnInd.querySelector('i').style.color = '#16a34a';
+        btnTurma.style.borderColor = '#e2e8f0'; btnTurma.style.background = '#f8fafc';
+        btnTurma.querySelector('i').style.color = '#64748b';
+    } else {
+        cpfArea.style.display = 'none';
+        turmaArea.style.display = 'block';
+        btnTurma.style.borderColor = '#16a34a'; btnTurma.style.background = '#f0fdf4';
+        btnTurma.querySelector('i').style.color = '#16a34a';
+        btnInd.style.borderColor = '#e2e8f0'; btnInd.style.background = '#f8fafc';
+        btnInd.querySelector('i').style.color = '#64748b';
+    }
+}
+
+function relDocGerar() {
+    var errEl = document.getElementById('rel-doc-err');
+    errEl.style.display = 'none';
+    if (!relDocModoSel) { errEl.textContent = 'Selecione o modo (Individual ou Por Turma).'; errEl.style.display = 'block'; return; }
+
+    if (relDocModoSel === 'individual') {
+        var cpf = document.getElementById('rel-doc-cpf').value.replace(/\D/g, '');
+        if (cpf.length < 10) { errEl.textContent = 'Digite um CPF valido.'; errEl.style.display = 'block'; return; }
+        var fonte = relDocTipo === 'certificado-formado' || relDocTipo === 'carteira-formado'
+            ? candidatos.filter(function(c) { return (c.tipoPessoa || 'A') === 'F'; })
+            : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+        var pessoa = fonte.find(function(c) { return (c.cpf || '').replace(/\D/g, '') === cpf; });
+        if (!pessoa) { errEl.textContent = 'Cadastro nao encontrado com este CPF.'; errEl.style.display = 'block'; return; }
+        relDocFechar();
+        if (relDocTipo === 'carteira-aluno') relGerarCarteiraAluno([pessoa]);
+        else if (relDocTipo === 'certificado-formado') relGerarCertificadoFormado([pessoa]);
+        else if (relDocTipo === 'carteira-formado') relGerarCarteiraFormado([pessoa]);
+    } else {
+        var turma = document.getElementById('rel-doc-turma-sel').value;
+        if (!turma) { errEl.textContent = 'Selecione uma turma.'; errEl.style.display = 'block'; return; }
+        var fonte = relDocTipo === 'certificado-formado' || relDocTipo === 'carteira-formado'
+            ? candidatos.filter(function(c) { return (c.tipoPessoa || 'A') === 'F'; })
+            : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+        var lista = fonte.filter(function(c) { return c.turma === turma; });
+        if (!lista.length) { errEl.textContent = 'Nenhum cadastro encontrado para esta turma.'; errEl.style.display = 'block'; return; }
+        lista.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+        relDocFechar();
+        if (relDocTipo === 'carteira-aluno') relGerarCarteiraAluno(lista);
+        else if (relDocTipo === 'certificado-formado') relGerarCertificadoFormado(lista);
+        else if (relDocTipo === 'carteira-formado') relGerarCarteiraFormado(lista);
+    }
+}
+
+function relatorioCarteiraAluno() { relDocAbrir('carteira-aluno'); }
+function relatorioCertificadoFormado() { relDocAbrir('certificado-formado'); }
+function relatorioCarteiraFormado() { relDocAbrir('carteira-formado'); }
+
+function relatorioFaltas() {
+    var turmas = new Set();
+    candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; }).forEach(function(c) { if (c.turma) turmas.add(c.turma); });
+    if (!turmas.size) { alert('Nenhuma turma encontrada.'); return; }
+
+    var selHtml = '<option value="">Selecione a turma...</option>';
+    Array.from(turmas).sort().forEach(function(t) { selHtml += '<option value="' + t + '">' + t + '</option>'; });
+
+    var w = window.open('', '_blank', 'width=500,height=300');
+    w.document.write('<!DOCTYPE html><html><head><title>Faltas por Turma - FARN</title><style>' +
+        'body{font-family:Arial,sans-serif;padding:30px;background:#f1f5f9}' +
+        '.box{max-width:500px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.1);text-align:center}' +
+        'h2{color:#dc2626;margin-bottom:20px;font-size:18px}' +
+        'select{width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:16px}' +
+        'button{padding:12px 32px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+        '</style></head><body><div class="box">' +
+        '<h2><i class="fa-solid fa-user-xmark"></i> Relatorio de Faltas por Turma</h2>' +
+        '<select id="sel-turma-faltas">' + selHtml + '</select>' +
+        '<br><button onclick="gerarRelatorioFaltas()">Gerar Relatorio</button>' +
+        '</div></body></html>');
+    w.document.close();
+    w.gerarRelatorioFaltas = function() {
+        var turma = w.document.getElementById('sel-turma-faltas').value;
+        if (!turma) { alert('Selecione uma turma.'); return; }
+
+        dbFirestore.collection('presencasAlunos').where('turma', '==', turma).limit(500).get().then(function(snap) {
+            var faltas = {};
+            snap.forEach(function(doc) {
+                var p = doc.data();
+                if (p.status === 'Falta') {
+                    var cpf = (p.cpf || '').replace(/\D/g, '');
+                    if (!faltas[cpf]) faltas[cpf] = { nome: p.nome || '---', cpf: cpf, matricula: p.matricula || '---', whatsapp: '---', aulas: [], count: 0 };
+                    faltas[cpf].aulas.push((p.disciplina || p.aula || '---') + (p.dataAula ? ' (' + p.dataAula + ')' : ''));
+                    faltas[cpf].count++;
+                }
+            });
+
+            /* Busca WhatsApp dos candidatos */
+            var cpfs = Object.keys(faltas);
+            candidatos.forEach(function(c) {
+                var cpfLimpo = (c.cpf || '').replace(/\D/g, '');
+                if (faltas[cpfLimpo] && c.whatsapp) faltas[cpfLimpo].whatsapp = c.whatsapp;
+            });
+
+            var lista = Object.values(faltas);
+            if (!lista.length) {
+                w.document.body.innerHTML = '<div style="text-align:center;padding:40px;font-family:Arial"><h2 style="color:#16a34a"><i class="fa-solid fa-check-circle"></i> Nenhuma falta encontrada!</h2><p>Turma: ' + turma + '</p><button onclick="window.print()" style="margin-top:16px;padding:10px 20px;background:#1a237e;color:#fff;border:none;border-radius:8px;cursor:pointer">Imprimir</button></div>';
+                return;
+            }
+
+            lista.sort(function(a, b) { return b.count - a.count || (a.nome || '').localeCompare(b.nome || ''); });
+
+            var header = '<div class="header"><img src="https://firebasestorage.googleapis.com/v0/b/farn-app.appspot.com/o/logofarn.png?alt=media" style="height:50px;margin-bottom:4px"><div class="title-line">FARN - BRASIL - BS.BRASIL - COMMAND BRASIL</div><div class="info-line">CNPJ: 43.327.929/0001-32</div></div>';
+            var totalFaltas = lista.reduce(function(s, c) { return s + c.count; }, 0);
+
+            w.document.body.innerHTML = '<style>' +
+                '@page{size:A4 portrait;margin:12mm}body{font-family:Arial,sans-serif;color:#222;padding:20px;font-size:11px}' +
+                '.header{text-align:center;margin-bottom:6px;border-bottom:3px solid #1a237e;padding-bottom:8px}' +
+                '.header .title-line{font-size:13px;font-weight:800;color:#1a237e;text-transform:uppercase;letter-spacing:1px}' +
+                '.header .info-line{font-size:10px;color:#666;margin-top:3px}' +
+                '.report-title{text-align:center;font-size:15px;font-weight:800;color:#dc2626;margin:10px 0;text-transform:uppercase;letter-spacing:2px;border:2px solid #dc2626;padding:7px;border-radius:4px}' +
+                '.info-bar{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:10px;padding:0 4px}' +
+                'table{width:100%;border-collapse:collapse}' +
+                'th{background:#dc2626;color:#fff;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px}' +
+                'td{padding:7px 10px;border-bottom:1px solid #e0e0e0;font-size:11px}' +
+                'tr:nth-child(even){background:#fef2f2}' +
+                'td.nome{font-weight:600}' +
+                'td.matricula{color:#dc2626;font-weight:800;font-family:Courier New,monospace;font-size:12px;letter-spacing:1px}' +
+                'td.center{text-align:center;font-weight:700;color:#dc2626}' +
+                'th:nth-child(1){width:3%}th:nth-child(2){width:22%}th:nth-child(3){width:13%}th:nth-child(4){width:13%}th:nth-child(5){width:8%}th:nth-child(6){width:41%}' +
+                '.print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#1a237e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+                '.footer{margin-top:14px;text-align:center;font-size:10px;color:#999;border-top:1px solid #ddd;padding-top:8px}' +
+                '.total{text-align:right;font-size:12px;font-weight:700;color:#333;margin-top:8px;padding-right:4px}' +
+                '@media print{.print-btn{display:none}th{background:#dc2626!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
+                '</style>' +
+                header +
+                '<div class="report-title">Relatorio de Alunos com Faltas - ' + turma + '</div>' +
+                '<div class="info-bar"><span>Data: ' + new Date().toLocaleDateString('pt-BR') + '</span><span>Total: ' + lista.length + ' aluno(s) | ' + totalFaltas + ' falta(s)</span></div>' +
+                '<table><thead><tr><th>#</th><th>Nome</th><th>Matricula</th><th>WhatsApp</th><th>Faltas</th><th>Aulas Faltadas</th></tr></thead><tbody>' +
+                lista.map(function(c, i) {
+                    return '<tr><td>' + (i + 1) + '</td><td class="nome">' + (c.nome || '---') + '</td><td class="matricula">' + c.matricula + '</td><td style="font-size:11px;white-space:nowrap">' + c.whatsapp + '</td><td class="center">' + c.count + '</td><td style="font-size:10px;color:#64748b">' + c.aulas.join(' | ') + '</td></tr>';
+                }).join('') +
+                '</tbody></table>' +
+                '<div class="total">Total de faltas: ' + totalFaltas + '</div>' +
+                '<button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Relatorio</button>' +
+                '<div class="footer">FARN - Forca Auxiliar de Resgate Nacional | Relatorio gerado em ' + new Date().toLocaleString('pt-BR') + '</div>';
+        }).catch(function(e) { alert('Erro ao buscar presencas: ' + e.message); });
+    };
+}
+
+function relGerarCarteiraAluno(lista) {
+    var cards = lista.map(function(c) {
+        var mat = c.matricula || generateMatricula(c.cpf) || '---';
+        var cpfDisp = c.cpf || '';
+        if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
+        return '<div class="pf-carteira-card" style="page-break-inside:avoid;margin-bottom:16px">' +
+            '<img src="CARTEIRA2.png" alt="Carteira FARN" class="pf-carteira-bg">' +
+            '<div class="pf-carteira-overlay">' +
+                '<div class="pf-carteira-foto-box"><i class="fa-solid fa-user"></i></div>' +
+                '<div class="pf-carteira-dados-box">' +
+                    '<div class="pf-carteira-dado" style="font-size:12px;font-weight:800;letter-spacing:.5px;color:#1a237e;margin-bottom:2px">' + (c.nome || '---').toUpperCase() + '</div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">MATRICULA:</span> <span class="pf-cd-val pf-cd-mat">' + mat + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">CPF:</span> <span class="pf-cd-val">' + cpfDisp + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">NASC.:</span> <span class="pf-cd-val">' + (c.nascimento || '---') + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TIPO SANG.:</span> <span class="pf-cd-val">' + (c.fatorRh || '---') + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TURMA:</span> <span class="pf-cd-val">' + (c.turma || '---') + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">PROJETO:</span> <span class="pf-cd-val" style="color:#c2410c;font-size:10px">' + (c.projeto || '---') + '</span></div>' +
+                '</div>' +
+                '<div class="pf-carteira-qr-box"><img src="' + qrUrl + '" alt="QR Code"></div>' +
+                '<div class="pf-carteira-title-overlay">CARTEIRA DE IDENTIFICACAO DE ALUNO</div>' +
+                '<div class="pf-carteira-inst-overlay">FARN - FORCA AUXILIAR DE RESGATE NACIONAL - CNPJ 43.327.929/0001-32</div>' +
+                '<div class="pf-carteira-aviso-overlay">NAO E VALIDA COMO CARTEIRA FUNCIONAL. SUJEITO AO CUMPRIMENTO DAS PENALIDADES EM CASO DE USO INDEVIDO.</div>' +
+            '</div></div>';
+    }).join('');
+
+    var css = '.pf-carteira-card{max-width:700px;margin:0 auto 16px;position:relative;border-radius:8px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.2)}' +
+        '.pf-carteira-bg{width:100%;display:block}' +
+        '.pf-carteira-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;align-items:center;justify-content:center}' +
+        '.pf-carteira-foto-box{position:absolute;top:38%;left:9%;width:17%;aspect-ratio:3/4;background:#f5f5f5;border:2px solid #8B6914;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}' +
+        '.pf-carteira-foto-box .fa-user{font-size:28px;color:#bbb}' +
+        '.pf-carteira-dados-box{position:absolute;top:36%;left:29%;width:32%;display:flex;flex-direction:column;gap:7px}' +
+        '.pf-carteira-dado{font-size:13px;line-height:1.4;color:#1e293b;display:flex;gap:4px;align-items:baseline}' +
+        '.pf-cd-label{font-weight:700;color:#374151;font-size:10px;text-transform:uppercase;white-space:nowrap;min-width:58px}' +
+        '.pf-cd-val{font-weight:600;font-size:13px}' +
+        '.pf-cd-mat{color:#16a34a;font-family:Courier New,monospace;font-size:14px;font-weight:800;letter-spacing:1px}' +
+        '.pf-carteira-qr-box{position:absolute;top:52%;right:2%;width:18%;text-align:center}' +
+        '.pf-carteira-qr-box img{width:100%;border-radius:4px;background:#fff;padding:2px}' +
+        '.pf-carteira-title-overlay{position:absolute;top:3%;left:0;width:100%;text-align:center;color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;text-shadow:1px 1px 3px rgba(0,0,0,.6)}' +
+        '.pf-carteira-inst-overlay{position:absolute;bottom:15%;left:9%;width:78%;text-align:center;color:#1a237e;font-size:9px;font-weight:700;letter-spacing:.5px}' +
+        '.pf-carteira-aviso-overlay{position:absolute;bottom:11%;left:9%;width:78%;text-align:center;color:#555;font-size:7px;font-style:italic;letter-spacing:.3px}' +
+        '.print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#1a237e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+        '@media print{@page{size:auto;margin:5mm}body{padding:0;margin:0;background:#fff}' +
+        '.print-btn{display:none}' +
+        '.pf-carteira-card{box-shadow:none;width:10cm;height:auto;margin:0 auto;page-break-inside:avoid;overflow:hidden;border-radius:0}' +
+        '.pf-carteira-bg{width:100%;height:auto;display:block}' +
+        '}' +
+        '@media screen{.pf-carteira-card{max-width:10cm}}';
+
+    var w = window.open('', '_blank', 'width=800,height=600');
+    w.document.write('<!DOCTYPE html><html><head><title>Carteira de Aluno - FARN</title><style>' + css + '</style></head><body style="padding:20px;background:#f1f5f9">' +
+        '<h2 style="text-align:center;color:#1a237e;margin-bottom:16px"><i class="fa-solid fa-id-card"></i> Carteiras de Aluno (' + lista.length + ')</h2>' +
+        cards + '<button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Salvar PDF</button></body></html>');
+    w.document.close();
+}
+
+function relGerarCertificadoFormado(lista) {
+    var items = lista.map(function(c) {
+        var nome = (c.nome || '').toUpperCase();
+        var cpfDisp = c.cpf || '';
+        if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        var nasc = c.nascimento || '---';
+        if (nasc && nasc.indexOf('-') !== -1) { var p = nasc.split('-'); if (p.length === 3) nasc = p[2] + '/' + p[1] + '/' + p[0]; }
+        var natural = c.naturalidade || '---';
+        var mat = c.matricula || '---';
+        var formacao = c.dataCertificado || '---';
+        if (formacao && formacao.indexOf('-') !== -1) { var p2 = formacao.split('-'); if (p2.length === 3) formacao = p2[2] + '/' + p2[1] + '/' + p2[0]; }
+        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=200x200&margin=2';
+        return '<div style="position:relative;width:100%;max-width:900px;margin:0 auto 20px;page-break-inside:avoid">' +
+            '<img src="CERTIFICADO.png" style="width:100%;height:auto;display:block">' +
+            '<div style="position:absolute;left:0;right:0;top:36.4%;text-align:center;font-family:Georgia,serif;font-size:16px;font-weight:700;color:#1c1917">' + nome + '</div>' +
+            '<div style="position:absolute;left:8%;right:8%;top:40%;text-align:center;font-family:Georgia,serif;font-size:9px;color:#1c1917;white-space:nowrap">' +
+                '<span style="margin:0 1.5%">CPF: ' + cpfDisp + '</span>' +
+                '<span style="margin:0 1.5%">Nascido em: ' + nasc + '</span>' +
+                '<span style="margin:0 1.5%">Natural de: ' + natural + '</span>' +
+                '<span style="margin:0 1.5%">Matricula: ' + mat + '</span>' +
+                '<span style="margin:0 1.5%">Formacao: ' + formacao + '</span>' +
+            '</div>' +
+            '<img style="position:absolute;right:8.7%;bottom:21.7%;width:8%;background:#fff;border:2px solid #1c1917;padding:2px;box-sizing:border-box" src="' + qrUrl + '" alt="QR">' +
+        '</div>';
+    }).join('');
+
+    var w = window.open('', '_blank', 'width=1000,height=700');
+    w.document.write('<!DOCTYPE html><html><head><title>Certificado de Formado - FARN</title><style>html,body{margin:0;padding:0;background:#f1f5f9}img{display:block;width:100%}.print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}@media print{.print-btn{display:none}}</style></head><body>' +
+        '<h2 style="text-align:center;color:#2563eb;margin:16px 0"><i class="fa-solid fa-award"></i> Certificados de Formado (' + lista.length + ')</h2>' +
+        items + '<button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Salvar PDF</button></body></html>');
+    w.document.close();
+}
+
+function relGerarCarteiraFormado(lista) {
+    var cards = lista.map(function(c) {
+        var mat = c.matricula || '---';
+        var cpfDisp = c.cpf || '';
+        if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
+        return '<div class="pf-carteira-card" style="page-break-inside:avoid;margin-bottom:16px">' +
+            '<img src="CARTEIRA2.png" alt="Carteira FARN" class="pf-carteira-bg">' +
+            '<div class="pf-carteira-overlay">' +
+                '<div class="pf-carteira-foto-box"><i class="fa-solid fa-user"></i></div>' +
+                '<div class="pf-carteira-dados-box">' +
+                    '<div class="pf-carteira-dado" style="font-size:12px;font-weight:800;letter-spacing:.5px;color:#1a237e;margin-bottom:2px">' + (c.nome || '---').toUpperCase() + '</div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">MATRICULA:</span> <span class="pf-cd-val pf-cd-mat">' + mat + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">CPF:</span> <span class="pf-cd-val">' + cpfDisp + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">NASC.:</span> <span class="pf-cd-val">' + (c.nascimento || '---') + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TIPO SANG.:</span> <span class="pf-cd-val">' + (c.fatorRh || '---') + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TURMA:</span> <span class="pf-cd-val">' + (c.turma || '---') + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">PROJETO:</span> <span class="pf-cd-val" style="color:#c2410c;font-size:10px">' + (c.projeto || '---') + '</span></div>' +
+                '</div>' +
+                '<div class="pf-carteira-qr-box"><img src="' + qrUrl + '" alt="QR Code"></div>' +
+                '<div class="pf-carteira-title-overlay">CARTEIRA DE IDENTIFICACAO DE FORMADO</div>' +
+                '<div class="pf-carteira-inst-overlay">FARN - FORCA AUXILIAR DE RESGATE NACIONAL - CNPJ 43.327.929/0001-32</div>' +
+                '<div class="pf-carteira-aviso-overlay">NAO E VALIDA COMO CARTEIRA FUNCIONAL. SUJEITO AO CUMPRIMENTO DAS PENALIDADES EM CASO DE USO INDEVIDO.</div>' +
+            '</div></div>';
+    }).join('');
+
+    var css = '.pf-carteira-card{max-width:700px;margin:0 auto 16px;position:relative;border-radius:8px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.2)}' +
+        '.pf-carteira-bg{width:100%;display:block}' +
+        '.pf-carteira-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;align-items:center;justify-content:center}' +
+        '.pf-carteira-foto-box{position:absolute;top:38%;left:9%;width:17%;aspect-ratio:3/4;background:#f5f5f5;border:2px solid #8B6914;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}' +
+        '.pf-carteira-foto-box .fa-user{font-size:28px;color:#bbb}' +
+        '.pf-carteira-dados-box{position:absolute;top:36%;left:29%;width:32%;display:flex;flex-direction:column;gap:7px}' +
+        '.pf-carteira-dado{font-size:13px;line-height:1.4;color:#1e293b;display:flex;gap:4px;align-items:baseline}' +
+        '.pf-cd-label{font-weight:700;color:#374151;font-size:10px;text-transform:uppercase;white-space:nowrap;min-width:58px}' +
+        '.pf-cd-val{font-weight:600;font-size:13px}' +
+        '.pf-cd-mat{color:#7c3aed;font-family:Courier New,monospace;font-size:14px;font-weight:800;letter-spacing:1px}' +
+        '.pf-carteira-qr-box{position:absolute;top:52%;right:2%;width:18%;text-align:center}' +
+        '.pf-carteira-qr-box img{width:100%;border-radius:4px;background:#fff;padding:2px}' +
+        '.pf-carteira-title-overlay{position:absolute;top:3%;left:0;width:100%;text-align:center;color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;text-shadow:1px 1px 3px rgba(0,0,0,.6)}' +
+        '.pf-carteira-inst-overlay{position:absolute;bottom:15%;left:9%;width:78%;text-align:center;color:#1a237e;font-size:9px;font-weight:700;letter-spacing:.5px}' +
+        '.pf-carteira-aviso-overlay{position:absolute;bottom:11%;left:9%;width:78%;text-align:center;color:#555;font-size:7px;font-style:italic;letter-spacing:.3px}' +
+        '.print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+        '@media print{@page{size:auto;margin:5mm}body{padding:0;margin:0;background:#fff}' +
+        '.print-btn{display:none}' +
+        '.pf-carteira-card{box-shadow:none;width:10cm;height:auto;margin:0 auto;page-break-inside:avoid;overflow:hidden;border-radius:0}' +
+        '.pf-carteira-bg{width:100%;height:auto;display:block}' +
+        '}' +
+        '@media screen{.pf-carteira-card{max-width:10cm}}';
+
+    var w = window.open('', '_blank', 'width=800,height=600');
+    w.document.write('<!DOCTYPE html><html><head><title>Carteira de Formado - FARN</title><style>' + css + '</style></head><body style="padding:20px;background:#f1f5f9">' +
+        '<h2 style="text-align:center;color:#7c3aed;margin-bottom:16px"><i class="fa-solid fa-id-card-clip"></i> Carteiras de Formado (' + lista.length + ')</h2>' +
+        cards + '<button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Salvar PDF</button></body></html>');
+    w.document.close();
+}
+
 function relatorioUniforme() {
     const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo');
     if (!aprovados.length) { alert('Nenhum aluno ativo para gerar relatorio.'); return; }
@@ -4459,17 +4813,17 @@ async function verificarInativosPorFalta(cpfs) {
 
 // ===== HISTÓRICO DE APONTAMENTOS =====
 let aptHistoricoCache = [];
+let aptHistoricoUnsub = null;
 
-async function apontamentoCarregarHistorico() {
-    try {
-        const snap = await dbFirestore.collection('apontamentos').orderBy('criadoEm', 'desc').limit(200).get();
+function apontamentoCarregarHistorico() {
+    if (aptHistoricoUnsub) { aptHistoricoUnsub(); aptHistoricoUnsub = null; }
+    aptHistoricoUnsub = dbFirestore.collection('apontamentos').orderBy('criadoEm', 'desc').limit(200).onSnapshot(function(snap) {
         aptHistoricoCache = [];
         snap.forEach(doc => {
             aptHistoricoCache.push({ docId: doc.id, ...doc.data() });
         });
-    } catch (e) {
-        console.error('Erro ao carregar histórico:', e);
-    }
+        apontamentoRender();
+    }, function(e) { console.error('Erro historico apontamentos:', e); });
 }
 
 function apontamentoPopularFiltroTurma() {
@@ -4482,8 +4836,11 @@ function apontamentoLimparFiltros() {
     apontamentoFiltrar();
 }
 
-async function apontamentoFiltrar() {
-    await apontamentoCarregarHistorico();
+function apontamentoRender() {
+    apontamentoFiltrar();
+}
+
+function apontamentoFiltrar() {
     const turmaFiltro = document.getElementById('apt-selecao-turma').value;
     const dataInicio = document.getElementById('apt-filtro-data-inicio').value;
     const dataFim = document.getElementById('apt-filtro-data-fim').value;
