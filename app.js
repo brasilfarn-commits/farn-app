@@ -887,6 +887,14 @@ function atualizarBotaoPortais() {
     const btn = document.getElementById('btn-portais');
     const statusEl = document.getElementById('portais-status');
     if (!btn) return;
+    const isGeral = currentUserData && currentUserData.cpf === ADMIN_CPF;
+    if (!isGeral) {
+        btn.style.display = 'none';
+        if (statusEl) statusEl.style.display = 'none';
+        return;
+    }
+    btn.style.display = '';
+    if (statusEl) statusEl.style.display = '';
     if (portaisManutencao) {
         btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Ligar portais';
         btn.style.background = '#dc2626';
