@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pré-Inscrição FARN</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: #f1f5f9; padding: 20px; min-height: 100vh; }
+        .wrap { max-width: 860px; margin: 0 auto; }
+        .banner { background: linear-gradient(135deg,#16a34a,#059669); color:#fff; border-radius:14px; padding:28px; text-align:center; margin-bottom:20px; box-shadow:0 6px 20px rgba(22,163,74,.25); }
+        .banner h1 { font-size:22px; margin-bottom:6px; }
+        .banner p { font-size:13px; opacity:.9; }
+        .card { background:#fff; border-radius:14px; padding:24px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+        .section { margin-bottom:22px; }
+        .section-title { display:flex; align-items:center; gap:8px; font-weight:700; color:#1e293b; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #e2e8f0; font-size:15px; }
+        .section-title i { color:#16a34a; }
+        .sec-green { border:2px solid #16a34a; border-radius:12px; padding:16px; background:linear-gradient(135deg,#f0fdf4,#ecfdf5); margin-bottom:20px; }
+        .sec-green .section-title i, .sec-green .section-title { color:#16a34a; border-bottom-color:#bbf7d0; }
+        .row { display:flex; gap:12px; flex-wrap:wrap; }
+        .row-3 { display:flex; gap:12px; flex-wrap:wrap; }
+        .row-3 > div { flex:1; min-width:150px; }
+        .fgroup { margin-bottom:12px; flex:1; min-width:180px; }
+        .fgroup.full { flex-basis:100%; }
+        label { font-size:12px; font-weight:600; color:#334155; display:block; margin-bottom:5px; }
+        label .req { color:#dc2626; }
+        input, select { width:100%; padding:9px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; background:#fff; color:#1e293b; }
+        input:focus, select:focus { border-color:#16a34a; outline:none; box-shadow:0 0 0 2px rgba(22,163,74,.15); }
+        input[readonly] { background:#f8fafc; color:#64748b; }
+        .submit-bar { display:flex; gap:12px; justify-content:flex-end; margin-top:20px; }
+        .btn { padding:12px 24px; border-radius:10px; border:none; font-size:14px; font-weight:700; cursor:pointer; transition:.2s; }
+        .btn-primary { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 4px 12px rgba(22,163,74,.25); }
+        .btn-primary:hover { transform:translateY(-1px); }
+        .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+        .area { text-align:center; padding:60px 20px; }
+        .area i { font-size:52px; color:#16a34a; margin-bottom:14px; display:block; }
+        .area.err i { color:#dc2626; }
+        .area h2 { font-size:20px; color:#1e293b; margin-bottom:8px; }
+        .area p { font-size:13px; color:#64748b; max-width:440px; margin:0 auto; line-height:1.6; }
+        .area .home-btn { display:inline-block; margin-top:20px; padding:12px 26px; border-radius:10px; background:#16a34a; color:#fff; text-decoration:none; font-weight:700; font-size:13px; }
+        .success-box { text-align:center; padding:20px; }
+        .success-box i { font-size:50px; color:#16a34a; display:block; margin-bottom:12px; }
+        .success-box h2 { color:#166534; margin-bottom:6px; }
+        .success-box p { color:#475569; font-size:14px; }
+        .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#16a34a; color:#fff; padding:12px 22px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,.2); display:none; z-index:9999; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="banner">
+            <h1><i class="fa-solid fa-handshake"></i> Pré-Inscrição FARN</h1>
+            <p>Força Auxiliar de Resgate Nacional — Formulário de pré-inscrição</p>
+        </div>
+
+        <div class="card" id="area-loading" class="area" style="text-align:center;padding:60px 20px">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <h2>Validando link...</h2>
+            <p>Aguarde um momento.</p>
+        </div>
+        <div class="card" id="area-invalido" class="area" style="display:none;text-align:center;padding:60px 20px">
+            <i class="fa-solid fa-ban" style="font-size:52px;color:#dc2626;display:block;margin-bottom:14px"></i>
+            <h2>Link inválido ou já utilizado</h2>
+            <p>Este link de pré-inscrição não é mais válido. Ele pode ter sido utilizado ou expirado. Solicite um novo link à equipe FARN.</p>
+            <a href="index.html" class="home-btn"><i class="fa-solid fa-house"></i> Página Inicial</a>
+        </div>
+        <div class="card" id="area-sucesso" style="display:none">
+            <div class="success-box">
+                <i class="fa-solid fa-circle-check"></i>
+                <h2>Pré-inscrição registrada!</h2>
+                <p>Seus dados foram enviados com sucesso. A equipe FARN analisará e você será notificado sobre os próximos passos.</p>
+            </div>
+        </div>
+
+        <div class="card" id="area-formulario" style="display:none">
+            <form id="form-pre" onsubmit="return enviarPre(event)">
+                <div class="sec-green">
+                    <div class="section-title"><i class="fa-solid fa-folder-open"></i> Projeto & Turma</div>
+                    <div class="row">
+                        <div class="fgroup"><label>Projeto</label><input id="f-pre-projeto" type="text" readonly></div>
+                        <div class="fgroup"><label>Turma</label><input id="f-pre-turma" type="text" readonly></div>
+                    </div>
+                    <p style="font-size:11px;color:#16a34a;margin-top:6px"><i class="fa-solid fa-lock"></i> Projeto e turma foram definidos pelo link e não podem ser alterados.</p>
+                </div>
+
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-user"></i> Dados Pessoais</div>
+                    <div class="fgroup full"><label>Nome Completo <span class="req">*</span></label><input id="f-nome" required></div>
+                    <div class="row-3">
+                        <div><label>CPF <span class="req">*</span></label><input id="f-cpf" maxlength="14" required oninput="formatCPF(this)"></div>
+                        <div><label>Data de Nascimento <span class="req">*</span></label><input id="f-nascimento" type="date" required></div>
+                        <div><label>Estado Civil <span class="req">*</span></label>
+                            <select id="f-estado-civil" required><option value="">Selecione...</option><option>Solteiro(a)</option><option>Casado(a)</option><option>Viuvo(a)</option><option>Divorciado(a)</option></select>
+                        </div>
+                    </div>
+                    <div class="row-3">
+                        <div><label>Gênero de Nascimento <span class="req">*</span></label>
+                            <select id="f-genero" required><option value="">Selecione...</option><option>Masculino</option><option>Feminino</option></select>
+                        </div>
+                        <div><label>Nacionalidade <span class="req">*</span></label><input id="f-nacionalidade" value="Brasileira" placeholder="Brasileira" required></div>
+                        <div><label>Naturalidade <span class="req">*</span></label><input id="f-naturalidade" placeholder="Cidade/Estado" required></div>
+                    </div>
+                    <div class="row">
+                        <div class="fgroup"><label>Título de Eleitor</label><input id="f-titulo" maxlength="18" placeholder="0000.0000.0000"></div>
+                        <div class="fgroup"><label>Profissão</label><input id="f-profissao" placeholder="Ex: Soldado"></div>
+                    </div>
+                    <div class="row">
+                        <div class="fgroup"><label>Nome da Mãe <span class="req">*</span></label><input id="f-mae" required></div>
+                        <div class="fgroup"><label>Nome do Pai</label><input id="f-pai"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-address-book"></i> Contato</div>
+                    <div class="row">
+                        <div class="fgroup"><label>Email <span class="req">*</span></label><input id="f-email" type="email" required></div>
+                        <div class="fgroup"><label>WhatsApp <span class="req">*</span></label><input id="f-whatsapp" maxlength="15" required oninput="formatPhone(this)"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-location-dot"></i> Endereço</div>
+                    <div class="row">
+                        <div class="fgroup" style="flex:2"><label>Endereço <span class="req">*</span></label><input id="f-endereco" required></div>
+                        <div class="fgroup"><label>Número <span class="req">*</span></label><input id="f-numero" required></div>
+                    </div>
+                    <div class="row-3">
+                        <div><label>Bairro <span class="req">*</span></label><input id="f-bairro" required></div>
+                        <div><label>Cidade <span class="req">*</span></label><input id="f-cidade" required></div>
+                        <div><label>Estado <span class="req">*</span></label>
+                            <select id="f-estado" required><option value="">UF</option>
+                                <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                                <option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                                <option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                                <option>SP</option><option>SE</option><option>TO</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-heart-pulse"></i> Dados Físicos e Saúde</div>
+                    <div class="row-3">
+                        <div><label>Altura (cm) <span class="req">*</span></label><input id="f-altura" type="number" min="100" max="250" required></div>
+                        <div><label>Peso (kg) <span class="req">*</span></label><input id="f-peso" type="number" min="30" max="250" required></div>
+                        <div><label>Fator RH <span class="req">*</span></label>
+                            <select id="f-fator-rh" required><option value="">Selecione...</option><option>O+</option><option>O-</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option></select>
+                        </div>
+                    </div>
+                    <div class="row-3">
+                        <div><label>Hipertensão?</label><select id="f-hipertensao"><option>Nao</option><option>Sim</option></select></div>
+                        <div><label>Diabetes?</label><select id="f-diabetes"><option>Nao</option><option>Sim</option></select></div>
+                        <div><label>Deficiência Física?</label><select id="f-deficiencia"><option>Nao</option><option>Sim</option></select></div>
+                    </div>
+                    <div class="row-3">
+                        <div><label>Tatuagem?</label><select id="f-tatuagem"><option>Nao</option><option>Sim</option></select></div>
+                        <div><label>Cirurgia?</label><select id="f-cirurgia"><option>Nao</option><option>Sim</option></select></div>
+                        <div><label>Bebida Alcoólica?</label><select id="f-alcool"><option>Nao</option><option>Sim</option></select></div>
+                    </div>
+                    <div class="row">
+                        <div class="fgroup"><label>Medicamento em uso?</label><input id="f-medicamento"></div>
+                        <div class="fgroup"><label>Cansaço frequente?</label><select id="f-cansaco"><option>Nao</option><option>Sim</option></select></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-shirt"></i> Medidas e Uniforme</div>
+                    <div class="row-3">
+                        <div><label>Calça</label><select id="f-calca"><option value="">Selecione...</option><option>35</option><option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option>42</option><option>43</option><option>44</option><option>45</option><option>46</option><option>OUT</option></select></div>
+                        <div><label>Camisa</label><select id="f-camisa"><option value="">Selecione...</option><option>P</option><option>M</option><option>G</option><option>GG</option></select></div>
+                        <div><label>Calçado</label><select id="f-calcado"><option value="">Selecione...</option><option>35</option><option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option>42</option><option>43</option><option>44</option><option>OUT</option></select></div>
+                    </div>
+                </div>
+
+                <div class="submit-bar">
+                    <button type="button" class="btn" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0" onclick="confirmarLimpar()">Limpar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-enviar"><i class="fa-solid fa-paper-plane"></i> Enviar Pré-Inscrição</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
+        if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+        var dbFirestore=firebase.firestore();
+
+        var tokenAtual = '';
+        var linkValido = null;
+
+        function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+        function getQueryParam(name){
+            var u=new URLSearchParams(window.location.search);
+            return u.get(name)||'';
+        }
+
+        function formatCPF(input){
+            var v=input.value.replace(/\D/g,'');
+            if(v.length>11)v=v.slice(0,11);
+            if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+            else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+            else if(v.length>3)v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+            input.value=v;
+        }
+
+        function formatPhone(input){
+            var v=input.value.replace(/\D/g,'');
+            if(v.length>11)v=v.slice(0,11);
+            if(v.length>6)v=v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+            else if(v.length>2)v=v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+            input.value=v;
+        }
+
+        function mostrarToast(msg){
+            var t=document.getElementById('toast');
+            t.textContent=msg;
+            t.style.display='block';
+            setTimeout(function(){t.style.display='none';},3000);
+        }
+
+        function confirmarLimpar(){
+            var form=document.getElementById('form-pre');
+            var reqs=form.querySelectorAll('input[required],select[required]');
+            var temValor=false;
+            reqs.forEach(function(el){ if(el.value) temValor=true; });
+            if(!temValor) return;
+            if(!confirm('Limpar todos os campos preenchidos?')) return;
+            form.reset();
+            document.getElementById('f-nacionalidade').value='Brasileira';
+        }
+
+        async function validarLink(){
+            tokenAtual=getQueryParam('token');
+            var load=document.getElementById('area-loading');
+            var inval=document.getElementById('area-invalido');
+            var forma=document.getElementById('area-formulario');
+            if(!tokenAtual){
+                load.style.display='none';
+                inval.style.display='block';
+                return;
+            }
+            try{
+                var doc=await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).get();
+                if(!doc.exists || doc.data().usado===true){
+                    load.style.display='none';
+                    inval.style.display='block';
+                    return;
+                }
+                linkValido=doc.data();
+                document.getElementById('f-pre-projeto').value=linkValido.projeto||'';
+                document.getElementById('f-pre-turma').value=linkValido.turma||'';
+                load.style.display='none';
+                forma.style.display='block';
+            }catch(e){
+                console.error('Erro ao validar link:',e);
+                load.innerHTML='<i class="fa-solid fa-triangle-exclamation" style="font-size:52px;color:#dc2626;display:block;margin-bottom:14px"></i><h2>Erro ao validar o link</h2><p>Não foi possível consultar o link. Tente novamente mais tarde.</p>';
+            }
+        }
+
+        function generateMatricula(cpf){
+            var digits=(cpf||'').replace(/\D/g,'');
+            if(digits.length<5)return '';
+            return 'ACD'+digits.slice(-5);
+        }
+
+        async function reservarLink(){
+            if(!tokenAtual) return false;
+            try{
+                var doc=await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).get();
+                if(!doc.exists || doc.data().usado===true) return false;
+                await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).update({
+                    usado:true,
+                    usadoEm:firebase.firestore.FieldValue.serverTimestamp()
+                });
+                return true;
+            }catch(e){
+                console.error('Erro ao reservar link:',e);
+                return false;
+            }
+        }
+
+        async function enviarPre(event){
+            event.preventDefault();
+            var btn=document.getElementById('btn-enviar');
+            var nome=document.getElementById('f-nome').value.trim();
+            var cpf=document.getElementById('f-cpf').value.replace(/\D/g,'');
+            if(cpf.length!==11){ alert('Informe um CPF válido.'); return false; }
+            if(!linkValido){ alert('Link inválido.'); return false; }
+
+            // Verifica se o CPF já está cadastrado
+            try{
+                var chk=await dbFirestore.collection('candidatos').where('cpf','==',cpf).get();
+                if(!chk.empty){
+                    alert('Este CPF já está cadastrado na FARN. Se precisar, entre em contato com a administração.');
+                    return false;
+                }
+            }catch(e){ console.error(e); }
+
+            btn.disabled=true;
+            btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+
+            try{
+                // Tenta reservar o link primeiro (uso único)
+                var reservado=await reservarLink();
+                if(!reservado){
+                    var f=document.getElementById('area-formulario');
+                    var inv=document.getElementById('area-invalido');
+                    f.style.display='none';
+                    inv.style.display='block';
+                    return false;
+                }
+
+                var data={
+                    nome:nome,
+                    cpf:cpf,
+                    matricula:generateMatricula(cpf),
+                    nascimento:document.getElementById('f-nascimento').value||'',
+                    estadoCivil:document.getElementById('f-estado-civil').value||'',
+                    genero:document.getElementById('f-genero').value||'',
+                    nacionalidade:document.getElementById('f-nacionalidade').value||'',
+                    naturalidade:document.getElementById('f-naturalidade').value||'',
+                    tituloEleitor:document.getElementById('f-titulo').value||'',
+                    profissao:document.getElementById('f-profissao').value||'',
+                    mae:document.getElementById('f-mae').value||'',
+                    pai:document.getElementById('f-pai').value||'',
+                    email:document.getElementById('f-email').value||'',
+                    whatsapp:document.getElementById('f-whatsapp').value||'',
+                    endereco:document.getElementById('f-endereco').value||'',
+                    numero:document.getElementById('f-numero').value||'',
+                    bairro:document.getElementById('f-bairro').value||'',
+                    cidade:document.getElementById('f-cidade').value||'',
+                    estado:document.getElementById('f-estado').value||'',
+                    altura:document.getElementById('f-altura').value||'',
+                    peso:document.getElementById('f-peso').value||'',
+                    fatorRh:document.getElementById('f-fator-rh').value||'',
+                    hipertensao:document.getElementById('f-hipertensao').value||'Nao',
+                    diabetes:document.getElementById('f-diabetes').value||'Nao',
+                    deficiencia:document.getElementById('f-deficiencia').value||'Nao',
+                    tatuagem:document.getElementById('f-tatuagem').value||'Nao',
+                    cirurgia:document.getElementById('f-cirurgia').value||'Nao',
+                    alcool:document.getElementById('f-alcool').value||'Nao',
+                    medicamento:document.getElementById('f-medicamento').value||'',
+                    cansaco:document.getElementById('f-cansaco').value||'Nao',
+                    calca:document.getElementById('f-calca').value||'',
+                    camisa:document.getElementById('f-camisa').value||'',
+                    calcado:document.getElementById('f-calcado').value||'',
+                    tipoPessoa:'A',
+                    status:'Pendente',
+                    projeto:linkValido.projeto||'',
+                    turma:linkValido.turma||'',
+                    dataCadastro:new Date().toLocaleDateString('pt-BR'),
+                    dataHoraCadastro:new Date().toLocaleString('pt-BR'),
+                    dataInscricao:new Date().toLocaleDateString('pt-BR'),
+                    cadastradoPor:'Pré-inscrição via Link',
+                    origem:'link-pre-inscricao',
+                    tokenLink:tokenAtual,
+                    id:Date.now()
+                };
+
+                await dbFirestore.collection('candidatos').doc(String(data.id)).set(data);
+                mostrarToast('Pré-inscrição registrada com sucesso!');
+                document.getElementById('area-formulario').style.display='none';
+                document.getElementById('area-sucesso').style.display='block';
+                window.location.hash='#';
+            }catch(e){
+                console.error('Erro ao salvar:',e);
+                alert('Erro ao enviar a pré-inscrição: '+e.message);
+                btn.disabled=false;
+                btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Enviar Pré-Inscrição';
+            }
+            return false;
+        }
+
+        // Inicializa
+        validarLink();
+    </script>
+</body>
+</html>

@@ -1866,6 +1866,99 @@ function preOnSelecaoChange() {
     }
 }
 
+/* ===== LINK DE PRE-INSCRICAO ===== */
+
+function gerarLinkPreAbrir() {
+    const body = document.getElementById('modal-pre-link-body');
+    if (!body) return;
+    let options = '<option value="">Selecione a turma...</option>';
+    turmas.filter(t => t.projeto || t.nome).forEach(t => {
+        options += '<option value="' + (t.nome || '') + '" data-projeto="' + (t.projeto || '') + '">' + (t.nome || '') + (t.projeto ? ' - ' + t.projeto : '') + '</option>';
+    });
+    body.innerHTML =
+        '<p style="font-size:13px;color:#475569;margin-bottom:16px">Gere um link único de pré-inscrição. O link pode ser usado <strong>somente uma vez</strong> — após o preenchimento, ele expira automaticamente. A pessoa acessa sem senha.</p>' +
+        '<div class="form-group">' +
+        '<label style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;display:block">Escolha a turma do link *</label>' +
+        '<select id="pre-link-turma" class="config-input" style="width:100%" onchange="gerarLinkPreAtualizarTurma()">' + options + '</select>' +
+        '</div>' +
+        '<button class="btn-primary btn-lg" style="width:100%;margin-top:18px;background:#7c3aed;border-color:#7c3aed" onclick="gerarLinkPreGerar()"><i class="fa-solid fa-link"></i> Gerar Link</button>' +
+        '<div id="pre-link-resultado" style="margin-top:16px"></div>';
+    document.getElementById('modal-pre-link').classList.remove('hidden');
+}
+
+function gerarLinkPreAtualizarTurma() {
+    const sel = document.getElementById('pre-link-turma');
+    if (sel) {
+        const opt = sel.options[sel.selectedIndex];
+        const projeto = opt ? opt.dataset.projeto || '' : '';
+        localStorage.setItem('pre_link_projeto_sel', projeto);
+    }
+}
+
+async function gerarLinkPreGerar() {
+    const sel = document.getElementById('pre-link-turma');
+    const turma = sel ? sel.value : '';
+    if (!turma) { alert('Selecione uma turma para gerar o link.'); return; }
+    const opt = sel.options[sel.selectedIndex];
+    const projeto = (opt && opt.dataset.projeto) || '';
+    const btn = document.querySelector('#modal-pre-link-body button');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; }
+    try {
+        const token = 'PL' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        const link = location.origin + '/pre-inscricao-via-link.html?token=' + token;
+        const docData = {
+            token: token,
+            turma: turma,
+            projeto: projeto,
+            usado: false,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            criadoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
+            link: link
+        };
+        await dbFirestore.collection('linksPreInscricao').doc(token).set(docData);
+        let html = '<div style="padding:16px;border-radius:10px;background:#f5f3ff;border:1px solid #ddd6fe;margin-top:6px">' +
+            '<div style="font-size:12px;font-weight:700;color:#6d28d9;margin-bottom:8px"><i class="fa-solid fa-circle-check"></i> Link gerado com sucesso!</div>' +
+            '<div style="font-size:11px;color:#475569;margin-bottom:6px">Turma: <strong>' + turma + '</strong>' + (projeto ? ' • Projeto: <strong>' + projeto + '</strong>' : '') + '</div>' +
+            '<input type="text" id="pre-link-copy" readonly value="' + link + '" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd6fe;font-size:12px;background:#fff;color:#1e293b">' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;margin-top:14px">' +
+            '<button class="btn-primary" style="flex:1;background:#16a34a;border-color:#16a34a" onclick="copiarLinkPre()"><i class="fa-solid fa-copy"></i> Copiar Link</button>' +
+            '<button class="btn-primary" style="flex:1;background:#7c3aed;border-color:#7c3aed" onclick="gerarLinkPreGerarNovamente()"><i class="fa-solid fa-plus"></i> Gerar Outro</button>' +
+            '</div>';
+        document.getElementById('pre-link-resultado').innerHTML = html;
+        const copyBtn = document.querySelector('#pre-link-resultado button');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-link"></i> Gerar Link'; }
+    } catch (e) {
+        console.error('Erro ao gerar link:', e);
+        alert('Erro ao gerar o link: ' + e.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-link"></i> Gerar Link'; }
+    }
+}
+
+function copiarLinkPre() {
+    const el = document.getElementById('pre-link-copy');
+    if (!el) return;
+    el.select();
+    el.setSelectionRange(0, 99999);
+    try {
+        navigator.clipboard.writeText(el.value);
+    } catch (e) {
+        document.execCommand('copy');
+    }
+    alert('Link copiado! Envie para a pessoa preencher o formulário.');
+}
+
+function gerarLinkPreGerarNovamente() {
+    document.getElementById('pre-link-resultado').innerHTML = '';
+    const sel = document.getElementById('pre-link-turma');
+    if (sel) sel.value = '';
+}
+
+function gerarLinkPreFechar(ev) {
+    if (ev && ev.target !== document.getElementById('modal-pre-link')) return;
+    document.getElementById('modal-pre-link').classList.add('hidden');
+}
+
 /* ===== LISTA ===== */
 
 function renderList() {

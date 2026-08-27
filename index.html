@@ -1877,6 +1877,9 @@
                                     <button class="btn-primary" onclick="openFormCandidato()">
                                         <i class="fa-solid fa-plus"></i> Novo Pre-Cadastro
                                     </button>
+                                    <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="gerarLinkPreAbrir()">
+                                        <i class="fa-solid fa-link"></i> Gerar Link de Pré-Inscrição
+                                    </button>
                                     <button class="btn-outline btn-sm" onclick="downloadExcelTemplate()">
                                         <i class="fa-solid fa-file-excel"></i> Gerar Planilha
                                     </button>
@@ -2642,6 +2645,17 @@
                 <button class="btn-outline" onclick="printModal()"><i class="fa-solid fa-print"></i> Imprimir</button>
                 <button class="btn-outline" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Fechar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL LINK DE PRE-INSCRICAO -->
+    <div id="modal-pre-link" class="modal-overlay hidden" onclick="gerarLinkPreFechar(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:520px">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-link" style="color:#7c3aed;margin-right:8px"></i> Gerar Link de Pré-Inscrição</h3>
+                <button class="modal-close" onclick="gerarLinkPreFechar()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="modal-pre-link-body"></div>
         </div>
     </div>
 

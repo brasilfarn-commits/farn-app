@@ -103,6 +103,32 @@
         .pf-section-header h2 { font-size:18px; font-weight:700; }
         .pd-btn-nova { margin-left:auto; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; padding:8px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
 
+        .pd-av-tab { padding:8px 16px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;transition:.2s }
+        .pd-av-tab.active { background:#16a34a;color:#fff;border-color:#16a34a }
+        .pd-av-tab:hover:not(.active) { background:#f0fdf4;border-color:#16a34a;color:#16a34a }
+        .pd-av-aula-row { display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0 }
+        .pd-av-aula-row .aula-info { flex:1;min-width:0 }
+        .pd-av-aula-row .aula-info .aula-disciplina { font-size:13px;font-weight:600;color:#1e293b }
+        .pd-av-aula-row .aula-info .aula-data { font-size:11px;color:#64748b;margin-top:2px }
+        .pd-av-aula-row input[type=number] { width:70px;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;text-align:center;font-weight:600 }
+        .pd-av-aula-row input[type=number]:focus { border-color:#16a34a;outline:none;box-shadow:0 0 0 2px rgba(22,163,74,.15) }
+        .pd-av-media-box { background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;margin-top:14px;text-align:center }
+        .pd-av-media-box .media-label { font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px }
+        .pd-av-media-box .media-valor { font-size:28px;font-weight:800;color:#16a34a;margin-top:4px }
+        .pd-av-card-aluno { background:#fff;border-radius:12px;padding:16px;border:1px solid #e2e8f0;transition:.2s;cursor:pointer }
+        .pd-av-card-aluno:hover { border-color:#16a34a;box-shadow:0 4px 14px rgba(22,163,74,.12) }
+        .pd-av-card-aluno .nome { font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px }
+        .pd-av-card-aluno .meta { font-size:11px;color:#64748b;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px }
+        .pd-av-card-aluno .meta span { display:inline-flex;align-items:center;gap:3px }
+        .pd-av-card-aluno .btn-avaliar { width:100%;padding:9px;border-radius:8px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer }
+        .pd-av-fo-item { display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;font-size:12px }
+        .pd-av-fo-item .fo-obs { flex:1;color:#334155 }
+        .pd-av-fo-item .fo-data { color:#94a3b8;font-size:11px }
+        .pd-av-fo-item button { background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px;padding:2px 6px }
+        .pd-av-fo-add { display:flex;gap:8px;margin-top:8px }
+        .pd-av-fo-add input { flex:1;padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px }
+        .pd-av-fo-add button { padding:8px 14px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer }
+
         .pf-noticia-empty { text-align:center; padding:60px 20px; color:#94a3b8; }
         .pf-noticia-empty i { font-size:40px; margin-bottom:10px; display:block; }
         .pf-noticia-empty p { font-size:13px; }
@@ -290,6 +316,9 @@
                 <div class="pf-nav-item" onclick="pdShowSection('apontamento', this)">
                     <i class="fa-solid fa-clipboard-check"></i><span>Apontamento</span>
                 </div>
+                <div class="pf-nav-item" onclick="pdShowSection('avaliacao', this)">
+                    <i class="fa-solid fa-clipboard-check"></i><span>Avaliação</span>
+                </div>
                 <div class="pf-nav-item" onclick="pdShowSection('apostilasextras', this)">
                     <i class="fa-solid fa-book-open"></i><span>Apostilas Extras</span>
                 </div>
@@ -453,6 +482,63 @@
                             </div>
                             <div id="apontamento-historico-lista" style="display:none"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AVALIACAO -->
+            <div id="pf-section-avaliacao" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <h2>Avaliação de Alunos</h2>
+                </div>
+                <div id="pd-avaliacao-selecao" style="margin-bottom:16px">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+                        <div style="flex:1;min-width:200px">
+                            <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Projeto</label>
+                            <select id="pd-av-projeto" onchange="pdAvOnProjetoChange()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;background:#fff">
+                                <option value="">Selecione o projeto...</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:200px">
+                            <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Turma</label>
+                            <select id="pd-av-turma" onchange="pdAvOnTurmaChange()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;background:#fff">
+                                <option value="">Selecione a turma...</option>
+                            </select>
+                        </div>
+                        <button onclick="pdAvLoadAulas()" style="padding:9px 16px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;height:37px"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                    </div>
+                </div>
+                <div id="pd-av-alunos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
+                <div id="pd-av-alunos-empty" style="text-align:center;padding:40px;color:#94a3b8;display:block">
+                    <i class="fa-solid fa-clipboard-check" style="font-size:36px;margin-bottom:10px;display:block;color:#16a34a"></i>
+                    <p>Selecione projeto e turma para avaliar os alunos.</p>
+                </div>
+            </div>
+
+            <!-- FICHA DE AVALIACAO (overlay) -->
+            <div id="pd-av-ficha-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:2000;overflow-y:auto;padding:20px" onclick="if(event.target===this)pdAvFecharFicha()">
+                <div style="max-width:700px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+                    <div style="background:linear-gradient(135deg,#16a34a,#059669);padding:18px 24px;color:#fff;display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div id="pd-av-ficha-nome" style="font-size:17px;font-weight:700"></div>
+                            <div id="pd-av-ficha-meta" style="font-size:12px;opacity:.85;margin-top:3px"></div>
+                        </div>
+                        <button onclick="pdAvFecharFicha()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="pd-av-ficha-avisos" style="padding:0 24px;padding-top:12px"></div>
+                    <div style="padding:16px 24px">
+                        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+                            <button id="pd-av-tab-teorica" onclick="pdAvTrocarAba('teorica')" class="pd-av-tab active"><i class="fa-solid fa-file-lines"></i> AV Teórica</button>
+                            <button id="pd-av-tab-pratica" onclick="pdAvTrocarAba('pratica')" class="pd-av-tab"><i class="fa-solid fa-flask"></i> AV Prática</button>
+                            <button id="pd-av-tab-comportamento" onclick="pdAvTrocarAba('comportamento')" class="pd-av-tab"><i class="fa-solid fa-face-smile"></i> Comportamento</button>
+                        </div>
+                        <div id="pd-av-aba-teorica"></div>
+                        <div id="pd-av-aba-pratica" style="display:none"></div>
+                        <div id="pd-av-aba-comportamento" style="display:none"></div>
+                    </div>
+                    <div style="padding:12px 24px 20px;text-align:right;border-top:1px solid #f1f5f9">
+                        <button onclick="pdAvFecharFicha()" style="padding:10px 22px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer">Fechar</button>
                     </div>
                 </div>
             </div>
@@ -872,6 +958,7 @@
             if (section === 'aulas') pdLoadAulas();
             if (section === 'tfm') pdLoadTfmAgendamentos();
             if (section === 'apontamento') pdLoadApontamentos();
+            if (section === 'avaliacao') pdAvInit();
             if (section === 'apostilasextras') pdLoadApostExtras();
         }
 
@@ -2713,6 +2800,340 @@
             } catch(e) {
                 alert('Erro ao excluir: ' + e.message);
             }
+        }
+
+        /* ===== AVALIACAO DE ALUNOS ===== */
+        var pdAvProjeto = '';
+        var pdAvTurma = '';
+        var pdAvAlunos = [];
+        var pdAvAulasCache = null;
+        var pdAvAlunoAtual = null;
+        var pdAvAvaliacao = null;
+        var pdAvPresencas = [];
+        var pdAvAbaAtual = 'teorica';
+        var pdAvFoLista = { positivos: [], negativos: [] };
+
+        function pdAvInit() {
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+            pdAvCarregarProjetos(docente);
+        }
+
+        async function pdAvCarregarProjetos(docente) {
+            var sel = document.getElementById('pd-av-projeto');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Carregando projetos...</option>';
+            try {
+                var projetos = {};
+                var snap = await dbFirestore.collection('aulas').get();
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    if (docente.isAdmin || pdPertenceDocente(d, docente.nome)) {
+                        if (d.projeto && !projetos[d.projeto]) projetos[d.projeto] = true;
+                    }
+                });
+                sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+                Object.keys(projetos).sort().forEach(function(p) {
+                    var op = document.createElement('option');
+                    op.value = p;
+                    op.textContent = p;
+                    sel.appendChild(op);
+                });
+            } catch (e) {
+                sel.innerHTML = '<option value="">Erro ao carregar projetos</option>';
+            }
+        }
+
+        function pdAvOnProjetoChange() {
+            pdAvProjeto = document.getElementById('pd-av-projeto').value;
+            pdAvTurma = '';
+            pdAvAulasCache = null;
+            var sel = document.getElementById('pd-av-turma');
+            sel.innerHTML = '<option value="">Selecione a turma...</option>';
+            document.getElementById('pd-av-alunos-grid').innerHTML = '';
+            document.getElementById('pd-av-alunos-empty').style.display = 'block';
+            if (!pdAvProjeto) return;
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+            var turmas = {};
+            dbFirestore.collection('aulas').get().then(function(snap) {
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    if ((docente.isAdmin || pdPertenceDocente(d, docente.nome)) && d.projeto === pdAvProjeto && d.turma && !turmas[d.turma]) {
+                        turmas[d.turma] = true;
+                    }
+                });
+                Object.keys(turmas).sort().forEach(function(t) {
+                    var op = document.createElement('option');
+                    op.value = t;
+                    op.textContent = t;
+                    sel.appendChild(op);
+                });
+            });
+        }
+
+        function pdAvOnTurmaChange() {
+            pdAvTurma = document.getElementById('pd-av-turma').value;
+            pdAvAulasCache = null;
+            if (!pdAvTurma) {
+                document.getElementById('pd-av-alunos-grid').innerHTML = '';
+                document.getElementById('pd-av-alunos-empty').style.display = 'block';
+                return;
+            }
+            pdAvLoadAlunos();
+        }
+
+        async function pdAvLoadAlunos() {
+            var grid = document.getElementById('pd-av-alunos-grid');
+            var empty = document.getElementById('pd-av-alunos-empty');
+            if (!pdAvTurma || !pdAvProjeto) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando alunos...</div>';
+            try {
+                var snap = await dbFirestore.collection('candidatos').where('turma', '==', pdAvTurma).where('projeto', '==', pdAvProjeto).get();
+                pdAvAlunos = [];
+                snap.forEach(function(doc) {
+                    var c = doc.data();
+                    if ((c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.ativo !== false) {
+                        pdAvAlunos.push({ cpf: c.cpf, nome: c.nome, matricula: c.matricula, turma: c.turma, projeto: c.projeto });
+                    }
+                });
+                pdAvAlunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+                pdAvRenderAlunos();
+            } catch (e) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#dc2626">Erro ao carregar alunos.</div>';
+            }
+        }
+
+        function pdAvRenderAlunos() {
+            var grid = document.getElementById('pd-av-alunos-grid');
+            var empty = document.getElementById('pd-av-alunos-empty');
+            if (!pdAvAlunos.length) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                empty.innerHTML = '<i class="fa-solid fa-user-slash" style="font-size:36px;margin-bottom:10px;display:block;color:#94a3b8"></i><p>Nenhum aluno ativo nesta turma.</p>';
+                return;
+            }
+            empty.style.display = 'none';
+            grid.innerHTML = '';
+            pdAvAlunos.forEach(function(a) {
+                var card = document.createElement('div');
+                card.className = 'pd-av-card-aluno';
+                card.innerHTML =
+                    '<div class="nome">' + pdEsc(a.nome) + '</div>' +
+                    '<div class="meta">' +
+                    '<span><i class="fa-solid fa-id-card"></i> ' + pdEsc(a.matricula || '—') + '</span>' +
+                    '<span><i class="fa-solid fa-users"></i> ' + pdEsc(a.turma) + '</span>' +
+                    '</div>' +
+                    '<button class="btn-avaliar" onclick="pdAvAbrirFicha(\'' + (a.cpf || '').replace(/'/g, '') + '\')"><i class="fa-solid fa-clipboard-check"></i> Avaliar</button>';
+                grid.appendChild(card);
+            });
+        }
+
+        async function pdAvLoadAulas() {
+            if (pdAvAulasCache) return pdAvAulasCache;
+            pdAvAulasCache = { todas: [], teorica: [], pratica: [] };
+            var sessao = sessionStorage.getItem('pd_sessao');
+            var docente = sessao ? JSON.parse(sessao) : null;
+            try {
+                var snap = await dbFirestore.collection('aulas').get();
+                snap.forEach(function(doc) {
+                    var a = doc.data();
+                    a._id = doc.id;
+                    if (a.projeto === pdAvProjeto && a.turma === pdAvTurma && (docente && (docente.isAdmin || pdPertenceDocente(a, docente.nome)))) {
+                        pdAvAulasCache.todas.push(a);
+                        if (a.avTeorica === 'Sim') pdAvAulasCache.teorica.push(a);
+                        if (a.avPratica === 'Sim') pdAvAulasCache.pratica.push(a);
+                    }
+                });
+                pdAvAulasCache.todas.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+                pdAvAulasCache.teorica.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+                pdAvAulasCache.pratica.sort(function(x, y) { return (x.data || '').localeCompare(y.data || ''); });
+            } catch (e) { console.error('Erro ao carregar aulas:', e); }
+            return pdAvAulasCache;
+        }
+
+        async function pdAvCarregarPresencas(cpf) {
+            pdAvPresencas = [];
+            try {
+                var snap = await dbFirestore.collection('presencasAlunos').where('cpf', '==', cpf).get();
+                snap.forEach(function(doc) { pdAvPresencas.push(doc.data()); });
+            } catch (e) { console.error('Erro ao carregar presenças:', e); }
+        }
+
+        async function pdAvCarregarAvaliacao(cpf) {
+            pdAvAvaliacao = null;
+            try {
+                var doc = await dbFirestore.collection('avaliacoesAlunos').doc(cpf).get();
+                if (doc.exists) pdAvAvaliacao = doc.data();
+            } catch (e) { console.error('Erro ao carregar avaliação:', e); }
+            if (!pdAvAvaliacao) {
+                pdAvAvaliacao = { cpf: cpf, foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '' };
+            }
+            pdAvFoLista = {
+                positivos: (pdAvAvaliacao.foPositivos || []).map(function(x) { return Object.assign({}, x); }),
+                negativos: (pdAvAvaliacao.foNegativos || []).map(function(x) { return Object.assign({}, x); })
+            };
+        }
+
+        async function pdAvSalvarAvaliacao() {
+            if (!pdAvAvaliacao || !pdAvAlunoAtual) return;
+            var dados = {
+                cpf: pdAvAvaliacao.cpf,
+                nome: pdAvAlunoAtual.nome,
+                matricula: pdAvAlunoAtual.matricula,
+                projeto: pdAvProjeto,
+                turma: pdAvTurma,
+                foPositivos: pdAvFoLista.positivos,
+                foNegativos: pdAvFoLista.negativos,
+                notasTeoricas: pdAvAvaliacao.notasTeoricas || {},
+                notasPraticas: pdAvAvaliacao.notasPraticas || {},
+                mediaTeoricaManual: pdAvAvaliacao.mediaTeoricaManual || '',
+                mediaPraticaManual: pdAvAvaliacao.mediaPraticaManual || '',
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                atualizadoPor: pdUser ? pdUser.nome || '' : ''
+            };
+            try {
+                await dbFirestore.collection('avaliacoesAlunos').doc(pdAvAvaliacao.cpf).set(dados, { merge: true });
+            } catch (e) { console.error('Erro ao salvar avaliação:', e); }
+        }
+
+        async function pdAvAbrirFicha(cpf) {
+            var a = null;
+            for (var i = 0; i < pdAvAlunos.length; i++) {
+                if (pdAvAlunos[i].cpf === cpf) { a = pdAvAlunos[i]; break; }
+            }
+            if (!a) return;
+            pdAvAlunoAtual = a;
+            document.getElementById('pd-av-ficha-overlay').style.display = 'block';
+            document.getElementById('pd-av-ficha-nome').textContent = a.nome;
+            document.getElementById('pd-av-ficha-meta').textContent = 'Matrícula: ' + (a.matricula || '—') + '  •  Turma: ' + a.turma + '  •  Projeto: ' + a.projeto;
+            document.getElementById('pd-av-ficha-avisos').innerHTML = '';
+            await pdAvLoadAulas();
+            await pdAvCarregarPresencas(cpf);
+            await pdAvCarregarAvaliacao(cpf);
+            pdAvTrocarAba('teorica');
+        }
+
+        function pdAvFecharFicha() {
+            document.getElementById('pd-av-ficha-overlay').style.display = 'none';
+            pdAvAlunoAtual = null;
+            pdAvAvaliacao = null;
+            pdAvPresencas = [];
+            pdAvAulasCache = null;
+            pdAvAbaAtual = 'teorica';
+        }
+
+        function pdAvTrocarAba(nome) {
+            pdAvAbaAtual = nome;
+            ['teorica', 'pratica', 'comportamento'].forEach(function(n) {
+                var tab = document.getElementById('pd-av-tab-' + n);
+                var aba = document.getElementById('pd-av-aba-' + n);
+                if (tab) tab.classList.toggle('active', n === nome);
+                if (aba) aba.style.display = n === nome ? 'block' : 'none';
+            });
+            if (nome === 'teorica') pdAvRenderNotas('teorica');
+            else if (nome === 'pratica') pdAvRenderNotas('pratica');
+            else pdAvRenderComportamento();
+        }
+
+        function pdAvRenderNotas(tipo) {
+            var container = document.getElementById('pd-av-aba-' + tipo);
+            if (!container || !pdAvAvaliacao) return;
+            var aulas = tipo === 'teorica' ? (pdAvAulasCache.teorica || []) : (pdAvAulasCache.pratica || []);
+            var notas = tipo === 'teorica' ? (pdAvAvaliacao.notasTeoricas || {}) : (pdAvAvaliacao.notasPraticas || {});
+            if (!aulas.length) {
+                container.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8"><i class="fa-solid fa-' + (tipo === 'teorica' ? 'file-lines' : 'flask') + '" style="font-size:30px;margin-bottom:8px;display:block"></i>Nenhuma aula marcada como AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '.</div>';
+                return;
+            }
+            var soma = 0, qtd = 0;
+            var html = '';
+            aulas.forEach(function(a) {
+                var val = notas[a._id] !== undefined ? notas[a._id] : '';
+                var dataStr = '';
+                if (a.data) {
+                    try { var dt = new Date(a.data + (a.data.length === 10 ? 'T12:00:00' : '')); if (!isNaN(dt.getTime())) dataStr = dt.toLocaleDateString('pt-BR'); } catch (e) { dataStr = a.data; }
+                }
+                html += '<div class="pd-av-aula-row">' +
+                    '<div class="aula-info">' +
+                    '<div class="aula-disciplina">' + pdEsc(a.disciplina || 'Aula') + '</div>' +
+                    '<div class="aula-data"><i class="fa-solid fa-calendar-day" style="margin-right:3px"></i>' + pdEsc(dataStr) + (a.conteudo ? ' — ' + pdEsc(a.conteudo) : '') + '</div>' +
+                    '</div>' +
+                    '<input type="number" min="0" max="10" step="0.1" value="' + val + '" placeholder="0-10" onchange="pdAvSalvarNota(\'' + tipo + '\',\'' + a._id + '\',this)" onblur="pdAvSalvarNota(\'' + tipo + '\',\'' + a._id + '\',this)" style="width:70px">' +
+                    '</div>';
+                var n = parseFloat(val);
+                if (!isNaN(n) && n >= 0) { soma += n; qtd++; }
+            });
+            var media = qtd ? Math.round((soma / qtd) * 10) / 10 : 0;
+            html += '<div class="pd-av-media-box">' +
+                '<div class="media-label">Média ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '</div>' +
+                '<div class="media-valor">' + (qtd ? media.toFixed(1) : '—') + '</div>' +
+                '<div style="font-size:11px;color:#64748b;margin-top:4px">' + qtd + ' nota(s) lancada(s)</div>' +
+                '</div>';
+            container.innerHTML = html;
+        }
+
+        async function pdAvSalvarNota(tipo, aulaId, el) {
+            var valor = el.value.trim();
+            var chave = tipo === 'teorica' ? 'notasTeoricas' : 'notasPraticas';
+            if (!pdAvAvaliacao[chave]) pdAvAvaliacao[chave] = {};
+            if (valor === '') delete pdAvAvaliacao[chave][aulaId];
+            else {
+                var n = parseFloat(valor.replace(',', '.'));
+                if (isNaN(n) || n < 0 || n > 10) { el.value = ''; alert('Informe uma nota entre 0 e 10.'); return; }
+                pdAvAvaliacao[chave][aulaId] = Math.round(n * 10) / 10;
+            }
+            await pdAvSalvarAvaliacao();
+            pdAvRenderNotas(tipo);
+        }
+
+        function pdAvRenderComportamento() {
+            var container = document.getElementById('pd-av-aba-comportamento');
+            if (!container || !pdAvAvaliacao) return;
+            var positivos = pdAvFoLista.positivos || [];
+            var negativos = pdAvFoLista.negativos || [];
+            var foP = positivos.length;
+            var foN = negativos.length;
+            var pontos = Math.floor(foP / 10) - Math.floor(foN / 5);
+            var html = '<div style="text-align:center;margin-bottom:16px">' +
+                '<div style="display:inline-flex;gap:24px;background:#f8fafc;padding:14px 24px;border-radius:10px">' +
+                '<div><div style="font-size:11px;color:#64748b">FO+</div><div style="font-size:22px;font-weight:800;color:#16a34a">' + foP + '</div></div>' +
+                '<div><div style="font-size:11px;color:#64748b">FO−</div><div style="font-size:22px;font-weight:800;color:#dc2626">' + foN + '</div></div>' +
+                '<div><div style="font-size:11px;color:#64748b">Pontos</div><div style="font-size:22px;font-weight:800;color:#1e293b">' + pontos + '</div></div>' +
+                '</div></div>';
+
+            html += '<div style="margin-bottom:12px"><strong style="font-size:13px;color:#16a34a"><i class="fa-solid fa-plus-circle"></i> FO Positivos</strong></div>';
+            positivos.forEach(function(f, i) {
+                html += '<div class="pd-av-fo-item"><span class="fo-obs">' + pdEsc(f.obs || 'Sem observação') + '</span><span class="fo-data">' + pdEsc(f.data || '') + '</span><button onclick="pdAvRemoverFO(true,' + i + ')" title="Remover"><i class="fa-solid fa-trash"></i></button></div>';
+            });
+            html += '<div class="pd-av-fo-add"><input id="pd-av-fo-obs-p" placeholder="Observação (opcional)" /><button onclick="pdAvAddFO(true)"><i class="fa-solid fa-plus"></i> FO+</button></div>';
+
+            html += '<div style="margin:16px 0 12px"><strong style="font-size:13px;color:#dc2626"><i class="fa-solid fa-minus-circle"></i> FO Negativos</strong></div>';
+            negativos.forEach(function(f, i) {
+                html += '<div class="pd-av-fo-item"><span class="fo-obs">' + pdEsc(f.obs || 'Sem observação') + '</span><span class="fo-data">' + pdEsc(f.data || '') + '</span><button onclick="pdAvRemoverFO(false,' + i + ')" title="Remover"><i class="fa-solid fa-trash"></i></button></div>';
+            });
+            html += '<div class="pd-av-fo-add"><input id="pd-av-fo-obs-n" placeholder="Observação (opcional)" /><button onclick="pdAvAddFO(false)" style="background:#dc2626"><i class="fa-solid fa-plus"></i> FO−</button></div>';
+
+            container.innerHTML = html;
+        }
+
+        async function pdAvAddFO(isPositive) {
+            var inputId = isPositive ? 'pd-av-fo-obs-p' : 'pd-av-fo-obs-n';
+            var obs = (document.getElementById(inputId).value || '').trim();
+            var item = { data: new Date().toLocaleDateString('pt-BR'), obs: obs, em: new Date().toISOString(), origem: 'portal-docente' };
+            var lista = isPositive ? pdAvFoLista.positivos : pdAvFoLista.negativos;
+            lista.push(item);
+            await pdAvSalvarAvaliacao();
+            pdAvRenderComportamento();
+        }
+
+        async function pdAvRemoverFO(isPositive, index) {
+            var lista = isPositive ? pdAvFoLista.positivos : pdAvFoLista.negativos;
+            lista.splice(index, 1);
+            await pdAvSalvarAvaliacao();
+            pdAvRenderComportamento();
         }
 
         /* Auto login se houver credenciais salvas */
