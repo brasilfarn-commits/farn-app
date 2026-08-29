@@ -1871,12 +1871,13 @@ function preOnSelecaoChange() {
 function gerarLinkPreAbrir() {
     const body = document.getElementById('modal-pre-link-body');
     if (!body) return;
+    const projetosEmAndamento = new Set(projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').map(p => p.nome));
     let options = '<option value="">Selecione a turma...</option>';
-    turmas.filter(t => t.projeto || t.nome).forEach(t => {
+    turmas.filter(t => (t.projeto || t.nome) && projetosEmAndamento.has(t.projeto)).forEach(t => {
         options += '<option value="' + (t.nome || '') + '" data-projeto="' + (t.projeto || '') + '">' + (t.nome || '') + (t.projeto ? ' - ' + t.projeto : '') + '</option>';
     });
     body.innerHTML =
-        '<p style="font-size:13px;color:#475569;margin-bottom:16px">Gere um link único de pré-inscrição. O link pode ser usado <strong>somente uma vez</strong> — após o preenchimento, ele expira automaticamente. A pessoa acessa sem senha.</p>' +
+        '<p style="font-size:13px;color:#475569;margin-bottom:16px">Gere um link único de pré-inscrição para turmas de projetos em andamento. O link pode ser usado <strong>somente uma vez</strong> — após o preenchimento, ele expira automaticamente. A pessoa acessa sem senha.</p>' +
         '<div class="form-group">' +
         '<label style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;display:block">Escolha a turma do link *</label>' +
         '<select id="pre-link-turma" class="config-input" style="width:100%" onchange="gerarLinkPreAtualizarTurma()">' + options + '</select>' +
@@ -1901,11 +1902,14 @@ async function gerarLinkPreGerar() {
     if (!turma) { alert('Selecione uma turma para gerar o link.'); return; }
     const opt = sel.options[sel.selectedIndex];
     const projeto = (opt && opt.dataset.projeto) || '';
+    const projEmAndamento = projetos.find(p => p.nome === projeto && (p.status || 'Em Andamento') === 'Em Andamento');
+    if (!projEmAndamento) { alert('Só é possível gerar link para turmas de projetos em andamento.'); return; }
     const btn = document.querySelector('#modal-pre-link-body button');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; }
     try {
         const token = 'PL' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-        const link = location.origin + '/pre-inscricao-via-link.html?token=' + token;
+        const base = (location.hostname.indexOf('github.io') >= 0 || location.hostname.indexOf('127.0.0.1') >= 0 || location.hostname === 'localhost') ? 'https://farn-app.web.app' : location.origin;
+        const link = base + '/pre-inscricao-via-link.html?token=' + token;
         const docData = {
             token: token,
             turma: turma,
@@ -3430,7 +3434,8 @@ function projetoRenderTurmas() {
         div.className = 'pf-turma-item';
         div.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid #222;transition:background 0.2s';
         var infoExtra = '';
-        if (t.previsao) infoExtra += '<span style="color:#94a3b8;font-size:11px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>Previsao: ' + t.previsao + '</span>';
+        if (t.inicio) infoExtra += '<span style="color:#94a3b8;font-size:11px"><i class="fa-solid fa-flag" style="margin-right:4px"></i>Inicio: ' + t.inicio + '</span>';
+        if (t.previsao) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>Previsao: ' + t.previsao + '</span>';
         if (t.dias && t.dias.length) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + t.dias.join(', ') + '</span>';
         if (t.horarios) {
             var hList = Object.entries(t.horarios).map(function(e) { return e[0] + ': ' + e[1].inicio + ' - ' + e[1].fim; }).join(', ');
@@ -3486,6 +3491,7 @@ function pfTurmaColetarDados() {
         horarios[d] = { inicio: ini ? ini.value : '08:00', fim: fim ? fim.value : '17:00' };
     });
     return {
+        inicio: (document.getElementById('pf-turma-inicio') && document.getElementById('pf-turma-inicio').value) || '',
         previsao: document.getElementById('pf-turma-previsao').value || '',
         dias: dias,
         horarios: horarios
@@ -3494,6 +3500,7 @@ function pfTurmaColetarDados() {
 
 function pfTurmaPreencherForm(t) {
     document.getElementById('pf-turma-previsao').value = t.previsao || '';
+    if (document.getElementById('pf-turma-inicio')) document.getElementById('pf-turma-inicio').value = t.inicio || '';
     document.querySelectorAll('#pf-turma-dias input[type=checkbox]').forEach(function(cb) {
         var checked = t.dias && t.dias.indexOf(cb.value) !== -1;
         cb.checked = checked;
@@ -3516,6 +3523,7 @@ function pfTurmaLimparForm() {
     document.getElementById('pf-turma-nome').value = '';
     document.getElementById('pf-turma-desc').value = '';
     document.getElementById('pf-turma-previsao').value = '';
+    if (document.getElementById('pf-turma-inicio')) document.getElementById('pf-turma-inicio').value = '';
     document.querySelectorAll('#pf-turma-dias input[type=checkbox]').forEach(function(cb) {
         cb.checked = false;
         cb.closest('label').style.background = '#fff';
@@ -3533,7 +3541,7 @@ function projetoAdicionarTurma() {
     var duplicada = projetoTurmasTemp.find(function(t) { return t.nome.toLowerCase() === nome.toLowerCase(); });
     if (duplicada) { alert('Ja existe uma turma com esse nome neste projeto.'); return; }
     var extras = pfTurmaColetarDados();
-    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim(), previsao: extras.previsao, dias: extras.dias, horarios: extras.horarios });
+    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim(), inicio: extras.inicio, previsao: extras.previsao, dias: extras.dias, horarios: extras.horarios });
     pfTurmaLimparForm();
     nomeEl.focus();
     projetoRenderTurmas();
@@ -3562,6 +3570,7 @@ function projetoSalvarTurma() {
     var extras = pfTurmaColetarDados();
     projetoTurmasTemp[editingProjetoTurmaIdx].nome = nome;
     projetoTurmasTemp[editingProjetoTurmaIdx].descricao = descEl.value.trim();
+    projetoTurmasTemp[editingProjetoTurmaIdx].inicio = extras.inicio;
     projetoTurmasTemp[editingProjetoTurmaIdx].previsao = extras.previsao;
     projetoTurmasTemp[editingProjetoTurmaIdx].dias = extras.dias;
     projetoTurmasTemp[editingProjetoTurmaIdx].horarios = extras.horarios;
@@ -3703,7 +3712,7 @@ async function handleProjetoSubmit(event) {
         }
         for (const t of projetoTurmasTemp) {
             const existe = turmas.find(tx => tx.nome === t.nome && tx.projeto === nome);
-            const turmaData = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome, previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} };
+            const turmaData = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome, inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} };
             if (existe) {
                 Object.assign(existe, turmaData);
             } else {
@@ -3776,7 +3785,7 @@ function editProjeto(i) {
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
     document.getElementById('pf-status').value = p.status || 'Em Andamento';
-    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} }));
+    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} }));
     projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
     showAdminSection('admin-form-projeto');

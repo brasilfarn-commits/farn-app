@@ -472,6 +472,44 @@
         @keyframes badgePulse{0%,100%{transform:translateY(-50%) scale(1)}50%{transform:translateY(-50%) scale(1.1)}}
         @keyframes badgePulseMobile{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
+        /* ===== NOTIFICACOES ===== */
+        .pf-notif-wrap{position:relative}
+        .pf-notif-btn{position:relative;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+        .pf-notif-btn:hover{background:rgba(255,255,255,.32)}
+        .pf-notif-dot{position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 2px #fff,0 0 10px rgba(74,222,128,.9);display:none;animation:notifPulse 1.6s infinite}
+        .pf-notif-dot.on{display:block}
+        .pf-notif-count{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+        .pf-notif-count.hidden{display:none}
+        @keyframes notifPulse{0%,100%{box-shadow:0 0 0 2px #fff,0 0 8px rgba(74,222,128,.9)}50%{box-shadow:0 0 0 4px #fff,0 0 18px rgba(74,222,128,1)}}
+        .pf-notif-panel{position:absolute;top:calc(100% + 10px);right:-60px;width:360px;max-width:calc(100vw - 24px);background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.22);overflow:hidden;display:none;z-index:300;border:1px solid var(--gray200)}
+        .pf-notif-panel.open{display:block}
+        .pf-notif-panel::before{content:'';position:absolute;top:-8px;right:70px;width:16px;height:16px;background:#fff;transform:rotate(45deg);border-left:1px solid var(--gray200);border-top:1px solid var(--gray200)}
+        .pf-notif-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff}
+        .pf-notif-header span{font-size:14px;font-weight:700}
+        .pf-notif-header button{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer}
+        .pf-notif-list{max-height:420px;overflow-y:auto}
+        .pf-notif-empty{text-align:center;padding:30px 16px;color:var(--gray400);font-size:13px}
+        .pf-notif-item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--gray100);cursor:pointer;transition:.15s}
+        .pf-notif-item:hover{background:#f8fafc}
+        .pf-notif-item.unseen{background:#f0fdf4}
+        .pf-notif-item .icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+        .pf-notif-item .icon.green{background:rgba(22,163,74,.12);color:var(--green)}
+        .pf-notif-item .icon.blue{background:rgba(33,136,255,.12);color:#2188ff}
+        .pf-notif-item .icon.purple{background:rgba(124,58,237,.12);color:#7c3aed}
+        .pf-notif-item .icon.orange{background:rgba(245,158,11,.15);color:#d97706}
+        .pf-notif-item .icon.red{background:rgba(220,38,38,.1);color:var(--red)}
+        .pf-notif-item .body{flex:1;min-width:0}
+        .pf-notif-item .body .titulo{font-size:13px;font-weight:700;color:var(--gray800)}
+        .pf-notif-item .body .texto{font-size:12px;color:var(--gray500);margin-top:2px;line-height:1.4}
+        .pf-notif-item .body .tempo{font-size:11px;color:var(--gray400);margin-top:4px}
+        .pf-notif-item .dot-um{width:8px;height:8px;border-radius:50%;background:#4ade80;margin-top:4px;flex-shrink:0;align-self:center}
+        .pf-notif-item.seen .dot-um{background:transparent}
+
+        @media (max-width:640px){
+            .pf-notif-panel{right:-10px;width:min(360px,calc(100vw - 24px))}
+            .pf-notif-panel::before{right:26px}
+        }
+
         /* Mobile Bottom Nav */
         .pf-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--gray200);padding:6px 0;z-index:100;box-shadow:0 -4px 16px rgba(0,0,0,.06)}
         .pf-mobile-nav-items{display:flex;justify-content:space-around}
@@ -569,6 +607,22 @@
                 <span class="pf-topbar-title">Portal do Aluno</span>
             </div>
             <div class="pf-topbar-right">
+                <div class="pf-notif-wrap" id="pf-notif-wrap">
+                    <button class="pf-notif-btn" onclick="paToggleNotificacoes(event)" aria-label="Notificações">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="pf-notif-dot" id="pf-notif-dot"></span>
+                        <span class="pf-notif-count hidden" id="pf-notif-count">0</span>
+                    </button>
+                    <div class="pf-notif-panel" id="pf-notif-panel">
+                        <div class="pf-notif-header">
+                            <span><i class="fa-solid fa-bell"></i> Notificações</span>
+                            <button onclick="paMarcarNotificacoesLidas()"><i class="fa-solid fa-check-double"></i> Marcar todas</button>
+                        </div>
+                        <div class="pf-notif-list" id="pf-notif-list">
+                            <div class="pf-notif-empty">Sem notificações no momento.</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="pf-user-info">
                     <div class="pf-user-name" id="pf-user-name">---</div>
                     <div class="pf-user-matricula" id="pf-user-matricula"></div>
@@ -1223,6 +1277,7 @@
                 paLoadStats();
                 paLoadAvaliacao();
                 chatInitEmoji();
+                paInitNotificacoes();
             }
 
             /* Se inativo por falta, abre modal de justificativas apos carregar */
@@ -1613,6 +1668,220 @@
         document.body.style.overflow = '';
     }
 
+/* ===== NOTIFICACOES ===== */
+    var paNotifUnsub = null;
+    var paNotifChatUnsub = null;
+    var paNotifApostUnsub = null;
+    var paNotifAvUnsub = null;
+    var paNotifLista = [];
+    var paNotifIds = {};
+
+    function paNotifStorageKey() { return 'farn_notif_list_' + (paUser ? paUser.cpf : ''); }
+    function paNotifCarregar() {
+        try {
+            var raw = localStorage.getItem(paNotifStorageKey());
+            var arr = raw ? JSON.parse(raw) : [];
+            if (Array.isArray(arr)) {
+                paNotifLista = arr.slice(0, 50);
+                paNotifIds = {};
+                paNotifLista.forEach(function(n) { if (n && n.id) paNotifIds[n.id] = true; });
+            }
+        } catch(e) { paNotifLista = []; paNotifIds = {}; }
+    }
+    function paNotifSalvar() {
+        try { localStorage.setItem(paNotifStorageKey(), JSON.stringify(paNotifLista.slice(0, 50))); } catch(e) {}
+    }
+    function paNotifAdd(item) {
+        if (!item || !item.id || paNotifIds[item.id]) return false;
+        paNotifIds[item.id] = true;
+        paNotifLista.unshift(item);
+        if (paNotifLista.length > 50) {
+            var removidos = paNotifLista.splice(50);
+            removidos.forEach(function(r) { if (r && r.id) delete paNotifIds[r.id]; });
+        }
+        paNotifSalvar();
+        paNotifRender();
+        return true;
+    }
+    function paNotifNaoLidas() {
+        return paNotifLista.filter(function(n) { return n && !n.lida; }).length;
+    }
+    function paNotifRender() {
+        var dot = document.getElementById('pf-notif-dot');
+        var count = document.getElementById('pf-notif-count');
+        var nl = paNotifNaoLidas();
+        if (dot) dot.classList.toggle('on', nl > 0);
+        if (count) {
+            if (nl > 0) { count.textContent = nl > 99 ? '99+' : nl; count.classList.remove('hidden'); }
+            else { count.classList.add('hidden'); }
+        }
+        var list = document.getElementById('pf-notif-list');
+        if (!list) return;
+        if (paNotifLista.length === 0) {
+            list.innerHTML = '<div class="pf-notif-empty"><i class="fa-solid fa-bell-slash"></i><p style="margin-top:8px">Sem notificacoes no momento.</p></div>';
+            return;
+        }
+        var html = '';
+        paNotifLista.slice(0, 30).forEach(function(n, i) {
+            html += '<div class="pf-notif-item ' + (n.lida ? 'seen' : 'unseen') + '" onclick="paNotifAbrir(' + i + ')">' +
+                '<div class="icon ' + (n.cor || 'green') + '"><i class="fa-solid ' + (n.icon || 'fa-bell') + '"></i></div>' +
+                '<div class="body">' +
+                    '<div class="titulo">' + n.titulo + '</div>' +
+                    (n.texto ? '<div class="texto">' + n.texto + '</div>' : '') +
+                    '<div class="tempo">' + (n.tempo || '') + '</div>' +
+                '</div>' +
+                '<div class="dot-um"></div>' +
+            '</div>';
+        });
+        list.innerHTML = html;
+    }
+    function paNotifAbrir(idx) {
+        if (paNotifLista[idx] && !paNotifLista[idx].lida) {
+            paNotifLista[idx].lida = true;
+            paNotifSalvar();
+            paNotifRender();
+        }
+        var tipo = paNotifLista[idx] ? paNotifLista[idx].tipo : '';
+        var el = null;
+        if (tipo === 'chat') { el = 'chat'; }
+        else if (tipo === 'apostila') { el = 'apostila'; }
+        else { el = 'avaliacao'; }
+        if (el && typeof paShowSection === 'function') {
+            var nav = document.querySelector('.pf-nav-item.active');
+            paShowSection(el, nav);
+        }
+        paFecharNotificacoes();
+    }
+    function paMarcarNotificacoesLidas() {
+        paNotifLista.forEach(function(n) { n.lida = true; });
+        paNotifSalvar();
+        paNotifRender();
+    }
+    function paToggleNotificacoes(e) {
+        if (e) e.stopPropagation();
+        var panel = document.getElementById('pf-notif-panel');
+        if (!panel) return;
+        panel.classList.toggle('open');
+        if (!panel.classList.contains('open')) return;
+        paNotifRender();
+        setTimeout(function() {
+            document.addEventListener('click', paNotifDocClick);
+        }, 0);
+    }
+    function paNotifDocClick(e) {
+        var panel = document.getElementById('pf-notif-panel');
+        if (panel && panel.classList.contains('open') && !panel.contains(e.target) && !e.target.closest('.pf-notif-btn')) {
+            paFecharNotificacoes();
+        }
+    }
+    function paFecharNotificacoes() {
+        var panel = document.getElementById('pf-notif-panel');
+        if (panel) panel.classList.remove('open');
+        document.removeEventListener('click', paNotifDocClick);
+    }
+    function paNotifTempo(ts) {
+        if (!ts) return '';
+        var m = ts;
+        if (ts.toMillis) m = ts.toMillis();
+        var diff = Date.now() - m;
+        if (diff < 60000) { var s = Math.floor(diff/1000); return s <= 1 ? 'agora' : s + 's atras'; }
+        var min = Math.floor(diff/60000);
+        if (min < 60) return min + 'min atras';
+        var h = Math.floor(min/60);
+        if (h < 24) return h + 'h atras';
+        var d = Math.floor(h/24);
+        if (d < 30) return d + 'd atras';
+        var dd = new Date(m);
+        return dd.toLocaleDateString('pt-BR');
+    }
+    function paNotifTituloCurto(t) {
+        if (!t) return '';
+        t = String(t);
+        if (t.length <= 40) return t;
+        return t.substring(0, 40) + '...';
+    }
+
+    function paInitNotificacoes() {
+        if (!paUser || !paUser.cpf) return;
+        paNotifCarregar();
+        paNotifRender();
+        if (paNotifUnsub) paNotifUnsub();
+        if (paNotifChatUnsub) paNotifChatUnsub();
+        if (paNotifApostUnsub) paNotifApostUnsub();
+        if (paNotifAvUnsub) paNotifAvUnsub();
+        var cpf = paUser.cpf;
+
+        /* Avaliacao / comportamento / FO / AV teorica / AV pratica */
+        paNotifAvUnsub = dbFirestore.collection('avaliacoesAlunos').doc(cpf).onSnapshot(function(doc) {
+            if (!doc.exists) return;
+            var d = doc.data();
+            var t = d.atualizadoEm;
+            if (!t) return;
+            var ms = t.toMillis ? t.toMillis() : (t.seconds ? t.seconds * 1000 : null);
+            if (!ms) return;
+            var id = 'av_' + ms;
+            if (paNotifIds[id]) return;
+            var titulo = 'Avaliacao atualizada';
+            var icon = 'fa-clipboard-list', cor = 'blue';
+            var texto = '';
+            if ((d.foPositivos && d.foPositivos.length) || (d.foNegativos && d.foNegativos.length)) {
+                texto = 'Novo lancamento de comportamento (FO+/FO-)';
+                icon = 'fa-face-smile'; cor = 'green';
+            }
+            var notasT = d.notasTeoricas ? Object.keys(d.notasTeoricas).length : 0;
+            var notasP = d.notasPraticas ? Object.keys(d.notasPraticas).length : 0;
+            if (notasT > 0 || notasP > 0) {
+                titulo = 'Notas lancadas';
+                texto = 'AV Teorica e/ou AV Pratica foram atualizadas (' + notasP + ' pratica / ' + notasT + ' teorica)';
+                icon = 'fa-graduation-cap'; cor = 'purple';
+            } else if (!texto) {
+                texto = 'Suas avaliacoes foram atualizadas pelo corpo docente';
+            }
+            paNotifAdd({
+                id: id, tipo: 'avaliacao', titulo: titulo, texto: texto,
+                icon: icon, cor: cor, tempo: paNotifTempo(ms), lida: false
+            });
+        });
+
+        /* Nova apostila extra para a turma */
+        paNotifApostUnsub = dbFirestore.collection('apostilasAlunos').where('tipo', '==', 'extra').onSnapshot(function(snap) {
+            var myTurma = (paUser.turma || '').trim();
+            snap.forEach(function(doc) {
+                var a = doc.data() || {};
+                if (myTurma && a.turma && a.turma !== myTurma) return;
+                if (a.visivel === false) return;
+                var t = a.criadoEm;
+                var ms = 0;
+                if (t) ms = t.toMillis ? t.toMillis() : (t.seconds ? t.seconds * 1000 : 0);
+                var id = 'ap_' + doc.id + '_' + ms;
+                if (paNotifIds[id] || !ms) return;
+                paNotifAdd({
+                    id: id, tipo: 'apostila', titulo: 'Nova apostila extra',
+                    texto: paNotifTituloCurto(a.titulo || 'Material extra disponivel'),
+                    icon: 'fa-book', cor: 'orange', tempo: paNotifTempo(ms), lida: false
+                });
+            });
+        });
+
+        /* Nova mensagem do admin/coordenacao no chat */
+        paNotifChatUnsub = dbFirestore.collection('chatAdmin').doc(cpf).collection('msgs').orderBy('hora', 'desc').limit(20).onSnapshot(function(snap) {
+            snap.forEach(function(doc) {
+                var m = doc.data() || {};
+                if (m.remetente === 'aluno') return;
+                var t = m.hora;
+                var ms = 0;
+                if (t) ms = t.toMillis ? t.toMillis() : (t.seconds ? t.seconds * 1000 : 0);
+                var id = 'chat_' + doc.id + '_' + ms;
+                if (paNotifIds[id] || !ms) return;
+                paNotifAdd({
+                    id: id, tipo: 'chat', titulo: 'Nova mensagem no chat',
+                    texto: paNotifTituloCurto(m.texto || 'Voce recebeu uma mensagem'),
+                    icon: 'fa-envelope', cor: 'blue', tempo: paNotifTempo(ms), lida: false
+                });
+            });
+        });
+    }
+
     function paShowSection(section, el) {
         document.querySelectorAll('.pf-section').forEach(function(s){ s.classList.remove('active'); });
         document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
@@ -1819,6 +2088,7 @@
             '<div class="pf-dados-card"><div class="pf-dados-label">Matricula</div><div class="pf-dados-val">' + (paUser.matricula || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'email\')"><div class="pf-dados-label">Email <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-email">' + (paUser.email || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'whatsapp\')"><div class="pf-dados-label">WhatsApp <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-whatsapp">' + (paUser.whatsapp || '---') + '</div></div>' +
+            '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'camisa\')"><div class="pf-dados-label">Camisa <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-camisa">' + (paUser.camisa || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'endereco\')" style="grid-column:1/-1"><div class="pf-dados-label">Endereco Completo <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-endereco">' + (endComp || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="paEditCampo(\'senha\')" style="grid-column:1/-1"><div class="pf-dados-label">Senha de Acesso <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-senha">******</div></div>';
     }
@@ -1837,6 +2107,13 @@
             title.textContent = 'Editar WhatsApp';
             atual = paUser.whatsapp || '';
             body.innerHTML = '<label style="color:var(--gray600);font-size:12px;font-weight:600">WhatsApp</label><input type="text" id="pf-edit-valor" value="' + atual + '" oninput="paFormatPhone(this)" maxlength="15" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">';
+        } else if (campo === 'camisa') {
+            title.textContent = 'Editar Tamanho de Camisa';
+            var atualCamisa = paUser.camisa || '';
+            var opcoes = ['P', 'M', 'G', 'GG'];
+            var sel = '<option value="">Selecione...</option>';
+            opcoes.forEach(function(o) { sel += '<option value="' + o + '"' + (atualCamisa === o ? ' selected' : '') + '>' + o + '</option>'; });
+            body.innerHTML = '<label style="color:var(--gray600);font-size:12px;font-weight:600">Tamanho da Camisa</label><select id="pf-edit-valor" style="width:100%;padding:10px;background:var(--gray100);border:1px solid var(--gray200);border-radius:var(--radius-xs);color:var(--gray800);font-size:14px;margin-top:6px">' + sel + '</select>';
         } else if (campo === 'endereco') {
             title.textContent = 'Editar Endereco';
             body.innerHTML =
@@ -1910,6 +2187,8 @@
         } else if (campo === 'whatsapp') {
             var val = document.getElementById('pf-edit-valor').value.trim();
             dados.whatsapp = val;
+        } else if (campo === 'camisa') {
+            dados.camisa = document.getElementById('pf-edit-valor').value.trim();
         } else if (campo === 'endereco') {
             dados.endereco = document.getElementById('pf-edit-endereco').value.trim();
             dados.numero = document.getElementById('pf-edit-numero').value.trim();
@@ -3487,20 +3766,32 @@
 
             var turmaData = {};
             if (turmaNome) {
-                var turmaId = turmaNome + '_' + projetoNome;
                 try {
-                    var turmaDoc = await dbFirestore.collection('turmas').doc(turmaId).get();
-                    if (turmaDoc.exists) {
-                        turmaData = turmaDoc.data();
-                    } else {
-                        var turmaSnap = await dbFirestore.collection('turmas').where('nome', '==', turmaNome).get();
-                        turmaSnap.forEach(function(doc) {
-                            var d = doc.data();
-                            if (d.projeto === projetoNome) turmaData = d;
+                    var turmaId = turmaNome + '_' + projetoNome;
+                    function melhorTurma(docsList) {
+                        var melhor = null;
+                        docsList.forEach(function(dc) {
+                            var d = dc.data();
+                            if (!d || !d.nome) return;
+                            if (!melhor) melhor = d;
+                            if (dc.id === turmaId) { melhor = d; return; }
+                            if (!melhor.inicio && d.inicio) melhor = d;
+                            if (!melhor.horarios && d.horarios) melhor = d;
+                            if (!melhor.previsao && d.previsao) melhor = d;
                         });
-                        if (!turmaData.nome) {
-                            turmaSnap.forEach(function(doc) { if (!turmaData.nome) turmaData = doc.data(); });
-                        }
+                        return melhor;
+                    }
+                    var turmaSnapQ = await dbFirestore.collection('turmas').where('nome', '==', turmaNome).where('projeto', '==', projetoNome).get();
+                    if (!turmaSnapQ.empty) {
+                        turmaData = melhorTurma(turmaSnapQ.docs) || {};
+                    }
+                    if (!turmaData.nome) {
+                        var turmaDoc = await dbFirestore.collection('turmas').doc(turmaId).get();
+                        if (turmaDoc.exists) turmaData = turmaDoc.data();
+                    }
+                    if (!turmaData.nome) {
+                        var turmaSnap = await dbFirestore.collection('turmas').where('nome', '==', turmaNome).get();
+                        turmaData = melhorTurma(turmaSnap.docs) || {};
                     }
                 } catch(e) {
                     console.warn('Erro ao buscar turma:', e);
@@ -3640,36 +3931,36 @@
 
             addField('Data de Inscricao', fmtDateBR(paUser.dataInscricao));
 
-            addField('Previsao Final', fmtDateBR(turmaData.previsao));
+            addField('Inicio da Turma', fmtDateBR(turmaData.inicio));
 
-            var diasSemana = turmaData.dias || [];
-            addField('Dias da Semana', diasSemana.length ? diasSemana.join(', ') : '---');
-            y += 4;
+            addField('Previsao Final', fmtDateBR(turmaData.previsao));
 
             addLine('green', y);
             y += 8;
 
-            /* --- HORARIOS --- */
+            /* --- DIAS DA SEMANA --- */
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
             doc.setTextColor(30, 41, 59);
-            doc.text('Horarios das Aulas', margin, y);
+            doc.text('Dias da Semana', margin, y);
             y += 7;
 
-            var horarios = turmaData.horarios || {};
+            var diasSemana = turmaData.dias || [];
+            var horariosTurma = turmaData.horarios || {};
             var diaOrder = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
             var diaFull = { Seg: 'Segunda-feira', Ter: 'Terca-feira', Qua: 'Quarta-feira', Qui: 'Quinta-feira', Sex: 'Sexta-feira', Sab: 'Sabado', Dom: 'Domingo' };
 
-            if (Object.keys(horarios).length) {
+            if (diasSemana.length) {
                 diaOrder.forEach(function(d) {
-                    if (horarios[d]) {
+                    if (diasSemana.indexOf(d) !== -1) {
                         doc.setFont('helvetica', 'bold');
                         doc.setFontSize(10);
                         doc.setTextColor(71, 85, 105);
                         doc.text((diaFull[d] || d) + ':', margin, y);
                         doc.setFont('helvetica', 'normal');
                         doc.setTextColor(30, 41, 59);
-                        doc.text(horarios[d].inicio + ' - ' + horarios[d].fim, margin + 45, y);
+                        var h = horariosTurma[d];
+                        doc.text(h && h.inicio ? h.inicio + ' - ' + (h.fim || '') : '---', margin + 75, y);
                         y += 6;
                     }
                 });
@@ -3677,7 +3968,7 @@
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(10);
                 doc.setTextColor(100, 116, 139);
-                doc.text('Nenhum horario cadastrado para esta turma.', margin, y);
+                doc.text('Nenhum dia da semana cadastrado para esta turma.', margin, y);
                 y += 6;
             }
             y += 4;
@@ -3690,7 +3981,7 @@
             doc.setFontSize(10);
             doc.setTextColor(30, 41, 59);
             var declText = 'Declaro, para os devidos fins, que o(a) aluno(a) acima identificado(a) encontra-se regularmente matriculado(a) no projeto "' + (projetoNome || '---') + '", turma "' + (turmaNome || '---') + '", ';
-            if (diasSemana.length) declText += 'com aulas nos dias ' + diasSemana.join(', ') + ', ';
+            if (diasSemana.length) declText += 'com aulas nos dias ' + diasSemana.map(function(d) { return diaFull[d] || d; }).join(', ') + ', ';
             declText += 'conforme dados acima.';
             var declLines = doc.splitTextToSize(declText, pw - 2 * margin);
             doc.text(declLines, margin, y);
