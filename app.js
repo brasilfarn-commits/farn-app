@@ -948,7 +948,8 @@ function applyUserPermissions() {
         'admin-noticias': p.includes('noticias') || isGeral,
         'admin-galeria': p.includes('galeria') || isGeral,
         'admin-atelie': isGeral,
-        'admin-avaliacao': p.includes('avaliacao') || isGeral
+        'admin-avaliacao': p.includes('avaliacao') || isGeral,
+        'admin-criar-avaliacao': p.includes('avaliacao') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -1587,7 +1588,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -8347,3 +8348,795 @@ function escHTML(str) {
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+/* ===== CONSTRUTOR DE AVALIACOES (ADMIN) ===== */
+const FB_AVALIACOES = 'avaliacoes';
+const FB_AVALIACOES_RESPOSTAS = 'avaliacoesRespostas';
+let cavEditingId = null;
+let cavQuestaoSeq = 0;
+let cavNomeAula = {};
+let cavNomeAtual = '';
+let cavQMax = 20;
+let cavAulasOptions = [];
+let cavAulasFiltro = '';
+
+function cavLoadList() {
+    const container = document.getElementById('cav-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>';
+    dbFirestore.collection(FB_AVALIACOES).orderBy('criadoEm', 'desc').get().then(snap => {
+        if (snap.empty) {
+            container.innerHTML = '<div class="empty-state" style="text-align:center;padding:30px"><p style="color:#64748b;margin-bottom:12px">Nenhuma avaliação criada ainda.</p>' +
+                '<button class="btn-primary btn-sm" onclick="cavNovaAvaliacao()"><i class="fa-solid fa-plus"></i> Criar primeira avaliação</button></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(doc => {
+            const d = doc.data();
+            const qtd = (d.questoes || []).length;
+            const card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(15,23,42,.04)';
+            const envBadge = d.enviada
+                ? ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.25)"><i class="fa-solid fa-paper-plane"></i> Enviada</span>'
+                : ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.25)">Não enviada</span>';
+            card.innerHTML =
+                '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-lines" style="color:#2563eb;font-size:18px"></i></div>' +
+                '<div style="flex:1;min-width:170px">' +
+                    '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + envBadge + '</div>' +
+                    '<div style="font-size:11.5px;color:#64748b;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">' +
+                        (d.projeto ? '<span><i class="fa-solid fa-folder-open" style="margin-right:3px"></i>' + escHTML(d.projeto) + '</span>' : '') +
+                        (d.turma ? '<span><i class="fa-solid fa-users" style="margin-right:3px"></i>' + escHTML(d.turma) + '</span>' : '') +
+                        (d.disciplina ? '<span><i class="fa-solid fa-book" style="margin-right:3px"></i>' + escHTML(d.disciplina) + '</span>' : '') +
+                        '<span><i class="fa-solid fa-list-check" style="margin-right:3px"></i>' + qtd + ' questões</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
+                    '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + doc.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + doc.id + '\')"><i class="fa-solid fa-print"></i></button>' +
+                    '<button class="btn-warning btn-sm" title="Enviar" onclick="cavAbrirEnvioPorId(\'' + doc.id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
+                    '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + doc.id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
+                    '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + doc.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(card);
+        });
+    }).catch(() => {
+        container.innerHTML = '<div class="empty-state" style="text-align:center;padding:20px"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
+    });
+}
+
+function cavAbrirEnvioPorId(id) {
+    cavEditingId = id;
+    cavAbrirEnvio();
+}
+
+function cavNovaAvaliacao() {
+    cavEditingId = null;
+    cavNomeAula = {};
+    cavNomeAtual = '';
+    document.getElementById('cav-nome').innerHTML = '<option value="">Selecione primeiro a turma...</option>';
+    const busca = document.getElementById('cav-aula-busca');
+    if (busca) busca.value = '';
+    document.getElementById('cav-projeto').innerHTML = '<option value="">Selecione o projeto...</option>';
+    document.getElementById('cav-turma').innerHTML = '<option value="">Selecione a turma...</option>';
+    document.getElementById('cav-docente').innerHTML = '<option value="">Selecione o docente...</option>';
+    document.getElementById('cav-questoes').innerHTML = '';
+    document.getElementById('cav-gabarito').style.display = 'none';
+    document.getElementById('cav-editing-badge').style.display = 'none';
+    document.getElementById('cav-editing-badge').innerHTML = '';
+    document.getElementById('cav-form-titulo').textContent = 'Nova Avaliação';
+    document.getElementById('cav-form').style.display = 'block';
+    document.getElementById('cav-add-q-btn').style.display = 'inline-flex';
+    cavQMax = 20;
+    const limiteSel = document.getElementById('cav-q-limite');
+    if (limiteSel) limiteSel.value = '20';
+    const qMaxEl = document.getElementById('cav-q-max');
+    if (qMaxEl) qMaxEl.textContent = cavQMax;
+    cavAtualizarQCount();
+    cavPopulateProjetos();
+    cavPopulateDocentes();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cavMudarLimite(n) {
+    cavQMax = (n === 10 || n === 20) ? n : 20;
+    const qMaxEl = document.getElementById('cav-q-max');
+    if (qMaxEl) qMaxEl.textContent = cavQMax;
+    // remove questoes excedentes
+    const wrap = document.getElementById('cav-questoes');
+    if (wrap) {
+        const extras = wrap.querySelectorAll('.cav-q');
+        for (let i = extras.length - 1; i >= cavQMax; i--) {
+            if (extras[i]) extras[i].remove();
+        }
+    }
+    cavAtualizarQCount();
+}
+
+function cavAtualizarQCount() {
+    const count = document.querySelectorAll('#cav-questoes .cav-q').length;
+    const el = document.getElementById('cav-q-count');
+    if (el) el.textContent = count;
+    const addBtn = document.getElementById('cav-add-q-btn');
+    if (addBtn) addBtn.style.display = count >= cavQMax ? 'none' : 'inline-flex';
+}
+
+function cavPopulateProjetos(value) {
+    const sel = document.getElementById('cav-projeto');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+    // Exibe apenas projetos em andamento que possuam turmas cadastradas
+    (projetos || []).forEach(p => {
+        if ((p.status || 'Em Andamento') !== 'Em Andamento') return;
+        const temTurma = (turmas || []).some(t => t.projeto === p.nome);
+        if (!temTurma) return;
+        const opt = document.createElement('option');
+        opt.value = p.nome || '';
+        opt.textContent = (p.nome || '') + (p.responsavel ? ' - ' + p.responsavel : '');
+        sel.appendChild(opt);
+    });
+    if (value) sel.value = value;
+}
+
+function cavPopulateTurmas(projetoNome, value) {
+    const sel = document.getElementById('cav-turma');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione a turma...</option>';
+    (turmas || []).filter(t => !projetoNome || t.projeto === projetoNome).forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.nome || '';
+        opt.textContent = (t.nome || '');
+        sel.appendChild(opt);
+    });
+    if (value) sel.value = value;
+}
+
+function cavOnProjetoChange() {
+    const proj = document.getElementById('cav-projeto').value;
+    cavPopulateTurmas(proj, '');
+    document.getElementById('cav-nome').innerHTML = '<option value="">Selecione primeiro a turma...</option>';
+    const busca = document.getElementById('cav-aula-busca');
+    if (busca) { busca.value = ''; busca.disabled = true; }
+    cavNomeAula = {};
+}
+
+function cavOnTurmaChange() {
+    const proj = document.getElementById('cav-projeto').value;
+    const turma = document.getElementById('cav-turma').value;
+    document.getElementById('cav-nome').innerHTML = '<option value="">Carregando aulas...</option>';
+    const busca = document.getElementById('cav-aula-busca');
+    if (busca) { busca.value = ''; busca.disabled = !turma; }
+    cavNomeAula = {};
+    cavLoadAulasNome(proj, turma);
+}
+
+// lista de aulas com AV Teorica 'Sim' da turma selecionada para preencher o nome da avaliacao
+function cavLoadAulasNome(proj, turma, nomeAlvo) {
+    const sel = document.getElementById('cav-nome');
+    if (!sel) return;
+    cavNomeAula = {};
+    cavAulasOptions = [];
+    cavAulasFiltro = '';
+    sel.innerHTML = '<option value="">Carregando...</option>';
+    dbFirestore.collection('aulas').get().then(snap => {
+        sel.innerHTML = '<option value="">Selecione a avaliação...</option>';
+        const adicionadas = {};
+        snap.forEach(doc => {
+            const d = doc.data();
+            if (d.avTeorica !== 'Sim') return;
+            const dProj = (proj || '').trim();
+            const dTurma = (turma || '').trim();
+            if (String(d.projeto || '').trim() !== dProj) return;
+            if (String(d.turma || '').trim() !== dTurma) return;
+            const nomeAula = (d.conteudo || d.disciplina || doc.id);
+            const chave = nomeAula;
+            // evita duplicar a mesma aula caso haja registros repetidos
+            if (adicionadas[String(d.disciplina) + '|' + chave]) return;
+            adicionadas[String(d.disciplina) + '|' + chave] = true;
+            cavNomeAula[doc.id] = {
+                nome: chave,
+                disciplina: d.disciplina || '',
+                docente: d.docente || ''
+            };
+            const nomeCompleto = (d.disciplina || 'Aula') + (chave && chave !== d.disciplina ? ' - ' + chave : '');
+            cavAulasOptions.push({ value: doc.id, text: nomeCompleto });
+        });
+        cavRenderAulas();
+        if (nomeAlvo) {
+            // seleciona a opcao que corresponde ao nome salvo na edicao
+            let achou = false;
+            Array.prototype.forEach.call(sel.options, o => {
+                if (o.getAttribute('data-nomecompleto') === nomeAlvo) { o.selected = true; achou = true; }
+            });
+            if (achou) cavOnNomeChange();
+        }
+    }).catch(() => { sel.innerHTML = '<option value="">Erro ao carregar aulas</option>'; });
+}
+
+// re-renderiza o select de aulas ja carregadas aplicando o filtro da busca
+function cavRenderAulas() {
+    const sel = document.getElementById('cav-nome');
+    if (!sel) return;
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">Selecione a avaliação...</option>';
+    if (cavAulasOptions.length === 0) {
+        sel.innerHTML = '<option value="">Nenhuma aula com AV Teórica nesta turma</option>';
+        return;
+    }
+    const f = (cavAulasFiltro || '').trim().toLowerCase();
+    let count = 0;
+    cavAulasOptions.forEach(o => {
+        if (f && String(o.text || '').toLowerCase().indexOf(f) === -1) return;
+        const opt = document.createElement('option');
+        opt.value = o.value;
+        opt.textContent = o.text;
+        opt.setAttribute('data-nomecompleto', o.text);
+        sel.appendChild(opt);
+        count++;
+    });
+    if (count === 0) {
+        sel.innerHTML = '<option value="">Nenhuma aula encontrada para a busca</option>';
+    }
+    // preserva a selecao atual se ainda existe nas opcoes originais
+    if (atual && cavAulasOptions.some(o => o.value === atual)) sel.value = atual;
+}
+
+// filtra as aulas pelo texto digitado no campo de busca
+function cavFiltrarAulas(texto) {
+    cavAulasFiltro = texto || '';
+    cavRenderAulas();
+}
+
+// preenche o nome da avaliacao a partir da aula selecionada
+function cavOnNomeChange() {
+    const selNome = document.getElementById('cav-nome');
+    const idAula = selNome ? selNome.value : '';
+    const dadosAula = cavNomeAula[idAula];
+    const selDoc = document.getElementById('cav-docente');
+    if (dadosAula) {
+        cavNomeAtual = (dadosAula.disciplina || '') + (dadosAula.nome && dadosAula.nome !== dadosAula.disciplina ? ' - ' + dadosAula.nome : '');
+        cavNomeAtual = cavNomeAtual.trim() || idAula;
+        if (dadosAula.docente) {
+            // garante que o docente selecionado exista na lista
+            let encontrou = false;
+            Array.prototype.forEach.call(selDoc.options, o => { if (o.value === dadosAula.docente) encontrou = true; });
+            if (encontrou) selDoc.value = dadosAula.docente;
+            else {
+                const opt = document.createElement('option');
+                opt.value = dadosAula.docente; opt.textContent = dadosAula.docente;
+                selDoc.appendChild(opt);
+                selDoc.value = dadosAula.docente;
+            }
+        }
+    }
+}
+function cavLoadDisciplinas(proj, turma, value) {
+    const sel = document.getElementById('cav-disciplina');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Carregando...</option>';
+    dbFirestore.collection('disciplinas').orderBy('nome').get().then(snap => {
+        sel.innerHTML = '<option value="">Selecione a disciplina...</option>';
+        snap.forEach(doc => {
+            const d = doc.data();
+            if (proj && d.projeto && d.projeto !== proj) return;
+            if (turma && d.turma && d.turma !== turma) return;
+            const opt = document.createElement('option');
+            opt.value = d.nome || '';
+            opt.textContent = d.nome || '';
+            sel.appendChild(opt);
+        });
+        if (value) sel.value = value;
+        else cavOnDisciplinaChange();
+    }).catch(() => { sel.innerHTML = '<option value="">Erro ao carregar</option>'; });
+}
+
+function cavLoadAulas(disciplinaNome, value) {
+    const sel = document.getElementById('cav-aula');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Carregando...</option>';
+    dbFirestore.collection('aulas').orderBy('data', 'desc').get().then(snap => {
+        sel.innerHTML = '<option value="">Selecione a aula...</option>';
+        snap.forEach(doc => {
+            const d = doc.data();
+            if (disciplinaNome && d.disciplina && d.disciplina !== disciplinaNome) return;
+            const opt = document.createElement('option');
+            opt.value = d.nome || d.disciplina || doc.id;
+            const dataStr = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
+            opt.textContent = (d.nome || d.disciplina || doc.id) + (dataStr ? ' - ' + dataStr : '');
+            sel.appendChild(opt);
+        });
+        if (value) sel.value = value;
+    }).catch(() => { sel.innerHTML = '<option value="">Erro ao carregar</option>'; });
+}
+
+function cavOnDisciplinaChange() {
+    const disc = document.getElementById('cav-disciplina').value;
+    cavLoadAulas(disc, '');
+    // preenche docente a partir da disciplina selecionada
+    if (disc) {
+        dbFirestore.collection('disciplinas').where('nome', '==', disc).limit(1).get().then(snap => {
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (d.docente) {
+                    const selD = document.getElementById('cav-docente');
+                    if (selD && selD.value !== d.docente) {
+                        selD.innerHTML = '<option value="">Selecione o docente...</option>';
+                        const opt = document.createElement('option');
+                        opt.value = d.docente; opt.textContent = d.docente;
+                        selD.appendChild(opt);
+                        selD.value = d.docente;
+                    }
+                }
+            });
+        });
+    }
+}
+
+function cavPopulateDocentes(value) {
+    const sel = document.getElementById('cav-docente');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione o docente...</option>';
+    dbFirestore.collection('docentes').orderBy('nome').get().then(snap => {
+        sel.innerHTML = '<option value="">Selecione o docente...</option>';
+        snap.forEach(doc => {
+            const d = doc.data();
+            const opt = document.createElement('option');
+            opt.value = d.nome || '';
+            opt.textContent = d.nome || '';
+            sel.appendChild(opt);
+        });
+        if (value) sel.value = value;
+    }).catch(() => {});
+}
+
+function cavAdicionarQuestao(dados) {
+    const wrap = document.getElementById('cav-questoes');
+    if (!wrap) return;
+    const atual = wrap.querySelectorAll('.cav-q').length;
+    if (atual >= cavQMax) { alert('O limite é de ' + cavQMax + ' questões por avaliação.'); return; }
+    const idx = cavQuestaoSeq++;
+    const q = document.createElement('div');
+    q.className = 'cav-q';
+    q.dataset.idx = idx;
+    q.style.cssText = 'background:#fafcff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:14px';
+    const e = (dados && dados.enunciado) ? escHTML(dados.enunciado) : '';
+    const op = (dados && dados.opcoes) ? dados.opcoes : null;
+    const oa = (op && op.a != null) ? escHTML(op.a) : '';
+    const ob = (op && op.b != null) ? escHTML(op.b) : '';
+    const oc = (op && op.c != null) ? escHTML(op.c) : '';
+    const od = (op && op.d != null) ? escHTML(op.d) : '';
+    const correta = (dados && dados.correta) ? dados.correta : '';
+    q.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">' +
+            '<strong style="color:#0f172a;font-size:13px">Questão ' + (atual + 1) + '</strong>' +
+            '<div style="display:flex;align-items:center;gap:8px">' +
+                '<label style="font-size:11px;color:#16a34a;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cav-ok-' + idx + '" value="a" ' + (correta === 'a' ? 'checked' : '') + '>A correta</label>' +
+            '</div>' +
+        '</div>' +
+        '<textarea class="cav-q-enunc" style="width:100%;min-height:64px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;resize:vertical;margin-bottom:10px" placeholder="Digite o enunciado da questão...">' + e + '</textarea>' +
+        cavOpcaoInput('a', 'A', oa, idx) +
+        cavOpcaoInput('b', 'B', ob, idx) +
+        cavOpcaoInput('c', 'C', oc, idx) +
+        cavOpcaoInput('d', 'D', od, idx) +
+        '<div style="display:flex;justify-content:flex-end;margin-top:6px">' +
+            '<button onclick="cavRemoverQuestao(this)" title="Remover questão" style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:#dc2626;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600"><i class="fa-solid fa-trash"></i> Remover</button>' +
+        '</div>';
+    wrap.appendChild(q);
+    cavAtualizarQCount();
+}
+
+function cavOpcaoInput(letra, rotulo, valor, qidx) {
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+        '<span style="width:24px;height:24px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;flex-shrink:0">' + rotulo + '</span>' +
+        '<span style="font-size:11px;color:#64748b;font-weight:700;flex-shrink:0">' + letra + ')</span>' +
+        '<input type="text" class="cav-q-p ca-' + letra + '" data-letra="' + letra + '" value="' + valor + '" placeholder="Opção ' + rotulo + '" style="flex:1;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;font-family:inherit">' +
+        '<input type="radio" class="cav-q-correta-field" name="cav-ok-' + qidx + '" value="' + letra + '" title="Marcar ' + rotulo + ' como correta" style="width:17px;height:17px;flex-shrink:0;cursor:pointer">' +
+    '</div>';
+}
+
+function cavRemoverQuestao(btn) {
+    const wrap = document.getElementById('cav-questoes');
+    const q = btn.closest('.cav-q');
+    if (q) q.remove();
+    cavRenumerarQuestoes();
+    cavAtualizarQCount();
+}
+
+function cavRenumerarQuestoes() {
+    const qs = document.querySelectorAll('#cav-questoes .cav-q');
+    qs.forEach((q, i) => {
+        const strong = q.querySelector('strong');
+        if (strong) strong.textContent = 'Questão ' + (i + 1);
+    });
+}
+
+function cavGetQuestoes() {
+    const questoes = [];
+    document.querySelectorAll('#cav-questoes .cav-q').forEach(q => {
+        const enunciado = (q.querySelector('.cav-q-enunc') || {}).value || '';
+        const opcoes = {
+            a: (q.querySelector('.ca-a') || {}).value || '',
+            b: (q.querySelector('.ca-b') || {}).value || '',
+            c: (q.querySelector('.ca-c') || {}).value || '',
+            d: (q.querySelector('.ca-d') || {}).value || ''
+        };
+        let correta = '';
+        const checked = q.querySelector('.cav-q-correta-field:checked');
+        if (checked) correta = checked.value;
+        questoes.push({ enunciado, opcoes, correta });
+    });
+    return questoes;
+}
+
+function cavColetarDados() {
+    const selNome = document.getElementById('cav-nome');
+    const nomeId = selNome ? selNome.value : '';
+    const dadosNome = (nomeId && cavNomeAula[nomeId]) ? cavNomeAula[nomeId] : null;
+    let nome = cavNomeAtual || nomeId;
+    const disciplina = dadosNome ? (dadosNome.disciplina || '') : '';
+    const aula = dadosNome ? (dadosNome.nome || dadosNome.disciplina || '') : '';
+    if (dadosNome) {
+        nome = (dadosNome.disciplina || '') + (dadosNome.nome && dadosNome.nome !== dadosNome.disciplina ? ' - ' + dadosNome.nome : '');
+        nome = nome.trim() || nomeId;
+    }
+    const projeto = document.getElementById('cav-projeto').value;
+    const turma = document.getElementById('cav-turma').value;
+    const docente = document.getElementById('cav-docente').value;
+    const questoes = cavGetQuestoes();
+    return { nome, projeto, turma, disciplina, aula, aulaId: nomeId, docente, questoes };
+}
+
+function cavSalvar() {
+    const d = cavColetarDados();
+    if (!d.nome) { alert('Informe o nome da avaliação.'); return; }
+    if (!d.projeto) { alert('Selecione o projeto.'); return; }
+    if(!d.turma) { alert('Selecione a turma.'); return; }
+    if (d.questoes.length === 0) { alert('Adicione ao menos uma questão.'); return; }
+    for (let i = 0; i < d.questoes.length; i++) {
+        const q = d.questoes[i];
+        if (!q.enunciado.trim()) { alert('A questão ' + (i + 1) + ' não tem enunciado.'); return; }
+        if (!q.correta) { alert('Marque a resposta correta (A, B, C ou D) da questão ' + (i + 1) + '.'); return; }
+        if (!q.opcoes.a.trim() || !q.opcoes.b.trim() || !q.opcoes.c.trim() || !q.opcoes.d.trim()) { alert('Preencha as 4 opções da questão ' + (i + 1) + '.'); return; }
+    }
+    const dados = {
+        nome: d.nome,
+        projeto: d.projeto,
+        turma: d.turma,
+        disciplina: d.disciplina || '',
+        aula: d.aula || '',
+        aulaId: d.aulaId || '',
+        docente: d.docente || '',
+        questoes: d.questoes,
+        atualizadoEm: new Date()
+    };
+    const salvar = (ref, update) => {
+        if (update) return dbFirestore.collection(FB_AVALIACOES).doc(ref).update({ ...dados });
+        return dbFirestore.collection(FB_AVALIACOES).add({ ...dados, criadoEm: new Date() });
+    };
+    if (cavEditingId) {
+        salvar(cavEditingId, true).then(() => { alert('Avaliação atualizada com sucesso!'); cavLoadList(); })
+            .catch(e => alert('Erro ao salvar: ' + e.message));
+    } else {
+        salvar(null, false).then(() => { alert('Avaliação criada com sucesso!'); cavLoadList(); })
+            .catch(e => alert('Erro ao salvar: ' + e.message));
+    }
+}
+
+function cavEditar() {
+    const id = cavEditingId;
+    if (!id) { alert('Selecione uma avaliação da lista para editar.'); return; }
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+        cavPreencherForm(doc.id, doc.data());
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+function cavEditarAvaliacao(id) {
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+        cavPreencherForm(doc.id, doc.data());
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+function cavPreencherForm(id, d) {
+    cavEditingId = id;
+    cavNomeAtual = d.nome || '';
+    cavQMax = (d.questoes && d.questoes.length > 10) ? 20 : 10;
+    const limiteSel = document.getElementById('cav-q-limite');
+    if (limiteSel) limiteSel.value = String(cavQMax);
+    const qMaxEl = document.getElementById('cav-q-max');
+    if (qMaxEl) qMaxEl.textContent = cavQMax;
+    const busca = document.getElementById('cav-aula-busca');
+    if (busca) { busca.value = ''; busca.disabled = false; }
+    document.getElementById('cav-nome').innerHTML = '<option value="">Carregando...</option>';
+    document.getElementById('cav-form').style.display = 'block';
+    document.getElementById('cav-form-titulo').textContent = 'Editar Avaliação';
+    const badge = document.getElementById('cav-editing-badge');
+    badge.style.display = 'inline-flex';
+    badge.style.cssText = 'background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.25);color:#2563eb;font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px';
+    badge.innerHTML = '<i class="fa-solid fa-pen"></i> Editando: ' + escHTML(d.nome || '');
+    document.getElementById('cav-gabarito').style.display = 'none';
+    cavPopulateProjetos(d.projeto || '');
+    cavPopulateTurmas(d.projeto || '', d.turma || '');
+    cavLoadAulasNome(d.projeto || '', d.turma || '', d.nome || '');
+    if (d.docente) {
+        const selD = document.getElementById('cav-docente');
+        selD.innerHTML = '<option value="">Selecione o docente...</option>';
+        const opt = document.createElement('option');
+        opt.value = d.docente; opt.textContent = d.docente;
+        selD.appendChild(opt);
+        selD.value = d.docente;
+        cavPopulateDocentes(d.docente);
+    } else { cavPopulateDocentes(''); }
+    const wrap = document.getElementById('cav-questoes');
+    wrap.innerHTML = '';
+    cavQuestaoSeq = 0;
+    (d.questoes || []).forEach(q => {
+        cavAdicionarQuestao(q);
+    });
+    cavAtualizarQCount();
+}
+
+function cavExcluir() {
+    const id = cavEditingId;
+    if (!id) { alert('Selecione uma avaliação da lista para excluir.'); return; }
+    if (!confirm('Excluir esta avaliação?')) return;
+    dbFirestore.collection(FB_AVALIACOES).doc(id).delete().then(() => {
+        alert('Avaliação excluída.');
+        cavEditingId = null;
+        cavNovaAvaliacao();
+        cavLoadList();
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+function cavExcluirPorId(id) {
+    if (!confirm('Excluir esta avaliação?')) return;
+    dbFirestore.collection(FB_AVALIACOES).doc(id).delete().then(() => {
+        alert('Avaliação excluída.');
+        if (cavEditingId === id) cavNovaAvaliacao();
+        cavLoadList();
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+function cavGerarGabarito() {
+    const d = cavColetarDados();
+    const questoes = d.questoes;
+    if (questoes.length === 0) { alert('Não há questões para gerar o gabarito.'); return; }
+    let html = '';
+    questoes.forEach((q, i) => {
+        const letra = q.correta ? q.correta.toUpperCase() : '<span style="color:#dc2626">—</span>';
+        html += '<div style="display:flex;gap:8px;padding:6px 8px;border-bottom:1px dashed #cbd5e1"><strong style="width:70px">Questão ' + (i + 1) + ':</strong><span>Letra <strong>' + letra + '</strong></span></div>';
+    });
+    document.getElementById('cav-gabarito-content').innerHTML = html;
+    document.getElementById('cav-gabarito').style.display = 'block';
+}
+
+function cavImprimir() {
+    const d = cavColetarDados();
+    if (d.questoes.length === 0) { alert('Não há questões para imprimir (abra uma avaliação da lista ou monte as questões).'); return; }
+    cavImprimirHTML(d);
+}
+
+function cavImprimirPorId(id) {
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+        cavImprimirHTML(doc.data());
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+function cavImprimirHTML(d) {
+    let questoesHtml = '';
+    (d.questoes || []).forEach((q, i) => {
+        questoesHtml += '<div style="margin-bottom:18px;page-break-inside:avoid"><div style="font-weight:700;margin-bottom:6px">' + (i + 1) + '. ' + escHTML(q.enunciado) + '</div>' +
+            '<div style="margin-left:18px;line-height:1.8">' +
+                '<div>A) ' + escHTML(q.opcoes.a) + '</div>' +
+                '<div>B) ' + escHTML(q.opcoes.b) + '</div>' +
+                '<div>C) ' + escHTML(q.opcoes.c) + '</div>' +
+                '<div>D) ' + escHTML(q.opcoes.d) + '</div>' +
+            '</div><div style="margin-top:4px;margin-left:18px;display:flex;gap:12px">' +
+                '<span style="color:#94a3b8">( ) A</span><span style="color:#94a3b8">( ) B</span><span style="color:#94a3b8">( ) C</span><span style="color:#94a3b8">( ) D</span>' +
+            '</div></div>';
+    });
+    const w = window.open('', '_blank');
+    w.document.write('<html><head><title>' + escHTML(d.nome || 'Avaliação') + '</title>' +
+        '<style>body{font-family:Arial,sans-serif;color:#111;padding:30px} h1{font-size:20px;margin-bottom:4px} meta{}</style>' +
+        '</head><body>' +
+        '<h1>' + escHTML((d.nome || 'Avaliação')) + '</h1>' +
+        '<div style="color:#555;margin-bottom:20px;font-size:13px">Projeto: ' + escHTML(d.projeto || '-') + ' | Turma: ' + escHTML(d.turma || '-') + (d.disciplina ? ' | Disciplina: ' + escHTML(d.disciplina) : '') + (d.docente ? ' | Docente: ' + escHTML(d.docente) : '') + (d.aula ? ' | Aula: ' + escHTML(d.aula) : '') + '</div>' +
+        '<div style="border:1px solid #ccc;border-radius:8px;padding:14px;margin-bottom:22px">' +
+            '<div style="font-weight:700;margin-bottom:6px">Gabarito</div>' +
+            (d.questoes || []).map((q, i) => '<div>Questão ' + (i + 1) + ': Letra ' + (q.correta || '').toUpperCase() + '</div>').join('') +
+        '</div>' +
+        questoesHtml +
+        '<script>window.onload=function(){window.print();};</scr' + 'ipt>' +
+        '</body></html>');
+    w.document.close();
+}
+
+function cavAbrirEnvio() {
+    const id = cavEditingId;
+    if (!id) { alert('Salve a avaliação antes de enviar.'); return; }
+    const sel = document.getElementById('cav-envio-turma');
+    sel.innerHTML = '<option value="">Carregando turmas...</option>';
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada. Salve novamente.'); return; }
+        const data = doc.data();
+        if (!data.questoes || data.questoes.length === 0) { alert('A avaliação não possui questões.'); return; }
+        sel.innerHTML = '<option value="">Selecione a turma...</option>';
+        turmas.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.nome || '';
+            opt.textContent = (t.nome || '');
+            sel.appendChild(opt);
+        });
+        if (data.turma) sel.value = data.turma;
+        const info = document.getElementById('cav-envio-info');
+        info.innerHTML = '<strong>' + escHTML(data.nome || '') + '</strong><br>' +
+            'Questões: ' + (data.questoes || []).length + ' · Turma vinculada: ' + escHTML(data.turma || '—');
+        document.getElementById('cav-envio-overlay').classList.remove('hidden');
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+function cavFecharEnvio() {
+    document.getElementById('cav-envio-overlay').classList.add('hidden');
+}
+
+function cavConfirmarEnvio() {
+    const id = cavEditingId;
+    const turma = document.getElementById('cav-envio-turma').value;
+    if (!turma) { alert('Selecione a turma para enviar.'); return; }
+    if (!confirm('Enviar esta avaliação para a turma "' + turma + '"? Os alunos poderão respondê-la no Portal do Aluno.')) return;
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+        const data = doc.data();
+        return dbFirestore.collection(FB_AVALIACOES).doc(id).update({
+            enviada: true,
+            enviadaEm: new Date(),
+            turma: turma
+        });
+    }).then(() => {
+        alert('Avaliação enviada para a turma "' + turma + '"!');
+        cavFecharEnvio();
+        cavLoadList();
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+/* ===== LISTAR AVALIADOS (ADMIN) ===== */
+var cavListarAvaliacaoId = null;
+
+function cavListarAvaliados(avId) {
+    cavListarAvaliacaoId = avId;
+    const overlay = document.getElementById('cav-listar-overlay');
+    const nomeEl = document.getElementById('cav-listar-avaliacao-nome');
+    const content = document.getElementById('cav-listar-avaliados-content');
+    if (!overlay || !content) return;
+    nomeEl.textContent = 'Avaliação...';
+    content.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Carregando alunos avaliados... <i class="fa-solid fa-spinner fa-spin"></i></div>';
+    overlay.classList.remove('hidden');
+
+    dbFirestore.collection(FB_AVALIACOES).doc(avId).get().then(avDoc => {
+        const avNome = avDoc.exists ? (avDoc.data().nome || 'Avaliação') : 'Avaliação';
+        nomeEl.textContent = avNome;
+        return dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).where('avaliacaoId', '==', avId).get();
+    }).then(snap => {
+        const avaliados = [];
+        snap.forEach(doc => {
+            const r = doc.data() || {};
+            avaliados.push({
+                cpf: r.cpf || '',
+                nome: r.nome || 'Sem nome',
+                matricula: r.matricula || '—',
+                pontos: (r.pontos != null ? Number(r.pontos).toFixed(1).replace('.', ',') : '—'),
+                certas: r.respostasCertas,
+                total: r.totalQuestoes,
+                enviadoEm: r.enviadoEm
+            });
+        });
+        if (avaliados.length === 0) {
+            content.innerHTML = '<div style="text-align:center;color:#64748b;padding:26px"><i class="fa-solid fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:10px"></i>Nenhum aluno concluiu esta avaliação ainda.</div>';
+            return;
+        }
+        content.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:10px">' + avaliados.length + ' aluno(s) concluíram a avaliação.</div>' +
+            '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' +
+            '<thead><tr style="background:#f1f5f9;color:#475569;text-align:left">' +
+                '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0">Aluno</th>' +
+                '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0">Matrícula</th>' +
+                '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Pontos</th>' +
+                '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Ações</th>' +
+            '</tr></thead><tbody>' +
+            avaliados.map(function(a) {
+                const nome = String(a.nome).replace(/'/g, '');
+                return '<tr style="border-bottom:1px solid #f1f5f9">' +
+                    '<td style="padding:9px 10px;font-weight:600;color:#0f172a">' + escHTML(a.nome) + '</td>' +
+                    '<td style="padding:9px 10px;color:#64748b">' + escHTML(a.matricula) + '</td>' +
+                    '<td style="padding:9px 10px;text-align:center;font-weight:700;color:#d97706">' + escHTML(a.pontos) + '</td>' +
+                    '<td style="padding:9px 10px;text-align:center">' +
+                        '<button class="btn-outline btn-sm" onclick="cavVerRespostas(\'' + avId + '\',\'' + a.cpf.replace(/'/g, '') + '\')"><i class="fa-solid fa-eye"></i> Ver respostas e pontos</button>' +
+                    '</td>' +
+                '</tr>';
+            }).join('') +
+            '</tbody></table>';
+    }).catch(function(e) {
+        console.error('Erro ao listar avaliados:', e);
+        content.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px">Erro ao carregar. Verifique se há índices necessários no Firestore ou tente novamente.</div>';
+    });
+}
+
+function cavFecharListarAvaliados() {
+    document.getElementById('cav-listar-overlay').classList.add('hidden');
+}
+
+function cavVerRespostas(avId, cpf) {
+    const content = document.getElementById('cav-respostas-content');
+    const overlay = document.getElementById('cav-respostas-overlay');
+    if (!content || !overlay) return;
+    content.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Carregando... <i class="fa-solid fa-spinner fa-spin"></i></div>';
+    overlay.classList.remove('hidden');
+
+    Promise.all([
+        dbFirestore.collection(FB_AVALIACOES).doc(avId).get(),
+        dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).doc(cpf + '_' + avId).get()
+    ]).then(function(results) {
+        const avDoc = results[0];
+        const respDoc = results[1];
+        if (!avDoc.exists) { content.innerHTML = '<p style="color:#dc2626">Avaliação não encontrada.</p>'; return; }
+        const d = avDoc.data() || {};
+        const questoes = d.questoes || [];
+        if (!respDoc.exists) {
+            content.innerHTML = '<p style="color:#64748b">Este aluno não possui resposta registrada para esta avaliação.</p>';
+            return;
+        }
+        const r = respDoc.data() || {};
+        const respostas = r.respostas || {};
+        const marcadas = r.respostasMarcadas != null ? r.respostasMarcadas : Object.keys(respostas).length;
+        const certas = r.respostasCertas != null ? r.respostasCertas : '—';
+        const pontos = r.pontos != null ? Number(r.pontos).toFixed(1).replace('.', ',') : '—';
+        const total = r.totalQuestoes != null ? r.totalQuestoes : questoes.length;
+
+        const cards =
+            '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">' +
+            '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#64748b;font-weight:700">ALUNO</div><div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:4px">' + escHTML(r.nome || '—') + '</div></div>' +
+            '<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#4f46e5;font-weight:700">RESPONDIDAS</div><div style="font-size:20px;font-weight:800;color:#4f46e5;margin-top:4px">' + (marcadas || 0) + '/' + (total || 0) + '</div></div>' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#16a34a;font-weight:700">CERTAS</div><div style="font-size:20px;font-weight:800;color:#16a34a;margin-top:4px">' + (certas == null ? '—' : certas) + '</div></div>' +
+            '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#d97706;font-weight:700">PONTOS</div><div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px">' + pontos + '</div></div>' +
+            '</div>';
+
+        let qHtml = '';
+        questoes.forEach(function(q, i) {
+            const escolhida = respostas[i] || '';
+            const correta = q.correta || '';
+            const opcoes = ['a', 'b', 'c', 'd'];
+            const opHtml = opcoes.map(function(letra) {
+                const texto = q.opcoes && q.opcoes[letra];
+                const chosen = (escolhida === letra);
+                const chosenIcon = chosen ? (letra === correta ? '✅' : '❌') : (letra === correta ? '✔️' : '');
+                const letraColor = chosen ? (letra === correta ? '#16a34a' : '#dc2626') : (letra === correta ? '#16a34a' : '#1e293b');
+                return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:5px;background:' + (chosen ? '#f8fafc' : '#fff') + '">' +
+                    '<span style="width:20px;height:20px;border-radius:5px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#334155;flex-shrink:0">' + letra.toUpperCase() + '</span>' +
+                    '<span style="font-size:12.5px;color:' + letraColor + ';flex:1">' + escHTML(texto || '') + (letra === correta && !chosen ? ' <span style="color:#16a34a;font-size:10px;font-weight:700">(correta)</span>' : '') + '</span>' +
+                    (chosen ? '<span style="font-size:10px;font-weight:700;color:' + (letra === correta ? '#16a34a' : '#dc2626') + '">' + (letra === correta ? 'SUA RESPOSTA' : 'SUA RESPOSTA') + '</span>' : '') +
+                    (chosenIcon ? '<span style="font-size:13px">' + chosenIcon + '</span>' : '') +
+                    '</div>';
+            }).join('');
+            const status = !escolhida
+                ? '<span style="color:#94a3b8;font-size:10px;font-weight:700">Não respondida</span>'
+                : (escolhida === correta
+                    ? '<span style="color:#16a34a;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-check"></i> Correta</span>'
+                    : '<span style="color:#dc2626;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-xmark"></i> Errada</span>');
+            qHtml += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:10px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12.5px;font-weight:700;color:#0f172a">' + (i + 1) + '. ' + escHTML(q.enunciado || '') + '</span>' + status + '</div>' +
+                opHtml +
+                '</div>';
+        });
+
+        content.innerHTML = cards + qHtml;
+    }).catch(function(e) {
+        console.error('Erro ao carregar respostas:', e);
+        content.innerHTML = '<p style="color:#dc2626">Erro ao carregar as respostas.</p>';
+    });
+}
+
+function cavFecharRespostas() {
+    document.getElementById('cav-respostas-overlay').classList.add('hidden');
+}
+

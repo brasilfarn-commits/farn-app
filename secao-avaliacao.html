@@ -465,6 +465,49 @@
             } catch (e) { console.error('Erro ao salvar avaliação:', e); }
         }
 
+        // Sincroniza automaticamente as notas das avaliacoes objetivas (questoes A-D)
+        // respondidas pelo aluno na guia AV Teorica da ficha, mesmo para avaliacoes respondidas antes.
+        async function avSincronizarNotasAutomaticas() {
+            try {
+                if (!avAvaliacao || !avAvaliacao.cpf) return;
+                if (!avAvaliacao.notasTeoricas) avAvaliacao.notasTeoricas = {};
+                var cpf = String(avAvaliacao.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '');
+                if (!cpf) return;
+                var turma = String(avTurma || '').trim();
+                var alterou = [false];
+                var snap = await db.collection('avaliacoes').where('enviada', '==', true).get();
+                var promessas = [];
+                snap.forEach(function(doc) {
+                    var avD = doc.data() || {};
+                    if (String(avD.turma || '').trim() !== turma) return;
+                    var aulaId = avD.aulaId;
+                    if (!aulaId) return;
+                    if (avAvaliacao.notasTeoricas[aulaId] != null) return; // mantem nota manual ja existente
+                    var avDq = avD.questoes || [];
+                    var peso = avDq.length === 10 ? 1.0 : 0.5;
+                    var avId = doc.id;
+                    promessas.push(
+                        db.collection('avaliacoesRespostas').doc(cpf + '_' + avId).get().then(function(rDoc) {
+                            if (rDoc.exists) {
+                                var r = rDoc.data() || {};
+                                var certas = r.respostasCertas != null ? Number(r.respostasCertas) : 0;
+                                var naoMarcadas = r.respostasMarcadas != null ? (Number(r.totalQuestoes || avDq.length) - Number(r.respostasMarcadas)) : 0;
+                                var pontos = r.pontos != null ? Number(r.pontos) : (certas * peso - naoMarcadas * peso);
+                                var nota = Math.max(0, Math.min(10, pontos));
+                                nota = Math.round(nota * 10) / 10;
+                                if (avAvaliacao.notasTeoricas[aulaId] == null) {
+                                    avAvaliacao.notasTeoricas[aulaId] = nota;
+                                    alterou[0] = true;
+                                }
+                            }
+                        })
+                    );
+                });
+                await Promise.all(promessas);
+                if (alterou[0]) await avSalvarAvaliacao();
+            } catch (e) { console.error('Erro ao sincronizar notas automaticas:', e); }
+        }
+
         function avCalcularApontamento() {
             var aulas = (avAulasCache && avAulasCache.todas) || [];
             var totalAulas = aulas.length;
@@ -527,6 +570,7 @@
             await avCarregarAulas();
             await avCarregarPresencas(cpf);
             await avCarregarAvaliacao(cpf);
+            await avSincronizarNotasAutomaticas();
             avTrocarAba('apontamento');
         }
 

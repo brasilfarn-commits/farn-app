@@ -16,10 +16,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gold: #fbbf24;
-            --gold-l: #fde047;
-            --verde-escuro: #0b3d1f;
+            --gold: #eab308;
+            --gold-l: #facc15;
+            --verde-escuro: #15803d;
             --verde: #16a34a;
+            --azul: #2563eb;
+            --vermelho: #dc2626;
         }
         /* ===== ANTI-FLASH: com sessao de admin, esconde a landing ate o painel ativar ===== */
         html.farn-admin-session #screen-login { display: none; }
@@ -29,7 +31,7 @@
             overflow-x: hidden;
             height: auto;
             min-height: 100vh;
-            background: var(--verde-escuro);
+            background: #eef4f6;
             -webkit-user-select: text;
             user-select: text;
         }
@@ -40,10 +42,11 @@
             min-height: 100vh;
             font-family: 'Inter', sans-serif;
             background:
-                radial-gradient(circle at 15% 20%, rgba(34,197,94,.16) 0%, transparent 38%),
-                radial-gradient(circle at 85% 60%, rgba(251,191,36,.12) 0%, transparent 30%),
-                linear-gradient(160deg, #0b3d1f 0%, #125227 40%, #1a6b33 70%, #0b2e18 100%);
-            color: #e8f2e9;
+                radial-gradient(circle at 12% 18%, rgba(37,99,235,.10) 0%, transparent 40%),
+                radial-gradient(circle at 88% 30%, rgba(234,179,8,.12) 0%, transparent 34%),
+                radial-gradient(circle at 60% 85%, rgba(22,163,74,.10) 0%, transparent 40%),
+                linear-gradient(170deg, #f7fafc 0%, #eaf1f4 45%, #e2edf0 100%);
+            color: #1e293b;
             overflow-x: hidden;
         }
         #screen-login.landing-screen::before {
@@ -52,23 +55,24 @@
             inset: 0;
             pointer-events: none;
             z-index: 0;
-            opacity: .10;
+            opacity: .5;
             background:
-                radial-gradient(ellipse at 10% 20%, rgba(0,0,0,.55) 0 8%, transparent 8.5%),
-                radial-gradient(ellipse at 30% 70%, rgba(255,255,255,.25) 0 6%, transparent 6.5%),
-                radial-gradient(ellipse at 55% 35%, rgba(0,0,0,.45) 0 9%, transparent 9.5%),
-                radial-gradient(ellipse at 75% 65%, rgba(255,255,255,.22) 0 7%, transparent 7.5%),
-                radial-gradient(ellipse at 90% 15%, rgba(0,0,0,.5) 0 6%, transparent 6.5%),
-                radial-gradient(ellipse at 45% 90%, rgba(255,255,255,.22) 0 8%, transparent 8.5%);
+                radial-gradient(ellipse at 10% 20%, rgba(37,99,235,.06) 0 8%, transparent 8.5%),
+                radial-gradient(ellipse at 30% 70%, rgba(234,179,8,.10) 0 6%, transparent 6.5%),
+                radial-gradient(ellipse at 55% 35%, rgba(22,163,74,.07) 0 9%, transparent 9.5%),
+                radial-gradient(ellipse at 75% 65%, rgba(220,38,38,.06) 0 7%, transparent 7.5%),
+                radial-gradient(ellipse at 90% 15%, rgba(37,99,235,.08) 0 6%, transparent 6.5%),
+                radial-gradient(ellipse at 45% 90%, rgba(234,179,8,.10) 0 8%, transparent 8.5%);
             background-size: 360px 360px;
         }
         .landing-header {
             position: sticky;
             top: 0;
             z-index: 50;
-            background: rgba(6, 44, 22, .85);
+            background: rgba(255,255,255,.86);
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(251,191,36,.25);
+            border-bottom: 1px solid rgba(37,99,235,.14);
+            box-shadow: 0 4px 18px rgba(15,23,42,.06);
         }
         .landing-header-inner {
             max-width: 1200px;
@@ -87,14 +91,14 @@
             border-radius: 50%;
             background: #fff;
             padding: 3px;
-            border: 2px solid var(--gold, #fbbf24);
+            border: 2px solid rgba(37,99,235,.45);
         }
         .landing-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-        .landing-brand-text strong { font-size: 17px; font-weight: 800; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .landing-brand-text span { font-size: 11.5px; color: #b9d4bd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .landing-brand-text strong { font-size: 17px; font-weight: 800; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0f172a; }
+        .landing-brand-text span { font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .landing-nav { display: flex; gap: 8px; }
         .landing-nav a {
-            color: #cfe6d2;
+            color: #334155;
             text-decoration: none;
             font-size: 13px;
             font-weight: 600;
@@ -102,13 +106,13 @@
             border-radius: 9px;
             transition: .25s;
         }
-        .landing-nav a:hover { background: rgba(255,255,255,.09); color: var(--gold-l, #fde047); }
+        .landing-nav a:hover { background: rgba(37,99,235,.10); color: var(--azul, #2563eb); }
         .landing-btn-atelie {
-            border: 1px solid rgba(251,191,36,.40);
-            background: rgba(251,191,36,.12);
+            border: 1px solid rgba(234,179,8,.50);
+            background: rgba(234,179,8,.12);
             border-radius: 9px;
         }
-        .landing-btn-atelie:hover { background: rgba(251,191,36,.25) !important; }
+        .landing-btn-atelie:hover { background: rgba(234,179,8,.22) !important; }
         .landing-btn-atelie i { margin-right: 4px; }
 
         /* ===== MENU LATERAL MOBILE ===== */
@@ -120,24 +124,24 @@
             z-index: 60;
             width: 40px;
             height: 40px;
-            border: 1px solid rgba(251,191,36,.35);
-            background: rgba(11,61,31,.92);
-            color: #e8f2e9;
+            border: 1px solid rgba(37,99,235,.25);
+            background: rgba(255,255,255,.92);
+            color: #1e293b;
             border-radius: 10px;
             cursor: pointer;
             align-items: center;
             justify-content: center;
             font-size: 17px;
-            box-shadow: 0 4px 12px rgba(0,0,0,.35);
+            box-shadow: 0 4px 12px rgba(15,23,42,.12);
             backdrop-filter: blur(6px);
         }
-        .landing-menu-btn:hover { background: rgba(251,191,36,.18); color: #fde047; }
+        .landing-menu-btn:hover { background: rgba(37,99,235,.10); color: var(--azul, #2563eb); }
         .landing-drawer-overlay {
             display: none;
             position: fixed;
             inset: 0;
             z-index: 64;
-            background: rgba(0,0,0,.55);
+            background: rgba(15,23,42,.45);
             opacity: 0;
             transition: opacity .25s;
         }
@@ -149,8 +153,8 @@
             bottom: 0;
             width: min(300px, 84vw);
             z-index: 65;
-            background: linear-gradient(180deg, #0b3d1f 0%, #125227 100%);
-            border-right: 1px solid rgba(251,191,36,.25);
+            background: linear-gradient(180deg, #ffffff 0%, #f1f6f8 100%);
+            border-right: 1px solid rgba(37,99,235,.14);
             padding: 18px 0;
             display: flex;
             flex-direction: column;
@@ -163,9 +167,9 @@
             align-items: center;
             gap: 10px;
             padding: 4px 18px 18px;
-            border-bottom: 1px solid rgba(251,191,36,.25);
+            border-bottom: 1px solid rgba(37,99,235,.14);
             margin-bottom: 12px;
-            color: #fff;
+            color: #0f172a;
             font-size: 16px;
             font-weight: 800;
         }
@@ -176,7 +180,7 @@
             border-radius: 50%;
             background: #fff;
             padding: 2px;
-            border: 1px solid var(--gold, #fbbf24);
+            border: 1px solid rgba(37,99,235,.45);
         }
         .landing-drawer-close {
             margin-left: auto;
@@ -184,18 +188,18 @@
             height: 32px;
             border: none;
             border-radius: 8px;
-            background: rgba(255,255,255,.08);
-            color: #cfe6d2;
+            background: rgba(37,99,235,.08);
+            color: #334155;
             font-size: 15px;
             cursor: pointer;
         }
-        .landing-drawer-close:hover { background: rgba(255,255,255,.16); color: #fff; }
+        .landing-drawer-close:hover { background: rgba(37,99,235,.16); color: #0f172a; }
         .landing-drawer-nav { display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
         .landing-drawer-nav a {
             display: flex;
             align-items: center;
             gap: 12px;
-            color: #cfe6d2;
+            color: #334155;
             text-decoration: none;
             font-size: 14px;
             font-weight: 600;
@@ -203,9 +207,9 @@
             border-radius: 10px;
             transition: .2s;
         }
-        .landing-drawer-nav a:hover { background: rgba(255,255,255,.08); color: #fde047; }
-        .landing-drawer-nav a i { width: 20px; text-align: center; color: #fbbf24; }
-        .landing-drawer-atelie { border: 1px solid rgba(251,191,36,.35); background: rgba(251,191,36,.10); margin-top: 6px; }
+        .landing-drawer-nav a:hover { background: rgba(37,99,235,.08); color: var(--azul, #2563eb); }
+        .landing-drawer-nav a i { width: 20px; text-align: center; color: var(--azul, #2563eb); }
+        .landing-drawer-atelie { border: 1px solid rgba(234,179,8,.45); background: rgba(234,179,8,.10); margin-top: 6px; }
         @media (max-width: 860px) {
             .landing-menu-btn { display: flex; }
             .landing-header-inner { padding-left: 60px; }
@@ -217,8 +221,8 @@
             align-items: center;
             gap: 7px;
             margin-left: auto;
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(251,191,36,.30);
+            background: rgba(15,23,42,.04);
+            border: 1px solid rgba(37,99,235,.22);
             border-radius: 10px;
             padding: 5px;
             position: relative;
@@ -227,28 +231,28 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: rgba(0,0,0,.28);
-            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(255,255,255,.9);
+            border: 1px solid rgba(15,23,42,.12);
             border-radius: 7px;
             padding: 5px 9px;
-            color: #dbe6ff;
+            color: #334155;
         }
-        .landing-login-field > i { font-size: 12px; opacity: .7; }
+        .landing-login-field > i { font-size: 12px; opacity: .7; color: var(--azul, #2563eb); }
         .landing-login-field input {
             background: transparent;
             border: none;
             outline: none;
-            color: #fff;
+            color: #0f172a;
             font-size: 13px;
             width: 112px;
             font-family: inherit;
         }
-        .landing-login-field input::placeholder { color: rgba(255,255,255,.45); }
+        .landing-login-field input::placeholder { color: rgba(15,23,42,.42); }
         .landing-login-portal-field select {
             background: transparent;
             border: none;
             outline: none;
-            color: #fff;
+            color: #0f172a;
             font-size: 13px;
             font-family: inherit;
             max-width: 152px;
@@ -256,26 +260,26 @@
             -webkit-appearance: none;
             appearance: none;
             padding-right: 14px;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'><path fill='%23f0d78c' d='M1 1l3.5 4L8 1z'/></svg>");
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'><path fill='%232563eb' d='M1 1l3.5 4L8 1z'/></svg>");
             background-repeat: no-repeat;
             background-position: right 0 center;
         }
-        .landing-login-portal-field select option { background: #0b3d1f; color: #fff; }
+        .landing-login-portal-field select option { background: #ffffff; color: #0f172a; }
         .landing-login-eye {
             background: transparent;
             border: none;
-            color: rgba(255,255,255,.6);
+            color: rgba(15,23,42,.55);
             cursor: pointer;
             font-size: 12px;
             padding: 0;
         }
-        .landing-login-eye:hover { color: #fde047; }
+        .landing-login-eye:hover { color: var(--azul, #2563eb); }
         .landing-login-btn {
             display: flex;
             align-items: center;
             gap: 7px;
-            background: linear-gradient(135deg, #fbbf24, #ca8a04);
-            color: #0b3d1f;
+            background: linear-gradient(135deg, var(--azul, #2563eb), #1d4ed8);
+            color: #ffffff;
             border: none;
             border-radius: 7px;
             padding: 8px 15px;
@@ -328,9 +332,9 @@
         .landing-sobre {
             position: relative;
             z-index: 1;
-            background: rgba(255,255,255,.03);
-            border-top: 1px solid rgba(251,191,36,.2);
-            border-bottom: 1px solid rgba(251,191,36,.2);
+            background: rgba(255,255,255,.60);
+            border-top: 1px solid rgba(37,99,235,.12);
+            border-bottom: 1px solid rgba(37,99,235,.12);
         }
         .landing-sobre-inner {
             max-width: 1200px;
@@ -339,9 +343,9 @@
         }
         .landing-sobre-text { text-align: center; max-width: 720px; margin: 0 auto 34px; }
         .landing-sobre-text .landing-eyebrow::before { display: none; }
-        .landing-sobre-text h2 { font-size: clamp(20px, 2.6vw, 30px); font-weight: 800; color: #fff; margin: 10px 0 10px; }
-        .landing-sobre-text p { font-size: 14.5px; line-height: 1.7; color: #c6dcc9; }
-        .landing-sobre-text p strong { color: var(--gold-l, #fde047); }
+        .landing-sobre-text h2 { font-size: clamp(20px, 2.6vw, 30px); font-weight: 800; color: #0f172a; margin: 10px 0 10px; }
+        .landing-sobre-text p { font-size: 14.5px; line-height: 1.7; color: #475569; }
+        .landing-sobre-text p strong { color: var(--vermelho, #dc2626); }
         .landing-values {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -351,24 +355,25 @@
             text-align: center;
             padding: 26px 20px;
             border-radius: 16px;
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.1);
+            background: #ffffff;
+            border: 1px solid rgba(37,99,235,.14);
+            box-shadow: 0 8px 22px rgba(15,23,42,.06);
         }
         .landing-value i {
             font-size: 26px;
-            color: var(--gold, #fbbf24);
-            background: rgba(251,191,36,.1);
+            color: var(--azul, #2563eb);
+            background: rgba(37,99,235,.10);
             width: 58px;
             height: 58px;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid rgba(251,191,36,.3);
+            border: 1px solid rgba(37,99,235,.25);
             margin-bottom: 12px;
         }
-        .landing-value h4 { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; }
-        .landing-value p { font-size: 12.5px; color: #b9d4bd; line-height: 1.55; }
+        .landing-value h4 { font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+        .landing-value p { font-size: 12.5px; color: #64748b; line-height: 1.55; }
 
         .landing-news-grid {
             display: grid;
@@ -393,9 +398,14 @@
             flex-shrink: 0;
             background: #fff;
             padding: 4px;
-            border: 2px solid var(--gold, #fbbf24);
-            box-shadow: 0 6px 16px rgba(0,0,0,.3);
+            border: 2px solid rgba(37,99,235,.5);
+            box-shadow: 0 6px 16px rgba(15,23,42,.12);
         }
+        .landing-hero-art {
+            max-width: 400px;
+            margin: 26px auto 0;
+        }
+        .landing-hero-art svg { width: 100%; height: auto; display: block; }
         @media (max-width: 560px) {
             .landing-news-left .landing-sobre-text {
                 flex-direction: column;
@@ -409,10 +419,10 @@
         .landing-news-right-head h2 {
             font-size: clamp(18px, 2vw, 24px);
             font-weight: 800;
-            color: #fff;
+            color: #0f172a;
             margin: 8px 0 6px;
         }
-        .landing-news-right-head p { color: #b9d4bd; font-size: 13px; margin: 0; }
+        .landing-news-right-head p { color: #64748b; font-size: 13px; margin: 0; }
 
         @media (max-width: 960px) {
             .landing-news-grid { grid-template-columns: 1fr; gap: 34px; }
@@ -438,32 +448,32 @@
             border-radius: 50%;
             background: #fff;
             padding: 3px;
-            border: 2px solid var(--gold, #fbbf24);
+            border: 2px solid rgba(37,99,235,.5);
         }
         .landing-footer-brand > div { display: flex; flex-direction: column; line-height: 1.25; }
-        .landing-footer-brand strong { font-size: 15px; font-weight: 800; }
-        .landing-footer-brand span { font-size: 11.5px; color: #b9d4bd; }
+        .landing-footer-brand strong { font-size: 15px; font-weight: 800; color: #0f172a; }
+        .landing-footer-brand span { font-size: 11.5px; color: #64748b; }
         .landing-footer-info { display: flex; flex-wrap: wrap; gap: 16px; }
         .landing-footer-info span {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             font-size: 12.5px;
-            color: #cfe6d2;
-            background: rgba(255,255,255,.05);
+            color: #334155;
+            background: #ffffff;
             padding: 8px 13px;
             border-radius: 9px;
-            border: 1px solid rgba(255,255,255,.1);
+            border: 1px solid rgba(37,99,235,.14);
         }
-        .landing-footer-info i { color: var(--gold, #fbbf24); }
+        .landing-footer-info i { color: var(--azul, #2563eb); }
         .landing-footer-copy {
-            border-top: 1px solid rgba(255,255,255,.08);
+            border-top: 1px solid rgba(15,23,42,.10);
             text-align: center;
             padding: 16px 24px;
             font-size: 12px;
-            color: #93ad98;
+            color: #64748b;
         }
-        .landing-footer-copy span { font-weight: 700; color: #cfe6d2; }
+        .landing-footer-copy span { font-weight: 700; color: #1e293b; }
 
         @media (max-width: 860px) {
             .landing-nav { display: none; }
@@ -590,6 +600,37 @@
                             <span class="landing-eyebrow">Nossa Instituição</span>
                             <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
                             <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
+                            <div class="landing-hero-art" aria-hidden="true">
+                                <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Capacete e machado de bombeiro militar">
+                                    <defs>
+                                        <linearGradient id="lgHelm" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0" stop-color="#ef4444"/>
+                                            <stop offset="1" stop-color="#b91c1c"/>
+                                        </linearGradient>
+                                        <linearGradient id="lgGold" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0" stop-color="#fbbf24"/>
+                                            <stop offset="1" stop-color="#b45309"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <ellipse cx="200" cy="175" rx="150" ry="26" fill="#0f172a" opacity=".10"/>
+                                    <g>
+                                        <path d="M200 40c-58 0-100 42-100 96v24c0 10 8 18 18 18h164c10 0 18-8 18-18v-24c0-54-42-96-100-96z" fill="url(#lgHelm)"/>
+                                        <rect x="185" y="20" rx="8" ry="8" width="30" height="26" fill="url(#lgGold)"/>
+                                        <path d="M200 46v230" stroke="#7f1d1d" stroke-width="10" stroke-linecap="round"/>
+                                        <path d="M112 130c-6 8-10 18-12 28l92 10 92-10c-2-10-6-20-12-28" fill="none" stroke="#fcd34d" stroke-width="7" stroke-linecap="round"/>
+                                        <circle cx="200" cy="126" r="12" fill="#fcd34d"/>
+                                        <path d="M92 158c-14 6-20 20-14 34 4 10 14 16 24 16" fill="none" stroke="url(#lgGold)" stroke-width="7" stroke-linecap="round"/>
+                                        <path d="M308 158c14 6 20 20 14 34-4 10-14 16-24 16" fill="none" stroke="url(#lgGold)" stroke-width="7" stroke-linecap="round"/>
+                                    </g>
+                                    <g transform="translate(330,40)">
+                                        <rect x="8" y="8" width="14" height="100" rx="5" fill="url(#lgGold)"/>
+                                        <path d="M0 6 34 0 40 6 34 14 8 14z" fill="#94a3b8"/>
+                                        <path d="M34 10v96h-20v-92z" fill="#e2e8f0"/>
+                                        <path d="M20 40c-8 12-8 28 2 38l12 12 12-12c10-10 10-26 2-38-4-6-10-8-14-8s-10 2-14 8z" fill="#ef4444"/>
+                                        <path d="M24 30h10a3 3 0 0 1 3 3v4h-16v-4a3 3 0 0 1 3-3z" fill="#7f1d1d"/>
+                                    </g>
+                                </svg>
+                            </div>
                         </div>
                     </div>
                     <div class="landing-values">
@@ -617,9 +658,9 @@
                             <h2>Fique por dentro das novidades</h2>
                         </div>
                         <div style="text-align:center;padding:40px 20px">
-                            <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#f59e0b"></i>
-                            <h3 style="font-size:18px;color:#e8f2e9;margin-bottom:8px">Em Construção</h3>
-                            <p style="font-size:13px;color:#94a3b8">Esta seção está sendo desenvolvida e estará disponível em breve.</p>
+                            <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#2563eb"></i>
+                            <h3 style="font-size:18px;color:#0f172a;margin-bottom:8px">Em Construção</h3>
+                            <p style="font-size:13px;color:#64748b">Esta seção está sendo desenvolvida e estará disponível em breve.</p>
                         </div>
                     </div>
                 </div>
@@ -732,6 +773,10 @@
                         <i class="fa-solid fa-clipboard-check"></i>
                         <span>Seção de Avaliação</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-criar-avaliacao', this); cavLoadList()">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Criar Avaliação</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -835,6 +880,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-avaliacao', document.querySelector('.nav-item:nth-child(18)'));">
                                 <i class="fa-solid fa-clipboard-check"></i>
                                 <span>Seção de Avaliação</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-criar-avaliacao', document.querySelector('.nav-item:nth-child(19)')); cavLoadList()">
+                                <i class="fa-solid fa-list-check"></i>
+                                <span>Criar Avaliação</span>
                             </div>
                         </div>
                     </div>
@@ -2581,6 +2630,147 @@
                             <i class="fa-solid fa-file-circle-check" style="font-size:48px;color:#16a34a;margin-bottom:14px;display:block"></i>
                             <p style="font-size:14px;color:#475569;margin-bottom:20px;line-height:1.6">A Seção de Avaliação abre em uma janela própria, onde você seleciona o projeto e a turma e avalia cada aluno ativo com as 5 avaliações.</p>
                             <button class="btn-primary" onclick="window.open('secao-avaliacao.html','_blank')" style="padding:12px 24px;font-size:14px"><i class="fa-solid fa-external-link-alt"></i> Abrir Seção de Avaliação</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECAO CRIAR AVALIACAO -->
+                <div id="admin-criar-avaliacao" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-list-check" style="color:#16a34a;margin-right:8px"></i> Criar Avaliação</h3>
+                            <small>Monte avaliações com até 20 questões de múltipla escolha (letras A a D). Cada questão vale 0,5 ponto.</small>
+                        </div>
+                        <div class="card-body">
+
+                            <!-- Toolbar de avaliações salvas -->
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+                                <button class="btn-primary btn-sm" onclick="cavNovaAvaliacao()"><i class="fa-solid fa-plus"></i> Nova Avaliação</button>
+                                <button class="btn-outline btn-sm" onclick="cavLoadList()"><i class="fa-solid fa-rotate"></i> Atualizar Lista</button>
+                            </div>
+                            <div id="cav-list" style="margin-bottom:24px">
+                                <div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>
+                            </div>
+
+                            <!-- Formulario / Construtor -->
+                            <div id="cav-form" style="display:none">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+                                    <h3 style="font-size:16px;color:#0f172a;margin:0"><i class="fa-solid fa-pen-to-square" style="color:#16a34a;margin-right:6px"></i> <span id="cav-form-titulo">Nova Avaliação</span></h3>
+                                    <span id="cav-editing-badge" style="display:none"></span>
+                                </div>
+
+                                <!-- Dados da avaliacao -->
+                                <div class="form-section-card" style="margin-bottom:18px">
+                                    <div class="form-section-title"><i class="fa-solid fa-folder-open"></i><h3>Dados da Avaliação</h3></div>
+                                    <div class="form-section-body">
+                                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+                                            <div style="grid-column:span 2">
+                                                <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Nome da Avaliação (selecione a aula com AV Teórica)</label>
+                                                <input type="text" id="cav-aula-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Selecione a turma para buscar as aulas com AV Teórica..." oninput="cavFiltrarAulas(this.value)" disabled>
+                                                <select id="cav-nome" class="config-input" style="width:100%" onchange="cavOnNomeChange()"><option value="">Selecione primeiro a turma...</option></select>
+                                            </div>
+                                            <div>
+                                                <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Projeto</label>
+                                                <select id="cav-projeto" class="config-input" style="width:100%" onchange="cavOnProjetoChange()"></select>
+                                            </div>
+                                            <div>
+                                                <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Turma</label>
+                                                <select id="cav-turma" class="config-input" style="width:100%" onchange="cavOnTurmaChange()"></select>
+                                            </div>
+                                            <div>
+                                                <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Docente</label>
+                                                <select id="cav-docente" class="config-input" style="width:100%"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Questoes -->
+                                <div class="form-section-card" style="margin-bottom:18px">
+                                    <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                                        <h3 style="display:flex;align-items:center;gap:6px;margin:0"><i class="fa-solid fa-file-lines"></i> Questões (<span id="cav-q-count">0</span>/<span id="cav-q-max">20</span>)</h3>
+                                        <label style="font-size:12px;color:#475569;font-weight:600;display:flex;align-items:center;gap:6px">Limite:
+                                            <select id="cav-q-limite" class="config-input small" style="width:130px" onchange="cavMudarLimite(parseInt(this.value||'20',10))">
+                                                <option value="10">10 questões</option>
+                                                <option value="20" selected>20 questões</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <div class="form-section-body">
+                                        <div id="cav-questoes"></div>
+                                        <button class="btn-outline btn-sm" onclick="cavAdicionarQuestao()" id="cav-add-q-btn"><i class="fa-solid fa-plus"></i> Adicionar Questão</button>
+                                    </div>
+                                </div>
+
+                                <!-- Acoes -->
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                                    <button class="btn-primary" onclick="cavSalvar()"><i class="fa-solid fa-floppy-disk"></i> Salvar Avaliação</button>
+                                    <button class="btn-outline" onclick="cavExcluir()"><i class="fa-solid fa-trash"></i> Excluir</button>
+                                    <button class="btn-outline" onclick="cavEditar()"><i class="fa-solid fa-pen"></i> Editar</button>
+                                    <button class="btn-warning" onclick="cavImprimir()"><i class="fa-solid fa-print"></i> Imprimir Avaliação</button>
+                                    <button class="btn-outline" onclick="cavGerarGabarito()"><i class="fa-solid fa-clipboard-check"></i> Gerar Gabarito</button>
+                                    <button class="btn-warning" onclick="cavAbrirEnvio()"><i class="fa-solid fa-paper-plane"></i> Enviar Avaliação</button>
+                                </div>
+                            </div>
+
+                            <!-- Gabarito -->
+                            <div id="cav-gabarito" style="display:none;margin-top:20px;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:16px">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+                                    <h4 style="font-size:15px;color:#15803d;margin:0"><i class="fa-solid fa-clipboard-check"></i> Gabarito</h4>
+                                    <button class="btn-danger-icon" onclick="document.getElementById('cav-gabarito').style.display='none'" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div id="cav-gabarito-content" style="font-size:13px;color:#1e293b;line-height:1.9"></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL LISTAR AVALIADOS -->
+                <div id="cav-listar-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharListarAvaliados()">
+                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:640px">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-users" style="margin-right:6px"></i> Listar Avaliados</h3>
+                            <button class="modal-close" onclick="cavFecharListarAvaliados()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="font-size:13px;color:#64748b;margin-bottom:14px" id="cav-listar-avaliacao-nome">—</p>
+                            <div id="cav-listar-avaliados-content" style="max-height:60vh;overflow-y:auto">
+                                <div style="text-align:center;color:#64748b;padding:20px">Carregando alunos avaliados...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL VER RESPOSTAS E PONTOS DO ALUNO -->
+                <div id="cav-respostas-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharRespostas()">
+                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:720px">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-clipboard-check" style="margin-right:6px"></i> Respostas e Pontos</h3>
+                            <button class="modal-close" onclick="cavFecharRespostas()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body" id="cav-respostas-content">
+                            <div style="text-align:center;color:#64748b;padding:20px">Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL ENVIO AVALIACAO -->
+                <div id="cav-envio-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharEnvio()">
+                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:460px">
+                        <div class="modal-header">
+                            <h3>Enviar Avaliação</h3>
+                            <button class="modal-close" onclick="cavFecharEnvio()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">Escolha a turma para a qual a avaliação será enviada. Os alunos desta turma poderão respondê-la no Portal do Aluno.</p>
+                            <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Turma de Envio</label>
+                            <select id="cav-envio-turma" class="config-input" style="margin-bottom:14px;width:100%"></select>
+                            <div id="cav-envio-info" style="font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:14px"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-outline" onclick="cavFecharEnvio()">Cancelar</button>
+                            <button class="btn-primary" onclick="cavConfirmarEnvio()"><i class="fa-solid fa-paper-plane"></i> Confirmar Envio</button>
                         </div>
                     </div>
                 </div>
