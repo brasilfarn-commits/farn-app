@@ -319,6 +319,9 @@
                 <div class="pf-nav-item" onclick="pdShowSection('avaliacao', this)">
                     <i class="fa-solid fa-clipboard-check"></i><span>Avaliação</span>
                 </div>
+                <div class="pf-nav-item" onclick="pdShowSection('responderavpratica', this)">
+                    <i class="fa-solid fa-flask"></i><span>Responder AV Prática</span>
+                </div>
                 <div class="pf-nav-item" onclick="pdShowSection('apostilasextras', this)">
                     <i class="fa-solid fa-book-open"></i><span>Apostilas Extras</span>
                 </div>
@@ -513,6 +516,60 @@
                 <div id="pd-av-alunos-empty" style="text-align:center;padding:40px;color:#94a3b8;display:block">
                     <i class="fa-solid fa-clipboard-check" style="font-size:36px;margin-bottom:10px;display:block;color:#16a34a"></i>
                     <p>Selecione projeto e turma para avaliar os alunos.</p>
+                </div>
+            </div>
+
+            <!-- RESPONDER AV PRATICA -->
+            <div id="pf-section-responderavpratica" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-flask"></i>
+                    <h2>Responder AV Prática</h2>
+                </div>
+                <div style="margin-bottom:16px">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+                        <div style="flex:1;min-width:200px">
+                            <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Projeto</label>
+                            <select id="pd-avp-projeto" onchange="pdAvPraticaOnProjetoChange()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;background:#fff">
+                                <option value="">Selecione o projeto...</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:200px">
+                            <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Turma</label>
+                            <select id="pd-avp-turma" onchange="pdAvPraticaOnTurmaChange()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;background:#fff">
+                                <option value="">Selecione a turma...</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:200px">
+                            <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Avaliação (AV Prática)</label>
+                            <select id="pd-avp-avaliacao" onchange="pdAvPraticaOnAvaliacaoChange()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;background:#fff">
+                                <option value="">Selecione a avaliação...</option>
+                            </select>
+                        </div>
+                        <button onclick="pdAvPraticaInitLoad()" style="padding:9px 16px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;height:37px"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                    </div>
+                </div>
+                <div id="pd-avp-alunos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
+                <div id="pd-avp-alunos-empty" style="text-align:center;padding:40px;color:#94a3b8;display:block">
+                    <i class="fa-solid fa-flask" style="font-size:36px;margin-bottom:10px;display:block;color:#16a34a"></i>
+                    <p>Selecione projeto, turma e a avaliação para responder pelos alunos.</p>
+                </div>
+            </div>
+
+            <!-- MODAL RESPONDER AV PRATICA -->
+            <div id="pd-avp-modal-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:2100;overflow-y:auto;padding:20px" onclick="if(event.target===this)pdAvPraticaFechar()">
+                <div style="max-width:760px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;max-height:92vh">
+                    <div style="background:linear-gradient(135deg,#16a34a,#059669);padding:18px 24px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                        <div>
+                            <div id="pd-avp-modal-titulo" style="font-size:17px;font-weight:700"></div>
+                            <div id="pd-avp-modal-meta" style="font-size:12px;opacity:.85;margin-top:3px"></div>
+                        </div>
+                        <button onclick="pdAvPraticaFechar()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="pd-avp-modal-conteudo" style="padding:18px 24px;overflow-y:auto;flex:1;background:#f8fafc"></div>
+                    <div style="padding:14px 24px;text-align:right;border-top:1px solid #f1f5f9;gap:8px;display:flex;justify-content:flex-end;flex-wrap:wrap">
+                        <button onclick="pdAvPraticaFechar()" style="padding:10px 22px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer">Fechar</button>
+                        <button onclick="pdAvPraticaSalvar()" style="padding:10px 22px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-floppy-disk"></i> Salvar Respostas</button>
+                    </div>
                 </div>
             </div>
 
@@ -959,6 +1016,7 @@
             if (section === 'tfm') pdLoadTfmAgendamentos();
             if (section === 'apontamento') pdLoadApontamentos();
             if (section === 'avaliacao') pdAvInit();
+            if (section === 'responderavpratica') pdAvPraticaInit();
             if (section === 'apostilasextras') pdLoadApostExtras();
         }
 
@@ -2813,6 +2871,16 @@
         var pdAvAbaAtual = 'teorica';
         var pdAvFoLista = { positivos: [], negativos: [] };
 
+        /* ===== RESPONDER AV PRATICA ===== */
+        var pdAvpProjeto = '';
+        var pdAvpTurma = '';
+        var pdAvpAvaliacaoId = '';
+        var pdAvpAvaliacao = null;
+        var pdAvpAlunoCpf = '';
+        var pdAvpAlunoNome = '';
+        var pdAvpRespostas = {};
+        var pdAvpAlunos = [];
+
         function pdAvInit() {
             var sessao = sessionStorage.getItem('pd_sessao');
             if (!sessao) return;
@@ -3134,6 +3202,273 @@
             lista.splice(index, 1);
             await pdAvSalvarAvaliacao();
             pdAvRenderComportamento();
+        }
+
+        /* ===== RESPONDER AV PRATICA ===== */
+        function pdAvPraticaInit() {
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+            pdAvPraticaCarregarProjetos(docente);
+        }
+
+        async function pdAvPraticaCarregarProjetos(docente) {
+            var sel = document.getElementById('pd-avp-projeto');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Carregando projetos...</option>';
+            try {
+                var projetos = {};
+                var snap = await dbFirestore.collection('aulas').get();
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    if (docente.isAdmin || pdPertenceDocente(d, docente.nome)) {
+                        if (d.projeto && !projetos[d.projeto]) projetos[d.projeto] = true;
+                    }
+                });
+                sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+                Object.keys(projetos).sort().forEach(function(p) {
+                    var op = document.createElement('option');
+                    op.value = p;
+                    op.textContent = p;
+                    sel.appendChild(op);
+                });
+            } catch (e) { sel.innerHTML = '<option value="">Erro ao carregar projetos</option>'; }
+        }
+
+        function pdAvPraticaOnProjetoChange() {
+            pdAvpProjeto = document.getElementById('pd-avp-projeto').value;
+            pdAvpTurma = '';
+            pdAvpAvaliacaoId = '';
+            pdAvpAvaliacao = null;
+            pdAvpAlunos = [];
+            var selTurma = document.getElementById('pd-avp-turma');
+            selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+            document.getElementById('pd-avp-avaliacao').innerHTML = '<option value="">Selecione a avaliação...</option>';
+            document.getElementById('pd-avp-alunos-grid').innerHTML = '';
+            document.getElementById('pd-avp-alunos-empty').style.display = 'block';
+            if (!pdAvpProjeto) return;
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+            var turmas = {};
+            dbFirestore.collection('aulas').get().then(function(snap) {
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    if ((docente.isAdmin || pdPertenceDocente(d, docente.nome)) && d.projeto === pdAvpProjeto && d.turma && !turmas[d.turma]) {
+                        turmas[d.turma] = true;
+                    }
+                });
+                Object.keys(turmas).sort().forEach(function(t) {
+                    var op = document.createElement('option');
+                    op.value = t;
+                    op.textContent = t;
+                    selTurma.appendChild(op);
+                });
+            });
+        }
+
+        function pdAvPraticaOnTurmaChange() {
+            pdAvpTurma = document.getElementById('pd-avp-turma').value;
+            pdAvpAvaliacaoId = '';
+            pdAvpAvaliacao = null;
+            pdAvpAlunos = [];
+            document.getElementById('pd-avp-avaliacao').innerHTML = '<option value="">Selecione a avaliação...</option>';
+            document.getElementById('pd-avp-alunos-grid').innerHTML = '';
+            document.getElementById('pd-avp-alunos-empty').style.display = 'block';
+            pdAvPraticaCarregarAvaliacoes();
+        }
+
+        async function pdAvPraticaCarregarAvaliacoes() {
+            var sel = document.getElementById('pd-avp-avaliacao');
+            if (!pdAvpProjeto || !pdAvpTurma) return;
+            sel.innerHTML = '<option value="">Carregando avaliações...</option>';
+            try {
+                var snap = await dbFirestore.collection('avaliacoes').get();
+                var avs = [];
+                snap.forEach(function(doc) {
+                    var d = doc.data() || {};
+                    if (d.tipo !== 'pratica') return;
+                    if (d.enviada !== true && d.enviada !== 'true') return;
+                    if (String(d.projeto || '').trim() !== String(pdAvpProjeto).trim()) return;
+                    if (String(d.turma || '').trim() !== String(pdAvpTurma).trim()) return;
+                    avs.push({ id: doc.id, nome: d.nome || 'Avaliação', qtd: (d.questoes || []).length });
+                });
+                sel.innerHTML = '<option value="">Selecione a avaliação...</option>';
+                avs.forEach(function(a) {
+                    var op = document.createElement('option');
+                    op.value = a.id;
+                    op.textContent = a.nome + ' (' + a.qtd + ' questões)';
+                    sel.appendChild(op);
+                });
+            } catch (e) { sel.innerHTML = '<option value="">Erro ao carregar avaliações</option>'; }
+        }
+
+        function pdAvPraticaOnAvaliacaoChange() {
+            pdAvpAvaliacaoId = document.getElementById('pd-avp-avaliacao').value;
+            pdAvpAvaliacao = null;
+            pdAvpAlunos = [];
+            if (!pdAvpAvaliacaoId) {
+                document.getElementById('pd-avp-alunos-grid').innerHTML = '';
+                document.getElementById('pd-avp-alunos-empty').style.display = 'block';
+                return;
+            }
+            pdAvPraticaCarregarAlunos();
+        }
+
+        async function pdAvPraticaCarregarAlunos() {
+            var grid = document.getElementById('pd-avp-alunos-grid');
+            var empty = document.getElementById('pd-avp-alunos-empty');
+            if (!pdAvpTurma || !pdAvpProjeto || !pdAvpAvaliacaoId) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando alunos...</div>';
+            try {
+                var snap = await dbFirestore.collection('candidatos').where('turma', '==', pdAvpTurma).where('projeto', '==', pdAvpProjeto).get();
+                pdAvpAlunos = [];
+                snap.forEach(function(doc) {
+                    var c = doc.data();
+                    if ((c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.ativo !== false) {
+                        pdAvpAlunos.push({ cpf: c.cpf, nome: c.nome, matricula: c.matricula, turma: c.turma, projeto: c.projeto });
+                    }
+                });
+                pdAvpAlunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+                pdAvPraticaRenderAlunos();
+            } catch (e) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#dc2626">Erro ao carregar alunos.</div>';
+            }
+        }
+
+        function pdAvPraticaRenderAlunos() {
+            var grid = document.getElementById('pd-avp-alunos-grid');
+            var empty = document.getElementById('pd-avp-alunos-empty');
+            if (!pdAvpAlunos.length) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                empty.innerHTML = '<i class="fa-solid fa-user-slash" style="font-size:36px;margin-bottom:10px;display:block;color:#94a3b8"></i><p>Nenhum aluno ativo nesta turma.</p>';
+                return;
+            }
+            empty.style.display = 'none';
+            grid.innerHTML = '';
+            pdAvpAlunos.forEach(function(a) {
+                var card = document.createElement('div');
+                card.className = 'pd-av-card-aluno';
+                card.innerHTML =
+                    '<div class="nome">' + pdEsc(a.nome) + '</div>' +
+                    '<div class="meta">' +
+                    '<span><i class="fa-solid fa-id-card"></i> ' + pdEsc(a.matricula || '—') + '</span>' +
+                    '<span><i class="fa-solid fa-users"></i> ' + pdEsc(a.turma) + '</span>' +
+                    '</div>' +
+                    '<button class="btn-avaliar" onclick="pdAvPraticaAbrir(\'' + (a.cpf || '').replace(/'/g, '') + '\',\'' + pdAvpAvaliacaoId + '\')"><i class="fa-solid fa-flask"></i> Responder</button>';
+                grid.appendChild(card);
+            });
+        }
+
+        async function pdAvPraticaAbrir(cpf, avId) {
+            var overlay = document.getElementById('pd-avp-modal-overlay');
+            var conteudo = document.getElementById('pd-avp-modal-conteudo');
+            if (!overlay || !conteudo) return;
+            pdAvpAlunoCpf = cpf;
+            pdAvpRespostas = {};
+            try {
+                var avDoc = await dbFirestore.collection('avaliacoes').doc(avId).get();
+                if (!avDoc.exists) { alert('Avaliação não encontrada.'); return; }
+                pdAvpAvaliacao = avDoc.data() || {};
+                pdAvpAvaliacaoId = avId;
+                var aluno = pdAvpAlunos.filter(function(a) { return a.cpf === cpf; })[0];
+                pdAvpAlunoNome = aluno ? aluno.nome : 'Aluno';
+                document.getElementById('pd-avp-modal-titulo').textContent = pdAvpAvaliacao.nome || 'Avaliação Prática';
+                document.getElementById('pd-avp-modal-meta').textContent = 'Aluno(a): ' + pdAvpAlunoNome + ' · ' + (pdAvpAvaliacao.questoes || []).length + ' questões';
+                try {
+                    var fichaDoc = await dbFirestore.collection('avaliacoesAlunos').doc(cpf).get();
+                    if (fichaDoc.exists) {
+                        var f = fichaDoc.data() || {};
+                        var manual = (f.avPraticaManual || {})[avId];
+                        if (manual && manual.respostas) pdAvpRespostas = manual.respostas || {};
+                    }
+                } catch (e) { console.error('Erro ao carregar respostas salvas:', e); }
+                pdAvPraticaRenderQuestoes();
+                overlay.style.display = 'block';
+            } catch (e) {
+                alert('Erro ao abrir avaliação.');
+            }
+        }
+
+        function pdAvPraticaRenderQuestoes() {
+            var conteudo = document.getElementById('pd-avp-modal-conteudo');
+            var questoes = (pdAvpAvaliacao && pdAvpAvaliacao.questoes) || [];
+            var html = '';
+            questoes.forEach(function(q, i) {
+                var atual = pdAvpRespostas[i] || '';
+                function btn(v, rotulo, cor) {
+                    var ativo = atual === v;
+                    return '<button onclick="pdAvPraticaMarcar(' + i + ',\'' + v + '\')" style="flex:1;padding:10px 8px;border-radius:8px;border:2px solid ' + (ativo ? cor : '#e2e8f0') + ';background:' + (ativo ? cor : '#fff') + ';color:' + (ativo ? '#fff' : '#475569') + ';font-size:12px;font-weight:700;cursor:pointer;min-width:110px">' + rotulo + '</button>';
+                }
+                html +=
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:12px">' +
+                    '<div style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:12px">' + (i + 1) + '. ' + pdEsc(q.enunciado || '') + '</div>' +
+                    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+                    btn('certa', 'CERTA', '#16a34a') +
+                    btn('parcial', 'PARCIAL', '#f59e0b') +
+                    btn('naorealizou', 'NÃO REALIZOU', '#dc2626') +
+                    '</div>' +
+                    '</div>';
+            });
+            conteudo.innerHTML = html;
+        }
+
+        function pdAvPraticaMarcar(idx, valor) {
+            pdAvpRespostas[idx] = valor;
+            pdAvPraticaRenderQuestoes();
+        }
+
+        function pdAvPraticaFechar() {
+            document.getElementById('pd-avp-modal-overlay').style.display = 'none';
+            pdAvpAvaliacao = null;
+            pdAvpRespostas = {};
+        }
+
+        async function pdAvPraticaSalvar() {
+            if (!pdAvpAvaliacao || !pdAvpAlunoCpf) return;
+            var questoes = pdAvpAvaliacao.questoes || [];
+            var total = questoes.length;
+            var peso = total === 10 ? 1.0 : 0.5;
+            var nota = 0;
+            var marcadas = 0;
+            questoes.forEach(function(q, i) {
+                var v = pdAvpRespostas[i];
+                if (v === 'certa') { nota += peso; marcadas++; }
+                else if (v === 'parcial') { nota += peso / 2; marcadas++; }
+            });
+            nota = Math.max(0, Math.min(10, nota));
+            nota = Math.round(nota * 10) / 10;
+            var avId = pdAvpAvaliacaoId;
+            var aulaId = pdAvpAvaliacao.aulaId || '';
+            var ficha = {
+                cpf: pdAvpAlunoCpf,
+                nome: pdAvpAlunoNome,
+                turma: pdAvpTurma,
+                projeto: pdAvpProjeto,
+                avPraticaManual: {}
+            };
+            ficha.avPraticaManual[avId] = {
+                avaliacaoId: avId,
+                avaliacaoNome: pdAvpAvaliacao.nome || 'Avaliação',
+                respostas: pdAvpRespostas,
+                totalQuestoes: total,
+                nota: nota,
+                respondidoEm: new Date()
+            };
+            if (aulaId) {
+                ficha.notasPraticas = {};
+                ficha.notasPraticas[aulaId] = nota;
+            }
+            try {
+                await dbFirestore.collection('avaliacoesAlunos').doc(pdAvpAlunoCpf).set(ficha, { merge: true });
+                alert('Respostas salvas! Nota: ' + String(nota).replace('.', ','));
+                pdAvPraticaFechar();
+            } catch (e) {
+                console.error('Erro ao salvar:', e);
+                alert('Erro ao salvar as respostas.');
+            }
         }
 
         /* Auto login se houver credenciais salvas */

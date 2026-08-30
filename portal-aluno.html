@@ -907,6 +907,15 @@
                             </button>
                             <div id="pf-regimento-status" style="margin-top:10px;font-size:11px;color:#64748b"></div>
                         </div>
+                        <div style="flex:1;min-width:240px;text-align:center;padding:24px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+                            <i class="fa-solid fa-mobile-screen-button" style="font-size:36px;color:#2563eb;margin-bottom:10px"></i>
+                            <p style="font-size:14px;color:#1e293b;font-weight:600;margin-bottom:4px">Termo - Avaliacao Teorica (Celular)</p>
+                            <p style="font-size:11px;color:#64748b;margin-bottom:14px">Termo de responsabilidade para uso do aparelho celular em avaliacao.</p>
+                            <button onclick="paTermoAbrirSeNecessario()" id="pf-termo-btn" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                                <i class="fa-solid fa-file-signature"></i> Ver / Assinar Termo
+                            </button>
+                            <div id="pf-termo-status" style="margin-top:10px;font-size:11px;color:#64748b"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -1120,6 +1129,30 @@
         </div>
     </div>
 
+    <!-- MODAL TERMO DE RESPONSABILIDADE (AVALIACAO TEORICA) -->
+    <div id="pf-termo-modal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.6);overflow-y:auto;padding:20px" onclick="if(event.target===this)paTermoFechar()">
+        <div style="background:#fff;border-radius:16px;max-width:820px;margin:0 auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <div>
+                    <div style="font-size:17px;font-weight:700;color:#fff;line-height:1.3">TERMO DE RESPONSABILIDADE PARA UTILIZAÇÃO DE APARELHO CELULAR DURANTE AVALIAÇÃO TEÓRICA</div>
+                    <div style="font-size:12px;color:#bbf7d0;margin-top:4px">PORTAAL DO ALUNO - FARN</div>
+                </div>
+                <button onclick="paTermoFechar()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="pf-termo-body" style="padding:24px 28px;max-height:62vh;overflow-y:auto;font-size:13px;color:#1e293b;line-height:1.7"></div>
+            <div id="pf-termo-footer" style="padding:16px 28px;border-top:1px solid #e2e8f0;background:#f8fafc;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <label id="pf-termo-check-label" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1e293b;cursor:pointer;flex:1">
+                    <input type="checkbox" id="pf-termo-check" style="width:18px;height:18px;accent-color:#16a34a" onchange="document.getElementById('pf-termo-aceitar').disabled=!this.checked">
+                    Confirmo que li e concordo com todos os termos descritos acima, servindo esta marcação como minha assinatura digital.
+                </label>
+                <button onclick="paTermoImprimir()" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-print"></i> Imprimir</button>
+                <button id="pf-termo-aceitar" onclick="paTermoAceitar()" disabled style="background:#16a34a;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;opacity:.5">
+                    <i class="fa-solid fa-check"></i> Aceitar e Assinar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL INATIVO POR FALTA -->
     <div id="pf-inativo-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);overflow-y:auto;padding:20px" onclick="if(event.target===this)pfInativoFechar()">
         <div style="background:#fff;border-radius:16px;max-width:700px;margin:0 auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
@@ -1192,6 +1225,9 @@
     var paDisciplinas=[];
     var paPortalLiberado=false;
     var paRegimentoBloqueio=false;
+    var paTermoAceito=false;
+    var paTermoConteudoSalvo=null;
+    var paInstituicaoInfo={ nome:'FARN - Forca Auxiliar de Resgate Nacional' };
     var paAvAulas={ todas:[], teorica:[], pratica:[] };
     var paAvPresencas=[];
     var paAvAvaliacao=null;
@@ -1352,6 +1388,7 @@
                 paLoadAvaliacao();
                 chatInitEmoji();
                 paInitNotificacoes();
+                paTermoChecar();
             }
 
             /* Se inativo por falta, abre modal de justificativas apos carregar */
@@ -4349,6 +4386,7 @@
             if (!paPortalLiberado) {
                 paLiberarPortal();
                 paFecharRegimento();
+                paTermoChecar();
             }
         } catch(e) {
             console.error('Erro ao aceitar regimento:', e);
@@ -4356,6 +4394,216 @@
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Aceitar Regimento';
         }
+    }
+
+    /* ===== TERMO DE RESPONSABILIDADE - AVALIACAO TEORICA ===== */
+    function paFormatCPFStr(cpf) {
+        var v = String(cpf || '').replace(/\D/g, '');
+        if (v.length === 11) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        return v;
+    }
+
+    function paTermoMontarHTML(nome, instituicao, cpf, comAssinatura) {
+        var p = function(s) { return String(s == null ? '' : s); };
+        var sub = function(txt) {
+            return '<u style="font-weight:700">' + paEsc(p(txt)) + '</u>';
+        };
+        var h = '';
+        h += '<div style="text-align:center;margin-bottom:18px">';
+        h += '<div style="font-size:11px;font-weight:600;color:#16a34a;letter-spacing:2px;text-transform:uppercase">Forca Auxiliar de Resgate Nacional</div>';
+        h += '<div style="font-size:16px;font-weight:700;color:#1e293b;margin:6px 0">TERMO DE RESPONSABILIDADE PARA UTILIZAÇÃO DE APARELHO CELULAR DURANTE AVALIAÇÃO TEÓRICA</div>';
+        h += '<div style="font-size:12px;color:#64748b">Portal do Aluno</div>';
+        h += '<div style="width:60px;height:3px;background:linear-gradient(90deg,#2563eb,#22c55e);margin:12px auto;border-radius:2px"></div>';
+        h += '</div>';
+
+        h += '<div style="margin-bottom:16px">Declaro, para os devidos fins, que estou ciente das normas estabelecidas para a realização das avaliações teóricas.</div>';
+
+        h += '<div style="margin-bottom:12px">' +
+            'Eu, ' + sub(nome) + ', aluno(a) regularmente vinculado(a) à instituição ' + sub(instituicao) + ', portador(a) do CPF nº ' + sub(cpf) + ', abaixo identificado(a):' +
+            '</div>';
+
+        h += '<h4 style="font-size:13px;color:#0f172a;margin:16px 0 6px">1. DA AUTORIZAÇÃO DE USO DO APARELHO CELULAR</h4>';
+        h += '<p style="margin:0 0 8px">Declaro estar ciente de que a utilização do aparelho celular durante as atividades em sala de aula é restrita, sendo permitida exclusivamente no momento e para a finalidade da avaliação teórica, quando expressamente autorizado pela instituição, coordenação pedagógica ou responsável pela aplicação da avaliação.</p>';
+        h += '<p style="margin:0 0 8px">O aparelho celular deverá ser utilizado somente conforme as orientações fornecidas pela instituição e pelos responsáveis pela avaliação.</p>';
+
+        h += '<h4 style="font-size:13px;color:#0f172a;margin:16px 0 6px">2. DA RESPONSABILIDADE PELO EQUIPAMENTO</h4>';
+        h += '<p style="margin:0 0 8px">Declaro que o aparelho celular utilizado durante a avaliação é de minha inteira responsabilidade, incluindo sua guarda, conservação, funcionamento, segurança e integridade.</p>';
+        h += '<p style="margin:0 0 8px">Estou ciente de que a instituição responsável pela aplicação da avaliação não se responsabiliza por perda, extravio, furto, roubo, dano, quebra, mau funcionamento ou qualquer outro prejuízo relacionado ao aparelho celular ou a outros equipamentos eletrônicos de propriedade do aluno.</p>';
+
+        h += '<h4 style="font-size:13px;color:#0f172a;margin:16px 0 6px">3. DA OBRIGAÇÃO DE CUMPRIMENTO DAS REGRAS</h4>';
+        h += '<p style="margin:0 0 8px">Comprometo-me a obedecer integralmente às normas, orientações e determinações estabelecidas pela instituição e pelos responsáveis pela aplicação da avaliação.</p>';
+        h += '<p style="margin:0 0 8px">Reconheço que o uso do aparelho celular deverá ocorrer somente para os fins autorizados durante o processo avaliativo, sendo proibida qualquer utilização indevida, não autorizada ou que comprometa a organização, a disciplina, a segurança ou a regularidade da avaliação.</p>';
+        h += '<p style="margin:0 0 8px">Declaro estar ciente de que o descumprimento das orientações poderá resultar nas medidas disciplinares e administrativas cabíveis, conforme as normas internas da instituição.</p>';
+
+        h += '<h4 style="font-size:13px;color:#0f172a;margin:16px 0 6px">4. DA CIÊNCIA E NÃO RESPONSABILIZAÇÃO DA INSTITUIÇÃO</h4>';
+        h += '<p style="margin:0 0 8px">Declaro que assumo integral responsabilidade pela utilização do meu aparelho celular durante o processo de avaliação e que não responsabilizarei a instituição, seus representantes, coordenadores, instrutores, professores ou aplicadores da avaliação por qualquer ocorrência relacionada ao meu equipamento pessoal.</p>';
+        h += '<p style="margin:0 0 8px">Reconheço, ainda, que a autorização para utilização do aparelho celular durante a avaliação constitui uma permissão específica e restrita à modalidade e às condições estabelecidas pela instituição.</p>';
+
+        h += '<h4 style="font-size:13px;color:#0f172a;margin:16px 0 6px">5. DA AUTORIZAÇÃO DA FORMA DE AVALIAÇÃO</h4>';
+        h += '<p style="margin:0 0 8px">Declaro que estou ciente e autorizo a instituição a utilizar o aparelho celular como instrumento ou recurso para a realização da avaliação teórica, de acordo com o método, sistema, plataforma ou procedimento definido pela instituição.</p>';
+        h += '<p style="margin:0 0 8px">Confirmo que compreendo e aceito a forma de aplicação da avaliação estabelecida pela instituição, comprometendo-me a seguir todas as instruções fornecidas durante o processo avaliativo.</p>';
+
+        h += '<p style="margin:16px 0">Por estar de acordo com todas as condições descritas neste termo, firmo o presente documento de livre e espontânea vontade.</p>';
+
+        if (comAssinatura) {
+            h += '<div style="margin-top:28px;border-top:2px solid #0f172a;padding-top:10px">' +
+                '<div style="display:flex;gap:30px;justify-content:center;text-align:center;font-size:12px;color:#334155">' +
+                '<div style="flex:1"><div style="font-weight:700">' + paEsc(p(nome)) + '</div><div style="color:#64748b">CPF: ' + paEsc(cpf) + '</div></div>' +
+                '<div style="flex:1"><div style="font-weight:700">Assinatura digital</div><div style="color:#64748b">Marcação de concordância</div></div>' +
+                '</div></div>';
+        } else {
+            h += '<div style="margin-top:18px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d"><i class="fa-solid fa-circle-check"></i> Termo assinado digitalmente pelo(a) aluno(a) ' + paEsc(p(nome)) + ' (CPF ' + paEsc(cpf) + ').</div>';
+        }
+        return h;
+    }
+
+    function paTermoDadosAluno() {
+        if (!paUser) return { nome:'', instituicao:'', cpf:'' };
+        var inst = (paInstituicaoInfo && paInstituicaoInfo.nome) ? paInstituicaoInfo.nome : 'FARN - Forca Auxiliar de Resgate Nacional';
+        return {
+            nome: paUser.nome || '',
+            instituicao: inst,
+            cpf: paFormatCPFStr(paUser.cpf || '')
+        };
+    }
+
+    function paTermoAbrir() {
+        var modal = document.getElementById('pf-termo-modal');
+        if (!modal) return;
+        try {
+            dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(sn) {
+                if (sn.exists && sn.data() && sn.data().nome) paInstituicaoInfo.nome = sn.data().nome;
+                paTermoRenderOpen();
+            }).catch(function() { paTermoRenderOpen(); });
+        } catch (e) {
+            paTermoRenderOpen();
+        }
+        document.body.style.overflow = 'hidden';
+    }
+
+    function paTermoRenderOpen() {
+        var dados = paTermoDadosAluno();
+        document.getElementById('pf-termo-body').innerHTML = paTermoMontarHTML(dados.nome, dados.instituicao, dados.cpf, false);
+        document.getElementById('pf-termo-check').checked = false;
+        document.getElementById('pf-termo-aceitar').disabled = true;
+        document.getElementById('pf-termo-check-label').style.display = 'flex';
+        document.getElementById('pf-termo-aceitar').style.opacity = '.5';
+        document.getElementById('pf-termo-modal').style.display = 'block';
+    }
+
+    function paTermoFechar() {
+        document.getElementById('pf-termo-modal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function paTermoVisualizar() {
+        var modal = document.getElementById('pf-termo-modal');
+        if (!modal) return;
+        var dados = paTermoDadosAluno();
+        var body;
+        if (paTermoConteudoSalvo) {
+            body = paTermoConteudoSalvo;
+        } else {
+            body = paTermoMontarHTML(dados.nome, dados.instituicao, dados.cpf, true);
+        }
+        document.getElementById('pf-termo-body').innerHTML = body;
+        document.getElementById('pf-termo-check-label').style.display = 'none';
+        document.getElementById('pf-termo-check').checked = false;
+        document.getElementById('pf-termo-aceitar').disabled = true;
+        document.getElementById('pf-termo-aceitar').style.display = 'none';
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    async function paTermoChecar() {
+        if (!paUser) return;
+        try {
+            var snap = await dbFirestore.collection('termoAvaliacaoAceites').doc(paUser.cpf).get();
+            var statusEl = document.getElementById('pf-termo-status');
+            if (snap.exists) {
+                paTermoAceito = true;
+                var d = snap.data();
+                paTermoConteudoSalvo = d.conteudo || '';
+                var dataFmt = d.dataAceite ? new Date(d.dataAceite).toLocaleDateString('pt-BR') : '';
+                if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#16a34a"></i> Termo assinado em ' + dataFmt;
+                var btn = document.getElementById('pf-termo-btn');
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-file-lines"></i> Visualizar Termo';
+            } else {
+                paTermoAceito = false;
+                if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-clock" style="color:#ca8a04"></i> Termo pendente de assinatura';
+                paTermoAbrir();
+            }
+        } catch (e) {
+            console.error('Erro ao checar termo:', e);
+        }
+    }
+
+    function paTermoAbrirSeNecessario() {
+        if (!paUser) return;
+        if (paTermoAceito) { paTermoVisualizar(); return; }
+        paTermoAbrir();
+    }
+
+    async function paTermoAceitar() {
+        if (!paUser) return;
+        var check = document.getElementById('pf-termo-check');
+        if (!check || !check.checked) { alert('Marque a caixa de confirmação para assinar o termo.'); return; }
+        if (!confirm('Confirma sua concordância com TODOS os termos acima? Esta ação será registrada como sua assinatura digital e não poderá ser alterada.')) return;
+        var btn = document.getElementById('pf-termo-aceitar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Assinando...';
+        var dados = paTermoDadosAluno();
+        var conteudo = paTermoMontarHTML(dados.nome, dados.instituicao, dados.cpf, true);
+        var dataAceite = new Date().toISOString();
+        try {
+            await dbFirestore.collection('termoAvaliacaoAceites').doc(paUser.cpf).set({
+                cpf: paUser.cpf,
+                nome: paUser.nome || '',
+                turma: paUser.turma || '',
+                projeto: paUser.projeto || '',
+                instituicao: dados.instituicao,
+                conteudo: conteudo,
+                dataAceite: dataAceite
+            });
+            await dbFirestore.collection('declaracoesAlunos').add({
+                cpf: paUser.cpf,
+                nome: paUser.nome || '',
+                turma: paUser.turma || '',
+                projeto: paUser.projeto || '',
+                tipo: 'termo_avaliacao_teorica',
+                titulo: 'Termo de Responsabilidade - Uso de Celular em Avaliação Teorica',
+                conteudo: conteudo,
+                assinado: true,
+                data: dataAceite
+            });
+            paTermoAceito = true;
+            paTermoConteudoSalvo = conteudo;
+            var statusEl = document.getElementById('pf-termo-status');
+            if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#16a34a"></i> Termo assinado em ' + new Date(dataAceite).toLocaleDateString('pt-BR');
+            var cartaoBtn = document.getElementById('pf-termo-btn');
+            if (cartaoBtn) cartaoBtn.innerHTML = '<i class="fa-solid fa-file-lines"></i> Visualizar Termo';
+            paTermoVisualizar();
+        } catch (e) {
+            console.error('Erro ao assinar termo:', e);
+            alert('Erro ao salvar: ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Aceitar e Assinar';
+        }
+    }
+
+    function paTermoImprimir() {
+        var body = document.getElementById('pf-termo-body');
+        if (!body) return;
+        var w = window.open('', '_blank');
+        if (!w) return;
+        w.document.write('<html><head><title>Termo de Responsabilidade - Avaliacao Teorica</title>');
+        w.document.write('<style>body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;margin:30px;font-size:12px;line-height:1.6}h4{margin:14px 0 6px} p{margin:0 0 8px} u{font-weight:700} @media print{body{margin:15px}}');
+        w.document.write('</style></head><body>');
+        w.document.write(body.innerHTML);
+        w.document.write('</body></html>');
+        w.document.close();
+        w.focus();
+        setTimeout(function(){ w.print(); }, 500);
     }
 
     /* Auto-login se lembrar estava marcado */
@@ -4411,8 +4659,11 @@
                 } catch (e) { console.error('Falha ao verificar resposta de', av.id, e); }
                 var card = document.createElement('div');
                 card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
+                var isPratica = (d.tipo === 'pratica');
                 var btn;
-                if (jaRespondeu) {
+                if (isPratica) {
+                    btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+                } else if (jaRespondeu) {
                     btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
                 } else {
                     btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
@@ -4447,6 +4698,7 @@
             if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
             var d = doc.data();
             if (d.enviada !== true || d.turma !== (paUser.turma || '').trim()) { alert('Esta avaliação não está disponível para a sua turma.'); return; }
+            if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
             paRavAtual = { id: avId, conteudo: d };
             paRavRespostas = {};
             paRavCorretas = {};
@@ -4666,6 +4918,39 @@
             var resumoHtml = '';
             if (!mostrar) {
                 resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-lock" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Avaliação indisponível</h4><p style="font-size:13px">Esta avaliação não está mais disponível ou não pertence à sua turma.</p></div>';
+            } else if (d.tipo === 'pratica') {
+                var manual = {};
+                var nota = null;
+                try {
+                    var fDoc = await dbFirestore.collection('avaliacoesAlunos').doc(cpfLimpo).get();
+                    if (fDoc.exists) {
+                        var fdata = fDoc.data() || {};
+                        var men = (fdata.avPraticaManual || {})[avId];
+                        if (men) { manual = men.respostas || {}; nota = (men.nota != null ? Number(men.nota) : null); }
+                    }
+                } catch (e) { console.error('Falha ao ler ficha p/ visualizar prática:', e); }
+                var notaHtml = '';
+                if (nota != null) {
+                    notaHtml = '<div style="background:linear-gradient(135deg,#16a34a,#059669);border-radius:12px;padding:16px;text-align:center;color:#fff;margin-bottom:16px">' +
+                        '<div style="font-size:11px;font-weight:700;letter-spacing:1px">NOTA DA AVALIAÇÃO PRÁTICA</div>' +
+                        '<div style="font-size:34px;font-weight:800;margin-top:4px">' + String(nota).replace('.', ',') + '</div>' +
+                        '<div style="font-size:11px;opacity:.85">de 0 a 10</div>' +
+                        '</div>';
+                } else {
+                    notaHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:22px;text-align:center;color:#64748b;margin-bottom:16px"><i class="fa-solid fa-hourglass-half" style="font-size:30px;color:#94a3b8;margin-bottom:8px;display:block"></i><p style="font-size:13px">Ainda não há nota registrada para esta avaliação prática.</p></div>';
+                }
+                var qHtml2 = '';
+                questoes.forEach(function(q, i) {
+                    var st = manual[i] || '';
+                    var rotulo = st === 'certa' ? 'CERTA' : (st === 'parcial' ? 'PARCIAL' : (st === 'naorealizou' ? 'NÃO REALIZOU' : 'Aguardando'));
+                    var cor = st === 'certa' ? '#16a34a' : (st === 'parcial' ? '#f59e0b' : (st === 'naorealizou' ? '#dc2626' : '#94a3b8'));
+                    var bg = st === 'certa' ? '#f0fdf4' : (st === 'parcial' ? '#fffbeb' : (st === 'naorealizou' ? '#fef2f2' : '#f8fafc'));
+                    qHtml2 += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:12px">' +
+                        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="font-size:13.5px;font-weight:700;color:#0f172a;flex:1;min-width:180px">' + (i + 1) + '. ' + paEsc(q.enunciado || '') + '</div>' +
+                        '<span style="background:' + bg + ';border:1px solid ' + cor + ';color:' + cor + ';font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;flex-shrink:0">' + rotulo + '</span></div>' +
+                        '</div>';
+                });
+                resumoHtml = notaHtml + qHtml2;
             } else if (!respDoc.exists) {
                 resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-file-circle-question" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Ainda não respondida</h4><p style="font-size:13px">Você ainda não enviou respostas para esta avaliação.</p></div>';
             } else {

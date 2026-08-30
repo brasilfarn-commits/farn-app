@@ -2684,6 +2684,10 @@ var regimentoTabAtual = 'aceitaram';
 var regimentoAceites = [];
 var regimentoPendentes = [];
 
+var termoTabAtual = 'aceitaram';
+var termoAceites = [];
+var termoPendentes = [];
+
 async function relatorioRegimento() {
     const modal = document.getElementById('modal-relatorio-regimento');
     const tbody = document.getElementById('regimento-aceites-body');
@@ -2813,6 +2817,138 @@ function exportarRegimentoCSV() {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'regimento_' + regimentoTabAtual + '_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+}
+
+// ===== RELATORIO TERMO AVALIACAO TEORICA =====
+async function relatorioTermo() {
+    const modal = document.getElementById('modal-relatorio-termo');
+    const tbody = document.getElementById('termo-aceites-body');
+    const statsDiv = document.getElementById('termo-stats');
+    if (!modal || !tbody || !statsDiv) return;
+    modal.classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
+    statsDiv.innerHTML = '';
+    termoTabAtual = 'aceitaram';
+    termoAceites = [];
+    termoPendentes = [];
+    document.getElementById('termo-tab-aceitaram').className = 'termo-tab active';
+    document.getElementById('termo-tab-aceitaram').style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s';
+    document.getElementById('termo-tab-pendentes').className = 'termo-tab';
+    document.getElementById('termo-tab-pendentes').style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f8fafc;color:#64748b;border-bottom:2px solid transparent;transition:all .2s';
+    try {
+        const snap = await dbFirestore.collection('termoAvaliacaoAceites').get();
+        const aceites = [];
+        snap.forEach(doc => aceites.push(doc.data()));
+
+        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo');
+        const aprovadosCpf = {};
+        aprovados.forEach(c => { if (c.cpf) aprovadosCpf[c.cpf] = true; });
+        const aceitesAtivos = aceites.filter(a => aprovadosCpf[a.cpf]);
+        aceitesAtivos.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+        termoAceites = aceitesAtivos;
+
+        const totalAprovados = aprovados.length;
+        const totalAceitaram = aceitesAtivos.length;
+        const pendentes = totalAprovados - totalAceitaram;
+
+        const aceitesCpf = {};
+        aceitesAtivos.forEach(a => { if (a.cpf) aceitesCpf[a.cpf] = true; });
+        termoPendentes = aprovados.filter(c => !aceitesCpf[c.cpf]);
+        termoPendentes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+        statsDiv.innerHTML = `
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+                <div style="font-size:24px;font-weight:700;color:#16a34a">${totalAceitaram}</div>
+                <div style="font-size:11px;color:#166534;font-weight:600">Aceitaram</div>
+            </div>
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+                <div style="font-size:24px;font-weight:700;color:#ca8a04">${pendentes}</div>
+                <div style="font-size:11px;color:#92400e;font-weight:600">Pendentes</div>
+            </div>
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+                <div style="font-size:24px;font-weight:700;color:#1e293b">${totalAprovados}</div>
+                <div style="font-size:11px;color:#475569;font-weight:600">Total de Ativos</div>
+            </div>`;
+
+        termoRenderTab('aceitaram');
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar: ' + e.message + '</td></tr>';
+    }
+}
+
+function termoSetTab(tab) {
+    termoTabAtual = tab;
+    ['aceitaram', 'pendentes'].forEach(function(t) {
+        var el = document.getElementById('termo-tab-' + t);
+        if (t === tab) {
+            el.style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s';
+        } else {
+            el.style.cssText = 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f8fafc;color:#64748b;border-bottom:2px solid transparent;transition:all .2s';
+        }
+    });
+    termoRenderTab(tab);
+}
+
+function termoRenderTab(tab) {
+    const tbody = document.getElementById('termo-aceites-body');
+    if (tab === 'pendentes') {
+        if (!termoPendentes.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">Todos os aprovados ja assinaram o termo.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = termoPendentes.map(function(c) {
+            const cpfFmt = (c.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            return '<tr>' +
+                '<td style="font-size:12px;font-weight:600">' + (c.nome || '-') + '</td>' +
+                '<td style="font-size:12px">' + cpfFmt + '</td>' +
+                '<td style="font-size:12px">' + (c.turma || '-') + '</td>' +
+                '<td style="font-size:12px">' + (c.projeto || '-') + '</td>' +
+                '<td style="font-size:12px;color:#ca8a04"><i class="fa-solid fa-clock"></i> Pendente</td>' +
+                '</tr>';
+        }).join('');
+    } else {
+        if (!termoAceites.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno assinou o termo ainda.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = termoAceites.map(function(a) {
+            const cpfFmt = (a.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            const dataAceite = a.dataAceite ? new Date(a.dataAceite).toLocaleDateString('pt-BR') + ' ' + new Date(a.dataAceite).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '-';
+            return '<tr>' +
+                '<td style="font-size:12px;font-weight:600">' + (a.nome || '-') + '</td>' +
+                '<td style="font-size:12px">' + cpfFmt + '</td>' +
+                '<td style="font-size:12px">' + (a.turma || '-') + '</td>' +
+                '<td style="font-size:12px">' + (a.projeto || '-') + '</td>' +
+                '<td style="font-size:12px">' + dataAceite + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+}
+
+function fecharModalRelatorioTermo() {
+    document.getElementById('modal-relatorio-termo').classList.add('hidden');
+}
+
+function exportarTermoCSV() {
+    const dados = termoTabAtual === 'aceitaram' ? termoAceites : termoPendentes;
+    if (!dados || !dados.length) { alert('Nenhum dado para exportar.'); return; }
+    const labelData = termoTabAtual === 'aceitaram' ? 'Data do Aceite' : 'Status';
+    let csv = 'Nome;CPF;Turma;Projeto;' + labelData + '\n';
+    dados.forEach(function(item) {
+        const nome = item.nome || '';
+        const cpf = (item.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        const turma = item.turma || '';
+        const projeto = item.projeto || '';
+        const data = termoTabAtual === 'aceitaram'
+            ? (item.dataAceite ? new Date(item.dataAceite).toLocaleDateString('pt-BR') : '-')
+            : 'Pendente';
+        csv += '"' + nome.replace(/"/g, '""') + '";"' + cpf + '";"' + turma.replace(/"/g, '""') + '";"' + projeto.replace(/"/g, '""') + '";"' + data + '"\n';
+    });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'termo_avaliacao_' + termoTabAtual + '_' + new Date().toISOString().slice(0,10) + '.csv';
     link.click();
 }
 
@@ -8359,6 +8495,29 @@ let cavNomeAtual = '';
 let cavQMax = 20;
 let cavAulasOptions = [];
 let cavAulasFiltro = '';
+let cavTipo = 'teorica';
+
+// retorna o campo da aula que identifica o tipo de avaliacao (avTeorica/avPratica)
+function cavCampoAV(tipo) {
+    return (tipo === 'pratica') ? 'avPratica' : 'avTeorica';
+}
+// retorna o rotulo do tipo para mensagens/exibicao
+function cavRotuloAV(tipo) {
+    return (tipo === 'pratica') ? 'Prática' : 'Teórica';
+}
+// atualiza os rotulos do formulario conforme o tipo atual
+function cavAplicarRotuloTipo() {
+    const tipo = cavTipo;
+    const rotulo = cavRotuloAV(tipo);
+    const rotuloCampo = (tipo === 'pratica') ? 'Prática' : 'Teórica';
+    const label = document.getElementById('cav-nome-label');
+    if (label) label.textContent = 'Nome da Avaliação (selecione a aula com AV ' + rotuloCampo + ')';
+    const busca = document.getElementById('cav-aula-busca');
+    if (busca) busca.placeholder = 'Selecione a turma para buscar as aulas com AV ' + rotuloCampo + '...';
+    const novoBtn = document.getElementById('cav-nova-btn');
+    if (novoBtn) novoBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Nova AV ' + rotuloCampo;
+    void rotulo;
+}
 
 function cavLoadList() {
     const container = document.getElementById('cav-list');
@@ -8423,7 +8582,8 @@ function cavNovaAvaliacao() {
     document.getElementById('cav-gabarito').style.display = 'none';
     document.getElementById('cav-editing-badge').style.display = 'none';
     document.getElementById('cav-editing-badge').innerHTML = '';
-    document.getElementById('cav-form-titulo').textContent = 'Nova Avaliação';
+    document.getElementById('cav-form-titulo').textContent = 'Nova AV ' + cavRotuloAV(cavTipo);
+    cavAplicarRotuloTipo();
     document.getElementById('cav-form').style.display = 'block';
     document.getElementById('cav-add-q-btn').style.display = 'inline-flex';
     cavQMax = 20;
@@ -8517,12 +8677,13 @@ function cavLoadAulasNome(proj, turma, nomeAlvo) {
     cavAulasOptions = [];
     cavAulasFiltro = '';
     sel.innerHTML = '<option value="">Carregando...</option>';
+    const campoAV = cavCampoAV(cavTipo);
     dbFirestore.collection('aulas').get().then(snap => {
         sel.innerHTML = '<option value="">Selecione a avaliação...</option>';
         const adicionadas = {};
         snap.forEach(doc => {
             const d = doc.data();
-            if (d.avTeorica !== 'Sim') return;
+            if (d[campoAV] !== 'Sim') return;
             const dProj = (proj || '').trim();
             const dTurma = (turma || '').trim();
             if (String(d.projeto || '').trim() !== dProj) return;
@@ -8559,7 +8720,7 @@ function cavRenderAulas() {
     const atual = sel.value;
     sel.innerHTML = '<option value="">Selecione a avaliação...</option>';
     if (cavAulasOptions.length === 0) {
-        sel.innerHTML = '<option value="">Nenhuma aula com AV Teórica nesta turma</option>';
+        sel.innerHTML = '<option value="">Nenhuma aula com AV ' + cavRotuloAV(cavTipo) + ' nesta turma</option>';
         return;
     }
     const f = (cavAulasFiltro || '').trim().toLowerCase();
@@ -8699,24 +8860,37 @@ function cavAdicionarQuestao(dados) {
     q.dataset.idx = idx;
     q.style.cssText = 'background:#fafcff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:14px';
     const e = (dados && dados.enunciado) ? escHTML(dados.enunciado) : '';
-    const op = (dados && dados.opcoes) ? dados.opcoes : null;
-    const oa = (op && op.a != null) ? escHTML(op.a) : '';
-    const ob = (op && op.b != null) ? escHTML(op.b) : '';
-    const oc = (op && op.c != null) ? escHTML(op.c) : '';
-    const od = (op && op.d != null) ? escHTML(op.d) : '';
-    const correta = (dados && dados.correta) ? dados.correta : '';
-    q.innerHTML =
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">' +
-            '<strong style="color:#0f172a;font-size:13px">Questão ' + (atual + 1) + '</strong>' +
-            '<div style="display:flex;align-items:center;gap:8px">' +
-                '<label style="font-size:11px;color:#16a34a;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cav-ok-' + idx + '" value="a" ' + (correta === 'a' ? 'checked' : '') + '>A correta</label>' +
+    const isPratica = cavTipo === 'pratica';
+    let corpo;
+    if (isPratica) {
+        corpo =
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">' +
+                '<strong style="color:#0f172a;font-size:13px">Questão ' + (atual + 1) + '</strong>' +
+                '<span style="font-size:11px;color:#64748b;font-weight:600">Marcação: CERTA / PARCIAL / NÃO REALIZOU</span>' +
             '</div>' +
-        '</div>' +
-        '<textarea class="cav-q-enunc" style="width:100%;min-height:64px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;resize:vertical;margin-bottom:10px" placeholder="Digite o enunciado da questão...">' + e + '</textarea>' +
-        cavOpcaoInput('a', 'A', oa, idx) +
-        cavOpcaoInput('b', 'B', ob, idx) +
-        cavOpcaoInput('c', 'C', oc, idx) +
-        cavOpcaoInput('d', 'D', od, idx) +
+            '<textarea class="cav-q-enunc" style="width:100%;min-height:64px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;resize:vertical;margin-bottom:10px" placeholder="Digite o enunciado da questão...">' + e + '</textarea>';
+    } else {
+        const op = (dados && dados.opcoes) ? dados.opcoes : null;
+        const oa = (op && op.a != null) ? escHTML(op.a) : '';
+        const ob = (op && op.b != null) ? escHTML(op.b) : '';
+        const oc = (op && op.c != null) ? escHTML(op.c) : '';
+        const od = (op && op.d != null) ? escHTML(op.d) : '';
+        const correta = (dados && dados.correta) ? dados.correta : '';
+        corpo =
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">' +
+                '<strong style="color:#0f172a;font-size:13px">Questão ' + (atual + 1) + '</strong>' +
+                '<div style="display:flex;align-items:center;gap:8px">' +
+                    '<label style="font-size:11px;color:#16a34a;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cav-ok-' + idx + '" value="a" ' + (correta === 'a' ? 'checked' : '') + '>A correta</label>' +
+                '</div>' +
+            '</div>' +
+            '<textarea class="cav-q-enunc" style="width:100%;min-height:64px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;resize:vertical;margin-bottom:10px" placeholder="Digite o enunciado da questão...">' + e + '</textarea>' +
+            cavOpcaoInput('a', 'A', oa, idx) +
+            cavOpcaoInput('b', 'B', ob, idx) +
+            cavOpcaoInput('c', 'C', oc, idx) +
+            cavOpcaoInput('d', 'D', od, idx);
+    }
+    q.innerHTML =
+        corpo +
         '<div style="display:flex;justify-content:flex-end;margin-top:6px">' +
             '<button onclick="cavRemoverQuestao(this)" title="Remover questão" style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:#dc2626;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600"><i class="fa-solid fa-trash"></i> Remover</button>' +
         '</div>';
@@ -8753,6 +8927,10 @@ function cavGetQuestoes() {
     const questoes = [];
     document.querySelectorAll('#cav-questoes .cav-q').forEach(q => {
         const enunciado = (q.querySelector('.cav-q-enunc') || {}).value || '';
+        if (cavTipo === 'pratica') {
+            questoes.push({ enunciado });
+            return;
+        }
         const opcoes = {
             a: (q.querySelector('.ca-a') || {}).value || '',
             b: (q.querySelector('.ca-b') || {}).value || '',
@@ -8782,7 +8960,7 @@ function cavColetarDados() {
     const turma = document.getElementById('cav-turma').value;
     const docente = document.getElementById('cav-docente').value;
     const questoes = cavGetQuestoes();
-    return { nome, projeto, turma, disciplina, aula, aulaId: nomeId, docente, questoes };
+    return { nome, projeto, turma, disciplina, aula, aulaId: nomeId, docente, questoes, tipo: cavTipo };
 }
 
 function cavSalvar() {
@@ -8794,8 +8972,10 @@ function cavSalvar() {
     for (let i = 0; i < d.questoes.length; i++) {
         const q = d.questoes[i];
         if (!q.enunciado.trim()) { alert('A questão ' + (i + 1) + ' não tem enunciado.'); return; }
-        if (!q.correta) { alert('Marque a resposta correta (A, B, C ou D) da questão ' + (i + 1) + '.'); return; }
-        if (!q.opcoes.a.trim() || !q.opcoes.b.trim() || !q.opcoes.c.trim() || !q.opcoes.d.trim()) { alert('Preencha as 4 opções da questão ' + (i + 1) + '.'); return; }
+        if (d.tipo !== 'pratica') {
+            if (!q.correta) { alert('Marque a resposta correta (A, B, C ou D) da questão ' + (i + 1) + '.'); return; }
+            if (!q.opcoes.a.trim() || !q.opcoes.b.trim() || !q.opcoes.c.trim() || !q.opcoes.d.trim()) { alert('Preencha as 4 opções da questão ' + (i + 1) + '.'); return; }
+        }
     }
     const dados = {
         nome: d.nome,
@@ -8805,6 +8985,7 @@ function cavSalvar() {
         aula: d.aula || '',
         aulaId: d.aulaId || '',
         docente: d.docente || '',
+        tipo: d.tipo || cavTipo || 'teorica',
         questoes: d.questoes,
         atualizadoEm: new Date()
     };
@@ -8840,6 +9021,7 @@ function cavEditarAvaliacao(id) {
 
 function cavPreencherForm(id, d) {
     cavEditingId = id;
+    cavTipo = (d.tipo === 'pratica') ? 'pratica' : 'teorica';
     cavNomeAtual = d.nome || '';
     cavQMax = (d.questoes && d.questoes.length > 10) ? 20 : 10;
     const limiteSel = document.getElementById('cav-q-limite');
@@ -8850,7 +9032,8 @@ function cavPreencherForm(id, d) {
     if (busca) { busca.value = ''; busca.disabled = false; }
     document.getElementById('cav-nome').innerHTML = '<option value="">Carregando...</option>';
     document.getElementById('cav-form').style.display = 'block';
-    document.getElementById('cav-form-titulo').textContent = 'Editar Avaliação';
+    document.getElementById('cav-form-titulo').textContent = 'Editar AV ' + cavRotuloAV(cavTipo);
+    cavAplicarRotuloTipo();
     const badge = document.getElementById('cav-editing-badge');
     badge.style.display = 'inline-flex';
     badge.style.cssText = 'background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.25);color:#2563eb;font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px';
@@ -9138,5 +9321,25 @@ function cavVerRespostas(avId, cpf) {
 
 function cavFecharRespostas() {
     document.getElementById('cav-respostas-overlay').classList.add('hidden');
+}
+
+/* ===== SELECAO DE TIPO DE AVALIACAO (TEORICA / PRATICA) ===== */
+function cavEscolherTipo() {
+    const o = document.getElementById('cav-tipo-overlay');
+    if (o) o.classList.remove('hidden');
+}
+
+function cavEscolherTipoConfirmar(tipo) {
+    cavTipo = (tipo === 'pratica') ? 'pratica' : 'teorica';
+    const o = document.getElementById('cav-tipo-overlay');
+    if (o) o.classList.add('hidden');
+    const titulo = document.getElementById('cav-form-titulo');
+    if (titulo) titulo.textContent = 'Nova AV ' + cavRotuloAV(cavTipo);
+    cavAplicarRotuloTipo();
+}
+
+function cavFecharTipo() {
+    const o = document.getElementById('cav-tipo-overlay');
+    if (o) o.classList.add('hidden');
 }
 
