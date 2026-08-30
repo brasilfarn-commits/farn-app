@@ -777,6 +777,10 @@
                         <i class="fa-solid fa-list-check"></i>
                         <span>Criar Avaliação</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-cursos', this); cursoListLoad(); cursoEpiRender()">
+                        <i class="fa-solid fa-book"></i>
+                        <span>Cursos</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -1075,6 +1079,11 @@
                                     <span style="font-size:13px">Termo Avaliação Teórica (Celular)</span>
                                     <small>Quem aceitou o termo de uso de celular</small>
                                 </div>
+                                <div class="config-card" onclick="relatorioEquipamentos()" style="padding:16px;max-width:220px;border-left:3px solid #f59e0b">
+                                    <i class="fa-solid fa-hard-hat" style="font-size:20px;color:#f59e0b"></i>
+                                    <span style="font-size:13px">Equipamentos (EPI) por Turma</span>
+                                    <small>EPIs usados pelos alunos de cada turma</small>
+                                </div>
                                 <div class="config-card" onclick="relatorioCarteiraAluno()" style="padding:16px;max-width:220px;border-left:3px solid #16a34a">
                                     <i class="fa-solid fa-id-card" style="font-size:20px;color:#16a34a"></i>
                                     <span style="font-size:13px">Carteira de Aluno</span>
@@ -1287,6 +1296,10 @@
                                             <div style="flex:2;min-width:200px">
                                                 <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Turma *</label>
                                                 <input type="text" id="pf-turma-nome" class="config-input" placeholder="Ex: Turma 1" style="width:100%">
+                                            </div>
+                                            <div style="flex:2;min-width:200px">
+                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome do Curso</label>
+                                                <select id="pf-turma-curso" class="config-input" style="width:100%"><option value="">Selecione o curso...</option></select>
                                             </div>
                                             <div style="flex:2;min-width:200px">
                                                 <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Descricao</label>
@@ -2835,6 +2848,97 @@
                             <button class="btn-outline" onclick="cavFecharEnvio()">Cancelar</button>
                             <button class="btn-primary" onclick="cavConfirmarEnvio()"><i class="fa-solid fa-paper-plane"></i> Confirmar Envio</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- CURSOS -->
+                <div id="admin-cursos" class="admin-section">
+                    <div style="display:flex;justify-content:flex-start;margin-bottom:20px">
+                        <button class="btn-primary" id="curso-criar-btn" onclick="cursoAbrirForm()" style="height:44px;padding:0 24px;font-size:14px"><i class="fa-solid fa-plus"></i> Criar Curso</button>
+                    </div>
+
+                    <div id="curso-form-container" style="display:none;padding:20px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #2563eb;border-radius:12px;margin-bottom:20px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+                            <h3 style="margin:0;color:#1e40af"><i class="fa-solid fa-book" style="margin-right:8px"></i><span id="curso-form-titulo">Novo Curso</span></h3>
+                            <button class="btn-outline btn-sm" id="curso-cancelar-btn" onclick="cursoFecharForm()" style="display:inline-flex"><i class="fa-solid fa-xmark"></i> Fechar formulario</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome do Curso *</label>
+                            <input type="text" id="curso-nome" class="config-input" placeholder="Ex: Curso de Bombeiro Civil">
+                        </div>
+
+                        <div class="form-group" style="margin-top:12px">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;display:block">Tipo *</label>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap" id="curso-tipos">
+                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
+                                    <input type="radio" name="curso-tipo" value="Profissionalizante" checked style="accent-color:#2563eb"> Profissionalizante
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
+                                    <input type="radio" name="curso-tipo" value="Especialização" style="accent-color:#2563eb"> Especialização
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
+                                    <input type="radio" name="curso-tipo" value="Qualificação" style="accent-color:#2563eb"> Qualificação
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
+                                    <input type="radio" name="curso-tipo" value="Técnico" style="accent-color:#2563eb"> Técnico
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
+                                    <input type="radio" name="curso-tipo" value="Tecnólogo" style="accent-color:#2563eb"> Tecnólogo
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Carga Horária Total (horas) *</label>
+                                <input type="number" id="curso-carga" class="config-input" min="0" step="1" placeholder="Ex: 240">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Lei e Normas</label>
+                                <input type="text" id="curso-lei" class="config-input" placeholder="Ex: Lei nº 12.302/2010 e Norma NBR 14608">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top:12px">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Lei e Normas (detalhamento)</label>
+                            <textarea id="curso-normas" class="config-input" rows="3" style="resize:vertical" placeholder="Detalhe as leis, normas e regulamentações aplicáveis ao curso..."></textarea>
+                        </div>
+
+                        <div style="margin-top:16px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:12px">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin:0"><i class="fa-solid fa-hard-hat" style="color:#f59e0b;margin-right:4px"></i> Equipamentos de Proteção Individual (EPI) do Aluno</label>
+                                <button type="button" class="btn-outline btn-sm" onclick="cursoEpiAdicionarLinha()"><i class="fa-solid fa-plus"></i> Adicionar Equipamento</button>
+                            </div>
+                            <div id="curso-epi-lista"></div>
+                        </div>
+
+                        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+                            <button class="btn-primary" id="curso-save-btn" onclick="cursoSalvar()" style="height:42px"><i class="fa-solid fa-check"></i> Salvar Curso</button>
+                            <button class="btn-outline" id="curso-limpar-btn" onclick="cursoResetForm()" style="height:42px"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
+                        </div>
+                        <div id="curso-msg" style="display:none;margin-top:12px;padding:10px;border-radius:8px;font-size:13px"></div>
+                    </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-book" style="color:#2563eb;margin-right:8px"></i> Cursos Cadastrados</h3>
+                        </div>
+                        <div id="curso-list" style="padding:16px">
+                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando cursos...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL VISUALIZAR CURSO -->
+                <div id="curso-detalhe-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cursorFecharDetalhe()">
+                    <div class="modal-content" style="max-width:640px;max-height:85vh;overflow-y:auto">
+                        <div class="modal-header">
+                            <h3 id="curso-detalhe-titulo"><i class="fa-solid fa-book" style="margin-right:8px"></i> Detalhes do Curso</h3>
+                            <button class="modal-close" onclick="cursorFecharDetalhe()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body" id="curso-detalhe-content"></div>
                     </div>
                 </div>
 

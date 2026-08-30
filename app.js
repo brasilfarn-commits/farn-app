@@ -1588,7 +1588,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -3160,6 +3160,132 @@ function relatorioFaltas() {
     };
 }
 
+function relatorioEquipamentos() {
+    var turmasComCurso = turmas.filter(function(t) { return t && t.nome; });
+    if (!turmasComCurso.length) { alert('Nenhuma turma encontrada.'); return; }
+    turmasComCurso.sort(function(a, b) { return (a.projeto || '').localeCompare(b.projeto || '') || (a.nome || '').localeCompare(b.nome || ''); });
+
+    var selHtml = '<option value="">Selecione a turma...</option>';
+    turmasComCurso.forEach(function(t, idx) {
+        var label = t.nome + (t.projeto ? ' (' + t.projeto + ')' : '');
+        selHtml += '<option value="' + idx + '">' + label + '</option>';
+    });
+
+    var w = window.open('', '_blank', 'width=500,height=300');
+    w.document.write('<!DOCTYPE html><html><head><title>Equipamentos (EPI) por Turma - FARN</title><style>' +
+        'body{font-family:Arial,sans-serif;padding:30px;background:#f1f5f9}' +
+        '.box{max-width:500px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.1);text-align:center}' +
+        'h2{color:#f59e0b;margin-bottom:20px;font-size:18px}' +
+        'select{width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:16px}' +
+        'button{padding:12px 32px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+        '</style></head><body><div class="box">' +
+        '<h2><i class="fa-solid fa-hard-hat"></i> Equipamentos (EPI) por Turma</h2>' +
+        '<select id="sel-turma-epi">' + selHtml + '</select>' +
+        '<br><button onclick="gerarRelatorioEquipamentos()">Gerar Relatorio</button>' +
+        '</div></body></html>');
+    w.document.close();
+
+    w.gerarRelatorioEquipamentos = function() {
+        var idx = w.document.getElementById('sel-turma-epi').value;
+        if (idx === '') { alert('Selecione uma turma.'); return; }
+        var turmaSel = turmasComCurso[Number(idx)];
+        var turma = turmaSel.nome;
+        var nomeCurso = turmaSel.curso || '';
+
+        w.document.body.innerHTML = '<div style="text-align:center;padding:40px;font-family:Arial"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando alunos e equipamentos da turma...</div>';
+
+        var buscaCurso;
+        if (nomeCurso) {
+            var cursosRef = dbFirestore.collection('cursos').where('nome', '==', nomeCurso).limit(1).get();
+            buscaCurso = cursosRef.catch(function() { return { empty: true }; });
+        } else {
+            buscaCurso = Promise.resolve({ empty: true, docs: [] });
+        }
+
+        buscaCurso.then(function(curSnap) {
+                var epis = [];
+                if (!curSnap.empty && curSnap.docs[0] && curSnap.docs[0].data && curSnap.docs[0].data().epis) {
+                    epis = curSnap.docs[0].data().epis || [];
+                }
+
+                var alunos = candidatos.filter(function(c) { return c.turma === turma && (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+                alunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+
+                if (!alunos.length) {
+                    w.document.body.innerHTML = '<div style="text-align:center;padding:40px;font-family:Arial"><h2 style="color:#16a34a"><i class="fa-solid fa-check-circle"></i> Nenhum aluno ativo encontrado!</h2><p>Turma: ' + turma + '</p><button onclick="window.print()" style="margin-top:16px;padding:10px 20px;background:#1a237e;color:#fff;border:none;border-radius:8px;cursor:pointer">Imprimir</button></div>';
+                    return;
+                }
+
+                var semEpi = epis.length === 0;
+
+                var header = '<div class="header"><img src="https://firebasestorage.googleapis.com/v0/b/farn-app.appspot.com/o/logofarn.png?alt=media" style="height:50px;margin-bottom:4px"><div class="title-line">FARN - BRASIL - BS.BRASIL - COMMAND BRASIL</div><div class="info-line">CNPJ: 43.327.929/0001-32</div></div>';
+
+                var theadEquip = '';
+                epis.forEach(function(e, i) {
+                    theadEquip += '<th>EPI ' + (i + 1) + ':<br>' + (e.nome || '---') + '</th>';
+                });
+                theadEquip += '<th class="col-total">Total de Itens</th>';
+
+                var rows = alunos.map(function(a, idx) {
+                    var cols = '';
+                    var soma = 0;
+                    epis.forEach(function(e) {
+                        var qtd = (e.quantidade != null ? e.quantidade : 0);
+                        soma += Number(qtd) || 0;
+                        cols += '<td class="center">' + (Number(qtd) || 0) + '</td>';
+                    });
+                    cols += '<td class="center col-total">' + soma + '</td>';
+                    return '<tr><td>' + (idx + 1) + '</td><td class="nome">' + (a.nome || '---') + '</td><td class="matricula">' + (a.matricula || '---') + '</td>' + cols + '</tr>';
+                }).join('');
+
+                var totalCols = '';
+                epis.forEach(function(e) {
+                    var qtd = Number(e.quantidade) || 0;
+                    var tot = qtd * alunos.length;
+                    totalCols += '<td class="center total-row">' + tot + '</td>';
+                });
+                totalCols += '<td class="center total-row col-total">' + (alunos.length) + ' aluno(s)</td>';
+
+                w.document.body.innerHTML = '<style>' +
+                    '@page{size:A4 landscape;margin:10mm}body{font-family:Arial,sans-serif;color:#222;padding:20px;font-size:11px}' +
+                    '.header{text-align:center;margin-bottom:6px;border-bottom:3px solid #b45309;padding-bottom:8px}' +
+                    '.header .title-line{font-size:13px;font-weight:800;color:#b45309;text-transform:uppercase;letter-spacing:1px}' +
+                    '.header .info-line{font-size:10px;color:#666;margin-top:3px}' +
+                    '.report-title{text-align:center;font-size:15px;font-weight:800;color:#b45309;margin:10px 0;text-transform:uppercase;letter-spacing:2px;border:2px solid #b45309;padding:7px;border-radius:4px}' +
+                    '.info-bar{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:10px;padding:0 4px}' +
+                    'table{width:100%;border-collapse:collapse}' +
+                    'th{background:#b45309;color:#fff;padding:7px 8px;text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:.3px;vertical-align:middle}' +
+                    'td{padding:6px 8px;border-bottom:1px solid #e0e0e0;font-size:11px}' +
+                    'tr:nth-child(even){background:#fef3c7}' +
+                    'td.nome{font-weight:600}' +
+                    'td.matricula{color:#b45309;font-weight:800;font-family:Courier New,monospace;font-size:11px;letter-spacing:1px}' +
+                    'td.center{text-align:center;font-weight:700}' +
+                    'td.col-total{background:#fef9c3;color:#92400e}' +
+                    'th.col-total{background:#92400e}' +
+                    'td.total-row{background:#fef3c7;color:#78350f;font-weight:800}' +
+                    'th:nth-child(1){width:3%}th:nth-child(2){width:20%}th:nth-child(3){width:13%}' +
+                    '.no-epi{background:#fffbeb;border:2px dashed #f59e0b;color:#92400e;padding:16px;text-align:center;font-size:13px;border-radius:8px;margin-bottom:12px}' +
+                    '.print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#1a237e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+                    '.footer{margin-top:14px;text-align:center;font-size:10px;color:#999;border-top:1px solid #ddd;padding-top:8px}' +
+                    '.total{text-align:right;font-size:12px;font-weight:700;color:#333;margin-top:8px;padding-right:4px}' +
+                    '@media print{.print-btn{display:none}th{background:#b45309!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}td.col-total{background:#fef9c3!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
+                    '</style>' +
+                    header +
+                    '<div class="report-title">Relatorio de Equipamentos (EPI) dos Alunos - ' + turma + '</div>' +
+                    '<div class="info-bar"><span>Data: ' + new Date().toLocaleDateString('pt-BR') + '</span><span>Curso: ' + (nomeCurso || 'Nao vinculado') + '</span><span>Total: ' + alunos.length + ' aluno(s)</span></div>' +
+                    (semEpi ? '<div class="no-epi"><i class="fa-solid fa-triangle-exclamation"></i> O curso desta turma nao possui equipamentos (EPI) cadastrados.</div>' : '') +
+                    '<table><thead><tr><th>#</th><th>Nome do Aluno</th><th>Matricula</th>' + theadEquip + '</tr></thead><tbody>' +
+                    rows +
+                    '<tr><td colspan="3" style="text-align:right;font-weight:800;color:#78350f;background:#fef9c3">Total por Equipamento</td>' + totalCols + '</tr>' +
+                    '</tbody></table>' +
+                    '<div class="total">Total de itens distribuidos por aluno: ' + alunos.length + ' aluno(s) na turma</div>' +
+                    '<button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Relatorio</button>' +
+                    '<div class="footer">FARN - Forca Auxiliar de Resgate Nacional | Relatorio gerado em ' + new Date().toLocaleString('pt-BR') + '</div>';
+            }).catch(function(e) { alert('Erro ao buscar equipamentos: ' + e.message); });
+    };
+}
+
+
 function relGerarCarteiraAluno(lista) {
     var cards = lista.map(function(c) {
         var mat = c.matricula || generateMatricula(c.cpf) || '---';
@@ -3571,7 +3697,8 @@ function projetoRenderTurmas() {
         div.className = 'pf-turma-item';
         div.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid #222;transition:background 0.2s';
         var infoExtra = '';
-        if (t.inicio) infoExtra += '<span style="color:#94a3b8;font-size:11px"><i class="fa-solid fa-flag" style="margin-right:4px"></i>Inicio: ' + t.inicio + '</span>';
+        if (t.curso) infoExtra += '<span style="color:#94a3b8;font-size:11px"><i class="fa-solid fa-book" style="margin-right:4px"></i>' + t.curso + '</span>';
+        if (t.inicio) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-flag" style="margin-right:4px"></i>Inicio: ' + t.inicio + '</span>';
         if (t.previsao) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>Previsao: ' + t.previsao + '</span>';
         if (t.dias && t.dias.length) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + t.dias.join(', ') + '</span>';
         if (t.horarios) {
@@ -3618,6 +3745,24 @@ function pfTurmaAtualizarHorarios() {
     area.innerHTML = html;
 }
 
+function pfTurmaCarregarCursos(valor) {
+    var sel = document.getElementById('pf-turma-curso');
+    if (!sel) return;
+    dbFirestore.collection('cursos').orderBy('nome').get().then(function(snap) {
+        var html = '<option value="">Selecione o curso...</option>';
+        snap.forEach(function(doc) {
+            var c = doc.data();
+            var nome = c.nome || '';
+            var selAttr = (valor && nome === valor) ? ' selected' : '';
+            html += '<option value="' + escHTML(nome) + '"' + selAttr + '>' + escHTML(nome) + '</option>';
+        });
+        sel.innerHTML = html;
+    }).catch(function(e) {
+        console.error('Erro ao carregar cursos:', e);
+        sel.innerHTML = '<option value="">Selecione o curso...</option>';
+    });
+}
+
 function pfTurmaColetarDados() {
     var dias = [];
     document.querySelectorAll('#pf-turma-dias input[type=checkbox]:checked').forEach(function(cb) { dias.push(cb.value); });
@@ -3631,11 +3776,13 @@ function pfTurmaColetarDados() {
         inicio: (document.getElementById('pf-turma-inicio') && document.getElementById('pf-turma-inicio').value) || '',
         previsao: document.getElementById('pf-turma-previsao').value || '',
         dias: dias,
-        horarios: horarios
+        horarios: horarios,
+        curso: (document.getElementById('pf-turma-curso') ? document.getElementById('pf-turma-curso').value : '') || ''
     };
 }
 
 function pfTurmaPreencherForm(t) {
+    pfTurmaCarregarCursos(t.curso || '');
     document.getElementById('pf-turma-previsao').value = t.previsao || '';
     if (document.getElementById('pf-turma-inicio')) document.getElementById('pf-turma-inicio').value = t.inicio || '';
     document.querySelectorAll('#pf-turma-dias input[type=checkbox]').forEach(function(cb) {
@@ -3657,6 +3804,7 @@ function pfTurmaPreencherForm(t) {
 }
 
 function pfTurmaLimparForm() {
+    pfTurmaCarregarCursos('');
     document.getElementById('pf-turma-nome').value = '';
     document.getElementById('pf-turma-desc').value = '';
     document.getElementById('pf-turma-previsao').value = '';
@@ -3678,7 +3826,7 @@ function projetoAdicionarTurma() {
     var duplicada = projetoTurmasTemp.find(function(t) { return t.nome.toLowerCase() === nome.toLowerCase(); });
     if (duplicada) { alert('Ja existe uma turma com esse nome neste projeto.'); return; }
     var extras = pfTurmaColetarDados();
-    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim(), inicio: extras.inicio, previsao: extras.previsao, dias: extras.dias, horarios: extras.horarios });
+    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim(), inicio: extras.inicio, previsao: extras.previsao, dias: extras.dias, horarios: extras.horarios, curso: extras.curso });
     pfTurmaLimparForm();
     nomeEl.focus();
     projetoRenderTurmas();
@@ -3711,6 +3859,7 @@ function projetoSalvarTurma() {
     projetoTurmasTemp[editingProjetoTurmaIdx].previsao = extras.previsao;
     projetoTurmasTemp[editingProjetoTurmaIdx].dias = extras.dias;
     projetoTurmasTemp[editingProjetoTurmaIdx].horarios = extras.horarios;
+    projetoTurmasTemp[editingProjetoTurmaIdx].curso = extras.curso;
     projetoCancelarEdicaoTurma();
     projetoRenderTurmas();
 }
@@ -3734,6 +3883,7 @@ function openFormProjeto() {
     editingProjetoIndex = null;
     projetoTurmasTemp = [];
     projetoCancelarEdicaoTurma();
+    pfTurmaCarregarCursos('');
     pfTurmaAtualizarHorarios();
     document.getElementById('pf-nome').value = '';
     document.getElementById('pf-cnpj').value = '';
@@ -3849,7 +3999,7 @@ async function handleProjetoSubmit(event) {
         }
         for (const t of projetoTurmasTemp) {
             const existe = turmas.find(tx => tx.nome === t.nome && tx.projeto === nome);
-            const turmaData = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome, inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} };
+            const turmaData = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome, inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '' };
             if (existe) {
                 Object.assign(existe, turmaData);
             } else {
@@ -3918,11 +4068,12 @@ function editProjeto(i) {
     const p = projetos[i]; if (!p) return;
     editingProjetoIndex = i;
     projetoCancelarEdicaoTurma();
+    pfTurmaCarregarCursos('');
     document.getElementById('pf-nome').value = p.nome || '';
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
     document.getElementById('pf-status').value = p.status || 'Em Andamento';
-    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {} }));
+    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '' }));
     projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
     showAdminSection('admin-form-projeto');
@@ -9342,4 +9493,239 @@ function cavFecharTipo() {
     const o = document.getElementById('cav-tipo-overlay');
     if (o) o.classList.add('hidden');
 }
+
+/* ===== CURSOS ===== */
+var cursoEditingId = null;
+var cursoEpiSeq = 0;
+
+var cursoTipos = ['Profissionalizante', 'Especialização', 'Qualificação', 'Técnico', 'Tecnólogo'];
+
+function cursoResetForm() {
+    cursoEditingId = null;
+    cursoEpiSeq = 0;
+    document.getElementById('curso-nome').value = '';
+    var radios = document.querySelectorAll('input[name="curso-tipo"]');
+    if (radios[0]) radios[0].checked = true;
+    document.getElementById('curso-carga').value = '';
+    document.getElementById('curso-lei').value = '';
+    document.getElementById('curso-normas').value = '';
+    document.getElementById('curso-form-titulo').textContent = 'Novo Curso';
+    document.getElementById('curso-save-btn').innerHTML = '<i class="fa-solid fa-check"></i> Salvar Curso';
+    cursoEpiRender();
+    cursoShowMsg('', '');
+}
+
+function cursoAbrirForm() {
+    cursoResetForm();
+    document.getElementById('curso-form-container').style.display = 'block';
+    document.getElementById('curso-criar-btn').style.display = 'none';
+    document.getElementById('admin-cursos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cursoFecharForm() {
+    cursoResetForm();
+    document.getElementById('curso-form-container').style.display = 'none';
+    document.getElementById('curso-criar-btn').style.display = 'inline-flex';
+}
+
+function cursoShowMsg(text, type) {
+    var el = document.getElementById('curso-msg');
+    if (!el) return;
+    if (!text) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.background = type === 'ok' ? 'rgba(22,163,74,.12)' : 'rgba(220,38,38,.12)';
+    el.style.border = '1px solid ' + (type === 'ok' ? 'rgba(22,163,74,.3)' : 'rgba(220,38,38,.3)');
+    el.style.color = type === 'ok' ? '#15803d' : '#b91c1c';
+    el.textContent = text;
+}
+
+function cursoEpiAdicionarLinha(nome, qtd) {
+    var idx = cursoEpiSeq++;
+    var cont = document.getElementById('curso-epi-lista');
+    if (!cont) return;
+    var empty = document.getElementById('curso-epi-empty');
+    if (empty) empty.remove();
+    var div = document.createElement('div');
+    div.className = 'curso-epi-linha';
+    div.dataset.idx = idx;
+    div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    div.innerHTML =
+        '<input type="text" class="config-input curso-epi-nome" placeholder="Nome do equipamento (ex: Capacete)" value="' + escHTML(nome || '') + '" style="flex:2;min-width:120px">' +
+        '<input type="number" class="config-input curso-epi-qtd" min="0" placeholder="Qtd por aluno" value="' + (qtd != null ? qtd : '') + '" style="flex:1;min-width:80px">' +
+        '<button type="button" title="Remover" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;flex-shrink:0" onclick="cursoEpiRemoverLinha(this)"><i class="fa-solid fa-trash"></i></button>';
+    cont.appendChild(div);
+}
+
+function cursoEpiRemoverLinha(btn) {
+    var linha = btn.closest('.curso-epi-linha');
+    if (linha) linha.remove();
+}
+
+function cursoEpiRender() {
+    var cont = document.getElementById('curso-epi-lista');
+    if (!cont) return;
+    cont.innerHTML = '<div id="curso-epi-empty" style="font-size:12px;color:#94a3b8">Nenhum equipamento cadastrado. Clique em "Adicionar Equipamento".</div>';
+}
+
+function cursoEpiColetar() {
+    var lista = [];
+    document.querySelectorAll('#curso-epi-lista .curso-epi-linha').forEach(function(linha) {
+        var nome = (linha.querySelector('.curso-epi-nome') || {}).value || '';
+        var qtd = (linha.querySelector('.curso-epi-qtd') || {}).value || '';
+        if (nome.trim()) lista.push({ nome: nome.trim(), quantidade: (qtd === '' ? null : Number(qtd)) });
+    });
+    return lista;
+}
+
+async function cursoSalvar() {
+    var nome = document.getElementById('curso-nome').value.trim();
+    if (!nome) { cursoShowMsg('Informe o nome do curso.', 'err'); return; }
+    var tipo = '';
+    var radioSel = document.querySelector('input[name="curso-tipo"]:checked');
+    if (radioSel) tipo = radioSel.value;
+    var carga = document.getElementById('curso-carga').value;
+    var lei = document.getElementById('curso-lei').value.trim();
+    var normas = document.getElementById('curso-normas').value.trim();
+    var epis = cursoEpiColetar();
+
+    var btn = document.getElementById('curso-save-btn');
+    btn.disabled = true;
+    var btnHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+    try {
+        var base = {
+            nome: nome,
+            tipo: tipo,
+            cargaHoraria: (carga === '' ? null : Number(carga)),
+            lei: lei,
+            normas: normas,
+            epis: epis
+        };
+        base.atualizadoEm = firebase.firestore.FieldValue.serverTimestamp();
+
+        if (cursoEditingId) {
+            await dbFirestore.collection('cursos').doc(cursoEditingId).update(base);
+            cursoShowMsg('Curso atualizado com sucesso!', 'ok');
+        } else {
+            base.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+            await dbFirestore.collection('cursos').add(base);
+            cursoShowMsg('Curso criado com sucesso!', 'ok');
+        }
+        cursoFecharForm();
+        cursoListLoad();
+    } catch (e) {
+        console.error('Erro ao salvar curso:', e);
+        cursoShowMsg('Erro: ' + e.message, 'err');
+    }
+    btn.disabled = false;
+    btn.innerHTML = btnHtml;
+}
+
+async function cursoListLoad() {
+    var cont = document.getElementById('curso-list');
+    if (!cont) return;
+    cont.innerHTML = '<div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando cursos...</div>';
+    try {
+        var snap = await dbFirestore.collection('cursos').orderBy('criadoEm', 'desc').get();
+        if (snap.empty) {
+            cont.innerHTML = '<div class="empty-state" style="text-align:center;padding:40px 20px"><i class="fa-solid fa-book-open" style="font-size:36px;color:#94a3b8;margin-bottom:10px"></i><p style="color:#64748b;font-size:13px">Nenhum curso cadastrado. Clique no botão "Salvar Curso" acima para criar o primeiro.</p></div>';
+            return;
+        }
+        cont.innerHTML = '';
+        snap.forEach(function(doc) {
+            var c = doc.data();
+            c._id = doc.id;
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;flex-wrap:wrap';
+            card.innerHTML =
+                '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-book" style="color:#2563eb;font-size:19px"></i></div>' +
+                '<div style="flex:1;min-width:180px">' +
+                    '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(c.nome || 'Curso') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">' +
+                        '<span style="background:rgba(37,99,235,.1);color:#2563eb;padding:2px 8px;border-radius:6px;font-weight:600">' + escHTML(c.tipo || '-') + '</span>' +
+                        '<span>' + (c.cargaHoraria != null ? c.cargaHoraria + ' h' : '-') + '</span>' +
+                        '<span>' + (c.epis ? c.epis.length : 0) + ' EPI(s)</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                    '<button class="btn-outline btn-sm" onclick="cursoVerDetalhe(\'' + c._id + '\')"><i class="fa-solid fa-eye"></i></button>' +
+                    '<button class="btn-outline btn-sm" onclick="cursoEditar(\'' + c._id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button class="btn-danger btn-sm" onclick="cursoExcluir(\'' + c._id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            cont.appendChild(card);
+        });
+    } catch (e) {
+        console.error('Erro ao listar cursos:', e);
+        cont.innerHTML = '<div style="text-align:center;color:#dc2626;padding:30px">Erro ao carregar cursos: ' + e.message + '</div>';
+    }
+}
+
+async function cursoEditar(id) {
+    try {
+        var doc = await dbFirestore.collection('cursos').doc(id).get();
+        if (!doc.exists) { alert('Curso não encontrado.'); return; }
+        var c = doc.data();
+        cursoResetForm();
+        cursoEditingId = id;
+        document.getElementById('curso-form-container').style.display = 'block';
+        document.getElementById('curso-criar-btn').style.display = 'none';
+        document.getElementById('curso-nome').value = c.nome || '';
+        var radios = document.querySelectorAll('input[name="curso-tipo"]');
+        radios.forEach(function(r) { r.checked = (r.value === (c.tipo || '')); });
+        document.getElementById('curso-carga').value = (c.cargaHoraria != null ? c.cargaHoraria : '');
+        document.getElementById('curso-lei').value = c.lei || '';
+        document.getElementById('curso-normas').value = c.normas || '';
+        document.getElementById('curso-form-titulo').textContent = 'Editar Curso';
+        document.getElementById('curso-cancelar-btn').style.display = 'inline-flex';
+        document.getElementById('curso-save-btn').innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Curso';
+        cursoEpiRender();
+        (c.epis || []).forEach(function(ep) { cursoEpiAdicionarLinha(ep.nome, ep.quantidade); });
+        document.getElementById('admin-cursos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+        alert('Erro: ' + e.message);
+    }
+}
+
+async function cursoExcluir(id) {
+    if (!confirm('Excluir este curso?')) return;
+    try {
+        await dbFirestore.collection('cursos').doc(id).delete();
+        alert('Curso excluído.');
+        if (cursoEditingId === id) cursoResetForm();
+        cursoListLoad();
+    } catch (e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}
+
+function cursoVerDetalhe(id) {
+    dbFirestore.collection('cursos').doc(id).get().then(function(doc) {
+        if (!doc.exists) { alert('Curso não encontrado.'); return; }
+        var c = doc.data();
+        document.getElementById('curso-detalhe-titulo').innerHTML = '<i class="fa-solid fa-book" style="margin-right:8px"></i> ' + escHTML(c.nome || 'Curso');
+        var episHtml = (c.epis || []).length
+            ? '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+                '<thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;font-size:12px">Equipamento</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;font-size:12px">Qtd por Aluno</th></tr></thead>' +
+                '<tbody>' + (c.epis || []).map(function(ep) {
+                    return '<tr><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + escHTML(ep.nome || '') + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + (ep.quantidade != null ? ep.quantidade : '-') + '</td></tr>';
+                }).join('') + '</tbody></table>'
+            : '<p style="font-size:13px;color:#64748b">Nenhum equipamento EPI cadastrado.</p>';
+        var html =
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">' +
+                '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px"><div style="font-size:11px;color:#64748b;font-weight:700">TIPO</div><div style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px">' + escHTML(c.tipo || '-') + '</div></div>' +
+                '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px"><div style="font-size:11px;color:#64748b;font-weight:700">CARGA HORÁRIA</div><div style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px">' + (c.cargaHoraria != null ? c.cargaHoraria + ' h' : '-') + '</div></div>' +
+            '</div>' +
+            '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:4px">LEI E NORMAS</div><p style="font-size:13px;color:#1e293b;margin:0">' + (c.lei ? escHTML(c.lei) : '-') + '</p>' + (c.normas ? '<p style="font-size:13px;color:#475569;margin-top:8px;line-height:1.6">' + escHTML(c.normas) + '</p>' : '') + '</div>' +
+            '<div><div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px">EQUIPAMENTOS EPI (' + (c.epis ? c.epis.length : 0) + ')</div>' + episHtml + '</div>';
+        document.getElementById('curso-detalhe-content').innerHTML = html;
+        document.getElementById('curso-detalhe-overlay').classList.remove('hidden');
+    }).catch(function(e) {
+        alert('Erro: ' + e.message);
+    });
+}
+
+function cursorFecharDetalhe() {
+    document.getElementById('curso-detalhe-overlay').classList.add('hidden');
+}
+
 

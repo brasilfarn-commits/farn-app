@@ -19,8 +19,8 @@ echo [2/3] Selecionando projeto...
 firebase use --add farn-app
 
 echo.
-echo [3/3] Publicando regras do Firestore...
-firebase deploy --only firestore:rules
+echo [3/3] Publicando regras do Firestore e Storage...
+firebase deploy --only firestore:rules,storage:rules
 
 echo.
 echo ============================================
