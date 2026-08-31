@@ -3439,7 +3439,7 @@
                 else if (v === 'parcial') { nota += peso / 2; marcadas++; }
             });
             nota = Math.max(0, Math.min(10, nota));
-            nota = Math.round(nota * 10) / 10;
+            nota = Math.round(nota * 100) / 100;
             var avId = pdAvpAvaliacaoId;
             var aulaId = pdAvpAvaliacao.aulaId || '';
             var ficha = {
