@@ -10,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -748,7 +749,9 @@
                 <div id="apt-inicio-qr" style="text-align:center;margin-bottom:16px;padding:14px;background:#f0fdf4;border:1px solid #16a34a;border-radius:12px">
                     <div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:8px"><i class="fa-solid fa-play" style="color:#16a34a;margin-right:6px"></i> Inicio de Aula — los alumnos escanean este QR al comenzar</div>
                     <button class="btn-primary" onclick="apontamentoGenerarQrInicio()" style="background:#16a34a"><i class="fa-solid fa-qrcode"></i> Generar QR de Inicio</button>
-                    <div id="apt-inicio-qr-area" style="display:none;margin-top:8px;text-align:center"></div>
+                    <div id="apt-inicio-qr-area" style="display:none;margin-top:8px;text-align:center">
+                        <div id="apt-inicio-qr-render"></div>
+                    </div>
                     <div id="apt-inicio-lista" style="display:none;margin-top:8px"></div>
                 </div>
 
@@ -2108,9 +2111,13 @@
             const cont = document.getElementById('apt-inicio-qr-area');
             cont.style.display = 'block';
             const data = 'FARN-INICIO:' + aulaId;
-            cont.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:8px">QR de inicio de esta aula:</div>' +
-                '<img src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(data) + '&size=220x220&margin=2" alt="QR Inicio de Aula" style="width:220px;height:220px;border:1px solid #16a34a;border-radius:8px;padding:4px;background:#fff">' +
-                '<div style="font-size:11px;color:#94a3b8;margin-top:8px">Los alumnos de la turma deben escanearlo para registrar el inicio.</div>';
+            var renderEl = document.getElementById('apt-inicio-qr-render');
+            renderEl.innerHTML = '';
+            try {
+                new QRCode(renderEl, { text: data, width: 230, height: 230, correctLevel: QRCode.CorrectLevel.M });
+            } catch(e) {
+                renderEl.innerHTML = '<div style="font-size:12px;color:#dc2626;text-align:center;padding:6px">Erro al generar QR: ' + e.message + '</div>';
+            }
             apontamentoCarregarInicios(aulaId);
         }
 
