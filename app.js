@@ -4695,7 +4695,7 @@ let aptFacialLibPr = null;
 let aptFacialModelosCarregados = false;
 let aptFacialDescritores = [];   // { cpf, nome, matricula, descriptor }
 let aptFacialFrameId = null;
-let aptFacialBaseURL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+let aptFacialBaseURL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 
 function apontamentoInicializar() {
     apontamentoPopularSelecaoProjeto();
