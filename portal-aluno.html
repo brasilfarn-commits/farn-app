@@ -195,6 +195,8 @@
         .pf-noticia-empty{text-align:center;padding:48px 20px;color:var(--gray300)}
         .pf-noticia-empty i{font-size:40px;margin-bottom:14px;display:block;color:var(--gray300)}
         .pf-noticia-empty p{font-size:13px;color:var(--gray400)}
+        .pf-inicio-andamento{border-left:3px solid #facc15 !important;background:linear-gradient(90deg,rgba(250,204,21,.16),rgba(250,204,21,.04)) !important;animation:pfInicioPisca 1.2s ease-in-out infinite}
+        @keyframes pfInicioPisca{0%,100%{background-color:rgba(250,204,21,.22)}50%{background-color:rgba(250,204,21,.02)}}
         .pf-blog-modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1000;overflow-y:auto}
         .pf-blog-modal.active{display:block}
         .pf-blog-modal-inner{max-width:700px;margin:40px auto;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.35)}
@@ -3728,24 +3730,44 @@
         if (!cont || !paUser) return;
         dbFirestore.collection('inicioAulas').where('cpf', '==', paUser.cpf).orderBy('criadoEm', 'desc').limit(50).get().then(function(snap) {
             if (snap.empty) { cont.innerHTML = ''; return; }
-            var html = '<div style="font-size:13px;font-weight:700;color:#16a34a;margin-bottom:8px"><i class="fa-solid fa-play" style="margin-right:4px"></i> Mis Inicios de Aula</div>';
-            snap.forEach(function(doc) {
-                var d = doc.data();
-                var dataFmt = d.dataAula ? new Date(d.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '---';
-                var horaFmt = d.horaInicio ? new Date(d.horaInicio).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '---';
-                html += '<div class="pf-noticia-card" style="border-left:3px solid #16a34a;padding:12px 16px;margin-bottom:8px">' +
-                    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">' +
-                    '<div style="flex:1;min-width:180px">' +
-                    '<div style="font-size:14px;font-weight:700;color:#16a34a;margin-bottom:4px"><i class="fa-solid fa-coins" style="color:#16a34a;margin-right:6px"></i>' + (d.disciplina || '---') + ' <span style="font-size:9px;font-weight:700;color:#fff;background:#16a34a;padding:2px 8px;border-radius:20px;vertical-align:middle">Inicio</span></div>' +
-                    '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-chalkboard" style="margin-right:4px"></i>' + (d.aula || '---') + '</div>' +
-                    '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>' + dataFmt + '</div>' +
-                    '<div style="font-size:11px;color:#94a3b8;margin-top:3px"><i class="fa-solid fa-clock" style="margin-right:4px"></i>Inicio a las ' + horaFmt + '</div>' +
-                    '</div>' +
-                    '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;background:#16a34a15;color:#16a34a;border:1px solid #16a34a30;white-space:nowrap"><i class="fa-solid fa-check-circle"></i> Iniciado</span>' +
-                    '</div>' +
-                    '</div>';
+            var inicios = [];
+            snap.forEach(function(doc) { var d = doc.data(); inicios.push(d); });
+            // Verifica quais inicios ja foram apontados (aula largada/finalizada/saida)
+            dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).get().then(function(presSnap) {
+                var apontadas = {};
+                presSnap.forEach(function(pDoc) {
+                    var p = pDoc.data();
+                    var chave = String(p.dataAula || '') + '|' + String(p.disciplina || '') + '|' + String(p.aula || '');
+                    if (chave) apontadas[chave] = true;
+                });
+                var html = '<div style="font-size:13px;font-weight:700;color:#16a34a;margin-bottom:8px"><i class="fa-solid fa-play" style="margin-right:4px"></i> Mis Inicios de Aula</div>';
+                inicios.forEach(function(d) {
+                    var dataFmt = d.dataAula ? new Date(d.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '---';
+                    var horaFmt = d.horaInicio ? new Date(d.horaInicio).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '---';
+                    var chave = String(d.dataAula || '') + '|' + String(d.disciplina || '') + '|' + String(d.aula || '');
+                    var emAndamento = !apontadas[chave];
+                    var infoExtra = emAndamento
+                        ? '<div style="font-size:11px;color:#a16207;margin-top:3px;font-weight:700"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Em andamento - aguardando apontamento do instructor.</div>'
+                        : '<span style="font-size:10px;font-weight:700;color:#16a34a;background:rgba(22,163,74,.12);padding:2px 8px;border-radius:20px">Já apontada</span>';
+                    html += '<div class="pf-noticia-card' + (emAndamento ? ' pf-inicio-andamento' : '') + '" style="padding:12px 16px;margin-bottom:8px">' +
+                        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">' +
+                        '<div style="flex:1;min-width:180px">' +
+                        '<div style="font-size:14px;font-weight:700;color:' + (emAndamento ? '#a16207' : '#16a34a') + ';margin-bottom:4px"><i class="fa-solid fa-coins" style="margin-right:6px"></i>' + (d.disciplina || '---') + ' <span style="font-size:9px;font-weight:700;color:#fff;background:' + (emAndamento ? '#ca8a04' : '#16a34a') + ';padding:2px 8px;border-radius:20px;vertical-align:middle">Inicio</span></div>' +
+                        '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-chalkboard" style="margin-right:4px"></i>' + (d.aula || '---') + '</div>' +
+                        '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>' + dataFmt + '</div>' +
+                        '<div style="font-size:11px;color:#94a3b8;margin-top:3px"><i class="fa-solid fa-clock" style="margin-right:4px"></i>Inicio a las ' + horaFmt + '</div>' +
+                        infoExtra +
+                        '</div>' +
+                        (emAndamento
+                            ? '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;background:#fef9c3;color:#a16207;border:1px solid #facc15;white-space:nowrap"><i class="fa-solid fa-rotate"></i> Em andamento</span>'
+                            : '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;background:#16a34a15;color:#16a34a;border:1px solid #16a34a30;white-space:nowrap"><i class="fa-solid fa-check-circle"></i> Iniciado</span>') +
+                        '</div>' +
+                        '</div>';
+                });
+                cont.innerHTML = html;
+            }).catch(function(e) {
+                cont.innerHTML = '';
             });
-            cont.innerHTML = html;
         }).catch(function(e) {
             cont.innerHTML = '';
         });
@@ -3760,6 +3782,7 @@
         paAptUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(100).onSnapshot(function(snap) {
             if (snap.empty) {
                 listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-clipboard-check" style="font-size:36px;color:#94a3b8;margin-bottom:10px"></i><p>Nenhum apontamento registrado</p></div>';
+                paLoadInicioAulas();
                 return;
             }
             var html = '';
@@ -3789,6 +3812,7 @@
                 html += '</div>';
             });
             listEl.innerHTML = html;
+            paLoadInicioAulas();
         }).catch(function(e) {
             listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
         });

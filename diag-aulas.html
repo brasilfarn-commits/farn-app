@@ -38,13 +38,13 @@
             var aulasSnap = await db.collection('aulas').get();
             html += '<div class="card"><b>AULAS:</b> ' + aulasSnap.size + ' documento(s)</div>';
             if (aulasSnap.size > 0) {
-                html += '<table><tr><th>Nome</th><th>Turma (string)</th><th>Turmas (array)</th><th>visivel</th><th>disciplinaId</th><th>ID Firestore</th></tr>';
+                html += '<table><tr><th>Nome</th><th>Projeto</th><th>Turma (string)</th><th>Turmas (array)</th><th>disciplina</th><th>ID Firestore</th></tr>';
                 aulasSnap.forEach(function(doc) {
                     var d = doc.data();
                     var vis = d.visivel;
                     var visClass = vis === true ? 'ok' : (vis === false ? 'err' : 'warn');
                     var visLabel = vis === true ? 'true' : (vis === false ? 'false' : 'UNDEFINED');
-                    html += '<tr><td>' + (d.nome||'-') + '</td><td>' + (d.turma||'-') + '</td><td>' + JSON.stringify(d.turmas||[]) + '</td><td class="' + visClass + '">' + visLabel + '</td><td>' + (d.disciplinaId||'-') + '</td><td>' + doc.id + '</td></tr>';
+                    html += '<tr><td>' + (d.nome||'-') + '</td><td class="ok">' + (d.projeto||'VAZIO') + '</td><td>' + (d.turma||'-') + '</td><td>' + JSON.stringify(d.turmas||[]) + '</td><td>' + (d.disciplina||'-') + '</td><td>' + doc.id + '</td></tr>';
                 });
                 html += '</table>';
             }
