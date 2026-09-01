@@ -1206,6 +1206,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -3376,7 +3377,12 @@
         if (!paUser) { qrEl.innerHTML = '<p style="color:#999;font-size:12px">Aguarde...</p>'; return; }
         var matricula = paUser.matricula || paGenerateMatricula(paUser.cpf) || '';
         if (!matricula) { qrEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation"></i> Matricula nao encontrada.</p>'; if (infoEl) infoEl.innerHTML = ''; return; }
-        qrEl.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=100x100&margin=2" alt="QR Code Matricula" style="width:120px;height:120px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff">';
+        qrEl.innerHTML = '';
+        try {
+            new QRCode(qrEl, { text: matricula, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M });
+        } catch(e) {
+            qrEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation"></i> Falha ao gerar QR: ' + e.message + '</p>';
+        }
         if (infoEl) {
             infoEl.innerHTML = '<div style="margin-top:10px;font-size:20px;font-weight:800;color:#16a34a;font-family:Courier New,monospace;letter-spacing:2px">' + matricula + '</div>' +
                 '<div style="font-size:15px;color:#1e293b;font-weight:600;margin-top:4px">' + (paUser.nome || '---') + '</div>';
@@ -3398,7 +3404,7 @@
         var turma = paUser.turma || '---';
         var projeto = paUser.projeto || '---';
 
-        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=100x100&margin=2';
+        var qrUrl = '';
 
         container.innerHTML =
         '<div class="pf-carteira-card">' +
@@ -3418,13 +3424,22 @@
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">PROJETO:</span> <span class="pf-cd-val" style="color:#c2410c;font-size:10px">' + projeto + '</span></div>' +
                 '</div>' +
                 '<div class="pf-carteira-qr-box">' +
-                    '<img src="' + qrUrl + '" alt="QR Code">' +
+                    '<div id="pf-carteira-qr-img"></div>' +
                 '</div>' +
                 '<div class="pf-carteira-title-overlay">CARTEIRA DE IDENTIFICACAO DE ALUNO</div>' +
                 '<div class="pf-carteira-inst-overlay">FARN - FORCA AUXILIAR DE RESGATE NACIONAL - CNPJ 43.327.929/0001-32</div>' +
                 '<div class="pf-carteira-aviso-overlay">NAO E VALIDA COMO CARTEIRA FUNCIONAL. SUJEITO AO CUMPRIMENTO DAS PENALIDADES EM CASO DE USO INDEVIDO.</div>' +
             '</div>' +
         '</div>';
+
+        try {
+            var carteiraQrEl = document.getElementById('pf-carteira-qr-img');
+            if (carteiraQrEl && typeof QRCode !== 'undefined') {
+                new QRCode(carteiraQrEl, { text: matricula, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+            }
+        } catch(e) {
+            console.error('Erro ao gerar QR da carteira:', e);
+        }
 
         paFotoCarregar();
     }

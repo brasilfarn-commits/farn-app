@@ -4687,6 +4687,7 @@ function showInstallGuide() {
 let aptScanner = null;
 let aptPresencas = {};
 let aptAlunosNaTurma = [];
+let aptInicioUnsub = null;
 
 function apontamentoInicializar() {
     apontamentoPopularSelecaoProjeto();
@@ -4798,6 +4799,7 @@ async function apontamentoAbrirModal() {
 function apontamentoFecharModal(event) {
     if (event && event.target !== event.currentTarget) return;
     apontamentoPararScanner();
+    if (aptInicioUnsub) { try { aptInicioUnsub(); } catch(e) {} aptInicioUnsub = null; }
     document.getElementById('modal-apontamento-overlay').classList.add('hidden');
 }
 
@@ -4900,44 +4902,50 @@ function apontamentoOnAulaChange() {
 }
 
 // Sincroniza o registro de inicio de aula (QR escaneado pelo aluno - colecao inicioAulas)
-// com a lista de presenca do apontamento, por turma e aula selecionadas.
+// com a lista de presenca do apontamento, em tempo real, por turma e aula selecionadas.
 function apontamentoSincronizarInicio(aulaId) {
+    if (aptInicioUnsub) {
+        try { aptInicioUnsub(); } catch(e) {}
+        aptInicioUnsub = null;
+    }
     if (!aulaId) return;
-    dbFirestore.collection('inicioAulas').where('aulaId', '==', String(aulaId)).get().then(function(snap) {
-        const mapa = {};
-        snap.forEach(function(doc) {
-            const d = doc.data();
-            if (!d.cpf) return;
-            const existente = mapa[d.cpf];
-            if (!existente || (d.horaInicio || '') > (existente.horaInicio || '')) {
-                mapa[d.cpf] = {
-                    horaInicio: d.horaInicio || d.criadoEm || '',
-                    dataAula: d.dataAula || '',
-                    disciplina: d.disciplina || '',
-                    aula: d.aula || ''
-                };
-            }
+    aptInicioUnsub = dbFirestore.collection('inicioAulas')
+        .where('aulaId', '==', String(aulaId))
+        .onSnapshot(function(snap) {
+            const mapa = {};
+            snap.forEach(function(doc) {
+                const d = doc.data();
+                if (!d.cpf) return;
+                const existente = mapa[d.cpf];
+                if (!existente || (d.horaInicio || '') > (existente.horaInicio || '')) {
+                    mapa[d.cpf] = {
+                        horaInicio: d.horaInicio || d.criadoEm || '',
+                        dataAula: d.dataAula || '',
+                        disciplina: d.disciplina || '',
+                        aula: d.aula || ''
+                    };
+                }
+            });
+            Object.keys(aptPresencas).forEach(function(cpf) {
+                const aluno = aptPresencas[cpf];
+                if (!aluno) return;
+                const reg = mapa[cpf];
+                if (reg && reg.horaInicio) {
+                    aluno.inicioPresente = true;
+                    aluno.inicioHora = reg.horaInicio;
+                    if (aluno.status !== 'Justificada') aluno.status = 'Presente';
+                } else {
+                    aluno.inicioPresente = false;
+                    aluno.inicioHora = '';
+                    if (!aluno.status) aluno.status = 'Falta';
+                }
+                aluno.inicioDisciplina = reg ? (reg.disciplina || '') : '';
+                aluno.inicioAula = reg ? (reg.aula || '') : '';
+            });
+            apontamentoRenderLista();
+        }, function(e) {
+            console.error('Erro ao sincronizar inicios:', e);
         });
-        Object.keys(aptPresencas).forEach(function(cpf) {
-            const aluno = aptPresencas[cpf];
-            if (!aluno) return;
-            const reg = mapa[cpf];
-            if (reg && reg.horaInicio) {
-                aluno.inicioPresente = true;
-                aluno.inicioHora = reg.horaInicio;
-                if (aluno.status !== 'Justificada') aluno.status = 'Presente';
-            } else {
-                aluno.inicioPresente = false;
-                aluno.inicioHora = '';
-                if (!aluno.status) aluno.status = 'Falta';
-            }
-            aluno.inicioDisciplina = reg ? (reg.disciplina || '') : '';
-            aluno.inicioAula = reg ? (reg.aula || '') : '';
-        });
-        apontamentoRenderLista();
-    }).catch(function(e) {
-        console.error('Erro ao sincronizar inicios:', e);
-    });
 }
 
 function apontamentoIniciarScanner() {
@@ -5283,6 +5291,7 @@ async function apontamentoSalvar() {
         await batch.commit();
 
         apontamentoPararScanner();
+        if (aptInicioUnsub) { try { aptInicioUnsub(); } catch(e) {} aptInicioUnsub = null; }
         document.getElementById('modal-apontamento-overlay').classList.add('hidden');
         alert('Apontamento salvo com sucesso!');
         apontamentoFiltrar();
