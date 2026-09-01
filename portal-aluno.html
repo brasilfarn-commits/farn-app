@@ -3631,11 +3631,19 @@
     function paFacialCarregarModelos() {
         if (paFacialModelosCarregados) return Promise.resolve();
         return paFacialLib().then(function(faceapi) {
+            function comTimeout(p) {
+                return Promise.race([p, new Promise(function(resolve, reject) {
+                    setTimeout(function() { reject(new Error('Tempo esgotado ao baixar os modelos faciais. Verifique sua conexão e tente novamente.')); }, 30000);
+                })]);
+            }
             return Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(paFacialBaseURL),
-                faceapi.nets.faceLandmark68Net.loadFromUri(paFacialBaseURL),
-                faceapi.nets.faceRecognitionNet.loadFromUri(paFacialBaseURL)
+                comTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(paFacialBaseURL)),
+                comTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(paFacialBaseURL)),
+                comTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(paFacialBaseURL))
             ]).then(function() { paFacialModelosCarregados = true; });
+        }).catch(function(e) {
+            paFacialModelosCarregados = false;
+            throw e;
         });
     }
 
@@ -3756,6 +3764,9 @@
                     paFacialSetStatus('Rosto cadastrado com sucesso!', '#16a34a');
                     paFacialRenderizarEstado();
                 });
+            })
+            .catch(function(e) {
+                paFacialSetStatus((e && e.message) || 'Erro ao processar o rosto. Tente novamente.', '#dc2626');
             });
     }
 
