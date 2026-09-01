@@ -839,6 +839,30 @@
                         <div id="pf-apontamento-qr-img" style="display:inline-block"></div>
                         <div id="pf-apontamento-qr-info" style="margin-top:10px"></div>
                     </div>
+                    <div id="pf-facial-bloco" style="text-align:center;margin-bottom:20px;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">
+                        <p style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px"><i class="fa-solid fa-id-badge" style="color:var(--green);margin-right:4px"></i> Reconhecimento Facial</p>
+                        <p style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:12px">Cadastre seu rosto para o instrutor registrar sua presença por reconhecimento facial no apontamento. A foto usada é exclusiva para este fim.</p>
+                        <div id="pf-facial-status" style="font-size:12px;color:#64748b;margin-bottom:12px;display:none"></div>
+                        <div id="pf-facial-preview" style="display:inline-block;margin-bottom:12px"></div>
+                        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                            <button onclick="paFacialAbrirCamera()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-camera"></i> Capturar rosto (câmera)</button>
+                            <button onclick="document.getElementById('pf-facial-file').click()" style="background:var(--blue);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-file-image"></i> Enviar foto</button>
+                            <button id="pf-facial-remove-btn" onclick="paFacialRemover()" style="background:#dc2626;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:none"><i class="fa-solid fa-trash"></i> Remover cadastro</button>
+                        </div>
+                        <input type="file" id="pf-facial-file" accept="image/*" style="display:none" onchange="paFacialOnFile(this.files)">
+                    </div>
+
+                    <!-- OVERLAY CAMERA RECONHECIMENTO FACIAL -->
+                    <div id="pf-facial-camera-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:16px">
+                        <div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:10px"><i class="fa-solid fa-id-badge"></i> Enquadre seu rosto e capturar</div>
+                        <video id="pf-facial-video" autoplay playsinline style="max-width:100%;max-height:60vh;border-radius:10px;background:#000"></video>
+                        <div id="pf-facial-video-status" style="color:#fde68a;font-size:12px;margin-top:8px;min-height:16px"></div>
+                        <div style="display:flex;gap:10px;margin-top:10px">
+                            <button onclick="paFacialCapturar()" style="background:#16a34a;color:#fff;border:none;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer"><i class="fa-solid fa-camera"></i> Capturar</button>
+                            <button onclick="paFacialFecharCamera()" style="background:#64748b;color:#fff;border:none;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                        </div>
+                    </div>
+
                     <div id="pf-apontamento-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
@@ -2017,7 +2041,7 @@
         if (target) target.classList.add('active');
         else document.getElementById('pf-section-construcao').classList.add('active');
 
-        if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); }
+        if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); paFacialInicializar(); }
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
         if (section === 'tfm') { paLoadTfmAgendamento(); paLoadTfmResultado(); }
@@ -3583,6 +3607,253 @@
                     status.style.color = '#f59e0b';
                 }
             });
+    }
+
+    /* ===== RECONHECIMENTO FACIAL (CADASTRO DO ALUNO) ===== */
+    var paFacialStream = null;
+    var paFacialLibPr = null;
+    var paFacialModelosCarregados = false;
+    var paFacialBaseURL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+    function paFacialLib() {
+        if (window.faceapi) return Promise.resolve(window.faceapi);
+        if (paFacialLibPr) return paFacialLibPr;
+        paFacialLibPr = new Promise(function(resolve, reject) {
+            var s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js';
+            s.onload = function() { resolve(window.faceapi); };
+            s.onerror = function() { paFacialLibPr = null; reject(new Error('Falha ao carregar a biblioteca de reconhecimento facial.')); };
+            document.head.appendChild(s);
+        });
+        return paFacialLibPr;
+    }
+
+    function paFacialCarregarModelos() {
+        if (paFacialModelosCarregados) return Promise.resolve();
+        return paFacialLib().then(function(faceapi) {
+            return Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(paFacialBaseURL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(paFacialBaseURL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(paFacialBaseURL)
+            ]).then(function() { paFacialModelosCarregados = true; });
+        });
+    }
+
+    function paFacialStatusEl() { return document.getElementById('pf-facial-status'); }
+    function paFacialPreviewEl() { return document.getElementById('pf-facial-preview'); }
+    function paFacialRemoveBtn() { return document.getElementById('pf-facial-remove-btn'); }
+
+    function paFacialSetStatus(texto, cor) {
+        var el = paFacialStatusEl();
+        if (!el) return;
+        if (!texto) { el.style.display = 'none'; el.textContent = ''; return; }
+        el.style.display = 'block';
+        el.style.color = cor || '#64748b';
+        el.textContent = texto;
+    }
+
+    function paFacialSnapshotLocal() {
+        if (!paUser) return null;
+        try { return localStorage.getItem('facial_snapshot_' + paUser.cpf) || null; } catch (e) { return null; }
+    }
+
+    function paFacialRenderizarEstado() {
+        var snapshot = paFacialSnapshotLocal();
+        var desc = paFacialDescritorAtual();
+        var prev = paFacialPreviewEl();
+        var rm = paFacialRemoveBtn();
+        if (desc) {
+            paFacialSetStatus('Rosto cadastrado com sucesso. O instrutor poderá registrar sua presença por reconhecimento facial.', '#16a34a');
+            if (rm) rm.style.display = 'inline-block';
+            if (prev) prev.innerHTML = snapshot
+                ? '<img src="' + snapshot + '" style="width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid #16a34a" alt="Rosto cadastrado">'
+                : '<div style="width:110px;height:110px;border-radius:50%;background:#dcfce7;border:3px solid #16a34a;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:30px"><i class="fa-solid fa-face-smile"></i></div>';
+        } else {
+            paFacialSetStatus('Você ainda não cadastrou seu rosto. Cadastre para usar o reconhecimento facial.', '#f59e0b');
+            if (rm) rm.style.display = 'none';
+            if (prev) prev.innerHTML = snapshot
+                ? '<img src="' + snapshot + '" style="width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid #94a3b8;opacity:.5" alt="Sem cadastro">'
+                : '';
+        }
+    }
+
+    function paFacialInicializar() {
+        if (!paUser) return;
+        paFacialRenderizarEstado();
+    }
+
+    function paFacialDescritorAtual() {
+        if (paUser && paUser.faceDescriptor && Array.isArray(paUser.faceDescriptor) && paUser.faceDescriptor.length) {
+            return paUser.faceDescriptor;
+        }
+        return null;
+    }
+
+    function paFacialMediaParaCanvas(media, maxLado) {
+        var max = maxLado || 720;
+        var larg, alt;
+        if (media.videoWidth) { larg = media.videoWidth; alt = media.videoHeight; }
+        else if (media.naturalWidth) { larg = media.naturalWidth; alt = media.naturalHeight; }
+        else { larg = media.width || 640; alt = media.height || 480; }
+        var escala = 1;
+        if (Math.max(larg, alt) > max) escala = max / Math.max(larg, alt);
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(larg * escala);
+        canvas.height = Math.round(alt * escala);
+        canvas.getContext('2d').drawImage(media, 0, 0, canvas.width, canvas.height);
+        return canvas;
+    }
+
+    function paFacialExtrair(canvas) {
+        if (!window.faceapi) return Promise.reject(new Error('Biblioteca não carregada.'));
+        return window.faceapi.detectSingleFace(canvas)
+            .withFaceLandmarks()
+            .withFaceDescriptor()
+            .then(function(result) {
+                if (!result || !result.descriptor || !result.descriptor.length) {
+                    throw new Error('Nenhum rosto detectado. Enquadre bem o rosto, com boa iluminação e olhando para a câmera.');
+                }
+                return {
+                    descriptor: result.descriptor,
+                    deteccao: result.detection
+                };
+            });
+    }
+
+    function paFacialSalvar(descriptor, snapshotDataUrl, blob) {
+        if (!paUser || !paUser._docId) { throw new Error('Sessão do aluno não identificada.'); }
+        var updates = {
+            faceDescriptor: Array.prototype.slice.call(descriptor),
+            faceCadastrada: true,
+            faceCadastradaEm: new Date().toISOString()
+        };
+        return dbFirestore.collection('candidatos').doc(paUser._docId).update(updates).then(function() {
+            paUser.faceDescriptor = updates.faceDescriptor;
+            paUser.faceCadastrada = true;
+            paUser.faceCadastradaEm = updates.faceCadastradaEm;
+            if (snapshotDataUrl) {
+                try { localStorage.setItem('facial_snapshot_' + paUser.cpf, snapshotDataUrl); } catch (e) {}
+            }
+            try {
+                if (blob && blob.size && paUser) {
+                    var fd = new FormData();
+                    fd.append('foto', blob, 'facial-' + Date.now() + '.jpg');
+                    fd.append('cpf', paUser.cpf || '');
+                    fd.append('matricula', paUser.matricula || '');
+                    fd.append('nome', paUser.nome || '');
+                    fetch(PA_LOCALSERV_URL, { method: 'POST', body: fd, targetAddressSpace: 'loopback' }).catch(function() {});
+                }
+            } catch (e) {}
+        });
+    }
+
+    function paFacialProcessarCanvas(canvas, snapshotDataUrl, blob) {
+        paFacialSetStatus('Analisando rosto...', '#2563eb');
+        return paFacialCarregarModelos()
+            .then(function() { return paFacialExtrair(canvas); })
+            .then(function(res) {
+                return paFacialSalvar(res.descriptor, snapshotDataUrl, blob).then(function() {
+                    paFacialSetStatus('Rosto cadastrado com sucesso!', '#16a34a');
+                    paFacialRenderizarEstado();
+                });
+            });
+    }
+
+    function paFacialAbrirCamera() {
+        var overlay = document.getElementById('pf-facial-camera-overlay');
+        if (!overlay) return;
+        paFacialCarregarModelos().catch(function(e) {
+            paFacialSetStatus(e.message, '#dc2626');
+        });
+        overlay.style.display = 'flex';
+        var video = document.getElementById('pf-facial-video');
+        paFacialSetStatus('Aguardando câmera...', '#2563eb');
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } }).then(function(stream) {
+            paFacialStream = stream;
+            video.srcObject = stream;
+            video.play().catch(function() {});
+        }).catch(function() {
+            navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                paFacialStream = stream;
+                video.srcObject = stream;
+                video.play().catch(function() {});
+            }).catch(function() {
+                paFacialFecharCamera();
+                paFacialSetStatus('Não foi possível acessar a câmera. Use a opção "Enviar foto".', '#dc2626');
+            });
+        });
+    }
+
+    function paFacialFecharCamera() {
+        if (paFacialStream) {
+            try { paFacialStream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
+            paFacialStream = null;
+        }
+        var overlay = document.getElementById('pf-facial-camera-overlay');
+        if (overlay) overlay.style.display = 'none';
+        var video = document.getElementById('pf-facial-video');
+        if (video) video.srcObject = null;
+    }
+
+    function paFacialCapturar() {
+        var video = document.getElementById('pf-facial-video');
+        if (!video || !video.videoWidth) { paFacialSetStatus('Câmera ainda não está pronta. Aguarde.', '#dc2626'); return; }
+        var canvas = paFacialMediaParaCanvas(video, 720);
+        var snapshot = document.createElement('canvas');
+        snapshot.width = 300;
+        snapshot.height = 300 * (video.videoHeight / video.videoWidth);
+        snapshot.getContext('2d').drawImage(video, 0, 0, snapshot.width, snapshot.height);
+        var snapshotDataUrl = null;
+        var blob = null;
+        try { snapshotDataUrl = snapshot.toDataURL('image/jpeg', 0.85); } catch (e) {}
+        snapshot.toBlob(function(b) { blob = b; }, 'image/jpeg', 0.85);
+        paFacialFecharCamera();
+        paFacialProcessarCanvas(canvas, snapshotDataUrl, blob);
+    }
+
+    function paFacialOnFile(files) {
+        if (!files || !files.length) return;
+        var file = files[0];
+        if (file.size > 3 * 1024 * 1024) { paFacialSetStatus('A imagem é grande demais. Use até 3 MB.', '#dc2626'); return; }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = paFacialMediaParaCanvas(img, 720);
+                var snapshot = document.createElement('canvas');
+                snapshot.width = 300;
+                snapshot.height = 300 * (img.naturalHeight / img.naturalWidth);
+                snapshot.getContext('2d').drawImage(img, 0, 0, snapshot.width, snapshot.height);
+                var snapshotDataUrl = null;
+                var blob = null;
+                try { snapshotDataUrl = snapshot.toDataURL('image/jpeg', 0.85); } catch (err) {}
+                snapshot.toBlob(function(b) { blob = b; }, 'image/jpeg', 0.85);
+                paFacialProcessarCanvas(canvas, snapshotDataUrl, blob);
+            };
+            img.onerror = function() { paFacialSetStatus('Não foi possível ler a imagem.', '#dc2626'); };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        document.getElementById('pf-facial-file').value = '';
+    }
+
+    function paFacialRemover() {
+        if (!paUser || !paUser._docId) { alert('Sessão do aluno não identificada.'); return; }
+        if (!confirm('Remover o cadastro do reconhecimento facial?')) return;
+        dbFirestore.collection('candidatos').doc(paUser._docId).update({
+            faceDescriptor: firebase.firestore.FieldValue.delete(),
+            faceCadastrada: firebase.firestore.FieldValue.delete(),
+            faceCadastradaEm: firebase.firestore.FieldValue.delete()
+        }).then(function() {
+            if (paUser.faceDescriptor) delete paUser.faceDescriptor;
+            if (paUser.faceCadastrada) delete paUser.faceCadastrada;
+            if (paUser.faceCadastradaEm) delete paUser.faceCadastradaEm;
+            try { localStorage.removeItem('facial_snapshot_' + paUser.cpf); } catch (e) {}
+            paFacialRenderizarEstado();
+            paFacialSetStatus('Cadastro de reconhecimento facial removido.', '#64748b');
+        }).catch(function(e) {
+            alert('Erro ao remover: ' + e.message);
+        });
     }
 
     /* ===== APONTAMENTO (real-time) ===== */

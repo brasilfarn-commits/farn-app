@@ -3411,6 +3411,21 @@
                     <button class="btn-primary" id="apt-btn-scan" onclick="apontamentoIniciarScanner()" disabled>
                         <i class="fa-solid fa-camera"></i> Iniciar Câmera para QR Code
                     </button>
+                    <button class="btn-primary" id="apt-btn-facial" onclick="apontamentoIniciarFacial()" disabled style="background:#0f766e;margin-left:8px">
+                        <i class="fa-solid fa-face-smile"></i> Reconhecimento Facial
+                    </button>
+                </div>
+                <!-- Reconhecimento Facial -->
+                <div id="apt-facial-area" style="display:none;margin-bottom:16px;border:2px solid #0f766e;border-radius:12px;overflow:hidden;position:relative">
+                    <video id="apt-facial-video" autoplay playsinline style="width:100%;min-height:300px;max-height:400px;background:#000;object-fit:cover"></video>
+                    <div style="position:absolute;top:8px;right:8px;z-index:10">
+                        <button class="btn-primary btn-sm" onclick="apontamentoPararFacial()" style="background:#f44336">
+                            <i class="fa-solid fa-stop"></i> Parar
+                        </button>
+                    </div>
+                    <div id="apt-facial-status" style="text-align:center;padding:8px;background:#f0fdf4;font-size:12px;color:#475569">
+                        <i class="fa-solid fa-camera" style="color:#0f766e"></i> Aproxime o rosto do aluno para registrar presença
+                    </div>
                 </div>
                 <!-- Digitar Matrícula Manualmente -->
                 <div id="apt-manual-area" style="text-align:center;margin-bottom:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">
