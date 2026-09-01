@@ -4695,7 +4695,7 @@ let aptFacialLibPr = null;
 let aptFacialModelosCarregados = false;
 let aptFacialDescritores = [];   // { cpf, nome, matricula, descriptor }
 let aptFacialFrameId = null;
-let aptFacialBaseURL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+let aptFacialBaseURL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/';
 
 function apontamentoInicializar() {
     apontamentoPopularSelecaoProjeto();
@@ -4934,7 +4934,7 @@ function apontamentoFacialLib() {
     if (aptFacialLibPr) return aptFacialLibPr;
     aptFacialLibPr = new Promise(function(resolve, reject) {
         const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/dist/face-api.min.js';
+        s.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js';
         s.onload = function() { resolve(window.faceapi); };
         s.onerror = function() { aptFacialLibPr = null; reject(new Error('Falha ao carregar a biblioteca de reconhecimento facial.')); };
         document.head.appendChild(s);
