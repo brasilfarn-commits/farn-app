@@ -4934,7 +4934,7 @@ function apontamentoFacialLib() {
     if (aptFacialLibPr) return aptFacialLibPr;
     aptFacialLibPr = new Promise(function(resolve, reject) {
         const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js';
+        s.src = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/dist/face-api.min.js';
         s.onload = function() { resolve(window.faceapi); };
         s.onerror = function() { aptFacialLibPr = null; reject(new Error('Falha ao carregar a biblioteca de reconhecimento facial.')); };
         document.head.appendChild(s);
