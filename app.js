@@ -4688,15 +4688,6 @@ let aptScanner = null;
 let aptPresencas = {};
 let aptAlunosNaTurma = [];
 
-// ===== APONTAMENTO - RECONHECIMENTO FACIAL =====
-let aptFacialStream = null;
-let aptFacialRunning = false;
-let aptFacialLibPr = null;
-let aptFacialModelosCarregados = false;
-let aptFacialDescritores = [];   // { cpf, nome, matricula, descriptor }
-let aptFacialFrameId = null;
-let aptFacialBaseURL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/';
-
 function apontamentoInicializar() {
     apontamentoPopularSelecaoProjeto();
     const conteudo = document.getElementById('apt-conteudo');
@@ -4725,6 +4716,43 @@ function apontamentoOnSelecaoProjetoChange() {
     apontamentoOnSelecaoChange();
 }
 
+function aptTurmaSelecionada() {
+    const sel = document.getElementById('apt-selecao-turma');
+    return sel ? sel.value : '';
+}
+
+function apontamentoCarregarInicios(turma) {
+    const listEl = document.getElementById('apt-inicios-lista');
+    if (!listEl) return;
+    if (!turma) {
+        listEl.innerHTML = '<span style="font-size:12px;color:#94a3b8">Seleciona una turma arriba para ver los inicios registrados.</span>';
+        return;
+    }
+    listEl.innerHTML = '<span style="font-size:12px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando inicios...</span>';
+    dbFirestore.collection('inicioAulas').where('turma', '==', turma).orderBy('criadoEm', 'desc').limit(200).get().then(function(snap) {
+        if (snap.empty) {
+            listEl.innerHTML = '<span style="font-size:12px;color:#94a3b8">Nenhun inicio registrado para esta turma.</span>';
+            return;
+        }
+        var rows = [];
+        snap.forEach(function(doc) { var d = doc.data(); rows.push({ _id: doc.id, ...d }); });
+        var html = '<div style="font-size:12px;color:#475569;margin-bottom:4px">Total de inicios: ' + rows.length + '</div>';
+        rows.forEach(function(d) {
+            var dataFmt = d.dataAula ? new Date(d.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '---';
+            var horaFmt = d.horaInicio || d.criadoEm || '';
+            var horaStr = horaFmt ? new Date(horaFmt).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '---';
+            html += '<div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #16a34a;border-radius:8px;padding:6px 10px;margin-bottom:6px">' +
+                '<i class="fa-solid fa-play" style="color:#16a34a"></i>' +
+                '<span style="flex:1;font-size:12px;color:#1e293b">' + escHTML(d.nome || '---') + ' <span style="color:#94a3b8">(' + escHTML(d.matricula || '---') + ') \u2013 ' + escHTML(d.disciplina || '---') + ' \u2013 ' + dataFmt + '</span></span>' +
+                '<span style="font-size:11px;color:#64748b"><i class="fa-solid fa-clock" style="margin-right:3px"></i>' + horaStr + '</span>' +
+                '</div>';
+        });
+        listEl.innerHTML = html;
+    }).catch(function(e) {
+        listEl.innerHTML = '<span style="font-size:12px;color:#dc2626">Erro ao cargar inicios: ' + e.message + '</span>';
+    });
+}
+
 function apontamentoOnSelecaoChange() {
     const projeto = document.getElementById('apt-selecao-projeto').value;
     const turma = document.getElementById('apt-selecao-turma').value;
@@ -4733,8 +4761,10 @@ function apontamentoOnSelecaoChange() {
         conteudo.style.display = '';
         apontamentoPopularFiltroTurma();
         apontamentoFiltrar();
+        apontamentoCarregarInicios(turma);
     } else {
         conteudo.style.display = 'none';
+        apontamentoCarregarInicios('');
     }
 }
 
@@ -4768,7 +4798,6 @@ async function apontamentoAbrirModal() {
 function apontamentoFecharModal(event) {
     if (event && event.target !== event.currentTarget) return;
     apontamentoPararScanner();
-    apontamentoPararFacial();
     document.getElementById('modal-apontamento-overlay').classList.add('hidden');
 }
 
@@ -4833,7 +4862,6 @@ function apontamentoOnAulaChange() {
         apontamentoRenderLista();
         if (aptAlunosNaTurma.length) {
             btnScan.disabled = false;
-            apontamentoFacialPreparar();
         } else {
             alert('Nenhum aluno ativo encontrado para a turma: ' + turma);
         }
@@ -4917,203 +4945,6 @@ function apontamentoPararScanner() {
     }
     document.getElementById('apt-scanner-area').style.display = 'none';
     document.getElementById('apt-scan-btn-area').style.display = 'block';
-}
-
-// ===== APONTAMENTO - RECONHECIMENTO FACIAL =====
-function aptFacialStatusEl() { return document.getElementById('apt-facial-status'); }
-
-function apontamentoFacialStatus(texto, cor) {
-    const el = aptFacialStatusEl();
-    if (!el) return;
-    el.style.color = cor || '#475569';
-    el.innerHTML = '<i class="fa-solid fa-camera" style="color:#0f766e"></i> ' + texto;
-}
-
-function apontamentoFacialLib() {
-    if (window.faceapi) return Promise.resolve(window.faceapi);
-    if (aptFacialLibPr) return aptFacialLibPr;
-    aptFacialLibPr = new Promise(function(resolve, reject) {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js';
-        s.onload = function() { resolve(window.faceapi); };
-        s.onerror = function() { aptFacialLibPr = null; reject(new Error('Falha ao carregar a biblioteca de reconhecimento facial.')); };
-        document.head.appendChild(s);
-    });
-    return aptFacialLibPr;
-}
-
-function apontamentoFacialCarregarModelos() {
-    if (aptFacialModelosCarregados) return Promise.resolve();
-    return apontamentoFacialLib().then(function(faceapi) {
-        return Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(aptFacialBaseURL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(aptFacialBaseURL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(aptFacialBaseURL)
-        ]).then(function() { aptFacialModelosCarregados = true; });
-    });
-}
-
-function apontamentoFacialPreparar() {
-    const btn = document.getElementById('apt-btn-facial');
-    if (btn) btn.disabled = true;
-    if (!aptAlunosNaTurma.length) { aptFacialDescritores = []; return; }
-    const cpfs = aptAlunosNaTurma.map(a => a.cpf).filter(function(c) { return c && c.indexOf('temp_') !== 0; });
-    if (!cpfs.length) { aptFacialDescritores = []; return; }
-    let lote = cpfs.slice(0, 10);
-    let resto = cpfs.slice(10);
-    let acum = [];
-    const buscar = function(l, r) {
-        dbFirestore.collection('candidatos').where('cpf', 'in', l).get().then(function(snap) {
-            snap.forEach(function(doc) {
-                const d = doc.data();
-                if (d.faceDescriptor && Array.isArray(d.faceDescriptor) && d.faceDescriptor.length) {
-                    acum.push({ cpf: d.cpf || '', nome: d.nome || '', matricula: d.matricula || '', descriptor: d.faceDescriptor });
-                }
-            });
-            if (r.length) { buscar(r.slice(0, 10), r.slice(10)); }
-            else {
-                aptFacialDescritores = acum;
-                const btn2 = document.getElementById('apt-btn-facial');
-                if (btn2) {
-                    if (aptFacialDescritores.length) {
-                        btn2.disabled = false;
-                        btn2.title = aptFacialDescritores.length + ' aluno(s) com rosto cadastrado';
-                    } else {
-                        btn2.disabled = true;
-                        btn2.title = 'Nenhum aluno desta turma possui cadastro facial';
-                    }
-                }
-            }
-        }).catch(function() {
-            if (r.length) { buscar(r.slice(0, 10), r.slice(10)); }
-            else {
-                aptFacialDescritores = acum;
-                const btn2 = document.getElementById('apt-btn-facial');
-                if (btn2) btn2.disabled = !aptFacialDescritores.length;
-            }
-        });
-    };
-    buscar(lote, resto);
-}
-
-function apontamentoIniciarFacial() {
-    if (!aptFacialDescritores.length) {
-        alert('Nenhum aluno desta turma possui reconhecimento facial cadastrado. O aluno deve cadastrar o rosto no portal do aluno primeiro.');
-        return;
-    }
-    const btnFacial = document.getElementById('apt-btn-facial');
-    if (btnFacial) btnFacial.disabled = true;
-    const btnScan = document.getElementById('apt-btn-scan');
-    if (btnScan) btnScan.disabled = true;
-    apontamentoPararScanner();
-    const area = document.getElementById('apt-facial-area');
-    area.style.display = 'block';
-    apontamentoFacialStatus('Carregando modelos de reconhecimento facial...', '#b45309');
-    apontamentoFacialCarregarModelos().then(function() {
-        const video = document.getElementById('apt-facial-video');
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } }).then(function(stream) {
-            aptFacialStream = stream;
-            video.srcObject = stream;
-            video.play().catch(function() {});
-            video.onloadedmetadata = function() {
-                aptFacialRunning = true;
-                apontamentoFacialStatus('Aproxime o rosto do aluno para registrar presença. Detectados: ' + aptFacialDescritores.length + ' aluno(s) cadastrados.', '#0f766e');
-                aptFacialFrameId = requestAnimationFrame(apontamentoFacialLoop);
-            };
-        }).catch(function() {
-            navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
-                aptFacialStream = stream;
-                video.srcObject = stream;
-                video.play().catch(function() {});
-                video.onloadedmetadata = function() {
-                    aptFacialRunning = true;
-                    apontamentoFacialStatus('Aproxime o rosto do aluno para registrar presença. Detectados: ' + aptFacialDescritores.length + ' aluno(s) cadastrados.', '#0f766e');
-                    aptFacialFrameId = requestAnimationFrame(apontamentoFacialLoop);
-                };
-            }).catch(function() {
-                apontamentoFacialStatus('Não foi possível acessar a câmera.', '#dc2626');
-                apontamentoFacialHabilitarBotoes();
-            });
-        });
-    }).catch(function(e) {
-        alert(e.message);
-        apontamentoFacialHabilitarBotoes();
-    });
-}
-
-function apontamentoFacialHabilitarBotoes() {
-    const btnFacial = document.getElementById('apt-btn-facial');
-    if (btnFacial) btnFacial.disabled = false;
-    const btnScan = document.getElementById('apt-btn-scan');
-    if (btnScan) btnScan.disabled = false;
-}
-
-function apontamentoPararFacial() {
-    aptFacialRunning = false;
-    if (aptFacialFrameId) { cancelAnimationFrame(aptFacialFrameId); aptFacialFrameId = null; }
-    if (aptFacialStream) {
-        try { aptFacialStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
-        aptFacialStream = null;
-    }
-    const video = document.getElementById('apt-facial-video');
-    if (video) video.srcObject = null;
-    const area = document.getElementById('apt-facial-area');
-    if (area) area.style.display = 'none';
-    apontamentoFacialHabilitarBotoes();
-}
-
-function apontamentoFacialDistancia(a, b) {
-    let soma = 0;
-    const n = Math.min(a.length, b.length);
-    for (let i = 0; i < n; i++) {
-        const d = (a[i] || 0) - (b[i] || 0);
-        soma += d * d;
-    }
-    return Math.sqrt(soma);
-}
-
-function apontamentoFacialEncontrarMatch(descriptor) {
-    let melhor = null;
-    let melhorDist = 9999;
-    for (let i = 0; i < aptFacialDescritores.length; i++) {
-        const d = aptFacialDescritores[i];
-        if (!d.descriptor) continue;
-        const dist = apontamentoFacialDistancia(descriptor, d.descriptor);
-        if (dist < melhorDist) { melhorDist = dist; melhor = d; }
-    }
-    if (melhor && melhorDist <= 0.5) {
-        return { aluno: melhor, dist: melhorDist };
-    }
-    return null;
-}
-
-function apontamentoFacialLoop() {
-    if (!aptFacialRunning) return;
-    const video = document.getElementById('apt-facial-video');
-    if (!video || !video.videoWidth || !window.faceapi) {
-        aptFacialFrameId = requestAnimationFrame(apontamentoFacialLoop);
-        return;
-    }
-    window.faceapi.detectAllFaces(video, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
-        .withFaceLandmarks()
-        .withFaceDescriptors()
-        .then(function(results) {
-            let marcaou = false;
-            results.forEach(function(r) {
-                if (!r.descriptor || !r.descriptor.length) return;
-                const match = apontamentoFacialEncontrarMatch(r.descriptor);
-                if (match) {
-                    apontamentoMarcarPresente({ cpf: match.aluno.cpf || '', nome: match.aluno.nome || '', matricula: match.aluno.matricula || '' });
-                    apontamentoFacialStatus('Presença registrada: ' + match.aluno.nome, '#16a34a');
-                    apontamentoPararFacial();
-                    marcaou = true;
-                }
-            });
-            if (aptFacialRunning) aptFacialFrameId = requestAnimationFrame(apontamentoFacialLoop);
-        })
-        .catch(function() {
-            if (aptFacialRunning) aptFacialFrameId = requestAnimationFrame(apontamentoFacialLoop);
-        });
 }
 
 function apontamentoOnQrSuccess(decodedText) {

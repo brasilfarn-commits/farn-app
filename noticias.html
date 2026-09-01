@@ -1138,6 +1138,14 @@
                                     <p style="color:#475569">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
                                 </div>
                                 <div id="apontamento-historico-lista" style="display:none"></div>
+                                <!-- Inicios de Aula -->
+                                <div style="margin-top:18px;background:#f0fdf4;border:1px solid #16a34a;border-radius:12px;padding:14px 16px">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+                                        <h4 style="margin:0;font-size:14px;font-weight:700;color:#1e293b"><i class="fa-solid fa-play" style="color:#16a34a;margin-right:6px"></i> Inicios de Aula registrados (por turma selecionada)</h4>
+                                        <button class="btn-outline btn-sm" onclick="apontamentoCarregarInicios(aptTurmaSelecionada())"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                                    </div>
+                                    <div id="apt-inicios-lista" style="font-size:12px;color:#94a3b8">Seleciona una turma acima para ver los inicios registrados.</div>
+                                </div>
                             </div>
                         </div>
                     </div>

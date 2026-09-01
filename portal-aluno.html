@@ -839,30 +839,17 @@
                         <div id="pf-apontamento-qr-img" style="display:inline-block"></div>
                         <div id="pf-apontamento-qr-info" style="margin-top:10px"></div>
                     </div>
-                    <div id="pf-facial-bloco" style="text-align:center;margin-bottom:20px;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">
-                        <p style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px"><i class="fa-solid fa-id-badge" style="color:var(--green);margin-right:4px"></i> Reconhecimento Facial</p>
-                        <p style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:12px">Cadastre seu rosto para o instrutor registrar sua presença por reconhecimento facial no apontamento. A foto usada é exclusiva para este fim.</p>
-                        <div id="pf-facial-status" style="font-size:12px;color:#64748b;margin-bottom:12px;display:none"></div>
-                        <div id="pf-facial-preview" style="display:inline-block;margin-bottom:12px"></div>
-                        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-                            <button onclick="paFacialAbrirCamera()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-camera"></i> Capturar rosto (câmera)</button>
-                            <button onclick="document.getElementById('pf-facial-file').click()" style="background:var(--blue);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-file-image"></i> Enviar foto</button>
-                            <button id="pf-facial-remove-btn" onclick="paFacialRemover()" style="background:#dc2626;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:none"><i class="fa-solid fa-trash"></i> Remover cadastro</button>
+                    <div id="pf-inicio-aula" style="text-align:center;margin-bottom:20px;padding:18px;background:#f0fdf4;border:1px solid #16a34a;border-radius:12px">
+                        <p style="font-size:13px;color:#64748b;margin-bottom:12px"><i class="fa-solid fa-play" style="color:#16a34a;margin-right:4px"></i> Al inicio de la aula, escanea el QR de inicio que muestra tu instructor. Quedara registrado como <b>apuntamiento de inicio</b>.</p>
+                        <button onclick="paInicioAbrirLector()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;padding:10px 24px"><i class="fa-solid fa-qrcode"></i> Leer QR de Inicio de Aula</button>
+                        <div id="pf-inicio-scanner" style="display:none;margin-top:8px;border:2px solid #16a34a;border-radius:12px;overflow:hidden">
+                            <div id="pf-inicio-qr-reader" style="width:100%;min-height:250px;max-height:350px"></div>
+                            <div style="text-align:center;padding:8px;background:#f0fdf4;font-size:12px;color:#475569"><i class="fa-solid fa-camera" style="color:#16a34a"></i> Apunta el QR de inicio hacia la camara</div>
+                            <div style="text-align:center;padding:8px"><button onclick="paInicioParar()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;padding:6px 16px"><i class="fa-solid fa-stop"></i> Parar</button></div>
                         </div>
-                        <input type="file" id="pf-facial-file" accept="image/*" style="display:none" onchange="paFacialOnFile(this.files)">
+                        <div id="pf-inicio-msg" style="font-size:13px;color:#16a34a;margin-top:8px"></div>
                     </div>
-
-                    <!-- OVERLAY CAMERA RECONHECIMENTO FACIAL -->
-                    <div id="pf-facial-camera-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:16px">
-                        <div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:10px"><i class="fa-solid fa-id-badge"></i> Enquadre seu rosto e capturar</div>
-                        <video id="pf-facial-video" autoplay playsinline style="max-width:100%;max-height:60vh;border-radius:10px;background:#000"></video>
-                        <div id="pf-facial-video-status" style="color:#fde68a;font-size:12px;margin-top:8px;min-height:16px"></div>
-                        <div style="display:flex;gap:10px;margin-top:10px">
-                            <button onclick="paFacialCapturar()" style="background:#16a34a;color:#fff;border:none;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer"><i class="fa-solid fa-camera"></i> Capturar</button>
-                            <button onclick="paFacialFecharCamera()" style="background:#64748b;color:#fff;border:none;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                        </div>
-                    </div>
-
+                    <div id="pf-apontamento-inicio-list" style="margin-bottom:16px"></div>
                     <div id="pf-apontamento-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
                     </div>
@@ -1221,6 +1208,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
@@ -2041,7 +2029,7 @@
         if (target) target.classList.add('active');
         else document.getElementById('pf-section-construcao').classList.add('active');
 
-        if (section === 'apontamento') { paLoadApontamento(); setTimeout(paGenerateQR, 200); paFacialInicializar(); }
+        if (section === 'apontamento') { paLoadApontamento(); paLoadInicioAulas(); setTimeout(paGenerateQR, 200); }
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
         if (section === 'tfm') { paLoadTfmAgendamento(); paLoadTfmResultado(); }
@@ -3609,261 +3597,142 @@
             });
     }
 
-    /* ===== RECONHECIMENTO FACIAL (CADASTRO DO ALUNO) ===== */
-    var paFacialStream = null;
-    var paFacialLibPr = null;
-    var paFacialModelosCarregados = false;
-    var paFacialBaseURL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/';
+    /* ===== INICIO DE AULA (lector QR) ===== */
+    var paInicioScanner = null;
 
-    function paFacialLib() {
-        if (window.faceapi) return Promise.resolve(window.faceapi);
-        if (paFacialLibPr) return paFacialLibPr;
-        paFacialLibPr = new Promise(function(resolve, reject) {
-            var s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js';
-            s.onload = function() { resolve(window.faceapi); };
-            s.onerror = function() { paFacialLibPr = null; reject(new Error('Falha ao carregar a biblioteca de reconhecimento facial.')); };
-            document.head.appendChild(s);
+    function paInicioAbrirLector() {
+        var msgEl = document.getElementById('pf-inicio-msg');
+        if (msgEl) msgEl.innerHTML = '';
+        document.getElementById('pf-inicio-scanner').style.display = 'block';
+        if (paInicioScanner) { try { paInicioScanner.stop().then(function() { paInicioScanner.clear(); }); } catch(e) {} }
+        paInicioScanner = new Html5Qrcode('pf-inicio-qr-reader');
+        paInicioScanner.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: function(viewfinderWidth, viewfinderHeight) {
+                var minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                var size = Math.floor(minEdge * 0.7);
+                return { width: size, height: size };
+            }, disableFlip: false, aspectRatio: 1.0 },
+            paInicioOnQr,
+            function() {}
+        ).catch(function(err) {
+            console.error('Erro camera environment:', err);
+            paInicioScanner.start(
+                { facingMode: 'user' },
+                { fps: 10, qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    var minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    var size = Math.floor(minEdge * 0.7);
+                    return { width: size, height: size };
+                }, disableFlip: false, aspectRatio: 1.0 },
+                paInicioOnQr,
+                function() {}
+            ).catch(function(err2) {
+                console.error('Erro camera user:', err2);
+                document.getElementById('pf-inicio-scanner').style.display = 'none';
+                if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-triangle-exclamation"></i> No fue posible acceder a la camara. Verifica los permisos del navegador.</span>';
+            });
         });
-        return paFacialLibPr;
     }
 
-    function paFacialCarregarModelos() {
-        if (paFacialModelosCarregados) return Promise.resolve();
-        return paFacialLib().then(function(faceapi) {
-            function comTimeout(p) {
-                return Promise.race([p, new Promise(function(resolve, reject) {
-                    setTimeout(function() { reject(new Error('Tempo esgotado ao baixar os modelos faciais. Verifique sua conexão e tente novamente.')); }, 30000);
-                })]);
+    function paInicioParar() {
+        if (paInicioScanner) { try { paInicioScanner.stop().then(function() { paInicioScanner.clear(); }); } catch(e) {} paInicioScanner = null; }
+        document.getElementById('pf-inicio-scanner').style.display = 'none';
+    }
+
+    function paInicioOnQr(decodedText) {
+        var texto = String(decodedText || '').trim();
+        paInicioParar();
+        var prefixo = 'FARN-INICIO:';
+        if (texto.indexOf(prefixo) !== 0) {
+            var msgEl = document.getElementById('pf-inicio-msg');
+            if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> QR no valido. Este QR no es de inicio de aula.</span>';
+            return;
+        }
+        var aulaId = texto.substring(prefixo.length).trim();
+        if (!aulaId) {
+            var msgEl = document.getElementById('pf-inicio-msg');
+            if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> QR invalido (aula no encontrada).</span>';
+            return;
+        }
+        paInicioRegistrar(aulaId);
+    }
+
+    function paInicioRegistrar(aulaId) {
+        var msgEl = document.getElementById('pf-inicio-msg');
+        if (msgEl) msgEl.innerHTML = '<span style="color:#94a3b8"><i class="fa-solid fa-spinner fa-spin"></i> Validando y registrando inicio...</span>';
+        dbFirestore.collection('aulas').doc(String(aulaId)).get().then(function(aulaDoc) {
+            if (!aulaDoc.exists) {
+                if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> La aula no existe.</span>';
+                return;
             }
-            return Promise.all([
-                comTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(paFacialBaseURL)),
-                comTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(paFacialBaseURL)),
-                comTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(paFacialBaseURL))
-            ]).then(function() { paFacialModelosCarregados = true; });
-        }).catch(function(e) {
-            paFacialModelosCarregados = false;
-            throw e;
-        });
-    }
-
-    function paFacialStatusEl() { return document.getElementById('pf-facial-status'); }
-    function paFacialPreviewEl() { return document.getElementById('pf-facial-preview'); }
-    function paFacialRemoveBtn() { return document.getElementById('pf-facial-remove-btn'); }
-
-    function paFacialSetStatus(texto, cor) {
-        var el = paFacialStatusEl();
-        if (!el) return;
-        if (!texto) { el.style.display = 'none'; el.textContent = ''; return; }
-        el.style.display = 'block';
-        el.style.color = cor || '#64748b';
-        el.textContent = texto;
-    }
-
-    function paFacialSnapshotLocal() {
-        if (!paUser) return null;
-        try { return localStorage.getItem('facial_snapshot_' + paUser.cpf) || null; } catch (e) { return null; }
-    }
-
-    function paFacialRenderizarEstado() {
-        var snapshot = paFacialSnapshotLocal();
-        var desc = paFacialDescritorAtual();
-        var prev = paFacialPreviewEl();
-        var rm = paFacialRemoveBtn();
-        if (desc) {
-            paFacialSetStatus('Rosto cadastrado com sucesso. O instrutor poderá registrar sua presença por reconhecimento facial.', '#16a34a');
-            if (rm) rm.style.display = 'inline-block';
-            if (prev) prev.innerHTML = snapshot
-                ? '<img src="' + snapshot + '" style="width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid #16a34a" alt="Rosto cadastrado">'
-                : '<div style="width:110px;height:110px;border-radius:50%;background:#dcfce7;border:3px solid #16a34a;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:30px"><i class="fa-solid fa-face-smile"></i></div>';
-        } else {
-            paFacialSetStatus('Você ainda não cadastrou seu rosto. Cadastre para usar o reconhecimento facial.', '#f59e0b');
-            if (rm) rm.style.display = 'none';
-            if (prev) prev.innerHTML = snapshot
-                ? '<img src="' + snapshot + '" style="width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid #94a3b8;opacity:.5" alt="Sem cadastro">'
-                : '';
-        }
-    }
-
-    function paFacialInicializar() {
-        if (!paUser) return;
-        paFacialRenderizarEstado();
-    }
-
-    function paFacialDescritorAtual() {
-        if (paUser && paUser.faceDescriptor && Array.isArray(paUser.faceDescriptor) && paUser.faceDescriptor.length) {
-            return paUser.faceDescriptor;
-        }
-        return null;
-    }
-
-    function paFacialMediaParaCanvas(media, maxLado) {
-        var max = maxLado || 720;
-        var larg, alt;
-        if (media.videoWidth) { larg = media.videoWidth; alt = media.videoHeight; }
-        else if (media.naturalWidth) { larg = media.naturalWidth; alt = media.naturalHeight; }
-        else { larg = media.width || 640; alt = media.height || 480; }
-        var escala = 1;
-        if (Math.max(larg, alt) > max) escala = max / Math.max(larg, alt);
-        var canvas = document.createElement('canvas');
-        canvas.width = Math.round(larg * escala);
-        canvas.height = Math.round(alt * escala);
-        canvas.getContext('2d').drawImage(media, 0, 0, canvas.width, canvas.height);
-        return canvas;
-    }
-
-    function paFacialExtrair(canvas) {
-        if (!window.faceapi) return Promise.reject(new Error('Biblioteca não carregada.'));
-        return window.faceapi.detectSingleFace(canvas)
-            .withFaceLandmarks()
-            .withFaceDescriptor()
-            .then(function(result) {
-                if (!result || !result.descriptor || !result.descriptor.length) {
-                    throw new Error('Nenhum rosto detectado. Enquadre bem o rosto, com boa iluminação e olhando para a câmera.');
+            var aula = aulaDoc.data() || {};
+            var projeto = aula.projeto || '';
+            var turma = aula.turma || '';
+            if (String(paUser.proyecto || '').trim() !== String(projeto).trim() || String(paUser.turma || '').trim() !== String(turma).trim()) {
+                if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> Este QR de inicio pertenece a otra turma/proyecto. No puedes registrarte.</span>';
+                return;
+            }
+            var cpf = paUser.cpf || '';
+            dbFirestore.collection('inicioAulas').where('cpf', '==', cpf).where('aulaId', '==', String(aulaId)).get().then(function(existente) {
+                if (!existente.empty) {
+                    if (msgEl) msgEl.innerHTML = '<span style="color:#ca8a04"><i class="fa-solid fa-circle-info"></i> Ya registraste el inicio de esta aula.</span>';
+                    paLoadInicioAulas();
+                    return;
                 }
-                return {
-                    descriptor: result.descriptor,
-                    deteccao: result.detection
+                var dados = {
+                    cpf: cpf,
+                    nome: paUser.nome || '',
+                    matricula: paUser.matricula || '',
+                    turma: turma,
+                    projeto: projeto,
+                    disciplina: aula.disciplina || '',
+                    aula: (aula.conteudo || ''),
+                    aulaId: String(aulaId),
+                    dataAula: aula.data || '',
+                    horaInicio: new Date().toISOString(),
+                    criadoEm: new Date().toISOString(),
+                    criadoPor: paUser.nome || ''
                 };
-            });
-    }
-
-    function paFacialSalvar(descriptor, snapshotDataUrl, blob) {
-        if (!paUser || !paUser._docId) { throw new Error('Sessão do aluno não identificada.'); }
-        var updates = {
-            faceDescriptor: Array.prototype.slice.call(descriptor),
-            faceCadastrada: true,
-            faceCadastradaEm: new Date().toISOString()
-        };
-        return dbFirestore.collection('candidatos').doc(paUser._docId).update(updates).then(function() {
-            paUser.faceDescriptor = updates.faceDescriptor;
-            paUser.faceCadastrada = true;
-            paUser.faceCadastradaEm = updates.faceCadastradaEm;
-            if (snapshotDataUrl) {
-                try { localStorage.setItem('facial_snapshot_' + paUser.cpf, snapshotDataUrl); } catch (e) {}
-            }
-            try {
-                if (blob && blob.size && paUser) {
-                    var fd = new FormData();
-                    fd.append('foto', blob, 'facial-' + Date.now() + '.jpg');
-                    fd.append('cpf', paUser.cpf || '');
-                    fd.append('matricula', paUser.matricula || '');
-                    fd.append('nome', paUser.nome || '');
-                    fetch(PA_LOCALSERV_URL, { method: 'POST', body: fd, targetAddressSpace: 'loopback' }).catch(function() {});
-                }
-            } catch (e) {}
-        });
-    }
-
-    function paFacialProcessarCanvas(canvas, snapshotDataUrl, blob) {
-        paFacialSetStatus('Analisando rosto...', '#2563eb');
-        return paFacialCarregarModelos()
-            .then(function() { return paFacialExtrair(canvas); })
-            .then(function(res) {
-                return paFacialSalvar(res.descriptor, snapshotDataUrl, blob).then(function() {
-                    paFacialSetStatus('Rosto cadastrado com sucesso!', '#16a34a');
-                    paFacialRenderizarEstado();
+                dbFirestore.collection('inicioAulas').add(dados).then(function() {
+                    if (msgEl) msgEl.innerHTML = '<span style="color:#16a34a"><i class="fa-solid fa-check-circle"></i> Inicio de aula registrado con exito!</span>';
+                    paLoadInicioAulas();
+                }).catch(function(e) {
+                    console.error('Erro al registrar inicio:', e);
+                    if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> Erro al registrar: ' + e.message + '</span>';
                 });
-            })
-            .catch(function(e) {
-                paFacialSetStatus((e && e.message) || 'Erro ao processar o rosto. Tente novamente.', '#dc2626');
+            }).catch(function(e) {
+                if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> Erro al validar: ' + e.message + '</span>';
             });
-    }
-
-    function paFacialAbrirCamera() {
-        var overlay = document.getElementById('pf-facial-camera-overlay');
-        if (!overlay) return;
-        paFacialCarregarModelos().catch(function(e) {
-            paFacialSetStatus(e.message, '#dc2626');
-        });
-        overlay.style.display = 'flex';
-        var video = document.getElementById('pf-facial-video');
-        paFacialSetStatus('Aguardando câmera...', '#2563eb');
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } }).then(function(stream) {
-            paFacialStream = stream;
-            video.srcObject = stream;
-            video.play().catch(function() {});
-        }).catch(function() {
-            navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
-                paFacialStream = stream;
-                video.srcObject = stream;
-                video.play().catch(function() {});
-            }).catch(function() {
-                paFacialFecharCamera();
-                paFacialSetStatus('Não foi possível acessar a câmera. Use a opção "Enviar foto".', '#dc2626');
-            });
-        });
-    }
-
-    function paFacialFecharCamera() {
-        if (paFacialStream) {
-            try { paFacialStream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
-            paFacialStream = null;
-        }
-        var overlay = document.getElementById('pf-facial-camera-overlay');
-        if (overlay) overlay.style.display = 'none';
-        var video = document.getElementById('pf-facial-video');
-        if (video) video.srcObject = null;
-    }
-
-    function paFacialCapturar() {
-        var video = document.getElementById('pf-facial-video');
-        if (!video || !video.videoWidth) { paFacialSetStatus('Câmera ainda não está pronta. Aguarde.', '#dc2626'); return; }
-        var canvas = paFacialMediaParaCanvas(video, 720);
-        var snapshot = document.createElement('canvas');
-        snapshot.width = 300;
-        snapshot.height = 300 * (video.videoHeight / video.videoWidth);
-        snapshot.getContext('2d').drawImage(video, 0, 0, snapshot.width, snapshot.height);
-        var snapshotDataUrl = null;
-        var blob = null;
-        try { snapshotDataUrl = snapshot.toDataURL('image/jpeg', 0.85); } catch (e) {}
-        snapshot.toBlob(function(b) { blob = b; }, 'image/jpeg', 0.85);
-        paFacialFecharCamera();
-        paFacialProcessarCanvas(canvas, snapshotDataUrl, blob);
-    }
-
-    function paFacialOnFile(files) {
-        if (!files || !files.length) return;
-        var file = files[0];
-        if (file.size > 3 * 1024 * 1024) { paFacialSetStatus('A imagem é grande demais. Use até 3 MB.', '#dc2626'); return; }
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var img = new Image();
-            img.onload = function() {
-                var canvas = paFacialMediaParaCanvas(img, 720);
-                var snapshot = document.createElement('canvas');
-                snapshot.width = 300;
-                snapshot.height = 300 * (img.naturalHeight / img.naturalWidth);
-                snapshot.getContext('2d').drawImage(img, 0, 0, snapshot.width, snapshot.height);
-                var snapshotDataUrl = null;
-                var blob = null;
-                try { snapshotDataUrl = snapshot.toDataURL('image/jpeg', 0.85); } catch (err) {}
-                snapshot.toBlob(function(b) { blob = b; }, 'image/jpeg', 0.85);
-                paFacialProcessarCanvas(canvas, snapshotDataUrl, blob);
-            };
-            img.onerror = function() { paFacialSetStatus('Não foi possível ler a imagem.', '#dc2626'); };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-        document.getElementById('pf-facial-file').value = '';
-    }
-
-    function paFacialRemover() {
-        if (!paUser || !paUser._docId) { alert('Sessão do aluno não identificada.'); return; }
-        if (!confirm('Remover o cadastro do reconhecimento facial?')) return;
-        dbFirestore.collection('candidatos').doc(paUser._docId).update({
-            faceDescriptor: firebase.firestore.FieldValue.delete(),
-            faceCadastrada: firebase.firestore.FieldValue.delete(),
-            faceCadastradaEm: firebase.firestore.FieldValue.delete()
-        }).then(function() {
-            if (paUser.faceDescriptor) delete paUser.faceDescriptor;
-            if (paUser.faceCadastrada) delete paUser.faceCadastrada;
-            if (paUser.faceCadastradaEm) delete paUser.faceCadastradaEm;
-            try { localStorage.removeItem('facial_snapshot_' + paUser.cpf); } catch (e) {}
-            paFacialRenderizarEstado();
-            paFacialSetStatus('Cadastro de reconhecimento facial removido.', '#64748b');
         }).catch(function(e) {
-            alert('Erro ao remover: ' + e.message);
+            if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> Erro al buscar la aula: ' + e.message + '</span>';
+        });
+    }
+
+    function paLoadInicioAulas() {
+        var cont = document.getElementById('pf-apontamento-inicio-list');
+        if (!cont || !paUser) return;
+        dbFirestore.collection('inicioAulas').where('cpf', '==', paUser.cpf).orderBy('criadoEm', 'desc').limit(50).get().then(function(snap) {
+            if (snap.empty) { cont.innerHTML = ''; return; }
+            var html = '<div style="font-size:13px;font-weight:700;color:#16a34a;margin-bottom:8px"><i class="fa-solid fa-play" style="margin-right:4px"></i> Mis Inicios de Aula</div>';
+            snap.forEach(function(doc) {
+                var d = doc.data();
+                var dataFmt = d.dataAula ? new Date(d.dataAula + 'T00:00:00').toLocaleDateString('pt-BR') : '---';
+                var horaFmt = d.horaInicio ? new Date(d.horaInicio).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '---';
+                html += '<div class="pf-noticia-card" style="border-left:3px solid #16a34a;padding:12px 16px;margin-bottom:8px">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">' +
+                    '<div style="flex:1;min-width:180px">' +
+                    '<div style="font-size:14px;font-weight:700;color:#16a34a;margin-bottom:4px"><i class="fa-solid fa-coins" style="color:#16a34a;margin-right:6px"></i>' + (d.disciplina || '---') + ' <span style="font-size:9px;font-weight:700;color:#fff;background:#16a34a;padding:2px 8px;border-radius:20px;vertical-align:middle">Inicio</span></div>' +
+                    '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-chalkboard" style="margin-right:4px"></i>' + (d.aula || '---') + '</div>' +
+                    '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>' + dataFmt + '</div>' +
+                    '<div style="font-size:11px;color:#94a3b8;margin-top:3px"><i class="fa-solid fa-clock" style="margin-right:4px"></i>Inicio a las ' + horaFmt + '</div>' +
+                    '</div>' +
+                    '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;background:#16a34a15;color:#16a34a;border:1px solid #16a34a30;white-space:nowrap"><i class="fa-solid fa-check-circle"></i> Iniciado</span>' +
+                    '</div>' +
+                    '</div>';
+            });
+            cont.innerHTML = html;
+        }).catch(function(e) {
+            cont.innerHTML = '';
         });
     }
 
