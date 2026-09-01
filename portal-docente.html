@@ -1841,6 +1841,7 @@
                     }).catch(function() { carregarTotaisFO(fila); });
                 };
                 carregarTotaisFO(cpfs.slice());
+                apontamentoSincronizarInicio(document.getElementById('apt-aula').value);
             };
 
             dbFirestore.collection('candidatos').where('turma', '==', turma).get().then(snap => {
@@ -1855,6 +1856,47 @@
                 });
             }).catch(err => {
                 console.error('Erro ao carregar alunos:', err);
+            });
+        }
+
+        // Sincroniza o registro de inicio de aula (QR escaneado pelo aluno - colecao inicioAulas)
+        // com a lista de presenca do apontamento, por turma e aula selecionadas.
+        function apontamentoSincronizarInicio(aulaId) {
+            if (!aulaId) return;
+            dbFirestore.collection('inicioAulas').where('aulaId', '==', String(aulaId)).get().then(function(snap) {
+                const mapa = {};
+                snap.forEach(function(doc) {
+                    const d = doc.data();
+                    if (!d.cpf) return;
+                    const existente = mapa[d.cpf];
+                    if (!existente || (d.horaInicio || '') > (existente.horaInicio || '')) {
+                        mapa[d.cpf] = {
+                            horaInicio: d.horaInicio || d.criadoEm || '',
+                            dataAula: d.dataAula || '',
+                            disciplina: d.disciplina || '',
+                            aula: d.aula || ''
+                        };
+                    }
+                });
+                Object.keys(aptPresencas).forEach(function(cpf) {
+                    const aluno = aptPresencas[cpf];
+                    if (!aluno) return;
+                    const reg = mapa[cpf];
+                    if (reg && reg.horaInicio) {
+                        aluno.inicioPresente = true;
+                        aluno.inicioHora = reg.horaInicio;
+                        if (aluno.status !== 'Justificada') aluno.status = 'Presente';
+                    } else {
+                        aluno.inicioPresente = false;
+                        aluno.inicioHora = '';
+                        if (!aluno.status) aluno.status = 'Falta';
+                    }
+                    aluno.inicioDisciplina = reg ? (reg.disciplina || '') : '';
+                    aluno.inicioAula = reg ? (reg.aula || '') : '';
+                });
+                apontamentoRenderLista();
+            }).catch(function(e) {
+                console.error('Erro ao sincronizar inicios:', e);
             });
         }
 
@@ -1978,19 +2020,32 @@
             const presentes = todos.filter(p => p.status === 'Presente').length;
             const faltas = todos.filter(p => p.status === 'Falta').length;
             const justificadas = todos.filter(p => p.status === 'Justificada').length;
-            count.textContent = presentes + ' presente(s) / ' + faltas + ' falta(s) / ' + justificadas + ' justificada(s) / ' + todos.length + ' total';
+            const iniciaram = todos.filter(p => p.inicioPresente).length;
+            count.textContent = iniciaram + ' iniciaram / ' + presentes + ' presente(s) / ' + faltas + ' falta(s) / ' + justificadas + ' justificada(s) / ' + todos.length + ' total';
             lista.innerHTML = '<div class="data-table" style="width:100%"><table style="width:100%;border-collapse:collapse"><thead><tr>' +
                 '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Matricula</th>' +
                 '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Nome</th>' +
+                '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px;width:150px">Registro de Inicio</th>' +
+                '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Hora Inicio</th>' +
                 '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px;width:130px">FO</th>' +
                 '<th style="text-align:center;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px;width:260px">Status</th>' +
                 '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #333;color:#aaa;font-size:12px">Observacao</th>' +
                 '</tr></thead><tbody>' +
                 todos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map(p => {
                     const statusClass = p.status === 'Presente' ? 'green' : p.status === 'Falta' ? 'red' : p.status === 'Justificada' ? 'orange' : 'gray';
+                    const inicioPresente = p.inicioPresente;
+                    const inicioHora = p.inicioHora;
+                    const horaFmt = inicioHora ? new Date(inicioHora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '—';
                     return '<tr style="border-bottom:1px solid #222">' +
                         '<td style="padding:8px;font-size:13px;color:#ccc;font-weight:600">' + (p.matricula || '-') + '</td>' +
                         '<td style="padding:8px;font-size:13px;color:#ccc">' + (p.nome || '-') + '</td>' +
+                        '<td style="padding:8px;text-align:center">' +
+                            '<div style="display:flex;gap:4px;justify-content:center">' +
+                                '<button onclick="apontamentoSetInicio(\'' + p.cpf + '\',true)" title="Marcar inicio Presente" style="padding:4px 8px;border-radius:6px;border:1px solid ' + (inicioPresente ? '#4caf50' : '#333') + ';background:' + (inicioPresente ? 'rgba(76,175,80,0.25)' : 'transparent') + ';color:' + (inicioPresente ? '#4caf50' : '#777') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-check"></i></button>' +
+                                '<button onclick="apontamentoSetInicio(\'' + p.cpf + '\',false,false)" title="Marcar Falta no inicio" style="padding:4px 8px;border-radius:6px;border:1px solid ' + (!inicioPresente && p.inicioJustificado !== true ? '#f44336' : '#333') + ';background:' + (!inicioPresente && p.inicioJustificado !== true ? 'rgba(244,67,54,0.25)' : 'transparent') + ';color:' + (!inicioPresente && p.inicioJustificado !== true ? '#f44336' : '#777') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-xmark"></i></button>' +
+                                '<button onclick="apontamentoSetInicio(\'' + p.cpf + '\',false,true)" title="Marcar Justificado no inicio" style="padding:4px 8px;border-radius:6px;border:1px solid ' + (p.inicioJustificado ? '#ff9800' : '#333') + ';background:' + (p.inicioJustificado ? 'rgba(255,152,0,0.25)' : 'transparent') + ';color:' + (p.inicioJustificado ? '#ff9800' : '#777') + ';cursor:pointer;font-size:12px;font-weight:600"><i class="fa-solid fa-circle-info"></i></button>' +
+                            '</div></td>' +
+                        '<td style="padding:8px;text-align:center;font-size:13px;color:' + (inicioPresente ? '#4caf50' : (p.inicioJustificado ? '#ff9800' : '#f87171')) + ';font-weight:600">' + (inicioPresente ? horaFmt : (p.inicioJustificado ? 'Just' : '—')) + '</td>' +
                         '<td style="padding:8px;text-align:center">' + apontamentoFOBadge(p) + '</td>' +
                         '<td style="padding:8px;text-align:center">' +
                             '<div style="display:flex;gap:4px;justify-content:center">' +
@@ -2023,6 +2078,33 @@
 
         function apontamentoSetObs(cpf, obs) {
             if (aptPresencas[cpf]) aptPresencas[cpf].obs = obs;
+        }
+
+        // Marca o registro de inicio de aula do aluno (Presente/Falta/Justificado)
+        function apontamentoSetInicio(cpf, presente, justificado) {
+            const aluno = aptPresencas[cpf];
+            if (!aluno) return;
+            if (presente) {
+                // Presente manualmente: registra hora atual caso nao tenha
+                aluno.inicioPresente = true;
+                aluno.inicioJustificado = false;
+                aluno.inicioHora = aluno.inicioHora || new Date().toISOString();
+                if (aluno.status === 'Falta' || aluno.status === 'Justificada') aluno.status = 'Presente';
+            } else if (justificado) {
+                const novo = !aluno.inicioJustificado;
+                aluno.inicioJustificado = novo;
+                if (novo) { aluno.inicioPresente = false; if (aluno.status === 'Falta') aluno.status = 'Justificada'; }
+                else if (!aluno.inicioPresente) aluno.status = 'Falta';
+            } else {
+                // Falta no inicio
+                const novoFalta = !(!aluno.inicioPresente && !aluno.inicioJustificado);
+                aluno.inicioPresente = false;
+                aluno.inicioJustificado = false;
+                aluno.inicioHora = '';
+                if (novoFalta && (aluno.status === 'Presente')) aluno.status = 'Falta';
+                else if (!novoFalta && aluno.status === 'Falta') aluno.status = 'Falta';
+            }
+            apontamentoRenderLista();
         }
 
         // ===== FO+ / FO- NO APONTAMENTO =====
@@ -2194,6 +2276,9 @@
                         dataAula: dataAula,
                         status: aluno.status || '',
                         obs: aluno.obs || '',
+                        inicioPresente: !!aluno.inicioPresente,
+                        inicioJustificado: !!aluno.inicioJustificado,
+                        inicioHora: aluno.inicioHora || '',
                         criadoEm: new Date().toISOString(),
                         criadoPor: criadoPor,
                         apontamentoId: aptId

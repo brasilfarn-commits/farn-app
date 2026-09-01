@@ -3668,7 +3668,7 @@
             var aula = aulaDoc.data() || {};
             var projeto = aula.projeto || '';
             var turma = aula.turma || '';
-            if (String(paUser.proyecto || '').trim() !== String(projeto).trim() || String(paUser.turma || '').trim() !== String(turma).trim()) {
+            if (String(paUser.projeto || '').trim() !== String(projeto).trim() || String(paUser.turma || '').trim() !== String(turma).trim()) {
                 if (msgEl) msgEl.innerHTML = '<span style="color:#dc2626"><i class="fa-solid fa-xmark"></i> Este QR de inicio pertenece a otra turma/proyecto. No puedes registrarte.</span>';
                 return;
             }
