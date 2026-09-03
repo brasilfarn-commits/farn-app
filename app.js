@@ -8816,22 +8816,38 @@ function cavLoadList() {
         }
         const avs = [];
         snap.forEach(doc => avs.push({ id: doc.id, d: doc.data() }));
-        return dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).get().then(rSnap => {
-            return { avs: avs, respostas: rSnap };
+        return Promise.all([
+            dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).get().catch(() => null),
+            dbFirestore.collection('avaliacoesAlunos').get().catch(() => null)
+        ]).then(([rSnap, aSnap]) => {
+            return { avs: avs, respostas: rSnap, avaliacoesAlunos: aSnap };
         });
-    }).then(({ avs, respostas }) => {
+    }).then(({ avs, respostas, avaliacoesAlunos }) => {
         container.innerHTML = '';
         const contagem = {};
-        respostas.forEach(rDoc => {
-            const avId = (rDoc.data() || {}).avaliacaoId;
-            if (!avId) return;
-            contagem[avId] = (contagem[avId] || 0) + 1;
-        });
+        const rotulos = {};
+        if (respostas) {
+            respostas.forEach(rDoc => {
+                const avId = (rDoc.data() || {}).avaliacaoId;
+                if (!avId) return;
+                contagem[avId] = (contagem[avId] || 0) + 1;
+            });
+        }
+        if (avaliacoesAlunos) {
+            avaliacoesAlunos.forEach(fDoc => {
+                const f = fDoc.data() || {};
+                const man = f.avPraticaManual || {};
+                Object.keys(man).forEach(avId => {
+                    contagem[avId] = (contagem[avId] || 0) + 1;
+                    rotulos[avId] = 'Prática (docente)';
+                });
+            });
+        }
         avs.forEach(({ id, d }) => {
             const qtd = (d.questoes || []).length;
             const respondidas = contagem[id] || 0;
             let cor, rotuloEstado;
-            if (respondidas > 0) { cor = '#16a34a'; rotuloEstado = 'Respondida :: ' + respondidas + ' aluno(s)'; }
+            if (respondidas > 0) { cor = '#16a34a'; rotuloEstado = 'Respondida :: ' + respondidas + (rotulos[id] ? ' (' + rotulos[id] + ')' : ' aluno(s)'); }
             else if (d.enviada) { cor = '#f59e0b'; rotuloEstado = 'Aguardando respostas'; }
             else { cor = '#2563eb'; rotuloEstado = 'Ainda não enviada'; }
             const card = document.createElement('div');
@@ -9498,8 +9514,9 @@ function cavListarAvaliados(avId) {
 
     Promise.all([
         dbFirestore.collection(FB_AVALIACOES).doc(avId).get().catch(() => null),
-        dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).get().catch(() => null)
-    ]).then(([avDoc, snap]) => {
+        dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).get().catch(() => null),
+        dbFirestore.collection('avaliacoesAlunos').get().catch(() => null)
+    ]).then(([avDoc, snap, avAlunos]) => {
         const avNome = (avDoc && avDoc.exists) ? (avDoc.data().nome || 'Avaliação') : 'Avaliação';
         nomeEl.textContent = avNome;
         if (!snap) {
@@ -9507,6 +9524,7 @@ function cavListarAvaliados(avId) {
             return;
         }
         const avaliados = [];
+        // Respostas enviadas pelo próprio aluno (AV teórica)
         snap.forEach(doc => {
             const r = doc.data() || {};
             if (String(r.avaliacaoId || '') !== avId) return;
@@ -9517,19 +9535,40 @@ function cavListarAvaliados(avId) {
                 pontos: (r.pontos != null ? Number(r.pontos).toFixed(1).replace('.', ',') : '—'),
                 certas: r.respostasCertas,
                 total: r.totalQuestoes,
+                tipo: 'Aluno',
                 enviadoEm: r.enviadoEm
             });
         });
+        // AV Prática respondida e salva pelo docente (coleção avaliacoesAlunos)
+        if (avAlunos) {
+            avAlunos.forEach(doc => {
+                const f = doc.data() || {};
+                const man = (f.avPraticaManual || {})[avId];
+                if (!man) return;
+                const notaLinha = (man.nota != null ? Number(man.nota).toFixed(1).replace('.', ',') : '—');
+                avaliados.push({
+                    cpf: f.cpf || '',
+                    nome: f.nome || 'Sem nome',
+                    matricula: f.matricula || '—',
+                    pontos: notaLinha,
+                    certas: null,
+                    total: man.totalQuestoes,
+                    tipo: 'Prática (docente)',
+                    enviadoEm: man.respondidoEm
+                });
+            });
+        }
         if (avaliados.length === 0) {
             content.innerHTML = '<div style="text-align:center;color:#64748b;padding:26px"><i class="fa-solid fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:10px"></i>Nenhum aluno concluiu esta avaliação ainda.</div>';
             return;
         }
-        content.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:10px">' + avaliados.length + ' aluno(s) concluíram a avaliação.</div>' +
+        content.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:10px">' + avaliados.length + ' aluno(s) avaliado(s).</div>' +
             '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' +
             '<thead><tr style="background:#f1f5f9;color:#475569;text-align:left">' +
                 '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0">Aluno</th>' +
                 '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0">Matrícula</th>' +
-                '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Pontos</th>' +
+                '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Nota</th>' +
+                '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Origem</th>' +
                 '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Ações</th>' +
             '</tr></thead><tbody>' +
             avaliados.map(function(a) {
@@ -9538,6 +9577,7 @@ function cavListarAvaliados(avId) {
                     '<td style="padding:9px 10px;font-weight:600;color:#0f172a">' + escHTML(a.nome) + '</td>' +
                     '<td style="padding:9px 10px;color:#64748b">' + escHTML(a.matricula) + '</td>' +
                     '<td style="padding:9px 10px;text-align:center;font-weight:700;color:#d97706">' + escHTML(a.pontos) + '</td>' +
+                    '<td style="padding:9px 10px;text-align:center">' + escHTML(a.tipo || '—') + '</td>' +
                     '<td style="padding:9px 10px;text-align:center">' +
                         '<button class="btn-outline btn-sm" onclick="cavVerRespostas(\'' + avId + '\',\'' + a.cpf.replace(/'/g, '') + '\')"><i class="fa-solid fa-eye"></i> Ver respostas e pontos</button>' +
                     '</td>' +
@@ -9562,62 +9602,94 @@ function cavVerRespostas(avId, cpf) {
     overlay.classList.remove('hidden');
 
     Promise.all([
-        dbFirestore.collection(FB_AVALIACOES).doc(avId).get(),
-        dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).doc(cpf + '_' + avId).get()
+        dbFirestore.collection(FB_AVALIACOES).doc(avId).get().catch(() => null),
+        dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).doc(cpf + '_' + avId).get().catch(() => null),
+        dbFirestore.collection('avaliacoesAlunos').doc(cpf).get().catch(() => null)
     ]).then(function(results) {
         const avDoc = results[0];
         const respDoc = results[1];
-        if (!avDoc.exists) { content.innerHTML = '<p style="color:#dc2626">Avaliação não encontrada.</p>'; return; }
+        const fichaDoc = results[2];
+        if (!avDoc || !avDoc.exists) { content.innerHTML = '<p style="color:#dc2626">Avaliação não encontrada.</p>'; return; }
         const d = avDoc.data() || {};
         const questoes = d.questoes || [];
-        if (!respDoc.exists) {
-            content.innerHTML = '<p style="color:#64748b">Este aluno não possui resposta registrada para esta avaliação.</p>';
+        // Preferir resposta enviada pelo aluno (AV teórica); caso contrário usar a respondida pelo docente (AV prática)
+        if (respDoc && respDoc.exists) {
+            const r = respDoc.data() || {};
+            const respostas = r.respostas || {};
+            const marcadas = r.respostasMarcadas != null ? r.respostasMarcadas : Object.keys(respostas).length;
+            const certas = r.respostasCertas != null ? r.respostasCertas : '—';
+            const pontos = r.pontos != null ? Number(r.pontos).toFixed(1).replace('.', ',') : '—';
+            const total = r.totalQuestoes != null ? r.totalQuestoes : questoes.length;
+
+            const cards =
+                '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">' +
+                '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#64748b;font-weight:700">ALUNO</div><div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:4px">' + escHTML(r.nome || '—') + '</div></div>' +
+                '<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#4f46e5;font-weight:700">RESPONDIDAS</div><div style="font-size:20px;font-weight:800;color:#4f46e5;margin-top:4px">' + (marcadas || 0) + '/' + (total || 0) + '</div></div>' +
+                '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#16a34a;font-weight:700">CERTAS</div><div style="font-size:20px;font-weight:800;color:#16a34a;margin-top:4px">' + (certas == null ? '—' : certas) + '</div></div>' +
+                '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#d97706;font-weight:700">PONTOS</div><div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px">' + pontos + '</div></div>' +
+                '</div>';
+
+            let qHtml = '';
+            questoes.forEach(function(q, i) {
+                const escolhida = respostas[i] || '';
+                const correta = q.correta || '';
+                const opcoes = ['a', 'b', 'c', 'd'];
+                const opHtml = opcoes.map(function(letra) {
+                    const texto = q.opcoes && q.opcoes[letra];
+                    const chosen = (escolhida === letra);
+                    const chosenIcon = chosen ? (letra === correta ? '✅' : '❌') : (letra === correta ? '✔️' : '');
+                    const letraColor = chosen ? (letra === correta ? '#16a34a' : '#dc2626') : (letra === correta ? '#16a34a' : '#1e293b');
+                    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:5px;background:' + (chosen ? '#f8fafc' : '#fff') + '">' +
+                        '<span style="width:20px;height:20px;border-radius:5px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#334155;flex-shrink:0">' + letra.toUpperCase() + '</span>' +
+                        '<span style="font-size:12.5px;color:' + letraColor + ';flex:1">' + escHTML(texto || '') + (letra === correta && !chosen ? ' <span style="color:#16a34a;font-size:10px;font-weight:700">(correta)</span>' : '') + '</span>' +
+                        (chosen ? '<span style="font-size:10px;font-weight:700;color:' + (letra === correta ? '#16a34a' : '#dc2626') + '">RESPOSTA</span>' : '') +
+                        (chosenIcon ? '<span style="font-size:13px">' + chosenIcon + '</span>' : '') +
+                        '</div>';
+                }).join('');
+                const status = !escolhida
+                    ? '<span style="color:#94a3b8;font-size:10px;font-weight:700">Não respondida</span>'
+                    : (escolhida === correta
+                        ? '<span style="color:#16a34a;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-check"></i> Correta</span>'
+                        : '<span style="color:#dc2626;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-xmark"></i> Errada</span>');
+                qHtml += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:10px">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12.5px;font-weight:700;color:#0f172a">' + (i + 1) + '. ' + escHTML(q.enunciado || '') + '</span>' + status + '</div>' +
+                    opHtml +
+                    '</div>';
+            });
+
+            content.innerHTML = cards + qHtml;
             return;
         }
-        const r = respDoc.data() || {};
-        const respostas = r.respostas || {};
-        const marcadas = r.respostasMarcadas != null ? r.respostasMarcadas : Object.keys(respostas).length;
-        const certas = r.respostasCertas != null ? r.respostasCertas : '—';
-        const pontos = r.pontos != null ? Number(r.pontos).toFixed(1).replace('.', ',') : '—';
-        const total = r.totalQuestoes != null ? r.totalQuestoes : questoes.length;
 
-        const cards =
-            '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#64748b;font-weight:700">ALUNO</div><div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:4px">' + escHTML(r.nome || '—') + '</div></div>' +
-            '<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#4f46e5;font-weight:700">RESPONDIDAS</div><div style="font-size:20px;font-weight:800;color:#4f46e5;margin-top:4px">' + (marcadas || 0) + '/' + (total || 0) + '</div></div>' +
-            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#16a34a;font-weight:700">CERTAS</div><div style="font-size:20px;font-weight:800;color:#16a34a;margin-top:4px">' + (certas == null ? '—' : certas) + '</div></div>' +
-            '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#d97706;font-weight:700">PONTOS</div><div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px">' + pontos + '</div></div>' +
-            '</div>';
-
-        let qHtml = '';
-        questoes.forEach(function(q, i) {
-            const escolhida = respostas[i] || '';
-            const correta = q.correta || '';
-            const opcoes = ['a', 'b', 'c', 'd'];
-            const opHtml = opcoes.map(function(letra) {
-                const texto = q.opcoes && q.opcoes[letra];
-                const chosen = (escolhida === letra);
-                const chosenIcon = chosen ? (letra === correta ? '✅' : '❌') : (letra === correta ? '✔️' : '');
-                const letraColor = chosen ? (letra === correta ? '#16a34a' : '#dc2626') : (letra === correta ? '#16a34a' : '#1e293b');
-                return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:5px;background:' + (chosen ? '#f8fafc' : '#fff') + '">' +
-                    '<span style="width:20px;height:20px;border-radius:5px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#334155;flex-shrink:0">' + letra.toUpperCase() + '</span>' +
-                    '<span style="font-size:12.5px;color:' + letraColor + ';flex:1">' + escHTML(texto || '') + (letra === correta && !chosen ? ' <span style="color:#16a34a;font-size:10px;font-weight:700">(correta)</span>' : '') + '</span>' +
-                    (chosen ? '<span style="font-size:10px;font-weight:700;color:' + (letra === correta ? '#16a34a' : '#dc2626') + '">' + (letra === correta ? 'SUA RESPOSTA' : 'SUA RESPOSTA') + '</span>' : '') +
-                    (chosenIcon ? '<span style="font-size:13px">' + chosenIcon + '</span>' : '') +
-                    '</div>';
-            }).join('');
-            const status = !escolhida
-                ? '<span style="color:#94a3b8;font-size:10px;font-weight:700">Não respondida</span>'
-                : (escolhida === correta
-                    ? '<span style="color:#16a34a;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-check"></i> Correta</span>'
-                    : '<span style="color:#dc2626;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-xmark"></i> Errada</span>');
-            qHtml += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:10px">' +
-                '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12.5px;font-weight:700;color:#0f172a">' + (i + 1) + '. ' + escHTML(q.enunciado || '') + '</span>' + status + '</div>' +
-                opHtml +
+        // AV Prática respondida pelo docente (coleção avaliacoesAlunos)
+        const man = (fichaDoc && fichaDoc.exists && (fichaDoc.data() || {}).avPraticaManual) ? (fichaDoc.data().avPraticaManual[avId]) : null;
+        if (man) {
+            const f = fichaDoc.data() || {};
+            const respostas = man.respostas || {};
+            const total = man.totalQuestoes != null ? man.totalQuestoes : questoes.length;
+            const nota = man.nota != null ? Number(man.nota).toFixed(1).replace('.', ',') : '—';
+            const cards =
+                '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">' +
+                '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#64748b;font-weight:700">ALUNO</div><div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:4px">' + escHTML(f.nome || '—') + '</div></div>' +
+                '<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#4f46e5;font-weight:700">AVALIADAS</div><div style="font-size:20px;font-weight:800;color:#4f46e5;margin-top:4px">' + Object.keys(respostas).length + '/' + (total || 0) + '</div></div>' +
+                '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#d97706;font-weight:700">NOTA</div><div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px">' + nota + '</div></div>' +
                 '</div>';
-        });
+            let qHtml = '';
+            questoes.forEach(function(q, i) {
+                const v = respostas[i] || '';
+                const cfg = v === 'certa'
+                    ? { cor: '#16a34a', rotulo: 'CERTA', icon: 'fa-circle-check' }
+                    : (v === 'parcial' ? { cor: '#f59e0b', rotulo: 'PARCIAL', icon: 'fa-circle-half-stroke' } : { cor: '#dc2626', rotulo: 'NÃO REALIZOU', icon: 'fa-circle-xmark' });
+                const status = v ? '<span style="color:' + cfg.cor + ';font-size:10px;font-weight:700"><i class="fa-solid ' + cfg.icon + '"></i> ' + cfg.rotulo + '</span>' : '<span style="color:#94a3b8;font-size:10px;font-weight:700">Não avaliada</span>';
+                qHtml += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:10px">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12.5px;font-weight:700;color:#0f172a">' + (i + 1) + '. ' + escHTML(q.enunciado || '') + '</span>' + status + '</div>' +
+                    '</div>';
+            });
+            content.innerHTML = cards + qHtml;
+            return;
+        }
 
-        content.innerHTML = cards + qHtml;
+        content.innerHTML = '<p style="color:#64748b">Este aluno não possui resposta registrada para esta avaliação.</p>';
     }).catch(function(e) {
         console.error('Erro ao carregar respostas:', e);
         content.innerHTML = '<p style="color:#dc2626">Erro ao carregar as respostas.</p>';
