@@ -8814,17 +8814,31 @@ function cavLoadList() {
                 '<button class="btn-primary btn-sm" onclick="cavNovaAvaliacao()"><i class="fa-solid fa-plus"></i> Criar primeira avaliação</button></div>';
             return;
         }
+        const avs = [];
+        snap.forEach(doc => avs.push({ id: doc.id, d: doc.data() }));
+        return dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).get().then(rSnap => {
+            return { avs: avs, respostas: rSnap };
+        });
+    }).then(({ avs, respostas }) => {
         container.innerHTML = '';
-        snap.forEach(doc => {
-            const d = doc.data();
+        const contagem = {};
+        respostas.forEach(rDoc => {
+            const avId = (rDoc.data() || {}).avaliacaoId;
+            if (!avId) return;
+            contagem[avId] = (contagem[avId] || 0) + 1;
+        });
+        avs.forEach(({ id, d }) => {
             const qtd = (d.questoes || []).length;
+            const respondidas = contagem[id] || 0;
+            let cor, rotuloEstado;
+            if (respondidas > 0) { cor = '#16a34a'; rotuloEstado = 'Respondida :: ' + respondidas + ' aluno(s)'; }
+            else if (d.enviada) { cor = '#f59e0b'; rotuloEstado = 'Aguardando respostas'; }
+            else { cor = '#2563eb'; rotuloEstado = 'Ainda não enviada'; }
             const card = document.createElement('div');
-            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(15,23,42,.04)';
-            const envBadge = d.enviada
-                ? ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.25)"><i class="fa-solid fa-paper-plane"></i> Enviada</span>'
-                : ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.25)">Não enviada</span>';
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(15,23,42,.04)';
+            const envBadge = ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.0);color:' + cor + ';border:1px solid ' + cor + '">' + rotuloEstado + '</span>';
             card.innerHTML =
-                '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-lines" style="color:#2563eb;font-size:18px"></i></div>' +
+                '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + cor + '"><i class="fa-solid fa-' + (respondidas > 0 ? 'check-double' : (d.enviada ? 'paper-plane' : 'file-lines')) + '" style="color:#fff;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:170px">' +
                     '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + envBadge + '</div>' +
                     '<div style="font-size:11.5px;color:#64748b;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">' +
@@ -8835,11 +8849,11 @@ function cavLoadList() {
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
-                    '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + doc.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
-                    '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + doc.id + '\')"><i class="fa-solid fa-print"></i></button>' +
-                    '<button class="btn-warning btn-sm" title="Enviar" onclick="cavAbrirEnvioPorId(\'' + doc.id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
-                    '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + doc.id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
-                    '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + doc.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + id + '\')"><i class="fa-solid fa-print"></i></button>' +
+                    '<button class="btn-warning btn-sm" title="Enviar" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
+                    '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
+                    '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
             container.appendChild(card);
         });
@@ -9482,14 +9496,20 @@ function cavListarAvaliados(avId) {
     content.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Carregando alunos avaliados... <i class="fa-solid fa-spinner fa-spin"></i></div>';
     overlay.classList.remove('hidden');
 
-    dbFirestore.collection(FB_AVALIACOES).doc(avId).get().then(avDoc => {
-        const avNome = avDoc.exists ? (avDoc.data().nome || 'Avaliação') : 'Avaliação';
+    Promise.all([
+        dbFirestore.collection(FB_AVALIACOES).doc(avId).get().catch(() => null),
+        dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).get().catch(() => null)
+    ]).then(([avDoc, snap]) => {
+        const avNome = (avDoc && avDoc.exists) ? (avDoc.data().nome || 'Avaliação') : 'Avaliação';
         nomeEl.textContent = avNome;
-        return dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).where('avaliacaoId', '==', avId).get();
-    }).then(snap => {
+        if (!snap) {
+            content.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px">Erro ao carregar respostas. Tente novamente.</div>';
+            return;
+        }
         const avaliados = [];
         snap.forEach(doc => {
             const r = doc.data() || {};
+            if (String(r.avaliacaoId || '') !== avId) return;
             avaliados.push({
                 cpf: r.cpf || '',
                 nome: r.nome || 'Sem nome',
@@ -9526,7 +9546,7 @@ function cavListarAvaliados(avId) {
             '</tbody></table>';
     }).catch(function(e) {
         console.error('Erro ao listar avaliados:', e);
-        content.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px">Erro ao carregar. Verifique se há índices necessários no Firestore ou tente novamente.</div>';
+        content.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px">Erro ao carregar. Tente novamente.</div>';
     });
 }
 
