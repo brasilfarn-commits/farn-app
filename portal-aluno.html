@@ -1043,7 +1043,7 @@
                                 <div id="pf-rav-res-pontos" style="font-size:22px;font-weight:800;color:#d97706;margin-top:4px">0,0</div>
                             </div>
                         </div>
-                        <p style="font-size:11px;color:#94a3b8;margin-bottom:18px;line-height:1.6">Cada questão vale 0,5 ponto. Questões não marcadas descontam 0,5 ponto.</p>
+                        <p id="pf-rav-res-peso" style="font-size:11px;color:#94a3b8;margin-bottom:18px;line-height:1.6">Cada questão vale 0,5 ponto. Questões não marcadas descontam 0,5 ponto.</p>
                         <button onclick="paRavFecharResultado()" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:12px 0;width:100%;font-size:13px;font-weight:700;cursor:pointer">Fechar</button>
                     </div>
                 </div>
@@ -5008,9 +5008,13 @@
             }
         }
         var naoMarcadas = total - marcadas;
-        var pesoQuestao = (total === 10) ? 1.0 : 0.5;
+        var pesoQuestao = (total === 10) ? 1.0 : (total === 20 ? 0.5 : (total > 0 ? 10 / total : 0));
         var pontos = certas * pesoQuestao - naoMarcadas * pesoQuestao;
         pontos = Math.round(pontos * 100) / 100;
+
+        var textPeso = (total === 10) ? 'Cada questão vale 1,0 ponto. Questões não marcadas descontam 1,0 ponto.' : (total === 20 ? 'Cada questão vale 0,5 ponto. Questões não marcadas descontam 0,5 ponto.' : 'Cada questão vale 0,5 ponto (escala até 10). Questões não marcadas descontam proporcionalmente.');
+        var resPesoEl = document.getElementById('pf-rav-res-peso');
+        if (resPesoEl) resPesoEl.textContent = textPeso;
 
         document.getElementById('pf-rav-res-titulo').textContent = porTempo ? 'Avaliação Finalizada' : 'Respostas Enviadas';
         document.getElementById('pf-rav-res-sub').textContent = porTempo ? 'O tempo de 30 minutos chegou ao fim.' : 'Suas respostas foram registradas.';

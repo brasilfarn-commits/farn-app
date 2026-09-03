@@ -484,7 +484,7 @@
                     if (!aulaId) return;
                     if (avAvaliacao.notasTeoricas[aulaId] != null) return; // mantem nota manual ja existente
                     var avDq = avD.questoes || [];
-                    var peso = avDq.length === 10 ? 1.0 : 0.5;
+                    var peso = avDq.length === 10 ? 1.0 : (avDq.length === 20 ? 0.5 : (avDq.length > 0 ? 10 / avDq.length : 0));
                     var avId = doc.id;
                     promessas.push(
                         db.collection('avaliacoesRespostas').doc(cpf + '_' + avId).get().then(function(rDoc) {

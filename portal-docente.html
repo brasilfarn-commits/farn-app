@@ -3582,7 +3582,7 @@
             if (!pdAvpAvaliacao || !pdAvpAlunoCpf) return;
             var questoes = pdAvpAvaliacao.questoes || [];
             var total = questoes.length;
-            var peso = total === 10 ? 1.0 : 0.5;
+            var peso = total === 10 ? 1.0 : (total === 20 ? 0.5 : (total > 0 ? 10 / total : 0));
             var nota = 0;
             var marcadas = 0;
             questoes.forEach(function(q, i) {
