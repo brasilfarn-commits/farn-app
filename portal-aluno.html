@@ -3906,7 +3906,7 @@
             var cor = notaVal === null ? '#94a3b8' : paAvCor(notaVal);
             var txt = notaVal === null ? '—' : paAvNum(notaVal);
             var data = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
-            html += '<div class="pf-av-chip"><i class="fa-solid fa-book-open" style="color:' + (tipo === 'teorica' ? '#ca8a04' : '#ea580c') + '"></i><span class="nm">' + (a.nome || a.disciplina || '---') + '</span><span class="dt">' + data + '</span><span class="nota" style="color:' + cor + '">' + txt + '</span></div>';
+            html += '<div class="pf-av-chip"><i class="fa-solid fa-book-open" style="color:' + (tipo === 'teorica' ? '#ca8a04' : '#ea580c') + '"></i><span class="nm">' + (a.conteudo || a.nome || a.disciplina || '---') + '</span><span class="dt">' + data + '</span><span class="nota" style="color:' + cor + '">' + txt + '</span></div>';
         });
         html += '</div>';
         return html;
