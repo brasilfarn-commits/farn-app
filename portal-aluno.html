@@ -4819,6 +4819,32 @@
     var paRavRespostas = {};
     var paRavCorretas = {};
 
+    function paRavMontarCard(av, jaAvaliada) {
+        var d = av.data;
+        var isPratica = (d.tipo === 'pratica');
+        var cor = jaAvaliada ? '#16a34a' : '#2563eb';
+        var btn;
+        if (isPratica) {
+            btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+        } else if (jaAvaliada) {
+            btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+        } else {
+            btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
+        }
+        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (jaAvaliada ? 'Avaliada' : 'Não avaliada') + '</span>';
+        var card = document.createElement('div');
+        card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
+        card.innerHTML =
+            '<div style="width:42px;height:42px;background:' + cor + ';border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-lines" style="color:#fff;font-size:17px"></i></div>' +
+            '<div style="flex:1;min-width:160px">' +
+                '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
+                '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
+                (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
+            '</div>' +
+            btn;
+        return card;
+    }
+
     async function paLoadResponderAvaliacao() {
         var lista = document.getElementById('pf-rav-lista');
         if (!lista || !paUser) return;
@@ -4826,47 +4852,63 @@
         lista.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliações...</p></div>';
         try {
             var snap = await dbFirestore.collection('avaliacoes').orderBy('criadoEm', 'desc').get();
-            var avs = [];
+            var teoria = [];
+            var pratica = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
                 if (d.enviada === true && d.turma === myTurma) {
-                    avs.push({ id: doc.id, data: d });
+                    if (d.tipo === 'pratica') pratica.push({ id: doc.id, data: d });
+                    else teoria.push({ id: doc.id, data: d });
                 }
             });
-            if (avs.length === 0) {
+            if (teoria.length === 0 && pratica.length === 0) {
                 lista.innerHTML = '<div class="pf-em-construcao" style="padding:30px 20px"><i class="fa-solid fa-file-circle-question" style="font-size:42px;color:#cbd5e1;margin-bottom:10px"></i><h3 style="font-size:17px;color:#0f172a;margin-bottom:6px">Nenhuma avaliação disponível</h3><p style="font-size:13px;color:#64748b">Não há avaliações enviadas para a sua turma no momento.</p></div>';
                 return;
             }
-            lista.innerHTML = '';
             var cpfLimpo = (paUser.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '') || 'anonimo';
-            for (var i = 0; i < avs.length; i++) {
-                var av = avs[i];
-                var d = av.data;
-                var jaRespondeu = false;
-                try {
-                    var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + av.id).get();
-                    if (rDoc.exists) jaRespondeu = true;
-                } catch (e) { console.error('Falha ao verificar resposta de', av.id, e); }
-                var card = document.createElement('div');
-                card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
-                var isPratica = (d.tipo === 'pratica');
-                var btn;
-                if (isPratica) {
-                    btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
-                } else if (jaRespondeu) {
-                    btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
-                } else {
-                    btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
+            var fichaPraDoc = null;
+            try {
+                fichaPraDoc = await dbFirestore.collection('avaliacoesAlunos').doc(paUser.cpf || cpfLimpo).get();
+            } catch (e) { console.error('Falha ao verificar ficha de questoes praticas', e); }
+            var fichaPra = (fichaPraDoc && fichaPraDoc.exists) ? (fichaPraDoc.data() || {}) : null;
+            var manPra = (fichaPra && fichaPra.avPraticaManual) ? fichaPra.avPraticaManual : {};
+
+            lista.innerHTML = '';
+
+            function montarSecao(titulo, icone, cor, itens) {
+                var secao = '<div style="margin-bottom:6px">' +
+                    '<div style="display:flex;align-items:center;gap:8px;margin:14px 0 12px;padding-bottom:8px;border-bottom:2px solid ' + cor + '">' +
+                        '<i class="fa-solid ' + icone + '" style="color:' + cor + ';font-size:15px"></i>' +
+                        '<span style="font-size:14px;font-weight:800;color:' + cor + '">' + titulo + '</span>' +
+                        '<span style="background:rgba(15,23,42,.05);color:#475569;border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700">' + itens + '</span>' +
+                    '</div>';
+                if (itens === 0) {
+                    secao += '<p style="font-size:12.5px;color:#94a3b8;padding:4px 2px">Nenhuma avaliação nesta seção.</p>';
                 }
-                card.innerHTML =
-                    '<div style="width:42px;height:42px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-lines" style="color:#2563eb;font-size:17px"></i></div>' +
-                    '<div style="flex:1;min-width:160px">' +
-                        '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + '</div>' +
-                        '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
-                        (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
-                    '</div>' +
-                    btn;
-                lista.appendChild(card);
+                secao += '</div>';
+                return secao;
+            }
+
+            if (pratica.length > 0) {
+                lista.insertAdjacentHTML('beforeend', montarSecao('AV Prática', 'fa-flask', '#ea580c', pratica.length));
+                for (var j = 0; j < pratica.length; j++) {
+                    var avPr = pratica[j];
+                    var avaliaPr = false;
+                    if (manPra[avPr.id]) avaliaPr = true;
+                    lista.appendChild(paRavMontarCard(avPr, avaliaPr));
+                }
+            }
+            if (teoria.length > 0) {
+                lista.insertAdjacentHTML('beforeend', montarSecao('AV Teórica', 'fa-book-open', '#ca8a04', teoria.length));
+                for (var k = 0; k < teoria.length; k++) {
+                    var avTe = teoria[k];
+                    var avalTe = false;
+                    try {
+                        var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avTe.id).get();
+                        if (rDoc.exists) avalTe = true;
+                    } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
+                    lista.appendChild(paRavMontarCard(avTe, avalTe));
+                }
             }
         } catch (e) {
             lista.innerHTML = '<div class="pf-em-construcao"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
