@@ -1863,14 +1863,14 @@
         m.classList.add('show');
     }
 
-    function wfFecharBemVindo() {
+    function wfFecharBemVindo(marcou) {
         var m = document.getElementById('wf-bv-modal');
         if (m) { m.classList.remove('show'); m.querySelector('.wf-bv-eps').textContent = ''; m.querySelector('.wf-bv-baixar').style.display = 'flex'; m.querySelector('.wf-bv-aparelho').style.display = 'flex'; }
-        try { localStorage.setItem('wf_bv_visto', '1'); } catch (e) {}
+        if (marcou) { var ck = document.getElementById('wf-bv-naoshow'); if (ck && ck.checked) { try { localStorage.setItem('wf_bv_naoshow', '1'); } catch (e) {} } }
     }
 
     function wfAbrirBemVindoAuto() {
-        try { if (localStorage.getItem('wf_bv_visto')) return; } catch (e) {}
+        try { if (localStorage.getItem('wf_bv_naoshow')) return; } catch (e) {}
         setTimeout(function () {
             var m = document.getElementById('wf-bv-modal');
             if (m) m.classList.add('show');
@@ -4704,6 +4704,8 @@
         #wf-bv-modal .wf-bv-eps{font-size:12.5px;color:#475569;line-height:1.8;border-top:1px solid #eef2f7;padding-top:14px}
         #wf-bv-modal .wf-bv-eps b{color:#14532d}
         #wf-bv-modal .wf-bv-fechar{width:100%;border:none;background:none;color:#94a3b8;font-size:12.5px;padding:8px;cursor:pointer;margin-top:4px}
+        #wf-bv-modal .wf-bv-naoshow{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:#475569;cursor:pointer;padding:6px 0;margin-top:2px}
+        #wf-bv-modal .wf-bv-naoshow input{width:16px;height:16px;accent-color:#16a34a;margin:0;cursor:pointer}
     </style>
     <div id="wf-bv-modal">
         <div class="wf-bv-card">
@@ -4717,7 +4719,8 @@
             </div>
             <button class="wf-bv-baixar" onclick="wfDownloadAPK('WhatFarn.apk')"><i class="fa-solid fa-download"></i> Baixar APK do WhatFarn</button>
             <button class="wf-bv-aparelho" onclick="wfMostrarInstrucoes()"><i class="fa-solid fa-circle-question"></i> Instrucoes de instalacao</button>
-            <button class="wf-bv-fechar" onclick="wfFecharBemVindo()">Fechar</button>
+            <label class="wf-bv-naoshow"><input type="checkbox" id="wf-bv-naoshow"> Nao exibir novamente ao entrar</label>
+            <button class="wf-bv-fechar" onclick="wfFecharBemVindo(true)">Fechar</button>
         </div>
     </div>
     <!-- Botao voltar pagina anterior -->
