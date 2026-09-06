@@ -188,7 +188,7 @@
             box-sizing:border-box;
         }
 
-        /* ===== LATERAL DIREITA - CHAT + GALERIA ===== */
+        /* ===== LATERAL DIREITA - GALERIA ===== */
         .pf-right { background:#ffffff; border-left:1px solid #e2e8f0; display:flex; flex-direction:column; overflow:hidden; }
         .pf-right-tabs { display:flex; border-bottom:1px solid #e2e8f0; }
         .pf-right-tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:600; color:#94a3b8; cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; }
@@ -197,47 +197,12 @@
         .pf-right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#fff; }
         .pf-right-content { flex:1; overflow-y:auto; }
 
-        /* CHAT */
-        .pf-chat-header { padding:14px 16px; border-bottom:1px solid #e5e7eb; background:#fff; }
-        .pf-chat-header h4 { font-size:13px; font-weight:700; color:#16a34a; }
-        .pf-chat-header p { font-size:11px; color:#94a3b8; }
-        .pf-chat-select { width:100%; padding:8px 10px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; color:#1e293b; font-size:12px; margin-top:8px; }
-        .pf-chat-select option { background:#fff; }
-        .pf-chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; background:#fff; }
-        .pf-chat-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
-        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; color:#cbd5e1; }
 
-        .pf-chat-bubble { max-width:85%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; position:relative; }
-        .pf-chat-bubble.me { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
-        .pf-chat-bubble.other { background:#f1f5f9; color:#1e293b; border:1px solid #e2e8f0; align-self:flex-start; border-bottom-left-radius:4px; }
-        .pf-chat-sender { font-size:10px; font-weight:700; margin-bottom:3px; }
-        .pf-chat-time { font-size:10px; color:rgba(255,255,255,.7); margin-top:3px; text-align:right; }
-        .pf-chat-bubble.other .pf-chat-time { color:#94a3b8; }
-        .pf-chat-edited { font-size:9px; font-style:italic; opacity:.7; margin-top:2px; }
-        .pf-chat-actions { display:flex; gap:4px; margin-top:4px; opacity:0; transition:opacity .2s; }
-        .pf-chat-bubble:hover .pf-chat-actions { opacity:1; }
-        .pf-chat-action-btn { background:rgba(255,255,255,.2); border:none; color:inherit; width:24px; height:24px; border-radius:50%; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; transition:background .2s; }
-        .pf-chat-action-btn:hover { background:rgba(255,255,255,.35); }
-        .pf-chat-bubble.other .pf-chat-action-btn { background:#e2e8f0; color:#64748b; }
-        .pf-chat-bubble.other .pf-chat-action-btn:hover { background:#cbd5e1; }
-        .pf-chat-img { max-width:100%; border-radius:8px; margin-top:6px; cursor:pointer; }
-
-        .pf-chat-edit-bar { display:none; padding:8px 12px; background:#f0fdf4; border-top:1px solid #16a34a; font-size:12px; color:#16a34a; align-items:center; gap:8px; }
-        .pf-chat-edit-bar.active { display:flex; }
-        .pf-chat-edit-cancel { background:none; border:1px solid #16a34a; color:#16a34a; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; margin-left:auto; }
-        .pf-chat-input { display:flex; gap:8px; padding:12px; border-top:1px solid #e5e7eb; background:#fff; align-items:center; position:relative; }
-        .pf-chat-emoji-btn { background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer; padding:4px; border-radius:50%; transition:all .2s; }
-        .pf-chat-emoji-btn:hover { color:#16a34a; background:#f0fdf4; }
-        .pf-chat-emoji-panel { display:none; position:absolute; bottom:100%; left:0; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; box-shadow:0 -4px 20px rgba(0,0,0,.1); width:280px; max-height:200px; overflow-y:auto; z-index:100; }
-        .pf-chat-emoji-panel.active { display:block; }
-        .pf-chat-emoji-panel span { font-size:20px; cursor:pointer; padding:4px; display:inline-block; border-radius:6px; transition:background .2s; }
-        .pf-chat-emoji-panel span:hover { background:#f1f5f9; }
-        .pf-chat-input input { flex:1; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#1e293b; font-size:13px; }
-        .pf-chat-input input:focus { border-color:#16a34a; outline:none; background:#fff; }
-        .pf-chat-send { background:#16a34a; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
-        .pf-chat-send:hover { background:#15803d; }
 
         /* GALERIA - ALBUNS */
+        .pf-gallery-header { padding:14px 16px; border-bottom:1px solid #e5e7eb; background:#fff; }
+        .pf-gallery-header h4 { font-size:13px; font-weight:700; color:#16a34a; }
+        .pf-gallery-header p { font-size:11px; color:#94a3b8; }
         .pf-gallery-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
         .pf-gallery-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; transition:.2s; }
         .pf-gallery-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.1); }
@@ -344,9 +309,7 @@
                 <div class="pf-nav-item active" onclick="pfShowSection('noticias', this)">
                     <i class="fa-solid fa-newspaper"></i><span>Noticias</span>
                 </div>
-                <div class="pf-nav-item" onclick="pfShowSection('chat', this)">
-                    <i class="fa-solid fa-comments"></i><span>Chat do Projeto</span>
-                </div>
+
                 <div class="pf-nav-item" onclick="pfShowSection('galeria', this)">
                     <i class="fa-solid fa-images"></i><span>Galeria de Fotos</span>
                 </div>
@@ -389,7 +352,7 @@
                     </div>
                     <h3 style="color:#16a34a;font-size:18px;margin:0 0 12px">Bem-vindo ao Portal do Formado!</h3>
                     <p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 10px">Estamos aos poucos construindo o Portal. <strong style="color:#16a34a">Em breve teremos novas atualizacoes!</strong></p>
-                    <p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 10px">Em caso de duvidas voce ja pode entrar no <strong style="color:#2563eb">Chat</strong> e conversar com um de nossos atendentes.</p>
+
                     <p style="color:#16a34a;font-size:15px;font-weight:700;margin:12px 0 0;line-height:1.6">
                         <i class="fa-solid fa-heart" style="margin-right:4px"></i> Esse e seu espaco.<br>O espaco que lhe representa!
                     </p>
@@ -427,7 +390,7 @@
                     <i class="fa-solid fa-mobile-screen-button"></i>
                     <h2>Baixar Aplicativo</h2>
                 </div>
-                <p style="color:#64748b;font-size:14px;margin-bottom:24px;text-align:center">Baixe o aplicativo <strong style="color:#16a34a">Portal do Formado FARN</strong> e tenha acesso rapido as noticias, chat, galeria e muito mais.</p>
+                <p style="color:#64748b;font-size:14px;margin-bottom:24px;text-align:center">Baixe o aplicativo <strong style="color:#16a34a">Portal do Formado FARN</strong> e tenha acesso rapido as noticias e galeria e muito mais.</p>
                 <div style="display:flex;flex-direction:column;gap:16px;max-width:400px;margin:0 auto">
                     <a href="#" onclick="pfDownloadApp('android');return false" style="display:flex;align-items:center;gap:16px;padding:18px 24px;background:linear-gradient(135deg,#1b5e20,#2e7d32);border-radius:14px;text-decoration:none;color:#fff;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(46,125,50,.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
                         <i class="fa-brands fa-google-play" style="font-size:32px"></i>
@@ -472,43 +435,16 @@
         <!-- LATERAL DIREITA -->
         <aside class="pf-right" id="pf-right">
             <div class="pf-right-tabs">
-                <div class="pf-right-tab active" onclick="pfRightTab('chat', this)">
-                    <i class="fa-solid fa-comments"></i> Chat
-                </div>
+
                 <div class="pf-right-tab" onclick="pfRightTab('galeria', this)">
                     <i class="fa-solid fa-images"></i> Galeria
                 </div>
                 <button class="pf-mobile-nav-close" onclick="pfRightCloseMobile()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <!-- PAINEL CHAT -->
-            <div id="pf-right-chat" class="pf-right-panel" style="display:flex">
-                <div class="pf-chat-header">
-                    <h4><i class="fa-solid fa-headset" style="margin-right:4px"></i> Chat com a Administracao</h4>
-                    <p>Tire duvidas e envie mensagens</p>
-                </div>
-                <div class="pf-chat-messages" id="pf-chat-messages">
-                    <div class="pf-chat-empty">
-                        <i class="fa-solid fa-comment-dots"></i>
-                        <p>Envie sua mensagem para a equipe FARN</p>
-                    </div>
-                </div>
-                <div class="pf-chat-edit-bar" id="pf-chat-edit-bar">
-                    <i class="fa-solid fa-pen"></i>
-                    <span id="pf-chat-edit-label">Editando mensagem...</span>
-                    <button class="pf-chat-edit-cancel" onclick="pfChatCancelEdit()">Cancelar</button>
-                </div>
-                <div class="pf-chat-input">
-                    <button class="pf-chat-emoji-btn" onclick="pfChatToggleEmoji(event)" title="Emojis"><i class="fa-regular fa-face-smile"></i></button>
-                    <div class="pf-chat-emoji-panel" id="pf-chat-emoji-panel"></div>
-                    <input type="text" id="pf-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')pfChatSend()">
-                    <button class="pf-chat-send" onclick="pfChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
-                </div>
-            </div>
-
             <!-- PAINEL GALERIA -->
             <div id="pf-right-galeria" class="pf-right-panel" style="display:none">
-                <div class="pf-chat-header">
+                <div class="pf-gallery-header">
                     <h4><i class="fa-solid fa-images" style="margin-right:4px"></i> Galeria de Fotos</h4>
                     <p>Fotos atualizadas pelo administrador</p>
                 </div>
@@ -558,7 +494,6 @@
     <script>
     /* ===== ESTADO ===== */
     var pfUser = null;
-    var pfChatUnsub = null;
     var pfGalleryUnsub = null;
     var pfNoticiasUnsub = null;
 
@@ -645,8 +580,7 @@
             pfLoadDados();
             pfLoadCertificado();
             pfLoadGallery();
-            pfChatLoadMessages();
-            pfChatInitEmoji();
+
 
         } catch(e) {
             console.error('Erro login:', e);
@@ -684,13 +618,11 @@
             pfLoadDados();
             pfLoadCertificado();
             pfLoadGallery();
-            if (typeof pfChatLoadMessages === 'function') pfChatLoadMessages();
-            if (typeof pfChatInitEmoji === 'function') pfChatInitEmoji();
+
         }
     }
 
     function pfLogout() {
-        if (pfChatUnsub) { pfChatUnsub(); pfChatUnsub = null; }
         if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
         if (pfGalleryUnsub2) { pfGalleryUnsub2(); pfGalleryUnsub2 = null; }
         if (pfNoticiasUnsub) { pfNoticiasUnsub(); pfNoticiasUnsub = null; }
@@ -708,11 +640,10 @@
         if (el) el.classList.add('active');
         pfCloseSidebar();
 
-        if (section === 'chat' || section === 'galeria') {
+        if (section === 'galeria') {
             document.getElementById('pf-section-noticias').classList.add('active');
             if (window.innerWidth <= 1024) document.getElementById('pf-right').classList.add('mobile-open');
-            if (section === 'chat') pfRightTab('chat', document.querySelector('.pf-right-tab'));
-            else pfRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
+            pfRightTab('galeria', document.querySelectorAll('.pf-right-tab')[0]);
             return;
         }
 
@@ -746,7 +677,6 @@
     function pfRightTab(tab, el) {
         document.querySelectorAll('.pf-right-tab').forEach(function(t){ t.classList.remove('active'); });
         if (el) el.classList.add('active');
-        document.getElementById('pf-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
         document.getElementById('pf-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
     }
 
@@ -969,135 +899,6 @@
             '</body></html>');
         w.document.close();
     }
-
-    /* ===== CHAT 1:1 COM ADMIN ===== */
-    var pfChatEditTarget = null;
-
-    function pfChatLoadMessages() {
-        if (!pfUser || !pfUser.cpf) return;
-        var container = document.getElementById('pf-chat-messages');
-        if (pfChatUnsub) { pfChatUnsub(); pfChatUnsub = null; }
-        container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
-
-        pfChatUnsub = dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
-            if (snap.empty) {
-                container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
-                return;
-            }
-            container.innerHTML = '';
-            snap.forEach(function(doc) {
-                var m = doc.data();
-                if (m.apagada) return;
-                var isMe = m.remetente === 'aluno';
-                var wrap = document.createElement('div');
-                wrap.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
-                var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                var senderHtml = !isMe ? '<div class="pf-chat-sender" style="color:#16a34a">Administracao FARN</div>' : '';
-                var bodyHtml = '<div>' + (m.texto || '') + '</div>';
-                if (m.editado) bodyHtml += '<div class="pf-chat-edited">( editado )</div>';
-                var actionsHtml = '';
-                if (isMe) {
-                    var safeTexto = (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    actionsHtml = '<div class="pf-chat-actions">' +
-                        '<button class="pf-chat-action-btn" onclick="pfChatEditMsg(\'' + doc.id + '\', \'' + safeTexto + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
-                        '<button class="pf-chat-action-btn" onclick="pfChatDeleteForMe(\'' + doc.id + '\')" title="Apagar para mim"><i class="fa-solid fa-trash"></i></button>' +
-                        '</div>';
-                }
-                wrap.innerHTML = senderHtml + bodyHtml + '<div class="pf-chat-time">' + time + '</div>' + actionsHtml;
-                container.appendChild(wrap);
-            });
-            container.scrollTop = container.scrollHeight;
-        }, function() {
-            container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
-        });
-    }
-
-    function pfChatEditMsg(msgId, texto) {
-        pfChatEditTarget = msgId;
-        var editBar = document.getElementById('pf-chat-edit-bar');
-        var editLabel = document.getElementById('pf-chat-edit-label');
-        editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
-        editBar.classList.add('active');
-        var input = document.getElementById('pf-chat-input');
-        input.value = texto;
-        input.focus();
-    }
-
-    function pfChatCancelEdit() {
-        pfChatEditTarget = null;
-        document.getElementById('pf-chat-edit-bar').classList.remove('active');
-        document.getElementById('pf-chat-input').value = '';
-    }
-
-    function pfChatDeleteForMe(msgId) {
-        if (!confirm('Apagar esta mensagem para voce?')) return;
-        if (!pfUser) return;
-        dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').doc(msgId).set({ apagada: true }, { merge: true });
-    }
-
-    function pfChatSend() {
-        var input = document.getElementById('pf-chat-input');
-        var texto = input.value.trim();
-        if (!texto || !pfUser) return;
-        input.value = '';
-
-        if (pfChatEditTarget) {
-            dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').doc(pfChatEditTarget).set({ texto: texto, editado: true }, { merge: true });
-            pfChatCancelEdit();
-            return;
-        }
-
-        dbFirestore.collection('chatAdmin').doc(pfUser.cpf).set({
-            cpf: pfUser.cpf,
-            nome: pfUser.nome || 'Formado',
-            projeto: pfUser.projeto || '',
-            ultimaMsg: texto,
-            ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
-            tipo: 'formado',
-            ultimaRemetente: 'aluno',
-            naoLidas: firebase.firestore.FieldValue.increment(1)
-        }, { merge: true }).then(function() {
-            return dbFirestore.collection('chatAdmin').doc(pfUser.cpf).collection('msgs').add({
-                texto: texto,
-                remetente: 'aluno',
-                nome: pfUser.nome || 'Formado',
-                cpf: pfUser.cpf,
-                hora: firebase.firestore.FieldValue.serverTimestamp(),
-                lida: false
-            });
-        }).catch(function(e) { console.error('Erro ao enviar:', e); });
-    }
-
-    /* ===== EMOJI ===== */
-    function pfChatInitEmoji() {
-        var panel = document.getElementById('pf-chat-emoji-panel');
-        if (!panel) return;
-        var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','💀','👀','💪','🤝','🇧🇷','⚽','🎮','📱','💻','🔧','💡','🔔','📦','🔑','✈️','🚗','🏥','🎓','📚','✏️'];
-        panel.innerHTML = '';
-        emojis.forEach(function(e) {
-            var span = document.createElement('span');
-            span.textContent = e;
-            span.onclick = function() {
-                var input = document.getElementById('pf-chat-input');
-                input.value += e;
-                input.focus();
-            };
-            panel.appendChild(span);
-        });
-    }
-
-    function pfChatToggleEmoji(ev) {
-        ev.stopPropagation();
-        var panel = document.getElementById('pf-chat-emoji-panel');
-        panel.classList.toggle('active');
-    }
-
-    document.addEventListener('click', function(e) {
-        var panel = document.getElementById('pf-chat-emoji-panel');
-        if (panel && !panel.contains(e.target) && !e.target.closest('.pf-chat-emoji-btn')) {
-            panel.classList.remove('active');
-        }
-    });
 
     /* ===== GALERIA - ALBUNS ===== */
     var pfGalleryAlbuns = [];

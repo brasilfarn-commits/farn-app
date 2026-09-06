@@ -315,7 +315,7 @@ async function syncAllDatabases() {
 
 /* ===== BACKUP E RESTAURACAO ===== */
 
-const FB_BACKUP_ALL = ['candidatos','turmas','usuarios','parceiros','tfmAgendamentos','tfmAlunos','apontamentos','formados','recadastramentos','chatMensagens','aula','noticia'];
+const FB_BACKUP_ALL = ['candidatos','turmas','usuarios','parceiros','tfmAgendamentos','tfmAlunos','apontamentos','formados','recadastramentos','aula','noticia'];
 
 async function backupAllData() {
     if (!firebaseReady && !firebaseError) {
@@ -865,7 +865,6 @@ function enterAdminPanel() {
     renderList();
     configInstituicaoCarregarHome();
     migrarDataInscricao();
-    if (typeof chatPortaisStartNotifListener === 'function') chatPortaisStartNotifListener();
     if (typeof atelieProdutosCarregar === 'function') atelieProdutosCarregar();
     carregarEstadoPortais();
 }
@@ -939,7 +938,6 @@ function applyUserPermissions() {
         'admin-form-usuario': p.includes('usuarios') || isGeral,
         'admin-recadastramento': p.includes('recadastramento') || p.includes('admin') || isGeral,
         'admin-recad-detalhe': p.includes('recadastramento') || p.includes('admin') || isGeral,
-        'admin-chat-portais': p.includes('chat-portais') || p.includes('admin') || isGeral,
         'admin-apostilas': p.includes('apostilas') || p.includes('admin') || isGeral,
         'admin-disciplinas': p.includes('disciplinas') || p.includes('admin') || isGeral,
         'admin-apontamento': p.includes('apontamento') || p.includes('admin') || isGeral,
@@ -974,8 +972,6 @@ function applyUserPermissions() {
 }
 
 function handleLogout() {
-    if (typeof chatPortaisNotifUnsub !== 'undefined' && chatPortaisNotifUnsub) { chatPortaisNotifUnsub(); chatPortaisNotifUnsub = null; }
-    if (typeof chatPortaisUnsub !== 'undefined' && chatPortaisUnsub) { chatPortaisUnsub(); chatPortaisUnsub = null; }
     document.getElementById('screen-admin').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.documentElement.classList.remove('farn-admin-session');
@@ -1588,7 +1584,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento', 'admin-chat-portais': 'Chat dos Portais', 'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -3946,14 +3942,6 @@ async function sincronizarNomeProjeto(nomeAntigo, nomeNovo) {
             if (aptSnap.size < 100) break;
         }
 
-        const chatSnap = await dbFirestore.collection('chatAdmin').where('projeto', '==', nomeAntigo).get();
-        let batch5 = dbFirestore.batch(); let b5count = 0;
-        for (const doc of chatSnap.docs) {
-            batch5.update(doc.ref, { projeto: nomeNovo }); total++; b5count++;
-            if (b5count >= 450) { await batch5.commit(); batch5 = dbFirestore.batch(); b5count = 0; }
-        }
-        if (b5count) await batch5.commit();
-
         const aulaSnap = await dbFirestore.collection('aulas').where('projeto', '==', nomeAntigo).get();
         let batch6 = dbFirestore.batch(); let b6count = 0;
         for (const doc of aulaSnap.docs) {
@@ -4481,7 +4469,6 @@ function renderUsuariosList() {
                 'usuarios': '<span class="usuario-tag usuario-tag-admin">Usuarios</span>',
                 'config': '<span class="usuario-tag usuario-tag-admin">Config</span>',
                 'recadastramento': '<span class="usuario-tag usuario-tag-pre">Recadastramento</span>',
-                'chat-portais': '<span class="usuario-tag usuario-tag-docente">Chat</span>',
                 'apostilas': '<span class="usuario-tag usuario-tag-pre">Apostilas</span>',
                 'disciplinas': '<span class="usuario-tag usuario-tag-docente">Disciplinas</span>',
                 'apontamento': '<span class="usuario-tag usuario-tag-admin">Apontamento</span>',

@@ -163,7 +163,7 @@
         .pd-card-conteudo { margin-top:10px; padding-top:10px; border-top:1px solid #f1f5f9; font-size:12px; color:#475569; line-height:1.5; }
         .pd-card-conteudo i { color:#94a3b8; margin-right:5px; }
 
-        /* ===== LATERAL DIREITA - CHAT + GALERIA ===== */
+        /* ===== LATERAL DIREITA - GALERIA ===== */
         .pf-right { background:#ffffff; border-left:1px solid #e2e8f0; display:flex; flex-direction:column; overflow:hidden; }
         .pf-right-tabs { display:flex; border-bottom:1px solid #e2e8f0; }
         .pf-right-tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:600; color:#94a3b8; cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; }
@@ -172,34 +172,10 @@
         .pf-right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#fff; }
         .pf-right-content { flex:1; overflow-y:auto; }
 
-        /* CHAT */
-        .pf-chat-header { padding:14px 16px; border-bottom:1px solid #e5e7eb; background:#fff; }
-        .pf-chat-header h4 { font-size:13px; font-weight:700; color:#16a34a; }
-        .pf-chat-header p { font-size:11px; color:#94a3b8; }
-        .pf-chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; background:#fff; }
-        .pf-chat-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:12px; }
-        .pf-chat-empty i { font-size:28px; margin-bottom:6px; display:block; color:#cbd5e1; }
-
-        .pf-chat-bubble { max-width:85%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; position:relative; }
-        .pf-chat-bubble.me { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
-        .pf-chat-bubble.other { background:#f1f5f9; color:#1e293b; border:1px solid #e2e8f0; align-self:flex-start; border-bottom-left-radius:4px; }
-        .pf-chat-sender { font-size:10px; font-weight:700; margin-bottom:3px; }
-        .pf-chat-time { font-size:10px; color:rgba(255,255,255,.7); margin-top:3px; text-align:right; }
-        .pf-chat-bubble.other .pf-chat-time { color:#94a3b8; }
-        .pf-chat-edit-bar { display:none; padding:8px 12px; background:#f0fdf4; border-top:1px solid #16a34a; font-size:12px; color:#16a34a; align-items:center; gap:8px; }
-        .pf-chat-edit-bar.active { display:flex; }
-        .pf-chat-edit-cancel { background:none; border:1px solid #16a34a; color:#16a34a; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; margin-left:auto; }
-        .pf-chat-input { display:flex; gap:8px; padding:12px; border-top:1px solid #e5e7eb; background:#fff; align-items:center; }
-        .pf-chat-emoji-btn { background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer; padding:4px; border-radius:50%; transition:all .2s; }
-        .pf-chat-emoji-btn:hover { color:#16a34a; background:#f0fdf4; }
-        .pf-chat-emoji-panel { display:none; flex-wrap:wrap; gap:4px; padding:8px; border-top:1px solid #e5e7eb; max-height:120px; overflow-y:auto; background:#fff; }
-        .pf-chat-emoji-panel.active { display:flex; }
-        .pf-chat-emoji-panel span { font-size:20px; cursor:pointer; padding:4px; border-radius:6px; transition:background .2s; }
-        .pf-chat-emoji-panel span:hover { background:#f1f5f9; }
-        .pf-chat-input input { flex:1; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#1e293b; font-size:13px; }
-        .pf-chat-input input:focus { border-color:#16a34a; outline:none; background:#fff; }
-        .pf-chat-send { background:#16a34a; color:#fff; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:14px; transition:background .2s; }
-        .pf-chat-send:hover { background:#15803d; }
+        /* GALERIA HEADER */
+        .pf-gallery-header { padding:14px 16px; border-bottom:1px solid #e5e7eb; background:#fff; }
+        .pf-gallery-header h4 { font-size:13px; font-weight:700; color:#16a34a; }
+        .pf-gallery-header p { font-size:11px; color:#94a3b8; }
 
         /* GALERIA - ALBUNS */
         .pf-gallery-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
@@ -325,9 +301,6 @@
                 </div>
                 <div class="pf-nav-item" onclick="pdShowSection('apostilasextras', this)">
                     <i class="fa-solid fa-book-open"></i><span>Apostilas Extras</span>
-                </div>
-                <div class="pf-nav-item" onclick="pdShowSection('chat', this)">
-                    <i class="fa-solid fa-comments"></i><span>Chat</span>
                 </div>
                 <div class="pf-nav-item" onclick="pdShowSection('galeria', this)">
                     <i class="fa-solid fa-images"></i><span>Galeria</span>
@@ -628,38 +601,15 @@
         <!-- LATERAL DIREITA -->
         <aside class="pf-right" id="pf-right">
             <div class="pf-right-tabs">
-                <div class="pf-right-tab active" onclick="pdRightTab('chat', this)">
-                    <i class="fa-solid fa-comments"></i> Chat
-                </div>
-                <div class="pf-right-tab" onclick="pdRightTab('galeria', this)">
+                <div class="pf-right-tab active" onclick="pdRightTab('galeria', this)">
                     <i class="fa-solid fa-images"></i> Galeria
                 </div>
                 <button class="pf-mobile-nav-close" onclick="pdRightCloseMobile()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <!-- PAINEL CHAT -->
-            <div id="pf-right-chat" class="pf-right-panel" style="display:flex">
-                <div class="pf-chat-header">
-                    <h4><i class="fa-solid fa-headset" style="margin-right:4px"></i> Chat com a Administracao</h4>
-                    <p>Tire duvidas e envie mensagens</p>
-                </div>
-                <div class="pf-chat-messages" id="pd-chat-messages">
-                    <div class="pf-chat-empty">
-                        <i class="fa-solid fa-comment-dots"></i>
-                        <p>Envie sua mensagem para a equipe FARN</p>
-                    </div>
-                </div>
-                <div class="pf-chat-emoji-panel" id="pd-chat-emoji-panel"></div>
-                <div class="pf-chat-input">
-                    <button class="pf-chat-emoji-btn" onclick="pdChatToggleEmoji(event)" title="Emojis"><i class="fa-regular fa-face-smile"></i></button>
-                    <input type="text" id="pd-chat-input" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')pdChatSend()">
-                    <button class="pf-chat-send" onclick="pdChatSend()"><i class="fa-solid fa-paper-plane"></i></button>
-                </div>
-            </div>
-
             <!-- PAINEL GALERIA -->
             <div id="pf-right-galeria" class="pf-right-panel" style="display:none">
-                <div class="pf-chat-header">
+                <div class="pf-gallery-header">
                     <h4><i class="fa-solid fa-images" style="margin-right:4px"></i> Galeria de Fotos</h4>
                     <p>Fotos atualizadas pelo administrador</p>
                 </div>
@@ -835,9 +785,7 @@
     <script>
         /* ===== ESTADO ===== */
         var pdUser = null;
-        var pdChatUnsub = null;
         var pdGalleryUnsub = null;
-        var pdEmojiList = ['😀','😂','😊','😍','🤔','👍','👏','🙏','❤️','🔥','🎉','😎','🥇','💪','👋','✌️'];
 
         /* ===== FORMATACAO ===== */
         function pdFormatCPF(input) {
@@ -954,8 +902,6 @@
             pdLoadTfmAgendamentos();
             pdLoadApontamentos();
             pdLoadGallery();
-            pdChatLoadMessages();
-            pdChatInitEmoji();
         }
 
         function pdAutoLogin() {
@@ -986,13 +932,10 @@
                 pdLoadTfmAgendamentos();
                 pdLoadApontamentos();
                 pdLoadGallery();
-                pdChatLoadMessages();
-                pdChatInitEmoji();
             }
         }
 
         function pdLogout() {
-            if (pdChatUnsub) { pdChatUnsub(); pdChatUnsub = null; }
             if (pdGalleryUnsub) { pdGalleryUnsub(); pdGalleryUnsub = null; }
             if (pdGalleryUnsub2) { pdGalleryUnsub2(); pdGalleryUnsub2 = null; }
             document.getElementById('screen-portal').classList.remove('active');
@@ -1010,11 +953,10 @@
             if (el) el.classList.add('active');
             pdCloseSidebar();
 
-            if (section === 'chat' || section === 'galeria') {
+            if (section === 'galeria') {
                 document.getElementById('pf-section-inicio').classList.add('active');
                 if (window.innerWidth <= 1024) document.getElementById('pf-right').classList.add('mobile-open');
-                if (section === 'chat') pdRightTab('chat', document.querySelector('.pf-right-tab'));
-                else pdRightTab('galeria', document.querySelectorAll('.pf-right-tab')[1]);
+                pdRightTab('galeria', document.querySelector('.pf-right-tab'));
                 return;
             }
 
@@ -1056,7 +998,6 @@
         function pdRightTab(tab, el) {
             document.querySelectorAll('.pf-right-tab').forEach(function(t){ t.classList.remove('active'); });
             if (el) el.classList.add('active');
-            document.getElementById('pf-right-chat').style.display = tab === 'chat' ? 'flex' : 'none';
             document.getElementById('pf-right-galeria').style.display = tab === 'galeria' ? 'flex' : 'none';
         }
 
@@ -2699,84 +2640,6 @@
 
         function pdClosePhoto() {
             document.getElementById('pf-photo-modal').classList.remove('active');
-        }
-
-        /* ===== CHAT ===== */
-        function pdChatInitEmoji() {
-            var panel = document.getElementById('pd-chat-emoji-panel');
-            if (!panel) return;
-            panel.innerHTML = '';
-            pdEmojiList.forEach(function(e) {
-                var s = document.createElement('span');
-                s.textContent = e;
-                s.onclick = function() {
-                    var input = document.getElementById('pd-chat-input');
-                    input.value += e;
-                    input.focus();
-                };
-                panel.appendChild(s);
-            });
-        }
-
-        function pdChatToggleEmoji(event) {
-            var panel = document.getElementById('pd-chat-emoji-panel');
-            if (event) event.stopPropagation();
-            if (panel) panel.classList.toggle('active');
-        }
-
-        function pdChatLoadMessages() {
-            var container = document.getElementById('pd-chat-messages');
-            if (!container) return;
-            pdChatUnsub = dbFirestore.collection('mensagens')
-                .orderBy('data', 'desc')
-                .limit(50)
-                .onSnapshot(function(snap) {
-                    var items = [];
-                    snap.forEach(function(doc) { items.push(doc.data()); });
-                    items.reverse();
-                    if (items.length === 0) {
-                        container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-comment-dots"></i><p>Envie sua mensagem para a equipe FARN</p></div>';
-                        return;
-                    }
-                    container.innerHTML = '';
-                    var sessao = sessionStorage.getItem('pd_sessao');
-                    var meuNome = '';
-                    if (sessao) {
-                        try { meuNome = JSON.parse(sessao).nome || ''; } catch(e) {}
-                    }
-                    items.forEach(function(m) {
-                        var bubble = document.createElement('div');
-                        var isMe = m.nome === meuNome;
-                        bubble.className = 'pf-chat-bubble ' + (isMe ? 'me' : 'other');
-                        var time = m.data ? new Date(m.data.toMillis ? m.data.toMillis() : m.data).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                        bubble.innerHTML =
-                            (!isMe ? '<div class="pf-chat-sender">' + pdEsc(m.nome || '') + '</div>' : '') +
-                            '<div>' + pdEsc(m.texto || m.mensagem || '') + '</div>' +
-                            '<div class="pf-chat-time">' + time + '</div>';
-                        container.appendChild(bubble);
-                    });
-                    container.scrollTop = container.scrollHeight;
-                }, function() {
-                    container.innerHTML = '<div class="pf-chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar chat.</p></div>';
-                });
-        }
-
-        function pdChatSend() {
-            var input = document.getElementById('pd-chat-input');
-            var texto = (input.value || '').trim();
-            if (!texto) return;
-            var sessao = sessionStorage.getItem('pd_sessao');
-            if (!sessao) return;
-            var docente = JSON.parse(sessao);
-            dbFirestore.collection('mensagens').add({
-                nome: docente.nome || 'Docente',
-                texto: texto,
-                data: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(function() {
-                input.value = '';
-            }).catch(function(e) {
-                console.error('Erro ao enviar:', e);
-            });
         }
 
         /* ===== APOSTILAS EXTRAS ===== */

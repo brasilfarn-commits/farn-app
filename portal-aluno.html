@@ -208,7 +208,7 @@
         .pf-blog-modal-content{font-size:14px;color:#334155;line-height:1.8;white-space:pre-wrap}
         .pf-blog-modal-img{width:100%;max-height:400px;object-fit:cover}
 
-        /* Right Panel (Chat/Galeria) */
+        /* Right Panel (Galeria) */
         .pf-noticias-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;min-height:calc(100vh - 170px)}
         .pf-noticias-col{padding-right:8px}
         .pf-right-panel{background:#ffffff;border:1px solid var(--gray200);border-radius:var(--radius);display:flex;flex-direction:column;overflow:visible;position:sticky;top:80px;box-shadow:var(--shadow)}
@@ -397,75 +397,6 @@
         .pf-photo-panel-input input::placeholder{color:rgba(255,255,255,.4)}
         .pf-photo-panel-input button{padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 
-        /* ===== CHAT WHATSAPP ===== */
-        .chat-container{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}
-        .chat-header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--green);border-bottom:1px solid rgba(0,0,0,.06);flex-shrink:0}
-        .chat-header-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .chat-header-avatar i{color:#fff;font-size:18px}
-        .chat-header-info{flex:1}
-        .chat-header-name{color:#fff;font-size:15px;font-weight:600}
-        .chat-header-status{color:rgba(255,255,255,.7);font-size:12px}
-        .chat-messages{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:4px;background:var(--gray100);min-height:0;-webkit-overflow-scrolling:touch}
-        .chat-date-sep{text-align:center;margin:12px 0 6px}
-        .chat-date-sep span{background:var(--white);border:1px solid var(--gray200);color:var(--gray500);font-size:10.5px;padding:4px 12px;border-radius:var(--radius-xs);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.05)}
-        .chat-msg-wrap{display:flex;align-items:flex-end;gap:6px;max-width:85%;animation:chatSlide .2s ease}
-        .chat-msg-wrap.me{align-self:flex-end;flex-direction:row-reverse}
-        .chat-msg-wrap.other{align-self:flex-start}
-        .chat-msg-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--green-d));display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .chat-msg-avatar i{color:#fff;font-size:11px}
-        .chat-msg-bubble{padding:6px 8px 4px 10px;font-size:14px;line-height:1.4;word-wrap:break-word;position:relative}
-        .chat-msg-bubble.me{background:linear-gradient(135deg,var(--green),var(--green-d));border-radius:8px 8px 2px 8px;color:#fff}
-        .chat-msg-bubble.other{background:var(--white);border-radius:8px 8px 8px 2px;color:var(--gray800);border:1px solid var(--gray200);box-shadow:0 1px 4px rgba(0,0,0,.05)}
-        .chat-msg-bubble::after{content:'';position:absolute;bottom:0;width:12px;height:16px}
-        .chat-msg-bubble.me::after{right:-6px;background:linear-gradient(135deg,var(--green-d) 50%,transparent 50%)}
-        .chat-msg-bubble.other::after{left:-6px;background:linear-gradient(225deg,var(--white) 50%,transparent 50%)}
-        .chat-msg-text{white-space:pre-wrap}
-        .chat-msg-sender{font-size:10.5px;font-weight:700;color:var(--green);margin-bottom:2px}
-        .chat-msg-time{font-size:10px;color:rgba(255,255,255,.5);text-align:right;margin-top:1px;display:flex;align-items:center;justify-content:flex-end;gap:3px}
-        .chat-msg-wrap.other .chat-msg-time{color:var(--gray400)}
-        .chat-msg-time .check{color:rgba(255,255,255,.6);font-size:12px}
-        .chat-msg-wrap.other .chat-msg-time .check{color:var(--green)}
-        .chat-msg-edited{font-size:9px;color:rgba(255,255,255,.4);font-style:italic}
-        .chat-msg-wrap.other .chat-msg-edited{color:var(--gray400)}
-        .chat-msg-actions{display:flex;gap:2px;margin-top:3px;justify-content:flex-end}
-        .chat-msg-action{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;padding:2px 4px;border-radius:4px;font-size:10px;transition:.15s}
-        .chat-msg-action:hover{color:#fff;background:rgba(255,255,255,.1)}
-        .chat-msg-wrap.other .chat-msg-action{color:var(--gray400)}
-        .chat-msg-wrap.other .chat-msg-action:hover{color:var(--gray700);background:var(--gray100)}
-        .chat-input-area{display:flex;align-items:flex-end;gap:6px;padding:8px 10px;padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));background:var(--white);border-top:1px solid var(--gray200);flex-shrink:0}
-        .chat-input-wrap{flex:1;display:flex;align-items:flex-end;background:var(--gray100);border:1px solid var(--gray200);border-radius:10px;padding:4px 8px;min-height:42px}
-        .chat-input-wrap input{flex:1;background:transparent;border:none;color:var(--gray800);font-size:15px;padding:6px 4px;outline:none;min-width:0}
-        .chat-input-wrap input::placeholder{color:var(--gray400)}
-        .chat-emoji-btn{background:none;border:none;color:var(--gray400);font-size:22px;cursor:pointer;padding:6px;border-radius:50%;transition:.15s;flex-shrink:0}
-        .chat-emoji-btn:hover{color:var(--green)}
-        .chat-send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--green-d));border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0;box-shadow:0 4px 12px rgba(22,163,74,.3)}
-        .chat-send-btn:hover{transform:scale(1.05);box-shadow:0 6px 16px rgba(22,163,74,.4)}
-        .chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray400);padding:40px 20px;text-align:center}
-        .chat-empty i{font-size:48px;margin-bottom:16px;color:var(--green);opacity:.25}
-        .chat-empty p{font-size:14px;line-height:1.5}
-        .chat-edit-bar{display:none;align-items:center;gap:8px;padding:8px 14px;background:rgba(22,163,74,.06);border-top:1px solid rgba(22,163,74,.15);font-size:11px;color:var(--gray500);flex-shrink:0}
-        .chat-edit-bar.active{display:flex}
-        .chat-edit-bar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .chat-edit-bar button{background:none;border:none;color:var(--gray400);cursor:pointer;font-size:14px;padding:2px 4px}
-        .chat-edit-bar button:hover{color:var(--gray700)}
-        .chat-emoji-panel{display:none;flex-wrap:wrap;gap:4px;padding:10px 14px;border-top:1px solid var(--gray200);max-height:140px;overflow-y:auto;background:var(--white)}
-        .chat-emoji-panel.active{display:flex}
-        .chat-emoji-panel span{font-size:24px;cursor:pointer;padding:4px;border-radius:6px;transition:.15s}
-        .chat-emoji-panel span:hover{background:rgba(22,163,74,.08);transform:scale(1.2)}
-        @keyframes chatSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-        /* Mobile chat full screen */
-        @media(max-width:768px){
-            .chat-header{padding:10px 14px}
-            .chat-messages{padding:12px 8px}
-            .chat-input-area{padding:6px 8px}
-            .chat-msg-wrap{max-width:90%}
-        }
-        @media(max-width:480px){
-            .chat-msg-wrap{max-width:92%}
-            .chat-msg-bubble{font-size:13.5px}
-        }
-
         /* Notification Badge */
         .pf-nav-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:20px;height:20px;background:linear-gradient(135deg,var(--red),var(--red-l));color:#fff;font-size:10px;font-weight:700;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;animation:badgePulse 2s infinite;box-shadow:0 2px 8px rgba(220,38,38,.3)}
         .pf-nav-badge.hidden{display:none}
@@ -553,7 +484,6 @@
             .pf-topbar{padding:0 14px}
             .pf-topbar-title{display:none}
             .pf-user-info{display:none}
-            .pf-section.active#pf-section-chat{position:fixed;top:60px;left:0;right:0;bottom:0;z-index:90;background:var(--gray100)}
         }
     </style>
 </head>
@@ -647,7 +577,6 @@
                 <a href="#" onclick="paShowSection('inicio',this); paCloseMenu(); return false;"><i class="fa-solid fa-house"></i> Início</a>
                 <a href="#" onclick="paShowSection('noticias',this); paCloseMenu(); return false;"><i class="fa-solid fa-newspaper"></i> Blog</a>
                 <a href="#" onclick="paShowSection('galeria',this); paCloseMenu(); return false;"><i class="fa-solid fa-images"></i> Galeria</a>
-                <a href="#" onclick="paShowSection('chat',this); paCloseMenu(); return false;"><i class="fa-solid fa-comments"></i> Chat</a>
                 <a href="#" onclick="paShowSection('aulas',this); paCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
                 <a href="#" onclick="paShowSection('apontamento',this); paCloseMenu(); return false;"><i class="fa-solid fa-clipboard-check"></i> Apontamento</a>
                 <a href="#" onclick="paShowSection('carteira',this); paCloseMenu(); return false;"><i class="fa-solid fa-id-card"></i> Carteira</a>
@@ -667,7 +596,6 @@
                 <div class="pf-nav-item active" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i> Inicio</div>
                 <div class="pf-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i> Blog</div>
                 <div class="pf-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
-                <div class="pf-nav-item" onclick="paShowSection('chat',this)" style="position:relative"><i class="fa-solid fa-comments"></i> Chat<span id="pf-chat-badge" class="pf-nav-badge hidden">0</span></div>
                 <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
                 <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
                 <div class="pf-nav-divider"></div>
@@ -701,12 +629,12 @@
                             <div class="pf-stat-val">--</div>
                             <div class="pf-stat-label">Blog</div>
                         </div>
-                        <div class="pf-stat-card" onclick="paShowSection('aulas', document.querySelectorAll('.pf-nav-item')[5])">
+                        <div class="pf-stat-card" onclick="paShowSection('aulas', document.querySelectorAll('.pf-nav-item')[4])">
                             <i class="fa-solid fa-chalkboard"></i>
                             <div class="pf-stat-val">--</div>
                             <div class="pf-stat-label">Aulas</div>
                         </div>
-                        <div class="pf-stat-card" onclick="paShowSection('apostila', document.querySelectorAll('.pf-nav-item')[4])">
+                        <div class="pf-stat-card" onclick="paShowSection('apostila', document.querySelectorAll('.pf-nav-item')[3])">
                             <i class="fa-solid fa-book-open"></i>
                             <div class="pf-stat-val">--</div>
                             <div class="pf-stat-label">Apostilas</div>
@@ -737,46 +665,6 @@
                     </div>
                     <div class="pf-gallery-grid" id="pf-gallery-grid">
                         <div class="pf-gallery-card-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
-                    </div>
-                </div>
-
-                <!-- CHAT -->
-                <div class="pf-section" id="pf-section-chat">
-                    <div class="chat-container">
-                        <div id="chat-pa-tabs" style="display:flex;border-bottom:2px solid #e2e8f0;flex-shrink:0;background:#f8fafc;border-radius:12px 12px 0 0;overflow:hidden">
-                            <div class="chat-pa-tab active" data-pa-tab="admin" onclick="chatSetTab('admin')" style="flex:1;padding:12px 10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#16a34a;border-bottom:3px solid #16a34a;transition:all .2s;background:#fff"><i class="fa-solid fa-shield-halved" style="margin-right:5px"></i>Administracao</div>
-                            <div class="chat-pa-tab" data-pa-tab="grupo" onclick="chatSetTab('grupo')" style="flex:1;padding:12px 10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#64748b;border-bottom:3px solid transparent;transition:all .2s;display:none"><i class="fa-solid fa-users" style="margin-right:5px"></i>Grupo da Turma</div>
-                        </div>
-                        <div id="chat-group-bar" style="display:none;padding:10px 14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:12px;margin-bottom:10px;align-items:center;gap:10px">
-                            <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px"><i class="fa-solid fa-users"></i></div>
-                            <div style="flex:1">
-                                <div style="font-weight:700;font-size:14px;color:#fff" id="chat-group-name"></div>
-                                <div style="font-size:11px;color:#bfdbfe" id="chat-group-info"></div>
-                            </div>
-                        </div>
-                        <div class="chat-header" id="chat-header-admin">
-                            <div class="chat-header-avatar"><i class="fa-solid fa-shield-halved"></i></div>
-                            <div class="chat-header-info">
-                                <div class="chat-header-name">Administracao FARN</div>
-                                <div class="chat-header-status">Online</div>
-                            </div>
-                        </div>
-                        <div class="chat-messages" id="chat-messages">
-                            <div class="chat-empty"><i class="fa-solid fa-comments"></i><p>Converse com a administracao da FARN.<br>Envie sua mensagem abaixo.</p></div>
-                        </div>
-                        <div class="chat-edit-bar" id="chat-edit-bar">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                            <span id="chat-edit-label"></span>
-                            <button onclick="chatCancelEdit()"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                        <div class="chat-emoji-panel" id="chat-emoji-panel"></div>
-                        <div class="chat-input-area">
-                            <button class="chat-emoji-btn" onclick="chatToggleEmoji(event)"><i class="fa-solid fa-face-smile"></i></button>
-                            <div class="chat-input-wrap">
-                                <input type="text" id="chat-input" placeholder="Mensagem" onkeydown="if(event.key==='Enter')chatSend()">
-                            </div>
-                            <button class="chat-send-btn" onclick="chatSend()"><i class="fa-solid fa-paper-plane"></i></button>
-                        </div>
                     </div>
                 </div>
 
@@ -1354,7 +1242,6 @@
                 paLoadAulas();
                 paLoadStats();
                 paLoadAvaliacao();
-                chatInitEmoji();
                 paInitNotificacoes();
                 paTermoChecar();
             }
@@ -1569,12 +1456,10 @@
             paLoadAulas();
             paLoadStats();
             paLoadAvaliacao();
-            if (typeof chatInitEmoji === 'function') chatInitEmoji();
         }
     }
 
     function paLogout() {
-        if (chatUnsub) { chatUnsub(); chatUnsub = null; }
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
         if (paGalleryUnsub2) { paGalleryUnsub2(); paGalleryUnsub2 = null; }
         if (paNoticiasUnsub) { paNoticiasUnsub(); paNoticiasUnsub = null; }
@@ -1688,7 +1573,6 @@
         paLoadApostilas();
         paLoadAulas();
         paLoadStats();
-        chatInitEmoji();
     }
 
     /* ===== STATS ===== */
@@ -1749,7 +1633,6 @@
 
 /* ===== NOTIFICACOES ===== */
     var paNotifUnsub = null;
-    var paNotifChatUnsub = null;
     var paNotifApostUnsub = null;
     var paNotifAvUnsub = null;
     var paNotifLista = [];
@@ -1822,8 +1705,7 @@
         }
         var tipo = paNotifLista[idx] ? paNotifLista[idx].tipo : '';
         var el = null;
-        if (tipo === 'chat') { el = 'chat'; }
-        else if (tipo === 'apostila') { el = 'apostila'; }
+        if (tipo === 'apostila') { el = 'apostila'; }
         else { el = 'avaliacao'; }
         if (el && typeof paShowSection === 'function') {
             var nav = document.querySelector('.pf-nav-item.active');
@@ -1885,7 +1767,6 @@
         paNotifCarregar();
         paNotifRender();
         if (paNotifUnsub) paNotifUnsub();
-        if (paNotifChatUnsub) paNotifChatUnsub();
         if (paNotifApostUnsub) paNotifApostUnsub();
         if (paNotifAvUnsub) paNotifAvUnsub();
         var cpf = paUser.cpf;
@@ -1941,24 +1822,6 @@
                 });
             });
         });
-
-        /* Nova mensagem do admin/coordenacao no chat */
-        paNotifChatUnsub = dbFirestore.collection('chatAdmin').doc(cpf).collection('msgs').orderBy('hora', 'desc').limit(20).onSnapshot(function(snap) {
-            snap.forEach(function(doc) {
-                var m = doc.data() || {};
-                if (m.remetente === 'aluno') return;
-                var t = m.hora;
-                var ms = 0;
-                if (t) ms = t.toMillis ? t.toMillis() : (t.seconds ? t.seconds * 1000 : 0);
-                var id = 'chat_' + doc.id + '_' + ms;
-                if (paNotifIds[id] || !ms) return;
-                paNotifAdd({
-                    id: id, tipo: 'chat', titulo: 'Nova mensagem no chat',
-                    texto: paNotifTituloCurto(m.texto || 'Voce recebeu uma mensagem'),
-                    icon: 'fa-envelope', cor: 'blue', tempo: paNotifTempo(ms), lida: false
-                });
-            });
-        });
     }
 
     function paShowSection(section, el) {
@@ -1971,13 +1834,6 @@
         if (section === 'galeria') {
             document.getElementById('pf-section-galeria').classList.add('active');
             paLoadGallery();
-            return;
-        }
-
-        if (section === 'chat') {
-            chatStart();
-            var target = document.getElementById('pf-section-chat');
-            if (target) target.classList.add('active');
             return;
         }
 
@@ -2292,339 +2148,6 @@
             errorEl.style.display = 'block';
         }
     }
-
-    /* ===== CHAT WHATSAPP 1:1 ===== */
-    var chatUnsub = null;
-    var chatEditTarget = null;
-    var chatLastRead = 0;
-    var chatUnreadCount = 0;
-    var chatGrupoId = null;
-    var chatGrupoData = null;
-    var chatGrupoUnsub = null;
-    var chatModo = 'admin';
-
-    function chatStart() {
-        if (!paUser || !paUser.cpf) return;
-        chatModo = 'admin';
-        chatGrupoId = null;
-        chatGrupoData = null;
-        var container = document.getElementById('chat-messages');
-        if (chatUnsub) { chatUnsub(); chatUnsub = null; }
-        if (chatGrupoUnsub) { chatGrupoUnsub(); chatGrupoUnsub = null; }
-
-        document.getElementById('chat-group-bar').style.display = 'none';
-        document.getElementById('chat-header-admin').style.display = '';
-
-        try {
-            var stored = localStorage.getItem('chat_read_' + paUser.cpf);
-            chatLastRead = stored ? parseInt(stored) : Date.now();
-        } catch(e) { chatLastRead = Date.now(); }
-
-        container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
-
-        chatVerificarGrupo();
-
-        chatUnsub = dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
-            var unread = 0;
-            if (snap.empty) {
-                container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-comments"></i><p>Converse com a administracao da FARN.<br>Envie sua mensagem abaixo.</p></div>';
-                chatUpdateBadge(0);
-                return;
-            }
-            container.innerHTML = '';
-            var lastDate = '';
-            snap.forEach(function(doc) {
-                var m = doc.data();
-                if (m.apagada) return;
-                var isMe = m.remetente === 'aluno';
-                if (!isMe) {
-                    var msgTime = m.hora ? (m.hora.seconds ? m.hora.seconds * 1000 : new Date(m.hora).getTime()) : 0;
-                    if (msgTime > chatLastRead) unread++;
-                }
-
-                var msgDate = '';
-                if (m.hora) {
-                    var d = new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora);
-                    msgDate = d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
-                }
-                if (msgDate && msgDate !== lastDate) {
-                    lastDate = msgDate;
-                    var sep = document.createElement('div');
-                    sep.className = 'chat-date-sep';
-                    sep.innerHTML = '<span>' + msgDate + '</span>';
-                    container.appendChild(sep);
-                }
-
-                var wrap = document.createElement('div');
-                wrap.className = 'chat-msg-wrap ' + (isMe ? 'me' : 'other');
-
-                var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                var checkHtml = isMe ? '<span class="check"><i class="fa-solid fa-check-double"></i></span>' : '';
-                var avatarHtml = !isMe ? '<div class="chat-msg-avatar"><i class="fa-solid fa-shield-halved"></i></div>' : '';
-                var senderHtml = !isMe ? '<div class="chat-msg-sender">Administracao FARN</div>' : '';
-                var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
-                if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
-                var actionsHtml = '';
-                if (isMe) {
-                    var safeTexto = (m.texto || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    actionsHtml = '<div class="chat-msg-actions">' +
-                        '<button class="chat-msg-action" onclick="chatEditMsg(\'' + doc.id + '\', \'' + safeTexto + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
-                        '<button class="chat-msg-action" onclick="chatDeleteForMe(\'' + doc.id + '\')" title="Apagar"><i class="fa-solid fa-trash"></i></button>' +
-                        '</div>';
-                }
-
-                var bubbleHtml = '<div class="chat-msg-bubble ' + (isMe ? 'me' : 'other') + '">' +
-                    senderHtml + bodyHtml +
-                    '<div class="chat-msg-time">' + time + checkHtml + '</div>' +
-                    actionsHtml + '</div>';
-
-                wrap.innerHTML = avatarHtml + bubbleHtml;
-                container.appendChild(wrap);
-            });
-            chatUpdateBadge(unread);
-            container.scrollTop = container.scrollHeight;
-        }, function() {
-            container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar.</p></div>';
-        });
-    }
-
-    function chatUpdateBadge(count) {
-        chatUnreadCount = count;
-        var badge = document.getElementById('pf-chat-badge');
-        var mBadge = document.getElementById('pf-chat-mobile-badge');
-        if (count > 0) {
-            if (badge) { badge.textContent = count; badge.classList.remove('hidden'); }
-            if (mBadge) { mBadge.textContent = count; mBadge.classList.remove('hidden'); }
-            document.title = '(' + count + ') Portal do Aluno - FARN';
-        } else {
-            if (badge) badge.classList.add('hidden');
-            if (mBadge) mBadge.classList.add('hidden');
-            document.title = 'Portal do Aluno - FARN';
-        }
-    }
-
-    function chatMarkRead() {
-        chatLastRead = Date.now();
-        try { localStorage.setItem('chat_read_' + (paUser ? paUser.cpf : ''), chatLastRead); } catch(e) {}
-        chatUpdateBadge(0);
-    }
-
-    function chatSend() {
-        var input = document.getElementById('chat-input');
-        var texto = input.value.trim();
-        if (!texto || !paUser) return;
-        input.value = '';
-
-        if (chatEditTarget) {
-            if (chatModo === 'grupo' && chatGrupoId) {
-                dbFirestore.collection('chatAdmin').doc(chatGrupoId).collection('msgs').doc(chatEditTarget).set({ texto: texto, editado: true }, { merge: true });
-            } else {
-                dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(chatEditTarget).set({ texto: texto, editado: true }, { merge: true });
-            }
-            chatCancelEdit();
-            return;
-        }
-
-        if (chatModo === 'grupo' && chatGrupoId) {
-            var msgData = {
-                texto: texto,
-                remetente: paUser.cpf,
-                nome: paUser.nome || 'Aluno',
-                hora: firebase.firestore.FieldValue.serverTimestamp(),
-                lida: false
-            };
-            dbFirestore.collection('chatAdmin').doc(chatGrupoId).collection('msgs').add(msgData);
-            dbFirestore.collection('chatAdmin').doc(chatGrupoId).set({
-                ultimaMsg: texto,
-                ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
-                ultimaRemetente: paUser.cpf
-            }, { merge: true });
-            return;
-        }
-
-        dbFirestore.collection('chatAdmin').doc(paUser.cpf).set({
-            cpf: paUser.cpf,
-            nome: paUser.nome || 'Aluno',
-            projeto: paUser.projeto || '',
-            turma: paUser.turma || '',
-            ultimaMsg: texto,
-            ultimaHora: firebase.firestore.FieldValue.serverTimestamp(),
-            tipo: 'aluno',
-            ultimaRemetente: 'aluno',
-            naoLidas: firebase.firestore.FieldValue.increment(1)
-        }, { merge: true }).then(function() {
-            return dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').add({
-                texto: texto,
-                remetente: 'aluno',
-                nome: paUser.nome || 'Aluno',
-                cpf: paUser.cpf,
-                hora: firebase.firestore.FieldValue.serverTimestamp(),
-                lida: false
-            });
-        }).then(function() {
-            chatMarkRead();
-        }).catch(function(e) { console.error('Erro ao enviar:', e); });
-    }
-
-    function chatEditMsg(msgId, texto) {
-        chatEditTarget = msgId;
-        var editBar = document.getElementById('chat-edit-bar');
-        var editLabel = document.getElementById('chat-edit-label');
-        editLabel.textContent = 'Editando: "' + (texto.length > 50 ? texto.substring(0, 50) + '...' : texto) + '"';
-        editBar.classList.add('active');
-        var input = document.getElementById('chat-input');
-        input.value = texto;
-        input.focus();
-    }
-
-    function chatCancelEdit() {
-        chatEditTarget = null;
-        document.getElementById('chat-edit-bar').classList.remove('active');
-        document.getElementById('chat-input').value = '';
-    }
-
-    function chatDeleteForMe(msgId) {
-        if (!confirm('Apagar esta mensagem para voce?')) return;
-        if (!paUser) return;
-        dbFirestore.collection('chatAdmin').doc(paUser.cpf).collection('msgs').doc(msgId).set({ apagada: true }, { merge: true });
-    }
-
-    function chatVerificarGrupo() {
-        if (!paUser || !paUser.turma) return;
-        var turma = paUser.turma;
-        var grupoId = 'grupo_' + turma.replace(/\s+/g, '_').toUpperCase();
-        dbFirestore.collection('chatAdmin').doc(grupoId).get().then(function(doc) {
-            if (doc.exists) {
-                chatGrupoId = grupoId;
-                chatGrupoData = doc.data();
-                var tabGrupo = document.querySelector('.chat-pa-tab[data-pa-tab="grupo"]');
-                if (tabGrupo) tabGrupo.style.display = '';
-            }
-        }).catch(function() {});
-    }
-
-    function chatSetTab(tab) {
-        if (tab === 'grupo' && !chatGrupoId) return;
-        chatModo = tab;
-        chatEditTarget = null;
-        document.getElementById('chat-edit-bar').classList.remove('active');
-        document.querySelectorAll('.chat-pa-tab').forEach(function(el) {
-            if (el.dataset.paTab === tab) {
-                el.style.color = '#16a34a';
-                el.style.borderBottomColor = '#16a34a';
-                el.style.background = '#fff';
-            } else {
-                el.style.color = '#64748b';
-                el.style.borderBottomColor = 'transparent';
-                el.style.background = 'transparent';
-            }
-        });
-        if (tab === 'admin') {
-            chatSairGrupo();
-        } else {
-            chatEntrarGrupo();
-        }
-    }
-
-    function chatEntrarGrupo() {
-        if (!chatGrupoId) return;
-        if (chatUnsub) { chatUnsub(); chatUnsub = null; }
-
-        var turma = paUser.turma;
-        document.getElementById('chat-group-bar').style.display = 'flex';
-        document.getElementById('chat-group-name').textContent = chatGrupoData.nome || turma;
-        document.getElementById('chat-group-info').textContent = 'Grupo da turma ' + turma;
-        document.getElementById('chat-header-admin').style.display = 'none';
-
-        var container = document.getElementById('chat-messages');
-
-        chatGrupoUnsub = dbFirestore.collection('chatAdmin').doc(chatGrupoId).collection('msgs').orderBy('hora').onSnapshot(function(snap) {
-            container.innerHTML = '';
-            if (snap.empty) {
-                container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-users"></i><p>Inicio do grupo da turma.<br>Envie sua mensagem abaixo.</p></div>';
-                return;
-            }
-            var lastDate = '';
-            snap.forEach(function(doc) {
-                var m = doc.data();
-                if (m.apagada) return;
-                var isMe = m.remetente === paUser.cpf;
-
-                var msgDate = '';
-                if (m.hora) {
-                    var d = new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora);
-                    msgDate = d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
-                }
-                if (msgDate && msgDate !== lastDate) {
-                    lastDate = msgDate;
-                    var sep = document.createElement('div');
-                    sep.className = 'chat-date-sep';
-                    sep.innerHTML = '<span>' + msgDate + '</span>';
-                    container.appendChild(sep);
-                }
-
-                var wrap = document.createElement('div');
-                wrap.className = 'chat-msg-wrap ' + (isMe ? 'me' : 'other');
-
-                var time = m.hora ? new Date(m.hora.seconds ? m.hora.seconds * 1000 : m.hora).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
-                var avatarHtml = !isMe ? '<div class="chat-msg-avatar" style="' + (m.remetente === 'admin' ? 'background:#16a34a' : 'background:#ca8a04') + '">' + (m.remetente === 'admin' ? '<i class="fa-solid fa-shield-halved"></i>' : '<i class="fa-solid fa-user"></i>') + '</div>' : '';
-                var senderLabel = m.remetente === 'admin' ? 'Administracao FARN' : (m.nome || 'Aluno');
-                var senderHtml = '';
-                if (!isMe) {
-                    senderHtml = '<div class="chat-msg-sender" style="' + (m.remetente === 'admin' ? 'color:#16a34a' : 'color:#ca8a04') + '">' + senderLabel + '</div>';
-                }
-                var bodyHtml = '<div class="chat-msg-text">' + (m.texto || '') + '</div>';
-                if (m.editado) bodyHtml += '<div class="chat-msg-edited"><i class="fa-solid fa-pen" style="font-size:8px;margin-right:2px"></i>editado</div>';
-
-                var bubbleHtml = '<div class="chat-msg-bubble ' + (isMe ? 'me' : 'other') + '">' +
-                    senderHtml + bodyHtml +
-                    '<div class="chat-msg-time">' + time + '</div></div>';
-
-                wrap.innerHTML = avatarHtml + bubbleHtml;
-                container.appendChild(wrap);
-            });
-            container.scrollTop = container.scrollHeight;
-        }, function() {
-            container.innerHTML = '<div class="chat-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar grupo.</p></div>';
-        });
-    }
-
-    function chatSairGrupo() {
-        if (chatGrupoUnsub) { chatGrupoUnsub(); chatGrupoUnsub = null; }
-        document.getElementById('chat-group-bar').style.display = 'none';
-        document.getElementById('chat-header-admin').style.display = '';
-        chatStart();
-    }
-
-    function chatInitEmoji() {
-        var panel = document.getElementById('chat-emoji-panel');
-        if (!panel) return;
-        var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','🥺','🤔','😴','👍','👎','🙏','❤️','🔥','✅','⭐','🎉','😢','😡','💀','👀','💪','🤝','🇧🇷','⚽','🎮','📱','💻','🔧','💡','🔔','📦','🔑','✈️','🚗','🏥','🎓','📚','✏️'];
-        panel.innerHTML = '';
-        emojis.forEach(function(e) {
-            var span = document.createElement('span');
-            span.textContent = e;
-            span.onclick = function() {
-                var input = document.getElementById('chat-input');
-                input.value += e;
-                input.focus();
-            };
-            panel.appendChild(span);
-        });
-    }
-
-    function chatToggleEmoji(ev) {
-        ev.stopPropagation();
-        var panel = document.getElementById('chat-emoji-panel');
-        panel.classList.toggle('active');
-    }
-
-    document.addEventListener('click', function(e) {
-        var panel = document.getElementById('chat-emoji-panel');
-        if (panel && !panel.contains(e.target) && !e.target.closest('.chat-emoji-btn')) {
-            panel.classList.remove('active');
-        }
-    });
 
     /* ===== APOSTILAS ===== */
     function paAbrirApostila(a) {
