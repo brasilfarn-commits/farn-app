@@ -59,7 +59,7 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 2;
+var WF_APK_VERSAO_ATUAL = 3;
 
 function wfVersaoLocal() {
     var v = 0;
@@ -607,6 +607,23 @@ function wfVoltarLista() {
     if (app) app.classList.remove('wf-open');
 }
 
+function wfManterInputVisivel() {
+    if (!window.visualViewport) return;
+    var input = document.getElementById('wf-input');
+    var composer = document.getElementById('wf-composer');
+    if (!input || !composer) return;
+    var vh = window.visualViewport.height || 0;
+    var rect = composer.getBoundingClientRect();
+    var sobra = (rect.bottom - (vh || window.innerHeight));
+    if (sobra > 0) {
+        var msgs = document.getElementById('wf-msgs');
+        if (msgs) {
+            msgs.scrollTop += sobra + 8;
+        }
+    }
+    try { if (typeof input.scrollIntoViewIfNeeded === 'function') input.scrollIntoViewIfNeeded(); } catch (e) {}
+}
+
 function wfExcluirConversa(convId) {
     if (!convId || !dbFirestore) return;
     if (!confirm('Excluir esta conversa?\nTodas as mensagens serao apagadas permanentemente.')) return;
@@ -927,6 +944,13 @@ function wfIniciar(modo) {
         document.addEventListener('visibilitychange', function () {
             if (document.hidden) { try { wfPresencaEnviar(false, false); } catch (e) {} }
             else if (wfState.iniciado && wfState.me) wfPresencaEnviar(true, false);
+        });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', function () { wfManterInputVisivel(); });
+            window.visualViewport.addEventListener('scroll', function () { wfManterInputVisivel(); });
+        }
+        document.addEventListener('focusin', function () {
+            setTimeout(wfManterInputVisivel, 350);
         });
     }
 
