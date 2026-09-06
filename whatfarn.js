@@ -336,7 +336,7 @@ function wfHTML() {
         '<label class="wf-ic-btn" title="Anexar imagem (galeria)"><i class="fa-solid fa-paperclip"></i><input type="file" accept="image/*" style="display:none" onchange="wfAnexarPermanente(this)"></label>' +
         '<label class="wf-ic-btn" title="Tirar foto temporaria (camera)"><i class="fa-solid fa-camera"></i><input type="file" accept="image/*" capture="environment" style="display:none" onchange="wfAnexarTemporaria(this)"></label>' +
         '<input class="wf-input" id="wf-input" type="text" placeholder="Digite uma mensagem..." oninput="wfDigitando()" onkeydown="if(event.key===\'Enter\')wfEnviar()">' +
-        '<button class="wf-send" onclick="wfEnviar()" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" title="Enviar"><i class="fa-solid fa-paper-plane"></i></button>' +
+        '<button class="wf-send" onclick="wfEnviar()" type="button" title="Enviar"><i class="fa-solid fa-paper-plane"></i></button>' +
         '</div>';
     var html = '<div class="wf-col wf-col-list">' + lista + '</div>' +
         '<div class="wf-col wf-col-chat" id="wf-col-chat">' + chat + '</div>';
