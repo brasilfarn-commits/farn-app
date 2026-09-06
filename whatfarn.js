@@ -111,7 +111,6 @@ function wfVerificarAtualizacao(auto) {
             var el = document.getElementById(id);
             if (el) el.remove();
         };
-        responder(true, '');
         var modal = document.createElement('div');
         modal.className = 'wf-modal';
         modal.id = 'wf-modal-apk-' + Date.now();
