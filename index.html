@@ -777,6 +777,10 @@
                         <i class="fa-solid fa-book"></i>
                         <span>Cursos</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-whatfarn', this); wfIniciar('admin')">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        <span>WhatFarn</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -881,6 +885,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-criar-avaliacao', document.querySelector('.nav-item:nth-child(19)')); cavLoadList(); cavEscolherTipo()">
                                 <i class="fa-solid fa-list-check"></i>
                                 <span>Criar Avaliação</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-whatfarn', document.querySelector('.nav-item:nth-child(20)')); wfIniciar('admin')">
+                                <i class="fa-brands fa-whatsapp"></i>
+                                <span>WhatFarn</span>
                             </div>
                         </div>
                     </div>
@@ -2871,6 +2879,11 @@
                     </div>
                 </div>
 
+            <!-- WHATFARN -->
+                <div id="admin-whatfarn" class="admin-section">
+                    <div id="wf-root"></div>
+                </div>
+
             </main>
         </div>
     </div>
@@ -3598,6 +3611,7 @@
     <script src="app.js"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
+    <script src="whatfarn.js"></script>
     <script>
     (function(){
         if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});

@@ -947,7 +947,8 @@ function applyUserPermissions() {
         'admin-galeria': p.includes('galeria') || isGeral,
         'admin-atelie': isGeral,
         'admin-avaliacao': p.includes('avaliacao') || isGeral,
-        'admin-criar-avaliacao': p.includes('avaliacao') || isGeral
+        'admin-criar-avaliacao': p.includes('avaliacao') || isGeral,
+        'admin-whatfarn': isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -972,6 +973,7 @@ function applyUserPermissions() {
 }
 
 function handleLogout() {
+    if (typeof wfSair === 'function') wfSair();
     document.getElementById('screen-admin').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.documentElement.classList.remove('farn-admin-session');
@@ -1584,7 +1586,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }

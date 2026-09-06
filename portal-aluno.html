@@ -584,6 +584,7 @@
                 <a href="#" onclick="paShowSection('apostila',this); paCloseMenu(); return false;"><i class="fa-solid fa-book-open"></i> Apostilas</a>
                 <a href="#" onclick="paShowSection('avaliacao',this); paCloseMenu(); return false;"><i class="fa-solid fa-chart-simple"></i> Avaliacao</a>
                 <a href="#" onclick="paShowSection('responder-avaliacao',this); paCloseMenu(); return false;"><i class="fa-solid fa-list-check"></i> Responder Avaliação</a>
+                <a href="#" onclick="paShowSection('whatfarn',this); paCloseMenu(); return false;"><i class="fa-brands fa-whatsapp"></i> WhatFarn</a>
                 <a href="#" onclick="paShowSection('dados',this); paCloseMenu(); return false;"><i class="fa-solid fa-user"></i> Meus Dados</a>
                 <a href="#" onclick="paShowSection('app',this); paCloseMenu(); return false;"><i class="fa-solid fa-mobile-screen"></i> Baixar App</a>
             </nav>
@@ -604,6 +605,7 @@
                 <div class="pf-nav-item" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i> Declaracoes</div>
                 <div class="pf-nav-item" onclick="paShowSection('avaliacao',this)"><i class="fa-solid fa-chart-simple"></i> Avaliacao</div>
                 <div class="pf-nav-item" onclick="paShowSection('responder-avaliacao',this)"><i class="fa-solid fa-list-check"></i> Responder Avaliacao</div>
+                <div class="pf-nav-item" onclick="paShowSection('whatfarn',this)"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>
                 <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
             </div>
@@ -906,6 +908,10 @@
                     </div>
                 </div>
 
+                <div class="pf-section" id="pf-section-whatfarn">
+                    <div id="wf-root"></div>
+                </div>
+
                 <div class="pf-section" id="pf-section-construcao">
                     <div class="pf-em-construcao">
                         <i class="fa-solid fa-wrench"></i>
@@ -1052,6 +1058,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
@@ -1460,6 +1467,7 @@
     }
 
     function paLogout() {
+        if (typeof wfSair === 'function') wfSair();
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
         if (paGalleryUnsub2) { paGalleryUnsub2(); paGalleryUnsub2 = null; }
         if (paNoticiasUnsub) { paNoticiasUnsub(); paNoticiasUnsub = null; }
@@ -1846,6 +1854,7 @@
         if (section === 'decl') { }
         if (section === 'avaliacao') { paLoadAvaliacao(); }
         if (section === 'responder-avaliacao') { paLoadResponderAvaliacao(); }
+        if (section === 'whatfarn') { wfIniciar('aluno'); }
     }
 
     function paCheckHash() {
@@ -4632,6 +4641,7 @@
     }
     </script>
     <script src="noticias-slider.js"></script>
+    <script src="whatfarn.js"></script>
     <!-- Botao voltar pagina anterior -->
     <style>
         #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0a1c40;color:#fff;border:1px solid rgba(212,175,55,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}
