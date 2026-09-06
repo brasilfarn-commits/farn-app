@@ -1,0 +1,17 @@
+{
+  "name": "WhatFarn",
+  "short_name": "WhatFarn",
+  "description": "Mensagens instantaneas entre o aluno e o Administrativo FARN",
+  "lang": "pt-BR",
+  "start_url": "/whatfarn.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#dcfce7",
+  "theme_color": "#16a34a",
+  "icons": [
+    { "src": "/icons/whatfarn-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/whatfarn-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/whatfarn-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

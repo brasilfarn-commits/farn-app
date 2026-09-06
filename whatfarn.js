@@ -75,15 +75,57 @@ function wfPreView(msgTexto, tipo) {
 /* ---------- Identidade do usuario logado ---------- */
 
 function wfQuemSou(modo) {
-    if (modo === 'aluno' && typeof paUser !== 'undefined' && paUser && paUser.cpf) {
-        var foto = wfFotoLocal(paUser.cpf) || '';
-        return { id: String(paUser.cpf), nome: paUser.nome || 'Aluno', foto: foto };
+    if (modo === 'aluno') {
+        var sess = wfSessao();
+        if (sess && sess.cpf) return { id: String(sess.cpf), nome: sess.nome || 'Aluno', foto: '' };
+        if (typeof paUser !== 'undefined' && paUser && paUser.cpf) {
+            var foto = wfFotoLocal(paUser.cpf) || '';
+            return { id: String(paUser.cpf), nome: paUser.nome || 'Aluno', foto: foto };
+        }
     }
     if (modo === 'admin') {
         var nome = (typeof currentUserData !== 'undefined' && currentUserData) ? (currentUserData.nome || WF_ADMIN_NOME) : WF_ADMIN_NOME;
         return { id: WF_ADMIN_ID, nome: WF_ADMIN_NOME, foto: '' };
     }
     return null;
+}
+
+function wfSessao() {
+    try { return JSON.parse(localStorage.getItem('wf_sessao') || 'null'); } catch (e) { return null; }
+}
+
+function wfSetSessao(s) {
+    try {
+        if (s) localStorage.setItem('wf_sessao', JSON.stringify({ cpf: s.cpf, nome: s.nome || 'Aluno' }));
+        else localStorage.removeItem('wf_sessao');
+    } catch (e) {}
+    wfState.sessao = s || null;
+}
+
+function wfLogin(cpf, senha, cb) {
+    if (!dbFirestore) { if (cb) cb(false, 'Sistema indisponivel. Verifique sua conexao.'); return; }
+    cpf = String(cpf || '').replace(/\D/g, '');
+    senha = String(senha == null ? '' : senha);
+    if (cpf.length !== 11) { if (cb) cb(false, 'CPF invalido.'); return; }
+    if (!senha) { if (cb) cb(false, 'Informe sua senha.'); return; }
+    dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get().then(function (snap) {
+        if (snap.empty) { if (cb) cb(false, 'CPF nao encontrado.'); return; }
+        var dados = snap.docs[0].data();
+        if (dados.senha !== senha) { if (cb) cb(false, 'Senha incorreta.'); return; }
+        if (dados.pediuBaixa) { if (cb) cb(false, 'Voce solicitou a baixa do curso. Seu acesso sera restabelecido somente apos autorizacao da administracao.'); return; }
+        if (dados.ativo === false) { if (cb) cb(false, 'Seu acesso ainda nao foi liberado. Aguarde aprovacao da administracao.'); return; }
+        if (dados.status !== 'Ativo' && dados.status !== 'Inativo por Falta') { if (cb) cb(false, 'Somente alunos com status Ativo ou Inativo por Falta podem acessar.'); return; }
+        var sess = { cpf: String(dados.cpf), nome: dados.nome || 'Aluno' };
+        wfSetSessao(sess);
+        if (cb) cb(true, sess);
+    }).catch(function () {
+        if (cb) cb(false, 'Erro ao conectar com o servidor. Tente novamente.');
+    });
+}
+
+function wfLogout() {
+    wfSair();
+    wfSetSessao(null);
 }
 
 function wfFotoLocal(cpf) {
@@ -118,6 +160,7 @@ function wfCss() {
         '.wf-conv-top{display:flex;align-items:center;gap:6px}.wf-conv-nome{font-size:14px;font-weight:600;color:#1e293b;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wf-conv-hora{font-size:11px;color:#94a3b8;flex-shrink:0}',
         '.wf-conv-bot{display:flex;align-items:center;gap:6px;margin-top:2px}.wf-conv-pv{font-size:12px;color:#94a3b8;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wf-conv-pv.wf-nao-lida{color:#1e293b;font-weight:600}.wf-conv-pv i{font-size:10px;color:#64748b;margin-right:3px}',
         '.wf-badge{min-width:20px;height:20px;border-radius:10px;background:#16a34a;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0}',
+        '.wf-conv-del{width:32px;height:32px;border-radius:50%;border:none;background:transparent;color:#cbd5e1;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;transition:.15s}.wf-conv:hover .wf-conv-del{opacity:1}.wf-conv-del:hover{background:#fee2e2;color:#dc2626}',
         '.wf-vazio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;text-align:center;color:#94a3b8;font-size:13px}',
         '.wf-chat-head{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-bottom:1px solid #e2e8f0;position:relative;z-index:2}',
         '.wf-back{display:none;width:36px;height:36px;border-radius:50%;border:none;background:#f1f5f9;color:#334155;cursor:pointer;align-items:center;justify-content:center;font-size:15px}.wf-app.wf-mobile .wf-back{display:flex}',
@@ -145,6 +188,7 @@ function wfCss() {
         '@keyframes wfSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}',
         '.wf-loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#94a3b8;font-size:13px}',
         '.wf-col-chat.wf-vazio-apenas{background:var(--wf-bg)}',
+        '.wf-app.wf-mobile .wf-conv-del{opacity:1;color:#94a3b8}',
         '@media(max-width:920px){.wf-app{height:calc(100dvh - 140px)}}',
         '@media(max-width:600px){.wf-app{height:calc(100dvh - 120px)}.wf-msg-wrap{max-width:88%}}'
     ].join('');
@@ -306,7 +350,8 @@ function wfRenderLista() {
             '<div class="wf-avatar">' + avatar + '</div>' +
             '<div class="wf-conv-main"><div class="wf-conv-top"><span class="wf-conv-nome">' + wfEsc(nome) + '</span><span class="wf-conv-hora">' + wfEsc(hora) + '</span></div>' +
             '<div class="wf-conv-bot"><span class="wf-conv-pv' + (naoLidas ? ' wf-nao-lida' : '') + '">' + lidaIcon + wfEsc(pvM) + '</span>' +
-            (naoLidas ? '<span class="wf-badge">' + naoLidas + '</span>' : '') + '</div></div></div>';
+            (naoLidas ? '<span class="wf-badge">' + naoLidas + '</span>' : '') + '</div></div>' +
+            '<button class="wf-conv-del" title="Excluir conversa" onclick="event.stopPropagation();wfExcluirConversa(\'' + wfEsc(c.id) + '\')"><i class="fa-solid fa-trash-can"></i></button></div>';
     });
     el.innerHTML = html;
 }
@@ -426,6 +471,54 @@ function wfSelecionarConversa(convId, nomeOverride, fotoOverride) {
 }
 
 function wfVoltarLista() {
+    var app = document.getElementById('wf-root');
+    if (app) app.classList.remove('wf-open');
+}
+
+function wfExcluirConversa(convId) {
+    if (!convId || !dbFirestore) return;
+    if (!confirm('Excluir esta conversa?\nTodas as mensagens serao apagadas permanentemente.')) return;
+    var fezEle = function () {
+        wfState.lista = wfState.lista.filter(function (c) { return c.id !== convId; });
+        if (wfState.convId === convId) {
+            wfState.convId = null;
+            wfState.contato = null;
+            if (wfState.msgsUnsub) { try { wfState.msgsUnsub(); } catch (e) {} wfState.msgsUnsub = null; }
+            wfState.msgs = [];
+            wfLimparConversaUI();
+        }
+        wfRenderLista();
+    };
+    try {
+        firebase.storage().ref('whatfarn/' + convId).listAll().then(function (res) {
+            var items = res.items.slice();
+            var p = Promise.resolve();
+            items.forEach(function (it) { p = p.then(function () { return it.delete().catch(function () {}); }); });
+            return p;
+        }).catch(function () {});
+    } catch (e) {}
+    var ref = dbFirestore.collection('whatfarnConversas').doc(convId);
+    ref.collection('msgs').get().then(function (snap) {
+        var batch = dbFirestore.batch();
+        snap.forEach(function (d) { batch.delete(d.ref); });
+        return batch.commit();
+    }).then(function () {
+        return ref.delete();
+    }).then(function () {
+        fezEle();
+    }).catch(function (e) {
+        console.error('wf: falha ao excluir', e);
+        alert('Nao foi possivel excluir a conversa. Tente novamente.');
+    });
+}
+
+function wfLimparConversaUI() {
+    var el = document.getElementById('wf-msgs');
+    if (el) el.innerHTML = '<div class="wf-vazio"><i class="fa-solid fa-comments" style="font-size:34px;opacity:.4"></i><p>Selecione uma conversa ao lado para comecar a conversar.</p></div>';
+    var n = document.getElementById('wf-chat-nome');
+    if (n) n.textContent = 'Selecione uma conversa';
+    var s = document.getElementById('wf-chat-status');
+    if (s) { s.classList.add('wf-cinza'); s.textContent = '&nbsp;'; }
     var app = document.getElementById('wf-root');
     if (app) app.classList.remove('wf-open');
 }
@@ -732,6 +825,8 @@ function wfIniciar(modo) {
                 wfCarregarMsgs();
             }
             wfRenderLista();
+            var appAb = document.getElementById('wf-root');
+            if (appAb) appAb.classList.add('wf-open');
         });
     } else {
         wfCarregarConversas();
@@ -744,6 +839,9 @@ function wfIniciar(modo) {
 /* Exposicao global (usadas em onclick e nos portais) */
 window.wfIniciar = wfIniciar;
 window.wfSair = wfSair;
+window.wfLogin = wfLogin;
+window.wfLogout = wfLogout;
+window.wfSessao = wfSessao;
 window.wfRenderLista = wfRenderLista;
 window.wfMostrarContatos = wfMostrarContatos;
 window.wfFecharContatos = wfFecharContatos;
@@ -751,6 +849,7 @@ window.wfFiltrarContatos = wfFiltrarContatos;
 window.wfSelecionarContato = wfSelecionarContato;
 window.wfSelecionarConversa = wfSelecionarConversa;
 window.wfVoltarLista = wfVoltarLista;
+window.wfExcluirConversa = wfExcluirConversa;
 window.wfEnviar = wfEnviar;
 window.wfDigitando = wfDigitando;
 window.wfVerTemporaria = wfVerTemporaria;

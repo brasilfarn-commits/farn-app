@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16a34a">
+<title>WhatFarn - FARN</title>
+<link rel="manifest" href="/whatfarn-manifest.json">
+<link rel="icon" href="/icons/whatfarn-192.png">
+<link rel="apple-touch-icon" href="/icons/whatfarn-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+    body{background:#efe7db;font-family:"Segoe UI",system-ui,sans-serif;color:#1e293b;overflow:hidden}
+    .wf-app-header{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px;height:56px;padding:0 14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+    .wf-app-header .wf-h-logo{width:36px;height:36px;border-radius:50%;background:#fff;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .wf-app-header .wf-h-title{font-size:17px;font-weight:800;letter-spacing:.3px;flex:1;display:flex;align-items:center;gap:8px}
+    .wf-app-header .wf-h-user{font-size:12px;background:rgba(255,255,255,.16);padding:5px 10px;border-radius:14px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .wf-app-header .wf-h-sair{width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .wf-app-header .wf-h-sair:active{transform:scale(.92)}
+    body.wf-standalone .wf-app{height:calc(100dvh - 56px);border:none;border-radius:0;box-shadow:none}
+
+    /* Tela de login */
+    .wf-login{position:fixed;inset:0;z-index:50;background:linear-gradient(160deg,#0f172a 0%,#16a34a 130%);display:flex;align-items:center;justify-content:center;padding:20px}
+    .wf-login-card{width:100%;max-width:360px;background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.3);padding:28px 24px;animation:wfSlideIn .3s ease}
+    @keyframes wfSlideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    .wf-login-logo{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;box-shadow:0 10px 24px rgba(22,163,74,.35)}
+    .wf-login-card h2{text-align:center;font-size:20px;font-weight:800;color:#14532d;display:flex;align-items:center;justify-content:center;gap:8px}
+    .wf-login-sub{text-align:center;font-size:12.5px;color:#64748b;margin:2px 0 18px}
+    .wf-login-field{margin-bottom:12px}
+    .wf-login-field label{display:block;font-size:11.5px;font-weight:700;color:#334155;margin-bottom:5px}
+    .wf-login-field .wf-lf-box{display:flex;align-items:center;gap:8px;border:1.5px solid #e2e8f0;border-radius:12px;padding:0 12px;background:#f8fafc;transition:.2s}
+    .wf-login-field .wf-lf-box:focus-within{border-color:#16a34a;background:#fff;box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+    .wf-login-field .wf-lf-box i{color:#94a3b8;font-size:14px}
+    .wf-login-field input{flex:1;border:none;outline:none;background:transparent;padding:12px 0;font-size:14px;color:#1e293b}
+    .wf-login-field .wf-eye{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:14px;padding:6px}
+    .wf-login-btn{width:100%;border:none;border-radius:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;font-size:15px;font-weight:800;padding:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 20px rgba(22,163,74,.35);transition:.2s;margin-top:6px}
+    .wf-login-btn:active{transform:scale(.98)}
+    .wf-login-err{display:none;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:12px}
+    .wf-login-note{text-align:center;font-size:11.5px;color:#94a3b8;margin-top:14px;line-height:1.5}
+    .wf-login-note a{color:#16a34a;font-weight:700;text-decoration:none}
+    .wf-install{display:none;margin-top:14px;width:100%;background:#0a1c40;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body class="wf-standalone">
+
+    <header class="wf-app-header" id="wf-app-header">
+        <div class="wf-h-logo"><i class="fa-brands fa-whatsapp"></i></div>
+        <div class="wf-h-title"><span>WhatFarn</span></div>
+        <div id="wf-h-user" class="wf-h-user" style="display:none"></div>
+        <button id="wf-h-sair" class="wf-h-sair" style="display:none" onclick="wfAppSair()" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </header>
+
+    <!-- TELA DE LOGIN -->
+    <div id="wf-screen-login" class="wf-login">
+        <div class="wf-login-card">
+            <div class="wf-login-logo"><i class="fa-brands fa-whatsapp"></i></div>
+            <h2>WhatFarn</h2>
+            <p class="wf-login-sub">Entre com o seu cadastro para conversar com o Administrativo FARN.</p>
+            <div id="wf-login-err" class="wf-login-err"></div>
+            <div class="wf-login-field">
+                <label>CPF</label>
+                <div class="wf-lf-box">
+                    <i class="fa-solid fa-id-card"></i>
+                    <input id="wf-cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" onkeydown="if(event.key==='Enter')wfAppEntrar()">
+                </div>
+            </div>
+            <div class="wf-login-field">
+                <label>Senha</label>
+                <div class="wf-lf-box">
+                    <i class="fa-solid fa-lock"></i>
+                    <input id="wf-senha" type="password" placeholder="Sua senha" onkeydown="if(event.key==='Enter')wfAppEntrar()">
+                    <button class="wf-eye" onclick="wfAppMostrarSenha()" title="Mostrar senha"><i class="fa-solid fa-eye"></i></button>
+                </div>
+            </div>
+            <button id="wf-login-btn" class="wf-login-btn" onclick="wfAppEntrar()"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+            <button id="wf-install-btn" class="wf-install" onclick="wfAppInstalar()"><i class="fa-solid fa-download"></i> Instalar aplicativo no aparelho</button>
+            <p class="wf-login-note">Use o <strong>mesmo CPF e senha</strong> do seu cadastro.<br>Acesse também pelo <a href="index.html">portal do aluno</a>.</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="whatfarn.js"></script>
+    <script>
+    var firebaseConfig = { apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0", authDomain: "farn-app.firebaseapp.com", databaseURL: "https://farn-app-default-rtdb.firebaseio.com", projectId: "farn-app", storageBucket: "farn-app.firebasestorage.app", messagingSenderId: "16254677061", appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    var dbFirestore = firebase.firestore();
+
+    /* ----- CPF mascara + visibilidade ----- */
+    var wfCpfEl = document.getElementById('wf-cpf');
+    wfCpfEl.addEventListener('input', function () {
+        var d = wfCpfEl.value.replace(/\D/g, '').slice(0, 11);
+        var m = d;
+        if (d.length > 9) m = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-' + d.slice(9);
+        else if (d.length > 6) m = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6);
+        else if (d.length > 3) m = d.slice(0, 3) + '.' + d.slice(3);
+        wfCpfEl.value = m;
+    });
+
+    function wfAppMostrarSenha() {
+        var s = document.getElementById('wf-senha');
+        var btn = s.nextElementSibling;
+        if (s.type === 'password') { s.type = 'text'; btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>'; }
+        else { s.type = 'password'; btn.innerHTML = '<i class="fa-solid fa-eye"></i>'; }
+    }
+
+    function wfAppMostrarLogin() {
+        document.getElementById('wf-screen-login').style.display = 'flex';
+        document.getElementById('wf-h-user').style.display = 'none';
+        document.getElementById('wf-h-sair').style.display = 'none';
+    }
+
+    function wfAppMostrarChat() {
+        document.getElementById('wf-screen-login').style.display = 'none';
+        var s = wfSessao();
+        var u = document.getElementById('wf-h-user');
+        if (s && s.nome) { u.textContent = s.nome; u.style.display = 'block'; }
+        document.getElementById('wf-h-sair').style.display = 'flex';
+    }
+
+    function wfAppEntrar() {
+        var cpf = document.getElementById('wf-cpf').value;
+        var senha = document.getElementById('wf-senha').value;
+        var errEl = document.getElementById('wf-login-err');
+        var btn = document.getElementById('wf-login-btn');
+        errEl.style.display = 'none';
+        wfLogin(cpf, senha, function (ok, msg) {
+            if (!ok) {
+                errEl.textContent = msg;
+                errEl.style.display = 'block';
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                return;
+            }
+            wfAppMostrarChat();
+            wfIniciar('aluno');
+        });
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
+    }
+
+    function wfAppSair() {
+        if (!confirm('Sair do WhatFarn?')) return;
+        wfLogout();
+        wfAppMostrarLogin();
+    }
+
+    /* ----- Instalacao PWA ----- */
+    var wfDeferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        wfDeferredPrompt = e;
+        var b = document.getElementById('wf-install-btn');
+        b.style.display = 'block';
+    });
+    function wfAppInstalar() {
+        if (!wfDeferredPrompt) { alert('Toque nos 3 pontos do navegador e selecione "Adicionar a tela inicial".'); return; }
+        wfDeferredPrompt.prompt();
+        wfDeferredPrompt.userChoice.then(function () {
+            wfDeferredPrompt = null;
+            document.getElementById('wf-install-btn').style.display = 'none';
+        });
+    }
+    window.addEventListener('appinstalled', function () {
+        document.getElementById('wf-install-btn').style.display = 'none';
+    });
+
+    /* ----- Restaura sessao ----- */
+    (function () {
+        var s = wfSessao();
+        if (s && s.cpf) {
+            wfAppMostrarChat();
+            wfIniciar('aluno');
+        } else {
+            wfAppMostrarLogin();
+        }
+    })();
+    </script>
+</body>
+</html>
