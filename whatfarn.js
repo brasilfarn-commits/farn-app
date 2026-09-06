@@ -59,7 +59,7 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 6;
+var WF_APK_VERSAO_ATUAL = 7;
 
 function wfVersaoLocal() {
     var v = 0;
