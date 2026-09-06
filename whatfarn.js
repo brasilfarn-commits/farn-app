@@ -59,7 +59,7 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 3;
+var WF_APK_VERSAO_ATUAL = 4;
 
 function wfVersaoLocal() {
     var v = 0;
@@ -611,16 +611,32 @@ function wfManterInputVisivel() {
     if (!window.visualViewport) return;
     var input = document.getElementById('wf-input');
     var composer = document.getElementById('wf-composer');
-    if (!input || !composer) return;
-    var vh = window.visualViewport.height || 0;
-    var rect = composer.getBoundingClientRect();
-    var sobra = (rect.bottom - (vh || window.innerHeight));
-    if (sobra > 0) {
-        var msgs = document.getElementById('wf-msgs');
-        if (msgs) {
-            msgs.scrollTop += sobra + 8;
+    var root0 = document.getElementById('wf-root');
+    if (!input || !composer || !root0) return;
+    try {
+        var vp = window.visualViewport;
+        var vh = vp.height || window.innerHeight;
+        var diff = Math.round(window.innerHeight - vh);
+        if (diff > 60) {
+            var headerH = 56;
+            var alvo = Math.max(180, vh - headerH);
+            root0.style.height = alvo + 'px';
+            if (root0.getBoundingClientRect().height < vh) {
+                var sobra = vh - (composer.getBoundingClientRect().bottom + root0.getBoundingClientRect().top);
+                if (sobra > 0) composer.style.marginBottom = '0px';
+            }
+        } else {
+            root0.style.height = '';
         }
-    }
+    } catch (e) {}
+    try {
+        var rect = composer.getBoundingClientRect();
+        var sobra = (rect.bottom - (window.visualViewport.height || window.innerHeight));
+        if (sobra > 0) {
+            var msgs = document.getElementById('wf-msgs');
+            if (msgs) msgs.scrollTop += sobra + 8;
+        }
+    } catch (e) {}
     try { if (typeof input.scrollIntoViewIfNeeded === 'function') input.scrollIntoViewIfNeeded(); } catch (e) {}
 }
 

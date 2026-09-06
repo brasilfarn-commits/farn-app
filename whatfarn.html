@@ -19,7 +19,9 @@
     .wf-app-header .wf-h-user{font-size:12px;background:rgba(255,255,255,.16);padding:5px 10px;border-radius:14px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .wf-app-header .wf-h-sair{width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .wf-app-header .wf-h-sair:active{transform:scale(.92)}
-    body.wf-standalone .wf-app{height:calc(100dvh - 56px);border:none;border-radius:0;box-shadow:none}
+    body.wf-standalone .wf-app{height:calc(100vh - 56px);border:none;border-radius:0;box-shadow:none}
+    @supports(height:100dvh){body.wf-standalone .wf-app{height:calc(100dvh - 56px)}}
+    @media(max-width:920px) and (orientation:landscape){body.wf-standalone .wf-app{height:calc(100vh - 56px)}}
 
     /* Tela de login */
     .wf-login{position:fixed;inset:0;z-index:50;background:linear-gradient(160deg,#0f172a 0%,#16a34a 130%);display:flex;align-items:center;justify-content:center;padding:20px}
