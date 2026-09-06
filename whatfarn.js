@@ -56,6 +56,103 @@ function wfDataLista(ts) {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
+/* ---------- Versao do app (APK) e atualizacao ---------- */
+
+var WF_APK_DOC = 'utils/whatfarn-app';
+var WF_APK_VERSAO_ATUAL = 1;
+
+function wfVersaoLocal() {
+    var v = 0;
+    try { v = parseInt(localStorage.getItem('wf_apk_versao') || '0', 10) || 0; } catch (e) {}
+    return v;
+}
+
+function wfDownloadAPK(nome) {
+    if (!dbFirestore) return;
+    dbFirestore.collection('utils').doc('whatfarn-app').get().then(function (doc) {
+        if (!doc.exists) return;
+        var d = doc.data();
+        var b64 = d.apk || '';
+        nome = nome || d.apkNome || 'WhatFarn.apk';
+        if (!b64) { alert('Arquivo do aplicativo indisponivel. Tente novamente.'); return; }
+        try {
+            var bin = atob(b64);
+            var bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            var blob = new Blob([bytes], { type: 'application/vnd.android.package-archive' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = nome;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+        } catch (e) {
+            alert('Nao foi possivel baixar o aplicativo.');
+            console.error('wf: download apk', e);
+        }
+    }).catch(function (e) { console.error('wf: download apk', e); alert('Erro ao baixar o aplicativo. Tente novamente.'); });
+}
+
+function wfVerificarAtualizacao(auto) {
+    if (!dbFirestore) return;
+    dbFirestore.collection('utils').doc('whatfarn-app').get().then(function (doc) {
+        if (!doc.exists) return;
+        var d = doc.data();
+        var remota = parseInt(d.versao || '0', 10) || 0;
+        var local = wfVersaoLocal();
+        if (auto && (!local || local >= remota)) return;
+        var responder = function (resp, id) {
+            if (resp === 'baixar') {
+                wfDownloadAPK(d.apkNome || 'WhatFarn.apk');
+            } else if (resp === 'memorizar') {
+                var v = parseInt(d.versao || '0', 10) || 0;
+                if (v) { try { localStorage.setItem('wf_apk_versao', String(v)); } catch (e) {} }
+            }
+            var el = document.getElementById(id);
+            if (el) el.remove();
+        };
+        responder(true, '');
+        var modal = document.createElement('div');
+        modal.className = 'wf-modal';
+        modal.id = 'wf-modal-apk-' + Date.now();
+        modal.innerHTML = '<div class="wf-modal-box">' +
+            '<div class="wf-m-title"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>' +
+            '<div class="wf-m-text">' + (d.msg || 'Nova versao do WhatFarn disponivel!') + '<br>Clique em baixar e instale o arquivo no seu celular.</div>' +
+            '<div class="wf-m-btns">' +
+            '<button class="wf-m-btn" onclick="wfRespostaAtualizacao(this,\'baixar\')"><i class="fa-solid fa-download"></i> Baixar</button>' +
+            '<button class="wf-m-btn later" onclick="wfRespostaAtualizacao(this,\'memorizar\')">Fechar</button>' +
+            '</div>' +
+            '<div class="wf-m-eps"><b>Como instalar:</b><br>1. Toque em Baixar<br>2. Abra o arquivo baixado<br>3. Se pedir, permita instalar de fontes desconhecidas<br>4. Toque em Instalar</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+    }).catch(function (e) { console.error('wf: verificar atualizacao', e); });
+}
+
+window.wfVerificarAtualizacao = wfVerificarAtualizacao;
+window.wfDownloadAPK = wfDownloadAPK;
+
+function wfAbrirInstrucoesAdmin() {
+    if (typeof wfMostrarInstrucoes === 'function') { wfMostrarInstrucoes(); return; }
+    var m = document.getElementById('wf-bv-modal');
+    if (m) m.classList.add('show');
+    else alert('Para instalar no celular:\n\n1. Baixe o arquivo WhatFarn.apk.\n2. Abra o arquivo baixado.\n3. Se pedir, permita instalar de fontes desconhecidas.\n4. Instale e entre com o mesmo CPF e senha do cadastro.');
+}
+
+function wfRespostaAtualizacao(btn, resp) {
+    var f = btn.closest('.wf-modal-box');
+    if (resp === 'baixar') {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Baixando...';
+        wfDownloadAPK();
+    }
+    if (f) {
+        setTimeout(function () {
+            var modal = f.parentNode;
+            if (modal) modal.remove();
+        }, resp === 'baixar' ? 1200 : 0);
+    }
+}
+window.wfRespostaAtualizacao = wfRespostaAtualizacao;
+
 function wfEventual(fn) {
     var unsub = null;
     try { unsub = fn(); } catch (e) { console.error('wf: erro ao registrar listener', e); }
@@ -190,7 +287,19 @@ function wfCss() {
         '.wf-col-chat.wf-vazio-apenas{background:var(--wf-bg)}',
         '.wf-app.wf-mobile .wf-conv-del{opacity:1;color:#94a3b8}',
         '@media(max-width:920px){.wf-app{height:calc(100dvh - 140px)}}',
-        '@media(max-width:600px){.wf-app{height:calc(100dvh - 120px)}.wf-msg-wrap{max-width:88%}}'
+        '@media(max-width:600px){.wf-app{height:calc(100dvh - 120px)}.wf-msg-wrap{max-width:88%}}',
+        '.wf-modal{position:fixed;inset:0;z-index:2147483100;background:rgba(8,15,32,.6);display:flex;align-items:flex-end;justify-content:center;padding:0;font-family:"Segoe UI",system-ui,sans-serif}',
+        '.wf-modal-box{width:100%;max-width:440px;background:#fff;border-radius:18px 18px 0 0;padding:22px 20px 24px;box-shadow:0 -10px 50px rgba(0,0,0,.3);animation:wfSheet .22s ease}',
+        '@keyframes wfSheet{from{transform:translateY(100%)}to{transform:none}}',
+        '.wf-modal-box .wf-m-title{font-size:17px;font-weight:800;color:#14532d;display:flex;align-items:center;gap:8px;margin-bottom:8px}',
+        '.wf-modal-box .wf-m-text{font-size:13.5px;color:#334155;line-height:1.55;margin-bottom:16px}',
+        '.wf-modal-box .wf-m-btns{display:flex;gap:10px;flex-wrap:wrap}',
+        '.wf-modal-box .wf-m-btn{flex:1;min-width:120px;border:none;border-radius:11px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;background:#16a34a;color:#fff}',
+        '.wf-modal-box .wf-m-btn.later{background:#eef2f7;color:#334155}',
+        '.wf-modal-box .wf-m-btn.small{background:#fff;color:#16a34a;border:1px solid #16a34a}',
+        '.wf-modal-box .wf-m-eps{font-size:12px;color:#64748b;margin-top:14px;line-height:1.7;border-top:1px solid #eef2f7;padding-top:12px}',
+        '.wf-modal-box .wf-m-eps b{color:#334155}',
+        '@media(min-width:600px){.wf-modal{align-items:center}.wf-modal-box{border-radius:18px}.wf-modal-box .wf-m-eps{display:none}}'
     ].join('');
     document.head.appendChild(st);
 }
@@ -209,8 +318,14 @@ function wfHTML() {
             '<div class="wf-search"><div class="wf-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="wf-contatos-busca" type="text" placeholder="Pesquisar aluno com status Ativo..." oninput="wfFiltrarContatos()"></div></div>' +
             '<div class="wf-contatos-list" id="wf-contatos-list"></div></div>';
     } else {
-        lista += '<div class="wf-list-head"><div class="wf-list-title"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div></div>' +
-            '<div class="wf-convs" id="wf-convs"></div>';
+        lista += '<div class="wf-list-head"><div class="wf-list-title"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>' +
+            '<button class="wf-btn-novo" onclick="wfMostrarContatos()" title="Nova conversa"><i class="fa-solid fa-square-plus"></i></button></div>' +
+            '<div class="wf-search"><div class="wf-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="wf-busca" type="text" placeholder="Pesquisar conversas ou contatos..." oninput="wfRenderLista()"></div></div>' +
+            '<div class="wf-convs" id="wf-convs"></div>' +
+            '<div class="wf-contatos" id="wf-contatos" style="display:none">' +
+            '<div class="wf-contatos-head"><strong>Novo Chat</strong><button onclick="wfFecharContatos()"><i class="fa-solid fa-xmark"></i></button></div>' +
+            '<div class="wf-search"><div class="wf-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="wf-contatos-busca" type="text" placeholder="Pesquisar aluno com status Ativo..." oninput="wfFiltrarContatos()"></div></div>' +
+            '<div class="wf-contatos-list" id="wf-contatos-list"></div></div>';
     }
     var chat = '<div class="wf-chat-head">' +
         '<button class="wf-back" onclick="wfVoltarLista()" title="Voltar"><i class="fa-solid fa-arrow-left"></i></button>' +
@@ -364,8 +479,25 @@ function wfMostrarContatos() {
     var list = document.getElementById('wf-contatos-list');
     if (list) list.innerHTML = '<div class="wf-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i> Carregando contatos...</div>';
     if (!dbFirestore) return;
+
+    function montar(adminFix) {
+        if (wfState.modo === 'aluno' && adminFix) {
+            wfState.contatos = [{ id: WF_ADMIN_ID, nome: WF_ADMIN_NOME, foto: '', sub: 'Administrativo FARN' }];
+        }
+        wfFiltrarContatos();
+    }
+
+    if (wfState.modo === 'aluno' && wfState.contatos && wfState.contatos.length) {
+        if (!wfState.contatos.some(function (x) { return x.id === WF_ADMIN_ID; })) {
+            wfState.contatos.unshift({ id: WF_ADMIN_ID, nome: WF_ADMIN_NOME, foto: '', sub: 'Administrativo FARN' });
+        }
+        wfFiltrarContatos();
+        return;
+    }
+
     dbFirestore.collection('candidatos').get().then(function (snap) {
-        wfState.contatos = [];
+        if (wfState.modo === 'aluno') wfState.contatos = [{ id: WF_ADMIN_ID, nome: WF_ADMIN_NOME, foto: '', sub: 'Administrativo FARN' }];
+        else wfState.contatos = [];
         snap.forEach(function (doc) {
             var d = doc.data();
             if (!d || !d.cpf) return;
@@ -376,8 +508,9 @@ function wfMostrarContatos() {
             var turma = d.turma || d.projeto || '';
             wfState.contatos.push({ id: String(d.cpf), nome: d.nome || 'Aluno', foto: foto, sub: turma || 'Aluno ativo' });
         });
-        wfFiltrarContatos();
+        montar(false);
     }).catch(function () {
+        montar(true);
         if (list) list.innerHTML = '<div class="wf-vazio"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar contatos.</p></div>';
     });
 }

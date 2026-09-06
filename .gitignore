@@ -8,3 +8,6 @@ firebase-debug.log
 
 # Fotos da carteira (LOCALSERV) - ficam somente no dispositivo
 fotos-carteira/
+
+# APK gerado (baixado via Firestore, nao vai para o hosting)
+whatfarn.apk

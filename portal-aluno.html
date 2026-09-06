@@ -918,7 +918,8 @@
                             </div>
                         </div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap">
-                            <a download href="whatfarn.apk" style="background:#fff;color:#15803d;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:8px"><i class="fa-solid fa-download"></i> Baixar APK</a>
+                            <button onclick="wfDownloadAPK('WhatFarn.apk')" style="background:#fff;color:#15803d;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><i class="fa-solid fa-download"></i> Baixar APK</button>
+                            <button onclick="wfMostrarInstrucoes()" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><i class="fa-solid fa-circle-question"></i> Como instalar</button>
                             <a href="whatfarn.html" target="_blank" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px"><i class="fa-solid fa-mobile-screen-button"></i> Abrir no celular</a>
                         </div>
                     </div>
@@ -1234,6 +1235,7 @@
             document.getElementById('screen-portal').classList.add('active');
             paCheckHash();
             paGenerateQR();
+            wfAbrirBemVindoAuto();
 
             var initials = (paUser.nome || 'AL').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
             document.getElementById('pf-user-avatar').textContent = initials;
@@ -1843,6 +1845,36 @@
                 });
             });
         });
+    }
+
+    function wfMostrarInstrucoes() {
+        var m = document.getElementById('wf-bv-modal');
+        if (!m) return;
+        m.querySelector('.wf-bv-sub').innerHTML = '<b>Como instalar o aplicativo no celular</b>';
+        m.querySelector('.wf-bv-feat').innerHTML =
+            '<div style="align-items:center"><i class="fa-solid fa-1" style="flex-shrink:0"></i><span>Toque em <b>Baixar APK</b> abaixo.</span></div>' +
+            '<div style="align-items:center"><i class="fa-solid fa-2" style="flex-shrink:0"></i><span>Abra o arquivo <b>WhatFarn.apk</b> baixado.</span></div>' +
+            '<div style="align-items:center"><i class="fa-solid fa-3" style="flex-shrink:0"></i><span>Se o celular pedir, permita <b>instalar de fontes desconhecidas</b>.</span></div>' +
+            '<div style="align-items:center"><i class="fa-solid fa-4" style="flex-shrink:0"></i><span>Toque em <b>Instalar</b> e abra o aplicativo <b>WhatFarn</b>.</span></div>' +
+            '<div style="align-items:center"><i class="fa-solid fa-5" style="flex-shrink:0"></i><span>Entre com o <b>mesmo CPF e senha</b> do seu cadastro.</span></div>';
+        m.querySelector('.wf-bv-baixar').style.display = 'flex';
+        m.querySelector('.wf-bv-aparelho').style.display = 'none';
+        m.querySelector('.wf-bv-eps').textContent = 'Ao abrir o arquivo de instalacao, o WhatsApp Fornecido pela Google pode pedir confirmacao. Aceite para continuar.';
+        m.classList.add('show');
+    }
+
+    function wfFecharBemVindo() {
+        var m = document.getElementById('wf-bv-modal');
+        if (m) { m.classList.remove('show'); m.querySelector('.wf-bv-eps').textContent = ''; m.querySelector('.wf-bv-baixar').style.display = 'flex'; m.querySelector('.wf-bv-aparelho').style.display = 'flex'; }
+        try { localStorage.setItem('wf_bv_visto', '1'); } catch (e) {}
+    }
+
+    function wfAbrirBemVindoAuto() {
+        try { if (localStorage.getItem('wf_bv_visto')) return; } catch (e) {}
+        setTimeout(function () {
+            var m = document.getElementById('wf-bv-modal');
+            if (m) m.classList.add('show');
+        }, 900);
     }
 
     function paShowSection(section, el) {
@@ -4655,6 +4687,39 @@
     </script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js"></script>
+    <!-- Modal bem-vindo / instrucoes WhatFarn -->
+    <style>
+        #wf-bv-modal{position:fixed;inset:0;z-index:2147483200;background:rgba(8,15,32,.62);display:none;align-items:center;justify-content:center;padding:16px;font-family:"Segoe UI",system-ui,sans-serif}
+        #wf-bv-modal.show{display:flex}
+        #wf-bv-modal .wf-bv-card{width:100%;max-width:420px;background:#fff;border-radius:18px;padding:24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:wfBvIn .25s ease;max-height:92vh;overflow-y:auto}
+        @keyframes wfBvIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+        #wf-bv-modal .wf-bv-logo{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px;box-shadow:0 8px 22px rgba(22,163,74,.35)}
+        #wf-bv-modal .wf-bv-titulo{font-size:19px;font-weight:800;color:#14532d;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px}
+        #wf-bv-modal .wf-bv-sub{text-align:center;font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5}
+        #wf-bv-modal .wf-bv-feat{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+        #wf-bv-modal .wf-bv-feat>div{display:flex;gap:10px;align-items:flex-start;background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:10px 12px;font-size:13px;color:#334155}
+        #wf-bv-modal .wf-bv-feat i{color:#16a34a;margin-top:2px;flex-shrink:0}
+        #wf-bv-modal .wf-bv-baixar{width:100%;border:none;border-radius:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;font-size:14.5px;font-weight:800;padding:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 20px rgba(22,163,74,.3);margin-bottom:12px}
+        #wf-bv-modal .wf-bv-aparelho{width:100%;border:none;border-radius:12px;background:#fff;color:#16a34a;border:1.5px solid #16a34a;font-size:13px;font-weight:700;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
+        #wf-bv-modal .wf-bv-eps{font-size:12.5px;color:#475569;line-height:1.8;border-top:1px solid #eef2f7;padding-top:14px}
+        #wf-bv-modal .wf-bv-eps b{color:#14532d}
+        #wf-bv-modal .wf-bv-fechar{width:100%;border:none;background:none;color:#94a3b8;font-size:12.5px;padding:8px;cursor:pointer;margin-top:4px}
+    </style>
+    <div id="wf-bv-modal">
+        <div class="wf-bv-card">
+            <div class="wf-bv-logo"><i class="fa-brands fa-whatsapp"></i></div>
+            <div class="wf-bv-titulo">WhatFarn</div>
+            <div class="wf-bv-sub">Nosso proprio aplicativo de mensagens da FARN, tipo WhatsApp!<br>Converse com os colegas e com a administracao.</div>
+            <div class="wf-bv-feat">
+                <div><i class="fa-solid fa-comments"></i><span><b>Mensagens instantaneas</b> em tempo real com todos os seus colegas e com a administracao.</span></div>
+                <div><i class="fa-solid fa-image"></i><span><b>Envio de imagens e fotos</b> direto pelo aplicativo.</span></div>
+                <div><i class="fa-solid fa-mobile-screen"></i><span><b>Instale em qualquer celular Android</b> e acesse com o mesmo CPF e senha do cadastro.</span></div>
+            </div>
+            <button class="wf-bv-baixar" onclick="wfDownloadAPK('WhatFarn.apk')"><i class="fa-solid fa-download"></i> Baixar APK do WhatFarn</button>
+            <button class="wf-bv-aparelho" onclick="wfMostrarInstrucoes()"><i class="fa-solid fa-circle-question"></i> Instrucoes de instalacao</button>
+            <button class="wf-bv-fechar" onclick="wfFecharBemVindo()">Fechar</button>
+        </div>
+    </div>
     <!-- Botao voltar pagina anterior -->
     <style>
         #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0a1c40;color:#fff;border:1px solid rgba(212,175,55,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}
