@@ -998,7 +998,7 @@ function wfIniciar(modo) {
             wfCarregarMsgs();
             wfRenderLista();
             var appAb = document.getElementById('wf-root');
-            if (appAb) appAb.classList.add('wf-open');
+            if (appAb) appAb.classList.remove('wf-open');
         });
     } else {
         wfCarregarConversas();
