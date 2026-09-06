@@ -336,7 +336,7 @@ function wfHTML() {
         '<label class="wf-ic-btn" title="Anexar imagem (galeria)"><i class="fa-solid fa-paperclip"></i><input type="file" accept="image/*" style="display:none" onchange="wfAnexarPermanente(this)"></label>' +
         '<label class="wf-ic-btn" title="Tirar foto temporaria (camera)"><i class="fa-solid fa-camera"></i><input type="file" accept="image/*" capture="environment" style="display:none" onchange="wfAnexarTemporaria(this)"></label>' +
         '<input class="wf-input" id="wf-input" type="text" placeholder="Digite uma mensagem..." oninput="wfDigitando()" onkeydown="if(event.key===\'Enter\')wfEnviar()">' +
-        '<button class="wf-send" onclick="wfEnviar()" title="Enviar"><i class="fa-solid fa-paper-plane"></i></button>' +
+        '<button class="wf-send" onclick="wfEnviar()" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" title="Enviar"><i class="fa-solid fa-paper-plane"></i></button>' +
         '</div>';
     var html = '<div class="wf-col wf-col-list">' + lista + '</div>' +
         '<div class="wf-col wf-col-chat" id="wf-col-chat">' + chat + '</div>';
@@ -803,7 +803,10 @@ function wfEnviar() {
     if (!texto || !wfState.convId || !wfState.contato) return;
     input.value = '';
     wfDigitando(false);
-    wfMsgsEnviar({ tipo: 'texto', texto: texto });
+    try { input.focus({ preventScroll: true }); } catch (e) {}
+    wfMsgsEnviar({ tipo: 'texto', texto: texto }).then(function () {
+        try { input.focus({ preventScroll: true }); } catch (e) {}
+    });
 }
 
 function wfDigitando(forcar) {
@@ -971,6 +974,7 @@ function wfIniciar(modo) {
     }
 
     if (modo === 'aluno') {
+        wfCarregarConversas();
         var convId = wfConvId(me.id, WF_ADMIN_ID);
         var outro = { id: WF_ADMIN_ID, nome: WF_ADMIN_NOME, foto: '' };
         wfState.contato = outro;
@@ -979,11 +983,7 @@ function wfIniciar(modo) {
         if (elNome) elNome.textContent = WF_ADMIN_NOME;
         wfLigarPresencaContato();
         dbFirestore.collection('whatfarnConversas').doc(convId).get().then(function (doc) {
-            if (doc.exists) {
-                wfState.lista = [{ id: convId, data: doc.data() }];
-                wfCarregarMsgs();
-            } else {
-                wfState.lista = [];
+            if (!doc.exists) {
                 var participantes = {};
                 participantes[me.id] = { nome: me.nome || 'Aluno', foto: me.foto || '' };
                 participantes[WF_ADMIN_ID] = { nome: WF_ADMIN_NOME, foto: '' };
@@ -994,8 +994,8 @@ function wfIniciar(modo) {
                     ultimaMsg: '',
                     criadoEm: Date.now()
                 }, { merge: true }).catch(function () {});
-                wfCarregarMsgs();
             }
+            wfCarregarMsgs();
             wfRenderLista();
             var appAb = document.getElementById('wf-root');
             if (appAb) appAb.classList.add('wf-open');
