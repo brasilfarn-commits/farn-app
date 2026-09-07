@@ -59,7 +59,7 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 7;
+var WF_APK_VERSAO_ATUAL = 8;
 
 function wfVersaoLocal() {
     var v = 0;
@@ -414,6 +414,7 @@ function wfCarregarConversas() {
                 var d = doc.data();
                 if (d.membros && d.membros.indexOf(wfState.me.id) !== -1) {
                     wfState.lista.push({ id: doc.id, data: d });
+                    wfVerNotificacaoNova({ id: doc.id, data: d });
                 }
             });
             wfState.lista.sort(function (a, b) { return (b.data.ultimaHora || 0) - (a.data.ultimaHora || 0); });
@@ -421,6 +422,41 @@ function wfCarregarConversas() {
         });
     });
     wfState.unsubs.push(unsub);
+}
+
+function wfVerNotificacaoNova(conv) {
+    if (!wfState.me || !conv || !conv.data || !conv.id) return;
+    var d = conv.data;
+    if (!d.membros || d.membros.indexOf(wfState.me.id) === -1) return;
+    if (!d.ultimaRemetente || d.ultimaRemetente === wfState.me.id) return;
+    var appVisivel = document.visibilityState === 'visible' || document.hidden === false;
+    var conversaEmFoco = wfState.convId && wfState.convId === conv.id && appVisivel;
+    if (conversaEmFoco) return;
+    var chave = conv.id + '|' + (d.ultimaMsg || '') + '|' + (d.ultimaHora || 0);
+    if (!wfState.notifVistas) wfState.notifVistas = {};
+    if (wfState.notifVistas[chave]) return;
+    wfState.notifVistas[chave] = true;
+    var p = d.participantes || {};
+    var outro = null;
+    for (var k in p) if (k !== wfState.me.id && p[k]) outro = p[k];
+    if (!outro) return;
+    var nome = outro.nome || outro.id || 'Contato';
+    var texto = d.ultimaMsg === 'FOTO' ? 'Voce recebeu uma foto.' : (d.ultimaMsg || 'Nova mensagem');
+    wfNotificarAndroid(nome, texto);
+}
+
+function wfNotificarAndroid(titulo, texto) {
+    try {
+        if (window.WhatFarnAndroid && window.WhatFarnAndroid.notificarSomLuzVibracao) {
+            window.WhatFarnAndroid.notificarSomLuzVibracao(String(titulo), String(texto));
+            return;
+        }
+        if (window.WhatFarnAndroid && window.WhatFarnAndroid.notificar) {
+            window.WhatFarnAndroid.notificar(String(titulo), String(texto));
+            return;
+        }
+    } catch (e) {
+    }
 }
 
 function wfRenderLista() {
@@ -1027,4 +1063,6 @@ window.wfDigitando = wfDigitando;
 window.wfVerTemporaria = wfVerTemporaria;
 window.wfAnexarPermanente = wfAnexarPermanente;
 window.wfAnexarTemporaria = wfAnexarTemporaria;
+window.wfVerNotificacaoNova = wfVerNotificacaoNova;
+window.wfNotificarAndroid = wfNotificarAndroid;
 window.wfAbrirImagem = wfAbrirImagem;
