@@ -59,7 +59,7 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 9;
+var WF_APK_VERSAO_ATUAL = 10;
 
 function wfVersaoLocal() {
     var v = 0;
@@ -445,6 +445,7 @@ function wfCarregarConversas() {
             });
             wfState.lista.sort(function (a, b) { return (b.data.ultimaHora || 0) - (a.data.ultimaHora || 0); });
             wfRenderLista();
+            wfSincronizarBadge();
         });
     });
     wfState.unsubs.push(unsub);
@@ -480,6 +481,28 @@ function wfNotificarAndroid(titulo, texto) {
         if (window.WhatFarnAndroid && window.WhatFarnAndroid.notificar) {
             window.WhatFarnAndroid.notificar(String(titulo), String(texto));
             return;
+        }
+    } catch (e) {
+    }
+}
+
+function wfTotalNaoLidas() {
+    var total = 0;
+    if (!wfState.lista || !wfState.me) return total;
+    var ehAdmin = wfState.me.id === WF_ADMIN_ID;
+    for (var i = 0; i < wfState.lista.length; i++) {
+        var c = wfState.lista[i];
+        if (!c || !c.data) continue;
+        var v = ehAdmin ? c.data.naoLidasAdmin : c.data.naoLidasAluno;
+        if (v) total += (parseInt(v, 10) || 0);
+    }
+    return total;
+}
+
+function wfSincronizarBadge() {
+    try {
+        if (window.WhatFarnAndroid && typeof window.WhatFarnAndroid.atualizarBadge === 'function') {
+            window.WhatFarnAndroid.atualizarBadge(wfTotalNaoLidas());
         }
     } catch (e) {
     }
@@ -773,7 +796,7 @@ function wfMarcarLidas() {
     var pendentes = wfState.msgs.filter(function (m) {
         return m.data.destinatario === me && !m.data.lida;
     });
-    if (!pendentes.length) return;
+    if (!pendentes.length) { wfSincronizarBadge(); return; }
     var batch = dbFirestore.batch();
     pendentes.forEach(function (m) {
         batch.update(dbFirestore.collection('whatfarnConversas').doc(wfState.convId).collection('msgs').doc(m.id), {
@@ -781,7 +804,7 @@ function wfMarcarLidas() {
             lidaEm: Date.now()
         });
     });
-    batch.commit().catch(function () {});
+    batch.commit().then(function () { wfSincronizarBadge(); }).catch(function () {});
     var conv = wfState.lista.find(function (c) { return c.id === wfState.convId; });
     if (conv) {
         var campo = me === WF_ADMIN_ID ? 'naoLidasAdmin' : 'naoLidasAluno';
@@ -1091,4 +1114,6 @@ window.wfAnexarPermanente = wfAnexarPermanente;
 window.wfAnexarTemporaria = wfAnexarTemporaria;
 window.wfVerNotificacaoNova = wfVerNotificacaoNova;
 window.wfNotificarAndroid = wfNotificarAndroid;
+window.wfTotalNaoLidas = wfTotalNaoLidas;
+window.wfSincronizarBadge = wfSincronizarBadge;
 window.wfAbrirImagem = wfAbrirImagem;
