@@ -355,7 +355,7 @@ function wfHTML() {
     var chat = '<div class="wf-chat-head">' +
         '<button class="wf-back" onclick="wfVoltarLista()" title="Voltar"><i class="fa-solid fa-arrow-left"></i></button>' +
         '<div class="wf-avatar wf-a2" id="wf-chat-avatar"><i class="fa-solid fa-headset"></i></div>' +
-        '<div class="wf-chat-info"><div class="wf-chat-nome" id="wf-chat-nome">Selecione uma conversa</div><div class="wf-chat-status wf-cinza" id="wf-chat-status">&nbsp;</div></div>' +
+        '<div class="wf-chat-info"><div class="wf-chat-nome" id="wf-chat-nome">Selecione uma conversa</div><div class="wf-chat-status wf-cinza" id="wf-chat-status">Offline</div></div>' +
         '</div>' +
         '<div class="wf-msgs" id="wf-msgs"><div class="wf-vazio"><i class="fa-solid fa-comments" style="font-size:34px;opacity:.4"></i><p>Selecione uma conversa ao lado para começar a conversar.</p></div></div>' +
         '<div class="wf-composer" id="wf-composer">' +
@@ -438,7 +438,13 @@ function wfCarregarConversas() {
             wfState.lista = [];
             snap.forEach(function (doc) {
                 var d = doc.data();
-                if (d.membros && d.membros.indexOf(wfState.me.id) !== -1) {
+                var pid = doc.id.replace(/^wf_/, '').split('__');
+                var ehMeu = d.membros && d.membros.indexOf(wfState.me.id) !== -1;
+                if (!ehMeu && pid.indexOf(wfState.me.id) !== -1) {
+                    ehMeu = true;
+                    dbFirestore.collection('whatfarnConversas').doc(doc.id).update({ membros: [pid[0], pid[1]].sort() }).catch(function () {});
+                }
+                if (ehMeu) {
                     wfState.lista.push({ id: doc.id, data: d });
                     wfVerNotificacaoNova({ id: doc.id, data: d });
                 }
@@ -454,7 +460,9 @@ function wfCarregarConversas() {
 function wfVerNotificacaoNova(conv) {
     if (!wfState.me || !conv || !conv.data || !conv.id) return;
     var d = conv.data;
-    if (!d.membros || d.membros.indexOf(wfState.me.id) === -1) return;
+    var pid = conv.id.replace(/^wf_/, '').split('__');
+    var ehMeu = d.membros && d.membros.indexOf(wfState.me.id) !== -1;
+    if (!ehMeu && pid.indexOf(wfState.me.id) === -1) return;
     if (!d.ultimaRemetente || d.ultimaRemetente === wfState.me.id) return;
     var appVisivel = document.visibilityState === 'visible' || document.hidden === false;
     var conversaEmFoco = wfState.convId && wfState.convId === conv.id && appVisivel;
@@ -465,9 +473,11 @@ function wfVerNotificacaoNova(conv) {
     wfState.notifVistas[chave] = true;
     var p = d.participantes || {};
     var outro = null;
-    for (var k in p) if (k !== wfState.me.id && p[k]) outro = p[k];
+    var oId = pid[0] === wfState.me.id ? pid[1] : pid[0];
+    if (p[oId]) outro = p[oId];
+    if (!outro) { for (var k in p) if (k !== wfState.me.id && p[k]) outro = p[k]; }
     if (!outro) return;
-    var nome = outro.nome || outro.id || 'Contato';
+    var nome = outro.nome || outro.id || oId || 'Contato';
     var texto = d.ultimaMsg === 'FOTO' ? 'Voce recebeu uma foto.' : (d.ultimaMsg || 'Nova mensagem');
     wfNotificarAndroid(nome, texto);
 }
@@ -527,11 +537,14 @@ function wfRenderLista() {
         html += '<div class="wf-vazio"><i class="fa-solid fa-comment-slash" style="font-size:30px;opacity:.4"></i><p>' + (wfState.modo === 'admin' ? 'Nenhuma conversa. Clique no + para iniciar um novo chat com um aluno ativo.' : 'Nenhuma conversa ainda. Inicie um chat com o Administrativo.') + '</p></div>';
     }
     itens.forEach(function (c) {
+        var pid = c.id.replace(/^wf_/, '').split('__');
+        var oId = pid[0] === wfState.me.id ? pid[1] : pid[0];
         var p = c.data.participantes || {};
-        var outro = null;
-        for (var k in p) if (k !== wfState.me.id) outro = p[k];
-        var nome = outro ? (outro.nome || k) : 'Contato';
-        var foto = outro ? (outro.foto || '') : '';
+        var outro = p[oId] || null;
+        if (!outro) { for (var k in p) if (k !== wfState.me.id && p[k]) { outro = p[k]; break; } }
+        if (!outro) outro = { nome: oId };
+        var nome = outro.nome || oId;
+        var foto = outro.foto || '';
         var pvC = wfState.me.id === WF_ADMIN_ID ? c.data.naoLidasAdmin : c.data.naoLidasAluno;
         var naoLidas = pvC || 0;
         var pvM = c.data.ultimaMsg || '';
@@ -632,15 +645,14 @@ function wfSelecionarContato(id, nome, foto) {
 function wfSelecionarConversa(convId, nomeOverride, fotoOverride) {
     if (!dbFirestore) return;
     var conv = wfState.lista.find(function (c) { return c.id === convId; });
-    var outro = { id: null, nome: nomeOverride || null, foto: fotoOverride || null };
+    var partsId = convId.replace(/^wf_/, '').split('__');
+    var outroId = partsId[0] === wfState.me.id ? partsId[1] : partsId[0];
+    var outro = { id: outroId, nome: nomeOverride || null, foto: fotoOverride || null };
     if (conv) {
         var p = conv.data.participantes || {};
-        for (var k in p) if (k !== wfState.me.id) { outro.id = k; if (!outro.nome) outro.nome = p[k].nome; if (outro.foto === null) outro.foto = p[k].foto || ''; }
-    } else if (!outro.nome) {
-        var parts = convId.replace(/^wf_/, '').split('__');
-        outro.id = parts[0] === wfState.me.id ? parts[1] : parts[0];
-        outro.nome = outro.id === WF_ADMIN_ID ? WF_ADMIN_NOME : (outro.nome || outro.id);
+        for (var k in p) if (p[k] && String(k) === String(outroId)) { if (!outro.nome) outro.nome = p[k].nome; if (outro.foto === null) outro.foto = p[k].foto || ''; }
     }
+    if (!outro.nome) outro.nome = outro.id === WF_ADMIN_ID ? WF_ADMIN_NOME : outro.id;
     if (!outro.nome) outro.nome = outro.id || 'Contato';
     wfState.contato = { id: outro.id, nome: outro.nome, foto: outro.foto || '' };
     wfState.convId = convId;
@@ -648,6 +660,7 @@ function wfSelecionarConversa(convId, nomeOverride, fotoOverride) {
     var updP = {};
     updP['participantes.' + wfState.me.id] = { nome: wfState.me.nome || 'Voce', foto: wfState.me.foto || '' };
     updP['participantes.' + wfState.contato.id] = { nome: wfState.contato.nome, foto: wfState.contato.foto || '' };
+    updP.membros = [wfState.me.id, wfState.contato.id].sort();
     dbFirestore.collection('whatfarnConversas').doc(convId).set(updP, { merge: true }).catch(function () {});
 
     document.getElementById('wf-col-chat').classList.add('wf-open-chat');
@@ -768,7 +781,7 @@ function wfLimparConversaUI() {
     var n = document.getElementById('wf-chat-nome');
     if (n) n.textContent = 'Selecione uma conversa';
     var s = document.getElementById('wf-chat-status');
-    if (s) { s.classList.add('wf-cinza'); s.textContent = '&nbsp;'; }
+    if (s) { s.classList.add('wf-cinza'); s.textContent = 'Offline'; }
     var app = document.getElementById('wf-root');
     if (app) app.classList.remove('wf-open');
 }
