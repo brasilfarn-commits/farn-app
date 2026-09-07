@@ -170,16 +170,18 @@
         document.getElementById('wf-install-btn').style.display = 'none';
     });
 
-    /* ----- Restaura sessao ----- */
+    /* ----- Verifica atualizacao ANTES de abrir o app ----- */
     (function () {
-        var s = wfSessao();
-        if (s && s.cpf) {
-            wfAppMostrarChat();
-            wfIniciar('aluno');
-        } else {
-            wfAppMostrarLogin();
+        function wfAbrir() {
+            var s = wfSessao();
+            if (s && s.cpf) {
+                wfAppMostrarChat();
+                wfIniciar('aluno');
+            } else {
+                wfAppMostrarLogin();
+            }
         }
-        wfVerificarAtualizacao(true);
+        wfVerificarAtualizacao(true, wfAbrir);
     })();
     </script>
 </body>

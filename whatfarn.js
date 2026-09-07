@@ -59,12 +59,29 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 8;
+var WF_APK_VERSAO_ATUAL = 9;
 
 function wfVersaoLocal() {
     var v = 0;
     try { v = parseInt(localStorage.getItem('wf_apk_versao') || '0', 10) || 0; } catch (e) {}
     return v;
+}
+
+function wfVersaoAtualApk() {
+    try {
+        if (window.WhatFarnAndroid && typeof window.WhatFarnAndroid.versaoApk === 'function') {
+            var v = parseInt(window.WhatFarnAndroid.versaoApk(), 10) || 0;
+            if (v > 0) return v;
+        }
+    } catch (e) {}
+    if (location && location.search) {
+        var m = location.search.match(/[?&]v=(\d+)/);
+        if (m && m[1]) {
+            var vq = parseInt(m[1], 10) || 0;
+            if (vq > 0) return vq;
+        }
+    }
+    return WF_APK_VERSAO_ATUAL;
 }
 
 function wfDownloadAPK(nome) {
@@ -93,23 +110,23 @@ function wfDownloadAPK(nome) {
     }).catch(function (e) { console.error('wf: download apk', e); alert('Erro ao baixar o aplicativo. Tente novamente.'); });
 }
 
-function wfVerificarAtualizacao(auto) {
-    if (!dbFirestore) return;
+function wfVerificarAtualizacao(auto, depois) {
+    if (typeof depois !== 'function') depois = function () {};
+    if (!dbFirestore) { depois(); return; }
     dbFirestore.collection('utils').doc('whatfarn-app').get().then(function (doc) {
-        if (!doc.exists) return;
+        if (!doc.exists) { depois(); return; }
         var d = doc.data();
         var remota = parseInt(d.versao || '0', 10) || 0;
-        var local = wfVersaoLocal();
-        if (auto && (!local || local >= remota)) return;
+        var local = wfVersaoAtualApk();
+        var temNova = remota > local;
+        if (auto && !temNova) { depois(); return; }
         var responder = function (resp, id) {
             if (resp === 'baixar') {
                 wfDownloadAPK(d.apkNome || 'WhatFarn.apk');
-            } else if (resp === 'memorizar') {
-                var v = parseInt(d.versao || '0', 10) || 0;
-                if (v) { try { localStorage.setItem('wf_apk_versao', String(v)); } catch (e) {} }
             }
             var el = document.getElementById(id);
             if (el) el.remove();
+            depois();
         };
         var modal = document.createElement('div');
         modal.className = 'wf-modal';
@@ -119,12 +136,21 @@ function wfVerificarAtualizacao(auto) {
             '<div class="wf-m-text">' + (d.msg || 'Nova versao do WhatFarn disponivel!') + '<br>Clique em baixar e instale o arquivo no seu celular.</div>' +
             '<div class="wf-m-btns">' +
             '<button class="wf-m-btn" onclick="wfRespostaAtualizacao(this,\'baixar\')"><i class="fa-solid fa-download"></i> Baixar</button>' +
-            '<button class="wf-m-btn later" onclick="wfRespostaAtualizacao(this,\'memorizar\')">Fechar</button>' +
+            '<button class="wf-m-btn later" onclick="wfRespostaAtualizacao(this,\'memorizar\')">Agora nao</button>' +
             '</div>' +
             '<div class="wf-m-eps"><b>Como instalar:</b><br>1. Toque em Baixar<br>2. Abra o arquivo baixado<br>3. Se pedir, permita instalar de fontes desconhecidas<br>4. Toque em Instalar</div>' +
             '</div>';
         document.body.appendChild(modal);
-    }).catch(function (e) { console.error('wf: verificar atualizacao', e); });
+        var id = modal.id;
+        modal.querySelector('.wf-m-btn').onclick = function (e) {
+            e.stopPropagation();
+            responder('baixar', id);
+        };
+        modal.querySelector('.wf-m-btn.later').onclick = function (e) {
+            e.stopPropagation();
+            responder('memorizar', id);
+        };
+    }).catch(function (e) { console.error('wf: verificar atualizacao', e); depois(); });
 }
 
 window.wfVerificarAtualizacao = wfVerificarAtualizacao;
