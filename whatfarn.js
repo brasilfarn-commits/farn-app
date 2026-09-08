@@ -59,7 +59,7 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 12;
+var WF_APK_VERSAO_ATUAL = 14;
 
 function wfVersaoLocal() {
     var v = 0;
@@ -92,6 +92,10 @@ function wfDownloadAPK(nome) {
         var b64 = d.apk || '';
         nome = nome || d.apkNome || 'WhatFarn.apk';
         if (!b64) { alert('Arquivo do aplicativo indisponivel. Tente novamente.'); return; }
+        if (window.WhatFarnAndroid && typeof window.WhatFarnAndroid.baixarApk === 'function') {
+            try { window.WhatFarnAndroid.baixarApk(b64, nome); return; } catch (e) {
+            }
+        }
         try {
             var bin = atob(b64);
             var bytes = new Uint8Array(bin.length);
@@ -110,9 +114,12 @@ function wfDownloadAPK(nome) {
     }).catch(function (e) { console.error('wf: download apk', e); alert('Erro ao baixar o aplicativo. Tente novamente.'); });
 }
 
+var ehAndroidApp = (typeof window !== 'undefined') && !!window.WhatFarnAndroid;
+
 function wfVerificarAtualizacao(auto, depois) {
     if (typeof depois !== 'function') depois = function () {};
     if (!dbFirestore) { depois(); return; }
+    if (!ehAndroidApp) { depois(); return; }
     dbFirestore.collection('utils').doc('whatfarn-app').get().then(function (doc) {
         if (!doc.exists) { depois(); return; }
         var d = doc.data();
@@ -491,6 +498,27 @@ function wfNotificarAndroid(titulo, texto) {
         if (window.WhatFarnAndroid && window.WhatFarnAndroid.notificar) {
             window.WhatFarnAndroid.notificar(String(titulo), String(texto));
             return;
+        }
+    } catch (e) {
+    }
+    try {
+        if (('Notification' in window)) {
+            if (Notification.permission === 'granted') {
+                var n = new Notification(String(titulo), { body: String(texto), icon: '/icons/whatfarn-192.png' });
+                if (n && n.onclick) {
+                    n.onclick = function () { window.focus(); };
+                }
+                return;
+            }
+            if (Notification.permission === 'default' && !wfState._notifPedido) {
+                wfState._notifPedido = true;
+                Notification.requestPermission().then(function () {
+                    if (Notification.permission === 'granted') {
+                        var n2 = new Notification(String(titulo), { body: String(texto), icon: '/icons/whatfarn-192.png' });
+                        if (n2 && n2.onclick) n2.onclick = function () { window.focus(); };
+                    }
+                }).catch(function () {});
+            }
         }
     } catch (e) {
     }

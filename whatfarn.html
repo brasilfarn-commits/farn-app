@@ -4,10 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16a34a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WhatFarn">
 <title>WhatFarn - FARN</title>
 <link rel="manifest" href="/whatfarn-manifest.json">
 <link rel="icon" href="/icons/whatfarn-192.png">
-<link rel="apple-touch-icon" href="/icons/whatfarn-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/whatfarn-180.png">
+<link rel="apple-touch-icon" sizes="167x167" href="/icons/whatfarn-167.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/icons/whatfarn-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/icons/whatfarn-120.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -22,6 +29,10 @@
     body.wf-standalone .wf-app{height:calc(100vh - 56px);border:none;border-radius:0;box-shadow:none}
     @supports(height:100dvh){body.wf-standalone .wf-app{height:calc(100dvh - 56px)}}
     @media(max-width:920px) and (orientation:landscape){body.wf-standalone .wf-app{height:calc(100vh - 56px)}}
+    body.wf-ios-standalone .wf-app-header{height:calc(56px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}
+    body.wf-ios-standalone .wf-app{height:calc(100vh - 56px - env(safe-area-inset-top) - env(safe-area-inset-bottom));border:none;border-radius:0;box-shadow:none}
+    @supports(height:100dvh){body.wf-ios-standalone .wf-app{height:calc(100dvh - 56px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
+    body.wf-ios-standalone .wf-login{padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 
     /* Tela de login */
     .wf-login{position:fixed;inset:0;z-index:50;background:linear-gradient(160deg,#0f172a 0%,#16a34a 130%);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -104,6 +115,20 @@
         wfCpfEl.value = m;
     });
 
+    /* ----- Modo standalone (PWA iOS/Android) ----- */
+    (function () {
+        var ehStandalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+        if (ehStandalone) {
+            document.body.classList.add('wf-ios-standalone');
+        }
+        if (('Notification' in window) && Notification.permission === 'default' && ehStandalone) {
+            var tentar = function () {
+                Notification.requestPermission();
+            };
+            window.setTimeout(tentar, 1500);
+        }
+    })();
+
     function wfAppMostrarSenha() {
         var s = document.getElementById('wf-senha');
         var btn = s.nextElementSibling;
@@ -152,6 +177,12 @@
 
     /* ----- Instalacao PWA ----- */
     var wfDeferredPrompt = null;
+    function wfEhIos() {
+        return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+    }
+    function wfEhAndroid() {
+        return !wfEhIos() && /android/i.test(navigator.userAgent || '');
+    }
     window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         wfDeferredPrompt = e;
@@ -159,16 +190,30 @@
         b.style.display = 'block';
     });
     function wfAppInstalar() {
-        if (!wfDeferredPrompt) { alert('Toque nos 3 pontos do navegador e selecione "Adicionar a tela inicial".'); return; }
-        wfDeferredPrompt.prompt();
-        wfDeferredPrompt.userChoice.then(function () {
-            wfDeferredPrompt = null;
-            document.getElementById('wf-install-btn').style.display = 'none';
-        });
+        if (wfDeferredPrompt && wfEhAndroid()) {
+            wfDeferredPrompt.prompt();
+            wfDeferredPrompt.userChoice.then(function () {
+                wfDeferredPrompt = null;
+                document.getElementById('wf-install-btn').style.display = 'none';
+            });
+            return;
+        }
+        if (wfEhIos()) {
+            if (window.navigator.standalone === true) {
+                alert('O WhatFarn ja esta instalado na sua tela inicial.');
+                return;
+            }
+            alert('Para instalar no iPhone/iPad:\n\n1. Toque no botao Compartilhar (quadrado com seta para cima), no Safari.\n2. Role e toque em "Adicionar a Tela de Inicio".\n3. Confirme em Adicionar.\n\nO icone do WhatFarn aparecera na tela inicial.');
+            return;
+        }
+        alert('Para instalar no celular:\n\n1. Toque nos 3 pontos do navegador.\n2. Selecione "Adicionar a tela inicial".');
     }
     window.addEventListener('appinstalled', function () {
         document.getElementById('wf-install-btn').style.display = 'none';
     });
+    if (wfEhIos()) {
+        document.getElementById('wf-install-btn').style.display = 'block';
+    }
 
     /* ----- Verifica atualizacao ANTES de abrir o app ----- */
     (function () {
