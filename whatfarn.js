@@ -437,7 +437,7 @@ function wfCss() {
         '.wf-msg-img-indisp{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:160px;padding:14px;text-align:center;background:#0b1220;border:1px dashed #263244;border-radius:11px;color:#64748b;font-size:12px}',
         '.wf-data-sep{align-self:center;background:rgba(255,255,255,.92);color:#94a3b8;font-size:11px;padding:4px 14px;border-radius:8px;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
         '.wf-composer{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border-top:1px solid #e2e8f0}',
-        '.wf-ic-btn{width:40px;height:40px;border-radius:50%;border:none;background:none;color:#15803d;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:.15s}.wf-ic-btn:hover{background:#dcfce7}',
+        '.wf-ic-btn{width:40px;height:40px;border-radius:50%;border:none;background:none;color:#15803d;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:.15s}.wf-ic-btn:hover{background:#dcfce7}.wf-ic-btn input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}',
         '.wf-input{flex:1;padding:11px 14px;background:#f1f5f9;border:1px solid transparent;border-radius:22px;outline:none;font-size:13.5px;color:#1e293b;transition:.2s}.wf-input:focus{border-color:#16a34a;background:#fff}',
         '.wf-send{width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;box-shadow:0 4px 12px rgba(22,163,74,.35)}.wf-send:hover{transform:scale(1.06)}',
         '.wf-lightbox{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}.wf-lightbox img{max-width:94vw;max-height:90vh;border-radius:10px;box-shadow:0 10px 50px rgba(0,0,0,.5)}',
@@ -502,8 +502,8 @@ function wfHTML() {
         '</div>' +
         '<div class="wf-msgs" id="wf-msgs"><div class="wf-vazio"><i class="fa-solid fa-comments" style="font-size:34px;opacity:.4"></i><p>Selecione uma conversa ao lado para começar a conversar.</p></div></div>' +
         '<div class="wf-composer" id="wf-composer">' +
-        '<label class="wf-ic-btn" title="Anexar imagem (galeria)"><i class="fa-solid fa-paperclip"></i><input type="file" accept="image/*" style="display:none" onchange="wfAnexarPermanente(this)"></label>' +
-        '<label class="wf-ic-btn" title="Tirar foto temporaria (camera)"><i class="fa-solid fa-camera"></i><input type="file" accept="image/*" capture="environment" style="display:none" onchange="wfAnexarTemporaria(this)"></label>' +
+        '<label class="wf-ic-btn" title="Anexar imagem (galeria)"><i class="fa-solid fa-paperclip"></i><input type="file" accept="image/*" onchange="wfAnexarPermanente(this)"></label>' +
+        '<label class="wf-ic-btn" title="Tirar foto temporaria (camera)"><i class="fa-solid fa-camera"></i><input type="file" accept="image/*" capture="environment" onchange="wfAnexarTemporaria(this)"></label>' +
         '<input class="wf-input" id="wf-input" type="text" placeholder="Digite uma mensagem..." oninput="wfDigitando()" onkeydown="if(event.key===\'Enter\')wfEnviar()">' +
         '<button class="wf-send" onclick="wfEnviar()" type="button" title="Enviar"><i class="fa-solid fa-paper-plane"></i></button>' +
         '</div>';
