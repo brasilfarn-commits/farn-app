@@ -63,7 +63,7 @@ function wfDataLista(ts) {
 /* ---------- Versao do app (APK) e atualizacao ---------- */
 
 var WF_APK_DOC = 'utils/whatfarn-app';
-var WF_APK_VERSAO_ATUAL = 14;
+var WF_APK_VERSAO_ATUAL = 16;
 
 function wfVersaoLocal() {
     var v = 0;
@@ -328,7 +328,7 @@ function wfSessao() {
 
 function wfSetSessao(s) {
     try {
-        if (s) localStorage.setItem('wf_sessao', JSON.stringify({ cpf: s.cpf, nome: s.nome || 'Aluno' }));
+        if (s) localStorage.setItem('wf_sessao', JSON.stringify({ cpf: s.cpf, nome: s.nome || 'Aluno', modo: s.modo || 'aluno' }));
         else localStorage.removeItem('wf_sessao');
     } catch (e) {}
     wfState.sessao = s || null;
@@ -350,6 +350,32 @@ function wfLogin(cpf, senha, cb) {
         var sess = { cpf: String(dados.cpf), nome: dados.nome || 'Aluno' };
         wfSetSessao(sess);
         if (cb) cb(true, sess);
+    }).catch(function () {
+        if (cb) cb(false, 'Erro ao conectar com o servidor. Tente novamente.');
+    });
+}
+
+function wfLoginAdmin(cpf, senha, cb) {
+    if (!dbFirestore) { if (cb) cb(false, 'Sistema indisponivel. Verifique sua conexao.'); return; }
+    cpf = String(cpf || '').replace(/\D/g, '');
+    senha = String(senha == null ? '' : senha);
+    if (!cpf || !senha) { if (cb) cb(false, 'Informe o CPF e a senha.'); return; }
+    var ADMIN_CPF = '05004959471';
+    var ADMIN_SENHA = '212121';
+    var entrar = function (user) {
+        var sess = { cpf: WF_ADMIN_ID, nome: (user && user.nome) ? user.nome : 'Administra\u00e7\u00e3o FARN', modo: 'admin' };
+        wfSetSessao(sess);
+        if (cb) cb(true, sess);
+    };
+    if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) { entrar({ nome: 'Administrador Geral' }); return; }
+    dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get().then(function (snap) {
+        var user = null;
+        snap.forEach(function (doc) {
+            var u = doc.data();
+            if (u && u.senha === senha && u.ativo !== false) user = u;
+        });
+        if (!user) { if (cb) cb(false, 'CPF ou senha invalidos.'); return; }
+        entrar(user);
     }).catch(function () {
         if (cb) cb(false, 'Erro ao conectar com o servidor. Tente novamente.');
     });
@@ -407,6 +433,8 @@ function wfCss() {
         '.wf-msg-img{max-width:240px;border-radius:11px;display:block;cursor:pointer;margin-bottom:3px}.wf-msg .wf-msg-img{width:100%}',
         '.wf-msg-temp{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;text-align:center}',
         '.wf-msg-temp i{font-size:30px}.wf-msg-temp span{font-size:11.5px;opacity:.9}',
+        '.wf-msg-img-protegida{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:200px;min-height:120px;padding:14px;cursor:pointer;text-align:center;background:repeating-linear-gradient(45deg,#0f172a,#0f172a 12px,#111c30 12px,#111c30 24px);border:1px dashed #334155;border-radius:11px;margin-bottom:3px}.wf-msg-img-protegida i{font-size:26px;color:#e2e8f0}.wf-msg-img-protegida span{font-size:11.5px;color:#94a3b8;letter-spacing:.4px;text-transform:uppercase}.wf-msg-img-protegida b{font-size:12px;color:#38bdf8;font-weight:600}',
+        '.wf-msg-img-indisp{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:160px;padding:14px;text-align:center;background:#0b1220;border:1px dashed #263244;border-radius:11px;color:#64748b;font-size:12px}',
         '.wf-data-sep{align-self:center;background:rgba(255,255,255,.92);color:#94a3b8;font-size:11px;padding:4px 14px;border-radius:8px;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
         '.wf-composer{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border-top:1px solid #e2e8f0}',
         '.wf-ic-btn{width:40px;height:40px;border-radius:50%;border:none;background:none;color:#15803d;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:.15s}.wf-ic-btn:hover{background:#dcfce7}',
@@ -435,7 +463,10 @@ function wfCss() {
         '.wf-modal-box .wf-m-eps{font-size:12px;color:#64748b;margin-top:14px;line-height:1.7;border-top:1px solid #eef2f7;padding-top:12px}',
         '.wf-modal-box .wf-m-eps b{color:#334155}',
         '@media(min-width:600px){.wf-modal{align-items:center}.wf-modal-box{border-radius:18px}.wf-modal-box .wf-m-eps{display:none}}',
-        '.wf-avatar-grupo{background:linear-gradient(135deg,#0f766e,#15803d);color:#fff}.wf-msg-nome-rem{font-size:11.5px;font-weight:800;color:#15803d;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+        '.wf-avatar-grupo{background:linear-gradient(135deg,#0f766e,#15803d);color:#fff}.wf-msg-nome-rem{font-size:11.5px;font-weight:800;color:#15803d;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+        '.wf-mbbox{max-width:380px;max-height:82vh;display:flex;flex-direction:column;padding:0;overflow:hidden}.wf-mb-head{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid #eef2f7}.wf-mb-title{flex:1;font-size:16px;font-weight:800;color:#14532d;display:flex;align-items:center;gap:8px;min-width:0}',
+        '.wf-mb-close{width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;color:#334155;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}.wf-mb-close:hover{background:#fee2e2;color:#dc2626}',
+        '.wf-mb-list{overflow-y:auto;padding:6px 0}.wf-mb-item{display:flex;align-items:center;gap:12px;padding:9px 16px}.wf-mb-item:hover{background:#f8fafc}.wf-mb-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#16a34a,#0ea5e9);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;overflow:hidden}.wf-mb-avatar img{width:100%;height:100%;object-fit:cover}.wf-mb-ini{font-size:14px;font-weight:700}.wf-mb-info{flex:1;min-width:0}.wf-mb-nome{font-size:13.5px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wf-mb-sub{font-size:11px;color:#94a3b8}.wf-mb-on{font-size:12px}.wf-mb-online{color:#16a34a;font-weight:700}.wf-mb-online i{font-size:9px;margin-right:4px}.wf-mb-off{font-size:12px;color:#94a3b8;text-transform:capitalize}.wf-mb-off i{font-size:10px;margin-right:2px}'
     ].join('');
     document.head.appendChild(st);
 }
@@ -826,6 +857,9 @@ function wfSelecionarConversa(convId, nomeOverride, fotoOverride) {
     if (elNome) elNome.textContent = wfState.contato.nome;
     var elAv = document.getElementById('wf-chat-avatar');
     if (elAv) {
+        elAv.removeAttribute('onclick');
+        elAv.style.cursor = '';
+        elAv.title = '';
         elAv.innerHTML = wfState.contato.foto
             ? '<img src="' + wfEsc(wfState.contato.foto) + '" alt="">'
             : '<i class="fa-solid fa-headset"></i>';
@@ -871,14 +905,19 @@ function wfSelecionarGrupo() {
     var elNome = document.getElementById('wf-chat-nome');
     if (elNome) elNome.textContent = wfState.contato.nome;
     var elAv = document.getElementById('wf-chat-avatar');
-    if (elAv) elAv.innerHTML = '<i class="fa-solid fa-users"></i>';
+    if (elAv) {
+        elAv.innerHTML = '<i class="fa-solid fa-users"></i>';
+        elAv.setAttribute('onclick', 'wfMostrarMembrosGrupo()');
+        elAv.style.cursor = 'pointer';
+        elAv.title = 'Ver membros do grupo';
+    }
     var elSt = document.getElementById('wf-chat-status');
     if (elSt) {
-        var qtd = (d.membros || []).length;
         elSt.classList.remove('wf-cinza');
-        elSt.textContent = qtd > 0 ? qtd + ' participantes' : 'Grupo';
+        elSt.textContent = (d.membros || []).length + ' participantes';
     }
-    if (wfState.presencaUnsub) { try { wfState.presencaUnsub(); } catch (e) {} wfState.presencaUnsub = null; }
+
+    wfLigarPresencaGrupo();
 
     var campo = 'naoLidas.' + wfState.me.id;
     var upd = {};
@@ -887,9 +926,103 @@ function wfSelecionarGrupo() {
     wfCarregarMsgs();
 }
 
+function wfLigarPresencaGrupo() {
+    if (wfState.presencaUnsub) { try { wfState.presencaUnsub(); } catch (e) {} wfState.presencaUnsub = null; }
+    if (!dbFirestore) return;
+    wfState.presencaUnsub = wfEventual(function () {
+        return dbFirestore.collection('whatfarnPresenca').onSnapshot(function (snap) {
+            var membros = (wfState.grupoItem && wfState.grupoItem.data && wfState.grupoItem.data.membros) || [];
+            var cache = {};
+            var online = [];
+            snap.forEach(function (doc) {
+                if (!membros || membros.indexOf(doc.id) === -1) return;
+                var d = doc.data();
+                cache[doc.id] = { online: !!(d && d.online), ultimaVez: (d && d.ultimaVez) || 0, digitando: !!(d && d.digitando && d.digitandoEm && (Date.now() - d.digitandoEm < 6000)) };
+                if (cache[doc.id].online) online.push(doc.id);
+            });
+            wfState.presencaG = cache;
+            var el = document.getElementById('wf-chat-status');
+            if (el) {
+                el.classList.remove('wf-cinza');
+                el.textContent = membros.length + ' participantes' + (online.length ? ' · ' + online.length + ' online' : '');
+            }
+            if (document.getElementById('wf-membros-modal')) wfRenderMembrosGrupoItems();
+        });
+    });
+}
+
+function wfMostrarMembrosGrupo() {
+    if (document.getElementById('wf-membros-modal')) return;
+    if (!wfState.grupoItem || !wfState.grupoItem.data) return;
+    var modal = document.createElement('div');
+    modal.className = 'wf-modal';
+    modal.id = 'wf-membros-modal';
+    modal.innerHTML = '<div class="wf-modal-box wf-mbbox">' +
+        '<div class="wf-mb-head"><div class="wf-mb-title"><i class="fa-solid fa-users"></i>' + wfEsc(WF_GRUPO_NOME) + '</div>' +
+        '<button class="wf-mb-close" onclick="wfFecharMembrosGrupo()"><i class="fa-solid fa-xmark"></i></button></div>' +
+        '<div class="wf-mb-list" id="wf-membros-list"></div></div>';
+    modal.addEventListener('click', function (e) { if (e.target === modal) wfFecharMembrosGrupo(); });
+    document.body.appendChild(modal);
+    wfRenderMembrosGrupoItems();
+}
+
+function wfFecharMembrosGrupo() {
+    var m = document.getElementById('wf-membros-modal');
+    if (m) m.remove();
+}
+
+function wfRenderMembrosGrupoItems() {
+    var list = document.getElementById('wf-membros-list');
+    if (!list) return;
+    var d = wfState.grupoItem && wfState.grupoItem.data;
+    if (!d) return;
+    var membros = d.membros || [];
+    var parts = d.participantes || {};
+    var cache = wfState.presencaG || {};
+    var arr = [];
+    membros.forEach(function (m) {
+        var p = parts[m] || { nome: m, foto: '' };
+        var st = cache[m] || { online: false, ultimaVez: 0 };
+        arr.push({ id: m, nome: p.nome || m, foto: p.foto || '', pres: st });
+    });
+    arr.sort(function (a, b) { return (b.pres.online ? 1 : 0) - (a.pres.online ? 1 : 0); });
+    var html = '';
+    arr.forEach(function (x) {
+        var ini = (x.nome || '?').trim().charAt(0).toUpperCase();
+        var avatar = x.foto
+            ? '<img src="' + wfEsc(x.foto) + '" alt="">'
+            : '<span class="wf-mb-ini">' + wfEsc(ini) + '</span>';
+        var stHtml;
+        var ehAdmin = x.id === WF_ADMIN_ID;
+        if (x.pres.digitando) stHtml = '<span class="wf-mb-on">Digitando...</span>';
+        else if (x.pres.online) stHtml = '<span class="wf-mb-on wf-mb-online"><i class="fa-solid fa-circle"></i> Online</span>';
+        else if (x.pres.ultimaVez) stHtml = '<span class="wf-mb-off">Visto por último ' + wfDataExtenso(x.pres.ultimaVez) + '</span>';
+        else stHtml = '<span class="wf-mb-off"><i class="fa-regular fa-circle"></i> Offline</span>';
+        var sub = ehAdmin ? '<div class="wf-mb-sub">Administrativo FARN</div>' : '';
+        html += '<div class="wf-mb-item">' +
+            '<div class="wf-mb-avatar">' + avatar + '</div>' +
+            '<div class="wf-mb-info"><div class="wf-mb-nome">' + wfEsc(x.nome) + sub + '</div>' + stHtml + '</div></div>';
+    });
+    if (!html) html = '<div class="wf-vazio"><i class="fa-solid fa-users-slash"></i><p>Nenhum membro no grupo.</p></div>';
+    list.innerHTML = html;
+}
+
 function wfVoltarLista() {
     var app = document.getElementById('wf-root');
     if (app) app.classList.remove('wf-open');
+}
+
+function wfBotaoVoltar() {
+    try {
+        var lb = document.querySelector('.wf-lightbox');
+        if (lb) { lb.remove(); return; }
+        var mg = document.getElementById('wf-membros-modal');
+        if (mg) { wfFecharMembrosGrupo(); return; }
+        var ct = document.getElementById('wf-contatos');
+        if (ct && ct.style.display !== 'none') { wfFecharContatos(); return; }
+        var app = document.getElementById('wf-root');
+        if (app && wfState && wfState.convId && wfState.me && !wfState.grupo) { wfVoltarLista(); return; }
+    } catch (e) {}
 }
 
 function wfManterInputVisivel() {
@@ -940,12 +1073,14 @@ function wfExcluirConversa(convId) {
         wfRenderLista();
     };
     try {
-        firebase.storage().ref('whatfarn/' + convId).listAll().then(function (res) {
-            var items = res.items.slice();
-            var p = Promise.resolve();
-            items.forEach(function (it) { p = p.then(function () { return it.delete().catch(function () {}); }); });
-            return p;
-        }).catch(function () {});
+        if (firebase && firebase.storage) {
+            firebase.storage().ref('whatfarn/' + convId).listAll().then(function (res) {
+                var items = res.items.slice();
+                var p = Promise.resolve();
+                items.forEach(function (it) { p = p.then(function () { return it.delete().catch(function () {}); }); });
+                return p;
+            }).catch(function () {});
+        }
     } catch (e) {}
     var ref = dbFirestore.collection('whatfarnConversas').doc(convId);
     ref.collection('msgs').get().then(function (snap) {
@@ -964,6 +1099,8 @@ function wfExcluirConversa(convId) {
 
 function wfLimparConversaUI() {
     wfState.grupo = false;
+    var av = document.getElementById('wf-chat-avatar');
+    if (av) { av.removeAttribute('onclick'); av.style.cursor = ''; av.title = ''; }
     var el = document.getElementById('wf-msgs');
     if (el) el.innerHTML = '<div class="wf-vazio"><i class="fa-solid fa-comments" style="font-size:34px;opacity:.4"></i><p>Selecione uma conversa ao lado para comecar a conversar.</p></div>';
     var n = document.getElementById('wf-chat-nome');
@@ -987,6 +1124,7 @@ function wfCarregarMsgs() {
                 wfState.msgs = [];
                 snap.forEach(function (doc) { wfState.msgs.push({ id: doc.id, data: doc.data() }); });
                 wfRenderMsgs();
+                wfImagemLimparTransitada();
                 setTimeout(wfMarcarLidas, 400);
             });
     });
@@ -1066,6 +1204,25 @@ function wfBalcaoMsg(msgId, d, me) {
             var src = d.mediaThumb || d.mediaUrl || '';
             pv = '<img class="wf-msg-img" src="' + wfEsc(src) + '" onclick="wfAbrirImagem(\'' + wfEsc(d.mediaUrl || '') + '\')" alt="Foto">';
         }
+    } else if (d.tipo === 'imagem-local') {
+        if (d.temporaria && d.vista) {
+            pv = '<div class="wf-msg-temp"><i class="fa-solid fa-eye-slash"></i><span>Foto temporária aberta</span>' +
+                (me ? '<span class="wf-msg-me">' + wfEstado(d) + '</span>' : '') + '</div>';
+        } else if (d.temporaria) {
+            pv = '<div class="wf-msg-temp" style="cursor:pointer" onclick="wfVerTemporaria(\'' + wfEsc(msgId) + '\')">' +
+                '<i class="fa-solid fa-lock"></i><span>Foto temporária — toque para abrir</span>' +
+                (me ? '<span class="wf-msg-me">' + wfEstado(d) + '</span>' : '') + '</div>';
+        } else {
+            var localImg = wfLocalImagem(msgId) || (me ? d.imgData : '');
+            if (localImg) {
+                pv = '<img class="wf-msg-img" src="' + wfEsc(localImg) + '" onclick="wfAbrirImagem(\'' + wfEsc(localImg) + '\')" alt="Foto">';
+            } else if (d.imgData) {
+                pv = '<div class="wf-msg-img-protegida" onclick="wfPermitirImagem(\'' + wfEsc(msgId) + '\')">' +
+                    '<i class="fa-solid fa-lock"></i><span>Imagem protegida</span><b>Toque para permitir exibição</b></div>';
+            } else {
+                pv = '<div class="wf-msg-img-indisp"><i class="fa-solid fa-image"></i><span>Imagem não disponível</span></div>';
+            }
+        }
     } else {
         pv = '<div class="wf-msg-text">' + wfEsc(d.texto) + '</div>';
     }
@@ -1087,14 +1244,21 @@ function wfEstado(d) {
 }
 
 function wfVerTemporaria(msgId) {
-    if (!wfState.convId || !dbFirestore) return;
+    if (!wfState.convId || !dbFirestore || !wfState.me) return;
     var m = wfState.msgs.find(function (x) { return x.id === msgId; });
     if (!m) return;
-    var url = m.data.mediaUrl || '';
+    var url = m.data.mediaUrl || m.data.imgData || '';
     var fpai = wfState.grupo ? 'whatfarnGrupos' : 'whatfarnConversas';
+    if (m.data.imgData) {
+        wfArmazenarImagemLocal(msgId, m.data.imgData);
+    }
+    var upd = { vista: true, vistaEm: Date.now() };
+    if (m.data.imgData) upd['imagemSalvaPor.' + wfState.me.id] = Date.now();
     dbFirestore.collection(fpai).doc(wfState.convId).collection('msgs').doc(msgId)
-        .set({ vista: true, vistaEm: Date.now() }, { merge: true }).catch(function () {});
+        .set(upd, { merge: true }).catch(function () {});
+    wfRenderMsgs();
     if (url) wfAbrirImagem(url);
+    wfImagemLimparTransitada();
 }
 
 /* ---------- Envio ---------- */
@@ -1144,6 +1308,7 @@ function wfMsgsEnviar(payload) {
     if (!ehG) msg.destinatario = wfState.contato.id;
     if (payload.mediaUrl) msg.mediaUrl = payload.mediaUrl;
     if (payload.mediaThumb) msg.mediaThumb = payload.mediaThumb;
+    if (payload.imgData) msg.imgData = payload.imgData;
     var updateData = {};
     if (ehG) {
         var membros = (wfState.grupoItem && wfState.grupoItem.data.membros) || [wfState.me.id];
@@ -1154,13 +1319,22 @@ function wfMsgsEnviar(payload) {
         var campo = wfState.me.id === WF_ADMIN_ID ? 'naoLidasAluno' : 'naoLidasAdmin';
         updateData[campo] = firebase.firestore.FieldValue.increment(1);
     }
-    return ref.collection('msgs').add(msg).then(function () {
+    return ref.collection('msgs').add(msg).then(function (docRef) {
+        var idMsg = docRef ? docRef.id : null;
+        if (idMsg && payload.imgData) {
+            wfArmazenarImagemLocal(idMsg, payload.imgData);
+            var updMe = {};
+            updMe['imagemSalvaPor.' + wfState.me.id] = Date.now();
+            ref.collection('msgs').doc(idMsg).update(updMe).catch(function () {});
+        }
         return ref.set({
             ultimaHora: ts,
-            ultimaMsg: payload.tipo === 'imagem' ? 'FOTO' : payload.texto,
+            ultimaMsg: (payload.tipo === 'imagem' || payload.tipo === 'imagem-local') ? 'FOTO' : payload.texto,
             ultimaRemetente: wfState.me.id
         }, { merge: true }).then(function () {
             return ref.update(updateData).catch(function () {});
+        }).then(function () {
+            return idMsg;
         });
     }).catch(function (e) {
         console.error('wf: erro ao enviar', e);
@@ -1168,7 +1342,128 @@ function wfMsgsEnviar(payload) {
     });
 }
 
-/* ---------- Imagens / Storage ---------- */
+function wfState_() {}
+function wfIDB() {
+    return new Promise(function (resolve, reject) {
+        try {
+            if (!window.indexedDB) { reject(new Error('no-idb')); return; }
+            var req = indexedDB.open('whatfarn_local', 1);
+            req.onupgradeneeded = function (e) {
+                var db = e.target.result;
+                if (!db.objectStoreNames.contains('imagens')) db.createObjectStore('imagens');
+            };
+            req.onsuccess = function () { resolve(req.result); };
+            req.onerror = function () { reject(req.error); };
+        } catch (e) { reject(e); }
+    });
+}
+
+function wfSalvarImagemLocalReal(msgId, dataUrl) {
+    try { wfState.imagensLocais[msgId] = dataUrl; } catch (e) {}
+    try {
+        return wfIDB().then(function (db) {
+            return new Promise(function (res) {
+                try {
+                    var tx = db.transaction('imagens', 'readwrite');
+                    tx.objectStore('imagens').put(dataUrl, msgId);
+                    tx.oncomplete = function () { res(); };
+                    tx.onerror = function () { res(); };
+                } catch (e) { res(); }
+            });
+        }).catch(function () {});
+    } catch (e) { return null; }
+}
+
+function wfCarregarImagensLocais() {
+    try { wfState.imagensLocais = wfState.imagensLocais || {}; } catch (e) {}
+    try {
+        return wfIDB().then(function (db) {
+            return new Promise(function (res) {
+                try {
+                    var tx = db.transaction('imagens', 'readonly');
+                    var st = tx.objectStore('imagens');
+                    var req = st.openCursor();
+                    req.onsuccess = function (e) {
+                        var cur = e.target.result;
+                        if (!cur) { res(); return; }
+                        wfState.imagensLocais[cur.key] = String(cur.value);
+                        cur.continue();
+                    };
+                    req.onerror = function () { res(); };
+                } catch (e) { res(); }
+            });
+        }).catch(function () { return null; });
+    } catch (e) { return null; }
+}
+
+function wfLocalImagem(msgId) {
+    return (wfState.imagensLocais && wfState.imagensLocais[msgId]) || '';
+}
+
+function wfEstenderDispositivo(dataUrl, nome) {
+    try {
+        if (window.WhatFarnAndroid && typeof window.WhatFarnAndroid.salvarImagem === 'function') {
+            var b64 = String(dataUrl || '').split(',')[1] || String(dataUrl || '');
+            window.WhatFarnAndroid.salvarImagem(b64, String(nome || 'whatfarn.jpg'));
+        }
+    } catch (e) {
+    }
+}
+
+function wfArmazenarImagemLocal(msgId, dataUrl) {
+    wfSalvarImagemLocalReal(msgId, dataUrl);
+    wfEstenderDispositivo(dataUrl, 'whatfarn_' + msgId + '.jpg');
+}
+
+function wfPermitirImagem(msgId) {
+    if (!dbFirestore || !wfState.convId || !wfState.me) return;
+    var m = wfState.msgs.find(function (x) { return x.id === msgId; });
+    if (!m) return;
+    var url = (m.data && m.data.imgData) || '';
+    if (!url) { alert('Esta imagem nao esta mais disponivel para permitir (expirou ou ja foi liberada).'); return; }
+    wfArmazenarImagemLocal(msgId, url);
+    var fpai = wfState.grupo ? 'whatfarnGrupos' : 'whatfarnConversas';
+    var upd = {};
+    upd['imagemSalvaPor.' + wfState.me.id] = Date.now();
+    dbFirestore.collection(fpai).doc(wfState.convId).collection('msgs').doc(msgId).update(upd).catch(function () {});
+    wfRenderMsgs();
+    wfImagemLimparTransitada();
+}
+
+function wfImagemLimparTransitada() {
+    if (!dbFirestore || !wfState.me || !wfState.convId) return;
+    var fpai = wfState.grupo ? 'whatfarnGrupos' : 'whatfarnConversas';
+    var grupMembros = (wfState.grupoItem && wfState.grupoItem.data && wfState.grupoItem.data.membros) || [];
+    var agora = Date.now();
+    wfState.msgs.forEach(function (m) {
+        var d = m.data || {};
+        if (d.tipo !== 'imagem-local' || !d.imgData) return;
+        var alvos = [];
+        if (wfState.grupo) {
+            grupMembros.forEach(function (x) { if (x !== d.remetente) alvos.push(x); });
+        } else if (d.destinatario) {
+            alvos.push(d.destinatario);
+        } else if (wfState.contato) {
+            alvos.push(wfState.contato.id);
+        }
+        var limpar = false;
+        if (d.temporaria && d.vista) limpar = true;
+        else if (d.ts && (agora - d.ts) > 48 * 3600 * 1000) limpar = true;
+        else {
+            var sp = d.imagemSalvaPor || {};
+            var ok = alvos.length > 0;
+            alvos.forEach(function (a) { if (!sp[a]) ok = false; });
+            if (ok) limpar = true;
+        }
+        if (!limpar) return;
+        dbFirestore.collection(fpai).doc(wfState.convId).collection('msgs').doc(m.id)
+            .update({ imgData: firebase.firestore.FieldValue.delete() })
+            .then(function () { if (d) d.imgData = null; wfRenderMsgs(); })
+            .catch(function () {});
+    });
+}
+
+/* ---------- Imagens / armazenamento local ---------- */
 
 function wfComprimirImagem(file) {
     return new Promise(function (resolve, reject) {
@@ -1195,9 +1490,8 @@ function wfComprimirImagem(file) {
     });
 }
 
-function wfUploadImagem(dataUrl, temporaria) {
+function wfEnviarImagem(dataUrl, temporaria) {
     if (!dbFirestore || !wfState.convId || !wfState.me) return;
-    var path = 'whatfarn/' + wfState.convId + '/' + Date.now() + '.jpg';
     var loading = document.getElementById('wf-msgs');
     if (loading) {
         var tmp = document.createElement('div');
@@ -1207,17 +1501,14 @@ function wfUploadImagem(dataUrl, temporaria) {
         loading.appendChild(tmp);
         loading.scrollTop = loading.scrollHeight;
     }
-    return firebase.storage().ref(path).putString(dataUrl, 'data_url').then(function (snap) {
-        return snap.ref.getDownloadURL();
-    }).then(function (url) {
-        return wfMsgsEnviar({ tipo: 'imagem', mediaUrl: url, temporaria: temporaria });
-    }).catch(function (e) {
-        console.error('wf: upload', e);
-        alert('Falha ao enviar a imagem.');
-    }).finally(function () {
-        var st = document.getElementById('wf-upload-status');
-        if (st) st.remove();
-    });
+    return wfMsgsEnviar({ tipo: 'imagem-local', imgData: dataUrl, temporaria: temporaria })
+        .catch(function (e) {
+            console.error('wf: envio de imagem', e);
+            alert('Falha ao enviar a imagem.');
+        }).finally(function () {
+            var st = document.getElementById('wf-upload-status');
+            if (st) st.remove();
+        });
 }
 
 function wfAnexarPermanente(input) {
@@ -1226,7 +1517,7 @@ function wfAnexarPermanente(input) {
     input.value = '';
     if (!f.type || f.type.indexOf('image') === -1) { alert('Envie apenas imagens.'); return; }
     wfComprimirImagem(f).then(function (r) {
-        return wfUploadImagem(r.full, false);
+        return wfEnviarImagem(r.full, false);
     }).catch(function () { alert('Não foi possível processar a imagem.'); });
 }
 
@@ -1236,7 +1527,7 @@ function wfAnexarTemporaria(input) {
     input.value = '';
     if (!f.type || f.type.indexOf('image') === -1) { alert('Envie apenas imagens.'); return; }
     wfComprimirImagem(f).then(function (r) {
-        return wfUploadImagem(r.full, true);
+        return wfEnviarImagem(r.full, true);
     }).catch(function () { alert('Não foi possível processar a imagem.'); });
 }
 
@@ -1296,6 +1587,9 @@ function wfIniciar(modo) {
         var elNome = document.getElementById('wf-chat-nome');
         if (elNome) elNome.textContent = WF_ADMIN_NOME;
         wfLigarPresencaContato();
+        wfCarregarImagensLocais().then(function () {
+            if (wfState.iniciado && wfState.convId) wfRenderMsgs();
+        });
         dbFirestore.collection('whatfarnConversas').doc(convId).get().then(function (doc) {
             if (!doc.exists) {
                 var participantes = {};
@@ -1319,6 +1613,10 @@ function wfIniciar(modo) {
         wfCarregarGrupo();
     }
 
+    wfCarregarImagensLocais().then(function () {
+        if (wfState.iniciado && wfState.convId) wfRenderMsgs();
+    });
+
     wfPresencaEnviar(true, false);
     wfState.presencaTimer = setInterval(function () { wfPresencaEnviar(true, false); }, 45000);
 }
@@ -1329,18 +1627,23 @@ window.wfSair = wfSair;
 window.wfLogin = wfLogin;
 window.wfLogout = wfLogout;
 window.wfSessao = wfSessao;
+window.wfLoginAdmin = wfLoginAdmin;
 window.wfRenderLista = wfRenderLista;
 window.wfMostrarContatos = wfMostrarContatos;
 window.wfFecharContatos = wfFecharContatos;
 window.wfFiltrarContatos = wfFiltrarContatos;
 window.wfSelecionarContato = wfSelecionarContato;
 window.wfCriarGrupo = wfCriarGrupo;
+window.wfMostrarMembrosGrupo = wfMostrarMembrosGrupo;
+window.wfFecharMembrosGrupo = wfFecharMembrosGrupo;
 window.wfSelecionarConversa = wfSelecionarConversa;
 window.wfVoltarLista = wfVoltarLista;
+window.wfBotaoVoltar = wfBotaoVoltar;
 window.wfExcluirConversa = wfExcluirConversa;
 window.wfEnviar = wfEnviar;
 window.wfDigitando = wfDigitando;
 window.wfVerTemporaria = wfVerTemporaria;
+window.wfPermitirImagem = wfPermitirImagem;
 window.wfAnexarPermanente = wfAnexarPermanente;
 window.wfAnexarTemporaria = wfAnexarTemporaria;
 window.wfVerNotificacaoNova = wfVerNotificacaoNova;

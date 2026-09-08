@@ -53,6 +53,8 @@
     .wf-login-err{display:none;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:12px}
     .wf-login-note{text-align:center;font-size:11.5px;color:#94a3b8;margin-top:14px;line-height:1.5}
     .wf-login-note a{color:#16a34a;font-weight:700;text-decoration:none}
+    .wf-login-switch{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;background:transparent;border:1.5px dashed #cbd5e1;border-radius:12px;color:#64748b;font-size:12.5px;font-weight:700;padding:10px;cursor:pointer;transition:.2s}
+    .wf-login-switch:hover{border-color:#16a34a;color:#15803d;background:#f0fdf4}
     .wf-install{display:none;margin-top:14px;width:100%;background:#0a1c40;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer}
 </style>
 </head>
@@ -72,10 +74,10 @@
         <div class="wf-login-card">
             <div class="wf-login-logo"><i class="fa-brands fa-whatsapp"></i></div>
             <h2>WhatFarn</h2>
-            <p class="wf-login-sub">Entre com o seu cadastro para conversar com o Administrativo FARN.</p>
+            <p class="wf-login-sub" id="wf-login-sub">Entre com o seu cadastro para conversar com o Administrativo FARN.</p>
             <div id="wf-login-err" class="wf-login-err"></div>
             <div class="wf-login-field">
-                <label>CPF</label>
+                <label id="wf-lab-cpf">CPF</label>
                 <div class="wf-lf-box">
                     <i class="fa-solid fa-id-card"></i>
                     <input id="wf-cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" onkeydown="if(event.key==='Enter')wfAppEntrar()">
@@ -90,15 +92,16 @@
                 </div>
             </div>
             <button id="wf-login-btn" class="wf-login-btn" onclick="wfAppEntrar()"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+            <button id="wf-login-switch" class="wf-login-switch" onclick="wfAppTrocarModo()"><i class="fa-solid fa-user-shield"></i> Entrar como Administrativo</button>
             <button id="wf-install-btn" class="wf-install" onclick="wfAppInstalar()"><i class="fa-solid fa-download"></i> Instalar aplicativo no aparelho</button>
-            <p class="wf-login-note">Use o <strong>mesmo CPF e senha</strong> do seu cadastro.<br>Acesse também pelo <a href="index.html">portal do aluno</a>.</p>
+            <p class="wf-login-note" id="wf-login-note">Use o <strong>mesmo CPF e senha</strong> do seu cadastro.<br>Acesse também pelo <a href="index.html">portal do aluno</a>.</p>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    <script src="whatfarn.js"></script>
+    <script src="whatfarn.js?v=16"></script>
     <script>
     var firebaseConfig = { apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0", authDomain: "farn-app.firebaseapp.com", databaseURL: "https://farn-app-default-rtdb.firebaseio.com", projectId: "farn-app", storageBucket: "farn-app.firebasestorage.app", messagingSenderId: "16254677061", appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -140,6 +143,7 @@
         document.getElementById('wf-screen-login').style.display = 'flex';
         document.getElementById('wf-h-user').style.display = 'none';
         document.getElementById('wf-h-sair').style.display = 'none';
+        document.getElementById('wf-login-switch').style.display = 'flex';
     }
 
     function wfAppMostrarChat() {
@@ -150,23 +154,45 @@
         document.getElementById('wf-h-sair').style.display = 'flex';
     }
 
+    var wfModoLogin = 'aluno';
+    function wfAppTrocarModo() {
+        if (wfModoLogin === 'aluno') {
+            wfModoLogin = 'admin';
+            document.getElementById('wf-login-sub').textContent = 'Acesso restrito a administracao. Entre com suas credenciais do portal administrativo.';
+            document.getElementById('wf-lab-cpf').textContent = 'CPF do Administrador';
+            document.getElementById('wf-login-switch').innerHTML = '<i class="fa-solid fa-graduation-cap"></i> Entrar como Aluno';
+            document.getElementById('wf-login-note').innerHTML = 'Use o <strong>mesmo CPF e senha</strong> do portal administrativo.<br>Voltar para o acesso do aluno: toque acima.';
+        } else {
+            wfModoLogin = 'aluno';
+            document.getElementById('wf-login-sub').textContent = 'Entre com o seu cadastro para conversar com o Administrativo FARN.';
+            document.getElementById('wf-lab-cpf').textContent = 'CPF';
+            document.getElementById('wf-login-switch').innerHTML = '<i class="fa-solid fa-user-shield"></i> Entrar como Administrativo';
+            document.getElementById('wf-login-note').innerHTML = 'Use o <strong>mesmo CPF e senha</strong> do seu cadastro.<br>Acesse também pelo <a href="index.html">portal do aluno</a>.';
+        }
+        var err = document.getElementById('wf-login-err');
+        err.style.display = 'none';
+    }
+
     function wfAppEntrar() {
         var cpf = document.getElementById('wf-cpf').value;
         var senha = document.getElementById('wf-senha').value;
         var errEl = document.getElementById('wf-login-err');
         var btn = document.getElementById('wf-login-btn');
         errEl.style.display = 'none';
-        wfLogin(cpf, senha, function (ok, msg) {
+        var fn = (wfModoLogin === 'admin') ? wfLoginAdmin : wfLogin;
+        fn(cpf, senha, function (ok, msg) {
             if (!ok) {
                 errEl.textContent = msg;
                 errEl.style.display = 'block';
                 btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                document.getElementById('wf-login-switch').style.display = 'flex';
                 return;
             }
             wfAppMostrarChat();
-            wfIniciar('aluno');
+            wfIniciar(wfModoLogin === 'admin' ? 'admin' : 'aluno');
         });
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
+        document.getElementById('wf-login-switch').style.display = 'none';
     }
 
     function wfAppSair() {
@@ -221,7 +247,7 @@
             var s = wfSessao();
             if (s && s.cpf) {
                 wfAppMostrarChat();
-                wfIniciar('aluno');
+                wfIniciar(s.modo === 'admin' ? 'admin' : 'aluno');
             } else {
                 wfAppMostrarLogin();
             }
