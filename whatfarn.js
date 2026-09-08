@@ -5,6 +5,8 @@
 
 var WF_ADMIN_ID = 'administrativo';
 var WF_ADMIN_NOME = 'Administrativo FARN';
+var WF_GRUPO_ID = 'grp_ba_alpha';
+var WF_GRUPO_NOME = 'BA-alpha';
 
 var wfState = {
     modo: null,          // 'admin' | 'aluno'
@@ -23,6 +25,8 @@ var wfState = {
     marcaLidaTimer: null,
     contatos: [],
     contatosFiltro: '',
+    grupoItem: null,       // {id, data, grupo} do grupo BA-alpha
+    grupo: false,          // true quando a conversa aberta e o grupo
     iniciado: false
 };
 
@@ -196,6 +200,105 @@ function wfConvId(idA, idB) {
     return 'wf_' + arr[0] + '__' + arr[1];
 }
 
+/* ---------- Grupo (BA-alpha) ---------- */
+
+function wfEhGrupo(convId) {
+    return String(convId || '') === WF_GRUPO_ID;
+}
+
+function wfCriarGrupo() {
+    if (!dbFirestore || wfState.modo !== 'admin') return;
+    var btn = document.querySelector('.wf-btn-grupo');
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    dbFirestore.collection('whatfarnGrupos').doc(WF_GRUPO_ID).get().then(function (doc) {
+        var existente = doc.exists ? doc.data() : null;
+        return dbFirestore.collection('candidatos').get().then(function (snap) {
+            var membros = [WF_ADMIN_ID];
+            var participantes = {};
+            participantes[WF_ADMIN_ID] = { nome: WF_ADMIN_NOME, foto: '' };
+            snap.forEach(function (d2) {
+                var d = d2.data();
+                if (!d || !d.cpf) return;
+                if (d.status !== 'Ativo') return;
+                if (d.tipoPessoa && d.tipoPessoa === 'F') return;
+                var id = String(d.cpf);
+                if (membros.indexOf(id) === -1) membros.push(id);
+                participantes[id] = { nome: d.nome || 'Aluno', foto: d.photoDataUrl || wfFotoLocal(id) || '' };
+            });
+            if (existente) {
+                var antigos = existente.membros || [];
+                antigos.forEach(function (m) {
+                    if (membros.indexOf(m) === -1) membros.push(m);
+                    if (!participantes[m]) participantes[m] = (existente.participantes || {})[m] || { nome: m, foto: '' };
+                });
+            }
+            var naoLidas = {};
+            var nav = (existente && existente.naoLidas) || {};
+            membros.forEach(function (m) { naoLidas[m] = nav[m] || 0; });
+            return dbFirestore.collection('whatfarnGrupos').doc(WF_GRUPO_ID).set({
+                id: WF_GRUPO_ID,
+                nome: WF_GRUPO_NOME,
+                tipo: 'grupo',
+                membros: membros,
+                participantes: participantes,
+                naoLidas: naoLidas,
+                ultimaMsg: existente && existente.ultimaMsg ? existente.ultimaMsg : 'Grupo criado. Todas as mensagens da turma ficam centralizadas aqui.',
+                ultimaHora: existente && existente.ultimaHora ? existente.ultimaHora : Date.now(),
+                ultimaRemetente: existente && existente.ultimaRemetente ? existente.ultimaRemetente : '',
+                criadoPor: existente && existente.criadoPor ? existente.criadoPor : WF_ADMIN_ID,
+                criadoEm: existente && existente.criadoEm ? existente.criadoEm : Date.now()
+            }, { merge: true }).then(function () {
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-users"></i>';
+                if (doc.exists) alert('Grupo "' + WF_GRUPO_NOME + '" atualizado com ' + (membros.length - 1) + ' aluno(s).');
+                else alert('Grupo "' + WF_GRUPO_NOME + '" criado com ' + (membros.length - 1) + ' aluno(s) ativo(s).');
+                wfFecharContatos();
+            });
+        });
+    }).catch(function (e) {
+        console.error('wf: criar grupo', e);
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-users"></i>';
+        alert('Nao foi possivel criar/atualizar o grupo.');
+    });
+}
+
+function wfGrupoAutoAdd(d) {
+    if (!d || !wfState.me || !dbFirestore) return;
+    var membros = d.membros || [];
+    if (membros.indexOf(wfState.me.id) !== -1) return;
+    var upd = {};
+    upd.membros = firebase.firestore.FieldValue.arrayUnion(wfState.me.id);
+    upd['participantes.' + wfState.me.id] = { nome: wfState.me.nome || 'Aluno', foto: wfState.me.foto || '' };
+    upd['naoLidas.' + wfState.me.id] = 0;
+    dbFirestore.collection('whatfarnGrupos').doc(WF_GRUPO_ID).update(upd).catch(function () {});
+}
+
+function wfMesclarListaComGrupo() {
+    wfState.lista = wfState.lista.filter(function (c) { return !c.grupo; });
+    if (wfState.grupoItem) wfState.lista.push(wfState.grupoItem);
+    wfState.lista.sort(function (a, b) { return (b.data.ultimaHora || 0) - (a.data.ultimaHora || 0); });
+    wfRenderLista();
+    wfSincronizarBadge();
+}
+
+function wfCarregarGrupo() {
+    if (!dbFirestore) return;
+    var unsub = wfEventual(function () {
+        return dbFirestore.collection('whatfarnGrupos').doc(WF_GRUPO_ID).onSnapshot(function (doc) {
+            if (!doc.exists || !wfState.me) {
+                wfState.grupoItem = null;
+                wfMesclarListaComGrupo();
+                return;
+            }
+            var d = doc.data();
+            wfGrupoAutoAdd(d);
+            wfState.grupoItem = { id: WF_GRUPO_ID, data: d, grupo: true };
+            wfVerNotificacaoNova(wfState.grupoItem);
+            wfMesclarListaComGrupo();
+        });
+    });
+    wfState.unsubs.push(unsub);
+}
+
 function wfPreView(msgTexto, tipo) {
     if (tipo === 'imagem') return 'FOTO';
     return String(msgTexto || '').replace(/\n/g, ' ').slice(0, 60);
@@ -331,7 +434,8 @@ function wfCss() {
         '.wf-modal-box .wf-m-btn.small{background:#fff;color:#16a34a;border:1px solid #16a34a}',
         '.wf-modal-box .wf-m-eps{font-size:12px;color:#64748b;margin-top:14px;line-height:1.7;border-top:1px solid #eef2f7;padding-top:12px}',
         '.wf-modal-box .wf-m-eps b{color:#334155}',
-        '@media(min-width:600px){.wf-modal{align-items:center}.wf-modal-box{border-radius:18px}.wf-modal-box .wf-m-eps{display:none}}'
+        '@media(min-width:600px){.wf-modal{align-items:center}.wf-modal-box{border-radius:18px}.wf-modal-box .wf-m-eps{display:none}}',
+        '.wf-avatar-grupo{background:linear-gradient(135deg,#0f766e,#15803d);color:#fff}.wf-msg-nome-rem{font-size:11.5px;font-weight:800;color:#15803d;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
     ].join('');
     document.head.appendChild(st);
 }
@@ -342,6 +446,7 @@ function wfHTML() {
     var lista = '';
     if (wfState.modo === 'admin') {
         lista += '<div class="wf-list-head"><div class="wf-list-title"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>' +
+            '<button class="wf-btn-novo wf-btn-grupo" onclick="wfCriarGrupo()" title="Criar/atualizar grupo BA-alpha"><i class="fa-solid fa-users"></i></button>' +
             '<button class="wf-btn-novo" onclick="wfMostrarContatos()" title="Nova conversa"><i class="fa-solid fa-square-plus"></i></button></div>' +
             '<div class="wf-search"><div class="wf-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="wf-busca" type="text" placeholder="Pesquisar conversas ou contatos..." oninput="wfRenderLista()"></div></div>' +
             '<div class="wf-convs" id="wf-convs"></div>' +
@@ -457,8 +562,7 @@ function wfCarregarConversas() {
                 }
             });
             wfState.lista.sort(function (a, b) { return (b.data.ultimaHora || 0) - (a.data.ultimaHora || 0); });
-            wfRenderLista();
-            wfSincronizarBadge();
+            wfMesclarListaComGrupo();
         });
     });
     wfState.unsubs.push(unsub);
@@ -467,9 +571,14 @@ function wfCarregarConversas() {
 function wfVerNotificacaoNova(conv) {
     if (!wfState.me || !conv || !conv.data || !conv.id) return;
     var d = conv.data;
-    var pid = conv.id.replace(/^wf_/, '').split('__');
-    var ehMeu = d.membros && d.membros.indexOf(wfState.me.id) !== -1;
-    if (!ehMeu && pid.indexOf(wfState.me.id) === -1) return;
+    var ehGrupo = wfEhGrupo(conv.id) || conv.grupo;
+    if (ehGrupo) {
+        if (!d.membros || d.membros.indexOf(wfState.me.id) === -1) return;
+    } else {
+        var pid0 = conv.id.replace(/^wf_/, '').split('__');
+        var ehMeu = d.membros && d.membros.indexOf(wfState.me.id) !== -1;
+        if (!ehMeu && pid0.indexOf(wfState.me.id) === -1) return;
+    }
     if (!d.ultimaRemetente || d.ultimaRemetente === wfState.me.id) return;
     var appVisivel = document.visibilityState === 'visible' || document.hidden === false;
     var conversaEmFoco = wfState.convId && wfState.convId === conv.id && appVisivel;
@@ -479,13 +588,22 @@ function wfVerNotificacaoNova(conv) {
     if (wfState.notifVistas[chave]) return;
     wfState.notifVistas[chave] = true;
     var p = d.participantes || {};
-    var outro = null;
-    var oId = pid[0] === wfState.me.id ? pid[1] : pid[0];
-    if (p[oId]) outro = p[oId];
-    if (!outro) { for (var k in p) if (k !== wfState.me.id && p[k]) outro = p[k]; }
-    if (!outro) return;
-    var nome = outro.nome || outro.id || oId || 'Contato';
-    var texto = d.ultimaMsg === 'FOTO' ? 'Voce recebeu uma foto.' : (d.ultimaMsg || 'Nova mensagem');
+    var nome;
+    var texto;
+    if (ehGrupo) {
+        var rem = p[d.ultimaRemetente] || null;
+        nome = WF_GRUPO_NOME;
+        var quem = rem ? rem.nome : (d.ultimaRemetente || 'Alguem');
+        texto = d.ultimaMsg === 'FOTO' ? (quem + ' enviou uma foto no grupo.') : (quem + ': ' + (d.ultimaMsg || 'Nova mensagem'));
+    } else {
+        var outro = null;
+        var oId = pid0[0] === wfState.me.id ? pid0[1] : pid0[0];
+        if (p[oId]) outro = p[oId];
+        if (!outro) { for (var k in p) if (k !== wfState.me.id && p[k]) { outro = p[k]; break; } }
+        if (!outro) return;
+        nome = outro.nome || outro.id || oId || 'Contato';
+        texto = d.ultimaMsg === 'FOTO' ? 'Voce recebeu uma foto.' : (d.ultimaMsg || 'Nova mensagem');
+    }
     wfNotificarAndroid(nome, texto);
 }
 
@@ -531,7 +649,9 @@ function wfTotalNaoLidas() {
     for (var i = 0; i < wfState.lista.length; i++) {
         var c = wfState.lista[i];
         if (!c || !c.data) continue;
-        var v = ehAdmin ? c.data.naoLidasAdmin : c.data.naoLidasAluno;
+        var v = 0;
+        if (c.grupo || wfEhGrupo(c.id)) v = (c.data.naoLidas || {})[wfState.me.id] || 0;
+        else v = ehAdmin ? c.data.naoLidasAdmin : c.data.naoLidasAluno;
         if (v) total += (parseInt(v, 10) || 0);
     }
     return total;
@@ -552,6 +672,10 @@ function wfRenderLista() {
     if (!el) return;
     var itens = wfState.lista.filter(function (c) {
         if (!q) return true;
+        if (c.grupo || wfEhGrupo(c.id)) {
+            var gn = (c.data.nome || '').toLowerCase();
+            if (gn.indexOf(q) !== -1) return true;
+        }
         var p = c.data.participantes || {};
         for (var k in p) {
             if (k === wfState.me.id) continue;
@@ -565,33 +689,34 @@ function wfRenderLista() {
         html += '<div class="wf-vazio"><i class="fa-solid fa-comment-slash" style="font-size:30px;opacity:.4"></i><p>' + (wfState.modo === 'admin' ? 'Nenhuma conversa. Clique no + para iniciar um novo chat com um aluno ativo.' : 'Nenhuma conversa ainda. Inicie um chat com o Administrativo.') + '</p></div>';
     }
     itens.forEach(function (c) {
+        var ehGrupo = c.grupo || wfEhGrupo(c.id);
         var pid = c.id.replace(/^wf_/, '').split('__');
-        var oId = pid[0] === wfState.me.id ? pid[1] : pid[0];
+        var oId = ehGrupo ? WF_GRUPO_ID : (pid[0] === wfState.me.id ? pid[1] : pid[0]);
         var p = c.data.participantes || {};
         var outro = p[oId] || null;
         if (!outro) { for (var k in p) if (k !== wfState.me.id && p[k]) { outro = p[k]; break; } }
         if (!outro) outro = { nome: oId };
-        var nome = outro.nome || oId;
-        var foto = outro.foto || '';
-        var pvC = wfState.me.id === WF_ADMIN_ID ? c.data.naoLidasAdmin : c.data.naoLidasAluno;
+        var nome = ehGrupo ? (c.data.nome || WF_GRUPO_NOME) : (outro.nome || oId);
+        var foto = ehGrupo ? '' : (outro.foto || '');
+        var pvC = ehGrupo ? ((c.data.naoLidas || {})[wfState.me.id] || 0) : (wfState.me.id === WF_ADMIN_ID ? c.data.naoLidasAdmin : c.data.naoLidasAluno);
         var naoLidas = pvC || 0;
         var pvM = c.data.ultimaMsg || '';
         var isImg = pvM === 'FOTO';
         var hora = c.data.ultimaHora ? wfDataLista(c.data.ultimaHora) : '';
         var ativo = wfState.convId === c.id ? ' wf-ativo' : '';
-        var ini = (nome || '?').trim().charAt(0).toUpperCase();
+        var avatarClass = ehGrupo ? ' wf-avatar-grupo' : '';
         var avatar = foto
             ? '<img src="' + wfEsc(foto) + '" alt="">'
-            : '<i class="fa-solid fa-user"></i>';
+            : (ehGrupo ? '<i class="fa-solid fa-users"></i>' : '<i class="fa-solid fa-user"></i>');
         var lidaIcon = '';
         if (c.data.ultimaRemetente === wfState.me.id && isImg) lidaIcon = '<i class="fa-solid fa-camera"></i> ';
         else if (c.data.ultimaRemetente === wfState.me.id && pvM) lidaIcon = '<i class="fa-solid fa-check-double"></i> ';
         html += '<div class="wf-conv' + ativo + '" onclick="wfSelecionarConversa(\'' + wfEsc(c.id) + '\')">' +
-            '<div class="wf-avatar">' + avatar + '</div>' +
+            '<div class="wf-avatar' + avatarClass + '">' + avatar + '</div>' +
             '<div class="wf-conv-main"><div class="wf-conv-top"><span class="wf-conv-nome">' + wfEsc(nome) + '</span><span class="wf-conv-hora">' + wfEsc(hora) + '</span></div>' +
             '<div class="wf-conv-bot"><span class="wf-conv-pv' + (naoLidas ? ' wf-nao-lida' : '') + '">' + lidaIcon + wfEsc(pvM) + '</span>' +
             (naoLidas ? '<span class="wf-badge">' + naoLidas + '</span>' : '') + '</div></div>' +
-            '<button class="wf-conv-del" title="Excluir conversa" onclick="event.stopPropagation();wfExcluirConversa(\'' + wfEsc(c.id) + '\')"><i class="fa-solid fa-trash-can"></i></button></div>';
+            (ehGrupo ? '' : '<button class="wf-conv-del" title="Excluir conversa" onclick="event.stopPropagation();wfExcluirConversa(\'' + wfEsc(c.id) + '\')"><i class="fa-solid fa-trash-can"></i></button>') + '</div>';
     });
     el.innerHTML = html;
 }
@@ -672,6 +797,7 @@ function wfSelecionarContato(id, nome, foto) {
 
 function wfSelecionarConversa(convId, nomeOverride, fotoOverride) {
     if (!dbFirestore) return;
+    if (wfEhGrupo(convId)) { wfSelecionarGrupo(); return; }
     var conv = wfState.lista.find(function (c) { return c.id === convId; });
     var partsId = convId.replace(/^wf_/, '').split('__');
     var outroId = partsId[0] === wfState.me.id ? partsId[1] : partsId[0];
@@ -684,6 +810,7 @@ function wfSelecionarConversa(convId, nomeOverride, fotoOverride) {
     if (!outro.nome) outro.nome = outro.id || 'Contato';
     wfState.contato = { id: outro.id, nome: outro.nome, foto: outro.foto || '' };
     wfState.convId = convId;
+    wfState.grupo = false;
 
     var updP = {};
     updP['participantes.' + wfState.me.id] = { nome: wfState.me.nome || 'Voce', foto: wfState.me.foto || '' };
@@ -726,6 +853,38 @@ function wfSelecionarConversa(convId, nomeOverride, fotoOverride) {
             wfCarregarMsgs();
         }).catch(function (e) { console.error(e); });
     }
+}
+
+function wfSelecionarGrupo() {
+    if (!dbFirestore) return;
+    var conv = wfState.grupoItem || (wfState.lista.find(function (c) { return wfEhGrupo(c.id); }));
+    if (!conv || !conv.data) { alert('O grupo ainda nao existe. Peça ao Administrativo FARN para cria-lo.'); return; }
+    var d = conv.data;
+    wfState.grupo = true;
+    wfState.contato = { id: WF_GRUPO_ID, nome: d.nome || WF_GRUPO_NOME, foto: '' };
+    wfState.convId = WF_GRUPO_ID;
+
+    document.getElementById('wf-col-chat').classList.add('wf-open-chat');
+    var app = document.getElementById('wf-root');
+    if (app) app.classList.add('wf-open');
+
+    var elNome = document.getElementById('wf-chat-nome');
+    if (elNome) elNome.textContent = wfState.contato.nome;
+    var elAv = document.getElementById('wf-chat-avatar');
+    if (elAv) elAv.innerHTML = '<i class="fa-solid fa-users"></i>';
+    var elSt = document.getElementById('wf-chat-status');
+    if (elSt) {
+        var qtd = (d.membros || []).length;
+        elSt.classList.remove('wf-cinza');
+        elSt.textContent = qtd > 0 ? qtd + ' participantes' : 'Grupo';
+    }
+    if (wfState.presencaUnsub) { try { wfState.presencaUnsub(); } catch (e) {} wfState.presencaUnsub = null; }
+
+    var campo = 'naoLidas.' + wfState.me.id;
+    var upd = {};
+    upd[campo] = 0;
+    dbFirestore.collection('whatfarnGrupos').doc(WF_GRUPO_ID).update(upd).catch(function () {});
+    wfCarregarMsgs();
 }
 
 function wfVoltarLista() {
@@ -804,6 +963,7 @@ function wfExcluirConversa(convId) {
 }
 
 function wfLimparConversaUI() {
+    wfState.grupo = false;
     var el = document.getElementById('wf-msgs');
     if (el) el.innerHTML = '<div class="wf-vazio"><i class="fa-solid fa-comments" style="font-size:34px;opacity:.4"></i><p>Selecione uma conversa ao lado para comecar a conversar.</p></div>';
     var n = document.getElementById('wf-chat-nome');
@@ -819,9 +979,10 @@ function wfLimparConversaUI() {
 function wfCarregarMsgs() {
     if (wfState.msgsUnsub) { try { wfState.msgsUnsub(); } catch (e) {} wfState.msgsUnsub = null; }
     if (!wfState.convId || !dbFirestore) return;
+    var fpai = wfState.grupo ? 'whatfarnGrupos' : 'whatfarnConversas';
     wfState.msgs = [];
     wfState.msgsUnsub = wfEventual(function () {
-        return dbFirestore.collection('whatfarnConversas').doc(wfState.convId).collection('msgs')
+        return dbFirestore.collection(fpai).doc(wfState.convId).collection('msgs')
             .orderBy('ts', 'asc').onSnapshot(function (snap) {
                 wfState.msgs = [];
                 snap.forEach(function (doc) { wfState.msgs.push({ id: doc.id, data: doc.data() }); });
@@ -834,18 +995,27 @@ function wfCarregarMsgs() {
 function wfMarcarLidas() {
     if (!wfState.me || !wfState.convId || !dbFirestore) return;
     var me = wfState.me.id;
+    var ehG = wfState.grupo || wfEhGrupo(wfState.convId);
+    var fpai = ehG ? 'whatfarnGrupos' : 'whatfarnConversas';
     var pendentes = wfState.msgs.filter(function (m) {
+        if (ehG) return m.data.remetente !== me && !m.data.lida;
         return m.data.destinatario === me && !m.data.lida;
     });
     if (!pendentes.length) { wfSincronizarBadge(); return; }
     var batch = dbFirestore.batch();
     pendentes.forEach(function (m) {
-        batch.update(dbFirestore.collection('whatfarnConversas').doc(wfState.convId).collection('msgs').doc(m.id), {
+        batch.update(dbFirestore.collection(fpai).doc(wfState.convId).collection('msgs').doc(m.id), {
             lida: true,
             lidaEm: Date.now()
         });
     });
     batch.commit().then(function () { wfSincronizarBadge(); }).catch(function () {});
+    if (ehG) {
+        var updG = {};
+        updG['naoLidas.' + me] = 0;
+        dbFirestore.collection('whatfarnGrupos').doc(wfState.convId).update(updG).catch(function () {});
+        return;
+    }
     var conv = wfState.lista.find(function (c) { return c.id === wfState.convId; });
     if (conv) {
         var campo = me === WF_ADMIN_ID ? 'naoLidasAdmin' : 'naoLidasAluno';
@@ -899,7 +1069,13 @@ function wfBalcaoMsg(msgId, d, me) {
     } else {
         pv = '<div class="wf-msg-text">' + wfEsc(d.texto) + '</div>';
     }
-    return '<div class="wf-msg-wrap ' + cls + '"><div class="wf-msg ' + cls + '">' + pv +
+    var nomeRem = '';
+    if (wfState.grupo && !me) {
+        var pR = (wfState.grupoItem && wfState.grupoItem.data.participantes) || {};
+        var r = pR[d.remetente] || null;
+        nomeRem = '<div class="wf-msg-nome-rem">' + wfEsc(r ? r.nome : (d.remetente || 'Aluno')) + '</div>';
+    }
+    return '<div class="wf-msg-wrap ' + cls + '"><div class="wf-msg ' + cls + '">' + nomeRem + pv +
         '<div class="wf-msg-me ' + (me ? '' : 'time-me') + '">' + wfDataVez(d.ts) +
         (me ? ' ' + wfEstado(d) : '') + '</div></div></div>';
 }
@@ -915,7 +1091,8 @@ function wfVerTemporaria(msgId) {
     var m = wfState.msgs.find(function (x) { return x.id === msgId; });
     if (!m) return;
     var url = m.data.mediaUrl || '';
-    dbFirestore.collection('whatfarnConversas').doc(wfState.convId).collection('msgs').doc(msgId)
+    var fpai = wfState.grupo ? 'whatfarnGrupos' : 'whatfarnConversas';
+    dbFirestore.collection(fpai).doc(wfState.convId).collection('msgs').doc(msgId)
         .set({ vista: true, vistaEm: Date.now() }, { merge: true }).catch(function () {});
     if (url) wfAbrirImagem(url);
 }
@@ -952,10 +1129,11 @@ function wfDigitando(forcar) {
 function wfMsgsEnviar(payload) {
     if (!dbFirestore || !wfState.convId || !wfState.me || !wfState.contato) return;
     var ts = Date.now();
-    var ref = dbFirestore.collection('whatfarnConversas').doc(wfState.convId);
+    var ehG = wfState.grupo || wfEhGrupo(wfState.convId);
+    var fpai = ehG ? 'whatfarnGrupos' : 'whatfarnConversas';
+    var ref = dbFirestore.collection(fpai).doc(wfState.convId);
     var msg = {
         remetente: wfState.me.id,
-        destinatario: wfState.contato.id,
         texto: payload.texto || '',
         tipo: payload.tipo || 'texto',
         temporaria: !!payload.temporaria,
@@ -963,11 +1141,19 @@ function wfMsgsEnviar(payload) {
         ts: ts,
         lida: false
     };
+    if (!ehG) msg.destinatario = wfState.contato.id;
     if (payload.mediaUrl) msg.mediaUrl = payload.mediaUrl;
     if (payload.mediaThumb) msg.mediaThumb = payload.mediaThumb;
-    var campo = wfState.me.id === WF_ADMIN_ID ? 'naoLidasAluno' : 'naoLidasAdmin';
     var updateData = {};
-    updateData[campo] = firebase.firestore.FieldValue.increment(1);
+    if (ehG) {
+        var membros = (wfState.grupoItem && wfState.grupoItem.data.membros) || [wfState.me.id];
+        membros.forEach(function (m) {
+            if (m !== wfState.me.id) updateData['naoLidas.' + m] = firebase.firestore.FieldValue.increment(1);
+        });
+    } else {
+        var campo = wfState.me.id === WF_ADMIN_ID ? 'naoLidasAluno' : 'naoLidasAdmin';
+        updateData[campo] = firebase.firestore.FieldValue.increment(1);
+    }
     return ref.collection('msgs').add(msg).then(function () {
         return ref.set({
             ultimaHora: ts,
@@ -1100,7 +1286,9 @@ function wfIniciar(modo) {
     }
 
     if (modo === 'aluno') {
+        wfState.grupo = false;
         wfCarregarConversas();
+        wfCarregarGrupo();
         var convId = wfConvId(me.id, WF_ADMIN_ID);
         var outro = { id: WF_ADMIN_ID, nome: WF_ADMIN_NOME, foto: '' };
         wfState.contato = outro;
@@ -1128,6 +1316,7 @@ function wfIniciar(modo) {
         });
     } else {
         wfCarregarConversas();
+        wfCarregarGrupo();
     }
 
     wfPresencaEnviar(true, false);
@@ -1145,6 +1334,7 @@ window.wfMostrarContatos = wfMostrarContatos;
 window.wfFecharContatos = wfFecharContatos;
 window.wfFiltrarContatos = wfFiltrarContatos;
 window.wfSelecionarContato = wfSelecionarContato;
+window.wfCriarGrupo = wfCriarGrupo;
 window.wfSelecionarConversa = wfSelecionarConversa;
 window.wfVoltarLista = wfVoltarLista;
 window.wfExcluirConversa = wfExcluirConversa;
