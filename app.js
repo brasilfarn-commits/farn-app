@@ -1867,7 +1867,11 @@ function preOnSelecaoChange() {
 
 /* ===== LINK DE PRE-INSCRICAO ===== */
 
-function gerarLinkPreAbrir() {
+var preLinkModo = 'unico';
+
+function gerarLinkPreAbrir(modo) {
+    preLinkModo = (modo === 'coletivo') ? 'coletivo' : 'unico';
+    const coletivo = preLinkModo === 'coletivo';
     const body = document.getElementById('modal-pre-link-body');
     if (!body) return;
     const projetosEmAndamento = new Set(projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').map(p => p.nome));
@@ -1875,14 +1879,22 @@ function gerarLinkPreAbrir() {
     turmas.filter(t => (t.projeto || t.nome) && projetosEmAndamento.has(t.projeto)).forEach(t => {
         options += '<option value="' + (t.nome || '') + '" data-projeto="' + (t.projeto || '') + '">' + (t.nome || '') + (t.projeto ? ' - ' + t.projeto : '') + '</option>';
     });
+    const texto = coletivo
+        ? 'Gere um link de pré-inscrição <strong>coletiva</strong>: várias pessoas podem usar o mesmo link para se inscrever (a única regra é não repetir o CPF). Após enviar, o candidato pode <strong>editar os próprios dados até a ativação</strong> pelo administrador e <strong>solicitar o comprovante por e-mail</strong>.'
+        : 'Gere um link único de pré-inscrição para turmas de projetos em andamento. O link pode ser usado <strong>somente uma vez</strong> — após o preenchimento, ele expira automaticamente. A pessoa acessa sem senha.';
+    const cor = coletivo ? '#d97706' : '#7c3aed';
     body.innerHTML =
-        '<p style="font-size:13px;color:#475569;margin-bottom:16px">Gere um link único de pré-inscrição para turmas de projetos em andamento. O link pode ser usado <strong>somente uma vez</strong> — após o preenchimento, ele expira automaticamente. A pessoa acessa sem senha.</p>' +
+        '<p style="font-size:13px;color:#475569;margin-bottom:16px">' + texto + '</p>' +
         '<div class="form-group">' +
         '<label style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;display:block">Escolha a turma do link *</label>' +
         '<select id="pre-link-turma" class="config-input" style="width:100%" onchange="gerarLinkPreAtualizarTurma()">' + options + '</select>' +
         '</div>' +
-        '<button class="btn-primary btn-lg" style="width:100%;margin-top:18px;background:#7c3aed;border-color:#7c3aed" onclick="gerarLinkPreGerar()"><i class="fa-solid fa-link"></i> Gerar Link</button>' +
+        '<button class="btn-primary btn-lg" style="width:100%;margin-top:18px;background:' + cor + ';border-color:' + cor + '" onclick="gerarLinkPreGerar()"><i class="fa-solid fa-link"></i> ' + (coletivo ? 'Gerar Link Coletivo' : 'Gerar Link Único') + '</button>' +
         '<div id="pre-link-resultado" style="margin-top:16px"></div>';
+    const h = document.querySelector('#modal-pre-link h3');
+    if (h) {
+        h.innerHTML = '<i class="fa-solid fa-link" style="color:' + cor + ';margin-right:8px"></i> ' + (coletivo ? 'Gerar Link de Pré-Inscrição Coletiva' : 'Gerar Link de Pré-Inscrição');
+    }
     document.getElementById('modal-pre-link').classList.remove('hidden');
 }
 
@@ -1908,20 +1920,24 @@ async function gerarLinkPreGerar() {
     try {
         const token = 'PL' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
         const base = (location.hostname.indexOf('github.io') >= 0 || location.hostname.indexOf('127.0.0.1') >= 0 || location.hostname === 'localhost') ? 'https://farn-app.web.app' : location.origin;
-        const link = base + '/pre-inscricao-via-link.html?token=' + token;
+        const link = base + '/pre-inscricao-via-link.html?v=22&token=' + token;
         const docData = {
             token: token,
             turma: turma,
             projeto: projeto,
+            tipo: preLinkModo,
+            coletivo: preLinkModo === 'coletivo',
             usado: false,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
             criadoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
             link: link
         };
         await dbFirestore.collection('linksPreInscricao').doc(token).set(docData);
+        const tipoLabel = preLinkModo === 'coletivo' ? 'Link coletivo (várias inscrições, sem CPF repetido)' : 'Link único (uso de 1 pessoa apenas)';
         let html = '<div style="padding:16px;border-radius:10px;background:#f5f3ff;border:1px solid #ddd6fe;margin-top:6px">' +
             '<div style="font-size:12px;font-weight:700;color:#6d28d9;margin-bottom:8px"><i class="fa-solid fa-circle-check"></i> Link gerado com sucesso!</div>' +
             '<div style="font-size:11px;color:#475569;margin-bottom:6px">Turma: <strong>' + turma + '</strong>' + (projeto ? ' • Projeto: <strong>' + projeto + '</strong>' : '') + '</div>' +
+            '<div style="font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:6px 8px;margin-bottom:8px"><i class="fa-solid fa-circle-info"></i> ' + tipoLabel + '</div>' +
             '<input type="text" id="pre-link-copy" readonly value="' + link + '" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd6fe;font-size:12px;background:#fff;color:#1e293b">' +
             '</div>' +
             '<div style="display:flex;gap:10px;margin-top:14px">' +
@@ -1930,11 +1946,11 @@ async function gerarLinkPreGerar() {
             '</div>';
         document.getElementById('pre-link-resultado').innerHTML = html;
         const copyBtn = document.querySelector('#pre-link-resultado button');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-link"></i> Gerar Link'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-link"></i> ' + (preLinkModo === 'coletivo' ? 'Gerar Link Coletivo' : 'Gerar Link Único'); }
     } catch (e) {
         console.error('Erro ao gerar link:', e);
         alert('Erro ao gerar o link: ' + e.message);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-link"></i> Gerar Link'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-link"></i> ' + (preLinkModo === 'coletivo' ? 'Gerar Link Coletivo' : 'Gerar Link Único'); }
     }
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farn-v20';
+const CACHE_NAME = 'farn-v21';
 const OFFLINE_URLS = [
     './',
     './index.html',

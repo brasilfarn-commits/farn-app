@@ -1984,8 +1984,11 @@
                                     <button class="btn-primary" onclick="openFormCandidato()">
                                         <i class="fa-solid fa-plus"></i> Novo Pre-Cadastro
                                     </button>
-                                    <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="gerarLinkPreAbrir()">
+                                    <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="gerarLinkPreAbrir('unico')">
                                         <i class="fa-solid fa-link"></i> Gerar Link de Pré-Inscrição
+                                    </button>
+                                    <button class="btn-primary" style="background:#d97706;border-color:#d97706" onclick="gerarLinkPreAbrir('coletivo')">
+                                        <i class="fa-solid fa-users"></i> Gerar Link de Pré-Inscrição Coletiva
                                     </button>
                                     <button class="btn-outline btn-sm" onclick="downloadExcelTemplate()">
                                         <i class="fa-solid fa-file-excel"></i> Gerar Planilha
@@ -3621,7 +3624,7 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=22"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

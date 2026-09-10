@@ -65,11 +65,7 @@
             <a href="index.html" class="home-btn"><i class="fa-solid fa-house"></i> Página Inicial</a>
         </div>
         <div class="card" id="area-sucesso" style="display:none">
-            <div class="success-box">
-                <i class="fa-solid fa-circle-check"></i>
-                <h2>Pré-inscrição registrada!</h2>
-                <p>Seus dados foram enviados com sucesso. A equipe FARN analisará e você será notificado sobre os próximos passos.</p>
-            </div>
+            <div id="sucesso-conteudo"></div>
         </div>
 
         <div class="card" id="area-formulario" style="display:none">
@@ -191,6 +187,10 @@
 
         var tokenAtual = '';
         var linkValido = null;
+        var editTokenAtual = '';
+        var modoEdicao = false;
+        var candidatoEdicao = null;
+        var ultimoCandidato = null;
 
         function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -232,34 +232,161 @@
             if(!confirm('Limpar todos os campos preenchidos?')) return;
             form.reset();
             document.getElementById('f-nacionalidade').value='Brasileira';
+            document.getElementById('f-pre-projeto').value=linkValido?linkValido.projeto||'':'';
+            document.getElementById('f-pre-turma').value=linkValido?linkValido.turma||'':'';
+        }
+
+        function mostrarInvalido(titulo, texto){
+            var inv=document.getElementById('area-invalido');
+            document.getElementById('area-loading').style.display='none';
+            document.getElementById('area-formulario').style.display='none';
+            document.getElementById('area-sucesso').style.display='none';
+            if(inv){
+                var h2=inv.querySelector('h2');
+                var p=inv.querySelector('p');
+                if(h2) h2.textContent=titulo;
+                if(p) p.textContent=texto;
+                inv.style.display='block';
+            }
+        }
+
+        async function buscarCandidatoEdit(){
+            try{
+                var res=await dbFirestore.collection('candidatos').where('editToken','==',editTokenAtual).limit(1).get();
+                if(res.empty){
+                    mostrarInvalido('Link de edição inválido','Não encontramos uma pré-inscrição para este link de edição. Verifique o endereço ou solicite um novo à equipe FARN.');
+                    return;
+                }
+                var c=res.docs[0].data();
+                if(c.status && c.status!=='Pendente'){
+                    mostrarInvalido('Edição encerrada','Sua pré-inscrição já foi avaliada/ativada pela equipe FARN. Por isso, não é mais possível editar os dados.');
+                    return;
+                }
+                candidatoEdicao=c;
+                candidatoEdicao.__id=res.docs[0].id;
+                modoEdicao=true;
+                linkValido={projeto:c.projeto||'',turma:c.turma||'',coletivo:!!c.linkColetivo};
+                preencherForm(c);
+                document.getElementById('btn-enviar').innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações';
+                document.getElementById('btn-enviar').style.background='linear-gradient(135deg,#d97706,#b45309)';
+                document.getElementById('area-loading').style.display='none';
+                document.getElementById('area-formulario').style.display='block';
+            }catch(e){
+                console.error('Erro ao buscar candidato para edição:',e);
+                document.getElementById('area-loading').innerHTML='<i class="fa-solid fa-triangle-exclamation" style="font-size:52px;color:#dc2626;display:block;margin-bottom:14px"></i><h2>Erro</h2><p>Não foi possível carregar os dados. Tente novamente mais tarde.</p>';
+            }
         }
 
         async function validarLink(){
+            editTokenAtual=getQueryParam('edittoken');
+            if(editTokenAtual){ await buscarCandidatoEdit(); return; }
             tokenAtual=getQueryParam('token');
             var load=document.getElementById('area-loading');
-            var inval=document.getElementById('area-invalido');
-            var forma=document.getElementById('area-formulario');
             if(!tokenAtual){
-                load.style.display='none';
-                inval.style.display='block';
+                mostrarInvalido('Link inválido','Este endereço não contém um link de pré-inscrição válido. Solicite um novo link à equipe FARN.');
                 return;
             }
             try{
                 var doc=await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).get();
-                if(!doc.exists || doc.data().usado===true){
-                    load.style.display='none';
-                    inval.style.display='block';
+                // Links coletivos não expiram após a primeira inscrição
+                if(!doc.exists || (doc.data().usado===true && doc.data().coletivo!==true)){
+                    mostrarInvalido('Link inválido ou já utilizado','Este link de pré-inscrição não é mais válido. Ele pode ter sido utilizado ou expirado. Solicite um novo link à equipe FARN.');
                     return;
                 }
                 linkValido=doc.data();
                 document.getElementById('f-pre-projeto').value=linkValido.projeto||'';
                 document.getElementById('f-pre-turma').value=linkValido.turma||'';
                 load.style.display='none';
-                forma.style.display='block';
+                document.getElementById('area-formulario').style.display='block';
+                if(linkValido.coletivo){
+                    mostrarToast('Link coletivo: outras pessoas também podem se inscrever pelo mesmo link.');
+                }
             }catch(e){
                 console.error('Erro ao validar link:',e);
                 load.innerHTML='<i class="fa-solid fa-triangle-exclamation" style="font-size:52px;color:#dc2626;display:block;margin-bottom:14px"></i><h2>Erro ao validar o link</h2><p>Não foi possível consultar o link. Tente novamente mais tarde.</p>';
             }
+        }
+
+        function setVal(id,val){
+            var el=document.getElementById(id);
+            if(el) el.value=(val==null?'':val);
+        }
+
+        function preencherForm(c){
+            setVal('f-nome',c.nome);
+            var cpf=(c.cpf||'').replace(/\D/g,'');
+            if(cpf.length===11)cpf=cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+            setVal('f-cpf',cpf);
+            setVal('f-nascimento',c.nascimento);
+            setVal('f-estado-civil',c.estadoCivil);
+            setVal('f-genero',c.genero);
+            setVal('f-nacionalidade',c.nacionalidade);
+            setVal('f-naturalidade',c.naturalidade);
+            setVal('f-titulo',c.tituloEleitor);
+            setVal('f-profissao',c.profissao);
+            setVal('f-mae',c.mae);
+            setVal('f-pai',c.pai);
+            setVal('f-email',c.email);
+            setVal('f-whatsapp',c.whatsapp);
+            setVal('f-endereco',c.endereco);
+            setVal('f-numero',c.numero);
+            setVal('f-bairro',c.bairro);
+            setVal('f-cidade',c.cidade);
+            setVal('f-estado',c.estado);
+            setVal('f-altura',c.altura);
+            setVal('f-peso',c.peso);
+            setVal('f-fator-rh',c.fatorRh);
+            setVal('f-hipertensao',c.hipertensao);
+            setVal('f-diabetes',c.diabetes);
+            setVal('f-deficiencia',c.deficiencia);
+            setVal('f-tatuagem',c.tatuagem);
+            setVal('f-cirurgia',c.cirurgia);
+            setVal('f-alcool',c.alcool);
+            setVal('f-medicamento',c.medicamento);
+            setVal('f-cansaco',c.cansaco);
+            setVal('f-calca',c.calca);
+            setVal('f-camisa',c.camisa);
+            setVal('f-calcado',c.calcado);
+            setVal('f-pre-projeto',c.projeto);
+            setVal('f-pre-turma',c.turma);
+        }
+
+        function coletarFormData(){
+            var data={
+                nome:document.getElementById('f-nome').value.trim(),
+                cpf:document.getElementById('f-cpf').value.replace(/\D/g,''),
+                nascimento:document.getElementById('f-nascimento').value||'',
+                estadoCivil:document.getElementById('f-estado-civil').value||'',
+                genero:document.getElementById('f-genero').value||'',
+                nacionalidade:document.getElementById('f-nacionalidade').value||'',
+                naturalidade:document.getElementById('f-naturalidade').value||'',
+                tituloEleitor:document.getElementById('f-titulo').value||'',
+                profissao:document.getElementById('f-profissao').value||'',
+                mae:document.getElementById('f-mae').value||'',
+                pai:document.getElementById('f-pai').value||'',
+                email:document.getElementById('f-email').value||'',
+                whatsapp:document.getElementById('f-whatsapp').value||'',
+                endereco:document.getElementById('f-endereco').value||'',
+                numero:document.getElementById('f-numero').value||'',
+                bairro:document.getElementById('f-bairro').value||'',
+                cidade:document.getElementById('f-cidade').value||'',
+                estado:document.getElementById('f-estado').value||'',
+                altura:document.getElementById('f-altura').value||'',
+                peso:document.getElementById('f-peso').value||'',
+                fatorRh:document.getElementById('f-fator-rh').value||'',
+                hipertensao:document.getElementById('f-hipertensao').value||'Nao',
+                diabetes:document.getElementById('f-diabetes').value||'Nao',
+                deficiencia:document.getElementById('f-deficiencia').value||'Nao',
+                tatuagem:document.getElementById('f-tatuagem').value||'Nao',
+                cirurgia:document.getElementById('f-cirurgia').value||'Nao',
+                alcool:document.getElementById('f-alcool').value||'Nao',
+                medicamento:document.getElementById('f-medicamento').value||'',
+                cansaco:document.getElementById('f-cansaco').value||'Nao',
+                calca:document.getElementById('f-calca').value||'',
+                camisa:document.getElementById('f-camisa').value||'',
+                calcado:document.getElementById('f-calcado').value||''
+            };
+            return data;
         }
 
         function generateMatricula(cpf){
@@ -268,11 +395,18 @@
             return 'ACD'+digits.slice(-5);
         }
 
+        function gerarEditToken(){
+            return 'ET'+Date.now().toString(36)+Math.random().toString(36).slice(2,12);
+        }
+
         async function reservarLink(){
             if(!tokenAtual) return false;
             try{
                 var doc=await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).get();
-                if(!doc.exists || doc.data().usado===true) return false;
+                if(!doc.exists) return false;
+                // Links coletivos nunca são reservados/marcados como usados
+                if(doc.data().coletivo===true) return true;
+                if(doc.data().usado===true) return false;
                 await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).update({
                     usado:true,
                     usadoEm:firebase.firestore.FieldValue.serverTimestamp()
@@ -284,96 +418,196 @@
             }
         }
 
-        async function enviarPre(event){
-            event.preventDefault();
-            var btn=document.getElementById('btn-enviar');
-            var nome=document.getElementById('f-nome').value.trim();
-            var cpf=document.getElementById('f-cpf').value.replace(/\D/g,'');
-            if(cpf.length!==11){ alert('Informe um CPF válido.'); return false; }
-            if(!linkValido){ alert('Link inválido.'); return false; }
-
-            // Verifica se o CPF já está cadastrado
+        async function validarCpfUnico(cpf, ignorarId){
             try{
                 var chk=await dbFirestore.collection('candidatos').where('cpf','==',cpf).get();
-                if(!chk.empty){
+                if(chk.empty) return true;
+                if(ignorarId){
+                    for(var i=0;i<chk.docs.length;i++){
+                        if(chk.docs[i].id!==ignorarId) return false;
+                    }
+                    return true;
+                }
+                return false;
+            }catch(e){
+                console.error(e);
+                return true;
+            }
+        }
+
+        async function salvarNovo(data,btn){
+            if(!linkValido){ alert('Link inválido.'); if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Enviar Pré-Inscrição';} return false; }
+            try{
+                var unico=await validarCpfUnico(data.cpf);
+                if(!unico){
                     alert('Este CPF já está cadastrado na FARN. Se precisar, entre em contato com a administração.');
+                    if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Enviar Pré-Inscrição';}
                     return false;
                 }
             }catch(e){ console.error(e); }
 
-            btn.disabled=true;
-            btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-
-            try{
-                // Tenta reservar o link primeiro (uso único)
+            var coletivo=!!linkValido.coletivo;
+            // Links únicos são reservados após o primeiro uso; coletivos podem ser reutilizados
+            if(!coletivo){
                 var reservado=await reservarLink();
                 if(!reservado){
-                    var f=document.getElementById('area-formulario');
-                    var inv=document.getElementById('area-invalido');
-                    f.style.display='none';
-                    inv.style.display='block';
+                    document.getElementById('area-formulario').style.display='none';
+                    mostrarInvalido('Link inválido ou já utilizado','Este link de pré-inscrição não é mais válido. Ele pode ter sido utilizado ou expirado. Solicite um novo link à equipe FARN.');
                     return false;
                 }
+            }
 
-                var data={
-                    nome:nome,
-                    cpf:cpf,
-                    matricula:generateMatricula(cpf),
-                    nascimento:document.getElementById('f-nascimento').value||'',
-                    estadoCivil:document.getElementById('f-estado-civil').value||'',
-                    genero:document.getElementById('f-genero').value||'',
-                    nacionalidade:document.getElementById('f-nacionalidade').value||'',
-                    naturalidade:document.getElementById('f-naturalidade').value||'',
-                    tituloEleitor:document.getElementById('f-titulo').value||'',
-                    profissao:document.getElementById('f-profissao').value||'',
-                    mae:document.getElementById('f-mae').value||'',
-                    pai:document.getElementById('f-pai').value||'',
-                    email:document.getElementById('f-email').value||'',
-                    whatsapp:document.getElementById('f-whatsapp').value||'',
-                    endereco:document.getElementById('f-endereco').value||'',
-                    numero:document.getElementById('f-numero').value||'',
-                    bairro:document.getElementById('f-bairro').value||'',
-                    cidade:document.getElementById('f-cidade').value||'',
-                    estado:document.getElementById('f-estado').value||'',
-                    altura:document.getElementById('f-altura').value||'',
-                    peso:document.getElementById('f-peso').value||'',
-                    fatorRh:document.getElementById('f-fator-rh').value||'',
-                    hipertensao:document.getElementById('f-hipertensao').value||'Nao',
-                    diabetes:document.getElementById('f-diabetes').value||'Nao',
-                    deficiencia:document.getElementById('f-deficiencia').value||'Nao',
-                    tatuagem:document.getElementById('f-tatuagem').value||'Nao',
-                    cirurgia:document.getElementById('f-cirurgia').value||'Nao',
-                    alcool:document.getElementById('f-alcool').value||'Nao',
-                    medicamento:document.getElementById('f-medicamento').value||'',
-                    cansaco:document.getElementById('f-cansaco').value||'Nao',
-                    calca:document.getElementById('f-calca').value||'',
-                    camisa:document.getElementById('f-camisa').value||'',
-                    calcado:document.getElementById('f-calcado').value||'',
-                    tipoPessoa:'A',
-                    status:'Pendente',
-                    projeto:linkValido.projeto||'',
-                    turma:linkValido.turma||'',
-                    dataCadastro:new Date().toLocaleDateString('pt-BR'),
-                    dataHoraCadastro:new Date().toLocaleString('pt-BR'),
-                    dataInscricao:new Date().toLocaleDateString('pt-BR'),
-                    cadastradoPor:'Pré-inscrição via Link',
-                    origem:'link-pre-inscricao',
-                    tokenLink:tokenAtual,
-                    id:Date.now()
-                };
+            data.matricula=generateMatricula(data.cpf);
+            data.tipoPessoa='A';
+            data.status='Pendente';
+            data.projeto=linkValido.projeto||'';
+            data.turma=linkValido.turma||'';
+            data.dataCadastro=new Date().toLocaleDateString('pt-BR');
+            data.dataHoraCadastro=new Date().toLocaleString('pt-BR');
+            data.dataInscricao=new Date().toLocaleDateString('pt-BR');
+            data.cadastradoPor='Pré-inscrição via Link';
+            data.origem='link-pre-inscricao';
+            data.tokenLink=tokenAtual;
+            data.linkColetivo=coletivo;
+            data.editToken=gerarEditToken();
+            data.id=Date.now();
 
+            try{
                 await dbFirestore.collection('candidatos').doc(String(data.id)).set(data);
+                ultimoCandidato=data;
                 mostrarToast('Pré-inscrição registrada com sucesso!');
                 document.getElementById('area-formulario').style.display='none';
-                document.getElementById('area-sucesso').style.display='block';
-                window.location.hash='#';
+                montarSucesso(data,true);
             }catch(e){
                 console.error('Erro ao salvar:',e);
                 alert('Erro ao enviar a pré-inscrição: '+e.message);
-                btn.disabled=false;
-                btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Enviar Pré-Inscrição';
+                if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Enviar Pré-Inscrição';}
             }
             return false;
+        }
+
+        async function salvarEdicao(data,btn){
+            if(!candidatoEdicao || !candidatoEdicao.__id){
+                alert('Sessão de edição inválida. Recarregue o link de edição.');
+                if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações';}
+                return false;
+            }
+            if(candidatoEdicao.status && candidatoEdicao.status!=='Pendente'){
+                mostrarToast('Sua pré-inscrição já foi ativada e não pode mais ser editada.');
+                if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações';}
+                return false;
+            }
+            try{
+                // O CPF não pode repetir em outra pré-inscrição (ignora a própria)
+                var unico=await validarCpfUnico(data.cpf, candidatoEdicao.__id);
+                if(!unico){
+                    alert('Este CPF já está cadastrado na FARN. Se precisar, entre em contato com a administração.');
+                    if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações';}
+                    return false;
+                }
+            }catch(e){ console.error(e); }
+
+            var novoh=Object.assign({}, candidatoEdicao, data, {
+                status:'Pendente',
+                dataHoraEdicao:new Date().toLocaleString('pt-BR')
+            });
+            delete novoh.__id;
+
+            try{
+                await dbFirestore.collection('candidatos').doc(candidatoEdicao.__id).set(novoh,{merge:true});
+                novoh.__id=candidatoEdicao.__id;
+                ultimoCandidato=novoh;
+                candidatoEdicao=novoh;
+                mostrarToast('Dados atualizados com sucesso!');
+                document.getElementById('area-formulario').style.display='none';
+                montarSucesso(novoh,false);
+            }catch(e){
+                console.error('Erro ao atualizar:',e);
+                alert('Erro ao atualizar a pré-inscrição: '+e.message);
+                if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações';}
+            }
+            return false;
+        }
+
+        async function enviarPre(event){
+            event.preventDefault();
+            var data=coletarFormData();
+            if(data.cpf.length!==11){ alert('Informe um CPF válido.'); return false; }
+            if(!modoEdicao && !linkValido){ alert('Link inválido.'); return false; }
+            var btn=document.getElementById('btn-enviar');
+            btn.disabled=true;
+            btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+            if(modoEdicao){ return await salvarEdicao(data,btn); }
+            return await salvarNovo(data,btn);
+        }
+
+        function montarSucesso(c,novo){
+            var editLink=location.origin+location.pathname+'?edittoken='+c.editToken;
+            var coletivo=novo && linkValido && linkValido.coletivo;
+            var html='<div class="success-box">'+
+                '<i class="fa-solid fa-circle-check"></i>'+
+                '<h2>'+(novo?'Pré-inscrição registrada!':'Alterações salvas!')+'</h2>'+
+                '<p>'+(novo?'Seus dados foram enviados com sucesso.':'Suas alterações foram salvas.')+
+                ' Você pode <strong>editar os dados até a ativação</strong> pela equipe FARN e, se quiser, <strong>receber o comprovante por e-mail</strong>.</p>'+
+                '<div style="margin-top:18px;max-width:420px;margin-left:auto;margin-right:auto">'+
+                    '<button type="button" class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="enviarComprovante()"><i class="fa-solid fa-envelope"></i> Enviar comprovante por e-mail</button>'+
+                    '<button type="button" class="btn" style="width:100%;margin-bottom:10px;background:#7c3aed;color:#fff" onclick="abrirEdicao()"><i class="fa-solid fa-pen"></i> Editar minha pré-inscrição</button>'+
+                    (coletivo?'<button type="button" class="btn" style="width:100%;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0" onclick="novaInscricao()"><i class="fa-solid fa-user-plus"></i> Fazer outra inscrição</button>':'')+
+                '</div>'+
+                '<p style="margin-top:16px;font-size:11px;color:#94a3b8;word-break:break-all">Link para editar depois: <a href="'+editLink+'" style="color:#7c3aed;word-break:break-all">'+editLink+'</a></p>'+
+            '</div>';
+            document.getElementById('sucesso-conteudo').innerHTML=html;
+            document.getElementById('area-sucesso').style.display='block';
+            window.scrollTo({top:0,behavior:'smooth'});
+        }
+
+        function novaInscricao(){
+            var form=document.getElementById('form-pre');
+            if(form) form.reset();
+            document.getElementById('f-nacionalidade').value='Brasileira';
+            document.getElementById('f-pre-projeto').value=linkValido?linkValido.projeto||'':'';
+            document.getElementById('f-pre-turma').value=linkValido?linkValido.turma||'':'';
+            document.getElementById('area-sucesso').style.display='none';
+            document.getElementById('area-formulario').style.display='block';
+            window.scrollTo({top:0,behavior:'smooth'});
+        }
+
+        function abrirEdicao(){
+            if(!ultimoCandidato || !ultimoCandidato.editToken) return;
+            location.href=location.origin+location.pathname+'?edittoken='+ultimoCandidato.editToken;
+        }
+
+        function comprovanteTexto(c){
+            function linha(t,r){ return t+(r==null||r===''?'':r)+'\n'; }
+            var t='RECIBO DE PRÉ-INSCRIÇÃO — FORÇA AUXILIAR DE RESGATE NACIONAL (FARN)\n\n';
+            t=linha(t,'Nome: '+c.nome);
+            t=linha(t,'CPF: '+c.cpf);
+            t=linha(t,'Matrícula: '+c.matricula);
+            t=linha(t,'Data de nascimento: '+c.nascimento);
+            t=linha(t,'Estado civil: '+c.estadoCivil);
+            t=linha(t,'Gênero: '+c.genero);
+            t=linha(t,'Nacionalidade: '+c.nacionalidade);
+            t=linha(t,'Naturalidade: '+c.naturalidade);
+            t=linha(t,'E-mail: '+c.email);
+            t=linha(t,'WhatsApp: '+c.whatsapp);
+            t=linha(t,'Endereço: '+[c.endereco,c.numero].filter(function(x){return x;}).join(', ')+', '+[c.bairro,c.cidade,c.estado].filter(function(x){return x;}).join(', '));
+            t=linha(t,'Projeto: '+c.projeto);
+            t=linha(t,'Turma: '+c.turma);
+            t=linha(t,'Status da pré-inscrição: '+c.status);
+            t=linha(t,'Data do registro: '+c.dataCadastro);
+            t+='\n\nMantenha este comprovante. A FARN entrará em contato quando sua pré-inscrição for ativada.';
+            return t;
+        }
+
+        function enviarComprovante(){
+            var c=ultimoCandidato;
+            if(!c || !c.email){
+                alert('Não há um e-mail válido para envio do comprovante.');
+                return;
+            }
+            var assunto='Comprovante de Pré-Inscrição — FARN';
+            var corpo=comprovanteTexto(c);
+            location.href='mailto:'+c.email+'?subject='+encodeURIComponent(assunto)+'&body='+encodeURIComponent(corpo);
         }
 
         // Inicializa
