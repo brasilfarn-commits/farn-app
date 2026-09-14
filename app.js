@@ -6689,6 +6689,8 @@ async function apostAbrirModal(disciplinaId) {
         var btn = document.getElementById('apost-upload-btn');
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvar Apostila';
         apostEditingId = null;
+        var delBtn = document.getElementById('apost-delete-btn');
+        if (delBtn) delBtn.style.display = 'none';
 
         var snap = await dbFirestore.collection('apostilasAlunos').where('disciplinaId', '==', disciplinaId).limit(1).get();
         if (snap.empty) {
@@ -6698,6 +6700,7 @@ async function apostAbrirModal(disciplinaId) {
             snap.forEach(function(apDoc) {
                 var a = apDoc.data();
                 apostEditingId = apDoc.id;
+                if (delBtn) delBtn.style.display = 'inline-flex';
                 document.getElementById('apost-file').value = a.url || '';
                 document.getElementById('apost-observacao').value = a.observacao || '';
                 document.getElementById('apost-ferramentas').value = a.ferramentas || '';
@@ -6826,6 +6829,19 @@ async function apostDelete(docId) {
     try {
         await dbFirestore.collection('apostilasAlunos').doc(docId).delete();
         apostilasLoadList();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}
+
+async function apostDeleteModal() {
+    if (!apostEditingId) { alert('Nenhuma apostila vinculada para excluir.'); return; }
+    if (!confirm('Excluir a apostila desta disciplina do sistema? Esta acao nao pode ser desfeita.')) return;
+    try {
+        await dbFirestore.collection('apostilasAlunos').doc(apostEditingId).delete();
+        apostFecharModal();
+        apostilasLoadList();
+        alert('Apostila excluida com sucesso!');
     } catch(e) {
         alert('Erro ao excluir: ' + e.message);
     }

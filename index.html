@@ -3205,7 +3205,7 @@
                                 <select id="apost-file" class="config-input">
                                     <option value="">Selecione o PDF...</option>
                                     <option value="APOST/AP OU E CT.pdf">AP OU E CT.pdf - Comunicacao Tecnica e Ordem Unida</option>
-                                    <option value="APOST/APH.pdf">APH.pdf</option>
+                                    <option value="APOST/APH/APH.pdf">APH.pdf</option>
                                     <option value="APOST/GER ANL.pdf">GER ANL.pdf</option>
                                     <option value="APOST/Legisla%C3%A7%C3%A3o.pdf">Legislacao.pdf</option>
                                 </select>
@@ -3251,6 +3251,7 @@
                     <div id="apost-msg" style="display:none;margin-bottom:10px;padding:10px;border-radius:8px;font-size:13px"></div>
 
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                        <button type="button" id="apost-delete-btn" class="btn-danger" style="display:none;margin-right:auto" onclick="apostDeleteModal()"><i class="fa-solid fa-trash"></i> Excluir Apostila</button>
                         <button type="button" class="btn-secondary" onclick="apostFecharModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                         <button type="submit" class="btn-primary" id="apost-upload-btn"><i class="fa-solid fa-check"></i> Salvar Apostila</button>
                     </div>
