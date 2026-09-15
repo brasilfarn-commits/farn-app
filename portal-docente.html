@@ -344,6 +344,9 @@
                     <i class="fa-solid fa-chalkboard"></i>
                     <h2>Minhas Aulas</h2>
                 </div>
+                <div style="text-align:right;margin-bottom:12px">
+                    <button onclick="pdExibirTodasAulas()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 6px rgba(37,99,235,.3)"><i class="fa-solid fa-table-list" style="margin-right:6px"></i> EXIBIR TODAS AS AULAS DO PROJETO</button>
+                </div>
                 <div id="pd-aulas-container">
                     <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando aulas...</p></div>
                 </div>
@@ -721,6 +724,26 @@
         </div>
     </div>
 
+    <!-- MODAL TODAS AS AULAS DO PROJETO (somente exibicao) -->
+    <div id="modal-todas-aulas-overlay" class="modal-overlay hidden" onclick="pdFecharTodasAulas(event)">
+        <div class="modal-content" style="max-width:860px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-table-list" style="color:#2563eb;margin-right:8px"></i> Todas as Aulas do Projeto</h3>
+                <button class="modal-close" onclick="pdFecharTodasAulas()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:12px;font-weight:600">
+                    <span style="display:inline-flex;align-items:center;gap:6px;color:#15803d"><span style="width:10px;height:10px;border-radius:50%;background:#16a34a;display:inline-block"></span> Ja apontada</span>
+                    <span style="display:inline-flex;align-items:center;gap:6px;color:#c2410c"><span style="width:10px;height:10px;border-radius:50%;background:#ea580c;display:inline-block"></span> Aula do dia atual</span>
+                    <span style="display:inline-flex;align-items:center;gap:6px;color:#1d4ed8"><span style="width:10px;height:10px;border-radius:50%;background:#2563eb;display:inline-block"></span> Ainda nao apontada</span>
+                </div>
+                <div id="pd-todas-aulas-list">
+                    <div style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block"></i>Carregando aulas...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL FO+ / FO- NO APONTAMENTO -->
     <div id="modal-apt-fo-overlay" class="modal-overlay hidden" onclick="apontamentoFOCancelar(event)">
         <div class="modal-content" style="max-width:440px">
@@ -1089,37 +1112,172 @@
                     container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Nenhuma aula cadastrada para voce.</p></div>';
                     return;
                 }
-                var html = '<div style="margin-bottom:12px;text-align:right"><button onclick="pdLoadAulas()" style="background:#fff;border:1px solid #16a34a;color:#16a34a;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button></div>';
-                docs.forEach(function(doc) {
-                    var d = doc.data();
-                    var dataStr = '';
-                    if (d.data) {
-                        try {
-                            var dt = new Date(d.data + (d.data.length === 10 ? 'T12:00:00' : ''));
-                            if (!isNaN(dt.getTime())) dataStr = dt.toLocaleDateString('pt-BR');
-                        } catch (e) { dataStr = d.data; }
-                    }
-                    var horaStr = d.horario || d.hora || '';
-                    var tags = '';
-                    if (d.avTeorica === 'Sim') tags += '<span style="background:rgba(37,99,235,.12);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-file-lines" style="margin-right:3px"></i>AV Teorica</span> ';
-                    if (d.avPratica === 'Sim') tags += '<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-flask" style="margin-right:3px"></i>AV Pratica</span>';
-                    html += '<div class="pd-card">' +
-                        '<div class="pd-card-header">' +
-                        '<div class="pd-card-titulo">' + pdEsc(d.disciplina || 'Sem disciplina') + '</div>' +
-                        '<div class="pd-card-data"><i class="fa-solid fa-calendar-day" style="margin-right:4px"></i>' + pdEsc(dataStr) + (horaStr ? ' <i class="fa-solid fa-clock" style="margin:0 4px"></i>' + pdEsc(horaStr) : '') + '</div>' +
-                        '</div>' +
-                        '<div class="pd-card-meta">' +
-                        '<span><i class="fa-solid fa-chalkboard-user"></i> ' + pdEsc(d.docente || '-') + '</span>' +
-                        '<span><i class="fa-solid fa-building"></i> ' + pdEsc(d.projeto || '-') + '</span>' +
-                        '<span><i class="fa-solid fa-users"></i> ' + pdEsc(d.turma || '-') + '</span>' +
-                        (tags ? '<span>' + tags + '</span>' : '') +
-                        '</div>' +
-                        (d.conteudo ? '<div class="pd-card-conteudo"><i class="fa-solid fa-book"></i><strong>Conteudo:</strong> ' + pdEsc(d.conteudo) + '</div>' : '') +
-                        '</div>';
+                dbFirestore.collection('apontamentos').get().then(function(aptSnap) {
+                    var apontadas = {};
+                    aptSnap.forEach(function(docApt) {
+                        var a = docApt.data();
+                        if (a.aulaId) apontadas[String(a.aulaId)] = true;
+                    });
+                    var agora = new Date();
+                    var hojeStr = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0') + '-' + String(agora.getDate()).padStart(2, '0');
+                    var html = '<div style="margin-bottom:12px;text-align:right"><button onclick="pdLoadAulas()" style="background:#fff;border:1px solid #16a34a;color:#16a34a;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button></div>';
+                    docs.forEach(function(doc) {
+                        var d = doc.data();
+                        var dataStr = '';
+                        if (d.data) {
+                            try {
+                                var dt = new Date(d.data + (d.data.length === 10 ? 'T12:00:00' : ''));
+                                if (!isNaN(dt.getTime())) dataStr = dt.toLocaleDateString('pt-BR');
+                            } catch (e) { dataStr = d.data; }
+                        }
+                        var horaStr = d.horario || d.hora || '';
+                        var tags = '';
+                        if (d.avTeorica === 'Sim') tags += '<span style="background:rgba(37,99,235,.12);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-file-lines" style="margin-right:3px"></i>AV Teorica</span> ';
+                        if (d.avPratica === 'Sim') tags += '<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-flask" style="margin-right:3px"></i>AV Pratica</span>';
+                        var isHoje = String(d.data || '').slice(0, 10) === hojeStr;
+                        var apontada = !!apontadas[doc.id];
+                        var cor, fundo, rotulo, icone;
+                        if (isHoje) {
+                            cor = '#ea580c';
+                            fundo = 'rgba(234,88,12,.08)';
+                            rotulo = 'Aula do dia atual';
+                            icone = 'fa-calendar-day';
+                        } else if (apontada) {
+                            cor = '#16a34a';
+                            fundo = 'rgba(22,163,74,.08)';
+                            rotulo = 'Ja apontada';
+                            icone = 'fa-check-circle';
+                        } else {
+                            cor = '#2563eb';
+                            fundo = 'rgba(37,99,235,.08)';
+                            rotulo = 'Ainda nao apontada';
+                            icone = 'fa-circle';
+                        }
+                        html += '<div class="pd-card" style="border-left:4px solid ' + cor + ';background:' + fundo + '">' +
+                            '<div class="pd-card-header">' +
+                            '<div class="pd-card-titulo">' + pdEsc(d.disciplina || 'Sem disciplina') + '</div>' +
+                            '<div class="pd-card-data"><i class="fa-solid fa-calendar-day" style="margin-right:4px"></i>' + pdEsc(dataStr) + (horaStr ? ' <i class="fa-solid fa-clock" style="margin:0 4px"></i>' + pdEsc(horaStr) : '') + '</div>' +
+                            '</div>' +
+                            '<div class="pd-card-meta">' +
+                            '<span><i class="fa-solid fa-chalkboard-user"></i> ' + pdEsc(d.docente || '-') + '</span>' +
+                            '<span><i class="fa-solid fa-building"></i> ' + pdEsc(d.projeto || '-') + '</span>' +
+                            '<span><i class="fa-solid fa-users"></i> ' + pdEsc(d.turma || '-') + '</span>' +
+                            (tags ? '<span>' + tags + '</span>' : '') +
+                            '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;color:' + cor + ';background:rgba(255,255,255,.65);border:1px solid ' + cor + '33;white-space:nowrap;margin-left:auto"><i class="fa-solid ' + icone + '"></i>' + rotulo + '</span>' +
+                            '</div>' +
+                            (d.conteudo ? '<div class="pd-card-conteudo"><i class="fa-solid fa-book"></i><strong>Conteudo:</strong> ' + pdEsc(d.conteudo) + '</div>' : '') +
+                            '</div>';
+                    });
+                    container.innerHTML = html;
+                }).catch(function(e) {
+                    console.error('Erro ao carregar apontamentos:', e);
+                    container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
                 });
-                container.innerHTML = html;
             }).catch(function(e) {
                 container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
+            });
+        }
+
+        /* ===== TODAS AS AULAS DO PROJETO (somente exibicao) ===== */
+        function pdFecharTodasAulas(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('modal-todas-aulas-overlay').classList.add('hidden');
+        }
+
+        function pdExibirTodasAulas() {
+            var sessao = sessionStorage.getItem('pd_sessao');
+            if (!sessao) return;
+            var docente = JSON.parse(sessao);
+            var overlay = document.getElementById('modal-todas-aulas-overlay');
+            var listEl = document.getElementById('pd-todas-aulas-list');
+            if (!overlay || !listEl) return;
+            overlay.classList.remove('hidden');
+            listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block"></i>Carregando aulas...</div>';
+
+            var agora = new Date();
+            var hojeStr = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0') + '-' + String(agora.getDate()).padStart(2, '0');
+
+            dbFirestore.collection('aulas').get().then(function(snap) {
+                var docs = [];
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    if (docente.isAdmin || pdPertenceDocente(d, docente.nome)) docs.push({ id: doc.id, dados: d });
+                });
+                docs.sort(function(a, b) {
+                    return String(b.dados.data || '').localeCompare(String(a.dados.data || ''));
+                });
+                if (!docs.length) {
+                    listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-calendar-minus"></i><p>Nenhuma aula cadastrada para voce.</p></div>';
+                    return;
+                }
+                dbFirestore.collection('apontamentos').get().then(function(aptSnap) {
+                    var apontadas = {};
+                    aptSnap.forEach(function(doc) {
+                        var a = doc.data();
+                        if (a.aulaId) apontadas[String(a.aulaId)] = true;
+                    });
+                    var html = '';
+                    var contApontadas = 0, contHoje = 0, contFaltam = 0;
+                    docs.forEach(function(item) {
+                        var d = item.dados;
+                        var dataStr = '';
+                        if (d.data) {
+                            try {
+                                var dt = new Date(d.data + (d.data.length === 10 ? 'T12:00:00' : ''));
+                                if (!isNaN(dt.getTime())) dataStr = dt.toLocaleDateString('pt-BR');
+                            } catch (e) { dataStr = d.data; }
+                        }
+                        var horaStr = d.horario || d.hora || '';
+                        var isHoje = String(d.data || '').slice(0, 10) === hojeStr;
+                        var apontada = !!apontadas[item.id];
+                        var cor, fundo, rotulo, icone;
+                        if (isHoje) {
+                            cor = '#ea580c';
+                            fundo = 'rgba(234,88,12,.10)';
+                            rotulo = 'Aula do dia atual';
+                            icone = 'fa-calendar-day';
+                            contHoje++;
+                        } else if (apontada) {
+                            cor = '#16a34a';
+                            fundo = 'rgba(22,163,74,.10)';
+                            rotulo = 'Ja apontada';
+                            icone = 'fa-check-circle';
+                            contApontadas++;
+                        } else {
+                            cor = '#2563eb';
+                            fundo = 'rgba(37,99,235,.10)';
+                            rotulo = 'Ainda nao apontada';
+                            icone = 'fa-circle';
+                            contFaltam++;
+                        }
+                        html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid ' + cor + ';border-radius:10px;margin-bottom:8px">' +
+                            '<div style="width:38px;height:38px;background:' + fundo + ';border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-graduation-cap" style="color:' + cor + ';font-size:16px"></i></div>' +
+                            '<div style="flex:1;min-width:0">' +
+                            '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + pdEsc(d.disciplina || 'Sem disciplina') + '</div>' +
+                            '<div style="font-size:11px;color:#64748b;margin-top:2px"><i class="fa-solid fa-calendar-day" style="margin-right:3px"></i>' + pdEsc(dataStr) + (horaStr ? ' <i class="fa-solid fa-clock" style="margin:0 3px"></i>' + pdEsc(horaStr) : '') + ' <i class="fa-solid fa-users" style="margin:0 3px"></i>' + pdEsc(d.turma || '-') + '</div>' +
+                            (d.conteudo ? '<div style="font-size:11px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><i class="fa-solid fa-book" style="margin-right:3px"></i>' + pdEsc(d.conteudo) + '</div>' : '') +
+                            '</div>' +
+                            '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;color:' + cor + ';background:' + fundo + ';border:1px solid ' + cor + '33;white-space:nowrap;flex-shrink:0"><i class="fa-solid ' + icone + '"></i>' + rotulo + '</span>' +
+                            '</div>';
+                    });
+                    /* Resumo numerico das aulas */
+                    var chip = function(num, corChip, rotulo, iconeChip) {
+                        return '<span style="display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:20px;font-size:12px;font-weight:700;color:' + corChip + ';background:' + (corChip === '#475569' ? 'rgba(100,116,139,.12)' : 'rgba(37,99,235,.08)') + ';border:1px solid ' + corChip + '33;white-space:nowrap"><i class="fa-solid ' + iconeChip + '"></i>' + rotulo + ': <b style="font-size:14px">' + num + '</b></span>';
+                    };
+                    var resumo = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">' +
+                        chip(docs.length, '#475569', 'Total de aulas', 'fa-layer-group') +
+                        chip(contApontadas, '#16a34a', 'Ja apontadas', 'fa-check-circle') +
+                        chip(contHoje, '#ea580c', 'Aulas do dia atual', 'fa-calendar-day') +
+                        chip(contFaltam, '#2563eb', 'Faltam apontar', 'fa-circle') +
+                        '</div>';
+                    listEl.innerHTML = resumo + html;
+                }).catch(function(e) {
+                    console.error('Erro ao carregar apontamentos:', e);
+                    listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar apontamentos.</p></div>';
+                });
+            }).catch(function(e) {
+                console.error('Erro ao carregar aulas:', e);
+                listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar aulas.</p></div>';
             });
         }
 

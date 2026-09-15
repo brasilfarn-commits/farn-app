@@ -1920,7 +1920,7 @@ async function gerarLinkPreGerar() {
     try {
         const token = 'PL' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
         const base = (location.hostname.indexOf('github.io') >= 0 || location.hostname.indexOf('127.0.0.1') >= 0 || location.hostname === 'localhost') ? 'https://farn-app.web.app' : location.origin;
-        const link = base + '/pre-inscricao-via-link.html?v=22&token=' + token;
+        const link = base + '/pre-inscricao-via-link.html?v=23&token=' + token;
         const docData = {
             token: token,
             turma: turma,
@@ -6814,7 +6814,7 @@ async function apostilasLoadList() {
                 '<div style="display:flex;gap:6px;flex-shrink:0">' +
                     '<button class="btn-primary btn-sm" style="background:#16a34a;border:none;font-size:11px;padding:6px 12px;white-space:nowrap" onclick="event.stopPropagation();apostAbrirModal(\'' + doc.id + '\')"><i class="fa-solid fa-' + (temApostila ? 'pen' : 'file-circle-plus') + '" style="margin-right:4px"></i>' + (temApostila ? 'Editar' : 'Cadastrar') + '</button>' +
                     (temApostila ? '<button title="Abrir PDF" style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:#4caf50;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px" onclick="event.stopPropagation();window.open(\'' + apost.url + '\',\'_blank\')"><i class="fa-solid fa-file-pdf"></i></button>' : '') +
-                    (temApostila ? '<button title="Excluir apostila" style="background:rgba(244,67,54,.15);border:1px solid rgba(244,67,54,.3);color:#f44336;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px" onclick="event.stopPropagation();apostDelete(\'' + apost._id + '\')"><i class="fa-solid fa-trash"></i></button>' : '') +
+                    (temApostila ? '<button class="btn-danger btn-sm" style="border:none;font-size:11px;padding:6px 12px;white-space:nowrap" title="Excluir apostila" onclick="event.stopPropagation();apostDelete(\'' + apost._id + '\')"><i class="fa-solid fa-trash" style="margin-right:4px"></i>Excluir</button>' : '') +
                 '</div>';
             container.appendChild(card);
         });
@@ -9462,11 +9462,11 @@ function cavImprimirHTML(d) {
         '</head><body>' +
         '<h1>' + escHTML((d.nome || 'Avaliação')) + '</h1>' +
         '<div style="color:#555;margin-bottom:20px;font-size:13px">Projeto: ' + escHTML(d.projeto || '-') + ' | Turma: ' + escHTML(d.turma || '-') + (d.disciplina ? ' | Disciplina: ' + escHTML(d.disciplina) : '') + (d.docente ? ' | Docente: ' + escHTML(d.docente) : '') + (d.aula ? ' | Aula: ' + escHTML(d.aula) : '') + '</div>' +
-        '<div style="border:1px solid #ccc;border-radius:8px;padding:14px;margin-bottom:22px">' +
-            '<div style="font-weight:700;margin-bottom:6px">Gabarito</div>' +
-            (d.questoes || []).map((q, i) => '<div>Questão ' + (i + 1) + ': Letra ' + (q.correta || '').toUpperCase() + '</div>').join('') +
-        '</div>' +
         questoesHtml +
+        '<div style="page-break-before:always;border:2px solid #111;border-radius:8px;padding:18px;margin-top:8px">' +
+            '<div style="font-weight:700;font-size:16px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:6px">GABARITO - ' + escHTML((d.nome || 'Avaliação')) + '</div>' +
+            (d.questoes || []).map((q, i) => '<div style="padding:6px 8px;border-bottom:1px dashed #aaa;font-size:14px">Questão <strong>' + (i + 1) + '</strong>: Letra <strong>' + (q.correta || '').toUpperCase() + '</strong></div>').join('') +
+        '</div>' +
         '<script>window.onload=function(){window.print();};</scr' + 'ipt>' +
         '</body></html>');
     w.document.close();
