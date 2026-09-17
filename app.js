@@ -1142,6 +1142,8 @@ async function landingLogin(event) {
                 location.href = 'portal-docente.html';
             } else if (portal === 'coordenacao') {
                 location.href = 'portal-coordenacao.html';
+            } else if (portal === 'cff') {
+                location.href = 'portal-cff.html';
             }
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return true;
@@ -1159,6 +1161,7 @@ async function landingLogin(event) {
             else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
             else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
             else if (portal === 'coordenacao') ok = await landingLoginCoordenacao(cpf, senha);
+            else if (portal === 'cff') ok = await landingLoginCff(cpf, senha);
         }
         if (!ok) {
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
@@ -1188,6 +1191,7 @@ async function landingLoginPortalPerm(cpf, senha, portal) {
     else if (portal === 'aluno') location.href = 'portal-aluno.html';
     else if (portal === 'docente') location.href = 'portal-docente.html';
     else if (portal === 'coordenacao') location.href = 'portal-coordenacao.html';
+    else if (portal === 'cff') location.href = 'portal-cff.html';
     return true;
 }
 
@@ -1282,6 +1286,19 @@ async function landingLoginCoordenacao(cpf, senha) {
     localStorage.setItem('pc_lembrar_cpf', cpf);
     localStorage.setItem('pc_lembrar_senha', senha);
     location.href = 'portal-coordenacao.html';
+    return true;
+}
+
+// login do PORTAL DO CFF (alunos cadastrados na seção CFF do admin)
+async function landingLoginCff(cpf, senha) {
+    var snap = await dbFirestore.collection('cffAlunos').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF não encontrado na inscrição do CFF.'); return false; }
+    var u = snap.docs[0].data();
+    if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
+    localStorage.setItem('cff_lembrar_cpf', cpf);
+    localStorage.setItem('cff_lembrar_senha', senha);
+    sessionStorage.setItem('cff_sessao', JSON.stringify(u));
+    location.href = 'portal-cff.html';
     return true;
 }
 
@@ -1586,7 +1603,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -2582,6 +2599,7 @@ function renderAlunosList() {
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
+                <button class="btn-icon" title="Copiar para a seção CFF" onclick="alunosCopyParaCff(${i})" style="color:#7c3aed"><i class="fa-solid fa-chalkboard"></i></button>
                 ${c.pediuBaixa ? `<button class="btn-icon btn-success" title="Autorizar Retorno" onclick="autorizarBaixa(${i})" style="color:#16a34a"><i class="fa-solid fa-check"></i></button>` : ''}
                 ${c.status === 'Ativo' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
                 <div class="status-dropdown">
@@ -7270,6 +7288,305 @@ async function aulaDelete(docId) {
     }
 }
 
+/* ===== DISCIPLINAS E AULAS DO CFF ===== */
+let cffDiscEditingId = null;
+let cffAulaEditingId = null;
+
+function cffDisciplinasAbrirSecao() {
+    showAdminSection('admin-cff-disciplinas');
+    cffDiscLoadList();
+    cffAulaLoadList();
+}
+
+function cffDiscMsg(msg, type) {
+    var el = document.getElementById('cff-disc-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.background = type === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+    el.style.color = type === 'ok' ? '#4caf50' : '#f44336';
+    el.textContent = msg;
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+async function cffCarregarDocentes(selectIds) {
+    var ids = Array.isArray(selectIds) ? selectIds : [selectIds];
+    try {
+        var snap = await dbFirestore.collection('docentes').orderBy('nome').get();
+        ids.forEach(function(id) {
+            var sel = document.getElementById(id);
+            if (!sel) return;
+            var atual = sel.value;
+            sel.innerHTML = '<option value="">Selecione o docente...</option>';
+            snap.forEach(function(doc) {
+                var i = doc.data();
+                sel.innerHTML += '<option value="' + i.nome + '">' + i.nome + (i.guerra ? ' (' + i.guerra + ')' : '') + '</option>';
+            });
+            sel.value = atual;
+        });
+    } catch(e) {
+        ids.forEach(function(id) {
+            var sel = document.getElementById(id);
+            if (sel) sel.innerHTML = '<option value="">Erro ao carregar docentes</option>';
+        });
+    }
+}
+
+async function cffDiscSave() {
+    var nome = document.getElementById('cff-disc-nome').value.trim();
+    var docente = document.getElementById('cff-disc-docente').value.trim();
+    var btn = document.getElementById('cff-disc-save-btn');
+
+    if (!nome) { cffDiscMsg('Informe o nome da disciplina.', 'err'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+
+    try {
+        var dados = { nome: nome, docente: docente };
+
+        if (cffDiscEditingId) {
+            await dbFirestore.collection('cffDisciplinas').doc(cffDiscEditingId).update(dados);
+            cffDiscMsg('Disciplina CFF atualizada com sucesso!', 'ok');
+            cffDiscEditingId = null;
+            document.getElementById('cff-disc-save-btn').innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Disciplina CFF';
+        } else {
+            dados.data = new Date().toISOString();
+            await dbFirestore.collection('cffDisciplinas').add(dados);
+            cffDiscMsg('Disciplina CFF cadastrada com sucesso!', 'ok');
+        }
+
+        document.getElementById('cff-disc-nome').value = '';
+        document.getElementById('cff-disc-docente').value = '';
+        cffDiscLoadList();
+        cffAulaLoadDisciplinas();
+    } catch(e) {
+        console.error('Erro ao salvar disciplina CFF:', e);
+        cffDiscMsg('Erro: ' + e.message, 'err');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Disciplina CFF';
+}
+
+async function cffDiscLoadList() {
+    var container = document.getElementById('cff-disc-list');
+    if (!container) return;
+    cffCarregarDocentes(['cff-disc-docente']);
+    try {
+        var snap = await dbFirestore.collection('cffDisciplinas').orderBy('data', 'desc').get();
+        if (snap.empty) {
+            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-graduation-cap" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma disciplina CFF cadastrada.</p></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(function(doc) {
+            var d = doc.data();
+            var dateStr = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
+            var docenteHtml = d.docente ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + d.docente + '</span>' : '';
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(124,58,237,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-graduation-cap" style="color:#7c3aed;font-size:18px"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                    '<div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (d.nome || 'Disciplina') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
+                        docenteHtml + (dateStr ? '<span>' + dateStr + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                    '<button onclick="cffDiscEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(245,127,23,.25)\'" onmouseout="this.style.background=\'rgba(245,127,23,.1)\'"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="cffDiscDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(220,38,38,.25)\'" onmouseout="this.style.background=\'rgba(220,38,38,.1)\'"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(card);
+        });
+    } catch(e) {
+        console.error('Erro ao listar disciplinas CFF:', e);
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar disciplinas CFF.</div>';
+    }
+}
+
+async function cffDiscEdit(docId) {
+    try {
+        var doc = await dbFirestore.collection('cffDisciplinas').doc(docId).get();
+        if (!doc.exists) { alert('Disciplina CFF nao encontrada.'); return; }
+        var d = doc.data();
+        cffDiscEditingId = docId;
+        document.getElementById('cff-disc-nome').value = d.nome || '';
+        document.getElementById('cff-disc-docente').value = d.docente || '';
+        var btn = document.getElementById('cff-disc-save-btn');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Disciplina CFF';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(e) {
+        alert('Erro ao carregar disciplina CFF: ' + e.message);
+    }
+}
+
+async function cffDiscDelete(docId) {
+    if (!confirm('Excluir esta disciplina CFF?')) return;
+    try {
+        await dbFirestore.collection('cffDisciplinas').doc(docId).delete();
+        cffDiscLoadList();
+        cffAulaLoadDisciplinas();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}
+
+async function cffAulaLoadDisciplinas() {
+    var sel = document.getElementById('cff-aula-disciplina');
+    if (!sel) return;
+    try {
+        var snap = await dbFirestore.collection('cffDisciplinas').orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione a disciplina...</option>';
+        snap.forEach(function(doc) {
+            var d = doc.data();
+            sel.innerHTML += '<option value="' + d.nome + '" data-docente="' + (d.docente || '') + '">' + d.nome + '</option>';
+        });
+    } catch(e) {
+        sel.innerHTML = '<option value="">Erro ao carregar disciplinas</option>';
+    }
+}
+
+function cffAulaOnDisciplinaChange() {
+    var sel = document.getElementById('cff-aula-disciplina');
+    var opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    var docente = opt.getAttribute('data-docente') || '';
+    if (docente) document.getElementById('cff-aula-docente').value = docente;
+}
+
+function cffAulaMsg(msg, type) {
+    var el = document.getElementById('cff-aula-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.background = type === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+    el.style.color = type === 'ok' ? '#4caf50' : '#f44336';
+    el.textContent = msg;
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+async function cffAulaSave() {
+    var disciplina = document.getElementById('cff-aula-disciplina').value;
+    var docente = document.getElementById('cff-aula-docente').value.trim();
+    var data = document.getElementById('cff-aula-data').value;
+    var horario = document.getElementById('cff-aula-horario').value.trim();
+    var conteudo = document.getElementById('cff-aula-conteudo').value.trim();
+    var avTeorica = document.getElementById('cff-aula-av-teorica').value;
+    var avPratica = document.getElementById('cff-aula-av-pratica').value;
+    var btn = document.getElementById('cff-aula-save-btn');
+
+    if (!disciplina) { cffAulaMsg('Selecione a disciplina.', 'err'); return; }
+    if (!data) { cffAulaMsg('Informe a data da aula.', 'err'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+
+    try {
+        var dados = {
+            disciplina: disciplina,
+            docente: docente,
+            data: data,
+            horario: horario,
+            conteudo: conteudo,
+            avTeorica: avTeorica,
+            avPratica: avPratica
+        };
+
+        if (cffAulaEditingId) {
+            await dbFirestore.collection('cffAulas').doc(cffAulaEditingId).update(dados);
+            cffAulaMsg('Aula CFF atualizada com sucesso!', 'ok');
+            cffAulaEditingId = null;
+            document.getElementById('cff-aula-save-btn').innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Aula CFF';
+        } else {
+            dados.criadoEm = new Date().toISOString();
+            await dbFirestore.collection('cffAulas').add(dados);
+            cffAulaMsg('Aula CFF cadastrada com sucesso!', 'ok');
+        }
+
+        document.getElementById('cff-aula-disciplina').value = '';
+        document.getElementById('cff-aula-docente').value = '';
+        document.getElementById('cff-aula-data').value = '';
+        document.getElementById('cff-aula-horario').value = '';
+        document.getElementById('cff-aula-conteudo').value = '';
+        document.getElementById('cff-aula-av-teorica').value = '';
+        document.getElementById('cff-aula-av-pratica').value = '';
+        cffAulaLoadList();
+    } catch(e) {
+        console.error('Erro ao salvar aula CFF:', e);
+        cffAulaMsg('Erro: ' + e.message, 'err');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Aula CFF';
+}
+
+async function cffAulaLoadList() {
+    var container = document.getElementById('cff-aula-list');
+    if (!container) return;
+    cffAulaLoadDisciplinas();
+    cffCarregarDocentes(['cff-aula-docente']);
+    try {
+        var snap = await dbFirestore.collection('cffAulas').orderBy('data', 'desc').get();
+        if (snap.empty) {
+            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-chalkboard" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma aula CFF cadastrada.</p></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(function(doc) {
+            var a = doc.data();
+            var dateStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+            var docenteHtml = a.docente ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.docente + '</span>' : '';
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(124,58,237,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-chalkboard" style="color:#7c3aed;font-size:18px"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                    '<div style="font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap">' +
+                        docenteHtml + (dateStr ? '<span><i class="fa-solid fa-calendar-day" style="margin-right:2px"></i>' + dateStr + '</span>' : '') + (a.horario ? '<span><i class="fa-solid fa-clock" style="margin-right:2px"></i>' + a.horario + '</span>' : '') +
+                        (a.avTeorica === 'Sim' ? '<span style="background:rgba(168,85,247,.12);color:#9333ea;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-file-lines" style="margin-right:3px"></i>AV Teórica</span>' : '') +
+                        (a.avPratica === 'Sim' ? '<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700"><i class="fa-solid fa-flask" style="margin-right:3px"></i>AV Prática</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                    '<button onclick="cffAulaEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(245,127,23,.25)\'" onmouseout="this.style.background=\'rgba(245,127,23,.1)\'"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="cffAulaDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.background=\'rgba(220,38,38,.25)\'" onmouseout="this.style.background=\'rgba(220,38,38,.1)\'"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(card);
+        });
+    } catch(e) {
+        console.error('Erro ao listar aulas CFF:', e);
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar aulas CFF.</div>';
+    }
+}
+
+async function cffAulaEdit(docId) {
+    try {
+        var doc = await dbFirestore.collection('cffAulas').doc(docId).get();
+        if (!doc.exists) { alert('Aula CFF nao encontrada.'); return; }
+        var a = doc.data();
+        cffAulaEditingId = docId;
+        document.getElementById('cff-aula-disciplina').value = a.disciplina || '';
+        document.getElementById('cff-aula-docente').value = a.docente || '';
+        document.getElementById('cff-aula-data').value = a.data || '';
+        document.getElementById('cff-aula-horario').value = a.horario || '';
+        document.getElementById('cff-aula-conteudo').value = a.conteudo || '';
+        document.getElementById('cff-aula-av-teorica').value = a.avTeorica || '';
+        document.getElementById('cff-aula-av-pratica').value = a.avPratica || '';
+        var btn = document.getElementById('cff-aula-save-btn');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Aula CFF';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(e) {
+        alert('Erro ao carregar aula CFF: ' + e.message);
+    }
+}
+
+async function cffAulaDelete(docId) {
+    if (!confirm('Excluir esta aula CFF?')) return;
+    try {
+        await dbFirestore.collection('cffAulas').doc(docId).delete();
+        cffAulaLoadList();
+    } catch(e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}
+
 /* ===== DOCENTES ===== */
 let docentes = [];
 let editingDocenteId = null;
@@ -8867,15 +9184,19 @@ function cavLoadList() {
         avs.forEach(({ id, d }) => {
             const qtd = (d.questoes || []).length;
             const respondidas = contagem[id] || 0;
+            const isPratica = (d.tipo === 'pratica');
             let cor, rotuloEstado;
             if (respondidas > 0) { cor = '#16a34a'; rotuloEstado = 'Respondida :: ' + respondidas + (rotulos[id] ? ' (' + rotulos[id] + ')' : ' aluno(s)'); }
+            else if (!isPratica && d.ativa) { cor = '#f59e0b'; rotuloEstado = 'Ativa · aguardando respostas'; }
+            else if (!isPratica && d.enviada) { cor = '#dc2626'; rotuloEstado = 'Em breve · não ativada'; }
+            else if (!isPratica) { cor = '#dc2626'; rotuloEstado = 'Não ativada para responder'; }
             else if (d.enviada) { cor = '#f59e0b'; rotuloEstado = 'Aguardando respostas'; }
             else { cor = '#2563eb'; rotuloEstado = 'Ainda não enviada'; }
             const card = document.createElement('div');
             card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(15,23,42,.04)';
             const envBadge = ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.0);color:' + cor + ';border:1px solid ' + cor + '">' + rotuloEstado + '</span>';
             card.innerHTML =
-                '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + cor + '"><i class="fa-solid fa-' + (respondidas > 0 ? 'check-double' : (d.enviada ? 'paper-plane' : 'file-lines')) + '" style="color:#fff;font-size:18px"></i></div>' +
+                '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + cor + '"><i class="fa-solid fa-' + (respondidas > 0 ? 'check-double' : (d.ativa ? 'pen-to-square' : (!isPratica ? 'clock' : (d.enviada ? 'paper-plane' : 'file-lines')))) + '" style="color:#fff;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:170px">' +
                     '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + envBadge + '</div>' +
                     '<div style="font-size:11.5px;color:#64748b;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">' +
@@ -8888,7 +9209,8 @@ function cavLoadList() {
                 '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
                     '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>' +
                     '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + id + '\')"><i class="fa-solid fa-print"></i></button>' +
-                    '<button class="btn-warning btn-sm" title="Enviar" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
+                    (!isPratica && !d.ativa ? '<button class="btn-success btn-sm" title="Liberar esta AV Teórica para os alunos responderem no Portal do Aluno" onclick="cavAtivarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-play"></i> ATIVAR AV TEORICA</button>' : '') +
+                    '<button class="btn-warning btn-sm" title="Comunicar que a AV estará disponível em breve (os alunos ainda não poderão responder)" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
                     '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
                     '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
@@ -8902,6 +9224,19 @@ function cavLoadList() {
 function cavAbrirEnvioPorId(id) {
     cavEditingId = id;
     cavAbrirEnvio();
+}
+
+// ativa a AV Teorica, liberando a resposta no Portal do Aluno
+function cavAtivarAVTeorica(id) {
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); return null; }
+        const data = doc.data();
+        if (!data.turma) { alert('Envie antes a avaliação (botão Enviar) para vincular a turma e avisar os alunos.'); return null; }
+        if (!confirm('Ativar esta AV Teórica para responder? Os alunos da turma "' + data.turma + '" poderão abrir e responder no Portal do Aluno.')) return null;
+        return dbFirestore.collection(FB_AVALIACOES).doc(id).update({ ativa: true, ativadaEm: new Date() });
+    }).then(res => {
+        if (res) { alert('AV Teórica ativada! Os alunos já podem respondê-la.'); cavLoadList(); }
+    }).catch(e => alert('Erro: ' + e.message));
 }
 
 function cavNovaAvaliacao() {
@@ -9504,7 +9839,7 @@ function cavConfirmarEnvio() {
     const id = cavEditingId;
     const turma = document.getElementById('cav-envio-turma').value;
     if (!turma) { alert('Selecione a turma para enviar.'); return; }
-    if (!confirm('Enviar esta avaliação para a turma "' + turma + '"? Os alunos poderão respondê-la no Portal do Aluno.')) return;
+    if (!confirm('Enviar esta avaliação para a turma "' + turma + '"? Os alunos verão a AV como "em breve" no Portal do Aluno, mas só poderão responder após você ativá-la (botão ATIVAR AV TEORICA).')) return;
     dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
         if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
         const data = doc.data();
@@ -9973,6 +10308,210 @@ function cursoVerDetalhe(id) {
 
 function cursorFecharDetalhe() {
     document.getElementById('curso-detalhe-overlay').classList.add('hidden');
+}
+
+/* ===== CFF - CURSO DE FORMACAO DE FORMADORES ===== */
+const FB_CFF = 'cffAlunos';
+const cffFormFields = ['cffc-nome','cffc-cpf','cffc-nascimento','cffc-idade','cffc-genero','cffc-estado-civil','cffc-nacionalidade','cffc-naturalidade','cffc-profissao','cffc-mae','cffc-pai','cffc-email','cffc-whatsapp','cffc-endereco','cffc-numero','cffc-bairro','cffc-cidade','cffc-estado','cffc-senha'];
+let cffAlunosList = [];
+let editingCffId = null;
+
+function cffToggleSenha() {
+    var el = document.getElementById('cffc-senha');
+    var icon = document.getElementById('cff-eye-icon');
+    if (!el || !icon) return;
+    var show = el.type === 'password';
+    el.type = show ? 'text' : 'password';
+    icon.className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+}
+
+function cffAbrirForm() {
+    editingCffId = null;
+    cffLimparForm();
+    document.getElementById('cff-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#7c3aed;margin-right:8px"></i> Novo CFF';
+    showAdminSection('admin-form-cff');
+}
+
+function cffLimparForm() {
+    cffFormFields.forEach(id => {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
+async function cffListLoad() {
+    const container = document.getElementById('cff-table-body');
+    const emptyEl = document.getElementById('cff-empty');
+    const listaEl = document.getElementById('cff-lista');
+    if (!container) return;
+    container.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">Carregando inscrições...</td></tr>';
+    try {
+        const snap = await dbFirestore.collection(FB_CFF).orderBy('criadoEm', 'desc').get();
+        cffAlunosList = [];
+        snap.forEach(doc => cffAlunosList.push({ id: doc.id, d: doc.data() }));
+        if (cffAlunosList.length === 0) {
+            if (emptyEl) emptyEl.style.display = '';
+            if (listaEl) listaEl.style.display = 'none';
+            return;
+        }
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (listaEl) listaEl.style.display = '';
+        cffRenderLista();
+    } catch (e) {
+        console.error('Erro ao carregar CFF:', e);
+        container.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar as inscrições do CFF.</td></tr>';
+    }
+}
+
+function cffRenderLista() {
+    const container = document.getElementById('cff-table-body');
+    const countEl = document.getElementById('cff-count-badge');
+    if (!container) return;
+    if (countEl) countEl.textContent = cffAlunosList.length + ' inscrição(ões)';
+    container.innerHTML = cffAlunosList.map(({ id, d }) => {
+        return '<tr>' +
+            '<td>' + escHTML(d.nome || '-') + '</td>' +
+            '<td>' + escHTML(d.cpf || '-') + '</td>' +
+            '<td>' + escHTML(d.whatsapp || '-') + '</td>' +
+            '<td>' + escHTML(d.email || '-') + '</td>' +
+            '<td>' + escHTML(d.dataCadastro || '-') + '</td>' +
+            '<td style="text-align:center;white-space:nowrap">' +
+                '<button class="btn-outline btn-sm" title="Editar" onclick="cffEditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button> ' +
+                '<button class="btn-danger btn-sm" title="Excluir" onclick="cffExcluir(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+            '</td>' +
+        '</tr>';
+    }).join('');
+}
+
+function cffListFiltrar() {
+    const busca = (document.getElementById('cff-search') ? document.getElementById('cff-search').value : '').toLowerCase();
+    const container = document.getElementById('cff-table-body');
+    if (!container) return;
+    const filtrados = cffAlunosList.filter(({ d }) =>
+        !busca || (d.nome || '').toLowerCase().indexOf(busca) !== -1 || (d.cpf || '').indexOf(busca) !== -1
+    );
+    container.innerHTML = filtrados.length ? filtrados.map(({ id, d }) => {
+        return '<tr>' +
+            '<td>' + escHTML(d.nome || '-') + '</td>' +
+            '<td>' + escHTML(d.cpf || '-') + '</td>' +
+            '<td>' + escHTML(d.whatsapp || '-') + '</td>' +
+            '<td>' + escHTML(d.email || '-') + '</td>' +
+            '<td>' + escHTML(d.dataCadastro || '-') + '</td>' +
+            '<td style="text-align:center;white-space:nowrap">' +
+                '<button class="btn-outline btn-sm" title="Editar" onclick="cffEditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button> ' +
+                '<button class="btn-danger btn-sm" title="Excluir" onclick="cffExcluir(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+            '</td>' +
+        '</tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Nenhuma inscrição encontrada.</td></tr>';
+}
+
+function cffEditar(id) {
+    const item = cffAlunosList.find(x => x.id === id);
+    if (!item) return;
+    editingCffId = id;
+    cffFormFields.forEach(fid => {
+        const el = document.getElementById(fid);
+        if (!el) return;
+        const key = fid.replace('cffc-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+        el.value = item.d[key] || '';
+    });
+    document.getElementById('cff-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#7c3aed;margin-right:8px"></i> Editar Inscrição CFF';
+    showAdminSection('admin-form-cff');
+}
+
+async function cffSalvar(event) {
+    event.preventDefault();
+    const data = {};
+    cffFormFields.forEach(fid => {
+        const el = document.getElementById(fid);
+        if (!el) return;
+        const key = fid.replace('cffc-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+        if (key === 'cpf') data[key] = el.value.replace(/\D/g, '');
+        else data[key] = el.value;
+    });
+    if (!data.cpf || data.cpf.length < 11) { alert('Informe um CPF válido.'); return false; }
+    if (!data.senha || data.senha.length < 6) { alert('A senha de acesso deve ter no mínimo 6 caracteres.'); return false; }
+    try {
+        const ref = dbFirestore.collection(FB_CFF).doc(data.cpf);
+        const existente = await ref.get();
+        if (existente.exists && editingCffId === null) {
+            alert('Já existe uma inscrição no CFF com este CPF.');
+            return false;
+        }
+        data.dataCadastro = editingCffId ? (existente.exists ? (existente.data().dataCadastro || new Date().toLocaleDateString('pt-BR')) : new Date().toLocaleDateString('pt-BR')) : new Date().toLocaleDateString('pt-BR');
+        data.cadastradoPor = currentUserData ? currentUserData.nome : 'Desconhecido';
+        data.criadoEm = existente.exists && existente.data().criadoEm ? existente.data().criadoEm : new Date();
+        await ref.set(data, { merge: true });
+        alert(editingCffId ? 'Inscrição do CFF atualizada!' : 'Inscrição no CFF realizada! O aluno já pode acessar o Portal do CFF com o CPF e a senha cadastrados.');
+        editingCffId = null;
+        cffLimparForm();
+        showAdminSection('admin-cff');
+        cffListLoad();
+    } catch (e) {
+        console.error('Erro ao salvar CFF:', e);
+        alert('Erro ao salvar a inscrição do CFF: ' + e.message);
+    }
+    return false;
+}
+
+function cffExcluir(id) {
+    const item = cffAlunosList.find(x => x.id === id);
+    if (!item) return;
+    if (!confirm('Excluir a inscrição do CFF de "' + (item.d.nome || '') + '"?')) return;
+    dbFirestore.collection(FB_CFF).doc(id).delete().then(() => {
+        alert('Inscrição do CFF excluída.');
+        cffListLoad();
+    }).catch(e => alert('Erro ao excluir: ' + e.message));
+}
+
+// copia o cadastro de um Aluno Ativo para a seção CFF (coleção cffAlunos)
+async function alunosCopyParaCff(i) {
+    const c = candidatos[i];
+    if (!c || !c.cpf) { alert('Aluno sem CPF válido.'); return; }
+    if (!confirm('Copiar o cadastro de "' + (c.nome || '') + '" para a seção CFF? Ele será adicionado à lista de inscritos no Curso de Formação de Formadores.')) return;
+    const cpf = String(c.cpf).replace(/\D/g, '');
+    const senhaCopia = c.senha || cpf.substring(0, 6);
+    const origem = (c.tipoPessoa || 'A') === 'F' ? 'copia-formado' : 'copia-aluno-ativo';
+    const data = {
+        nome: c.nome || '',
+        cpf: cpf,
+        nascimento: c.nascimento || '',
+        idade: c.idade || '',
+        genero: c.genero || '',
+        estadoCivil: c.estadoCivil || '',
+        nacionalidade: c.nacionalidade || '',
+        naturalidade: c.naturalidade || '',
+        profissao: c.profissao || '',
+        mae: c.mae || '',
+        pai: c.pai || '',
+        email: c.email || '',
+        whatsapp: c.whatsapp || '',
+        endereco: c.endereco || '',
+        numero: c.numero || '',
+        bairro: c.bairro || '',
+        cidade: c.cidade || '',
+        estado: c.estado || '',
+        senha: senhaCopia,
+        origem: origem,
+        projetoOrigem: c.projeto || '',
+        turmaOrigem: c.turma || '',
+        dataCadastro: c.dataCadastro || new Date().toLocaleDateString('pt-BR'),
+        cadastradoPor: currentUserData ? currentUserData.nome : 'Desconhecido',
+        criadoEm: new Date()
+    };
+    try {
+        const ref = dbFirestore.collection(FB_CFF).doc(cpf);
+        const existente = await ref.get();
+        if (existente.exists && !confirm('Já existe uma inscrição no CFF com o CPF ' + cpf + '. Deseja ATUALIZAR os dados do cadastro na seção CFF?')) return;
+        await ref.set(data, { merge: true });
+        alert(existente.exists
+            ? 'Cadastro copiado e ATUALIZADO na seção CFF! Senha de acesso: ' + senhaCopia
+            : 'Cadastro copiado para a seção CFF! Senha de acesso: ' + senhaCopia);
+        if (typeof cffListLoad === 'function') cffListLoad();
+    } catch (e) {
+        console.error('Erro ao copiar para o CFF:', e);
+        alert('Erro ao copiar o cadastro para o CFF: ' + e.message);
+    }
 }
 
 

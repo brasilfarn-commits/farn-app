@@ -4254,16 +4254,19 @@
     function paRavMontarCard(av, jaAvaliada) {
         var d = av.data;
         var isPratica = (d.tipo === 'pratica');
-        var cor = jaAvaliada ? '#16a34a' : '#2563eb';
+        var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true);
+        var cor = emBreve ? '#dc2626' : (jaAvaliada ? '#16a34a' : '#2563eb');
         var btn;
         if (isPratica) {
             btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
         } else if (jaAvaliada) {
             btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+        } else if (emBreve) {
+            btn = '<span style="display:inline-flex;align-items:center;gap:5px;background:#dc2626;color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid fa-hourglass-half" style="margin-right:4px"></i>Em breve</span>';
         } else {
             btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
         }
-        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (jaAvaliada ? 'Avaliada' : 'Não avaliada') + '</span>';
+        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (emBreve ? 'Em breve' : (jaAvaliada ? 'Avaliada' : 'Disponível')) + '</span>';
         var card = document.createElement('div');
         card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
         card.innerHTML =
@@ -4271,6 +4274,7 @@
             '<div style="flex:1;min-width:160px">' +
                 '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
                 '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
+                (emBreve ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Disponível em breve para responder.</div>' : '') +
                 (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
             '</div>' +
             btn;
@@ -4363,6 +4367,7 @@
             var d = doc.data();
             if (d.enviada !== true || d.turma !== (paUser.turma || '').trim()) { alert('Esta avaliação não está disponível para a sua turma.'); return; }
             if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
+            if (d.ativa !== true) { alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return; }
             paRavAtual = { id: avId, conteudo: d };
             paRavRespostas = {};
             paRavCorretas = {};

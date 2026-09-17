@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Avaliação CFF - FARN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --green:#16a34a;--green-l:#22c55e;--green-d:#15803d;
+            --red:#dc2626;--red-l:#ef4444;
+            --blue:#2563eb;--blue-l:#3b82f6;
+            --yellow:#ca8a04;--yellow-l:#eab308;
+            --purple:#8b5cf6;--purple-l:#a78bfa;--purple-d:#6d28d9;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+        .hidden { display: none !important; }
+
+        /* ===== TOPBAR ===== */
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 28px; gap: 16px; flex-wrap: wrap;
+            background: linear-gradient(90deg, #7c3aed, #6d28d9);
+            position: sticky; top: 0; z-index: 50;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 14px; }
+        .topbar-logo { width: 42px; height: 42px; object-fit: contain; border-radius: 50%; background: #fff; padding: 2px; border: 2px solid #c4b5fd; }
+        .topbar-txt { display: flex; flex-direction: column; line-height: 1.2; }
+        .topbar-txt strong { font-size: 16px; font-weight: 800; color: #fff; }
+        .topbar-txt span { font-size: 11px; color: #ddd6fe; }
+        .btn-voltar {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+            color: #fff; padding: 8px 14px; border-radius: 9px;
+            font-size: 12px; font-weight: 600; text-decoration: none; transition: .2s;
+        }
+        .btn-voltar:hover { background: rgba(255,255,255,.22); }
+
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 26px 20px 60px; }
+
+        .card {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
+            overflow: hidden; margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 8px;
+        }
+        .card-header h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .card-header small { font-size: 12px; color: #64748b; }
+        .card-body { padding: 24px; }
+
+        /* ===== BOTOES ===== */
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-d));
+            border: none; border-radius: 10px; color: #fff;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(124,58,237,.4); }
+        .btn-outline {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; background: transparent;
+            border: 2px solid #e2e8f0; border-radius: 10px; color: #475569;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-outline:hover { border-color: #94a3b8; color: #1e293b; }
+        .btn-success {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+            background: rgba(22,163,74,.1); border: 1px solid rgba(22,163,74,.3);
+            border-radius: 6px; color: #16a34a; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-success:hover { background: rgba(22,163,74,.2); border-color: #16a34a; }
+        .btn-warning {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+            background: rgba(202,138,4,.1); border: 1px solid rgba(202,138,4,.3);
+            border-radius: 6px; color: #ca8a04; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-warning:hover { background: rgba(202,138,4,.2); border-color: #ca8a04; }
+        .btn-danger {
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+            background: linear-gradient(135deg, #c62828, #e53935); border: none; border-radius: 10px;
+            color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(198,40,40,.4); }
+        .btn-sm { padding: 8px 14px; font-size: 12px; }
+
+        .empty-state {
+            text-align: center; padding: 40px 20px; color: #64748b; font-size: 14px;
+            background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px;
+        }
+        .empty-state i { font-size: 34px; color: #cbd5e1; display: block; margin-bottom: 10px; }
+
+        /* ===== FORM ===== */
+        .form-section-card {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
+            overflow: hidden; margin-bottom: 18px;
+        }
+        .form-section-title {
+            display: flex; align-items: center; gap: 12px;
+            padding: 18px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+        }
+        .form-section-title i { font-size: 18px; color: var(--purple); }
+        .form-section-title h3 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin: 0; }
+        .form-section-body { padding: 24px; }
+
+        .config-input {
+            padding: 12px 16px; background: #f8fafc;
+            border: 2px solid #e2e8f0; border-radius: 10px; color: #1e293b;
+            font-size: 14px; font-family: 'Inter', sans-serif; transition: border-color .3s; outline: none;
+        }
+        .config-input:focus { border-color: var(--purple); }
+        .config-input.small { max-width: 130px; }
+        select.config-input {
+            appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+        }
+        select.config-input option { background: #f8fafc; color: #1e293b; }
+
+        .form-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn .2s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px;
+            width: 90%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;
+            animation: slideUp .3s ease; overflow: hidden;
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-bottom: 1px solid #e2e8f0;
+        }
+        .modal-header h3 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .modal-close { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px; border-radius: 8px; transition: all .2s; }
+        .modal-close:hover { background: #e2e8f0; color: #1e293b; }
+        .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid #e2e8f0; }
+
+        @media (max-width: 600px) {
+            .topbar { padding: 12px 16px; }
+            .topbar-txt span { display: none; }
+            .wrap { padding: 18px 12px 50px; }
+            .card-body { padding: 16px; }
+            .form-section-body { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição" class="topbar-logo">
+            <div class="topbar-txt">
+                <strong>Criar Avaliação CFF</strong>
+                <span>Construtor de avaliações do Curso de Formação de Formadores</span>
+            </div>
+        </div>
+        <a href="index.html" class="btn-voltar"><i class="fa-solid fa-house"></i><span> Voltar ao início</span></a>
+    </header>
+
+    <main class="wrap">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-list-check" style="color:#8b5cf6"></i> Criar Avaliação CFF</h3>
+                <small>Monte avaliações com até 20 questões de múltipla escolha (letras A a D). Cada questão vale 0,5 ponto.</small>
+            </div>
+            <div class="card-body">
+
+                <!-- Toolbar de avaliações salvas -->
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+                    <button id="cav-nova-btn" class="btn-primary btn-sm" onclick="cavEscolherTipo()"><i class="fa-solid fa-plus"></i> Nova AV</button>
+                    <button class="btn-outline btn-sm" onclick="cavLoadList()"><i class="fa-solid fa-rotate"></i> Atualizar Lista</button>
+                </div>
+                <div id="cav-list" style="margin-bottom:24px">
+                    <div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>
+                </div>
+
+                <!-- Formulario / Construtor -->
+                <div id="cav-form" style="display:none">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+                        <h3 style="font-size:16px;color:#0f172a;margin:0"><i class="fa-solid fa-pen-to-square" style="color:#8b5cf6;margin-right:6px"></i> <span id="cav-form-titulo">Nova Avaliação</span></h3>
+                        <span id="cav-editing-badge" style="display:none"></span>
+                    </div>
+
+                    <!-- Dados da avaliacao -->
+                    <div class="form-section-card" style="margin-bottom:18px">
+                        <div class="form-section-title"><i class="fa-solid fa-folder-open"></i><h3>Dados da Avaliação</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div style="grid-column:span 2">
+                                    <label id="cav-nome-label" style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Nome da Avaliação (selecione a aula do CFF com AV Teórica)</label>
+                                    <input type="text" id="cav-aula-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Digite para buscar as aulas do CFF com AV Teórica..." oninput="cavFiltrarAulas(this.value)">
+                                    <select id="cav-nome" class="config-input" style="width:100%" onchange="cavOnNomeChange()"><option value="">Carregando aulas...</option></select>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Docente</label>
+                                    <select id="cav-docente" class="config-input" style="width:100%"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Questoes -->
+                    <div class="form-section-card" style="margin-bottom:18px">
+                        <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                            <h3 style="display:flex;align-items:center;gap:6px;margin:0"><i class="fa-solid fa-file-lines"></i> Questões (<span id="cav-q-count">0</span>/<span id="cav-q-max">20</span>)</h3>
+                            <label style="font-size:12px;color:#475569;font-weight:600;display:flex;align-items:center;gap:6px">Limite:
+                                <select id="cav-q-limite" class="config-input small" style="width:130px" onchange="cavMudarLimite(parseInt(this.value||'20',10))">
+                                    <option value="4">4 questões</option>
+                                    <option value="6">6 questões</option>
+                                    <option value="8">8 questões</option>
+                                    <option value="10">10 questões</option>
+                                    <option value="20" selected>20 questões</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="form-section-body">
+                            <div id="cav-questoes"></div>
+                            <button class="btn-outline btn-sm" onclick="cavAdicionarQuestao()" id="cav-add-q-btn"><i class="fa-solid fa-plus"></i> Adicionar Questão</button>
+                        </div>
+                    </div>
+
+                    <!-- Acoes -->
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                        <button class="btn-primary" onclick="cavSalvar()"><i class="fa-solid fa-floppy-disk"></i> Salvar Avaliação</button>
+                        <button class="btn-outline" onclick="cavExcluir()"><i class="fa-solid fa-trash"></i> Excluir</button>
+                        <button class="btn-outline" onclick="cavEditar()"><i class="fa-solid fa-pen"></i> Editar</button>
+                        <button class="btn-warning" onclick="cavImprimir()"><i class="fa-solid fa-print"></i> Imprimir Avaliação</button>
+                        <button class="btn-outline" onclick="cavGerarGabarito()"><i class="fa-solid fa-clipboard-check"></i> Gerar Gabarito</button>
+                        <button class="btn-warning" onclick="cavAbrirEnvio()"><i class="fa-solid fa-paper-plane"></i> Enviar Avaliação</button>
+                    </div>
+                </div>
+
+                <!-- Gabarito -->
+                <div id="cav-gabarito" style="display:none;margin-top:20px;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:16px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+                        <h4 style="font-size:15px;color:#15803d;margin:0"><i class="fa-solid fa-clipboard-check"></i> Gabarito</h4>
+                        <button class="btn-danger" style="padding:6px 12px" onclick="document.getElementById('cav-gabarito').style.display='none'" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="cav-gabarito-content" style="font-size:13px;color:#1e293b;line-height:1.9"></div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL SELECAO TIPO AVALIACAO -->
+    <div id="cav-tipo-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharTipo()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:480px">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-clipboard-list" style="margin-right:6px"></i> Qual tipo de Avaliação?</h3>
+                <button class="modal-close" onclick="cavFecharTipo()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6">Selecione o tipo de avaliação que deseja criar. A página se adapta ao vínculo das aulas do CFF com o tipo escolhido.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <button onclick="cavEscolherTipoConfirmar('teorica')" style="background:#2563eb;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:inherit">
+                        <i class="fa-solid fa-book-open" style="font-size:28px"></i>
+                        <span style="font-size:14px;font-weight:800">AV Teórica</span>
+                        <span style="font-size:11px;opacity:.85">Aulas do CFF com AV Teórica = Sim</span>
+                    </button>
+                    <button onclick="cavEscolherTipoConfirmar('pratica')" style="background:#16a34a;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:inherit">
+                        <i class="fa-solid fa-flask" style="font-size:28px"></i>
+                        <span style="font-size:14px;font-weight:800">AV Prática</span>
+                        <span style="font-size:11px;opacity:.85">Aulas do CFF com AV Prática = Sim</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ENVIO AVALIACAO -->
+    <div id="cav-envio-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharEnvio()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:460px">
+            <div class="modal-header">
+                <h3>Enviar Avaliação</h3>
+                <button class="modal-close" onclick="cavFecharEnvio()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">A avaliação será enviada para <strong>todos os cadastrados do CFF</strong>. Eles poderão respondê-la no Portal do CFF.</p>
+                <div id="cav-envio-info" style="font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:14px"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="cavFecharEnvio()">Cancelar</button>
+                <button class="btn-primary" onclick="cavConfirmarEnvio()"><i class="fa-solid fa-paper-plane"></i> Confirmar Envio</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LISTAR AVALIADOS -->
+    <div id="cav-listar-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharListarAvaliados()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:640px">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-users" style="margin-right:6px"></i> Listar Avaliados</h3>
+                <button class="modal-close" onclick="cavFecharListarAvaliados()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:#64748b;margin-bottom:14px" id="cav-listar-avaliacao-nome">—</p>
+                <div id="cav-listar-avaliados-content" style="max-height:60vh;overflow-y:auto">
+                    <div style="text-align:center;color:#64748b;padding:20px">Carregando cadastrados avaliados...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL VER RESPOSTAS E PONTOS -->
+    <div id="cav-respostas-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharRespostas()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:720px">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-clipboard-check" style="margin-right:6px"></i> Respostas e Pontos</h3>
+                <button class="modal-close" onclick="cavFecharRespostas()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="cav-respostas-content">
+                <div style="text-align:center;color:#64748b;padding:20px">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_CPF = '05004959471';
+        const FB_CFFAV = 'cffAvaliacoes';
+        const FB_CFFAV_RESPOSTAS = 'cffAvaliacoesRespostas';
+        const FB_CFFAV_ALUNOS = 'cffAvaliacoesAlunos';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function escHTML(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function cffFormatCpf(v) {
+            var d = String(v || '').replace(/\D/g, '');
+            if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            return v || '—';
+        }
+
+        let cavEditingId = null;
+        let cavQuestaoSeq = 0;
+        let cavNomeAula = {};
+        let cavNomeAtual = '';
+        let cavQMax = 20;
+        let cavAulasOptions = [];
+        let cavAulasFiltro = '';
+        let cavTipo = 'teorica';
+
+        function cavCampoAV(tipo) {
+            return (tipo === 'pratica') ? 'avPratica' : 'avTeorica';
+        }
+
+        function cavRotuloAV(tipo) {
+            return (tipo === 'pratica') ? 'Prática' : 'Teórica';
+        }
+
+        function cavAplicarRotuloTipo() {
+            const tipo = cavTipo;
+            const rotuloCampo = (tipo === 'pratica') ? 'Prática' : 'Teórica';
+            const label = document.getElementById('cav-nome-label');
+            if (label) label.textContent = 'Nome da Avaliação (selecione a aula do CFF com AV ' + rotuloCampo + ')';
+            const busca = document.getElementById('cav-aula-busca');
+            if (busca) busca.placeholder = 'Digite para buscar as aulas do CFF com AV ' + rotuloCampo + '...';
+            const novoBtn = document.getElementById('cav-nova-btn');
+            if (novoBtn) novoBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Nova AV ' + rotuloCampo;
+        }
+
+        function cavLoadList() {
+            const container = document.getElementById('cav-list');
+            if (!container) return;
+            container.innerHTML = '<div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>';
+            db.collection(FB_CFFAV).orderBy('criadoEm', 'desc').get().then(snap => {
+                if (snap.empty) {
+                    container.innerHTML = '<div class="empty-state" style="text-align:center;padding:30px"><p style="color:#64748b;margin-bottom:12px">Nenhuma avaliação criada ainda.</p>' +
+                        '<button class="btn-primary btn-sm" onclick="cavEscolherTipo()"><i class="fa-solid fa-plus"></i> Criar primeira avaliação</button></div>';
+                    return;
+                }
+                const avs = [];
+                snap.forEach(doc => avs.push({ id: doc.id, d: doc.data() }));
+                return Promise.all([
+                    db.collection(FB_CFFAV_RESPOSTAS).get().catch(() => null),
+                    db.collection(FB_CFFAV_ALUNOS).get().catch(() => null)
+                ]).then(([rSnap, aSnap]) => {
+                    return { avs: avs, respostas: rSnap, avaliacoesAlunos: aSnap };
+                });
+            }).then(({ avs, respostas, avaliacoesAlunos }) => {
+                container.innerHTML = '';
+                const contagem = {};
+                const rotulos = {};
+                if (respostas) {
+                    respostas.forEach(rDoc => {
+                        const avId = (rDoc.data() || {}).avaliacaoId;
+                        if (!avId) return;
+                        contagem[avId] = (contagem[avId] || 0) + 1;
+                    });
+                }
+                if (avaliacoesAlunos) {
+                    avaliacoesAlunos.forEach(fDoc => {
+                        const f = fDoc.data() || {};
+                        const man = f.avPraticaManual || {};
+                        Object.keys(man).forEach(avId => {
+                            contagem[avId] = (contagem[avId] || 0) + 1;
+                            rotulos[avId] = 'Prática (docente)';
+                        });
+                    });
+                }
+                avs.forEach(({ id, d }) => {
+                    const qtd = (d.questoes || []).length;
+                    const respondidas = contagem[id] || 0;
+                    const isPratica = (d.tipo === 'pratica');
+                    let cor, rotuloEstado;
+                    if (respondidas > 0) { cor = '#16a34a'; rotuloEstado = 'Respondida :: ' + respondidas + (rotulos[id] ? ' (' + rotulos[id] + ')' : ' cadastrado(s)'); }
+                    else if (!isPratica && d.ativa) { cor = '#f59e0b'; rotuloEstado = 'Ativa · aguardando respostas'; }
+                    else if (!isPratica && d.enviada) { cor = '#dc2626'; rotuloEstado = 'Em breve · não ativada'; }
+                    else if (!isPratica) { cor = '#dc2626'; rotuloEstado = 'Não ativada para responder'; }
+                    else if (d.enviada) { cor = '#f59e0b'; rotuloEstado = 'Aguardando respostas'; }
+                    else { cor = '#2563eb'; rotuloEstado = 'Ainda não enviada'; }
+                    const card = document.createElement('div');
+                    card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(15,23,42,.04)';
+                    const envBadge = ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;color:' + cor + ';border:1px solid ' + cor + '">' + rotuloEstado + '</span>';
+                    card.innerHTML =
+                        '<div style="width:44px;height:44px;background:' + cor + ';border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-' + (respondidas > 0 ? 'check-double' : (d.ativa ? 'pen-to-square' : (!isPratica ? 'clock' : (d.enviada ? 'paper-plane' : 'file-lines')))) + '" style="color:#fff;font-size:18px"></i></div>' +
+                        '<div style="flex:1;min-width:170px">' +
+                            '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + envBadge + '</div>' +
+                            '<div style="font-size:11.5px;color:#64748b;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">' +
+                                '<span><i class="fa-solid fa-graduation-cap" style="margin-right:3px;color:#8b5cf6"></i>Curso de Formação de Formadores</span>' +
+                                (d.disciplina ? '<span><i class="fa-solid fa-book" style="margin-right:3px"></i>' + escHTML(d.disciplina) + '</span>' : '') +
+                                '<span><i class="fa-solid fa-list-check" style="margin-right:3px"></i>' + qtd + ' questões</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
+                            '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                            '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + id + '\')"><i class="fa-solid fa-print"></i></button>' +
+                            (!isPratica && !d.ativa ? '<button class="btn-success btn-sm" title="Liberar esta AV Teórica para os cadastrados do CFF responderem no Portal do CFF" onclick="cavAtivarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-play"></i> ATIVAR AV TEORICA</button>' : '') +
+                            '<button class="btn-warning btn-sm" title="Comunicar que a AV estará disponível em breve (os cadastrados ainda não poderão responder)" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
+                            '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
+                            '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                        '</div>';
+                    container.appendChild(card);
+                });
+            }).catch(() => {
+                container.innerHTML = '<div class="empty-state" style="text-align:center;padding:20px"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
+            });
+        }
+
+        function cavAbrirEnvioPorId(id) {
+            cavEditingId = id;
+            cavAbrirEnvio();
+        }
+
+        function cavAtivarAVTeorica(id) {
+            db.collection(FB_CFFAV).doc(id).get().then(doc => {
+                if (!doc.exists) { alert('Avaliação não encontrada.'); return null; }
+                if (!confirm('Ativar esta AV Teórica para responder? Todos os cadastrados do CFF poderão abrir e responder no Portal do CFF.')) return null;
+                return db.collection(FB_CFFAV).doc(id).update({ ativa: true, ativadaEm: new Date() });
+            }).then(res => {
+                if (res) { alert('AV Teórica ativada! Os cadastrados do CFF já podem respondê-la.'); cavLoadList(); }
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        function cavEscolherTipo() {
+            const o = document.getElementById('cav-tipo-overlay');
+            if (o) o.classList.remove('hidden');
+        }
+
+        function cavEscolherTipoConfirmar(tipo) {
+            cavTipo = (tipo === 'pratica') ? 'pratica' : 'teorica';
+            const o = document.getElementById('cav-tipo-overlay');
+            if (o) o.classList.add('hidden');
+            cavNovaAvaliacao();
+            cavAplicarRotuloTipo();
+        }
+
+        function cavFecharTipo() {
+            const o = document.getElementById('cav-tipo-overlay');
+            if (o) o.classList.add('hidden');
+        }
+
+        function cavNovaAvaliacao() {
+            cavEditingId = null;
+            cavNomeAula = {};
+            cavNomeAtual = '';
+            document.getElementById('cav-form').style.display = 'block';
+            document.getElementById('cav-form-titulo').textContent = 'Nova AV ' + cavRotuloAV(cavTipo);
+            const badge = document.getElementById('cav-editing-badge');
+            badge.style.display = 'none';
+            badge.innerHTML = '';
+            document.getElementById('cav-gabarito').style.display = 'none';
+            document.getElementById('cav-questoes').innerHTML = '';
+            cavQMax = 20;
+            const limiteSel = document.getElementById('cav-q-limite');
+            if (limiteSel) limiteSel.value = '20';
+            const qMaxEl = document.getElementById('cav-q-max');
+            if (qMaxEl) qMaxEl.textContent = cavQMax;
+            const addBtn = document.getElementById('cav-add-q-btn');
+            if (addBtn) addBtn.style.display = 'inline-flex';
+            cavAtualizarQCount();
+            cavPopulateDocentes('');
+            cffcavLoadAulasNome('');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cavMudarLimite(n) {
+            cavQMax = ([4, 6, 8, 10, 20].indexOf(n) !== -1) ? n : 20;
+            const qMaxEl = document.getElementById('cav-q-max');
+            if (qMaxEl) qMaxEl.textContent = cavQMax;
+            const wrap = document.getElementById('cav-questoes');
+            if (wrap) {
+                const extras = wrap.querySelectorAll('.cav-q');
+                for (let i = extras.length - 1; i >= cavQMax; i--) {
+                    if (extras[i]) extras[i].remove();
+                }
+            }
+            cavAtualizarQCount();
+        }
+
+        function cavAtualizarQCount() {
+            const count = document.querySelectorAll('#cav-questoes .cav-q').length;
+            const el = document.getElementById('cav-q-count');
+            if (el) el.textContent = count;
+            const addBtn = document.getElementById('cav-add-q-btn');
+            if (addBtn) addBtn.style.display = count >= cavQMax ? 'none' : 'inline-flex';
+        }
+
+        function cavPopulateDocentes(value) {
+            const sel = document.getElementById('cav-docente');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Selecione o docente...</option>';
+            db.collection('docentes').orderBy('nome').get().then(snap => {
+                sel.innerHTML = '<option value="">Selecione o docente...</option>';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const opt = document.createElement('option');
+                    opt.value = d.nome || '';
+                    opt.textContent = d.nome || '';
+                    sel.appendChild(opt);
+                });
+                if (value) sel.value = value;
+            }).catch(() => {});
+        }
+
+        // lista de aulas do CFF com AV do tipo selecionado para preencher o nome da avaliacao
+        function cffcavLoadAulasNome(value) {
+            const sel = document.getElementById('cav-nome');
+            if (!sel) return;
+            cavNomeAula = {};
+            cavAulasOptions = [];
+            cavAulasFiltro = '';
+            sel.innerHTML = '<option value="">Carregando...</option>';
+            const campoAV = cavCampoAV(cavTipo);
+            db.collection('cffAulas').get().then(snap => {
+                sel.innerHTML = '<option value="">Selecione a avaliação...</option>';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (d[campoAV] !== 'Sim') return;
+                    const idAula = doc.id;
+                    const conteudo = (d.conteudo || '').trim();
+                    const disciplina = (d.disciplina || '').trim();
+                    const nomeAula = conteudo || disciplina || idAula;
+                    const chave = String(disciplina) + '|' + nomeAula;
+                    if (cavNomeAula[chave]) return;
+                    cavNomeAula[chave] = { id: idAula, nome: nomeAula, disciplina: disciplina, docente: (d.docente || '') };
+                    const dataStr = d.data ? new Date(String(d.data).replace(/-(\d+)-(\d+)$/, '-$2-$1') + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+                    const nomeCompleto = (disciplina ? disciplina + ' - ' : '') + (conteudo && conteudo !== disciplina ? conteudo : nombreAulaFallback(conteudo, disciplina)) + (dataStr ? ' (' + dataStr + ')' : '');
+                    cavAulasOptions.push({ value: idAula, text: nomeCompleto, chave: chave });
+                });
+                cavRenderAulas();
+                if (value) {
+                    // seleciona a aula correspondente ao salvo na edicao
+                    const alvo = cavAulasOptions.find(o => String(o.value) === String(value));
+                    if (alvo) {
+                        sel.value = alvo.value;
+                        const dadosAula = cavNomeAula[alvo.chave];
+                        if (dadosAula) {
+                            cavNomeAtual = (dadosAula.disciplina || '') + (dadosAula.nome && dadosAula.nome !== dadosAula.disciplina ? ' - ' + dadosAula.nome : '');
+                            cavNomeAtual = cavNomeAtual.trim() || value;
+                        }
+                    }
+                }
+                if (cavEditingId) {
+                    // ao editar, dispara o preenchimento do docente a partir da aula selecionada
+                    if (sel.value) cavOnNomeChange();
+                }
+            }).catch(() => { sel.innerHTML = '<option value="">Erro ao carregar aulas</option>'; });
+        }
+
+        function nombreAulaFallback(conteudo, disciplina) {
+            if (conteudo) return conteudo;
+            if (disciplina) return disciplina;
+            return '';
+        }
+
+        function cavRenderAulas() {
+            const sel = document.getElementById('cav-nome');
+            if (!sel) return;
+            const atual = sel.value;
+            sel.innerHTML = '<option value="">Selecione a avaliação...</option>';
+            if (cavAulasOptions.length === 0) {
+                sel.innerHTML = '<option value="">Nenhuma aula do CFF com AV ' + cavRotuloAV(cavTipo) + ' (Sim)</option>';
+                return;
+            }
+            const f = (cavAulasFiltro || '').trim().toLowerCase();
+            let count = 0;
+            cavAulasOptions.forEach(o => {
+                if (f && String(o.text || '').toLowerCase().indexOf(f) === -1) return;
+                const opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                sel.appendChild(opt);
+                count++;
+            });
+            if (count === 0) {
+                sel.innerHTML = '<option value="">Nenhuma aula encontrada para a busca</option>';
+            }
+            if (atual && cavAulasOptions.some(o => o.value === atual)) sel.value = atual;
+        }
+
+        function cavFiltrarAulas(texto) {
+            cavAulasFiltro = texto || '';
+            cavRenderAulas();
+        }
+
+        function cavOnNomeChange() {
+            const selNome = document.getElementById('cav-nome');
+            const idAula = selNome ? selNome.value : '';
+            const dadosAula = (function() {
+                for (const chave in cavNomeAula) {
+                    if (cavNomeAula[chave].id === idAula) return cavNomeAula[chave];
+                }
+                return null;
+            })();
+            const selDoc = document.getElementById('cav-docente');
+            if (dadosAula) {
+                cavNomeAtual = (dadosAula.disciplina || '') + (dadosAula.nome && dadosAula.nome !== dadosAula.disciplina ? ' - ' + dadosAula.nome : '');
+                cavNomeAtual = cavNomeAtual.trim() || idAula;
+                if (dadosAula.docente && selDoc) {
+                    let encontrou = false;
+                    Array.prototype.forEach.call(selDoc.options, o => { if (o.value === dadosAula.docente) encontrou = true; });
+                    if (encontrou) selDoc.value = dadosAula.docente;
+                    else {
+                        const opt = document.createElement('option');
+                        opt.value = dadosAula.docente; opt.textContent = dadosAula.docente;
+                        selDoc.appendChild(opt);
+                        selDoc.value = dadosAula.docente;
+                    }
+                }
+            }
+        }
+
+        function cavAdicionarQuestao(dados) {
+            const wrap = document.getElementById('cav-questoes');
+            if (!wrap) return;
+            const atual = wrap.querySelectorAll('.cav-q').length;
+            if (atual >= cavQMax) { alert('O limite é de ' + cavQMax + ' questões por avaliação.'); return; }
+            const idx = cavQuestaoSeq++;
+            const q = document.createElement('div');
+            q.className = 'cav-q';
+            q.dataset.idx = idx;
+            q.style.cssText = 'background:#fafcff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:14px';
+            const e = (dados && dados.enunciado) ? escHTML(dados.enunciado) : '';
+            const isPratica = cavTipo === 'pratica';
+            let corpo;
+            if (isPratica) {
+                corpo =
+                    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">' +
+                        '<strong style="color:#0f172a;font-size:13px">Questão ' + (atual + 1) + '</strong>' +
+                        '<span style="font-size:11px;color:#64748b;font-weight:600">Marcação: CERTA / PARCIAL / NÃO REALIZOU</span>' +
+                    '</div>' +
+                    '<textarea class="cav-q-enunc" style="width:100%;min-height:64px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;resize:vertical;margin-bottom:10px" placeholder="Digite o enunciado da questão...">' + e + '</textarea>';
+            } else {
+                const op = (dados && dados.opcoes) ? dados.opcoes : null;
+                const oa = (op && op.a != null) ? escHTML(op.a) : '';
+                const ob = (op && op.b != null) ? escHTML(op.b) : '';
+                const oc = (op && op.c != null) ? escHTML(op.c) : '';
+                const od = (op && op.d != null) ? escHTML(op.d) : '';
+                const correta = (dados && dados.correta) ? dados.correta : '';
+                corpo =
+                    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">' +
+                        '<strong style="color:#0f172a;font-size:13px">Questão ' + (atual + 1) + '</strong>' +
+                        '<div style="display:flex;align-items:center;gap:8px">' +
+                            '<label style="font-size:11px;color:#16a34a;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cav-ok-' + idx + '" value="a" ' + (correta === 'a' ? 'checked' : '') + '>A correta</label>' +
+                        '</div>' +
+                    '</div>' +
+                    '<textarea class="cav-q-enunc" style="width:100%;min-height:64px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;resize:vertical;margin-bottom:10px" placeholder="Digite o enunciado da questão...">' + e + '</textarea>' +
+                    cavOpcaoInput('a', 'A', oa, idx) +
+                    cavOpcaoInput('b', 'B', ob, idx) +
+                    cavOpcaoInput('c', 'C', oc, idx) +
+                    cavOpcaoInput('d', 'D', od, idx);
+            }
+            q.innerHTML =
+                corpo +
+                '<div style="display:flex;justify-content:flex-end;margin-top:6px">' +
+                    '<button onclick="cavRemoverQuestao(this)" title="Remover questão" style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:#dc2626;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit"><i class="fa-solid fa-trash"></i> Remover</button>' +
+                '</div>';
+            wrap.appendChild(q);
+            cavAtualizarQCount();
+        }
+
+        function cavOpcaoInput(letra, rotulo, valor, qidx) {
+            return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+                '<span style="width:24px;height:24px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;flex-shrink:0">' + rotulo + '</span>' +
+                '<span style="font-size:11px;color:#64748b;font-weight:700;flex-shrink:0">' + letra + ')</span>' +
+                '<input type="text" class="cav-q-p ca-' + letra + '" data-letra="' + letra + '" value="' + valor + '" placeholder="Opção ' + rotulo + '" style="flex:1;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;font-family:inherit">' +
+                '<input type="radio" class="cav-q-correta-field" name="cav-ok-' + qidx + '" value="' + letra + '" title="Marcar ' + rotulo + ' como correta" style="width:17px;height:17px;flex-shrink:0;cursor:pointer">' +
+            '</div>';
+        }
+
+        function cavRemoverQuestao(btn) {
+            const wrap = document.getElementById('cav-questoes');
+            const q = btn.closest('.cav-q');
+            if (q) q.remove();
+            cavRenumerarQuestoes();
+            cavAtualizarQCount();
+        }
+
+        function cavRenumerarQuestoes() {
+            const qs = document.querySelectorAll('#cav-questoes .cav-q');
+            qs.forEach((q, i) => {
+                const strong = q.querySelector('strong');
+                if (strong) strong.textContent = 'Questão ' + (i + 1);
+            });
+        }
+
+        function cavGetQuestoes() {
+            const questoes = [];
+            document.querySelectorAll('#cav-questoes .cav-q').forEach(q => {
+                const enunciado = (q.querySelector('.cav-q-enunc') || {}).value || '';
+                if (cavTipo === 'pratica') {
+                    questoes.push({ enunciado });
+                    return;
+                }
+                const opcoes = {
+                    a: (q.querySelector('.ca-a') || {}).value || '',
+                    b: (q.querySelector('.ca-b') || {}).value || '',
+                    c: (q.querySelector('.ca-c') || {}).value || '',
+                    d: (q.querySelector('.ca-d') || {}).value || ''
+                };
+                let correta = '';
+                const checked = q.querySelector('.cav-q-correta-field:checked');
+                if (checked) correta = checked.value;
+                questoes.push({ enunciado, opcoes, correta });
+            });
+            return questoes;
+        }
+
+        function cavColetarDados() {
+            const selNome = document.getElementById('cav-nome');
+            const nomeId = selNome ? selNome.value : '';
+            const dadosNome = (function() {
+                for (const chave in cavNomeAula) {
+                    if (cavNomeAula[chave].id === nomeId) return cavNomeAula[chave];
+                }
+                return null;
+            })();
+            if (dadosNome) {
+                cavNomeAtual = (dadosNome.disciplina || '') + (dadosNome.nome && dadosNome.nome !== dadosNome.disciplina ? ' - ' + dadosNome.nome : '');
+                cavNomeAtual = cavNomeAtual.trim() || nomeId;
+            }
+            const nome = cavNomeAtual || nomeId;
+            const disciplina = dadosNome ? (dadosNome.disciplina || '') : '';
+            const aula = dadosNome ? (dadosNome.nome || dadosNome.disciplina || '') : '';
+            const docente = document.getElementById('cav-docente').value;
+            const questoes = cavGetQuestoes();
+            return { nome, disciplina, aula, aulaId: nomeId, docente, questoes, tipo: cavTipo };
+        }
+
+        function cavSalvar() {
+            const d = cavColetarDados();
+            if (!d.nome) { alert('Informe o nome da avaliação (selecione uma aula do CFF).'); return; }
+            if (d.questoes.length === 0) { alert('Adicione ao menos uma questão.'); return; }
+            for (let i = 0; i < d.questoes.length; i++) {
+                const q = d.questoes[i];
+                if (!q.enunciado.trim()) { alert('A questão ' + (i + 1) + ' não tem enunciado.'); return; }
+                if (d.tipo !== 'pratica') {
+                    if (!q.correta) { alert('Marque a resposta correta (A, B, C ou D) da questão ' + (i + 1) + '.'); return; }
+                    if (!q.opcoes.a.trim() || !q.opcoes.b.trim() || !q.opcoes.c.trim() || !q.opcoes.d.trim()) { alert('Preencha as 4 opções da questão ' + (i + 1) + '.'); return; }
+                }
+            }
+            const dados = {
+                nome: d.nome,
+                disciplina: d.disciplina || '',
+                aula: d.aula || '',
+                aulaId: d.aulaId || '',
+                docente: d.docente || '',
+                tipo: d.tipo || cavTipo || 'teorica',
+                questoes: d.questoes,
+                atualizadoEm: new Date()
+            };
+            if (cavEditingId) {
+                db.collection(FB_CFFAV).doc(cavEditingId).update(Object.assign({}, dados)).then(() => { alert('Avaliação atualizada com sucesso!'); cavLoadList(); })
+                    .catch(e => alert('Erro ao salvar: ' + e.message));
+            } else {
+                db.collection(FB_CFFAV).add(Object.assign({}, dados, { criadoEm: new Date() })).then(() => { alert('Avaliação criada com sucesso!'); cavLoadList(); })
+                    .catch(e => alert('Erro ao salvar: ' + e.message));
+            }
+        }
+
+        function cavEditar() {
+            const id = cavEditingId;
+            if (!id) { alert('Selecione uma avaliação da lista para editar.'); return; }
+            db.collection(FB_CFFAV).doc(id).get().then(doc => {
+                if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+                cavPreencherForm(doc.id, doc.data());
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        function cavEditarAvaliacao(id) {
+            db.collection(FB_CFFAV).doc(id).get().then(doc => {
+                if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+                cavPreencherForm(doc.id, doc.data());
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        function cavPreencherForm(id, d) {
+            cavEditingId = id;
+            cavTipo = (d.tipo === 'pratica') ? 'pratica' : 'teorica';
+            cavNomeAtual = d.nome || '';
+            cavQMax = ([4, 6, 8, 10, 20].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
+            const limiteSel = document.getElementById('cav-q-limite');
+            if (limiteSel) limiteSel.value = String(cavQMax);
+            const qMaxEl = document.getElementById('cav-q-max');
+            if (qMaxEl) qMaxEl.textContent = cavQMax;
+            document.getElementById('cav-form').style.display = 'block';
+            document.getElementById('cav-form-titulo').textContent = 'Editar AV ' + cavRotuloAV(cavTipo);
+            cavAplicarRotuloTipo();
+            const badge = document.getElementById('cav-editing-badge');
+            badge.style.display = 'inline-flex';
+            badge.style.cssText = 'background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#7c3aed;font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px';
+            badge.innerHTML = '<i class="fa-solid fa-pen"></i> Editando: ' + escHTML(d.nome || '');
+            document.getElementById('cav-gabarito').style.display = 'none';
+            if (d.docente) {
+                const selD = document.getElementById('cav-docente');
+                selD.innerHTML = '<option value="">Selecione o docente...</option>';
+                const opt = document.createElement('option');
+                opt.value = d.docente; opt.textContent = d.docente;
+                selD.appendChild(opt);
+                selD.value = d.docente;
+                cavPopulateDocentes(d.docente);
+            } else { cavPopulateDocentes(''); }
+            const wrap = document.getElementById('cav-questoes');
+            wrap.innerHTML = '';
+            cavQuestaoSeq = 0;
+            (d.questoes || []).forEach(q => {
+                cavAdicionarQuestao(q);
+            });
+            cavAtualizarQCount();
+            cffcavLoadAulasNome(d.aulaId || '');
+        }
+
+        function cavExcluir() {
+            const id = cavEditingId;
+            if (!id) { alert('Selecione uma avaliação da lista para excluir.'); return; }
+            if (!confirm('Excluir esta avaliação?')) return;
+            db.collection(FB_CFFAV).doc(id).delete().then(() => {
+                alert('Avaliação excluída.');
+                cavEditingId = null;
+                cavNovaAvaliacao();
+                cavLoadList();
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        function cavExcluirPorId(id) {
+            if (!confirm('Excluir esta avaliação?')) return;
+            db.collection(FB_CFFAV).doc(id).delete().then(() => {
+                alert('Avaliação excluída.');
+                if (cavEditingId === id) cavNovaAvaliacao();
+                cavLoadList();
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        function cavGerarGabarito() {
+            const d = cavColetarDados();
+            const questoes = d.questoes;
+            if (questoes.length === 0) { alert('Não há questões para gerar o gabarito.'); return; }
+            let html = '';
+            questoes.forEach((q, i) => {
+                const letra = q.correta ? q.correta.toUpperCase() : '<span style="color:#dc2626">—</span>';
+                html += '<div style="display:flex;gap:8px;padding:6px 8px;border-bottom:1px dashed #cbd5e1"><strong style="width:70px">Questão ' + (i + 1) + ':</strong><span>Letra <strong>' + letra + '</strong></span></div>';
+            });
+            document.getElementById('cav-gabarito-content').innerHTML = html;
+            document.getElementById('cav-gabarito').style.display = 'block';
+        }
+
+        function cavImprimir() {
+            const d = cavColetarDados();
+            if (d.questoes.length === 0) { alert('Não há questões para imprimir (abra uma avaliação da lista ou monte as questões).'); return; }
+            cavImprimirHTML(d);
+        }
+
+        function cavImprimirPorId(id) {
+            db.collection(FB_CFFAV).doc(id).get().then(doc => {
+                if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+                cavImprimirHTML(doc.data());
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        function cavImprimirHTML(d) {
+            let questoesHtml = '';
+            (d.questoes || []).forEach((q, i) => {
+                if (d.tipo === 'pratica') {
+                    questoesHtml += '<div style="margin-bottom:18px;page-break-inside:avoid"><div style="font-weight:700;margin-bottom:6px">' + (i + 1) + '. ' + escHTML(q.enunciado) + '</div>' +
+                        '<div style="margin-top:8px;display:flex;gap:12px;flex-wrap:wrap"><span style="border:1px solid #ccc;border-radius:5px;padding:3px 8px">( ) CERTA</span><span style="border:1px solid #ccc;border-radius:5px;padding:3px 8px">( ) PARCIAL</span><span style="border:1px solid #ccc;border-radius:5px;padding:3px 8px">( ) NÃO REALIZOU</span></div></div>';
+                    return;
+                }
+                questoesHtml += '<div style="margin-bottom:18px;page-break-inside:avoid"><div style="font-weight:700;margin-bottom:6px">' + (i + 1) + '. ' + escHTML(q.enunciado) + '</div>' +
+                    '<div style="margin-left:18px;line-height:1.8">' +
+                        '<div>A) ' + escHTML(q.opcoes.a) + '</div>' +
+                        '<div>B) ' + escHTML(q.opcoes.b) + '</div>' +
+                        '<div>C) ' + escHTML(q.opcoes.c) + '</div>' +
+                        '<div>D) ' + escHTML(q.opcoes.d) + '</div>' +
+                    '</div><div style="margin-top:4px;margin-left:18px;display:flex;gap:12px">' +
+                        '<span style="color:#94a3b8">( ) A</span><span style="color:#94a3b8">( ) B</span><span style="color:#94a3b8">( ) C</span><span style="color:#94a3b8">( ) D</span>' +
+                    '</div></div>';
+            });
+            const w = window.open('', '_blank');
+            w.document.write('<html><head><title>' + escHTML(d.nome || 'Avaliação') + '</title>' +
+                '<style>body{font-family:Arial,sans-serif;color:#111;padding:30px} h1{font-size:20px;margin-bottom:4px}</style>' +
+                '</head><body>' +
+                '<h1>' + escHTML((d.nome || 'Avaliação')) + '</h1>' +
+                '<div style="color:#555;margin-bottom:20px;font-size:13px">Curso: Curso de Formação de Formadores (CFF)' + (d.disciplina ? ' | Disciplina: ' + escHTML(d.disciplina) : '') + (d.docente ? ' | Docente: ' + escHTML(d.docente) : '') + (d.aula ? ' | Aula: ' + escHTML(d.aula) : '') + '</div>' +
+                questoesHtml +
+                '<div style="page-break-before:always;border:2px solid #111;border-radius:8px;padding:18px;margin-top:8px">' +
+                    '<div style="font-weight:700;font-size:16px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:6px">GABARITO - ' + escHTML((d.nome || 'Avaliação')) + '</div>' +
+                    (d.questoes || []).map((q, i) => '<div style="padding:6px 8px;border-bottom:1px dashed #aaa;font-size:14px">Questão <strong>' + (i + 1) + '</strong>: ' + (d.tipo === 'pratica' ? '<strong>CERTA / PARCIAL / NÃO REALIZOU</strong>' : 'Letra <strong>' + (q.correta || '').toUpperCase() + '</strong>') + '</div>').join('') +
+                '</div>' +
+                '<script>window.onload=function(){window.print();};</scr' + 'ipt>' +
+                '</body></html>');
+            w.document.close();
+        }
+
+        function cavAbrirEnvio() {
+            const id = cavEditingId;
+            if (!id) { alert('Salve a avaliação antes de enviar.'); return; }
+            db.collection(FB_CFFAV).doc(id).get().then(doc => {
+                if (!doc.exists) { alert('Avaliação não encontrada. Salve novamente.'); return; }
+                const data = doc.data();
+                if (!data.questoes || data.questoes.length === 0) { alert('A avaliação não possui questões.'); return; }
+                const info = document.getElementById('cav-envio-info');
+                info.innerHTML = '<strong>' + escHTML(data.nome || '') + '</strong><br>' +
+                    'Questões: ' + (data.questoes || []).length + ' · Enviada a todos os cadastrados do CFF';
+                document.getElementById('cav-envio-overlay').classList.remove('hidden');
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        function cavFecharEnvio() {
+            document.getElementById('cav-envio-overlay').classList.add('hidden');
+        }
+
+        function cavConfirmarEnvio() {
+            const id = cavEditingId;
+            if (!confirm('Enviar esta avaliação para todos os cadastrados do CFF? Eles verão a AV como "em breve" no Portal do CFF, mas só poderão responder após você ativá-la (botão ATIVAR AV TEORICA).')) return;
+            db.collection(FB_CFFAV).doc(id).get().then(doc => {
+                if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+                return db.collection(FB_CFFAV).doc(id).update({
+                    enviada: true,
+                    enviadaEm: new Date()
+                });
+            }).then(() => {
+                alert('Avaliação enviada para todos os cadastrados do CFF!');
+                cavFecharEnvio();
+                cavLoadList();
+            }).catch(e => alert('Erro: ' + e.message));
+        }
+
+        /* ===== LISTAR AVALIADOS ===== */
+        var cavListarAvaliacaoId = null;
+
+        function cavListarAvaliados(avId) {
+            cavListarAvaliacaoId = avId;
+            const overlay = document.getElementById('cav-listar-overlay');
+            const nomeEl = document.getElementById('cav-listar-avaliacao-nome');
+            const content = document.getElementById('cav-listar-avaliados-content');
+            if (!overlay || !content) return;
+            nomeEl.textContent = 'Avaliação...';
+            content.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Carregando cadastrados avaliados... <i class="fa-solid fa-spinner fa-spin"></i></div>';
+            overlay.classList.remove('hidden');
+
+            Promise.all([
+                db.collection(FB_CFFAV).doc(avId).get().catch(() => null),
+                db.collection(FB_CFFAV_RESPOSTAS).get().catch(() => null),
+                db.collection(FB_CFFAV_ALUNOS).get().catch(() => null)
+            ]).then(([avDoc, snap, avAlunos]) => {
+                const avNome = (avDoc && avDoc.exists) ? (avDoc.data().nome || 'Avaliação') : 'Avaliação';
+                nomeEl.textContent = avNome;
+                if (!snap) {
+                    content.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px">Erro ao carregar respostas. Tente novamente.</div>';
+                    return;
+                }
+                const avaliados = [];
+                snap.forEach(doc => {
+                    const r = doc.data() || {};
+                    if (String(r.avaliacaoId || '') !== avId) return;
+                    avaliados.push({
+                        cpf: r.cpf || '',
+                        nome: r.nome || 'Sem nome',
+                        pontos: (r.pontos != null ? Number(r.pontos).toFixed(1).replace('.', ',') : '—'),
+                        certas: r.respostasCertas,
+                        total: r.totalQuestoes,
+                        tipo: 'Cadastrado CFF',
+                        enviadoEm: r.enviadoEm
+                    });
+                });
+                if (avAlunos) {
+                    avAlunos.forEach(doc => {
+                        const f = doc.data() || {};
+                        const man = (f.avPraticaManual || {})[avId];
+                        if (!man) return;
+                        const notaLinha = (man.nota != null ? Number(man.nota).toFixed(1).replace('.', ',') : '—');
+                        avaliados.push({
+                            cpf: f.cpf || '',
+                            nome: f.nome || 'Sem nome',
+                            pontos: notaLinha,
+                            certas: null,
+                            total: man.totalQuestoes,
+                            tipo: 'Prática (docente)',
+                            enviadoEm: man.respondidoEm
+                        });
+                    });
+                }
+                if (avaliados.length === 0) {
+                    content.innerHTML = '<div style="text-align:center;color:#64748b;padding:26px"><i class="fa-solid fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:10px"></i>Nenhum cadastrado concluiu esta avaliação ainda.</div>';
+                    return;
+                }
+                content.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:10px">' + avaliados.length + ' cadastrado(s) avaliado(s).</div>' +
+                    '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' +
+                    '<thead><tr style="background:#f1f5f9;color:#475569;text-align:left">' +
+                        '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0">Cadastrado</th>' +
+                        '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0">CPF</th>' +
+                        '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Nota</th>' +
+                        '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Origem</th>' +
+                        '<th style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center">Ações</th>' +
+                    '</tr></thead><tbody>' +
+                    avaliados.map(function(a) {
+                        const nome = String(a.nome).replace(/'/g, '');
+                        return '<tr style="border-bottom:1px solid #f1f5f9">' +
+                            '<td style="padding:9px 10px;font-weight:600;color:#0f172a">' + escHTML(a.nome) + '</td>' +
+                            '<td style="padding:9px 10px;color:#64748b">' + escHTML(cffFormatCpf(a.cpf)) + '</td>' +
+                            '<td style="padding:9px 10px;text-align:center;font-weight:700;color:#d97706">' + escHTML(a.pontos) + '</td>' +
+                            '<td style="padding:9px 10px;text-align:center">' + escHTML(a.tipo || '—') + '</td>' +
+                            '<td style="padding:9px 10px;text-align:center">' +
+                                '<button class="btn-outline btn-sm" onclick="cavVerRespostas(\'' + avId + '\',\'' + String(a.cpf).replace(/'/g, '') + '\')"><i class="fa-solid fa-eye"></i> Ver respostas e pontos</button>' +
+                            '</td>' +
+                        '</tr>';
+                    }).join('') +
+                    '</tbody></table>';
+            }).catch(function(e) {
+                console.error('Erro ao listar avaliados:', e);
+                content.innerHTML = '<div style="text-align:center;color:#dc2626;padding:20px">Erro ao carregar. Tente novamente.</div>';
+            });
+        }
+
+        function cavFecharListarAvaliados() {
+            document.getElementById('cav-listar-overlay').classList.add('hidden');
+        }
+
+        function cavVerRespostas(avId, cpf) {
+            const content = document.getElementById('cav-respostas-content');
+            const overlay = document.getElementById('cav-respostas-overlay');
+            if (!content || !overlay) return;
+            content.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Carregando... <i class="fa-solid fa-spinner fa-spin"></i></div>';
+            overlay.classList.remove('hidden');
+
+            Promise.all([
+                db.collection(FB_CFFAV).doc(avId).get().catch(() => null),
+                db.collection(FB_CFFAV_RESPOSTAS).doc(cpf + '_' + avId).get().catch(() => null),
+                db.collection(FB_CFFAV_ALUNOS).doc(cpf).get().catch(() => null)
+            ]).then(function(results) {
+                const avDoc = results[0];
+                const respDoc = results[1];
+                const fichaDoc = results[2];
+                if (!avDoc || !avDoc.exists) { content.innerHTML = '<p style="color:#dc2626">Avaliação não encontrada.</p>'; return; }
+                const d = avDoc.data() || {};
+                const questoes = d.questoes || [];
+                if (respDoc && respDoc.exists) {
+                    const r = respDoc.data() || {};
+                    const respostas = r.respostas || {};
+                    const marcadas = r.respostasMarcadas != null ? r.respostasMarcadas : Object.keys(respostas).length;
+                    const certas = r.respostasCertas != null ? r.respostasCertas : '—';
+                    const pontos = r.pontos != null ? Number(r.pontos).toFixed(1).replace('.', ',') : '—';
+                    const total = r.totalQuestoes != null ? r.totalQuestoes : questoes.length;
+
+                    const cards =
+                        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">' +
+                        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#64748b;font-weight:700">CADASTRADO</div><div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:4px">' + escHTML(r.nome || '—') + '</div></div>' +
+                        '<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#4f46e5;font-weight:700">RESPONDIDAS</div><div style="font-size:20px;font-weight:800;color:#4f46e5;margin-top:4px">' + (marcadas || 0) + '/' + (total || 0) + '</div></div>' +
+                        '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#16a34a;font-weight:700">CERTAS</div><div style="font-size:20px;font-weight:800;color:#16a34a;margin-top:4px">' + (certas == null ? '—' : certas) + '</div></div>' +
+                        '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#d97706;font-weight:700">PONTOS</div><div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px">' + pontos + '</div></div>' +
+                        '</div>';
+
+                    let qHtml = '';
+                    questoes.forEach(function(q, i) {
+                        const escolhida = respostas[i] || '';
+                        const correta = q.correta || '';
+                        const opcoes = ['a', 'b', 'c', 'd'];
+                        const opHtml = opcoes.map(function(letra) {
+                            const texto = q.opcoes && q.opcoes[letra];
+                            const chosen = (escolhida === letra);
+                            const chosenIcon = chosen ? (letra === correta ? '✅' : '❌') : (letra === correta ? '✔️' : '');
+                            const letraColor = chosen ? (letra === correta ? '#16a34a' : '#dc2626') : (letra === correta ? '#16a34a' : '#1e293b');
+                            return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:5px;background:' + (chosen ? '#f8fafc' : '#fff') + '">' +
+                                '<span style="width:20px;height:20px;border-radius:5px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#334155;flex-shrink:0">' + letra.toUpperCase() + '</span>' +
+                                '<span style="font-size:12.5px;color:' + letraColor + ';flex:1">' + escHTML(texto || '') + (letra === correta && !chosen ? ' <span style="color:#16a34a;font-size:10px;font-weight:700">(correta)</span>' : '') + '</span>' +
+                                (chosen ? '<span style="font-size:10px;font-weight:700;color:' + (letra === correta ? '#16a34a' : '#dc2626') + '">RESPOSTA</span>' : '') +
+                                (chosenIcon ? '<span style="font-size:13px">' + chosenIcon + '</span>' : '') +
+                                '</div>';
+                        }).join('');
+                        const status = !escolhida
+                            ? '<span style="color:#94a3b8;font-size:10px;font-weight:700">Não respondida</span>'
+                            : (escolhida === correta
+                                ? '<span style="color:#16a34a;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-check"></i> Correta</span>'
+                                : '<span style="color:#dc2626;font-size:10px;font-weight:700"><i class="fa-solid fa-circle-xmark"></i> Errada</span>');
+                        qHtml += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:10px">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12.5px;font-weight:700;color:#0f172a">' + (i + 1) + '. ' + escHTML(q.enunciado || '') + '</span>' + status + '</div>' +
+                            opHtml +
+                            '</div>';
+                    });
+
+                    content.innerHTML = cards + qHtml;
+                    return;
+                }
+
+                const man = (fichaDoc && fichaDoc.exists && (fichaDoc.data() || {}).avPraticaManual) ? (fichaDoc.data().avPraticaManual[avId]) : null;
+                if (man) {
+                    const f = fichaDoc.data() || {};
+                    const respostas = man.respostas || {};
+                    const total = man.totalQuestoes != null ? man.totalQuestoes : questoes.length;
+                    const nota = man.nota != null ? Number(man.nota).toFixed(1).replace('.', ',') : '—';
+                    const cards =
+                        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">' +
+                        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#64748b;font-weight:700">CADASTRADO</div><div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:4px">' + escHTML(f.nome || '—') + '</div></div>' +
+                        '<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#4f46e5;font-weight:700">AVALIADAS</div><div style="font-size:20px;font-weight:800;color:#4f46e5;margin-top:4px">' + Object.keys(respostas).length + '/' + (total || 0) + '</div></div>' +
+                        '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;color:#d97706;font-weight:700">NOTA</div><div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px">' + nota + '</div></div>' +
+                        '</div>';
+                    let qHtml = '';
+                    questoes.forEach(function(q, i) {
+                        const v = respostas[i] || '';
+                        const cfg = v === 'certa'
+                            ? { cor: '#16a34a', rotulo: 'CERTA', icon: 'fa-circle-check' }
+                            : (v === 'parcial' ? { cor: '#f59e0b', rotulo: 'PARCIAL', icon: 'fa-circle-half-stroke' } : { cor: '#dc2626', rotulo: 'NÃO REALIZOU', icon: 'fa-circle-xmark' });
+                        const status = v ? '<span style="color:' + cfg.cor + ';font-size:10px;font-weight:700"><i class="fa-solid ' + cfg.icon + '"></i> ' + cfg.rotulo + '</span>' : '<span style="color:#94a3b8;font-size:10px;font-weight:700">Não avaliada</span>';
+                        qHtml += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:10px">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12.5px;font-weight:700;color:#0f172a">' + (i + 1) + '. ' + escHTML(q.enunciado || '') + '</span>' + status + '</div>' +
+                            '</div>';
+                    });
+                    content.innerHTML = cards + qHtml;
+                    return;
+                }
+
+                content.innerHTML = '<p style="color:#64748b">Este cadastrado não possui resposta registrada para esta avaliação.</p>';
+            }).catch(function(e) {
+                console.error('Erro ao carregar respostas:', e);
+                content.innerHTML = '<p style="color:#dc2626">Erro ao carregar as respostas.</p>';
+            });
+        }
+
+        function cavFecharRespostas() {
+            document.getElementById('cav-respostas-overlay').classList.add('hidden');
+        }
+
+        function avInit() {
+            var userData = null;
+            try { userData = JSON.parse(localStorage.getItem('farn_user_data')); } catch (e) {}
+            var isAdmin = userData && (userData.cpf === ADMIN_CPF || (userData.permissoes || []).indexOf('admin') >= 0 || (userData.permissoes || []).indexOf('avaliacao') >= 0);
+            if (!isAdmin) { location.href = 'index.html'; return; }
+            var logoRef = document.querySelector('[data-farn-logo]');
+            if (logoRef) {
+                db.collection('configuracoes').doc('instituicao').get().then(function(doc) {
+                    if (doc.exists && doc.data().logo) {
+                        document.querySelectorAll('[data-farn-logo]').forEach(function(img) { img.src = doc.data().logo; });
+                    }
+                }).catch(function() {});
+            }
+            cavLoadList();
+        }
+
+        document.addEventListener('DOMContentLoaded', avInit);
+    </script>
+</body>
+</html>
