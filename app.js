@@ -4851,15 +4851,39 @@ function apontamentoOnDisciplinaChange() {
     const selAula = document.getElementById('apt-aula');
     selAula.innerHTML = '<option value="">Carregando...</option>';
     if (!discName || discName === 'Selecione a disciplina') { selAula.innerHTML = '<option value="">Selecione...</option>'; return; }
-    dbFirestore.collection('aulas').where('disciplina', '==', discName).get().then(snap => {
+    const normNome = function(s) {
+        return (s || '').toString().trim().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, ' ');
+    };
+    const montarOpcoes = function(lista) {
         selAula.innerHTML = '<option value="">Selecione a aula</option>';
-        snap.forEach(doc => {
-            const a = doc.data();
+        lista.sort(function(x, y) { return (y.a.data || '').localeCompare(x.a.data || ''); });
+        lista.forEach(function(item) {
+            const a = item.a;
             const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-            selAula.innerHTML += '<option value="' + doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
+            selAula.innerHTML += '<option value="' + item.doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
         });
-        if (snap.empty) selAula.innerHTML = '<option value="">Nenhuma aula encontrada</option>';
-    }).catch(() => { selAula.innerHTML = '<option value="">Erro ao carregar</option>'; });
+        if (!lista.length) selAula.innerHTML = '<option value="">Nenhuma aula encontrada</option>';
+    };
+    dbFirestore.collection('aulas').where('disciplina', '==', discName).get().then(function(snap) {
+        const lista = [];
+        snap.forEach(function(doc) { lista.push({ doc: doc, a: doc.data() }); });
+        if (lista.length) { montarOpcoes(lista); return; }
+        /* Fallback: procura por nome normalizado caso o nome da disciplina tenha
+           espaco/acento/caixa diferente nas aulas (ex.: espaco duplo em "RESGATE TERRESTRE -  BUSCA..."). */
+        dbFirestore.collection('aulas').get().then(function(snap2) {
+            const lista2 = [];
+            snap2.forEach(function(doc) {
+                const a = doc.data();
+                if (normNome(a.disciplina) !== normNome(discName)) return;
+                lista2.push({ doc: doc, a: a });
+            });
+            montarOpcoes(lista2);
+        }).catch(function() {
+            montarOpcoes(lista);
+        });
+    }).catch(function() { selAula.innerHTML = '<option value="">Erro ao carregar</option>'; });
 }
 
 function apontamentoAtualizarAulas() {
@@ -5271,23 +5295,38 @@ async function apontamentoSalvar() {
     const selDisc = document.getElementById('apt-disciplina');
     const disciplinaNome = selDisc.options[selDisc.selectedIndex] ? selDisc.options[selDisc.selectedIndex].text : '';
     const projeto = document.getElementById('apt-selecao-projeto').value || '';
+    const criadoPor = currentUserData ? currentUserData.nome || '' : '';
+    /* Busca dados completos da aula (data, horario e docente) para gravar no apontamento —
+       o historico fica identico entre o Painel Admin e o portal do docente. */
+    let dataAula = '';
+    let horaAula = '';
+    let docenteAula = '';
+    try {
+        const aulaDoc = await dbFirestore.collection('aulas').doc(aulaId).get();
+        if (aulaDoc.exists) {
+            const ad = aulaDoc.data();
+            dataAula = ad.data || '';
+            horaAula = ad.horario || '';
+            docenteAula = ad.docente || '';
+        }
+    } catch (e) { console.error('Erro ao carregar aula para apontamento:', e); }
     const dados = {
         turma: turma,
         aula: aulaNome,
         aulaId: aulaId,
+        disciplina: disciplinaNome,
+        disciplinaId: disciplinaId,
+        projeto: projeto,
+        dataAula: dataAula,
+        horaAula: horaAula,
+        docente: docenteAula || criadoPor,
         alunos: todos,
         criadoEm: new Date().toISOString(),
-        criadoPor: currentUserData ? currentUserData.nome || '' : ''
+        criadoPor: criadoPor
     };
     try {
         const aptRef = await dbFirestore.collection('apontamentos').add(dados);
         const aptId = aptRef.id;
-
-        let dataAula = '';
-        try {
-            const aulaDoc = await dbFirestore.collection('aulas').doc(aulaId).get();
-            if (aulaDoc.exists) dataAula = aulaDoc.data().data || '';
-        } catch (e) {}
 
         const batch = dbFirestore.batch();
         todos.forEach(aluno => {

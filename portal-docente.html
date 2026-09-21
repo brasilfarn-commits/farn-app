@@ -399,6 +399,9 @@
                         <!-- Conteudo (oculto ate selecionar projeto+turma) -->
                         <div id="apt-conteudo" style="display:none">
                             <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
+                                <button class="btn-outline" onclick="apontamentoAtualizarAulas()" style="white-space:nowrap;margin:0">
+                                    <i class="fa-solid fa-rotate"></i> Atualizar aulas
+                                </button>
                                 <button class="btn-primary" onclick="apontamentoAbrirModal()">
                                     <i class="fa-solid fa-qrcode"></i> Apontar Aluno
                                 </button>
@@ -1663,6 +1666,7 @@
         var aptAlunosNaTurma = [];
         var aptInicioUnsub = null;
         var aptHistoricoCache = [];
+        var aptHistoricoUnsub = null;
         var pdAptProjetos = [];
         var pdAptTurmas = [];
         var pdAptAulaIds = [];
@@ -1677,8 +1681,15 @@
         /* Compara nome do docente de forma tolerante (ignora caixa e espacos) */
         function pdPertenceDocente(d, nome) {
             if (!d) return false;
-            var n = (nome || '').trim().toLowerCase();
-            return (d.docente || '').trim().toLowerCase() === n || (d.instrutor || '').trim().toLowerCase() === n;
+            /* Normaliza: remove acentos, espaços extras e caixa alta para comparar nomes com folga
+               (evita falhas tipo "BRANDÃO" vs "Brandão" vs "BRANDAO"). */
+            function norm(s) {
+                return (s || '').toString().trim().toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\s+/g, ' ');
+            }
+            var n = norm(nome);
+            return norm(d.docente) === n || norm(d.instrutor) === n;
         }
 
         /* Turma pertence ao docente logado? (aceita aulas com turma em caixa/espacos diferentes) */
@@ -1688,12 +1699,19 @@
         }
 
         function pdLoadApontamentos() {
-            if (pdAptBasePronta) {
-                apontamentoPopularSelecaoProjeto();
-                apontamentoOnSelecaoChange();
+            if (!pdAptBasePronta) {
+                pdAptCarregarBase();
                 return;
             }
-            pdAptCarregarBase();
+            /* Recarrega as aulas para refletir cadastros novos feitos no Painel Administrativo */
+            pdAptRecarregarAulas().then(function() {
+                apontamentoPopularSelecaoProjeto();
+                apontamentoOnSelecaoChange();
+            }).catch(function(e) {
+                console.error('Erro ao recarregar aulas do apontamento:', e);
+                apontamentoPopularSelecaoProjeto();
+                apontamentoOnSelecaoChange();
+            });
         }
 
         function pdAptCarregarBase() {
@@ -1708,25 +1726,7 @@
             var tarefas = [];
 
             /* Aulas do docente logado (docente ou instrutor == nome), ou todas se for admin */
-            tarefas.push(dbFirestore.collection('aulas').get().then(function(snap) {
-                pdAptAulaIds = [];
-                pdAptAulaNomes = [];
-                pdAptTurmaSet = {};
-                pdAptTurmasAula = [];
-                snap.forEach(function(doc) {
-                    var a = doc.data();
-                    if (!pdAptAdmin && !pdPertenceDocente(a, pdAptDocente.nome)) return;
-                    pdAptAulaIds.push(doc.id);
-                    if (a.nome && pdAptAulaNomes.indexOf(a.nome) === -1) pdAptAulaNomes.push(a.nome);
-                    if (a.conteudo && pdAptAulaNomes.indexOf(a.conteudo) === -1) pdAptAulaNomes.push(a.conteudo);
-                    if (a.turma) {
-                        pdAptTurmaSet[a.turma.trim().toLowerCase()] = true;
-                        pdAptTurmaSet[a.turma] = true;
-                        var jaTem = pdAptTurmasAula.some(function(x) { return x.turma === a.turma && x.projeto === (a.projeto || ''); });
-                        if (!jaTem) pdAptTurmasAula.push({ turma: a.turma, projeto: a.projeto || '' });
-                    }
-                });
-            }));
+            tarefas.push(pdAptRecarregarAulas());
 
             /* Turmas cadastradas */
             tarefas.push(dbFirestore.collection('turmas').get().then(function(snap) {
@@ -1757,9 +1757,35 @@
                 pdAptBasePronta = true;
                 apontamentoPopularSelecaoProjeto();
                 apontamentoInicializar();
+                /* Sincroniza em tempo real com o Painel Administrativo e demais portais */
+                apontamentoCarregarHistorico();
             }).catch(function(e) {
                 console.error('Erro ao carregar base de apontamento:', e);
                 pdAptCarregando = false;
+            });
+        }
+
+        /* Recarrega somente as aulas do apontamento (usa pdAptDocente/pdAptAdmin já definidos).
+           Necessário para que aulas cadastradas no Painel Administrativo apareçam para o docente. */
+        function pdAptRecarregarAulas() {
+            pdAptAulaIds = [];
+            pdAptAulaNomes = [];
+            pdAptTurmaSet = {};
+            pdAptTurmasAula = [];
+            return dbFirestore.collection('aulas').get().then(function(snap) {
+                snap.forEach(function(doc) {
+                    var a = doc.data();
+                    if (!pdAptAdmin && !pdPertenceDocente(a, pdAptDocente.nome)) return;
+                    pdAptAulaIds.push(doc.id);
+                    if (a.nome && pdAptAulaNomes.indexOf(a.nome) === -1) pdAptAulaNomes.push(a.nome);
+                    if (a.conteudo && pdAptAulaNomes.indexOf(a.conteudo) === -1) pdAptAulaNomes.push(a.conteudo);
+                    if (a.turma) {
+                        pdAptTurmaSet[a.turma.trim().toLowerCase()] = true;
+                        pdAptTurmaSet[a.turma] = true;
+                        var jaTem = pdAptTurmasAula.some(function(x) { return x.turma === a.turma && x.projeto === (a.projeto || ''); });
+                        if (!jaTem) pdAptTurmasAula.push({ turma: a.turma, projeto: a.projeto || '' });
+                    }
+                });
             });
         }
 
@@ -1816,6 +1842,12 @@
 
         async function apontamentoAbrirModal() {
             aptPresencas = {};
+            /* Recarrega as aulas antes de abrir para incluir cadastros novos do Painel Administrativo */
+            try {
+                if (pdAptDocente) await pdAptRecarregarAulas();
+            } catch (e) {
+                console.error('Erro ao recarregar aulas no modal:', e);
+            }
             const turmaSelecionada = document.getElementById('apt-selecao-turma').value;
             const projetoSelecionado = document.getElementById('apt-selecao-projeto').value;
             document.getElementById('apt-turma').innerHTML = '<option value="">Carregando...</option>';
@@ -1885,19 +1917,65 @@
             const selAula = document.getElementById('apt-aula');
             selAula.innerHTML = '<option value="">Carregando...</option>';
             if (!discName || discName === 'Selecione a disciplina') { selAula.innerHTML = '<option value="">Selecione...</option>'; return; }
-            dbFirestore.collection('aulas').where('disciplina', '==', discName).get().then(snap => {
+            /* Normalizacao usada no fallback: ignora caixa, acentos e espacos extras no nome da disciplina
+               (ex.: "RESGATE TERRESTRE -  BUSCA E SALVAMENTO" com espaco duplo). */
+            const normNome = function(s) {
+                return (s || '').toString().trim().toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\s+/g, ' ');
+            };
+            const montarOpcoes = function(lista) {
                 selAula.innerHTML = '<option value="">Selecione a aula</option>';
-                snap.forEach(doc => {
-                    const a = doc.data();
-                    if (!pdAptAdmin && pdAptAulaIds.indexOf(doc.id) === -1) return;
+                lista.sort(function(x, y) { return (y.a.data || '').localeCompare(x.a.data || ''); });
+                lista.forEach(function(item) {
+                    const a = item.a;
                     const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-                    selAula.innerHTML += '<option value="' + doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
+                    selAula.innerHTML += '<option value="' + item.doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
                 });
-                if (snap.empty) selAula.innerHTML = '<option value="">Nenhuma aula encontrada</option>';
-            }).catch(() => { selAula.innerHTML = '<option value="">Erro ao carregar</option>'; });
+                if (!lista.length) selAula.innerHTML = '<option value="">Nenhuma aula encontrada para o docente</option>';
+            };
+            const filtrarDoDocente = function(doc) {
+                const a = doc.data();
+                if (!pdAptAdmin && pdAptDocente && !pdPertenceDocente(a, pdAptDocente.nome)) return false;
+                return true;
+            };
+            dbFirestore.collection('aulas').where('disciplina', '==', discName).get().then(function(snap) {
+                const lista = [];
+                snap.forEach(function(doc) {
+                    if (filtrarDoDocente(doc)) lista.push({ doc: doc, a: doc.data() });
+                });
+                if (lista.length) { montarOpcoes(lista); return; }
+                /* Fallback: se a busca exata nao achou aulas do docente, procura por nome normalizado
+                   (resistente a nome de disciplina com espaco/acento/caixa diferente nas aulas). */
+                dbFirestore.collection('aulas').get().then(function(snap2) {
+                    const lista2 = [];
+                    snap2.forEach(function(doc) {
+                        const a = doc.data();
+                        if (normNome(a.disciplina) !== normNome(discName)) return;
+                        if (!filtrarDoDocente(doc)) return;
+                        lista2.push({ doc: doc, a: a });
+                    });
+                    montarOpcoes(lista2);
+                }).catch(function() {
+                    montarOpcoes(lista);
+                });
+            }).catch(function() { selAula.innerHTML = '<option value="">Erro ao carregar</option>'; });
         }
 
         function apontamentoAtualizarAulas() {
+            if (!pdAptDocente) {
+                var sessao = sessionStorage.getItem('pd_sessao');
+                if (!sessao) return Promise.resolve();
+                pdAptDocente = JSON.parse(sessao);
+                pdAptAdmin = !!pdAptDocente.isAdmin;
+            }
+            return pdAptRecarregarAulas().then(function() {
+                apontamentoPopularSelecaoProjeto();
+                apontamentoOnSelecaoChange();
+                apontamentoFiltrar();
+            }).catch(function(e) {
+                console.error('Erro ao atualizar aulas:', e);
+            });
         }
 
         function apontamentoOnAulaChange() {
@@ -2350,24 +2428,37 @@
             const disciplinaNome = selDisc.options[selDisc.selectedIndex] ? selDisc.options[selDisc.selectedIndex].text : '';
             const projeto = document.getElementById('apt-selecao-projeto').value || '';
             const criadoPor = pdAptDocente ? (pdAptDocente.nome || '') : '';
+            /* Busca dados completos da aula (data, horario e docente) para gravar no apontamento —
+               o historico fica identico entre o Painel Admin e o portal do docente. */
+            let dataAula = '';
+            let horaAula = '';
+            let docenteAula = '';
+            try {
+                const aulaDoc = await dbFirestore.collection('aulas').doc(aulaId).get();
+                if (aulaDoc.exists) {
+                    const ad = aulaDoc.data();
+                    dataAula = ad.data || '';
+                    horaAula = ad.horario || '';
+                    docenteAula = ad.docente || '';
+                }
+            } catch (e) { console.error('Erro ao carregar aula para apontamento:', e); }
             const dados = {
                 turma: turma,
                 aula: aulaNome,
                 aulaId: aulaId,
+                disciplina: disciplinaNome,
+                disciplinaId: disciplinaId,
+                projeto: projeto,
+                dataAula: dataAula,
+                horaAula: horaAula,
+                docente: docenteAula || criadoPor,
                 alunos: todos,
                 criadoEm: new Date().toISOString(),
-                criadoPor: criadoPor,
-                docente: criadoPor
+                criadoPor: criadoPor
             };
             try {
                 const aptRef = await dbFirestore.collection('apontamentos').add(dados);
                 const aptId = aptRef.id;
-
-                let dataAula = '';
-                try {
-                    const aulaDoc = await dbFirestore.collection('aulas').doc(aulaId).get();
-                    if (aulaDoc.exists) dataAula = aulaDoc.data().data || '';
-                } catch (e) {}
 
                 const batch = dbFirestore.batch();
                 todos.forEach(aluno => {
@@ -2443,26 +2534,47 @@
         }
 
         async function apontamentoCarregarHistorico() {
+            /* Carga inicial one-shot (preenche a tela imediatamente) */
             try {
                 const snap = await dbFirestore.collection('apontamentos').orderBy('criadoEm', 'desc').limit(200).get();
-                aptHistoricoCache = [];
-                if (pdAptAdmin) {
-                    snap.forEach(doc => {
-                        aptHistoricoCache.push({ docId: doc.id, ...doc.data() });
-                    });
-                } else {
-                    snap.forEach(doc => {
-                        const d = doc.data();
-                        const okAulaId = d.aulaId && pdAptAulaIds.indexOf(d.aulaId) !== -1;
-                        const okAulaNome = d.aula && pdAptAulaNomes.indexOf(d.aula) !== -1;
-                        if (okAulaId || okAulaNome) {
-                            aptHistoricoCache.push({ docId: doc.id, ...d });
-                        }
-                    });
-                }
+                apontamentoAtualizarCache(snap);
             } catch (e) {
                 console.error('Erro ao carregar historico:', e);
             }
+            /* Mantém atualizado em tempo real: apontamentos criados no Painel Administrativo
+               (ou em outro dispositivo/portal) aparecem sem precisar recarregar a tela. */
+            apontamentoIniciarHistoricoLive();
+        }
+
+        function apontamentoIniciarHistoricoLive() {
+            if (aptHistoricoUnsub) return;
+            aptHistoricoUnsub = dbFirestore.collection('apontamentos').orderBy('criadoEm', 'desc').limit(200).onSnapshot(function(snap) {
+                apontamentoAtualizarCache(snap);
+            }, function(e) {
+                console.error('Erro ao ouvir historico apontamentos (tempo real):', e);
+            });
+        }
+
+        function apontamentoAtualizarCache(snap) {
+            aptHistoricoCache = [];
+            const nomeNorm = function(s) {
+                return (s || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+            };
+            snap.forEach(function(doc) {
+                const d = doc.data();
+                if (!pdAptAdmin) {
+                    const okAulaId = d.aulaId && pdAptAulaIds.indexOf(d.aulaId) !== -1;
+                    /* Compara pelo nome da aula normalizado (ignora o sufixo " (dd/mm/aaaa)",
+                       acentos, caixa e espaços) para funcionar mesmo se a aula foi recriada/renomeada. */
+                    const aulaSemData = (d.aula || '').replace(/\s*\(\d{2}\/\d{2}\/\d{4}\)\s*$/, '');
+                    const okAulaNome = aulaSemData && pdAptAulaNomes.some(function(n) {
+                        return nomeNorm(n) === nomeNorm(aulaSemData);
+                    });
+                    if (!okAulaId && !okAulaNome) return;
+                }
+                aptHistoricoCache.push({ docId: doc.id, ...d });
+            });
+            apontamentoAplicarFiltros();
         }
 
         function apontamentoPopularFiltroTurma() {
@@ -2475,8 +2587,7 @@
             apontamentoFiltrar();
         }
 
-        async function apontamentoFiltrar() {
-            await apontamentoCarregarHistorico();
+        function apontamentoAplicarFiltros() {
             const turmaFiltro = document.getElementById('apt-selecao-turma').value;
             const dataInicio = document.getElementById('apt-filtro-data-inicio').value;
             const dataFim = document.getElementById('apt-filtro-data-fim').value;
@@ -2498,6 +2609,11 @@
                 });
             }
             apontamentoRenderHistorico(registros);
+        }
+
+        async function apontamentoFiltrar() {
+            await apontamentoCarregarHistorico();
+            apontamentoAplicarFiltros();
         }
 
         function apontamentoRenderHistorico(registros) {
