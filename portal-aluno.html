@@ -578,6 +578,7 @@
                 <a href="#" onclick="paShowSection('noticias',this); paCloseMenu(); return false;"><i class="fa-solid fa-newspaper"></i> Blog</a>
                 <a href="#" onclick="paShowSection('galeria',this); paCloseMenu(); return false;"><i class="fa-solid fa-images"></i> Galeria</a>
                 <a href="#" onclick="paShowSection('aulas',this); paCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
+                <a href="#" onclick="paShowSection('docente',this); paCloseMenu(); return false;"><i class="fa-solid fa-chalkboard-user"></i> Informações do Docente</a>
                 <a href="#" onclick="paShowSection('apontamento',this); paCloseMenu(); return false;"><i class="fa-solid fa-clipboard-check"></i> Apontamento</a>
                 <a href="#" onclick="paShowSection('carteira',this); paCloseMenu(); return false;"><i class="fa-solid fa-id-card"></i> Carteira</a>
                 <a href="#" onclick="paShowSection('decl',this); paCloseMenu(); return false;"><i class="fa-solid fa-file-lines"></i> Declarações</a>
@@ -599,6 +600,7 @@
                 <div class="pf-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
                 <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
                 <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
+                <div class="pf-nav-item" onclick="paShowSection('docente',this)"><i class="fa-solid fa-chalkboard-user"></i> Informações do Docente</div>
                 <div class="pf-nav-divider"></div>
                 <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
                 <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
@@ -1049,6 +1051,46 @@
                 <div style="display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0">
                     <button onclick="pfInativoFechar()" style="flex:1;padding:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;font-size:13px;cursor:pointer">Fechar</button>
                     <button onclick="pfInativoSalvar()" id="pf-inativo-salvar-btn" style="flex:1;padding:10px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-check"></i> Confirmar Justificativas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL JUSTIFICAR FALTA -->
+    <div class="pf-baixa-overlay" id="pa-justificar-modal" onclick="if(event.target===this)paJustificarFechar()">
+        <div class="pf-baixa-card">
+            <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:20px 24px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <div style="font-size:18px;font-weight:700;color:#fff"><i class="fa-solid fa-pen-to-square"></i> Justificar Falta</div>
+                    <div id="pa-justificar-subtitulo" style="font-size:12px;color:#fecaca;margin-top:2px">Escreva sua justificativa para esta falta</div>
+                </div>
+                <button onclick="paJustificarFechar()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="padding:20px 24px">
+                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:16px">
+                    <p style="font-size:12px;color:#92400e;line-height:1.6">
+                        <i class="fa-solid fa-circle-info" style="margin-right:4px"></i>
+                        Sua justificativa sera enviada a diretoria/docente para analise. 
+                        Apos aprovacao, esta falta sera considerada <b>Justificada</b> e, se voce estava <b>Inativo por Falta</b>, sera reativado automaticamente.
+                    </p>
+                </div>
+                <label style="font-size:12px;font-weight:700;color:#0f172a;display:block;margin-bottom:6px">Justificativa <span style="color:#dc2626">*</span></label>
+                <textarea id="pa-justificar-texto" placeholder="Escreva aqui o motivo da sua falta (minimo 50 caracteres)" style="width:100%;min-height:110px;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box" oninput="document.getElementById('pa-justificar-contador').textContent=this.value.length+'/50 min'"></textarea>
+                <div id="pa-justificar-contador" style="font-size:11px;color:#94a3b8;margin-top:4px">0/50 min</div>
+
+                <label style="font-size:12px;font-weight:700;color:#0f172a;display:block;margin-top:14px;margin-bottom:6px">Foto da camera (opcional, max 500KB)</label>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;color:#334155;cursor:pointer"><i class="fa-solid fa-camera"></i> Tirar foto
+                        <input type="file" id="pa-justificar-foto" accept="image/*" capture="environment" style="display:none" onchange="paJustificarFotoSel(this)">
+                    </label>
+                    <span id="pa-justificar-foto-info" style="font-size:11px;color:#94a3b8">Nenhuma foto</span>
+                </div>
+                <img id="pa-justificar-foto-preview" style="display:none;margin-top:10px;max-width:220px;max-height:180px;border-radius:10px;border:1px solid #e2e8f0" />
+
+                <div id="pa-justificar-err" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:12px;margin-top:14px;display:none"></div>
+                <div style="display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0">
+                    <button onclick="paJustificarFechar()" style="flex:1;padding:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;font-size:13px;cursor:pointer">Cancelar</button>
+                    <button onclick="paJustificarSalvar()" id="pa-justificar-salvar-btn" style="flex:1;padding:10px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-check"></i> Salvar</button>
                 </div>
             </div>
         </div>
@@ -3237,6 +3279,9 @@
                 if (a.obs) html += '<div style="font-size:11px;color:#64748b;margin-top:4px;font-style:italic"><i class="fa-solid fa-comment" style="margin-right:4px"></i>' + a.obs + '</div>';
                 html += '</div>';
                 html += '<span style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:' + statusColor + '15;color:' + statusColor + ';border:1px solid ' + statusColor + '30;white-space:nowrap"><i class="fa-solid ' + statusIcon + '"></i> ' + (a.status || '---') + '</span>';
+                if (a.status === 'Falta') {
+                    html += '<button class="btn-warning btn-sm" title="Justificar esta falta para a diretoria/docente. Apos aprovacao sua falta sera considerada justificada." onclick="paJustificarFalta(\'' + escJS(a._id) + '\',\'' + escJS(a.disciplina || '') + '\',\'' + escJS(a.dataAula || '') + '\')"><i class="fa-solid fa-pen-to-square"></i> JUSTIFICAR FALTA</button>';
+                }
                 html += '</div>';
                 html += '</div>';
             });
@@ -3245,6 +3290,121 @@
         }).catch(function(e) {
             listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
         });
+    }
+
+    /* ===== JUSTIFICAR FALTA (APONTAMENTO) ===== */
+    var paJustificarAtual = null;
+
+    function paJustificarFalta(id, disciplina, dataAula) {
+        if (!paUser) return;
+        paJustificarAtual = { id: id, disciplina: disciplina, dataAula: dataAula };
+        document.getElementById('pa-justificar-subtitulo').textContent = 'Apontamento: ' + (disciplina || '---') + (dataAula ? '  •  ' + dataAula : '');
+        document.getElementById('pa-justificar-texto').value = '';
+        document.getElementById('pa-justificar-contador').textContent = '0/50 min';
+        var foto = document.getElementById('pa-justificar-foto');
+        if (foto) foto.value = '';
+        document.getElementById('pa-justificar-foto-info').textContent = 'Nenhuma foto';
+        var prev = document.getElementById('pa-justificar-foto-preview');
+        prev.style.display = 'none';
+        prev.src = '';
+        var err = document.getElementById('pa-justificar-err');
+        err.style.display = 'none';
+        document.getElementById('pa-justificar-modal').style.display = 'flex';
+        setTimeout(function() { document.getElementById('pa-justificar-texto').focus(); }, 120);
+    }
+
+    function paJustificarFechar() {
+        document.getElementById('pa-justificar-modal').style.display = 'none';
+        paJustificarAtual = null;
+    }
+
+    function paJustificarFotoSel(input) {
+        var err = document.getElementById('pa-justificar-err');
+        var info = document.getElementById('pa-justificar-foto-info');
+        var prev = document.getElementById('pa-justificar-foto-preview');
+        err.style.display = 'none';
+        if (!input.files || !input.files[0]) {
+            info.textContent = 'Nenhuma foto';
+            prev.style.display = 'none';
+            return;
+        }
+        var file = input.files[0];
+        if (file.size > 500 * 1024) {
+            input.value = '';
+            info.textContent = 'Nenhuma foto';
+            prev.style.display = 'none';
+            err.textContent = 'A foto deve ter no maximo 500KB (' + Math.round(file.size / 1024) + ' KB enviados).';
+            err.style.display = 'block';
+            return;
+        }
+        info.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            prev.src = e.target.result;
+            prev.style.display = 'block';
+            if (paJustificarAtual) paJustificarAtual.foto = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function paJustificarSalvar() {
+        var err = document.getElementById('pa-justificar-err');
+        var btn = document.getElementById('pa-justificar-salvar-btn');
+        err.style.display = 'none';
+        if (!paJustificarAtual) return;
+
+        var texto = document.getElementById('pa-justificar-texto').value.trim();
+        if (texto.length < 50) {
+            err.textContent = 'A justificativa deve ter no minimo 50 caracteres (atual: ' + texto.length + ').';
+            err.style.display = 'block';
+            return;
+        }
+        if (!paUser || !paUser._docId) {
+            err.textContent = 'Sessao expirada. Faca login novamente.';
+            err.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+
+        try {
+            var ref = dbFirestore.collection('presencasAlunos').doc(paJustificarAtual.id);
+            var doc = await ref.get();
+            if (!doc.exists) throw new Error('Apontamento nao encontrado.');
+            var dados = doc.data();
+
+            /* Vincula justificativa a observacao do apontamento + marca Justificada */
+            var update = {
+                obs: texto,
+                status: 'Justificada',
+                observacaoJustificativa: texto,
+                justificadaEm: new Date().toISOString()
+            };
+            if (paJustificarAtual.foto) update.fotoJustificativa = paJustificarAtual.foto;
+            await ref.update(update);
+
+            /* Reativa aluno caso esteja inativo por falta */
+            if (paUser.status === 'Inativo por Falta') {
+                await dbFirestore.collection('candidatos').doc(paUser._docId).update({
+                    status: 'Ativo',
+                    inativoPorFaltaEm: firebase.firestore.FieldValue.delete(),
+                    inativoPorFaltaMotivo: firebase.firestore.FieldValue.delete()
+                });
+                paUser.status = 'Ativo';
+            }
+
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvo!';
+            btn.style.background = '#16a34a';
+            setTimeout(function() { paJustificarFechar(); paLoadApontamento(); }, 900);
+        } catch(e) {
+            console.error('Erro ao justificar falta:', e);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvar';
+            btn.style.background = '';
+            err.textContent = 'Erro ao salvar: ' + e.message;
+            err.style.display = 'block';
+        }
     }
 
     /* ===== SECAO DE AVALIACAO ===== */
