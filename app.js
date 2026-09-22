@@ -5338,10 +5338,16 @@ async function apontamentoSalvar() {
                 turma: turma,
                 projeto: projeto,
                 disciplina: disciplinaNome,
+                disciplinaId: disciplinaId,
                 aula: aulaNome,
+                aulaId: aulaId,
                 dataAula: dataAula,
+                horaAula: horaAula,
+                docente: docenteAula || criadoPor,
                 status: aluno.status || '',
                 obs: aluno.obs || '',
+                observacaoJustificativa: (aluno.status === 'Justificada' && aluno.obs) ? aluno.obs : '',
+                justificadaEm: (aluno.status === 'Justificada' && aluno.obs) ? new Date().toISOString() : '',
                 inicioPresente: !!aluno.inicioPresente,
                 inicioJustificado: !!aluno.inicioJustificado,
                 inicioHora: aluno.inicioHora || '',
@@ -5634,12 +5640,27 @@ function apontamentoEditarAluno(recId, alunoIdx) {
     }
 
     if (a.cpf) {
+        const obsJust = statusFinal === 'Justificada' ? (a.obs || '') : '';
         promisses.push(
             dbFirestore.collection('presencasAlunos').where('cpf', '==', a.cpf).get().then(function(snap) {
                 snap.forEach(function(doc) {
                     var pd = doc.data();
-                    if (pd.aula === (reg.aula || '') && pd.turma === (reg.turma || '')) {
-                        doc.ref.update({ status: statusFinal, obs: a.obs });
+                    var match = false;
+                    if (recId && pd.apontamentoId && pd.apontamentoId === recId) {
+                        match = true; /* vinculo exato pelo apontamentoId */
+                    } else if (pd.aula === (reg.aula || '') && pd.turma === (reg.turma || '')) {
+                        match = true; /* fallback por aula + turma para registros antigos sem apontamentoId */
+                    }
+                    if (match) {
+                        var up = { status: statusFinal, obs: a.obs };
+                        if (statusFinal === 'Justificada') {
+                            up.observacaoJustificativa = obsJust;
+                            up.justificadaEm = new Date().toISOString();
+                        } else {
+                            up.observacaoJustificativa = '';
+                            up.justificadaEm = '';
+                        }
+                        doc.ref.update(up);
                     }
                 });
             })

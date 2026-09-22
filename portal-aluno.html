@@ -3270,11 +3270,12 @@
                 html += '<div style="flex:1;min-width:200px">';
                 html += '<div style="font-size:15px;font-weight:700;color:#16a34a;margin-bottom:6px"><i class="fa-solid fa-clipboard-check" style="color:#16a34a;margin-right:6px"></i>' + (a.disciplina || '---') + ' <span style="font-size:10px;font-weight:700;color:#16a34a;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25);padding:2px 8px;border-radius:20px;vertical-align:middle">Apontada</span></div>';
                 html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-chalkboard" style="margin-right:4px"></i>' + (a.aula || '---') + '</div>';
-                html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>' + dataFmt + '</div>';
+                html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>' + dataFmt + (a.horaAula ? ' ' + a.horaAula : '') + '</div>';
                 html += '<div style="font-size:12px;color:#64748b;margin-bottom:3px"><i class="fa-solid fa-users" style="margin-right:4px"></i>' + (a.turma || '---') + ' &bull; ' + (a.projeto || '---') + '</div>';
                 html += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;padding-top:6px;border-top:1px solid #e2e8f0">';
                 html += '<i class="fa-solid fa-clock" style="margin-right:4px"></i>Apontado em: ' + horaFmt;
                 if (a.criadoPor) html += '<br><i class="fa-solid fa-user-check" style="margin-right:4px"></i>Registrado por: ' + a.criadoPor;
+                if (a.docente && a.docente !== a.criadoPor) html += '<br><i class="fa-solid fa-chalkboard-user" style="margin-right:4px"></i>Docente: ' + a.docente;
                 html += '</div>';
                 if (a.obs) html += '<div style="font-size:11px;color:#64748b;margin-top:4px;font-style:italic"><i class="fa-solid fa-comment" style="margin-right:4px"></i>' + a.obs + '</div>';
                 html += '</div>';
