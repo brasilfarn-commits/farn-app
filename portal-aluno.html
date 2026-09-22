@@ -2380,28 +2380,31 @@
             var docenteHtml = a.docente ? '<span class="pf-apostila-badge" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + a.docente + '</span>' : '';
 
             var pres = null;
-            var dateStr = a.data || '';
-            for (var k in paPresencasCache) {
-                var pp = paPresencasCache[k];
-                if (pp.dataAula === a.data || pp.dataAula === dateStr) {
-                    pres = pp;
-                    break;
+            /* 1) Match exato por aulaId (presencasAlunos grava o id da aula no apontamento) */
+            var aId = a._id != null ? String(a._id) : '';
+            if (aId) {
+                for (var k in paPresencasCache) {
+                    var ppk = paPresencasCache[k];
+                    if (ppk.aulaId && String(ppk.aulaId) === aId) { pres = ppk; break; }
                 }
             }
+            /* 2) Fallback (presencas antigas sem aulaId): exige MESMA data E disciplina relacionada,
+                  evitando que uma aula nova "herde" presenca de outro apontamento no mesmo dia */
             if (!pres) {
                 for (var k2 in paPresencasCache) {
                     var pp2 = paPresencasCache[k2];
-                    if (pp2.dataAula && a.data && pp2.dataAula.substring(0, 10) === a.data.substring(0, 10)) {
-                        var discP = (pp2.disciplina || '').toLowerCase();
-                        var discA = (a.disciplina || '').toLowerCase();
-                        var contA = (a.conteudo || '').toLowerCase();
-                        var aulaP = (pp2.aula || '').toLowerCase();
-                        if (discP === discA || discA.indexOf(discP) !== -1 || discP.indexOf(discA) !== -1 ||
-                            aulaP.indexOf(discA) !== -1 || discA.indexOf(aulaP) !== -1 ||
-                            aulaP.indexOf(contA) !== -1 || contA.indexOf(aulaP) !== -1) {
-                            pres = pp2;
-                            break;
-                        }
+                    if (!pp2.dataAula || !a.data) continue;
+                    if (pp2.dataAula.substring(0, 10) !== a.data.substring(0, 10)) continue;
+                    var discP = (pp2.disciplina || '').toLowerCase();
+                    var discA = (a.disciplina || '').toLowerCase();
+                    var contA = (a.conteudo || '').toLowerCase();
+                    var aulaP = (pp2.aula || '').toLowerCase();
+                    var casouDisciplina = discP && discA && (discP === discA || discA.indexOf(discP) !== -1 || discP.indexOf(discA) !== -1);
+                    var casouAulaDisc = aulaP && discA && (aulaP.indexOf(discA) !== -1 || discA.indexOf(aulaP) !== -1);
+                    var casouAulaCont = aulaP && contA && (aulaP.indexOf(contA) !== -1 || contA.indexOf(aulaP) !== -1);
+                    if (casouDisciplina || casouAulaDisc || casouAulaCont) {
+                        pres = pp2;
+                        break;
                     }
                 }
             }
