@@ -3389,6 +3389,30 @@
             if (paJustificarAtual.foto) update.fotoJustificativa = paJustificarAtual.foto;
             await ref.update(update);
 
+            /* Sincroniza status + observacoes de justificativa no apontamento do administrativo */
+            if (dados && dados.apontamentoId) {
+                try {
+                    var aptRef = await dbFirestore.collection('apontamentos').doc(dados.apontamentoId).get();
+                    if (aptRef.exists) {
+                        var aptData = aptRef.data();
+                        var aptAlunos = aptData.alunos || [];
+                        var syncAlterou = false;
+                        for (var sa = 0; sa < aptAlunos.length; sa++) {
+                            if (aptAlunos[sa].cpf === paUser.cpf && aptAlunos[sa].status === 'Falta') {
+                                aptAlunos[sa].status = 'Justificada';
+                                aptAlunos[sa].obs = texto;
+                                aptAlunos[sa].observacaoJustificativa = texto;
+                                aptAlunos[sa].justificadaEm = update.justificadaEm;
+                                syncAlterou = true;
+                            }
+                        }
+                        if (syncAlterou) {
+                            await dbFirestore.collection('apontamentos').doc(dados.apontamentoId).update({ alunos: aptAlunos });
+                        }
+                    }
+                } catch (e) { console.error('Erro ao sincronizar justificativa com apontamento do admin:', e); }
+            }
+
             /* Reativa aluno caso esteja inativo por falta */
             if (paUser.status === 'Inativo por Falta') {
                 await dbFirestore.collection('candidatos').doc(paUser._docId).update({
