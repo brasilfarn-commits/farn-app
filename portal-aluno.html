@@ -3280,20 +3280,25 @@
                 html += '</div>';
                 html += '<span style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:' + statusColor + '15;color:' + statusColor + ';border:1px solid ' + statusColor + '30;white-space:nowrap"><i class="fa-solid ' + statusIcon + '"></i> ' + (a.status || '---') + '</span>';
                 if (a.status === 'Falta') {
-                    html += '<button class="btn-warning btn-sm" title="Justificar esta falta para a diretoria/docente. Apos aprovacao sua falta sera considerada justificada." onclick="paJustificarFalta(\'' + escJS(a._id) + '\',\'' + escJS(a.disciplina || '') + '\',\'' + escJS(a.dataAula || '') + '\')"><i class="fa-solid fa-pen-to-square"></i> JUSTIFICAR FALTA</button>';
+                    html += '<button class="btn-warning btn-sm" title="Justificar esta falta para a diretoria/docente. Apos aprovacao sua falta sera considerada justificada." onclick="paJustificarFalta(\'' + paEscJS(a._id) + '\',\'' + paEscJS(a.disciplina || '') + '\',\'' + paEscJS(a.dataAula || '') + '\')"><i class="fa-solid fa-pen-to-square"></i> JUSTIFICAR FALTA</button>';
                 }
                 html += '</div>';
                 html += '</div>';
             });
             listEl.innerHTML = html;
             paLoadInicioAulas();
-        }).catch(function(e) {
-            listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + e.message + '</p></div>';
+        }, function(e) {
+            listEl.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-exclamation-triangle" style="color:#dc2626"></i><p>Erro ao carregar: ' + (e && e.message ? e.message : 'erro desconhecido') + '</p></div>';
         });
     }
 
     /* ===== JUSTIFICAR FALTA (APONTAMENTO) ===== */
     var paJustificarAtual = null;
+
+    /* Escapa string para uso seguro dentro do atributo onclick (aspas/backslash/quebras) */
+    function paEscJS(s) {
+        return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\r?\n/g, ' ');
+    }
 
     function paJustificarFalta(id, disciplina, dataAula) {
         if (!paUser) return;
