@@ -2742,11 +2742,19 @@ function foto3x4RenderList() {
 
     tbody.innerHTML = filtrados.map((c, fi) => {
         const mat = c.matricula || generateMatricula(c.cpf);
+        const cpfSeguro = String(c.cpf || '').replace(/'/g, '');
         return '<tr>' +
-            '<td style="vertical-align:middle"><div id="foto3x4-cell-' + fi + '" style="width:54px;height:72px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#cbd5e1"><i class="fa-solid fa-user" style="font-size:20px"></i></div></td>' +
+            '<td style="vertical-align:middle"><div id="foto3x4-cell-' + fi + '" onclick="foto3x4VerFoto(' + fi + ')" title="Clique para ampliar" style="width:54px;height:72px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#cbd5e1;cursor:pointer;position:relative"><i class="fa-solid fa-user" style="font-size:20px"></i><span style="position:absolute;bottom:0;left:0;right:0;background:rgba(37,99,235,.85);color:#fff;font-size:8px;text-align:center;padding:2px 0;font-weight:700">AMPLIAR</span></div></td>' +
             '<td style="font-weight:600">' + (c.nome || '---') + '</td>' +
             '<td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:\'Courier New\',monospace;font-size:13px">' + (mat || '-') + '</td>' +
             '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
+            '<td style="vertical-align:middle">' +
+                '<div style="display:flex;gap:8px;align-items:center;justify-content:center">' +
+                    '<button class="btn-icon" title="Editar foto (atualizar do dispositivo)" onclick="foto3x4EditarFoto(' + fi + ')"><i class="fa-solid fa-camera"></i></button>' +
+                    '<button class="btn-icon" title="Ver foto ampliada" onclick="foto3x4VerFoto(' + fi + ')"><i class="fa-solid fa-magnifying-glass-plus"></i></button>' +
+                    '<input type="file" id="foto3x4-file-' + fi + '" accept="image/*" style="display:none" onchange="foto3x4OnFile(' + fi + ', this.files)">' +
+                '</div>' +
+            '</td>' +
             '</tr>';
     }).join('');
 
@@ -2759,6 +2767,88 @@ function foto3x4RenderList() {
             }
         }).catch(function() {});
     });
+}
+
+function foto3x4EditarFoto(fi) {
+    const input = document.getElementById('foto3x4-file-' + fi);
+    if (input) input.click();
+}
+
+function foto3x4OnFile(fi, files) {
+    if (!files || !files.length) return;
+    const c = foto3x4CandidatoPorIndice(fi);
+    if (!c) return;
+    const file = files[0];
+    if (file.size > 5 * 1024 * 1024) { alert('A imagem e grande demais (max 5 MB).'); return; }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const img = new Image();
+        img.onload = function() {
+            var maxLado = 600;
+            var w = img.width, h = img.height;
+            var escala = Math.min(1, maxLado / Math.max(w, h));
+            var cw = Math.max(1, Math.round(w * escala)), ch = Math.max(1, Math.round(h * escala));
+            var canvas = document.createElement('canvas');
+            canvas.width = cw; canvas.height = ch;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.drawImage(img, 0, 0, cw, ch);
+            var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
+            var finalDataUrl = null;
+            for (var i = 0; i < qualidades.length; i++) {
+                var url = canvas.toDataURL('image/jpeg', qualidades[i]);
+                var bytes = Math.round(url.length * 3 / 4);
+                if (bytes <= 900 * 1024) { finalDataUrl = url; break; }
+            }
+            if (!finalDataUrl) finalDataUrl = canvas.toDataURL('image/jpeg', 0.1);
+            paFotoAdminSalvar(c, finalDataUrl, fi);
+        };
+        img.onerror = function() { alert('Nao foi possivel ler a imagem.'); };
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function foto3x4CandidatoPorIndice(fi) {
+    const projeto = document.getElementById('foto3x4-selecao-projeto').value;
+    const turma = document.getElementById('foto3x4-selecao-turma').value;
+    const filtrados = candidatos.filter(x => (x.tipoPessoa || 'A') !== 'F'
+        && x.status === 'Ativo'
+        && (!projeto || x.projeto === projeto)
+        && (!turma || x.turma === turma));
+    return filtrados[fi] || null;
+}
+
+function paFotoAdminSalvar(c, dataUrl, fi) {
+    setFoto(c.cpf, dataUrl);
+    const cell = document.getElementById('foto3x4-cell-' + fi);
+    if (cell) {
+        cell.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">';
+    }
+    alert('Foto atualizada com sucesso para ' + (c.nome || 'o aluno') + '.');
+}
+
+function foto3x4VerFoto(fi) {
+    const c = foto3x4CandidatoPorIndice(fi);
+    if (!c) return;
+    getFoto(c.cpf).then(function(photoSrc) {
+        const modal = document.getElementById('foto3x4-modal');
+        const img = document.getElementById('foto3x4-modal-img');
+        const nomeEl = document.getElementById('foto3x4-modal-nome');
+        const infoEl = document.getElementById('foto3x4-modal-info');
+        if (nomeEl) nomeEl.textContent = c.nome || 'Aluno';
+        if (img) img.src = photoSrc || '';
+        if (infoEl) {
+            infoEl.innerHTML = '<strong>Matricula:</strong> ' + (c.matricula || generateMatricula(c.cpf) || '-') + ' &nbsp;|&nbsp; <strong>CPF:</strong> ' + formatCPFDisplay(c.cpf) + ' &nbsp;|&nbsp; <strong>Turma:</strong> ' + (c.turma || '-');
+        }
+        if (modal) modal.style.display = 'block';
+    });
+}
+
+function foto3x4FecharModal() {
+    const modal = document.getElementById('foto3x4-modal');
+    if (modal) modal.style.display = 'none';
 }
 
 function exportExcelAlunos() {
