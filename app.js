@@ -928,6 +928,7 @@ function applyUserPermissions() {
         'admin-home': true,
         'admin-pre-inscricao': p.includes('pre-inscricao') || isGeral,
         'admin-alunos': p.includes('alunos') || isGeral,
+        'admin-foto3x4': p.includes('alunos') || isGeral,
         'admin-docentes': p.includes('docentes') || isGeral,
         'admin-formados': p.includes('formados') || isGeral,
         'admin-relatorios': p.includes('relatorios') || isGeral,
@@ -1603,7 +1604,7 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -2678,6 +2679,85 @@ function filterAlunos() {
     document.querySelectorAll('#alunos-table-body tr').forEach(row => {
         const text = row.textContent.toLowerCase();
         row.style.display = (!search || text.includes(search)) ? '' : 'none';
+    });
+}
+
+/* ===== FOTO 3X4 (ADMIN) ===== */
+
+function foto3x4Inicializar() {
+    const selProj = document.getElementById('foto3x4-selecao-projeto');
+    if (!selProj) return;
+    selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
+    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+        selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
+    });
+    const selTurma = document.getElementById('foto3x4-selecao-turma');
+    if (selTurma) selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    const conteudo = document.getElementById('foto3x4-conteudo');
+    if (conteudo) conteudo.style.display = 'none';
+}
+
+function foto3x4OnProjetoChange() {
+    const projetoNome = document.getElementById('foto3x4-selecao-projeto').value;
+    const selTurma = document.getElementById('foto3x4-selecao-turma');
+    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
+            selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
+        });
+    }
+    foto3x4OnTurmaChange();
+}
+
+function foto3x4OnTurmaChange() {
+    const projeto = document.getElementById('foto3x4-selecao-projeto').value;
+    const turma = document.getElementById('foto3x4-selecao-turma').value;
+    const conteudo = document.getElementById('foto3x4-conteudo');
+    if (projeto && turma) {
+        if (conteudo) conteudo.style.display = '';
+        foto3x4RenderList();
+    } else {
+        if (conteudo) conteudo.style.display = 'none';
+    }
+}
+
+function foto3x4RenderList() {
+    const tbody = document.getElementById('foto3x4-table-body');
+    if (!tbody) return;
+    const projeto = document.getElementById('foto3x4-selecao-projeto').value;
+    const turma = document.getElementById('foto3x4-selecao-turma').value;
+    const countEl = document.getElementById('foto3x4-count');
+
+    const filtrados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F'
+        && c.status === 'Ativo'
+        && (!projeto || c.projeto === projeto)
+        && (!turma || c.turma === turma));
+
+    if (countEl) countEl.textContent = filtrados.length;
+
+    if (!filtrados.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;padding:24px">Nenhum aluno ativo com foto encontrado para a selecao.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filtrados.map((c, fi) => {
+        const mat = c.matricula || generateMatricula(c.cpf);
+        return '<tr>' +
+            '<td style="vertical-align:middle"><div id="foto3x4-cell-' + fi + '" style="width:54px;height:72px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#cbd5e1"><i class="fa-solid fa-user" style="font-size:20px"></i></div></td>' +
+            '<td style="font-weight:600">' + (c.nome || '---') + '</td>' +
+            '<td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:\'Courier New\',monospace;font-size:13px">' + (mat || '-') + '</td>' +
+            '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
+            '</tr>';
+    }).join('');
+
+    filtrados.forEach((c, fi) => {
+        getFoto(c.cpf).then(function(photoSrc) {
+            const cell = document.getElementById('foto3x4-cell-' + fi);
+            if (!cell) return;
+            if (photoSrc) {
+                cell.innerHTML = '<img src="' + photoSrc + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">';
+            }
+        }).catch(function() {});
     });
 }
 

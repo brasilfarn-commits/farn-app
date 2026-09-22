@@ -713,6 +713,10 @@
                         <i class="fa-solid fa-user-graduate"></i>
                         <span>Alunos</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-foto3x4', this); foto3x4Inicializar()">
+                        <i class="fa-solid fa-id-card"></i>
+                        <span>Foto 3x4</span>
+                    </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-docentes', this); docentesInicializar()">
                         <i class="fa-solid fa-chalkboard-user"></i>
                         <span>Docentes</span>
@@ -968,6 +972,56 @@
                                         </thead>
                                         <tbody id="alunos-table-body"></tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="admin-foto3x4" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-id-card" style="color:#2563eb;margin-right:8px"></i> Foto 3x4 - Fotos Enviadas pelos Alunos</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Selecao Projeto + Turma -->
+                            <div style="padding:20px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #2563eb;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                    <i class="fa-solid fa-filter" style="color:#2563eb;font-size:16px"></i>
+                                    <span style="color:#2563eb;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para listar as fotos</span>
+                                </div>
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Projeto *</label>
+                                        <select id="foto3x4-selecao-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="foto3x4OnProjetoChange()">
+                                            <option value="">Selecione o projeto...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Turma *</label>
+                                        <select id="foto3x4-selecao-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="foto3x4OnTurmaChange()">
+                                            <option value="">Selecione a turma...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                            <div id="foto3x4-conteudo" style="display:none">
+                                <div class="alunos-toolbar">
+                                    <div style="font-size:12px;color:#64748b;font-weight:600"><i class="fa-solid fa-users"></i> <span id="foto3x4-count">0</span> aluno(s) ativo(s)</div>
+                                </div>
+                                <div id="foto3x4-tab-content">
+                                    <div class="card full-width" style="margin-top:14px">
+                                        <div class="card-body">
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr><th>Foto 3x4</th><th>Nome do Aluno</th><th>Matricula</th><th>CPF</th></tr>
+                                                </thead>
+                                                <tbody id="foto3x4-table-body">
+                                                    <tr><td colspan="4" style="text-align:center;color:#888;padding:24px">Selecione o projeto e a turma para listar as fotos dos alunos ativos.</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3880,7 +3934,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=29"></script>
+    <script src="app.js?v=30"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

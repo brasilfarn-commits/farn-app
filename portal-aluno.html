@@ -3024,16 +3024,41 @@
         try { localStorage.setItem('foto3x4_' + paUser.cpf, dataUrl); } catch(e) {}
     }
 
-    function paFotoCarregar() {
-        var src = paFotoLocal();
-        var img = document.getElementById('pf-carteira-foto');
-        var icon = document.getElementById('pf-carteira-foto-icon');
+    function paFotoEnviarFirestore(dataUrl) {
+        if (!paUser || !paUser._docId) return;
+        try {
+            dbFirestore.collection('candidatos').doc(paUser._docId)
+                .set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true })
+                .catch(function(e) { console.error('Erro ao salvar foto no Firestore:', e); });
+        } catch(e) { console.error('Erro ao salvar foto no Firestore:', e); }
+    }
+
+    function paFotoExibir(src, img, icon, pv, pvIcon) {
         if (src && img) { img.src = src; img.style.display = 'block'; }
         if (icon) icon.style.display = src ? 'none' : 'block';
-        var pv = document.getElementById('pf-foto3x4-preview');
-        var pvIcon = document.getElementById('pf-foto3x4-preview-icon');
         if (src && pv) { pv.src = src; pv.style.display = 'block'; }
         if (pvIcon) pvIcon.style.display = src ? 'none' : 'flex';
+    }
+
+    function paFotoCarregar() {
+        var img = document.getElementById('pf-carteira-foto');
+        var icon = document.getElementById('pf-carteira-foto-icon');
+        var pv = document.getElementById('pf-foto3x4-preview');
+        var pvIcon = document.getElementById('pf-foto3x4-preview-icon');
+        var src = paFotoLocal();
+        if (!src && paUser && paUser._docId) {
+            /* Busca no Firestore a foto salva anteriormente (carteira/outro dispositivo) */
+            dbFirestore.collection('candidatos').doc(paUser._docId).get()
+                .then(function(dFind) {
+                    if (dFind.exists && dFind.data().photoDataUrl) {
+                        try { localStorage.setItem('farn_photo_' + paUser.cpf, dFind.data().photoDataUrl); } catch(e) {}
+                        paFotoExibir(dFind.data().photoDataUrl, img, icon, pv, pvIcon);
+                    }
+                })
+                .catch(function() {});
+            return;
+        }
+        paFotoExibir(src, img, icon, pv, pvIcon);
     }
 
     function paFotoProcessar(blob, nomeArquivo) {
@@ -3063,6 +3088,7 @@
                 if (!finalDataUrl) finalDataUrl = canvas.toDataURL('image/jpeg', 0.1);
                 paFotoSalvarLocal(finalDataUrl);
                 paFotoCarregar();
+                paFotoEnviarFirestore(finalDataUrl);
                 paFotoEnviarLocal(finalDataUrl, nomeArquivo || 'foto3x4.jpg');
             };
             img.onerror = function() {
