@@ -4857,14 +4857,35 @@ function apontamentoOnDisciplinaChange() {
             .replace(/\s+/g, ' ');
     };
     const montarOpcoes = function(lista) {
-        selAula.innerHTML = '<option value="">Selecione a aula</option>';
-        lista.sort(function(x, y) { return (y.a.data || '').localeCompare(x.a.data || ''); });
-        lista.forEach(function(item) {
-            const a = item.a;
-            const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-            selAula.innerHTML += '<option value="' + item.doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
+        selAula.innerHTML = '<option value="">Carregando...</option>';
+        /* Exibe apenas aulas ainda NAO apontadas: consulta apontamentos e filtra pelos aulaId ja registrados */
+        dbFirestore.collection('apontamentos').get().then(function(aptSnap) {
+            var apontadas = {};
+            aptSnap.forEach(function(docApt) {
+                var a = docApt.data();
+                if (a.aulaId) apontadas[String(a.aulaId)] = true;
+            });
+            var pendentes = lista.filter(function(item) {
+                return !apontadas[String(item.doc.id)];
+            });
+            selAula.innerHTML = '<option value="">Selecione a aula</option>';
+            pendentes.sort(function(x, y) { return (y.a.data || '').localeCompare(x.a.data || ''); });
+            pendentes.forEach(function(item) {
+                const a = item.a;
+                const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                selAula.innerHTML += '<option value="' + item.doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
+            });
+            if (!pendentes.length) selAula.innerHTML = '<option value="">Todas as aulas desta disciplina ja foram apontadas</option>';
+        }).catch(function() {
+            selAula.innerHTML = '<option value="">Selecione a aula</option>';
+            lista.sort(function(x, y) { return (y.a.data || '').localeCompare(x.a.data || ''); });
+            lista.forEach(function(item) {
+                const a = item.a;
+                const dataFmt = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                selAula.innerHTML += '<option value="' + item.doc.id + '">' + (a.nome || a.conteudo || 'Aula') + (dataFmt ? ' (' + dataFmt + ')' : '') + '</option>';
+            });
+            if (!lista.length) selAula.innerHTML = '<option value="">Nenhuma aula encontrada</option>';
         });
-        if (!lista.length) selAula.innerHTML = '<option value="">Nenhuma aula encontrada</option>';
     };
     dbFirestore.collection('aulas').where('disciplina', '==', discName).get().then(function(snap) {
         const lista = [];
