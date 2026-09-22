@@ -1276,6 +1276,7 @@
             document.getElementById('screen-login').style.display = 'none';
             document.getElementById('screen-portal').classList.add('active');
             paCheckHash();
+            paFaltasQRStart();
             paGenerateQR();
             wfAbrirBemVindoAuto();
 
@@ -2843,13 +2844,16 @@
         if (digits.length < 5) return '';
         return 'ACD' + digits.slice(-5);
     }
-    function paGenerateQR() {
-        var qrEl = document.getElementById('pf-apontamento-qr-img');
-        var infoEl = document.getElementById('pf-apontamento-qr-info');
-        if (!qrEl) return;
-        if (!paUser) { qrEl.innerHTML = '<p style="color:#999;font-size:12px">Aguarde...</p>'; return; }
-        var matricula = paUser.matricula || paGenerateMatricula(paUser.cpf) || '';
-        if (!matricula) { qrEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation"></i> Matricula nao encontrada.</p>'; if (infoEl) infoEl.innerHTML = ''; return; }
+    var paFaltasQRUnsub = null;
+
+    function paFaltasQRStart() {
+        if (paFaltasQRUnsub || !paUser || !paUser.cpf) return;
+        paFaltasQRUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).onSnapshot(function() {
+            paGenerateQR();
+        }, function() {});
+    }
+
+    function paRenderQRNormal(qrEl, infoEl, matricula) {
         qrEl.innerHTML = '';
         try {
             new QRCode(qrEl, { text: matricula, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M });
@@ -2860,6 +2864,44 @@
             infoEl.innerHTML = '<div style="margin-top:10px;font-size:20px;font-weight:800;color:#16a34a;font-family:Courier New,monospace;letter-spacing:2px">' + matricula + '</div>' +
                 '<div style="font-size:15px;color:#1e293b;font-weight:600;margin-top:4px">' + (paUser.nome || '---') + '</div>';
         }
+    }
+
+    function paRenderQRBloqueado(qrEl, infoEl) {
+        qrEl.innerHTML =
+            '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:300px;max-width:380px;padding:30px 22px;background:#fef2f2;border:3px solid #dc2626;border-radius:16px">' +
+                '<div style="width:120px;height:120px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(220,38,38,.15)">' +
+                    '<i class="fa-solid fa-triangle-exclamation" style="font-size:52px;color:#dc2626"></i>' +
+                '</div>' +
+                '<div style="font-size:24px;font-weight:900;color:#dc2626;line-height:1.25;text-align:center;letter-spacing:.5px;margin-top:14px">JUSTIFIQUE SUAS FALTAS<br>E VOLTE PARA APONTAR</div>' +
+            '</div>';
+        if (infoEl) infoEl.innerHTML = '';
+    }
+
+    function paGenerateQR() {
+        var qrEl = document.getElementById('pf-apontamento-qr-img');
+        var infoEl = document.getElementById('pf-apontamento-qr-info');
+        if (!qrEl) return;
+        if (!paUser) { qrEl.innerHTML = '<p style="color:#999;font-size:12px">Aguarde...</p>'; return; }
+        var matricula = paUser.matricula || paGenerateMatricula(paUser.cpf) || '';
+        if (!matricula) { qrEl.innerHTML = '<p style="color:#dc2626;font-size:12px"><i class="fa-solid fa-triangle-exclamation"></i> Matricula nao encontrada.</p>'; if (infoEl) infoEl.innerHTML = ''; return; }
+
+        qrEl.innerHTML = '<p style="color:#94a3b8;font-size:12px"><i class="fa-solid fa-spinner fa-spin"></i> Verificando faltas...</p>';
+        if (infoEl) infoEl.innerHTML = '';
+        dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).get().then(function(snap) {
+            var temFalta = false;
+            snap.forEach(function(doc) {
+                var p = doc.data();
+                if (p.status === 'Falta') temFalta = true;
+            });
+            if (temFalta) {
+                paRenderQRBloqueado(qrEl, infoEl);
+            } else {
+                paRenderQRNormal(qrEl, infoEl, matricula);
+            }
+        }).catch(function(e) {
+            console.error('Erro ao verificar faltas:', e);
+            paRenderQRNormal(qrEl, infoEl, matricula);
+        });
     }
 
     /* ===== CARTEIRA ===== */
