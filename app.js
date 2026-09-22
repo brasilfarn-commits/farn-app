@@ -5384,7 +5384,13 @@ async function verificarInativosPorFalta(cpfs) {
             snap.forEach(doc => {
                 const d = doc.data();
                 const k = (d.cpf || '').replace(/\D/g, '');
-                if (k && d.status === 'Falta') faltas[k] = (faltas[k] || 0) + 1;
+                if (!k || d.status !== 'Falta') return;
+                /* Conta 1 falta por AULA DISTINTA: evita inflar a contagem quando a mesma aula
+                   e apontada mais de uma vez (ex.: "tematica 03/09" gravada em 09-08 e 09-22). */
+                const chaveAula = (d.aulaId && d.aulaId !== 'n/a')
+                    ? ('aulaId:' + d.aulaId)
+                    : ('aula:' + (d.aula || '') + '|' + (d.dataAula || ''));
+                (faltas[k] = faltas[k] || new Set()).add(chaveAula);
             });
         } catch (e) { console.error('Erro ao contar faltas:', e); }
     }
@@ -5394,11 +5400,12 @@ async function verificarInativosPorFalta(cpfs) {
         const k = (c.cpf || '').replace(/\D/g, '');
         if (!k || !faltas[k]) return;
         if ((c.tipoPessoa || 'A') === 'F' || c.remanejadoDocente) return;
-        if (c.status === 'Ativo' && faltas[k] >= 3) {
+        const totalFaltas = faltas[k].size;
+        if (c.status === 'Ativo' && totalFaltas >= 3) {
             candidatos[i].status = 'Inativo por Falta';
             if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { status: 'Inativo por Falta', inativoPorFaltaEm: new Date().toISOString(), inativoPorFaltaMotivo: '3 ou mais faltas' });
             mudou = true;
-        } else if (c.status === 'Inativo por Falta' && faltas[k] < 3) {
+        } else if (c.status === 'Inativo por Falta' && totalFaltas < 3) {
             candidatos[i].status = 'Ativo';
             if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { status: 'Ativo', inativoPorFaltaEm: firebase.firestore.FieldValue.delete(), inativoPorFaltaMotivo: firebase.firestore.FieldValue.delete() });
             mudou = true;
@@ -5572,6 +5579,7 @@ async function apontamentoExcluirLista() {
     try {
         const aptDoc = await dbFirestore.collection('apontamentos').doc(docId).get();
         const aptData = aptDoc.exists ? aptDoc.data() : {};
+        const cpfsExcluidos = (aptData.alunos || []).map(al => al.cpf || '').filter(Boolean);
         await dbFirestore.collection('apontamentos').doc(docId).delete();
 
         const presSnap1 = await dbFirestore.collection('presencasAlunos').where('apontamentoId', '==', docId).get();
@@ -5597,6 +5605,7 @@ async function apontamentoExcluirLista() {
 
         alert('Lista excluida com sucesso!');
         apontamentoFiltrar();
+        if (cpfsExcluidos.length) verificarInativosPorFalta(cpfsExcluidos); /* reavalia status apos exclusao */
     } catch (e) {
         alert('Erro ao excluir: ' + e.message);
     }
@@ -5669,6 +5678,7 @@ function apontamentoEditarAluno(recId, alunoIdx) {
 
     Promise.all(promisses).then(function() {
         apontamentoFiltrar();
+        if (a && a.cpf) verificarInativosPorFalta([a.cpf]); /* reavalia status de inatividade por falta apos edicao */
         alert('Alteracao salva com sucesso!');
     }).catch(function(e) { alert('Erro ao salvar: ' + e.message); });
 }
