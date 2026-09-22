@@ -9249,6 +9249,7 @@ function cavLoadList() {
                     '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>' +
                     '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + id + '\')"><i class="fa-solid fa-print"></i></button>' +
                     (!isPratica && !d.ativa ? '<button class="btn-success btn-sm" title="Liberar esta AV Teórica para os alunos responderem no Portal do Aluno" onclick="cavAtivarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-play"></i> ATIVAR AV TEORICA</button>' : '') +
+                    (!isPratica && d.ativa ? '<button class="btn-danger btn-sm" title="Desativar esta AV Teórica — os alunos não poderão mais ler as questões nem responder. A avaliação volta ao estado inativo." onclick="cavDesativarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-pause"></i> DESATIVAR PARA RESPOSTAS</button>' : '') +
                     '<button class="btn-warning btn-sm" title="Comunicar que a AV estará disponível em breve (os alunos ainda não poderão responder)" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
                     '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
                     '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
@@ -9275,6 +9276,19 @@ function cavAtivarAVTeorica(id) {
         return dbFirestore.collection(FB_AVALIACOES).doc(id).update({ ativa: true, ativadaEm: new Date() });
     }).then(res => {
         if (res) { alert('AV Teórica ativada! Os alunos já podem respondê-la.'); cavLoadList(); }
+    }).catch(e => alert('Erro: ' + e.message));
+}
+
+// desativa a AV Teorica, bloqueando a leitura/exibição das questões e a resposta no Portal do Aluno
+function cavDesativarAVTeorica(id) {
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); return null; }
+        const data = doc.data();
+        if (!data.turma) { alert('Envie antes a avaliação (botão Enviar) para vincular a turma.'); return null; }
+        if (!confirm('Desativar esta AV Teórica? Os alunos da turma "' + data.turma + '" não poderão mais ler as questões nem responder no Portal do Aluno. As respostas já enviadas são mantidas.')) return null;
+        return dbFirestore.collection(FB_AVALIACOES).doc(id).update({ ativa: false, desativadaEm: new Date() });
+    }).then(res => {
+        if (res) { alert('AV Teórica desativada! Os alunos não poderão mais ler as questões nem responder.'); cavLoadList(); }
     }).catch(e => alert('Erro: ' + e.message));
 }
 
