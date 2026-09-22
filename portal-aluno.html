@@ -2389,12 +2389,15 @@
                 }
             }
             /* 2) Fallback (presencas antigas sem aulaId): exige MESMA data E disciplina relacionada,
-                  evitando que uma aula nova "herde" presenca de outro apontamento no mesmo dia */
+                  evitando que uma aula nova "herde" presenca de outro apontamento no mesmo dia.
+                  Tambem descarta quando a aula foi criada DEPOIS da presenca (a aula ainda nao existia). */
             if (!pres) {
+                var criadoAula = a.criadoEm ? String(a.criadoEm) : '';
                 for (var k2 in paPresencasCache) {
                     var pp2 = paPresencasCache[k2];
                     if (!pp2.dataAula || !a.data) continue;
                     if (pp2.dataAula.substring(0, 10) !== a.data.substring(0, 10)) continue;
+                    if (criadoAula && pp2.criadoEm && criadoAula > String(pp2.criadoEm)) continue;
                     var discP = (pp2.disciplina || '').toLowerCase();
                     var discA = (a.disciplina || '').toLowerCase();
                     var contA = (a.conteudo || '').toLowerCase();
