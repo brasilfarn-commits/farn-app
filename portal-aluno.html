@@ -1311,11 +1311,6 @@
                 paTermoChecar();
             }
 
-            /* Se inativo por falta, abre modal de justificativas apos carregar */
-            if (paUser.status === 'Inativo por Falta') {
-                setTimeout(function() { pfInativoAbrir(); }, 800);
-            }
-
         } catch(e) {
             console.error('Erro login aluno:', e);
             errEl.textContent = 'Erro ao acessar. Tente novamente.';
@@ -2415,6 +2410,8 @@
                 var stColor = pres.status === 'Presente' ? '#16a34a' : pres.status === 'Falta' ? '#dc2626' : '#ca8a04';
                 var stIcon = pres.status === 'Presente' ? 'fa-check-circle' : pres.status === 'Falta' ? 'fa-times-circle' : 'fa-info-circle';
                 statusBadge = '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + stColor + '15;color:' + stColor + ';border:1px solid ' + stColor + '30;margin-left:8px"><i class="fa-solid ' + stIcon + '"></i> ' + pres.status + '</span>';
+            } else {
+                statusBadge = '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(37,99,235,.12);color:var(--blue);border:1px solid rgba(37,99,235,.3);margin-left:8px"><i class="fa-solid fa-circle-info"></i> AINDA NAO APONTADO</span>';
             }
 
             var card = document.createElement('div');
@@ -2424,13 +2421,17 @@
                 card.style.border = '2px solid rgba(22,163,74,.35)';
                 card.style.background = 'rgba(22,163,74,.04)';
                 card.style.boxShadow = '0 2px 12px rgba(22,163,74,.1)';
+            } else {
+                card.style.border = '2px solid rgba(37,99,235,.3)';
+                card.style.background = 'rgba(37,99,235,.05)';
+                card.style.boxShadow = '0 2px 12px rgba(37,99,235,.12)';
             }
-            card.innerHTML = '<div class="pf-apostila-icon" style="background:' + (pres ? 'rgba(22,163,74,.12)' : 'rgba(37,99,235,.06)') + ';border-color:' + (pres ? 'rgba(22,163,74,.25)' : 'rgba(37,99,235,.12)') + '"><i class="fa-solid ' + (pres ? 'fa-clipboard-check' : 'fa-chalkboard-user') + '" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + ';font-size:18px"></i></div>' +
+            card.innerHTML = '<div class="pf-apostila-icon" style="background:' + (pres ? 'rgba(22,163,74,.12)' : 'rgba(37,99,235,.14)') + ';border-color:' + (pres ? 'rgba(22,163,74,.25)' : 'rgba(37,99,235,.25)') + '"><i class="fa-solid ' + (pres ? 'fa-clipboard-check' : 'fa-chalkboard-user') + '" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + ';font-size:18px"></i></div>' +
                 '<div class="pf-apostila-info">' +
-                    '<div class="pf-apostila-titulo" style="color:' + (pres ? '#16a34a' : 'inherit') + '">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                    '<div class="pf-apostila-titulo" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + '">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
                     '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px">' +
                     statusBadge +
-                    (pres ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.1);color:#16a34a;border:1px solid rgba(22,163,74,.25)"><i class="fa-solid fa-check-double"></i> Apontado</span>' : '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.25)"><i class="fa-solid fa-clock"></i> Aguardando</span>') +
+                    (pres ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.1);color:#16a34a;border:1px solid rgba(22,163,74,.25)"><i class="fa-solid fa-check-double"></i> Apontado</span>' : '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(37,99,235,.1);color:var(--blue);border:1px solid rgba(37,99,235,.25)"><i class="fa-solid fa-clock"></i> Ainda nao apontado</span>') +
                     '</div>' +
                     '<div class="pf-apostila-desc">' + (a.horario || '') + '</div>' +
                     '<div class="pf-apostila-meta">' +
@@ -2850,6 +2851,14 @@
         if (paFaltasQRUnsub || !paUser || !paUser.cpf) return;
         paFaltasQRUnsub = dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).onSnapshot(function() {
             paGenerateQR();
+            var carteiraSec = document.getElementById('pf-section-carteira');
+            if (carteiraSec && carteiraSec.classList.contains('active')) {
+                var carteiraQrEl = document.getElementById('pf-carteira-qr-img');
+                if (carteiraQrEl) {
+                    var mat = paUser.matricula || paGenerateMatricula(paUser.cpf) || '---';
+                    paRenderCarteiraQR(carteiraQrEl, mat);
+                }
+            }
         }, function() {});
     }
 
@@ -2905,6 +2914,40 @@
     }
 
     /* ===== CARTEIRA ===== */
+    function paRenderCarteiraQR(carteiraQrEl, matricula) {
+        if (!carteiraQrEl) return;
+        carteiraQrEl.innerHTML = '<div style="width:150px;height:150px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:4px;color:#94a3b8;font-size:11px">Verificando...</div>';
+        dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).get().then(function(snap) {
+            var temFalta = false;
+            snap.forEach(function(doc) {
+                var p = doc.data();
+                if (p.status === 'Falta') temFalta = true;
+            });
+            if (temFalta) {
+                carteiraQrEl.innerHTML =
+                    '<div style="width:150px;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fef2f2;border:2px solid #dc2626;border-radius:6px;padding:6px;box-sizing:border-box;text-align:center">' +
+                        '<i class="fa-solid fa-triangle-exclamation" style="font-size:22px;color:#dc2626"></i>' +
+                        '<div style="font-size:9px;font-weight:900;color:#dc2626;line-height:1.25;letter-spacing:.3px;margin-top:5px;text-transform:uppercase">JUSTIFIQUE SUAS FALTAS E VOLTE PARA APONTAR</div>' +
+                    '</div>';
+            } else {
+                carteiraQrEl.innerHTML = '';
+                try {
+                    new QRCode(carteiraQrEl, { text: matricula, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+                } catch(e) {
+                    carteiraQrEl.innerHTML = '<p style="color:#dc2626;font-size:11px"><i class="fa-solid fa-triangle-exclamation"></i> Erro ao gerar QR.</p>';
+                }
+            }
+        }).catch(function(e) {
+            console.error('Erro ao verificar faltas (carteira):', e);
+            carteiraQrEl.innerHTML = '';
+            try {
+                new QRCode(carteiraQrEl, { text: matricula, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+            } catch(e2) {
+                carteiraQrEl.innerHTML = '<p style="color:#dc2626;font-size:11px"><i class="fa-solid fa-triangle-exclamation"></i> Erro ao gerar QR.</p>';
+            }
+        });
+    }
+
     function paGenerateCarteira() {
         var container = document.getElementById('pf-carteira-container');
         if (!container) return;
@@ -2950,7 +2993,7 @@
         try {
             var carteiraQrEl = document.getElementById('pf-carteira-qr-img');
             if (carteiraQrEl && typeof QRCode !== 'undefined') {
-                new QRCode(carteiraQrEl, { text: matricula, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+                paRenderCarteiraQR(carteiraQrEl, matricula);
             }
         } catch(e) {
             console.error('Erro ao gerar QR da carteira:', e);
