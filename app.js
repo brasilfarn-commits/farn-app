@@ -11386,6 +11386,21 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '</div>';
 }
 
+function fgStatusOrdem(status) {
+    const mapa = { 'Ativo': 0, 'Pendente': 1, 'Espera': 2, 'Inativo por Falta': 3, '2a Chamada': 4, 'Reprovado': 5, 'Inativo': 6 };
+    const s = String(status || '');
+    return mapa[s] !== undefined ? mapa[s] : 99;
+}
+
+function fgGrupoHeader(status, qtd) {
+    const stCor = fichaGeralStatusCor(status || '');
+    return '<div style="display:flex;align-items:center;gap:10px;margin:6px 2px 2px">'
+        + '<span style="background:' + stCor[1] + ';color:' + stCor[0] + ';border:1px solid ' + stCor[2] + ';border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800">'
+        + escHTML(status || 'Sem Status') + '</span>'
+        + '<span style="font-size:11px;color:#64748b;font-weight:600">' + qtd + ' ficha(s)</span>'
+        + '</div>';
+}
+
 function fichaGeralItemHTML(c, calc, aulas, idx) {
     const st = c.status || '—';
     const stCor = fichaGeralStatusCor(st);
@@ -11431,7 +11446,14 @@ async function fichaGeralRenderList() {
     const filtrados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F'
         && (!projeto || c.projeto === projeto)
         && (!turma || c.turma === turma));
-    filtrados.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+    filtrados.sort((a, b) => {
+        const oa = fgStatusOrdem(a.status);
+        const ob = fgStatusOrdem(b.status);
+        if (oa !== ob) return oa - ob;
+        const n = (a.nome || '').localeCompare(b.nome || '', 'pt-BR');
+        if (n !== 0) return n;
+        return String(a.cpf || '').localeCompare(String(b.cpf || ''));
+    });
     if (countEl) countEl.textContent = filtrados.length;
 
     if (!filtrados.length) {
@@ -11447,8 +11469,19 @@ async function fichaGeralRenderList() {
         const dadosList = await Promise.all(jobs);
 
         const folhas = [];
+        let ultimoStatus = null;
         for (let i = 0; i < filtrados.length; i++) {
             const c = filtrados[i];
+            const stAtual = String(c.status || '');
+            if (stAtual !== ultimoStatus) {
+                let qtd = 0;
+                for (let j = i; j < filtrados.length; j++) {
+                    if (String(filtrados[j].status || '') !== stAtual) break;
+                    qtd++;
+                }
+                folhas.push(fgGrupoHeader(stAtual, qtd));
+                ultimoStatus = stAtual;
+            }
             const calc = fichaGeralCalcular(c, dadosList[i], aulas);
             fichaGeralCache.push({ c: c, calc: calc, aulas: aulas });
             folhas.push(fichaGeralItemHTML(c, calc, aulas, i));
