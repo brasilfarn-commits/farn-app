@@ -1652,10 +1652,63 @@ async function openFormCandidato() {
     resetFormCandidato();
     await populateTurmaSelect();
     populateProjetoSelect();
+    fcCursosCarregar([]);
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) btnAtualizar.style.display = 'none';
     document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#16a34a;margin-right:8px"></i> Novo Pre-Cadastro';
     showAdminSection('admin-form-candidato');
+}
+
+/* ===== CURSOS DO CANDIDATO (MULTIPLA ESCOLHA - VINCULADO A SECAO CURSOS DO ADMIN) ===== */
+
+function fcCursosCarregar(selecionados) {
+    const cont = document.getElementById('fc-cursos-container');
+    if (!cont) return;
+    cont.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando cursos...</div>';
+    dbFirestore.collection('cursos').orderBy('nome').get().then(function(snap) {
+        if (snap.empty) {
+            cont.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:16px"><i class="fa-solid fa-book-open"></i><br>Nenhum curso cadastrado na secao Cursos do administrador.</div>';
+            return;
+        }
+        cont.innerHTML = '';
+        snap.forEach(function(doc) {
+            const c = doc.data();
+            const marcado = selecionados.indexOf((c.nome || '').trim()) !== -1;
+            cont.innerHTML +=
+                '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:11px 12px;border:1px solid ' + (marcado ? '#7c3aed' : '#ddd6fe') + ';border-radius:8px;background:' + (marcado ? '#f5f3ff' : '#fff') + ';transition:all .2s">' +
+                    '<input type="checkbox" value="' + escHTML(c.nome || '') + '" style="accent-color:#7c3aed" ' + (marcado ? 'checked' : '') + ' onchange="fcCursosToggleCheck(this)">' +
+                    '<span style="flex:1"><span style="font-size:13px;font-weight:700;color:#5b21b6">' + escHTML(c.nome || 'Curso') + '</span>' +
+                    (c.tipo ? '<span style="font-size:11px;color:#8b5cf6;margin-left:6px;background:#ede9fe;padding:2px 8px;border-radius:6px">' + escHTML(c.tipo) + '</span>' : '') +
+                    (c.cargaHoraria != null ? '<span style="font-size:11px;color:#94a3b8;margin-left:6px">' + c.cargaHoraria + 'h</span>' : '') +
+                    '</span>' +
+                    '<span style="font-size:16px;color:' + (marcado ? '#7c3aed' : '#cbd5e1') + '"><i class="fa-solid ' + (marcado ? 'fa-square-check' : 'fa-square') + '"></i></span>' +
+                '</label>';
+        });
+        if (!snap.size) return;
+    }).catch(function(e) {
+        console.error('Erro ao carregar cursos do form:', e);
+        cont.innerHTML = '<div style="color:#dc2626;font-size:12px;text-align:center;padding:16px"><i class="fa-solid fa-triangle-exclamation"></i><br>Erro ao carregar cursos: ' + e.message + '</div>';
+    });
+}
+
+function fcCursosToggleCheck(cb) {
+    if (!cb) return;
+    const label = cb.closest('label');
+    if (label) {
+        const marcado = cb.checked;
+        label.style.borderColor = marcado ? '#7c3aed' : '#ddd6fe';
+        label.style.background = marcado ? '#f5f3ff' : '#fff';
+        const ic = label.querySelector('span[style*="fa-square"]');
+        if (ic) ic.style.color = marcado ? '#7c3aed' : '#cbd5e1';
+    }
+}
+
+function fcCursosColetar() {
+    const selecionados = [];
+    document.querySelectorAll('#fc-cursos-container input[type=checkbox]:checked').forEach(function(cb) {
+        if (cb.value) selecionados.push(cb.value);
+    });
+    return selecionados;
 }
 
 async function editCandidato(index) {
@@ -1702,6 +1755,9 @@ async function editCandidato(index) {
     document.getElementById('fc-projeto').value = c.projeto || '';
     fcProjetoOnTurmaChange();
     document.getElementById('fc-turma').value = c.turma || '';
+    fcCursosCarregar(c.cursos || []);
+    // Marcar cursos salvos do candidato
+    fcCursosCarregar(Array.isArray(c.cursos) ? c.cursos : []);
     const tipoPessoa = c.tipoPessoa || 'A';
     const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"][value="' + tipoPessoa + '"]');
     if (tipoRadio) tipoRadio.checked = true;
@@ -1769,6 +1825,9 @@ function resetFormCandidato() {
     if (mq) { mq.src = ''; mq.style.display = 'none'; }
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
+    // Marcar cursos salvos (multipla escolha)
+    const cCursos = (c.cursos && Array.isArray(c.cursos)) ? c.cursos : [];
+    if (typeof fcCursosCarregar === 'function') fcCursosCarregar(cCursos);
     uploadedFiles = [];
     renderFilesList();
 }
@@ -1806,6 +1865,7 @@ async function handleCandidatoSubmit(event) {
     });
     const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
     data.tipoPessoa = tipoRadio ? tipoRadio.value : 'A';
+    data.cursos = fcCursosColetar();
     data.matricula = generateMatricula(data.cpf);
     data.status = editingIndex !== null ? candidatos[editingIndex].status : 'Pendente';
     data.dataCadastro = (editingIndex !== null && candidatos[editingIndex].dataCadastro) ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
