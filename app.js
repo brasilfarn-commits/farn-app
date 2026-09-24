@@ -11386,6 +11386,37 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '</div>';
 }
 
+function fichaGeralItemHTML(c, calc, aulas, idx) {
+    const st = c.status || '—';
+    const stCor = fichaGeralStatusCor(st);
+    const mat = c.matricula || generateMatricula(c.cpf) || '—';
+    const cpfFmt = formatCPFDisplay(c.cpf) || '—';
+    const nome = c.nome || '—';
+    return '<div id="fg-item-' + idx + '" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 14px rgba(2,6,23,.08);overflow:hidden">'
+        + '<div onclick="fichaGeralToggle(' + idx + ')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid #e2e8f0;user-select:none">'
+        + '<div style="width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0"><i class="fa-solid fa-user"></i></div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:14px;font-weight:800;color:#0f172a">' + escHTML(nome) + '</div>'
+        + '<div style="font-size:11px;color:#64748b;margin-top:2px">Matricula: ' + escHTML(mat) + '  •  CPF: ' + escHTML(cpfFmt) + '  •  ' + escHTML(fichaGeralProjeto || c.projeto) + ' / ' + escHTML(fichaGeralTurma || c.turma) + '</div>'
+        + '</div>'
+        + '<span style="background:' + stCor[1] + ';color:' + stCor[0] + ';border:1px solid ' + stCor[2] + ';border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:800;flex-shrink:0">' + escHTML(st) + '</span>'
+        + '<i id="fg-chevron-' + idx + '" class="fa-solid fa-chevron-down" style="color:#94a3b8;font-size:12px;flex-shrink:0"></i>'
+        + '</div>'
+        + '<div id="fg-body-' + idx + '" style="display:none;padding:16px;background:#eef2f7">'
+        + fichaGeralFolha(c, calc, null, idx, aulas)
+        + '</div>'
+        + '</div>';
+}
+
+function fichaGeralToggle(idx) {
+    const body = document.getElementById('fg-body-' + idx);
+    const chev = document.getElementById('fg-chevron-' + idx);
+    if (!body) return;
+    const abrir = body.style.display === 'none';
+    body.style.display = abrir ? '' : 'none';
+    if (chev) chev.className = 'fa-solid ' + (abrir ? 'fa-chevron-up' : 'fa-chevron-down');
+}
+
 async function fichaGeralRenderList() {
     const lista = document.getElementById('ficha-geral-lista');
     if (!lista) return;
@@ -11420,7 +11451,7 @@ async function fichaGeralRenderList() {
             const c = filtrados[i];
             const calc = fichaGeralCalcular(c, dadosList[i], aulas);
             fichaGeralCache.push({ c: c, calc: calc, aulas: aulas });
-            folhas.push(fichaGeralFolha(c, calc, null, i, aulas));
+            folhas.push(fichaGeralItemHTML(c, calc, aulas, i));
         }
         lista.innerHTML = folhas.join('');
 
