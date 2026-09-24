@@ -2750,8 +2750,8 @@ function foto3x4RenderList() {
             '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
             '<td style="vertical-align:middle">' +
                 '<div style="display:flex;gap:8px;align-items:center;justify-content:center">' +
+                    '<button class="btn-icon" title="Baixar foto para o dispositivo" onclick="foto3x4BaixarFoto(' + fi + ')"><i class="fa-solid fa-download"></i></button>' +
                     '<button class="btn-icon" title="Editar foto (atualizar do dispositivo)" onclick="foto3x4EditarFoto(' + fi + ')"><i class="fa-solid fa-camera"></i></button>' +
-                    '<button class="btn-icon" title="Ver foto ampliada" onclick="foto3x4VerFoto(' + fi + ')"><i class="fa-solid fa-magnifying-glass-plus"></i></button>' +
                     '<input type="file" id="foto3x4-file-' + fi + '" accept="image/*" style="display:none" onchange="foto3x4OnFile(' + fi + ', this.files)">' +
                 '</div>' +
             '</td>' +
@@ -2784,30 +2784,209 @@ function foto3x4OnFile(fi, files) {
     reader.onload = function(ev) {
         const img = new Image();
         img.onload = function() {
-            var maxLado = 600;
-            var w = img.width, h = img.height;
-            var escala = Math.min(1, maxLado / Math.max(w, h));
-            var cw = Math.max(1, Math.round(w * escala)), ch = Math.max(1, Math.round(h * escala));
-            var canvas = document.createElement('canvas');
-            canvas.width = cw; canvas.height = ch;
-            var ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, cw, ch);
-            ctx.drawImage(img, 0, 0, cw, ch);
-            var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
-            var finalDataUrl = null;
-            for (var i = 0; i < qualidades.length; i++) {
-                var url = canvas.toDataURL('image/jpeg', qualidades[i]);
-                var bytes = Math.round(url.length * 3 / 4);
-                if (bytes <= 900 * 1024) { finalDataUrl = url; break; }
-            }
-            if (!finalDataUrl) finalDataUrl = canvas.toDataURL('image/jpeg', 0.1);
-            paFotoAdminSalvar(c, finalDataUrl, fi);
+            foto3x4EditorAbrir(c, fi, img);
         };
         img.onerror = function() { alert('Nao foi possivel ler a imagem.'); };
         img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+var foto3x4EditorEstado = null;
+var foto3x4EditorListenersPresos = false;
+
+function foto3x4EditorAbrir(c, fi, img) {
+    foto3x4EditorEstado = { c: c, fi: fi, img: img, rot: 0, zoom: 1, offX: 0, offY: 0, arrastando: false, ultX: 0, ultY: 0, base: null };
+    foto3x4EditorRebater();
+    const nomeEl = document.getElementById('foto3x4-editor-nome');
+    if (nomeEl) nomeEl.textContent = c.nome || 'Aluno';
+    const zoomEl = document.getElementById('foto3x4-editor-zoom');
+    if (zoomEl) zoomEl.value = 100;
+    const modal = document.getElementById('foto3x4-editor-modal');
+    if (modal) modal.style.display = 'block';
+    foto3x4EditorLigarListeners();
+    foto3x4EditorPosicionar();
+}
+
+function foto3x4EditorRebater() {
+    const e = foto3x4EditorEstado;
+    if (!e) return;
+    const rot = ((e.rot % 360) + 360) % 360;
+    const iw = e.img.naturalWidth || e.img.width, ih = e.img.naturalHeight || e.img.height;
+    const canvas = document.createElement('canvas');
+    if (rot % 180 === 90) { canvas.width = ih; canvas.height = iw; } else { canvas.width = iw; canvas.height = ih; }
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    if (rot === 90) { ctx.translate(canvas.width, 0); ctx.rotate(Math.PI / 2); }
+    else if (rot === 180) { ctx.translate(canvas.width, canvas.height); ctx.rotate(Math.PI); }
+    else if (rot === 270) { ctx.translate(0, canvas.height); ctx.rotate(-Math.PI / 2); }
+    ctx.drawImage(e.img, 0, 0);
+    ctx.restore();
+    e.base = canvas;
+    const imgEl = document.getElementById('foto3x4-editor-img');
+    if (imgEl) imgEl.src = canvas.toDataURL('image/png');
+}
+
+function foto3x4EditorMedidas() {
+    const e = foto3x4EditorEstado;
+    if (!e) return null;
+    const sombra = document.getElementById('foto3x4-editor-sombra');
+    const vw = (sombra && sombra.clientWidth) || 280;
+    const vh = (sombra && sombra.clientHeight) || Math.round(vw * 4 / 3);
+    const iw = e.base ? e.base.width : 1, ih = e.base ? e.base.height : 1;
+    const escala = Math.max(vw / iw, vh / ih);
+    return { vw: vw, vh: vh, iw: iw, ih: ih, escala: escala };
+}
+
+function foto3x4EditorPosicionar() {
+    const e = foto3x4EditorEstado;
+    if (!e || !e.base) return;
+    const m = foto3x4EditorMedidas();
+    if (!m) return;
+    const dw = m.iw * m.escala * e.zoom, dh = m.ih * m.escala * e.zoom;
+    const maxX = Math.max(0, (dw - m.vw) / 2), maxY = Math.max(0, (dh - m.vh) / 2);
+    if (e.offX < -maxX) e.offX = -maxX;
+    if (e.offX > maxX) e.offX = maxX;
+    if (e.offY < -maxY) e.offY = -maxY;
+    if (e.offY > maxY) e.offY = maxY;
+    const left = e.offX + (m.vw - dw) / 2, top = e.offY + (m.vh - dh) / 2;
+    const imgEl = document.getElementById('foto3x4-editor-img');
+    if (!imgEl) return;
+    imgEl.style.width = dw + 'px';
+    imgEl.style.height = dh + 'px';
+    imgEl.style.left = left + 'px';
+    imgEl.style.top = top + 'px';
+}
+
+function foto3x4EditorZoom(v) {
+    const e = foto3x4EditorEstado;
+    if (!e) return;
+    var novo = Math.max(1, (parseInt(v, 10) || 100) / 100);
+    if (novo === e.zoom) return;
+    const m = foto3x4EditorMedidas();
+    if (!m) return;
+    const dw0 = m.iw * m.escala * e.zoom, dh0 = m.ih * m.escala * e.zoom;
+    const left0 = e.offX + (m.vw - dw0) / 2, top0 = e.offY + (m.vh - dh0) / 2;
+    const fx = (m.vw / 2 - left0) / dw0, fy = (m.vh / 2 - top0) / dh0;
+    e.zoom = novo;
+    const dw1 = m.iw * m.escala * novo, dh1 = m.ih * m.escala * novo;
+    const left1 = m.vw / 2 - fx * dw1, top1 = m.vh / 2 - fy * dh1;
+    e.offX = left1 - (m.vw - dw1) / 2;
+    e.offY = top1 - (m.vh - dh1) / 2;
+    foto3x4EditorPosicionar();
+}
+
+function foto3x4EditorCentralizar() {
+    const e = foto3x4EditorEstado;
+    if (!e) return;
+    e.zoom = 1; e.offX = 0; e.offY = 0;
+    const zoomEl = document.getElementById('foto3x4-editor-zoom');
+    if (zoomEl) zoomEl.value = 100;
+    foto3x4EditorPosicionar();
+}
+
+function foto3x4EditorCancelar() {
+    const modal = document.getElementById('foto3x4-editor-modal');
+    if (modal) modal.style.display = 'none';
+    foto3x4EditorEstado = null;
+}
+
+function foto3x4EditorSalvar() {
+    const e = foto3x4EditorEstado;
+    if (!e || !e.base) return;
+    const m = foto3x4EditorMedidas();
+    if (!m) return;
+    const dw = m.iw * m.escala * e.zoom, dh = m.ih * m.escala * e.zoom;
+    const left = e.offX + (m.vw - dw) / 2, top = e.offY + (m.vh - dh) / 2;
+    var srcX = ((-left) / dw) * m.iw;
+    var srcY = ((-top) / dh) * m.ih;
+    var srcW = (m.vw / dw) * m.iw;
+    var srcH = (m.vh / dh) * m.ih;
+    srcX = Math.max(0, Math.min(srcX, m.iw - 1));
+    srcY = Math.max(0, Math.min(srcY, m.ih - 1));
+    srcW = Math.max(1, Math.min(srcW, m.iw - srcX));
+    srcH = Math.max(1, Math.min(srcH, m.ih - srcY));
+    const out = document.createElement('canvas');
+    out.width = 480; out.height = 640;
+    const octx = out.getContext('2d');
+    octx.fillStyle = '#ffffff';
+    octx.fillRect(0, 0, 480, 640);
+    octx.drawImage(e.base, srcX, srcY, srcW, srcH, 0, 0, 480, 640);
+    const qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
+    var finalDataUrl = null;
+    for (var i = 0; i < qualidades.length; i++) {
+        var url = out.toDataURL('image/jpeg', qualidades[i]);
+        var bytes = Math.round(url.length * 3 / 4);
+        if (bytes <= 900 * 1024) { finalDataUrl = url; break; }
+    }
+    if (!finalDataUrl) finalDataUrl = out.toDataURL('image/jpeg', 0.1);
+    paFotoAdminSalvar(e.c, finalDataUrl, e.fi);
+    const modal = document.getElementById('foto3x4-editor-modal');
+    if (modal) modal.style.display = 'none';
+    foto3x4EditorEstado = null;
+}
+
+function foto3x4EditorLigarListeners() {
+    if (foto3x4EditorListenersPresos) return;
+    foto3x4EditorListenersPresos = true;
+    const sombra = document.getElementById('foto3x4-editor-sombra');
+    if (sombra) {
+        sombra.addEventListener('mousedown', foto3x4EditorOnDown);
+        sombra.addEventListener('touchstart', foto3x4EditorOnDown, { passive: false });
+    }
+    window.addEventListener('mousemove', foto3x4EditorOnMove);
+    window.addEventListener('mouseup', foto3x4EditorOnUp);
+    window.addEventListener('touchmove', foto3x4EditorOnMove, { passive: false });
+    window.addEventListener('touchend', foto3x4EditorOnUp);
+    window.addEventListener('touchcancel', foto3x4EditorOnUp);
+}
+
+function foto3x4EditorCliente(ev) {
+    if (ev.touches && ev.touches.length) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+    return { x: ev.clientX, y: ev.clientY };
+}
+
+function foto3x4EditorOnDown(ev) {
+    const e = foto3x4EditorEstado;
+    if (!e) return;
+    ev.preventDefault();
+    const pt = foto3x4EditorCliente(ev);
+    e.arrastando = true;
+    e.ultX = pt.x;
+    e.ultY = pt.y;
+}
+
+function foto3x4EditorOnMove(ev) {
+    const e = foto3x4EditorEstado;
+    if (!e || !e.arrastando) return;
+    ev.preventDefault();
+    const pt = foto3x4EditorCliente(ev);
+    e.offX += pt.x - e.ultX;
+    e.offY += pt.y - e.ultY;
+    e.ultX = pt.x;
+    e.ultY = pt.y;
+    foto3x4EditorPosicionar();
+}
+
+function foto3x4EditorOnUp() {
+    const e = foto3x4EditorEstado;
+    if (e) e.arrastando = false;
+}
+
+function foto3x4BaixarFoto(fi) {
+    const c = foto3x4CandidatoPorIndice(fi);
+    if (!c) return;
+    getFoto(c.cpf).then(function(photoSrc) {
+        if (!photoSrc) { alert('Este aluno ainda nao possui foto 3x4.'); return; }
+        const a = document.createElement('a');
+        a.href = photoSrc;
+        a.download = 'foto3x4_' + String(c.nome || 'aluno').replace(/[^\w\-]+/g, '_') + '_' + String(c.matricula || generateMatricula(c.cpf) || '') + '.jpg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
 }
 
 function foto3x4CandidatoPorIndice(fi) {

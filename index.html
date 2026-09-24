@@ -1040,6 +1040,36 @@
                         </div>
                     </div>
                 </div>
+                <!-- MODAL EDITOR RECORTE FOTO 3X4 -->
+                <div id="foto3x4-editor-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.9);overflow-y:auto;padding:20px" onclick="if(event.target===this)foto3x4EditorCancelar()">
+                    <div style="background:#fff;border-radius:14px;max-width:440px;margin:20px auto;padding:22px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+                            <h3 style="margin:0;font-size:16px"><i class="fa-solid fa-crop-simple" style="color:#2563eb;margin-right:8px"></i> Editar Foto 3x4 (<span id="foto3x4-editor-nome">Aluno</span>)</h3>
+                            <button onclick="foto3x4EditorCancelar()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <p style="margin:0 0 10px;font-size:12px;color:#475569;line-height:1.5">
+                            <i class="fa-solid fa-info-circle" style="color:#2563eb"></i> Use o controle para <strong>ampliar/reduzir</strong>, arraste a imagem para enquadrar o rosto e clique em <strong>Salvar Recorte</strong>. A area destacada indica o corte 3x4 final.
+                        </p>
+                        <div style="position:relative;margin:0 auto;max-width:280px">
+                            <div id="foto3x4-editor-sombra" style="position:relative;width:100%;aspect-ratio:3/4;background:#0f172a;border-radius:8px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:0 0 0 2px #2563eb inset">
+                                <img id="foto3x4-editor-img" src="" alt="Imagem para recorte" style="position:absolute;display:block;user-select:none;-webkit-user-select:none;touch-action:none;max-width:none">
+                                <div style="position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)"></div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;margin:14px 0">
+                            <i class="fa-solid fa-magnifying-glass-minus" style="color:#64748b"></i>
+                            <input type="range" id="foto3x4-editor-zoom" min="100" max="500" value="100" style="flex:1" oninput="foto3x4EditorZoom(this.value)">
+                            <i class="fa-solid fa-magnifying-glass-plus" style="color:#64748b"></i>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:6px">
+                            <button class="btn-icon" title="Centralizar (zoom 100%)" onclick="foto3x4EditorCentralizar()"><i class="fa-solid fa-crosshairs"></i></button>
+                        </div>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+                            <button class="btn-secondary" onclick="foto3x4EditorCancelar()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                            <button class="btn-primary" onclick="foto3x4EditorSalvar()"><i class="fa-solid fa-crop"></i> Salvar Recorte</button>
+                        </div>
+                    </div>
+                </div>
                 <div id="admin-docentes" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
@@ -3947,7 +3977,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=31"></script>
+    <script src="app.js?v=32"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
