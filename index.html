@@ -790,6 +790,10 @@
                         <i class="fa-solid fa-chalkboard"></i>
                         <span>CFF</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-ficha-geral', this); fichaGeralInicializar()">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span>Ficha Geral</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -902,6 +906,10 @@
                             <div class="admin-home-card" onclick="showAdminSection('admin-cff', document.querySelector('.nav-item:nth-child(21)')); cffListLoad()">
                                 <i class="fa-solid fa-chalkboard"></i>
                                 <span>CFF</span>
+                            </div>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-ficha-geral', document.querySelector('.nav-item[onclick*=&quot;admin-ficha-geral&quot;]')); fichaGeralInicializar()">
+                                <i class="fa-solid fa-folder-open"></i>
+                                <span>Ficha Geral</span>
                             </div>
                         </div>
                     </div>
@@ -1023,6 +1031,50 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECAO FICHA GERAL -->
+                <div id="admin-ficha-geral" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-folder-open" style="color:#0ea5e9;margin-right:8px"></i> Ficha Geral - Cadastro e Avaliacoes</h3>
+                            <small>Fichas completas dos cadastrados: todos os dados do formulario, foto 3x4 e todas as avaliacoes, com visual moderno de pagina PDF e botoes de impressao.</small>
+                        </div>
+                        <div class="card-body">
+                            <!-- Selecao Projeto + Turma -->
+                            <div style="padding:20px;background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);border:2px solid #0ea5e9;border-radius:12px;margin-bottom:20px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                    <i class="fa-solid fa-filter" style="color:#0ea5e9;font-size:16px"></i>
+                                    <span style="color:#0ea5e9;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para gerar as fichas</span>
+                                </div>
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Projeto *</label>
+                                        <select id="ficha-geral-selecao-projeto" class="config-input" style="width:100%;border-color:#0ea5e9" onchange="fichaGeralOnProjetoChange()">
+                                            <option value="">Selecione o projeto...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Turma *</label>
+                                        <select id="ficha-geral-selecao-turma" class="config-input" style="width:100%;border-color:#0ea5e9" onchange="fichaGeralOnTurmaChange()">
+                                            <option value="">Selecione a turma...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                            <div id="ficha-geral-conteudo" style="display:none">
+                                <div class="alunos-toolbar" style="flex-wrap:wrap;gap:8px">
+                                    <div style="font-size:13px;color:#0f172a;font-weight:700"><i class="fa-solid fa-folder-open" style="color:#0ea5e9;margin-right:6px"></i><span id="ficha-geral-count">0</span> ficha(s) gerada(s)</div>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                        <button class="btn-primary btn-sm" onclick="fichaGeralImprimirTodas()" style="background:#0ea5e9;border-color:#0ea5e9"><i class="fa-solid fa-print"></i> Imprimir Todas as Fichas</button>
+                                        <button class="btn-outline btn-sm" onclick="fichaGeralDownloadTodas()"><i class="fa-solid fa-file-pdf"></i> Visualizar PDF</button>
+                                    </div>
+                                </div>
+                                <div id="ficha-geral-lista" style="margin-top:16px;display:flex;flex-direction:column;gap:18px"></div>
                             </div>
                         </div>
                     </div>
@@ -3977,7 +4029,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=32"></script>
+    <script src="app.js?v=33"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
