@@ -184,6 +184,113 @@ function fgFOLista(lista, positivo) {
     return html;
 }
 
+/* ===== APONTAMENTO POR AULA =====
+   Lista, em fonte menor, as aulas da turma com o apontamento do aluno e a
+   observacao da justificativa de cada falta/justificativa. */
+
+function fgAptBadge(status) {
+    const s = String(status || '');
+    if (s === 'Presente') return ['PRESENTE', '#16a34a', '#dcfce7', '#bbf7d0'];
+    if (s === 'Falta') return ['FALTA', '#dc2626', '#fee2e2', '#fecaca'];
+    if (s === 'Justificada') return ['JUSTIFICADA', '#ca8a04', '#fef3c7', '#fde68a'];
+    return ['SEM APONTAMENTO', '#64748b', '#f1f5f9', '#cbd5e1'];
+}
+
+/* Chave que liga o apontamento a aula. Prioriza o id do doc em aulas
+   (mesmo criterio de verificarInativosPorFalta no admin); registros antigos
+   sem id caem para data + disciplina e, sem referencia, ficam soltos. */
+function fgAptChave(p) {
+    const id = String(p.aulaId || '').trim();
+    if (id && id !== 'n/a') return 'id:' + id;
+    const data = String(p.dataAula || '').trim();
+    const disc = String(p.disciplina || '').trim();
+    if (data || disc) return 'ad:' + data + '|' + disc;
+    return '';
+}
+
+function fgAptObservacao(p) {
+    const obs = String((p && (p.observacaoJustificativa || p.obs)) || '').trim();
+    if (!obs) return '';
+    return (p.status === 'Justificada' ? 'Justificativa: ' : 'Obs: ') + obs;
+}
+
+function fgAptLinha(data, disciplina, status, obs, marca) {
+    const b = fgAptBadge(status);
+    const obsHtml = obs
+        ? '<span style="display:inline-block;background:' + b[1] + ';border:1px solid ' + b[2] + ';border-radius:6px;padding:1px 6px;color:' + b[0] + ';font-weight:600">' + fgEsc(obs) + '</span>'
+        : '';
+    return '<tr style="border-bottom:1px solid #f1f5f9">'
+        + '<td style="padding:3px 8px 3px 0;font-size:10px;color:#475569;white-space:nowrap">' + fgEsc(data) + marca + '</td>'
+        + '<td style="padding:3px 8px 3px 0;font-size:10px;font-weight:600;color:#334155">' + fgEsc(disciplina) + '</td>'
+        + '<td style="padding:3px 8px 3px 0"><span style="background:' + b[1] + ';color:' + b[0] + ';border:1px solid ' + b[2] + ';border-radius:20px;padding:1px 7px;font-size:8.5px;font-weight:800;white-space:nowrap">' + b[0] + '</span></td>'
+        + '<td style="padding:3px 0;font-size:9.5px">' + obsHtml + '</td>'
+        + '</tr>';
+}
+
+function fgTabelaApontamento(listaAulas, presencas) {
+    if (!listaAulas || !listaAulas.length) {
+        return '<div style="font-size:10.5px;color:#94a3b8;padding:4px 2px">Nenhuma aula cadastrada para esta turma.</div>';
+    }
+    /* Agrupa os apontamentos por aula (mantem o mais recente quando a mesma
+       aula foi apontada mais de uma vez). */
+    const grupos = {};
+    const ordem = [];
+    (presencas || []).forEach((p, i) => {
+        const k = fgAptChave(p);
+        const key = k ? k : 'avulso#' + i;
+        const ts = String(p.criadoEm || p.justificadaEm || '');
+        if (!grupos[key]) {
+            grupos[key] = { reg: p, ts: ts, qtd: 1 };
+            ordem.push(key);
+        } else {
+            grupos[key].qtd++;
+            if (ts >= grupos[key].ts) { grupos[key].reg = p; grupos[key].ts = ts; }
+        }
+    });
+
+    const usadas = {};
+    let rows = '';
+    listaAulas.forEach(a => {
+        const key = 'id:' + a._id;
+        const alt = 'ad:' + String(a.data || '').trim() + '|' + String(a.disciplina || '').trim();
+        const g = grupos[key] || grupos[alt] || null;
+        const usadasKey = grupos[key] ? key : (grupos[alt] ? alt : null);
+        if (usadasKey) usadas[usadasKey] = true;
+        const p = g ? g.reg : null;
+        const data = a.data || (p ? p.dataAula : '') || '';
+        const disciplina = a.disciplina || a.conteudo || (p ? (p.disciplina || p.aula) : '') || 'Aula';
+        const marca = g && g.qtd > 1 ? ' <span style="color:#94a3b8" title="Aula apontada mais de uma vez">*</span>' : '';
+        rows += fgAptLinha(fichaGeralData(data) || '—', disciplina, p ? p.status : '', p ? fgAptObservacao(p) : '', marca);
+    });
+
+    /* Apontamentos de aulas que nao estao mais na lista cadastrada */
+    let extras = 0;
+    ordem.forEach(key => {
+        if (usadas[key]) return;
+        const g = grupos[key];
+        const p = g.reg;
+        const data = p.dataAula || '';
+        const disciplina = p.disciplina || p.aula || 'Aula';
+        rows += fgAptLinha(fichaGeralData(data) || '—', disciplina, p.status, fgAptObservacao(p), '');
+        extras++;
+    });
+
+    const titulo = '<div style="display:flex;align-items:center;gap:6px;margin:8px 0 4px;padding-top:6px;border-top:1px dashed #e2e8f0">'
+        + '<i class="fa-solid fa-list-check" style="color:#0ea5e9;font-size:10px"></i>'
+        + '<span style="font-size:9.5px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.5px">Aulas e apontamento</span>'
+        + (extras ? '<span style="font-size:8.5px;color:#94a3b8">inclui ' + extras + ' apontamento(s) de aula fora da lista atual</span>' : '')
+        + '</div>';
+
+    return titulo
+        + '<table style="width:100%;border-collapse:collapse">'
+        + '<thead><tr style="background:#f8fafc">'
+        + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Data</th>'
+        + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Aula</th>'
+        + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Apontamento</th>'
+        + '<th style="padding:3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Justificativa</th>'
+        + '</tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
 /* ===== DADOS E CALCULO DAS AVALIACOES ===== */
 function fichaGeralCarregarAulas(projeto, turma) {
     const db = fgDb();
@@ -231,9 +338,9 @@ function fichaGeralCalcular(c, dados, aulas) {
     const av = dados.av || {};
     // AV Apontamento
     const totalAulas = (aulas.todas || []).length;
+    const presencasTurma = (dados.presencas || []).filter(p => p.turma === c.turma && p.projeto === c.projeto);
     let pres = 0, fal = 0, just = 0;
-    (dados.presencas || []).forEach(p => {
-        if (p.turma !== c.turma || p.projeto !== c.projeto) return;
+    presencasTurma.forEach(p => {
         if (p.status === 'Presente') pres++;
         else if (p.status === 'Falta') fal++;
         else if (p.status === 'Justificada') just++;
@@ -268,6 +375,7 @@ function fichaGeralCalcular(c, dados, aulas) {
     return {
         av: av,
         presencas: dados.presencas || [],
+        presencasTurma: presencasTurma,
         totalAulas: totalAulas, pres: pres, fal: fal, just: just, pct: pct,
         foP: foP, foN: foN, pontosComp: pontosComp,
         notaTeor: notaTeor, notaPrat: notaPrat,
@@ -396,7 +504,7 @@ function fichaGeralCabecalho(inst, c, fotoHtml) {
 
 /* ===== MONTAGEM DA FICHA ===== */
 function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
-    const aulasRef = aulas || fichaGeralAulasCache || { teorica: [], pratica: [] };
+    const aulasRef = aulas || fichaGeralAulasCache || { todas: [], teorica: [], pratica: [] };
     const nome = c.nome || '—';
     const cpf = fgCPF(c.cpf) || '—';
     const mat = c.matricula || fgMatricula(c.cpf) || '—';
@@ -502,6 +610,8 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + fgCampo('Presenca', calc.pct + '%')
         + '</div>'
         + fgBarra(calc.pct, corAp)
+        /* Aulas da turma com o apontamento e a observacao da justificativa */
+        + fgTabelaApontamento(aulasRef.todas, calc.presencasTurma)
         + '</div>';
 
     // Detalhe comportamento
