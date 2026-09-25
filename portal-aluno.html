@@ -279,6 +279,9 @@
         .pf-section-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--gray200)}
         .pf-section-header i{font-size:20px;color:var(--green)}
         .pf-section-header h2{font-size:18px;font-weight:700;color:var(--gray800)}
+        /* FICHA GERAL (aluno) - botao Imprimir da ficha */
+        .fg-somente-tela{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #0ea5e9;color:#0284c7;border-radius:9px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+        .fg-somente-tela:hover{background:#f0f9ff;box-shadow:0 3px 10px rgba(14,165,233,.22)}
         .pf-em-construcao{text-align:center;padding:60px 20px;color:var(--gray300)}
         .pf-em-construcao i{font-size:44px;margin-bottom:16px;display:block;color:var(--gray300)}
         .pf-em-construcao h3{font-size:17px;color:var(--gray500);margin-bottom:6px;font-weight:600}
@@ -932,13 +935,16 @@
 
                 <!-- FICHA GERAL -->
                 <div class="pf-section" id="pf-section-ficha-geral">
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
                         <h3 style="font-size:18px;color:#fff;margin:0"><i class="fa-solid fa-folder-open" style="margin-right:8px"></i> Ficha Geral</h3>
+                        <span style="font-size:11px;color:#94a3b8;font-weight:600">Cadastro e avaliacoes do seu registro</span>
                     </div>
-                    <div class="pf-em-construcao">
-                        <i class="fa-solid fa-wrench"></i>
-                        <h3>Em construcao</h3>
-                        <p>Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
+                    <div id="pf-ficha-geral-conteudo">
+                        <div class="pf-em-construcao">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <h3>Em construcao</h3>
+                            <p>Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -1130,6 +1136,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="ficha-geral-compartilhar.js?v=1"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
@@ -1951,6 +1958,7 @@
         if (section === 'decl') { }
         if (section === 'avaliacao') { paLoadAvaliacao(); }
         if (section === 'responder-avaliacao') { paLoadResponderAvaliacao(); }
+        if (section === 'ficha-geral') { paFichaGeralCarregar(); }
         if (section === 'whatfarn') { wfIniciar('aluno'); }
     }
 
@@ -2247,6 +2255,7 @@
         try {
             await dbFirestore.collection('candidatos').doc(paUser._docId).update(dados);
             Object.assign(paUser, dados);
+            paFichaGeralPronta = false;
             paLoadDados();
             paCloseEditModal();
         } catch(e) {
@@ -2254,6 +2263,68 @@
             errorEl.style.display = 'block';
         }
     }
+
+    /* ===== FICHA GERAL (ALUNO) =====
+       Reaproveita o nucleo compartilhado com o administrador
+       (ficha-geral-compartilhar.js): mesma montagem e mesmo calculo. */
+    var paFichaGeralCarregando = false;
+    var paFichaGeralPronta = false;
+
+    function paFichaGeralHTML(msg, icone) {
+        return '<div class="pf-em-construcao"><i class="fa-solid ' + (icone || 'fa-folder-open') + '"></i>'
+            + '<h3>' + msg + '</h3></div>';
+    }
+
+    async function paFichaGeralFoto() {
+        if (!paUser) return null;
+        var local = localStorage.getItem('farn_photo_' + paUser.cpf) || localStorage.getItem('foto3x4_' + paUser.cpf);
+        if (local) return local;
+        if (!paUser._docId) return null;
+        try {
+            var doc = await dbFirestore.collection('candidatos').doc(paUser._docId).get();
+            var url = (doc.exists && doc.data() && doc.data().photoDataUrl) ? doc.data().photoDataUrl : null;
+            if (url) {
+                try { localStorage.setItem('farn_photo_' + paUser.cpf, url); } catch (e) {}
+            }
+            return url;
+        } catch (e) { return null; }
+    }
+
+    async function paFichaGeralCarregar(forcar) {
+        var cont = document.getElementById('pf-ficha-geral-conteudo');
+        if (!cont || !paUser) return;
+        if (paFichaGeralCarregando) return;
+        if (paFichaGeralPronta && !forcar) return;
+        paFichaGeralCarregando = true;
+        cont.innerHTML = paFichaGeralHTML('Carregando sua ficha...', 'fa-spinner fa-spin');
+        try {
+            var c = paUser;
+            fichaGeralAulasCache = null;
+            var aulas = await fichaGeralCarregarAulas(c.projeto, c.turma);
+            var dados = await fichaGeralDadosAluno(c);
+            var calc = fichaGeralCalcular(c, dados, aulas);
+            var foto = await paFichaGeralFoto();
+            cont.innerHTML = fichaGeralFolha(c, calc, foto, 0, aulas);
+            paFichaGeralPronta = true;
+        } catch (e) {
+            console.error('Erro ao carregar a ficha geral do aluno:', e);
+            cont.innerHTML = paFichaGeralHTML('Nao foi possivel carregar a ficha. Tente novamente.', 'fa-triangle-exclamation');
+        } finally {
+            paFichaGeralCarregando = false;
+        }
+    }
+
+    function paFichaGeralImprimir() {
+        var el = document.querySelector('#pf-ficha-geral-conteudo .fg-quebra');
+        if (!el) { paFichaGeralCarregar(true); return; }
+        var clone = el.cloneNode(true);
+        var btn = clone.querySelector('.fg-somente-tela');
+        if (btn) btn.remove();
+        fichaGeralAbrirImpressao('FARN - Ficha Geral - ' + (paUser && paUser.nome ? paUser.nome : ''), clone.outerHTML, true);
+    }
+
+    /* A ficha compartilhada chama o botao Imprimir por este handler. */
+    fichaGeralImprimirHandler = paFichaGeralImprimir;
 
     /* ===== APOSTILAS ===== */
     function paAbrirApostila(a) {
