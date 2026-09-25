@@ -215,21 +215,30 @@ function fgAptChave(p) {
     return '';
 }
 
+/* Assunto gravado no apontamento ("Nome da aula (10/01/2026)" -> "Nome da aula"). */
+function fgAptTexto(p) {
+    return String((p && p.aula) || '').replace(/\s*\(\s*\d{1,2}\/\d{1,2}\/\d{4}\s*\)\s*$/, '').trim();
+}
+
 function fgAptObservacao(p) {
     const obs = String((p && (p.observacaoJustificativa || p.obs)) || '').trim();
     if (!obs) return '';
     return (p.status === 'Justificada' ? 'Justificativa: ' : 'Obs: ') + obs;
 }
 
-function fgAptLinha(data, disciplina, status, obs, marca) {
+function fgAptLinha(data, assunto, disciplina, status, obs, marca) {
+    /* b = [rotulo, cor do texto, fundo claro, borda] */
     const b = fgAptBadge(status);
     const obsHtml = obs
-        ? '<span style="display:inline-block;background:' + b[1] + ';border:1px solid ' + b[2] + ';border-radius:6px;padding:1px 6px;color:' + b[0] + ';font-weight:600">' + fgEsc(obs) + '</span>'
+        ? '<span style="display:inline-block;background:' + b[2] + ';border:1px solid ' + b[3] + ';border-radius:6px;padding:1px 6px;color:' + b[1] + ';font-weight:600">' + fgEsc(obs) + '</span>'
         : '';
-    return '<tr style="border-bottom:1px solid #f1f5f9">'
+    return '<tr style="border-bottom:1px solid #f1f5f9;vertical-align:top">'
         + '<td style="padding:3px 8px 3px 0;font-size:10px;color:#475569;white-space:nowrap">' + fgEsc(data) + marca + '</td>'
-        + '<td style="padding:3px 8px 3px 0;font-size:10px;font-weight:600;color:#334155">' + fgEsc(disciplina) + '</td>'
-        + '<td style="padding:3px 8px 3px 0"><span style="background:' + b[1] + ';color:' + b[0] + ';border:1px solid ' + b[2] + ';border-radius:20px;padding:1px 7px;font-size:8.5px;font-weight:800;white-space:nowrap">' + b[0] + '</span></td>'
+        + '<td style="padding:3px 8px 3px 0;min-width:110px">'
+        + '<div style="font-size:10.5px;font-weight:700;color:#0f172a;word-break:break-word">' + fgEsc(assunto) + '</div>'
+        + ((disciplina && disciplina !== assunto) ? '<div style="font-size:9px;color:#94a3b8">' + fgEsc(disciplina) + '</div>' : '')
+        + '</td>'
+        + '<td style="padding:3px 8px 3px 0"><span style="background:' + b[2] + ';color:' + b[1] + ';border:1px solid ' + b[3] + ';border-radius:20px;padding:1px 7px;font-size:8.5px;font-weight:800;white-space:nowrap">' + b[0] + '</span></td>'
         + '<td style="padding:3px 0;font-size:9.5px">' + obsHtml + '</td>'
         + '</tr>';
 }
@@ -265,9 +274,14 @@ function fgTabelaApontamento(listaAulas, presencas) {
         if (usadasKey) usadas[usadasKey] = true;
         const p = g ? g.reg : null;
         const data = a.data || (p ? p.dataAula : '') || '';
-        const disciplina = a.disciplina || a.conteudo || (p ? (p.disciplina || p.aula) : '') || 'Aula';
+        /* Conteudo / assunto da aula; a disciplina fica na linha de apoio */
+        const assunto = String(a.nome || a.conteudo || '').trim()
+            || (p ? (fgAptTexto(p) || String(p.disciplina || '').trim()) : '')
+            || String(a.disciplina || '').trim()
+            || 'Aula sem assunto cadastrado';
+        const disciplina = String(a.disciplina || (p ? p.disciplina : '') || '').trim();
         const marca = g && g.qtd > 1 ? ' <span style="color:#94a3b8" title="Aula apontada mais de uma vez">*</span>' : '';
-        rows += fgAptLinha(fichaGeralData(data) || '—', disciplina, p ? p.status : '', p ? fgAptObservacao(p) : '', marca);
+        rows += fgAptLinha(fichaGeralData(data) || '—', assunto, disciplina, p ? p.status : '', p ? fgAptObservacao(p) : '', marca);
     });
 
     /* Apontamentos de aulas que nao estao mais na lista cadastrada */
@@ -277,8 +291,9 @@ function fgTabelaApontamento(listaAulas, presencas) {
         const g = grupos[key];
         const p = g.reg;
         const data = p.dataAula || '';
-        const disciplina = p.disciplina || p.aula || 'Aula';
-        rows += fgAptLinha(fichaGeralData(data) || '—', disciplina, p.status, fgAptObservacao(p), '');
+        const assunto = fgAptTexto(p) || String(p.disciplina || '').trim() || 'Aula sem assunto cadastrado';
+        const disciplina = String(p.disciplina || '').trim();
+        rows += fgAptLinha(fichaGeralData(data) || '—', assunto, disciplina, p.status, fgAptObservacao(p), '');
         extras++;
     });
 
@@ -292,8 +307,8 @@ function fgTabelaApontamento(listaAulas, presencas) {
         + '<table style="width:100%;border-collapse:collapse">'
         + '<thead><tr style="background:#f8fafc">'
         + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Data</th>'
-        + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Aula</th>'
-        + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Apontamento</th>'
+        + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Conteudo / Assunto</th>'
+        + '<th style="padding:3px 8px 3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:center;letter-spacing:.3px">Apontamento</th>'
         + '<th style="padding:3px 0;font-size:8.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Justificativa</th>'
         + '</tr></thead><tbody>' + rows + '</tbody></table>';
 }
