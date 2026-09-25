@@ -2341,6 +2341,24 @@
 
     var paRenderAulasData = [];
 
+    /* Conteudo / Assunto da aula, com a mesma precedencia da Ficha Geral:
+       o assunto cadastrado (nome ou conteudo), depois o assunto gravado no
+       apontamento do aluno (sem a data entre parenteses) e por fim a disciplina. */
+    function paAulaAssunto(a, pres) {
+        var cadastrado = String((a && (a.nome || a.conteudo)) || '').trim();
+        if (cadastrado) return cadastrado;
+        var doApontamento = '';
+        if (pres) {
+            doApontamento = (typeof fgAptTexto === 'function') ? fgAptTexto(pres) : '';
+            if (!doApontamento) {
+                doApontamento = String(pres.aula || '').replace(/\s*\(\s*\d{1,2}\/\d{1,2}\/\d{4}\s*\)\s*$/, '').trim();
+            }
+        }
+        return doApontamento
+            || String((a && a.disciplina) || '').trim()
+            || 'Aula sem assunto cadastrado';
+    }
+
     function paRenderAulas(container, myProjeto, myTurma, discFilter) {
         var items = paRenderAulasData;
         if (items.length === 0 && Object.keys(paPresencasCache).length === 0) {
@@ -2411,6 +2429,16 @@
                 statusBadge = '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(37,99,235,.12);color:var(--blue);border:1px solid rgba(37,99,235,.3);margin-left:8px"><i class="fa-solid fa-circle-info"></i> AINDA NAO APONTADO</span>';
             }
 
+            var assunto = paAulaAssunto(a, pres);
+            var disciplinaAula = String((a && a.disciplina) || (pres && pres.disciplina) || '').trim();
+            /* Rotulo + Conteudo / Assunto (quebra em varias linhas, sem cortar);
+               disciplina fica na linha de apoio, como na Ficha Geral. */
+            var assuntoHtml = '<div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px">Conteudo / Assunto</div>'
+                + '<div class="pf-apostila-titulo" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + ';white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35;word-break:break-word">' + paEsc(assunto) + '</div>'
+                + ((disciplinaAula && disciplinaAula !== assunto)
+                    ? '<div style="font-size:10.5px;color:#94a3b8;font-weight:600;margin-bottom:2px">' + paEsc(disciplinaAula) + '</div>'
+                    : '');
+
             var card = document.createElement('div');
             card.className = 'pf-apostila-card';
             card.style.cursor = 'default';
@@ -2425,7 +2453,7 @@
             }
             card.innerHTML = '<div class="pf-apostila-icon" style="background:' + (pres ? 'rgba(22,163,74,.12)' : 'rgba(37,99,235,.14)') + ';border-color:' + (pres ? 'rgba(22,163,74,.25)' : 'rgba(37,99,235,.25)') + '"><i class="fa-solid ' + (pres ? 'fa-clipboard-check' : 'fa-chalkboard-user') + '" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + ';font-size:18px"></i></div>' +
                 '<div class="pf-apostila-info">' +
-                    '<div class="pf-apostila-titulo" style="color:' + (pres ? '#16a34a' : 'var(--blue)') + '">' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</div>' +
+                    assuntoHtml +
                     '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px">' +
                     statusBadge +
                     (pres ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(22,163,74,.1);color:#16a34a;border:1px solid rgba(22,163,74,.25)"><i class="fa-solid fa-check-double"></i> Apontado</span>' : '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(37,99,235,.1);color:var(--blue);border:1px solid rgba(37,99,235,.25)"><i class="fa-solid fa-clock"></i> Ainda nao apontado</span>') +
