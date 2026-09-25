@@ -174,12 +174,19 @@ function fgTabelaNotas(listaAulas, notas) {
 
 function fgFOLista(lista, positivo) {
     const cores = positivo ? ['#16a34a', '#dcfce7', '#bbf7d0'] : ['#dc2626', '#fee2e2', '#fecaca'];
-    if (!lista || !lista.length) return '<div style="font-size:11px;color:#94a3b8;padding:4px 2px">Nenhum FO ' + (positivo ? '+' : '-') + ' registrado.</div>';
-    let html = '';
-    lista.forEach(fo => {
+    const sig = positivo ? '+' : '-';
+    /* Mostra somente os FO com observacao preenchida (os totais acima do
+       quadro continuam contando todos os registros). */
+    const comObs = (lista || []).filter(fo => String((fo && fo.obs) || '').trim() !== '');
+    if (!comObs.length) {
+        return '<div style="font-size:10.5px;color:#94a3b8;padding:4px 2px">Nenhum FO ' + sig + ' com observacao registrada.</div>';
+    }
+    let html = '<div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">'
+        + comObs.length + ' de ' + (lista || []).length + ' registro(s) com observacao</div>';
+    comObs.forEach(fo => {
         html += '<div style="display:flex;justify-content:space-between;gap:8px;background:' + cores[1] + ';border:1px solid ' + cores[2] + ';border-radius:8px;padding:5px 8px;margin-top:4px;font-size:11px">'
-            + '<span style="font-weight:700;color:' + cores[0] + ';white-space:nowrap">' + (positivo ? 'FO +' : 'FO -') + ' ' + fichaGeralData(fo.data) + '</span>'
-            + '<span style="color:#475569;flex:1;text-align:right">' + fgEsc(fo.obs || '') + '</span></div>';
+            + '<span style="font-weight:700;color:' + cores[0] + ';white-space:nowrap">FO ' + sig + ' ' + fichaGeralData(fo.data) + '</span>'
+            + '<span style="color:#475569;flex:1;text-align:right">' + fgEsc(fo.obs) + '</span></div>';
     });
     return html;
 }
@@ -616,8 +623,9 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
 
     // Detalhe comportamento
     avHtml += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fa-solid fa-face-smile" style="color:#0ea5e9;font-size:12px"></i>'
-        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">Detalhe - AV Comportamento (FO+ / FO-)</span></div>'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap"><i class="fa-solid fa-face-smile" style="color:#0ea5e9;font-size:12px"></i>'
+        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">Detalhe - AV Comportamento (FO+ / FO-)</span>'
+        + '<span style="font-size:9.5px;color:#94a3b8">totais acima; abaixo somente os registros com observacao</span></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
         + fgCampo('Total FO+', calc.foP)
         + fgCampo('Total FO-', calc.foN)
