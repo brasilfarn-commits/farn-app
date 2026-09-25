@@ -11147,6 +11147,13 @@ function fgCampo(rotulo, valor) {
         + '<div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:2px;word-break:break-word">' + escHTML(v) + '</div></div>';
 }
 
+function fgCampoDestaque(rotulo, valor) {
+    const v = (valor === null || valor === undefined || valor === '') ? '—' : String(valor);
+    return '<div style="grid-column:1/-1;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;background:#fef2f2;min-width:0">'
+        + '<div style="font-size:9px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.5px">' + escHTML(rotulo) + '</div>'
+        + '<div style="font-size:14px;font-weight:800;color:#dc2626;margin-top:2px;word-break:break-word">' + escHTML(v) + '</div></div>';
+}
+
 function fgSimNao(rotulo, v) {
     const sim = String(v || '').toLowerCase() === 'sim';
     const badge = sim
@@ -11372,11 +11379,11 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     secoes.push(fgSecao('fa-calendar-check', 'Registro', fgGrid(
         fgCampo('Projeto', c.projeto) +
         fgCampo('Turma', c.turma) +
-        fgCampo('Cursos', cursos.join(', ')) +
         fgCampo('Data de Inscricao', fichaGeralData(c.dataInscricao)) +
         fgCampo('Data do Cadastro', fichaGeralData(c.dataCadastro)) +
         fgCampo('Data/Hora Cadastro', c.dataHoraCadastro) +
-        fgCampo('Cadastrado Por', c.cadastradoPor)
+        fgCampo('Cadastrado Por', c.cadastradoPor) +
+        fgCampoDestaque('Cursos', cursos.join(', '))
     )));
 
     // Secao 7 - Avaliacoes
@@ -11510,12 +11517,15 @@ function fichaGeralItemHTML(c, calc, aulas, idx) {
     const mat = c.matricula || generateMatricula(c.cpf) || '—';
     const cpfFmt = formatCPFDisplay(c.cpf) || '—';
     const nome = c.nome || '—';
+    const cursos = Array.isArray(c.cursos) ? c.cursos.filter(Boolean) : (c.cursos ? [c.cursos] : []);
+    const cursosResumo = cursos.length ? cursos.join(', ') : '—';
     return '<div id="fg-item-' + idx + '" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 14px rgba(2,6,23,.08);overflow:hidden">'
         + '<div onclick="fichaGeralToggle(' + idx + ')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid #e2e8f0;user-select:none">'
         + '<div style="width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0"><i class="fa-solid fa-user"></i></div>'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:14px;font-weight:800;color:#0f172a">' + escHTML(nome) + '</div>'
         + '<div style="font-size:11px;color:#64748b;margin-top:2px">Matricula: ' + escHTML(mat) + '  •  CPF: ' + escHTML(cpfFmt) + '  •  ' + escHTML(fichaGeralProjeto || c.projeto) + ' / ' + escHTML(fichaGeralTurma || c.turma) + '</div>'
+        + '<div style="font-size:11px;font-weight:800;color:#dc2626;margin-top:3px;word-break:break-word"><i class="fa-solid fa-book-open" style="margin-right:4px"></i> Cursos: ' + escHTML(cursosResumo) + '</div>'
         + '</div>'
         + '<span style="background:' + stCor[1] + ';color:' + stCor[0] + ';border:1px solid ' + stCor[2] + ';border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:800;flex-shrink:0">' + escHTML(st) + '</span>'
         + '<i id="fg-chevron-' + idx + '" class="fa-solid fa-chevron-down" style="color:#94a3b8;font-size:12px;flex-shrink:0"></i>'
