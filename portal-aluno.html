@@ -2186,17 +2186,11 @@
     }
 
     async function paFichaGeralFoto() {
-        if (!paUser) return null;
-        var local = localStorage.getItem('farn_photo_' + paUser.cpf) || localStorage.getItem('foto3x4_' + paUser.cpf);
-        if (local) return local;
-        if (!paUser._docId) return null;
+        /* Vai ao Firestore para pegar a foto nova reenviada pelo administrador
+           (o que esta no aparelho pode ser a versao antiga). */
         try {
-            var doc = await dbFirestore.collection('candidatos').doc(paUser._docId).get();
-            var url = (doc.exists && doc.data() && doc.data().photoDataUrl) ? doc.data().photoDataUrl : null;
-            if (url) {
-                try { localStorage.setItem('farn_photo_' + paUser.cpf, url); } catch (e) {}
-            }
-            return url;
+            var r = await paFotoSincronizar();
+            return (r && r.src) ? r.src : null;
         } catch (e) { return null; }
     }
 
@@ -3021,11 +3015,32 @@
         try { localStorage.setItem('foto3x4_' + paUser.cpf, dataUrl); } catch(e) {}
     }
 
+    /* Versao da foto que este aparelho ja conhece. O administrador grava uma
+       versao nova no Firestore sempre que reenvia a foto. */
+    function paFotoVersaoLocal() {
+        if (!paUser) return '';
+        try { return localStorage.getItem('farn_foto_ver_' + paUser.cpf) || ''; } catch (e) { return ''; }
+    }
+    function paFotoVersaoGravar(versao) {
+        if (!paUser) return;
+        try { localStorage.setItem('farn_foto_ver_' + paUser.cpf, String(versao || '')); } catch (e) {}
+    }
+
     function paFotoEnviarFirestore(dataUrl) {
         if (!paUser || !paUser._docId) return;
+        var versao = String(Date.now());
+        paFotoVersaoGravar(versao);
+        paUser.photoDataUrl = dataUrl;
+        paUser.hasPhoto = true;
+        paUser.fotoVersao = versao;
         try {
             dbFirestore.collection('candidatos').doc(paUser._docId)
-                .set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true })
+                .set({
+                    photoDataUrl: dataUrl,
+                    hasPhoto: true,
+                    fotoVersao: versao,
+                    fotoAtualizadaEm: versao
+                }, { merge: true })
                 .catch(function(e) { console.error('Erro ao salvar foto no Firestore:', e); });
         } catch(e) { console.error('Erro ao salvar foto no Firestore:', e); }
     }
@@ -3042,20 +3057,54 @@
         var icon = document.getElementById('pf-carteira-foto-icon');
         var pv = document.getElementById('pf-foto3x4-preview');
         var pvIcon = document.getElementById('pf-foto3x4-preview-icon');
-        var src = paFotoLocal();
-        if (!src && paUser && paUser._docId) {
-            /* Busca no Firestore a foto salva anteriormente (carteira/outro dispositivo) */
-            dbFirestore.collection('candidatos').doc(paUser._docId).get()
-                .then(function(dFind) {
-                    if (dFind.exists && dFind.data().photoDataUrl) {
-                        try { localStorage.setItem('farn_photo_' + paUser.cpf, dFind.data().photoDataUrl); } catch(e) {}
-                        paFotoExibir(dFind.data().photoDataUrl, img, icon, pv, pvIcon);
+        /* Mostra na hora o que ja esta no aparelho e depois troca pela versao
+           nova caso o administrador tenha reenviado a foto. */
+        var local = paFotoLocal();
+        if (local) paFotoExibir(local, img, icon, pv, pvIcon);
+        paFotoSincronizar().then(function (r) {
+            if (!r) return;
+            if (r.mudou) {
+                paFotoExibir(r.src, img, icon, pv, pvIcon);
+                var status = document.getElementById('pf-foto3x4-status');
+                if (status) { status.textContent = 'Sua foto foi atualizada pela administracao.'; status.style.color = '#16a34a'; }
+                /* A Ficha Geral tambem precisa ser redesenhada com a foto nova */
+                if (typeof paFichaGeralPronta !== 'undefined' && paFichaGeralPronta) paFichaGeralPronta = false;
+            } else if (r.src) {
+                paFotoExibir(r.src, img, icon, pv, pvIcon);
+            }
+        });
+    }
+
+    /* Consulta o Firestore e devolve a foto a ser usada, trocando a copia do
+       aparelho quando a versao gravada pelo administrador for mais nova. */
+    function paFotoSincronizar() {
+        if (!paUser || !paUser._docId) return Promise.resolve({ src: paFotoLocal(), mudou: false });
+        return dbFirestore.collection('candidatos').doc(paUser._docId).get()
+            .then(function (dFind) {
+                if (!dFind.exists) return { src: paFotoLocal(), mudou: false };
+                var dados = dFind.data() || {};
+                var remota = dados.photoDataUrl || null;
+                var versao = String(dados.fotoVersao || dados.fotoAtualizadaEm || '');
+                var local = paFotoLocal();
+                if (versao && versao !== paFotoVersaoLocal()) {
+                    if (remota && remota !== local) {
+                        paFotoSalvarLocal(remota);
+                        paFotoVersaoGravar(versao);
+                        paUser.photoDataUrl = remota;
+                        paUser.hasPhoto = true;
+                        /* "mudou" so quando ja havia foto no aparelho: a primeira
+                           carga da foto nao e uma atualizacao da administracao. */
+                        return { src: remota, mudou: !!local };
                     }
-                })
-                .catch(function() {});
-            return;
-        }
-        paFotoExibir(src, img, icon, pv, pvIcon);
+                    paFotoVersaoGravar(versao);
+                }
+                if (!local && remota) {
+                    paFotoSalvarLocal(remota);
+                    return { src: remota, mudou: false };
+                }
+                return { src: local || remota, mudou: false };
+            })
+            .catch(function () { return { src: paFotoLocal(), mudou: false }; });
     }
 
     function paFotoProcessar(blob, nomeArquivo) {

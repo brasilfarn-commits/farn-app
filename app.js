@@ -65,32 +65,76 @@ function candidatoToDoc(c) {
     return copy;
 }
 
-function getFoto(cpf) {
-    var fromLocal = localStorage.getItem('farn_photo_' + cpf) || localStorage.getItem('foto3x4_' + cpf);
-    if (fromLocal) return Promise.resolve(fromLocal);
-    var c = candidatos.find(function(x) { return x.cpf === cpf; });
-    if (c && c.photoDataUrl) return Promise.resolve(c.photoDataUrl);
-    if (c && c.id) {
-        return dbFirestore.collection('candidatos').doc(String(c.id)).get().then(function(doc) {
-            if (doc.exists && doc.data().photoDataUrl) {
-                c.photoDataUrl = doc.data().photoDataUrl;
-                return doc.data().photoDataUrl;
-            }
-            return null;
-        }).catch(function() { return null; });
+/* Versao da foto que o aparelho (admin ou portal do aluno) ja conhece.
+   O Firestore guarda fotoVersao; se ela mudar, a copia local esta defasada. */
+function fotoVersaoLocal(cpf) {
+    try { return localStorage.getItem('farn_foto_ver_' + cpf) || ''; } catch (e) { return ''; }
+}
+function fotoVersaoGravar(cpf, versao) {
+    try { localStorage.setItem('farn_foto_ver_' + cpf, String(versao || '')); } catch (e) {}
+}
+/* Guarda a foto por 30s para nao repetir a leitura do Firestore a cada
+   renderizacao (a ficha geral chama getFoto para cada aluno). */
+var fotoMemo = {};
+var FOTO_MEMO_MS = 30000;
+
+function getFoto(cpf, forcar) {
+    var local = localStorage.getItem('farn_photo_' + cpf) || localStorage.getItem('foto3x4_' + cpf) || null;
+    var c = candidatos.find(function (x) { return x.cpf === cpf; });
+    var memo = fotoMemo[cpf];
+    if (!forcar && memo && (Date.now() - memo.t) < FOTO_MEMO_MS) return Promise.resolve(memo.src);
+    if (!c || !c.id) {
+        var semDoc = local || (c && c.photoDataUrl) || null;
+        fotoMemo[cpf] = { t: Date.now(), src: semDoc };
+        return Promise.resolve(semDoc);
     }
-    return Promise.resolve(null);
+    /* A foto pode ter sido atualizada no portal do aluno: a versao do
+       Firestore prevalece sobre a copia antiga guardada no aparelho. */
+    return dbFirestore.collection('candidatos').doc(String(c.id)).get().then(function (doc) {
+        if (!doc.exists) {
+            var atual = local || c.photoDataUrl || null;
+            fotoMemo[cpf] = { t: Date.now(), src: atual };
+            return atual;
+        }
+        var dados = doc.data() || {};
+        var remota = dados.photoDataUrl || null;
+        var versao = String(dados.fotoVersao || dados.fotoAtualizadaEm || '');
+        if (versao && versao !== fotoVersaoLocal(cpf) && remota) {
+            try { localStorage.setItem('farn_photo_' + cpf, remota); } catch (e) {}
+            try { localStorage.setItem('foto3x4_' + cpf, remota); } catch (e) {}
+            fotoVersaoGravar(cpf, versao);
+            c.photoDataUrl = remota; c.hasPhoto = true; c.fotoVersao = versao;
+            fotoMemo[cpf] = { t: Date.now(), src: remota };
+            return remota;
+        }
+        if (versao) fotoVersaoGravar(cpf, versao);
+        var final = local || remota || c.photoDataUrl || null;
+        fotoMemo[cpf] = { t: Date.now(), src: final };
+        return final;
+    }).catch(function () {
+        var salvou = local || (c && c.photoDataUrl) || null;
+        return salvou;
+    });
 }
 
 function setFoto(cpf, dataUrl) {
     try { localStorage.setItem('farn_photo_' + cpf, dataUrl); } catch(e) {}
     try { localStorage.setItem('foto3x4_' + cpf, dataUrl); } catch(e) {}
+    var versao = String(Date.now());
+    fotoVersaoGravar(cpf, versao);
+    delete fotoMemo[cpf];
     var c = candidatos.find(function(x) { return x.cpf === cpf; });
-    if (c) { c.photoDataUrl = dataUrl; c.hasPhoto = true; }
-    if (currentAluno && currentAluno.cpf === cpf) { currentAluno.photoDataUrl = dataUrl; currentAluno.hasPhoto = true; }
+    if (c) { c.photoDataUrl = dataUrl; c.hasPhoto = true; c.fotoVersao = versao; }
+    if (currentAluno && currentAluno.cpf === cpf) { currentAluno.photoDataUrl = dataUrl; currentAluno.hasPhoto = true; currentAluno.fotoVersao = versao; }
     var docId = c && c.id ? String(c.id) : null;
     if (docId) {
-        dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true }).catch(function() {});
+        dbFirestore.collection('candidatos').doc(docId).set({
+            photoDataUrl: dataUrl,
+            hasPhoto: true,
+            fotoVersao: versao,
+            fotoAtualizadaEm: versao,
+            fotoAtualizadaPor: 'Administrador'
+        }, { merge: true }).catch(function() {});
     }
 }
 
@@ -1519,12 +1563,15 @@ function fcAdminFoto3x4Apagar() {
         var cpf = candidatos[editingIndex].cpf;
         try { localStorage.removeItem('farn_photo_' + cpf); } catch(e) {}
         try { localStorage.removeItem('foto3x4_' + cpf); } catch(e) {}
+        fotoVersaoGravar(cpf, '');
+        delete fotoMemo[cpf];
         candidatos[editingIndex].photoDataUrl = null;
         candidatos[editingIndex].hasPhoto = false;
         backupCandidatos();
         var docId = candidatos[editingIndex].id ? String(candidatos[editingIndex].id) : null;
         if (docId) {
-            dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: null, hasPhoto: false }, { merge: true }).catch(function() {});
+            var versaoApagada = String(Date.now());
+            dbFirestore.collection('candidatos').doc(docId).set({ photoDataUrl: null, hasPhoto: false, fotoVersao: versaoApagada, fotoAtualizadaEm: versaoApagada, fotoAtualizadaPor: 'Administrador' }, { merge: true }).catch(function() {});
         }
     }
 }
@@ -2858,6 +2905,7 @@ function foto3x4RenderList() {
                 '<div style="display:flex;gap:8px;align-items:center;justify-content:center">' +
                     '<button class="btn-icon" title="Baixar foto para o dispositivo" onclick="foto3x4BaixarFoto(' + fi + ')"><i class="fa-solid fa-download"></i></button>' +
                     '<button class="btn-icon" title="Editar foto (atualizar do dispositivo)" onclick="foto3x4EditarFoto(' + fi + ')"><i class="fa-solid fa-camera"></i></button>' +
+                    '<button class="btn-icon" title="Atualizar esta foto no dispositivo do aluno (portal, Carteira e Ficha Geral)" onclick="foto3x4AtualizarAluno(' + fi + ')" style="color:#2563eb"><i class="fa-solid fa-mobile-screen-button"></i></button>' +
                     '<input type="file" id="foto3x4-file-' + fi + '" accept="image/*" style="display:none" onchange="foto3x4OnFile(' + fi + ', this.files)">' +
                 '</div>' +
             '</td>' +
@@ -3103,6 +3151,190 @@ function foto3x4CandidatoPorIndice(fi) {
         && (!projeto || x.projeto === projeto)
         && (!turma || x.turma === turma));
     return filtrados[fi] || null;
+}
+
+/* ===== FOTO 3X4: REENVIAR AS FOTOS DO ADMIN PARA O DISPOSITIVO DO ALUNO =====
+   O portal do aluno guarda a foto no localStorage do aparelho. Como a foto
+   exibida aqui no administrador pode ter sido trocada, este botao regrava a
+   foto no Firestore com uma versao nova (fotoVersao). O portal compara a
+   versao com a do aparelho e substitui a foto antiga pela nova. */
+
+var foto3x4SyncRodando = false;
+/* Firestore aceita 500 escritas por lote; 20 evita estouro de carga com
+   fotos grandes (data URL) e mantem o progresso visivel. */
+var FOTO3X4_LOTE = 20;
+
+function foto3x4Filtrados() {
+    const selProj = document.getElementById('foto3x4-selecao-projeto');
+    const selTurma = document.getElementById('foto3x4-selecao-turma');
+    const projeto = selProj ? selProj.value : '';
+    const turma = selTurma ? selTurma.value : '';
+    return candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F'
+        && c.status === 'Ativo'
+        && (!projeto || c.projeto === projeto)
+        && (!turma || c.turma === turma));
+}
+
+function foto3x4SyncMsg(texto, cor) {
+    const el = document.getElementById('foto3x4-sync-msg');
+    if (!el) return;
+    el.textContent = texto || '';
+    el.style.color = cor || '#64748b';
+}
+
+/* Monta o plano: compara a foto exibida aqui com a que esta no Firestore. */
+async function foto3x4Plano(lista) {
+    const plano = [];
+    for (const c of lista) {
+        const src = await getFoto(c.cpf, true).catch(function () { return null; });
+        if (!src) { plano.push({ c: c, estado: 'sem-foto' }); continue; }
+        if (!c.id) { plano.push({ c: c, estado: 'sem-doc' }); continue; }
+        let remota = null;
+        let existe = false;
+        try {
+            const doc = await dbFirestore.collection('candidatos').doc(String(c.id)).get();
+            existe = !!doc.exists;
+            if (existe) remota = (doc.data() || {}).photoDataUrl || null;
+        } catch (e) { plano.push({ c: c, estado: 'erro-leitura' }); continue; }
+        /* Sem registro no Firestore nao ha como entregar a foto ao aparelho */
+        if (!existe) { plano.push({ c: c, src: src, estado: 'sem-doc' }); continue; }
+        plano.push({ c: c, src: src, estado: remota === src ? 'igual' : 'divergente' });
+    }
+    return plano;
+}
+
+function foto3x4GravarLote(lote, versao) {
+    const batch = dbFirestore.batch();
+    lote.forEach(function (item) {
+        batch.set(dbFirestore.collection('candidatos').doc(String(item.c.id)), {
+            photoDataUrl: item.src,
+            hasPhoto: true,
+            fotoVersao: versao,
+            fotoAtualizadaEm: versao,
+            fotoAtualizadaPor: 'Administrador'
+        }, { merge: true });
+    });
+    return batch.commit();
+}
+
+function foto3x4AplicarPlano(plano) {
+    const divergentes = plano.filter(p => p.estado === 'divergente');
+    const iguais = plano.filter(p => p.estado === 'igual').length;
+    const semFoto = plano.filter(p => p.estado === 'sem-foto').length;
+    const semDoc = plano.filter(p => p.estado === 'sem-doc').length;
+    const erroLeitura = plano.filter(p => p.estado === 'erro-leitura').length;
+    if (!divergentes.length) {
+        return Promise.resolve({ enviados: 0, iguais: iguais, semFoto: semFoto, semDoc: semDoc, erroLeitura: erroLeitura });
+    }
+    const nomes = divergentes.slice(0, 4).map(p => (p.c.nome || p.c.cpf || 'aluno')).join(', ')
+        + (divergentes.length > 4 ? ' e mais ' + (divergentes.length - 4) : '');
+    const ok = window.confirm(
+        'Reenviar ' + divergentes.length + ' foto(s) para o dispositivo do aluno?\n\n'
+        + 'Alunos: ' + nomes + '\n\n'
+        + 'A foto atualizada passa a valer no portal do aluno, na Carteira e na Ficha Geral.'
+    );
+    if (!ok) return Promise.resolve({ enviados: 0, iguais: iguais, semFoto: semFoto, semDoc: semDoc, erroLeitura: erroLeitura, cancelado: true });
+
+    const versao = String(Date.now());
+    let enviados = 0;
+    let falhas = 0;
+    const lotes = [];
+    for (let i = 0; i < divergentes.length; i += FOTO3X4_LOTE) lotes.push(divergentes.slice(i, i + FOTO3X4_LOTE));
+    return lotes.reduce(function (sequencia, lote) {
+        return sequencia.then(function () {
+            foto3x4SyncMsg('Enviando ' + (enviados + 1) + ' de ' + divergentes.length + ' foto(s)...', '#2563eb');
+            return foto3x4GravarLote(lote, versao).then(function () {
+                enviados += lote.length;
+                lote.forEach(function (item) {
+                    item.c.photoDataUrl = item.src;
+                    item.c.hasPhoto = true;
+                    item.c.fotoVersao = versao;
+                    delete fotoMemo[item.c.cpf];
+                });
+            }).catch(function (e) {
+                console.error('Erro ao reenviar foto:', e);
+                falhas += lote.length;
+            });
+        });
+    }, Promise.resolve()).then(function () {
+        return { enviados: enviados, falhas: falhas, iguais: iguais, semFoto: semFoto, semDoc: semDoc, erroLeitura: erroLeitura };
+    });
+}
+
+function foto3x4SyncResultado(res) {
+    if (res.cancelado) {
+        foto3x4SyncMsg('Envio cancelado. Nada foi alterado.', '#f59e0b');
+        return;
+    }
+    const partes = [];
+    if (res.enviados) partes.push(res.enviados + ' foto(s) atualizada(s) no dispositivo do aluno');
+    if (res.iguais) partes.push(res.iguais + ' ja estava(m) igual');
+    if (res.semFoto) partes.push(res.semFoto + ' sem foto');
+    if (res.semDoc) partes.push(res.semDoc + ' sem registro no Firestore');
+    if (res.erroLeitura) partes.push(res.erroLeitura + ' com falha de leitura');
+    if (res.falhas) partes.push(res.falhas + ' com falha no envio');
+    const texto = partes.length ? partes.join(' | ') : 'Nada a atualizar.';
+    foto3x4SyncMsg(texto, res.falhas ? '#dc2626' : (res.enviados ? '#16a34a' : '#64748b'));
+}
+
+/* Botao da secao: atualiza no dispositivo do aluno todas as fotos da turma. */
+async function foto3x4AtualizarDispositivos() {
+    if (foto3x4SyncRodando) return;
+    const selProj = document.getElementById('foto3x4-selecao-projeto');
+    const selTurma = document.getElementById('foto3x4-selecao-turma');
+    const btn = document.getElementById('foto3x4-sync-btn');
+    if (!selProj || !selTurma) return;
+    if (!selProj.value || !selTurma.value) {
+        foto3x4SyncMsg('Selecione o projeto e a turma antes de atualizar.', '#f59e0b');
+        return;
+    }
+    if (!firebaseReady) {
+        foto3x4SyncMsg('Aguarde a conexao com o banco de dados.', '#f59e0b');
+        return;
+    }
+    const lista = foto3x4Filtrados();
+    if (!lista.length) {
+        foto3x4SyncMsg('Nenhum aluno ativo nesta selecao.', '#f59e0b');
+        return;
+    }
+    foto3x4SyncRodando = true;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...'; }
+    foto3x4SyncMsg('Conferindo ' + lista.length + ' aluno(s)...', '#2563eb');
+    try {
+        const plano = await foto3x4Plano(lista);
+        const res = await foto3x4AplicarPlano(plano);
+        foto3x4SyncResultado(res);
+    } catch (e) {
+        console.error('Erro ao atualizar fotos:', e);
+        foto3x4SyncMsg('Erro ao atualizar as fotos: ' + e.message, '#dc2626');
+    } finally {
+        foto3x4SyncRodando = false;
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Atualizar Fotos no Dispositivo do Aluno'; }
+    }
+}
+
+/* Botao da linha: atualiza no dispositivo do aluno apenas a foto daquele aluno. */
+async function foto3x4AtualizarAluno(fi) {
+    if (foto3x4SyncRodando) return;
+    const c = foto3x4CandidatoPorIndice(fi);
+    if (!c) return;
+    if (!firebaseReady) { alert('Aguarde a conexao com o banco de dados.'); return; }
+    foto3x4SyncRodando = true;
+    try {
+        const plano = await foto3x4Plano([c]);
+        const res = await foto3x4AplicarPlano(plano);
+        if (res.cancelado) return;
+        if (res.enviados) alert('Foto de ' + (c.nome || 'o aluno') + ' atualizada no dispositivo do aluno.');
+        else if (res.iguais) alert('A foto de ' + (c.nome || 'o aluno') + ' ja esta igual a que esta no aparelho.');
+        else if (res.semFoto) alert('Este aluno ainda nao possui foto 3x4.');
+        else if (res.semDoc) alert('Este aluno nao tem registro no banco de dados para receber a foto.');
+        else if (res.erroLeitura) alert('Nao foi possivel ler a foto do aluno no banco de dados.');
+    } catch (e) {
+        console.error('Erro ao atualizar a foto do aluno:', e);
+        alert('Erro ao atualizar a foto: ' + e.message);
+    } finally {
+        foto3x4SyncRodando = false;
+    }
 }
 
 function paFotoAdminSalvar(c, dataUrl, fi) {

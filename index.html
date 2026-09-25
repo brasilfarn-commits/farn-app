@@ -1014,8 +1014,14 @@
                             </div>
                             <!-- Conteudo (oculto ate selecionar projeto+turma) -->
                             <div id="foto3x4-conteudo" style="display:none">
-                                <div class="alunos-toolbar">
+                                <div class="alunos-toolbar" style="flex-wrap:wrap;gap:8px">
                                     <div style="font-size:12px;color:#64748b;font-weight:600"><i class="fa-solid fa-users"></i> <span id="foto3x4-count">0</span> aluno(s) ativo(s)</div>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                                        <button class="btn-primary btn-sm" id="foto3x4-sync-btn" onclick="foto3x4AtualizarDispositivos()" style="background:#2563eb;border-color:#2563eb" title="Reenvia as fotos exibidas aqui no administrador para o Firestore, para que aparecam atualizadas no portal do aluno, na Carteira e na Ficha Geral">
+                                            <i class="fa-solid fa-cloud-arrow-down"></i> Atualizar Fotos no Dispositivo do Aluno
+                                        </button>
+                                        <span id="foto3x4-sync-msg" style="font-size:11.5px;color:#64748b"></span>
+                                    </div>
                                 </div>
                                 <div id="foto3x4-tab-content">
                                     <div class="card full-width" style="margin-top:14px">
@@ -4044,7 +4050,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=42"></script>
+    <script src="app.js?v=43"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
