@@ -11305,6 +11305,7 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     const nome = c.nome || '—';
     const cpf = formatCPFDisplay(c.cpf) || '—';
     const mat = c.matricula || generateMatricula(c.cpf) || '—';
+    const cursos = Array.isArray(c.cursos) ? c.cursos.filter(Boolean) : (c.cursos ? [c.cursos] : []);
     const st = c.status || '—';
     const stCor = fichaGeralStatusCor(st);
     const fotoHtml = fotoSrc
@@ -11371,6 +11372,7 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     secoes.push(fgSecao('fa-calendar-check', 'Registro', fgGrid(
         fgCampo('Projeto', c.projeto) +
         fgCampo('Turma', c.turma) +
+        fgCampo('Cursos', cursos.join(', ')) +
         fgCampo('Data de Inscricao', fichaGeralData(c.dataInscricao)) +
         fgCampo('Data do Cadastro', fichaGeralData(c.dataCadastro)) +
         fgCampo('Data/Hora Cadastro', c.dataHoraCadastro) +
