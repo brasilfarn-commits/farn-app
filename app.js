@@ -241,6 +241,10 @@ function configInstituicaoSalvar() {
                 FARN_LOGO = dados.logo;
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img) { img.src = dados.logo; });
             }
+            /* A Ficha Geral (admin e portal) usa estes dados no cabecalho */
+            if (typeof fichaGeralCarregarInstituicao === 'function') {
+                fichaGeralCarregarInstituicao(true);
+            }
             configInstituicaoFechar();
         })
         .catch(function(e) {
@@ -11087,6 +11091,8 @@ function fichaGeralInicializar() {
     if (selTurma) selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     const conteudo = document.getElementById('ficha-geral-conteudo');
     if (conteudo) conteudo.style.display = 'none';
+    /* Cabecalho institucional vem de Configuracoes > Dados da Instituicao */
+    if (typeof fichaGeralCarregarInstituicao === 'function') fichaGeralCarregarInstituicao();
 }
 
 function fichaGeralOnProjetoChange() {
@@ -11195,6 +11201,7 @@ async function fichaGeralRenderList() {
 
     try {
         const aulas = await fichaGeralCarregarAulas(projeto, turma);
+        await fichaGeralCarregarInstituicao();
         const jobs = filtrados.map(c => fichaGeralDadosAluno(c));
         const dadosList = await Promise.all(jobs);
 
@@ -11217,6 +11224,7 @@ async function fichaGeralRenderList() {
             folhas.push(fichaGeralItemHTML(c, calc, aulas, i));
         }
         lista.innerHTML = folhas.join('');
+        fichaGeralAplicarLogo(lista);
 
         // Aplica as fotos assincronamente
         filtrados.forEach((c, i) => {
@@ -11248,24 +11256,10 @@ async function fichaGeralAbrirJanela(imprimirAgora) {
     fichaGeralCache.forEach((x, i) => {
         body += fichaGeralFolha(x.c, x.calc, fotos[i] || null, i, x.aulas);
     });
+    /* Janela A4 compartilhada com o portal do aluno (quebra de pagina entre
+       as fichas, CSS de impressao e aplicacao do logo da instituicao). */
     const titulo = 'FARN - Fichas Gerais - ' + fichaGeralProjeto + ' / ' + fichaGeralTurma;
-    const w = window.open('', '_blank', 'width=960,height=760');
-    if (!w) { alert('Permita a abertura de pop-ups para imprimir as fichas.'); return; }
-    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + titulo + '</title>'
-        + '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'
-        + '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">'
-        + '<style>'
-        + '@page{size:A4;margin:12mm}'
-        + 'body{margin:0;padding:14px;font-family:Inter,Arial,sans-serif;background:#eef2f7;color:#0f172a}'
-        + '.fg-quebra{page-break-after:always}'
-        + '.fg-quebra:last-child{page-break-after:auto}'
-        + '.fg-somente-tela{display:none}'
-        + '@media print{body{background:#fff;padding:0}.fg-quebra{box-shadow:none;border:none;border-radius:0;max-width:none}}'
-        + '</style>'
-        + '</head><body>' + body + '</body></html>');
-    w.document.close();
-    w.focus();
-    if (imprimirAgora) setTimeout(function() { w.print(); }, 600);
+    fichaGeralAbrirImpressao(titulo, body, imprimirAgora);
 }
 
 function fichaGeralImprimirTodas() {
@@ -11282,21 +11276,7 @@ async function fichaGeralImprimirUma(idx) {
     let foto = null;
     try { foto = await getFoto(x.c.cpf); } catch (e) {}
     const body = fichaGeralFolha(x.c, x.calc, foto, idx, x.aulas);
-    const w = window.open('', '_blank', 'width=900,height=720');
-    if (!w) return;
-    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>FARN - Ficha Geral - ' + escHTML(x.c.nome || '') + '</title>'
-        + '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'
-        + '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">'
-        + '<style>'
-        + '@page{size:A4;margin:12mm}'
-        + 'body{margin:0;padding:14px;font-family:Inter,Arial,sans-serif;background:#eef2f7;color:#0f172a}'
-        + '.fg-somente-tela{display:none}'
-        + '@media print{body{background:#fff;padding:0}.fg-quebra{box-shadow:none;border:none;border-radius:0;max-width:none}}'
-        + '</style>'
-        + '</head><body>' + body + '</body></html>');
-    w.document.close();
-    w.focus();
-    setTimeout(function() { w.print(); }, 600);
+    fichaGeralAbrirImpressao('FARN - Ficha Geral - ' + (x.c.nome || ''), body, true);
 }
 
 /* A Ficha Geral compartilhada (ficha-geral-compartilhar.js) chama o botao

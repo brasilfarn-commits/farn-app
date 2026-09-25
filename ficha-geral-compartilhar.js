@@ -55,6 +55,7 @@ function fgDb() {
 
 /* Monta e abre a janela de impressao (A4) da ficha. */
 function fichaGeralAbrirImpressao(titulo, bodyHtml, imprimirAgora) {
+    fichaGeralPrepararLogo();
     var w = window.open('', '_blank', 'width=900,height=720');
     if (!w) { alert('Permita a abertura de pop-ups para imprimir a ficha.'); return null; }
     w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + fgEsc(titulo) + '</title>'
@@ -68,7 +69,7 @@ function fichaGeralAbrirImpressao(titulo, bodyHtml, imprimirAgora) {
         + '.fg-somente-tela{display:none}'
         + '@media print{body{background:#fff;padding:0}.fg-quebra{box-shadow:none;border:none;border-radius:0;max-width:none}}'
         + '</style>'
-        + '</head><body>' + bodyHtml + '</body></html>');
+        + '</head><body>' + bodyHtml + fichaGeralScriptLogo() + '</body></html>');
     w.document.close();
     w.focus();
     if (imprimirAgora) setTimeout(function() { w.print(); }, 600);
@@ -275,6 +276,124 @@ function fichaGeralCalcular(c, dados, aulas) {
     };
 }
 
+/* ===== DADOS DA INSTITUICAO (Configuracoes > Dados da Instituicao) =====
+   Le o mesmo documento usado pelo administrativo (configuracoes/instituicao)
+   e monta o cabecalho institucional da ficha. */
+var fichaGeralInstCache = null;
+var fichaGeralInstPromise = null;
+var FICHA_GERAL_LOGO_KEY = 'fichaGeralLogo';
+
+async function fichaGeralCarregarInstituicao(forcar) {
+    const db = fgDb();
+    if (!db) { fichaGeralInstCache = null; return null; }
+    if (fichaGeralInstCache && !forcar) return fichaGeralInstCache;
+    if (fichaGeralInstPromise && !forcar) return fichaGeralInstPromise;
+    fichaGeralInstPromise = db.collection('configuracoes').doc('instituicao').get()
+        .then(doc => {
+            fichaGeralInstCache = doc.exists ? (doc.data() || null) : null;
+            return fichaGeralInstCache;
+        })
+        .catch(e => {
+            console.error('Erro ao carregar os dados da instituicao:', e);
+            fichaGeralInstCache = null;
+            return null;
+        });
+    return fichaGeralInstPromise;
+}
+
+/* Somente os campos que podem sair impressos. A senha do administrador
+   cadastrada no admin nunca e levada para a ficha. */
+function fichaGeralDadosInstituicao() {
+    const d = fichaGeralInstCache || {};
+    const txt = v => String(v == null ? '' : v).trim();
+    return {
+        razaoSocial: txt(d.razaoSocial),
+        nomeFantasia: txt(d.nomeFantasia),
+        cnpj: txt(d.cnpj),
+        fone: txt(d.fone),
+        email: txt(d.email),
+        logo: typeof d.logo === 'string' ? d.logo : ''
+    };
+}
+
+/* O logo cadastrado no admin e um data URL (base64) que pode chegar a 2MB.
+   Para nao repetir esse texto dentro do HTML de cada ficha, a folha usa
+   <img data-fg-logo> sem src: a tela aplica a imagem e a janela de impressao
+   le o logo do sessionStorage. */
+function fichaGeralAplicarLogo(raiz) {
+    const logo = fichaGeralDadosInstituicao().logo;
+    if (!logo) return;
+    const base = raiz || (typeof document !== 'undefined' ? document : null);
+    if (!base || !base.querySelectorAll) return;
+    const imgs = base.querySelectorAll('img[data-fg-logo]');
+    for (let i = 0; i < imgs.length; i++) {
+        if (imgs[i].getAttribute('data-fg-pronto')) continue;
+        imgs[i].setAttribute('data-fg-pronto', '1');
+        imgs[i].src = logo;
+        imgs[i].style.display = '';
+    }
+}
+
+function fichaGeralPrepararLogo() {
+    try {
+        const logo = fichaGeralDadosInstituicao().logo;
+        if (logo) sessionStorage.setItem(FICHA_GERAL_LOGO_KEY, logo);
+        else sessionStorage.removeItem(FICHA_GERAL_LOGO_KEY);
+    } catch (e) { /* sessionStorage indisponivel: a ficha sai sem logo */ }
+}
+
+/* Script injetado na janela de impressao: aplica o logo em todas as folhas. */
+function fichaGeralScriptLogo() {
+    return '<scr' + 'ipt>(function(){try{var l=sessionStorage.getItem("' + FICHA_GERAL_LOGO_KEY + '")||"";'
+        + 'if(!l)return;var n=document.querySelectorAll("img[data-fg-logo]");'
+        + 'for(var i=0;i<n.length;i++){if(n[i].getAttribute("data-fg-pronto"))continue;'
+        + 'n[i].setAttribute("data-fg-pronto","1");n[i].src=l;n[i].style.display="";}}catch(e){}})();</scr' + 'ipt>';
+}
+
+function fgChipContato(icone, rotulo, valor) {
+    return '<div style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #bae6fd;border-radius:20px;padding:4px 10px;max-width:100%">'
+        + '<i class="fa-solid ' + icone + '" style="color:#0ea5e9;font-size:9.5px;flex-shrink:0"></i>'
+        + '<span style="font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0">' + fgEsc(rotulo) + '</span>'
+        + '<span style="font-size:11px;font-weight:700;color:#0f172a;word-break:break-word">' + fgEsc(valor) + '</span></div>';
+}
+
+/* Cabecalho institucional (espaco superior da ficha): logo, razao social,
+   nome fantasia, contatos e o projeto/turma do aluno. */
+function fichaGeralCabecalho(inst, c, fotoHtml) {
+    const razao = inst.razaoSocial || 'FARN - FORCA AUXILIAR DE RESGATE NACIONAL';
+    const chips = (inst.cnpj ? fgChipContato('fa-file-invoice', 'CNPJ', inst.cnpj) : '')
+        + (inst.fone ? fgChipContato('fa-phone', 'Telefone', inst.fone) : '')
+        + (inst.email ? fgChipContato('fa-envelope', 'E-mail', inst.email) : '');
+    const marca = inst.logo
+        ? '<img data-fg-logo="1" alt="Logo da instituicao" style="width:54px;height:54px;border-radius:12px;object-fit:contain;background:#fff;border:1px solid #bae6fd;padding:2px;flex-shrink:0;display:none">'
+        : '<div style="width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;flex-shrink:0"><i class="fa-solid fa-building-columns"></i></div>';
+
+    let linha = '<div style="border-top:1px dashed #7dd3fc;margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">';
+    linha += chips
+        ? '<div style="display:flex;gap:6px;flex-wrap:wrap;min-width:0">' + chips + '</div>'
+        : '<div style="font-size:10.5px;color:#64748b;font-style:italic">Dados da instituicao nao cadastrados no administrativo.</div>';
+    linha += '<div style="font-size:11px;font-weight:800;color:#0284c7;white-space:nowrap">'
+        + '<i class="fa-solid fa-layer-group" style="margin-right:4px"></i>Projeto: ' + fgEsc(fichaGeralProjeto || c.projeto || '')
+        + '  &bull;  Turma: ' + fgEsc(fichaGeralTurma || c.turma || '') + '</div>';
+    linha += '</div>';
+
+    return '<div style="border:1px solid #bae6fd;border-radius:12px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);padding:12px 16px;margin-bottom:14px">'
+        + '<div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">'
+        + marca
+        + '<div style="flex:1;min-width:190px">'
+        + '<div style="font-size:9.5px;font-weight:800;color:#0284c7;text-transform:uppercase;letter-spacing:1.1px">'
+        + '<i class="fa-solid fa-building-columns" style="margin-right:4px"></i>Dados da Instituicao</div>'
+        + '<div style="font-size:15px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.3px;margin-top:3px;line-height:1.25">' + fgEsc(razao) + '</div>'
+        + (inst.nomeFantasia ? '<div style="font-size:12.5px;font-weight:700;color:#0ea5e9;margin-top:2px">' + fgEsc(inst.nomeFantasia) + '</div>' : '')
+        + '<div style="font-size:9.5px;font-weight:700;color:#475569;letter-spacing:.9px;margin-top:5px">FICHA GERAL DO CADASTRO E AVALIACOES</div>'
+        + '</div>'
+        + '<div style="flex-shrink:0;text-align:center">' + fotoHtml
+        + '<div style="font-size:9px;color:#94a3b8;margin-top:4px;font-weight:700;letter-spacing:.5px">FOTO 3X4</div>'
+        + '</div></div>'
+        + linha
+        + '</div>';
+}
+
 /* ===== MONTAGEM DA FICHA ===== */
 function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     const aulasRef = aulas || fichaGeralAulasCache || { teorica: [], pratica: [] };
@@ -442,18 +561,7 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '</div>';
 
     return '<div class="fg-quebra" style="background:#fff;border-radius:14px;box-shadow:0 12px 34px rgba(2,6,23,.14);border:1px solid #e2e8f0;padding:24px 26px;max-width:800px;margin:0 auto;color:#0f172a;font-family:Inter,Arial,sans-serif">'
-        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;border-bottom:3px solid #0ea5e9;padding-bottom:12px;margin-bottom:14px">'
-        + '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">'
-        + '<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0"><i class="fa-solid fa-bullhorn"></i></div>'
-        + '<div style="min-width:0">'
-        + '<div style="font-size:14px;font-weight:800;color:#0f172a;letter-spacing:.3px">FARN - FORCA AUXILIAR DE RESGATE NACIONAL</div>'
-        + '<div style="font-size:11px;color:#64748b;margin-top:2px">Ficha Geral do Cadastro e Avaliacoes</div>'
-        + '<div style="font-size:11px;font-weight:700;color:#0ea5e9;margin-top:4px"><i class="fa-solid fa-layer-group" style="margin-right:4px"></i>Projeto: ' + fgEsc(fichaGeralProjeto || c.projeto) + '  •  Turma: ' + fgEsc(fichaGeralTurma || c.turma) + '</div>'
-        + '</div></div>'
-        + '<div style="flex-shrink:0;text-align:center">'
-        + fotoHtml
-        + '<div style="font-size:9px;color:#94a3b8;margin-top:4px;font-weight:700;letter-spacing:.5px">FOTO 3X4</div>'
-        + '</div></div>'
+        + fichaGeralCabecalho(fichaGeralDadosInstituicao(), c, fotoHtml)
         + '<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
         + '<div><div style="font-size:17px;font-weight:800;color:#0f172a">' + fgEsc(nome) + '</div>'
         + '<div style="font-size:11px;color:#475569;margin-top:2px">Matricula: ' + fgEsc(mat) + '  •  CPF: ' + fgEsc(cpf) + '  •  Turma: ' + fgEsc(fichaGeralTurma || c.turma) + '</div></div>'
