@@ -2192,7 +2192,7 @@
                     <div class="card full-width">
                         <div class="card-header">
                             <h3 id="form-title"><i class="fa-solid fa-user-plus" style="color:#16a34a;margin-right:8px"></i> Novo Pre-Cadastro</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-pre-inscricao')">
+                            <button class="btn-outline" id="fc-voltar-btn" onclick="showAdminSection('admin-pre-inscricao')">
                                 <i class="fa-solid fa-arrow-left"></i> Voltar
                             </button>
                         </div>
@@ -2447,9 +2447,9 @@
 
                                 <div class="form-submit-bar">
                                     <button type="button" class="btn-outline" onclick="resetFormCandidato()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
-                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-pre-inscricao')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                    <button type="button" class="btn-outline" id="fc-cancelar-btn" onclick="showAdminSection('admin-pre-inscricao')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                                     <button type="button" class="btn-outline btn-atualizar" id="btn-atualizar-cadastro" style="display:none;border-color:#16a34a;color:#16a34a" onclick="toggleAtualizarCadastro()"><i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro</button>
-                                    <button type="submit" class="btn-primary btn-lg"><i class="fa-solid fa-check"></i> Salvar Pre-Cadastro</button>
+                                    <button type="submit" class="btn-primary btn-lg" id="fc-save-btn"><i class="fa-solid fa-check"></i> Salvar Pre-Cadastro</button>
                                 </div>
                             </form>
                         </div>
@@ -4043,7 +4043,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=37"></script>
+    <script src="app.js?v=38"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

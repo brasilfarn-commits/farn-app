@@ -3,6 +3,20 @@ const ADMIN_SENHA = '212121';
 let selectedLoginRole = 'admin';
 let editingIndex = null;
 let editingFormadoMode = false;
+// Origem do formulario de candidato: 'pre-inscricao' | 'alunos' | 'formados'.
+// Define titulo, rotulo do botao Salvar e a tela de retorno apos salvar.
+let editingOrigem = 'pre-inscricao';
+
+/* ===== MODO DO FORMULARIO (PRE-CADASTRO / ALUNO / FORMADO) =====
+   O formulario de pre-inscricao e o formulario de Alunos sao fluxos distintos:
+   - Pre-inscricao: cadastro inicial (status Pendente), avaliado antes de virar Ativo.
+   - Alunos: recebe o cadastro quando o status passa para Ativo (formulario independente).
+   Ao salvar, o usuario deve voltar para a tela de origem, nunca para a pre-inscricao. */
+const FC_ORIGENS = {
+    'pre-inscricao': { rotulo: 'Pre-Cadastro', icone: 'fa-user-plus', cor: '#16a34a', salvar: 'Salvar Pre-Cadastro', section: 'admin-pre-inscricao' },
+    'alunos': { rotulo: 'Aluno', icone: 'fa-user-graduate', cor: '#2563eb', salvar: 'Salvar Aluno', section: 'admin-alunos' },
+    'formados': { rotulo: 'Formado', icone: 'fa-user-graduate', cor: '#2563eb', salvar: 'Salvar Formado', section: 'admin-formados' }
+};
 let candidatos = [];
 let turmas = [];
 let uploadedFiles = [];
@@ -982,6 +996,7 @@ function handleLogout() {
     document.body.classList.add('landing-mode');
     editingIndex = null;
     editingFormadoMode = false;
+    editingOrigem = 'pre-inscricao';
     currentUserData = null;
     clearLoginState();
     landingCarregarInstituicao();
@@ -1605,7 +1620,8 @@ function showAdminSection(sectionId, navEl) {
     el.classList.add('active');
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar Pre-Cadastro' : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral' };
+    const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -1646,16 +1662,34 @@ function calcularIdadeCampo(nascId, idadeId) {
 
 const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-idade','fc-data-inscricao','fc-estado-civil','fc-genero','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
+function fcFormularioModo(origem, nome, isNovo) {
+    const cfg = FC_ORIGENS[origem] || FC_ORIGENS['pre-inscricao'];
+    editingOrigem = origem || 'pre-inscricao';
+    const acao = isNovo ? 'Novo' : 'Editar';
+    const tituloEl = document.getElementById('form-title');
+    if (tituloEl) {
+        tituloEl.innerHTML = '<i class="fa-solid ' + cfg.icone + '" style="color:' + cfg.cor + ';margin-right:8px"></i> ' + acao + ' ' + cfg.rotulo + (nome ? ' - ' + nome : '');
+    }
+    const pageEl = document.getElementById('admin-page-title');
+    if (pageEl) pageEl.textContent = acao + ' ' + cfg.rotulo;
+    const btnSalvar = document.getElementById('fc-save-btn');
+    if (btnSalvar) btnSalvar.innerHTML = '<i class="fa-solid fa-check"></i> ' + cfg.salvar;
+    const irParaOrigem = "showAdminSection('" + cfg.section + "')";
+    const btnVoltar = document.getElementById('fc-voltar-btn');
+    if (btnVoltar) btnVoltar.setAttribute('onclick', irParaOrigem);
+    const btnCancelar = document.getElementById('fc-cancelar-btn');
+    if (btnCancelar) btnCancelar.setAttribute('onclick', irParaOrigem);
+}
+
 async function openFormCandidato() {
     editingIndex = null;
     editingFormadoMode = false;
     resetFormCandidato();
     await populateTurmaSelect();
     populateProjetoSelect();
-    fcCursosCarregar([]);
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) btnAtualizar.style.display = 'none';
-    document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#16a34a;margin-right:8px"></i> Novo Pre-Cadastro';
+    fcFormularioModo('pre-inscricao', '', true);
     showAdminSection('admin-form-candidato');
 }
 
@@ -1711,7 +1745,7 @@ function fcCursosColetar() {
     return selecionados;
 }
 
-async function editCandidato(index) {
+async function editCandidato(index, origem) {
     const c = candidatos[index]; if (!c) return;
     editingIndex = index;
     await populateTurmaSelect();
@@ -1755,7 +1789,6 @@ async function editCandidato(index) {
     document.getElementById('fc-projeto').value = c.projeto || '';
     fcProjetoOnTurmaChange();
     document.getElementById('fc-turma').value = c.turma || '';
-    fcCursosCarregar(c.cursos || []);
     // Marcar cursos salvos do candidato
     fcCursosCarregar(Array.isArray(c.cursos) ? c.cursos : []);
     const tipoPessoa = c.tipoPessoa || 'A';
@@ -1799,21 +1832,19 @@ async function editCandidato(index) {
         }
     }
     editingFormadoMode = (c.tipoPessoa || 'A') === 'F';
-    if (editingFormadoMode) {
-        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-graduate" style="color:#2563eb;margin-right:8px"></i> Editar Formado - ' + c.nome;
-        const titleEl = document.getElementById('admin-page-title');
-        if (titleEl) titleEl.textContent = 'Editar Formado';
-    }
+    // A tela de origem define titulo, rotulo do botao Salvar e o retorno apos salvar.
+    const origemForm = origem || (editingFormadoMode ? 'formados' : 'pre-inscricao');
+    fcFormularioModo(origemForm, c.nome || '', false);
     showAdminSection('admin-form-candidato');
-    if (editingFormadoMode) {
-        const titleEl = document.getElementById('admin-page-title');
-        if (titleEl) titleEl.textContent = 'Editar Formado';
-    }
+    const titleEl = document.getElementById('admin-page-title');
+    if (titleEl) titleEl.textContent = 'Editar ' + ((FC_ORIGENS[origemForm] || FC_ORIGENS['pre-inscricao']).rotulo);
 }
 
 function resetFormCandidato() {
     editingIndex = null;
     editingFormadoMode = false;
+    editingOrigem = 'pre-inscricao';
+    fcFormularioModo('pre-inscricao', '', true);
     formFields.forEach(id => { const el = document.getElementById(id); if (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; } });
     document.getElementById('senha-field-wrapper').style.display = 'none';
     document.getElementById('fc-senha').required = false;
@@ -1825,9 +1856,8 @@ function resetFormCandidato() {
     if (mq) { mq.src = ''; mq.style.display = 'none'; }
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
-    // Marcar cursos salvos (multipla escolha)
-    const cCursos = (c.cursos && Array.isArray(c.cursos)) ? c.cursos : [];
-    if (typeof fcCursosCarregar === 'function') fcCursosCarregar(cCursos);
+    // No formulario vazio, nenhum curso deve permanecer selecionado.
+    if (typeof fcCursosCarregar === 'function') fcCursosCarregar([]);
     uploadedFiles = [];
     renderFilesList();
 }
@@ -1855,6 +1885,9 @@ function toggleAtualizarCadastro() {
 
 async function handleCandidatoSubmit(event) {
     event.preventDefault();
+    // Origem do formulario em uso: define para qual tela voltar apos salvar.
+    const origemSalvar = editingOrigem || 'pre-inscricao';
+    const isNovoCadastro = editingIndex === null;
     const data = {};
     formFields.forEach(id => {
         const key = id.replace('fc-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
@@ -1888,16 +1921,21 @@ async function handleCandidatoSubmit(event) {
     }
 
     backupCandidatos();
-    if (editingFormadoMode) {
-        editingFormadoMode = false;
+    editingFormadoMode = false;
+    editingOrigem = 'pre-inscricao';
+    if (origemSalvar === 'formados') {
         showAdminSection('admin-formados');
         if (typeof formadosInicializar === 'function') formadosInicializar();
         renderFormadosList();
+    } else if (origemSalvar === 'alunos') {
+        // Formulario de Alunos e independente: mantem a aba e os filtros atuais.
+        showAdminSection('admin-alunos');
+        renderAlunosList();
     } else {
         showAdminSection('admin-pre-inscricao');
         renderList();
     }
-    if (editingIndex === null && data.whatsapp) {
+    if (isNovoCadastro && data.whatsapp) {
         var linkWa = farnGerarLinkWhatsApp(data.whatsapp, 'Olá ' + (data.nome || 'Aluno') + ', seu cadastro na FARN foi realizado com sucesso! Aguarde a análise da equipe. Qualquer dúvida, entre em contato!');
         if (linkWa && confirm('Cadastro de ' + data.nome + ' finalizado. Enviar confirmação pelo WhatsApp?')) {
             window.open(linkWa, '_blank');
@@ -2064,7 +2102,9 @@ function renderList() {
     const badge = document.getElementById('pre-count-badge');
     if (!tbody) return;
     const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
-    const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
+    // Pre-inscricao mostra apenas os cadastros ainda em avaliacao.
+    // Ao virar Ativo, o cadastro sai daqui e passa a integrar o formulario de Alunos.
+    const filtrados = candidatos.filter(c => c.status !== 'Ativo' && (!turmaFiltro || c.turma === turmaFiltro));
     const p = filtrados.filter(c => c.status === 'Pendente').length;
     if (badge) badge.textContent = p + ' pendente' + (p !== 1 ? 's' : '');
     if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
@@ -2085,7 +2125,7 @@ function renderList() {
             <td style="color:#aaa;font-size:12px">${c.cadastradoPor || '-'}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
-                <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon" title="Editar" onclick="editCandidato(${i}, 'pre-inscricao')"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon" title="Mudar Turma" onclick="mudarTurmaCandidato(${i})"><i class="fa-solid fa-arrows-left-right"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidato(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
@@ -2530,7 +2570,8 @@ async function importExcelFile(event) {
 
 function exportExcel() {
     const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
-    const filtrados = candidatos.filter(c => !turmaFiltro || c.turma === turmaFiltro);
+    // Mantem o mesmo criterio da lista de pre-inscricao: exclui os já Ativos.
+    const filtrados = candidatos.filter(c => c.status !== 'Ativo' && (!turmaFiltro || c.turma === turmaFiltro));
     if (!filtrados.length) { alert('Nenhum candidato para exportar nesta turma.'); return; }
     let csv = 'Nome,CPF,Nascimento,Idade,Genero de Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     filtrados.forEach(c => {
@@ -2658,7 +2699,7 @@ function renderAlunosList() {
 
         const actionsHtml = `<div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
-                <button class="btn-icon" title="Editar" onclick="editCandidato(${i})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon" title="Editar" onclick="editCandidato(${i}, 'alunos')"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
                 <button class="btn-icon" title="Copiar para a seção CFF" onclick="alunosCopyParaCff(${i})" style="color:#7c3aed"><i class="fa-solid fa-chalkboard"></i></button>
@@ -8262,7 +8303,7 @@ function renderFormadosList() {
             '<td>' + remanejado + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(' + i + ')"><i class="fa-solid fa-eye"></i></button>' +
-                '<button class="btn-icon" title="Editar" onclick="editCandidato(' + i + ')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="btn-icon" title="Editar" onclick="editCandidato(' + i + ', \'formados\')"><i class="fa-solid fa-pen"></i></button>' +
                 (!c.remanejadoDocente ? '<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
             '</div></td></tr>';
     }).join('');
