@@ -52,6 +52,16 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
 .cff-aula-card p { font-size:12px; color:#64748b; margin:0; display:flex; gap:10px; flex-wrap:wrap; align-items:center; line-height:1.6; }
 .cff-aula-card p i { margin-right:3px; color:#7c3aed; opacity:.7; }
 .cff-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; }
+
+.cff-apostila-card { display:flex; align-items:center; gap:14px; padding:14px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:10px; cursor:pointer; transition:.2s; }
+.cff-apostila-card:hover { border-color:#7c3aed; box-shadow:0 4px 16px rgba(124,58,237,.1); }
+.cff-apostila-icon { width:46px; height:46px; background:rgba(220,38,38,.08); color:#dc2626; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.cff-apostila-info { flex:1; min-width:0; }
+.cff-apostila-info h4 { font-size:14px; font-weight:700; color:#1e1b4b; margin:0 0 5px; line-height:1.4; word-break:break-word; }
+.cff-apostila-meta { font-size:12px; color:#64748b; margin:0; display:flex; gap:10px; flex-wrap:wrap; align-items:center; line-height:1.6; }
+.cff-apostila-desc { font-size:12.5px; color:#475569; margin:6px 0 0; line-height:1.6; }
+.cff-apostila-btn { flex-shrink:0; width:38px; height:38px; border-radius:10px; border:1px solid rgba(124,58,237,.3); background:rgba(124,58,237,.1); color:#7c3aed; cursor:pointer; font-size:15px; }
+.cff-apostila-btn:hover { background:rgba(124,58,237,.2); }
 .cff-aula-empty { text-align:center; padding:40px 20px; color:#94a3b8; }
 .cff-aula-empty i { font-size:40px; color:#c4b5fd; display:block; margin-bottom:10px; }
 .cff-aula-empty p { font-size:13px; color:#64748b; }
@@ -136,7 +146,7 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
     </div>
     <nav class="drawer-nav">
         <a href="#" id="cff-nav-inicio" onclick="cffShowSecao('inicio'); cffCloseMenu(); return false;"><i class="fa-solid fa-house"></i> Início</a>
-        <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-book-open"></i> Apostilas <span class="em-breve">EM BREVE</span></a>
+        <a href="#" id="cff-nav-apostilas" onclick="cffShowSecao('apostilas'); cffCloseMenu(); return false;"><i class="fa-solid fa-book-open"></i> Apostilas</a>
         <a href="#" id="cff-nav-aulas" onclick="cffShowSecao('aulas'); cffCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
         <a href="#" id="cff-nav-avaliacoes" onclick="cffShowSecao('avaliacoes'); cffCloseMenu(); return false;"><i class="fa-solid fa-list-check"></i> Avaliações</a>
         <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-newspaper"></i> Notícias <span class="em-breve">EM BREVE</span></a>
@@ -162,7 +172,7 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
                 </div>
                 <div class="box-body">
                     <div class="cards">
-                        <div class="card"><i class="fa-solid fa-book-open"></i><div>Apostilas</div><span>Em breve</span></div>
+                        <div class="card" onclick="cffShowSecao('apostilas')" style="cursor:pointer"><i class="fa-solid fa-book-open"></i><div>Apostilas</div><span>Disponíveis</span></div>
                         <div class="card"><i class="fa-solid fa-video"></i><div>Aulas</div><span>Em breve</span></div>
                         <div class="card"><i class="fa-solid fa-newspaper"></i><div>Notícias</div><span>Em breve</span></div>
                         <div class="card"><i class="fa-solid fa-graduation-cap"></i><div>Certificação</div><span>Em breve</span></div>
@@ -204,6 +214,24 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
             </div>
             <div class="dados-body">
                 <div class="dados-grid" id="cff-dados-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APOSTILAS -->
+    <div class="sec" id="cff-sec-apostilas">
+        <div class="box">
+            <div class="dados-head">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                    <h3 style="margin:0"><i class="fa-solid fa-book-open" style="color:#7c3aed;margin-right:6px"></i> Apostilas</h3>
+                    <button onclick="cffLoadApostilas()" style="background:#fff;border:1px solid #7c3aed;color:#7c3aed;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                </div>
+                <p style="margin-top:8px">Apostilas exclusivas disponibilizadas pelos docentes para o Curso de Formação de Formadores.</p>
+            </div>
+            <div class="dados-body">
+                <div id="cff-apostila-list">
+                    <div class="cff-aula-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando apostilas...</p></div>
+                </div>
             </div>
         </div>
     </div>
@@ -404,16 +432,129 @@ var cffUser = null;
         document.querySelectorAll('.sec').forEach(function(s) { s.classList.remove('ativo'); });
         var alvo = document.getElementById('cff-sec-' + nome);
         if (alvo) alvo.classList.add('ativo');
-        var navs = { inicio: 'cff-nav-inicio', dados: 'cff-nav-dados', aulas: 'cff-nav-aulas', avaliacoes: 'cff-nav-avaliacoes' };
+        var navs = { inicio: 'cff-nav-inicio', dados: 'cff-nav-dados', apostilas: 'cff-nav-apostilas', aulas: 'cff-nav-aulas', avaliacoes: 'cff-nav-avaliacoes' };
         for (var key in navs) {
             var n = document.getElementById(navs[key]);
             if (n) n.classList.toggle('ativo', nome === key);
         }
         if (nome === 'dados' && cffUser) cffLoadDados();
+        if (nome === 'apostilas') cffLoadApostilas();
         if (nome === 'aulas') cffLoadAulas();
         if (nome === 'avaliacoes') cffLoadAvaliacoes();
         document.querySelector('.wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
+
+    /* ===== APOSTILAS DO CFF =====
+       Vem da colecao apostilasAlunos: somente as apostilas marcadas como
+       exclusivas do CFF (campo cff == true) anexadas pelos docentes. */
+    function cffEsc(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    var cffApostilasCache = [];
+
+    function cffApostilaSrc(a) {
+        /* A apostila vem embutida em base64; a URL e usada quando existir. */
+        if (a.pdfBase64) return 'data:application/pdf;base64,' + a.pdfBase64;
+        return a.url || '';
+    }
+
+    window.cffAbrirApostila = function(index) {
+        var a = cffApostilasCache[index];
+        if (!a) return;
+        var src = cffApostilaSrc(a);
+        if (!src) { alert('Apostila sem arquivo.'); return; }
+        window.open(src, '_blank');
+    };
+
+    window.cffImprimirApostila = function(index) {
+        var a = cffApostilasCache[index];
+        if (!a) return;
+        var src = cffApostilaSrc(a);
+        if (!src) { alert('Apostila sem arquivo.'); return; }
+        var iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+        iframe.src = src;
+        iframe.onload = function() {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (e) {
+                window.open(src, '_blank');
+            }
+        };
+        document.body.appendChild(iframe);
+        setTimeout(function() { try { iframe.remove(); } catch (e) {} }, 120000);
+    };
+
+    async function cffLoadApostilas() {
+        var container = document.getElementById('cff-apostila-list');
+        if (!container) return;
+        container.innerHTML = '<div class="cff-aula-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando apostilas...</p></div>';
+        try {
+            var snap = await dbFirestore.collection('apostilasAlunos')
+                .where('cff', '==', true)
+                .get();
+            var items = [];
+            snap.forEach(function(doc) {
+                var a = doc.data() || {};
+                if (a.visivel === false) return;
+                if (a.tipo && a.tipo !== 'extra') return;
+                a._id = doc.id;
+                items.push(a);
+            });
+            items.sort(function(x, y) {
+                var dx = x.data ? new Date(x.data).getTime() : 0;
+                var dy = y.data ? new Date(y.data).getTime() : 0;
+                return dy - dx;
+            });
+            cffApostilasCache = items;
+            if (items.length === 0) {
+                container.innerHTML = '<div class="cff-aula-empty"><i class="fa-solid fa-book-open"></i><p>Nenhuma apostila disponível no momento.</p></div>';
+                return;
+            }
+            container.innerHTML = '';
+            items.forEach(function(a, i) {
+                container.appendChild(cffRenderApostila(a, i));
+            });
+        } catch (e) {
+            console.error('Erro ao carregar apostilas do CFF:', e);
+            container.innerHTML = '<div class="cff-aula-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar as apostilas.</p></div>';
+        }
+    }
+
+    function cffRenderApostila(a, index) {
+        var card = document.createElement('div');
+        card.className = 'cff-apostila-card';
+        card.onclick = function() { cffAbrirApostila(index); };
+        var dateStr = '';
+        if (a.data) {
+            var dt = new Date(a.data);
+            if (!isNaN(dt.getTime())) dateStr = dt.toLocaleDateString('pt-BR');
+        }
+        var desc = (a.observacao || a.descricao) ? '<p class="cff-apostila-desc">' + cffEsc(a.observacao || a.descricao) + '</p>' : '';
+        var temArquivo = !!(a.pdfBase64 || a.url);
+        card.innerHTML =
+            '<div class="cff-apostila-icon"><i class="fa-solid fa-file-pdf"></i></div>' +
+            '<div class="cff-apostila-info">' +
+                '<h4>' + cffEsc(a.titulo || 'Apostila') + '</h4>' +
+                '<p class="cff-apostila-meta">' +
+                    '<span class="cff-badge" style="background:rgba(124,58,237,.12);color:#7c3aed"><i class="fa-solid fa-user-graduate"></i> CFF</span>' +
+                    (dateStr ? '<span><i class="fa-solid fa-calendar-day"></i>' + dateStr + '</span>' : '') +
+                    (a.docente ? '<span><i class="fa-solid fa-chalkboard-user"></i>' + cffEsc(a.docente) + '</span>' : '') +
+                    (a.pdfNome ? '<span><i class="fa-solid fa-paperclip"></i>' + cffEsc(a.pdfNome) + '</span>' : '') +
+                '</p>' +
+                desc +
+            '</div>' +
+            '<button class="cff-apostila-btn" title="Imprimir" onclick="event.stopPropagation(); cffImprimirApostila(' + index + ')"><i class="fa-solid fa-print"></i></button>';
+        if (!temArquivo) {
+            card.style.cursor = 'default';
+            card.onclick = function() { alert('Apostila sem arquivo.'); };
+        }
+        return card;
+    }
 
     /* ===== AULAS DO CFF ===== */
     async function cffLoadAulas() {

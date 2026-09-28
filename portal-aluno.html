@@ -1588,7 +1588,7 @@
 
         dbFirestore.collection('apostilasAlunos').onSnapshot(function(snap) {
             var count = 0;
-            snap.forEach(function(doc) { var a = doc.data(); if (a.visivel === false) return; if (a.turma && myTurma && a.turma !== myTurma) return; count++; });
+            snap.forEach(function(doc) { var a = doc.data(); if (a.visivel === false) return; if (a.cff) return; if (a.turma && myTurma && a.turma !== myTurma) return; count++; });
             if (statCards[2]) statCards[2].textContent = count;
         });
     }
@@ -1801,6 +1801,7 @@
             var myTurma = (paUser.turma || '').trim();
             snap.forEach(function(doc) {
                 var a = doc.data() || {};
+                if (a.cff) return;   /* apostila exclusiva do CFF nao aparece para o aluno */
                 if (myTurma && a.turma && a.turma !== myTurma) return;
                 if (a.visivel === false) return;
                 var t = a.criadoEm;
@@ -2257,6 +2258,7 @@
                 var a = doc.data();
                 a._id = doc.id;
                 if (a.visivel === false) return;
+                if (a.cff) return;   /* apostila exclusiva do CFF nao aparece para o aluno */
                 items.push(a);
             });
             if (items.length === 0) {
