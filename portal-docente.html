@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="foto3x4-editor.js?v=1"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -647,7 +648,7 @@
                     </div>
                     <div style="flex:1;min-width:220px">
                         <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px">Foto 3x4 da Carteira</div>
-                        <div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:12px">Anexe uma foto do dispositivo ou tire uma foto pela camera. A foto nao pode ultrapassar <b>900 KB</b>. O administrador tambem pode enviar a sua foto pelo cadastro de docente.</div>
+                        <div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:12px">Anexe uma foto do dispositivo ou tire uma foto pela camera. A foto nao pode ultrapassar <b>900 KB</b>. Depois de escolher, voce <b>arrasta e usa o zoom para enquadrar o rosto</b> e salva o recorte 3x4 (vale tambem no computador). O administrador tambem pode enviar a sua foto pelo cadastro de docente.</div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap">
                             <input type="file" id="pd-foto3x4-file" accept="image/*" style="display:none" onchange="pdFotoOnFile(this.files)">
                             <button onclick="document.getElementById('pd-foto3x4-file').click()" style="background:#16a34a;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-folder-open"></i> Anexar do dispositivo</button>
@@ -3550,38 +3551,71 @@
             }).catch(function () { return { src: pdFotoLocal(), mudou: false }; });
         }
 
-        function pdFotoProcessar(blob, nomeArquivo) {
+        /* Aplica a foto: mesma ordem de sempre (cache local, previa, aviso,
+           Firestore), tanto vindo do recorte quanto sem ajuste. */
+        function pdFotoGravar(dataUrl, nomeArquivo) {
+            if (!dataUrl) return;
+            var kb = Math.round(dataUrl.length * 3 / 4 / 1024);
+            pdFotoSalvarLocal(dataUrl);
+            pdFotoExibir(dataUrl);
+            pdFotoStatus('Foto salva (' + kb + ' KB).', '#16a34a');
+            pdFotoEnviarFirestore(dataUrl);
+        }
+
+        /* Sem o editor (ou se o usuario pediu "Usar sem ajuste"): a imagem segue o
+           mesmo caminho de antes, so reduzindo o lado maior e aguentando 900 KB. */
+        function pdFotoComprimir(fonte, nomeArquivo) {
             pdFotoStatus('Processando a foto...', '#64748b');
+            var img = new Image();
+            img.onload = function () {
+                var maxLado = 600;
+                var w = img.width, h = img.height;
+                var escala = Math.min(1, maxLado / Math.max(w, h));
+                var cw = Math.max(1, Math.round(w * escala)), ch = Math.max(1, Math.round(h * escala));
+                var canvas = document.createElement('canvas');
+                canvas.width = cw; canvas.height = ch;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, cw, ch);
+                ctx.drawImage(img, 0, 0, cw, ch);
+                var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
+                var limite = PD_FOTO_MAX_KB * 1024;
+                var finalDataUrl = null;
+                for (var i = 0; i < qualidades.length; i++) {
+                    var url = canvas.toDataURL('image/jpeg', qualidades[i]);
+                    if (Math.round(url.length * 3 / 4) <= limite) { finalDataUrl = url; break; }
+                }
+                if (!finalDataUrl) finalDataUrl = canvas.toDataURL('image/jpeg', 0.1);
+                pdFotoGravar(finalDataUrl, nomeArquivo);
+            };
+            img.onerror = function () { pdFotoStatus('Nao foi possivel ler a imagem.', '#dc2626'); };
+            img.src = fonte;
+        }
+
+        /* Abre o editor de zoom/recorte. No celular o seletor de fotos do aparelho
+           ja recorta, mas no computador nao ha nada: o editor cobre os dois casos.
+           "Usar sem ajuste" mantem a foto inteira, como antes. */
+        function pdFotoAbrirEditor(fonte, nomeArquivo) {
+            if (typeof Foto3x4Editor === 'undefined' || !Foto3x4Editor) {
+                pdFotoComprimir(fonte, nomeArquivo);
+                return;
+            }
+            var d = pdDocenteAtual();
+            Foto3x4Editor.abrir({
+                nome: (d && (d.nome || d.guerra)) || 'Docente',
+                fonte: fonte,
+                aoConcluir: function (dataUrl, recortado) {
+                    if (recortado) pdFotoGravar(dataUrl, nomeArquivo);
+                    else pdFotoComprimir(fonte, nomeArquivo);
+                }
+            });
+        }
+
+        function pdFotoProcessar(blob, nomeArquivo) {
+            pdFotoStatus('Carregando a foto...', '#64748b');
             var leitor = new FileReader();
             leitor.onload = function (ev) {
-                var img = new Image();
-                img.onload = function () {
-                    var maxLado = 600;
-                    var w = img.width, h = img.height;
-                    var escala = Math.min(1, maxLado / Math.max(w, h));
-                    var cw = Math.max(1, Math.round(w * escala)), ch = Math.max(1, Math.round(h * escala));
-                    var canvas = document.createElement('canvas');
-                    canvas.width = cw; canvas.height = ch;
-                    var ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, cw, ch);
-                    ctx.drawImage(img, 0, 0, cw, ch);
-                    var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
-                    var limite = PD_FOTO_MAX_KB * 1024;
-                    var finalDataUrl = null;
-                    for (var i = 0; i < qualidades.length; i++) {
-                        var url = canvas.toDataURL('image/jpeg', qualidades[i]);
-                        if (Math.round(url.length * 3 / 4) <= limite) { finalDataUrl = url; break; }
-                    }
-                    if (!finalDataUrl) finalDataUrl = canvas.toDataURL('image/jpeg', 0.1);
-                    var kb = Math.round(finalDataUrl.length * 3 / 4 / 1024);
-                    pdFotoSalvarLocal(finalDataUrl);
-                    pdFotoExibir(finalDataUrl);
-                    pdFotoStatus('Foto salva (' + kb + ' KB).', '#16a34a');
-                    pdFotoEnviarFirestore(finalDataUrl);
-                };
-                img.onerror = function () { pdFotoStatus('Nao foi possivel ler a imagem.', '#dc2626'); };
-                img.src = ev.target.result;
+                pdFotoAbrirEditor(ev.target.result, nomeArquivo);
             };
             leitor.onerror = function () { pdFotoStatus('Falha ao ler o arquivo.', '#dc2626'); };
             leitor.readAsDataURL(blob);
