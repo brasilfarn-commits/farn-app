@@ -8628,45 +8628,81 @@ async function cffTurmaLoadList() {
 }
 
 /* ===== PROJETO E TURMA NO FORMULARIO DE INSCRICAO DO CFF =====
-   Os selects sao carregados do Firestore, entao a edicao reaplica os valores
-   depois que as opcoes chegam (evita perder projeto/turma ao editar). */
+   Os selects sao carregados do Firestore, entao a edicao so pode reaplicar os
+   valores depois que as opcoes chegam. Cada select tem sua propria guarda para
+   que uma resposta atrasada nao sobrescreva a escolha mais recente. */
 var cffProjTurmaToken = 0;
+var cffTurmaToken = 0;
+
+/* Aplica o valor gravado no registro. Se ele nao estiver mais na lista (projeto
+   ou turma renomeado/excluido), a opcao e recriada para o dado nao ser apagado
+   quando o formulario for salvo de novo. */
+function cffSelecionarOuInserir(sel, valor, valores, textoForaDaLista) {
+    if (!valor) return;
+    if (valores.indexOf(valor) === -1) {
+        var texto = escHTML(valor) + (textoForaDaLista ? ' (' + escHTML(textoForaDaLista) + ')' : '');
+        sel.innerHTML += '<option value="' + escHTML(valor) + '">' + texto + '</option>';
+    }
+    sel.value = valor;
+}
 
 function cffProjetosCarregar(projetoSel, turmaSel) {
     var selProjeto = document.getElementById('cffc-projeto');
     if (!selProjeto) return;
     var token = ++cffProjTurmaToken;
+    selProjeto.innerHTML = '<option value="">Carregando projetos...</option>';
     dbFirestore.collection(FB_CFF_PROJETOS).orderBy('nome').get().then(function(snap) {
         if (token !== cffProjTurmaToken) return;   /* uma chamada mais nova ja carregou */
-        selProjeto.innerHTML = '<option value="">Selecione o projeto...</option>';
+        var valores = [];
+        var html = '<option value="">Selecione o projeto...</option>';
         snap.forEach(function(doc) {
-            var i = doc.data();
-            selProjeto.innerHTML += '<option value="' + escHTML(i.nome || '') + '">' + escHTML(i.nome || '') + '</option>';
+            var nome = (doc.data() || {}).nome || '';
+            if (!nome || valores.indexOf(nome) !== -1) return;
+            valores.push(nome);
+            html += '<option value="' + escHTML(nome) + '">' + escHTML(nome) + '</option>';
         });
-        if (projetoSel) selProjeto.value = projetoSel;
+        selProjeto.innerHTML = html;
+        cffSelecionarOuInserir(selProjeto, projetoSel, valores, 'fora da lista de projetos');
         cffTurmasCarregar(selProjeto.value, turmaSel);
     }).catch(function(e) {
         if (token !== cffProjTurmaToken) return;
         console.error('Erro ao carregar projetos CFF:', e);
         selProjeto.innerHTML = '<option value="">Erro ao carregar projetos</option>';
+        cffTurmasCarregar('', turmaSel);   /* evita deixar a turma carregando para sempre */
     });
 }
 
 function cffTurmasCarregar(projetoNome, turmaSel) {
     var selTurma = document.getElementById('cffc-turma');
     if (!selTurma) return;
-    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
-    if (!projetoNome) { if (turmaSel) selTurma.value = turmaSel; return; }
+    var token = ++cffTurmaToken;
+    if (!projetoNome) {
+        /* Sem projeto nao ha turmas para listar, mas a turma ja gravada no registro
+           precisa continuar visivel e preservada ao salvar. */
+        selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+        cffSelecionarOuInserir(selTurma, turmaSel, [], 'selecione o projeto antes');
+        return;
+    }
+    selTurma.innerHTML = '<option value="">Carregando turmas...</option>';
     dbFirestore.collection(FB_CFF_TURMAS).orderBy('nome').get().then(function(snap) {
+        if (token !== cffTurmaToken) return;
+        var valores = [];
         var html = '<option value="">Selecione a turma...</option>';
         snap.forEach(function(doc) {
-            var t = doc.data();
-            if (t.projeto !== projetoNome) return;
-            html += '<option value="' + escHTML(t.nome || '') + '">' + escHTML(t.nome || '') + (t.descricao ? ' - ' + escHTML(t.descricao) : '') + '</option>';
+            var t = doc.data() || {};
+            if (!t.projeto || t.projeto !== projetoNome) return;
+            var nome = t.nome || '';
+            if (!nome || valores.indexOf(nome) !== -1) return;
+            valores.push(nome);
+            html += '<option value="' + escHTML(nome) + '">' + escHTML(nome) + (t.descricao ? ' - ' + escHTML(t.descricao) : '') + '</option>';
         });
+        if (!valores.length) {
+            html += '<option value="" disabled>Nenhuma turma cadastrada neste projeto</option>';
+        }
         selTurma.innerHTML = html;
-        if (turmaSel) selTurma.value = turmaSel;
+        cffSelecionarOuInserir(selTurma, turmaSel, valores, 'turma nao encontrada');
     }).catch(function(e) {
+        if (token !== cffTurmaToken) return;
         console.error('Erro ao carregar turmas CFF:', e);
         selTurma.innerHTML = '<option value="">Erro ao carregar turmas</option>';
     });
