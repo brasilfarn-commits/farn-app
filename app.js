@@ -8759,6 +8759,148 @@ function mascaraFone(el) {
     el.value = v;
 }
 
+/* ===== FOTO 3X4 DO DOCENTE =====
+   Usa os mesmos campos do aluno ativo (photoDataUrl/hasPhoto/fotoVersao/
+   fotoAtualizadaEm), entao a administracao envia a foto e o Portal do Docente
+   le o mesmo documento da colecao `docentes`.
+   A foto comprime para no maximo 900 KB, como no portal do aluno. */
+var DOCENTE_FOTO_MAX_KB = 900;
+var docenteFotoPendente = { dataUrl: null, remover: false };
+
+function docenteFotoCampos() {
+    return ['photoDataUrl', 'hasPhoto', 'fotoVersao', 'fotoAtualizadaEm', 'fotoAtualizadaPor'];
+}
+
+/* Mostra (ou limpa) a previa do formulario. */
+function docenteFotoExibir(dataUrl) {
+    var img = document.getElementById('intr-foto-preview');
+    var icon = document.getElementById('intr-foto-icon');
+    if (img) {
+        if (dataUrl) { img.src = dataUrl; img.style.display = 'block'; }
+        else { img.removeAttribute('src'); img.style.display = 'none'; }
+    }
+    if (icon) icon.style.display = dataUrl ? 'none' : 'block';
+    var btn = document.getElementById('intr-foto-limpar-btn');
+    if (btn) btn.style.display = dataUrl ? 'inline-flex' : 'none';
+}
+
+/* Deixa o campo pronto para um cadastro novo ou para um cadastro sem foto. */
+function docenteFotoReset() {
+    docenteFotoPendente = { dataUrl: null, remover: false };
+    docenteFotoExibir(null);
+    var status = document.getElementById('intr-foto-status');
+    if (status) { status.textContent = ''; status.style.color = '#64748b'; }
+    var input = document.getElementById('intr-foto-file');
+    if (input) input.value = '';
+}
+
+/* Carrega a foto ja gravada no cadastro (edicao). */
+function docenteFotoVer(docente) {
+    docenteFotoReset();
+    var url = docente && docente.photoDataUrl ? docente.photoDataUrl : null;
+    docenteFotoExibir(url);
+    var status = document.getElementById('intr-foto-status');
+    if (status && url) { status.textContent = 'Foto cadastrada. Selecione outra para substituir.'; status.style.color = '#16a34a'; }
+}
+
+function docenteFotoStatus(texto, cor) {
+    var status = document.getElementById('intr-foto-status');
+    if (!status) return;
+    status.textContent = texto;
+    status.style.color = cor || '#64748b';
+}
+
+/* Reduz a imagem e devolve um data URL de JPEG dentro do limite. */
+function docenteFotoComprimir(arquivo, pronto) {
+    var leitor = new FileReader();
+    leitor.onerror = function () { pronto(null, 'Nao foi possivel ler a imagem.'); };
+    leitor.onload = function (ev) {
+        var img = new Image();
+        img.onerror = function () { pronto(null, 'O arquivo escolhido nao e uma imagem valida.'); };
+        img.onload = function () {
+            var maiorLado = 600;
+            var w = img.width, h = img.height;
+            var escala = Math.min(1, maiorLado / Math.max(w, h));
+            var cw = Math.max(1, Math.round(w * escala));
+            var ch = Math.max(1, Math.round(h * escala));
+            var canvas = document.createElement('canvas');
+            canvas.width = cw; canvas.height = ch;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.drawImage(img, 0, 0, cw, ch);
+            var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
+            var limite = DOCENTE_FOTO_MAX_KB * 1024;
+            var final = null;
+            for (var i = 0; i < qualidades.length; i++) {
+                var url = canvas.toDataURL('image/jpeg', qualidades[i]);
+                if (Math.round(url.length * 3 / 4) <= limite) { final = url; break; }
+            }
+            if (!final) final = canvas.toDataURL('image/jpeg', 0.1);
+            pronto(final, null);
+        };
+        img.src = ev.target.result;
+    };
+    leitor.readAsDataURL(arquivo);
+}
+
+function docenteFotoOnFile(arquivos) {
+    if (!arquivos || !arquivos.length) return;
+    var arquivo = arquivos[0];
+    if (String(arquivo.type || '').indexOf('image/') !== 0) {
+        docenteFotoStatus('Escolha um arquivo de imagem.', '#dc2626');
+        return;
+    }
+    if (arquivo.size > 8 * 1024 * 1024) {
+        docenteFotoStatus('Imagem maior que 8 MB. Escolha uma menor.', '#dc2626');
+        return;
+    }
+    docenteFotoStatus('Processando a foto...', '#64748b');
+    docenteFotoComprimir(arquivo, function (dataUrl, erro) {
+        if (erro || !dataUrl) { docenteFotoStatus(erro || 'Nao foi possivel processar a imagem.', '#dc2626'); return; }
+        var kb = Math.round(dataUrl.length * 3 / 4 / 1024);
+        docenteFotoPendente = { dataUrl: dataUrl, remover: false };
+        docenteFotoExibir(dataUrl);
+        docenteFotoStatus('Foto pronta (' + kb + ' KB). Clique em Salvar para gravar no cadastro.', '#16a34a');
+    });
+}
+
+function docenteFotoLimpar() {
+    docenteFotoPendente = { dataUrl: null, remover: true };
+    docenteFotoExibir(null);
+    var input = document.getElementById('intr-foto-file');
+    if (input) input.value = '';
+    docenteFotoStatus('A foto sera removida ao salvar.', '#f57f17');
+}
+
+/* Monta os campos de foto que entram no Firestore, ou null se nada mudou. */
+function docenteFotoCamposParaGravar() {
+    if (docenteFotoPendente.remover) {
+        var apagado = {};
+        docenteFotoCampos().forEach(function (k) { apagado[k] = firebase.firestore.FieldValue.delete(); });
+        return apagado;
+    }
+    if (docenteFotoPendente.dataUrl) {
+        var versao = String(Date.now());
+        return {
+            photoDataUrl: docenteFotoPendente.dataUrl,
+            hasPhoto: true,
+            fotoVersao: versao,
+            fotoAtualizadaEm: versao,
+            fotoAtualizadaPor: 'Administrador'
+        };
+    }
+    return null;
+}
+
+/* Depois de gravar, a lista local nao pode guardar sentinelas de delete():
+   recebe os valores reais que foram enviados ao Firestore. */
+function docenteFotoAplicarNoCacheLocal(alvo, fotoDados) {
+    if (!alvo || !fotoDados) return;
+    docenteFotoCampos().forEach(function (k) { delete alvo[k]; });
+    Object.assign(alvo, fotoDados);
+}
+
 function docenteAbrirModal(id) {
     editingDocenteId = id || null;
     docenteLimparForm();
@@ -8810,6 +8952,7 @@ function docenteAbrirModal(id) {
         calcularIdadeCampo('intr-nascimento', 'intr-idade');
         docentePopulateDisciplinas(inst.disciplinas || []);
         docentePopulateCursos(inst.cursos || []);
+        docenteFotoVer(inst);
     } else {
         titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Docente';
         docentePopulateDisciplinas([]);
@@ -8826,6 +8969,7 @@ function docenteFecharModal(event) {
 function docenteLimparForm() {
     document.getElementById('intr-id').value = '';
     document.getElementById('intr-origem').value = '';
+    docenteFotoReset();
     document.getElementById('intr-aviso-remanejamento').style.display = 'none';
     ['intr-nome','intr-guerra','intr-cpf','intr-matricula','intr-fone','intr-email','intr-senha','intr-nascimento','intr-idade','intr-data-inscricao','intr-nacionalidade','intr-naturalidade','intr-titulo','intr-profissao','intr-mae','intr-pai','intr-endereco','intr-numero','intr-bairro','intr-cidade','intr-local-votacao','intr-altura','intr-peso','intr-medicamento'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -9014,6 +9158,12 @@ function docenteAbrirRemanejado(c) {
     document.getElementById('intr-calca').value = c.calca || '';
     document.getElementById('intr-camisa').value = c.camisa || '';
     document.getElementById('intr-calcado').value = c.calcado || '';
+    /* A foto 3x4 do cadastro do formado vem junto no remanejamento. */
+    if (c.photoDataUrl) {
+        docenteFotoPendente = { dataUrl: c.photoDataUrl, remover: false };
+        docenteFotoExibir(c.photoDataUrl);
+        docenteFotoStatus('Foto herdada do cadastro do formado. Clique em Salvar para gravar.', '#16a34a');
+    }
     docentePopulateSelects(c.projeto, c.turma);
     calcularIdadeCampo('intr-nascimento', 'intr-idade');
     docentePopulateDisciplinas([]);
@@ -9152,12 +9302,22 @@ async function docenteSalvar(e) {
         cursos: docenteGetSelectedCursos(),
         atualizadoEm: new Date().toISOString()
     };
+    /* Foto 3x4: so entra no Firestore se o administrador escolheu ou removeu uma. */
+    var fotoDados = docenteFotoCamposParaGravar();
+    if (fotoDados) {
+        for (var chaveFoto in fotoDados) dados[chaveFoto] = fotoDados[chaveFoto];
+    }
     var origemCandidato = document.getElementById('intr-origem').value;
     try {
         if (editingDocenteId) {
             await dbFirestore.collection('docentes').doc(editingDocenteId).update(dados);
             var idx = docentes.findIndex(i => i.id === editingDocenteId);
-            if (idx !== -1) Object.assign(docentes[idx], dados);
+            if (idx !== -1) {
+                Object.assign(docentes[idx], dados);
+                /* os campos de foto podem ter sido enviados como FieldValue.delete();
+                   a lista local nao guarda sentinelas, entao normaliza depois. */
+                docenteFotoAplicarNoCacheLocal(docentes[idx], fotoDados);
+            }
             alert('Docente atualizado com sucesso!');
         } else {
             var dup = docentes.find(i => i.cpf === cpf);
@@ -9165,6 +9325,7 @@ async function docenteSalvar(e) {
             dados.criadoEm = new Date().toISOString();
             var ref = await dbFirestore.collection('docentes').add(dados);
             dados.id = ref.id;
+            docenteFotoAplicarNoCacheLocal(dados, fotoDados);
             docentes.push(dados);
             if (origemCandidato) {
                 dados.remanejadoDe = origemCandidato;
@@ -9198,6 +9359,7 @@ async function docenteSalvar(e) {
             alert('Docente cadastrado com sucesso!' + (origemCandidato ? ' Formado remanejado e ativado como docente.' : ''));
         }
         docenteFecharModal();
+        docenteFotoReset();
         docenteListar();
         renderList();
         document.getElementById('modal-overlay').classList.add('hidden');

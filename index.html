@@ -3622,6 +3622,32 @@
                         </div>
                     </div>
 
+                    <!-- FOTO 3X4 -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-id-card" style="color:#2563eb"></i><h3>Foto 3x4</h3></div>
+                        <div class="form-section-body">
+                            <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+                                <div style="width:120px;height:160px;background:#f1f5f9;border:3px solid #2563eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <img id="intr-foto-preview" src="" alt="Foto 3x4 do docente" style="width:100%;height:100%;object-fit:cover;display:none">
+                                    <i id="intr-foto-icon" class="fa-solid fa-user" style="font-size:40px;color:#cbd5e1"></i>
+                                </div>
+                                <div style="flex:1;min-width:240px">
+                                    <div style="font-size:12.5px;color:#64748b;line-height:1.5;margin-bottom:12px">
+                                        Mesmos campos do aluno ativo. A foto e comprimida para no maximo <b>900 KB</b> e aparece
+                                        na <b>Carteira do Portal do Docente</b> e na Ficha Geral. O docente tambem pode
+                                        enviar a propria foto pelo portal.
+                                    </div>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                        <input type="file" id="intr-foto-file" accept="image/*" style="display:none" onchange="docenteFotoOnFile(this.files)">
+                                        <button type="button" class="btn-secondary" onclick="document.getElementById('intr-foto-file').click()"><i class="fa-solid fa-folder-open"></i> Selecionar foto</button>
+                                        <button type="button" class="btn-secondary" id="intr-foto-limpar-btn" onclick="docenteFotoLimpar()" style="display:none"><i class="fa-solid fa-trash" style="color:#dc2626"></i> Remover foto</button>
+                                    </div>
+                                    <div id="intr-foto-status" style="font-size:12px;color:#64748b;margin-top:10px"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- CONTATO -->
                     <div class="form-section-card">
                         <div class="form-section-title"><i class="fa-solid fa-address-book"></i><h3>Contato</h3></div>
@@ -4191,7 +4217,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=50"></script>
+    <script src="app.js?v=51"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
