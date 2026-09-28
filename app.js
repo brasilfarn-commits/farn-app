@@ -8665,22 +8665,24 @@ function docenteGetSelectedDisciplinas() {
     return Array.from(document.querySelectorAll('.intr-disc-check:checked')).map(function(cb) { return cb.value; });
 }
 
-/* ===== CURSOS DO DOCENTE (MULTIPLA ESCOLHA - VINCULADO A SECAO CURSOS DO ADMIN) =====
+/* ===== CURSOS (MULTIPLA ESCOLHA - VINCULADO A SECAO CURSOS DO ADMIN) =====
    As opcoes vem da colecao "cursos" (secao Cursos do administrador) e o que for
-   marcado e gravado no array "cursos" do docente, com o nome do curso. */
+   marcado e gravado no array "cursos" do cadastro, com o nome do curso.
+   Compartilhado pelo cadastro do docente e pela inscricao do CFF. */
 
-var docenteCursosToken = 0;
+var cursosChecksToken = {};
 
-function docentePopulateCursos(selecionados) {
-    var cont = document.getElementById('intr-cursos-checks');
+function cursosChecksPopular(containerId, classeCheck, selecionados) {
+    var cont = document.getElementById(containerId);
     if (!cont) return;
-    /* Evita corrida quando o form e aberto para edicao logo apos ser limpo */
-    var token = ++docenteCursosToken;
+    /* Evita corrida: cada abertura do form incrementa o token do container e
+       uma leitura antiga nao desenha por cima da selecao atual. */
+    var token = cursosChecksToken[containerId] = (cursosChecksToken[containerId] || 0) + 1;
     var arr = Array.isArray(selecionados) ? selecionados : (selecionados ? [selecionados] : []);
     arr = arr.map(function(v) { return String(v == null ? '' : v).trim(); }).filter(Boolean);
     cont.innerHTML = '<span style="color:#7c3aed;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando cursos...</span>';
     dbFirestore.collection('cursos').orderBy('nome').get().then(function(snap) {
-        if (token !== docenteCursosToken) return;   /* uma chamada mais nova ja desenhou a lista */
+        if (cursosChecksToken[containerId] !== token) return;   /* uma chamada mais nova ja desenhou a lista */
         if (!snap.size) {
             cont.innerHTML = '<span style="color:#94a3b8;font-size:13px">Nenhum curso cadastrado na secao Cursos do administrador.</span>';
             return;
@@ -8695,20 +8697,29 @@ function docentePopulateCursos(selecionados) {
             if (c.tipo) detalhe += '<span style="font-size:11px;color:#8b5cf6;margin-left:4px">' + escHTML(c.tipo) + '</span>';
             if (c.cargaHoraria != null) detalhe += '<span style="font-size:11px;color:#94a3b8;margin-left:4px">' + escHTML(String(c.cargaHoraria)) + 'h</span>';
             html += '<label class="intr-check-item" style="border-color:#ddd6fe">' +
-                '<input type="checkbox" class="intr-curso-check" value="' + escHTML(nome) + '" ' + checked + '> ' +
+                '<input type="checkbox" class="' + classeCheck + '" value="' + escHTML(nome) + '" ' + checked + '> ' +
                 escHTML(nome) + detalhe +
                 '</label>';
         });
         cont.innerHTML = html || '<span style="color:#94a3b8;font-size:13px">Nenhum curso valido cadastrado.</span>';
     }).catch(function(e) {
-        if (token !== docenteCursosToken) return;
-        console.error('Erro ao carregar cursos do docente:', e);
+        if (cursosChecksToken[containerId] !== token) return;
+        console.error('Erro ao carregar cursos:', e);
         cont.innerHTML = '<span style="color:#dc2626;font-size:13px"><i class="fa-solid fa-triangle-exclamation"></i> Erro ao carregar cursos: ' + escHTML(e.message) + '</span>';
     });
 }
 
+function cursosChecksColetar(classeCheck) {
+    return Array.from(document.querySelectorAll('.' + classeCheck + ':checked')).map(function(cb) { return cb.value; });
+}
+
+/* Cadastro do docente */
+function docentePopulateCursos(selecionados) {
+    cursosChecksPopular('intr-cursos-checks', 'intr-curso-check', selecionados);
+}
+
 function docenteGetSelectedCursos() {
-    return Array.from(document.querySelectorAll('.intr-curso-check:checked')).map(function(cb) { return cb.value; });
+    return cursosChecksColetar('intr-curso-check');
 }
 
 async function docenteSalvar(e) {
@@ -11185,6 +11196,16 @@ function cffLimparForm() {
         var el = document.getElementById(id);
         if (el) el.value = '';
     });
+    cffPopulateCursos([]);
+}
+
+/* Cursos da inscricao do CFF (multipla escolha - vinculo com a secao Cursos) */
+function cffPopulateCursos(selecionados) {
+    cursosChecksPopular('cff-cursos-checks', 'cff-curso-check', selecionados);
+}
+
+function cffGetSelectedCursos() {
+    return cursosChecksColetar('cff-curso-check');
 }
 
 async function cffListLoad() {
@@ -11192,7 +11213,7 @@ async function cffListLoad() {
     const emptyEl = document.getElementById('cff-empty');
     const listaEl = document.getElementById('cff-lista');
     if (!container) return;
-    container.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">Carregando inscrições...</td></tr>';
+    container.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">Carregando inscrições...</td></tr>';
     try {
         const snap = await dbFirestore.collection(FB_CFF).orderBy('criadoEm', 'desc').get();
         cffAlunosList = [];
@@ -11207,7 +11228,7 @@ async function cffListLoad() {
         cffRenderLista();
     } catch (e) {
         console.error('Erro ao carregar CFF:', e);
-        container.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar as inscrições do CFF.</td></tr>';
+        container.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar as inscrições do CFF.</td></tr>';
     }
 }
 
@@ -11222,6 +11243,7 @@ function cffRenderLista() {
             '<td>' + escHTML(d.cpf || '-') + '</td>' +
             '<td>' + escHTML(d.whatsapp || '-') + '</td>' +
             '<td>' + escHTML(d.email || '-') + '</td>' +
+            '<td>' + (cffCursosHTML(d.cursos) || '-') + '</td>' +
             '<td>' + escHTML(d.dataCadastro || '-') + '</td>' +
             '<td style="text-align:center;white-space:nowrap">' +
                 '<button class="btn-outline btn-sm" title="Editar" onclick="cffEditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button> ' +
@@ -11229,6 +11251,14 @@ function cffRenderLista() {
             '</td>' +
         '</tr>';
     }).join('');
+}
+
+/* Cursos vinculados a inscricao do CFF, em etiquetas */
+function cffCursosHTML(cursos) {
+    const lista = Array.isArray(cursos) ? cursos.filter(Boolean) : (cursos ? [cursos] : []);
+    return lista.map(function (c) {
+        return '<span class="badge" style="font-size:10px;margin:1px;background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe">' + escHTML(c) + '</span>';
+    }).join(' ');
 }
 
 function cffListFiltrar() {
@@ -11244,13 +11274,14 @@ function cffListFiltrar() {
             '<td>' + escHTML(d.cpf || '-') + '</td>' +
             '<td>' + escHTML(d.whatsapp || '-') + '</td>' +
             '<td>' + escHTML(d.email || '-') + '</td>' +
+            '<td>' + (cffCursosHTML(d.cursos) || '-') + '</td>' +
             '<td>' + escHTML(d.dataCadastro || '-') + '</td>' +
             '<td style="text-align:center;white-space:nowrap">' +
                 '<button class="btn-outline btn-sm" title="Editar" onclick="cffEditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button> ' +
                 '<button class="btn-danger btn-sm" title="Excluir" onclick="cffExcluir(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
             '</td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Nenhuma inscrição encontrada.</td></tr>';
+    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Nenhuma inscrição encontrada.</td></tr>';
 }
 
 function cffEditar(id) {
@@ -11263,6 +11294,7 @@ function cffEditar(id) {
         const key = fid.replace('cffc-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
         el.value = item.d[key] || '';
     });
+    cffPopulateCursos(item.d.cursos || []);
     document.getElementById('cff-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#7c3aed;margin-right:8px"></i> Editar Inscrição CFF';
     showAdminSection('admin-form-cff');
 }
@@ -11277,6 +11309,8 @@ async function cffSalvar(event) {
         if (key === 'cpf') data[key] = el.value.replace(/\D/g, '');
         else data[key] = el.value;
     });
+    /* Cursos vinculados (multipla escolha, secao Cursos do administrador) */
+    data.cursos = cffGetSelectedCursos();
     if (!data.cpf || data.cpf.length < 11) { alert('Informe um CPF válido.'); return false; }
     if (!data.senha || data.senha.length < 6) { alert('A senha de acesso deve ter no mínimo 6 caracteres.'); return false; }
     try {

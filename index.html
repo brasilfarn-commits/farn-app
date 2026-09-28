@@ -3115,6 +3115,7 @@
                                             <th>CPF</th>
                                             <th>WhatsApp</th>
                                             <th>Email</th>
+                                            <th>Cursos</th>
                                             <th>Data Cadastro</th>
                                             <th>Acoes</th>
                                         </tr>
@@ -3295,6 +3296,20 @@
                                                     <option>SP</option><option>SE</option><option>TO</option>
                                                 </select>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CURSOS (MULTIPLA ESCOLHA - VINCULADO A SECAO CURSOS DO ADMIN) -->
+                                <div class="form-section-card">
+                                    <div class="form-section-title"><i class="fa-solid fa-book-open" style="color:#7c3aed"></i><h3>Cursos (Multipla Escolha)</h3></div>
+                                    <div class="form-section-body">
+                                        <div class="form-group full">
+                                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Cursos em que o aluno do CFF esta inscrito (selecione um ou mais)</label>
+                                            <div id="cff-cursos-checks" class="intr-check-list" style="border-color:#ddd6fe;background:#faf5ff">
+                                                <span style="color:#7c3aed;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando cursos...</span>
+                                            </div>
+                                            <span class="field-hint" style="color:#7c3aed"><i class="fa-solid fa-circle-info"></i> Os cursos listados vem da secao "Cursos" do administrador.</span>
                                         </div>
                                     </div>
                                 </div>
@@ -4068,7 +4083,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=45"></script>
+    <script src="app.js?v=46"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
