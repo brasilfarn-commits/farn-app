@@ -8681,6 +8681,7 @@ function cffTurmasCarregar(projetoNome, turmaSel) {
            precisa continuar visivel e preservada ao salvar. */
         selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
         cffSelecionarOuInserir(selTurma, turmaSel, [], 'selecione o projeto antes');
+        cffProjTurmaHint();
         return;
     }
     selTurma.innerHTML = '<option value="">Carregando turmas...</option>';
@@ -8701,6 +8702,7 @@ function cffTurmasCarregar(projetoNome, turmaSel) {
         }
         selTurma.innerHTML = html;
         cffSelecionarOuInserir(selTurma, turmaSel, valores, 'turma nao encontrada');
+        cffProjTurmaHint(valores.length);
     }).catch(function(e) {
         if (token !== cffTurmaToken) return;
         console.error('Erro ao carregar turmas CFF:', e);
@@ -8708,10 +8710,35 @@ function cffTurmasCarregar(projetoNome, turmaSel) {
     });
 }
 
+/* Mostra em texto o vinculo atual, para ficar claro de onde vem a lista. */
+function cffProjTurmaHint(qtdTurmas) {
+    var el = document.getElementById('cffc-projeto-hint');
+    if (!el) return;
+    var selP = document.getElementById('cffc-projeto');
+    var selT = document.getElementById('cffc-turma');
+    var projeto = selP ? selP.value : '';
+    var turma = selT ? selT.value : '';
+    if (!projeto) {
+        el.innerHTML = '<i class="fa-solid fa-circle-info"></i> Escolha um projeto: a lista de turmas vem do cadastro <b>PROJETO E TURMA CFF</b>.';
+        return;
+    }
+    if (!turma) {
+        el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#f57f17"></i> Projeto <b>' + escHTML(projeto) + '</b> selecionado'
+            + (typeof qtdTurmas === 'number' ? ' - ' + qtdTurmas + ' turma(s) cadastrada(s)' : '')
+            + '. Escolha a turma.';
+        return;
+    }
+    el.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Projeto <b>' + escHTML(projeto) + '</b> / Turma <b>' + escHTML(turma) + '</b>';
+}
+
 function cffProjetoOnTurmaChange() {
     var selProjeto = document.getElementById('cffc-projeto');
     if (!selProjeto) return;
     cffTurmasCarregar(selProjeto.value, '');
+}
+
+function cffTurmaOnChange() {
+    cffProjTurmaHint();
 }
 
 /* ===== DOCENTES ===== */

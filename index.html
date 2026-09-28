@@ -3397,9 +3397,14 @@
                                     <div class="form-section-body">
                                         <div class="form-row">
                                             <div class="form-group"><label>Projeto</label><select id="cffc-projeto" class="config-input" onchange="cffProjetoOnTurmaChange()"><option value="">Selecione o projeto...</option></select></div>
-                                            <div class="form-group"><label>Turma</label><select id="cffc-turma" class="config-input"><option value="">Selecione a turma...</option></select></div>
+                                            <div class="form-group"><label>Turma</label><select id="cffc-turma" class="config-input" onchange="cffTurmaOnChange()"><option value="">Selecione a turma...</option></select></div>
                                         </div>
-                                        <span class="field-hint" style="color:#7c3aed"><i class="fa-solid fa-circle-info"></i> Projetos e turmas cadastrados em "PROJETO E TURMA CFF", exclusivos do Curso de Formação de Formadores.</span>
+                                        <span id="cffc-projeto-hint" class="field-hint" style="color:#7c3aed;display:block"><i class="fa-solid fa-circle-info"></i> Escolha um projeto: a lista de turmas vem do cadastro <b>PROJETO E TURMA CFF</b>.</span>
+                                        <span class="field-hint" style="color:#7c3aed;display:block;margin-top:4px">
+                                            <a href="#" onclick="cffProjetosAbrirSecao(); return false;" style="color:#6d28d9;font-weight:600;text-decoration:underline">
+                                                <i class="fa-solid fa-plus" style="margin-right:3px"></i>Cadastrar novo projeto ou turma do CFF
+                                            </a>
+                                        </span>
                                     </div>
                                 </div>
 
@@ -4186,7 +4191,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=49"></script>
+    <script src="app.js?v=50"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
