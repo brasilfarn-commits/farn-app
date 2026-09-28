@@ -10928,7 +10928,7 @@ function cavFecharTipo() {
 var cursoEditingId = null;
 var cursoEpiSeq = 0;
 
-var cursoTipos = ['Profissionalizante', 'Especialização', 'Qualificação', 'Técnico', 'Tecnólogo'];
+var cursoTipos = ['Profissionalizante', 'Especialização', 'Qualificação', 'Técnico', 'Tecnólogo', 'Superior'];
 
 function cursoResetForm() {
     cursoEditingId = null;
