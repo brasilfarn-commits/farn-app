@@ -8433,9 +8433,11 @@ function docenteAbrirModal(id) {
         docentePopulateSelects(inst.projeto || [], inst.turma || []);
         calcularIdadeCampo('intr-nascimento', 'intr-idade');
         docentePopulateDisciplinas(inst.disciplinas || []);
+        docentePopulateCursos(inst.cursos || []);
     } else {
         titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Docente';
         docentePopulateDisciplinas([]);
+        docentePopulateCursos([]);
     }
     document.getElementById('modal-docente-overlay').classList.remove('hidden');
 }
@@ -8463,6 +8465,7 @@ function docenteLimparForm() {
     });
     docentePopulateSelects();
     docentePopulateDisciplinas([]);
+    docentePopulateCursos([]);
 }
 
 /* ===== FORMADOS ===== */
@@ -8638,6 +8641,8 @@ function docenteAbrirRemanejado(c) {
     docentePopulateSelects(c.projeto, c.turma);
     calcularIdadeCampo('intr-nascimento', 'intr-idade');
     docentePopulateDisciplinas([]);
+    /* O candidato ja tem os cursos marcados na inscricao; reaproveita ao remanejar */
+    docentePopulateCursos(c.cursos || []);
     document.getElementById('modal-docente-overlay').classList.remove('hidden');
 }
 
@@ -8658,6 +8663,52 @@ function docentePopulateDisciplinas(selectedArr) {
 
 function docenteGetSelectedDisciplinas() {
     return Array.from(document.querySelectorAll('.intr-disc-check:checked')).map(function(cb) { return cb.value; });
+}
+
+/* ===== CURSOS DO DOCENTE (MULTIPLA ESCOLHA - VINCULADO A SECAO CURSOS DO ADMIN) =====
+   As opcoes vem da colecao "cursos" (secao Cursos do administrador) e o que for
+   marcado e gravado no array "cursos" do docente, com o nome do curso. */
+
+var docenteCursosToken = 0;
+
+function docentePopulateCursos(selecionados) {
+    var cont = document.getElementById('intr-cursos-checks');
+    if (!cont) return;
+    /* Evita corrida quando o form e aberto para edicao logo apos ser limpo */
+    var token = ++docenteCursosToken;
+    var arr = Array.isArray(selecionados) ? selecionados : (selecionados ? [selecionados] : []);
+    arr = arr.map(function(v) { return String(v == null ? '' : v).trim(); }).filter(Boolean);
+    cont.innerHTML = '<span style="color:#7c3aed;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando cursos...</span>';
+    dbFirestore.collection('cursos').orderBy('nome').get().then(function(snap) {
+        if (token !== docenteCursosToken) return;   /* uma chamada mais nova ja desenhou a lista */
+        if (!snap.size) {
+            cont.innerHTML = '<span style="color:#94a3b8;font-size:13px">Nenhum curso cadastrado na secao Cursos do administrador.</span>';
+            return;
+        }
+        var html = '';
+        snap.forEach(function(doc) {
+            var c = doc.data() || {};
+            var nome = String(c.nome || '').trim();
+            if (!nome) return;
+            var checked = arr.indexOf(nome) !== -1 ? 'checked' : '';
+            var detalhe = '';
+            if (c.tipo) detalhe += '<span style="font-size:11px;color:#8b5cf6;margin-left:4px">' + escHTML(c.tipo) + '</span>';
+            if (c.cargaHoraria != null) detalhe += '<span style="font-size:11px;color:#94a3b8;margin-left:4px">' + escHTML(String(c.cargaHoraria)) + 'h</span>';
+            html += '<label class="intr-check-item" style="border-color:#ddd6fe">' +
+                '<input type="checkbox" class="intr-curso-check" value="' + escHTML(nome) + '" ' + checked + '> ' +
+                escHTML(nome) + detalhe +
+                '</label>';
+        });
+        cont.innerHTML = html || '<span style="color:#94a3b8;font-size:13px">Nenhum curso valido cadastrado.</span>';
+    }).catch(function(e) {
+        if (token !== docenteCursosToken) return;
+        console.error('Erro ao carregar cursos do docente:', e);
+        cont.innerHTML = '<span style="color:#dc2626;font-size:13px"><i class="fa-solid fa-triangle-exclamation"></i> Erro ao carregar cursos: ' + escHTML(e.message) + '</span>';
+    });
+}
+
+function docenteGetSelectedCursos() {
+    return Array.from(document.querySelectorAll('.intr-curso-check:checked')).map(function(cb) { return cb.value; });
 }
 
 async function docenteSalvar(e) {
@@ -8711,6 +8762,7 @@ async function docenteSalvar(e) {
         camisa: document.getElementById('intr-camisa').value,
         calcado: document.getElementById('intr-calcado').value,
         disciplinas: docenteGetSelectedDisciplinas(),
+        cursos: docenteGetSelectedCursos(),
         atualizadoEm: new Date().toISOString()
     };
     var origemCandidato = document.getElementById('intr-origem').value;
@@ -8783,6 +8835,7 @@ function docenteListar() {
     tbody.innerHTML = docentes.map(function(i) {
         var cpfFmt = i.cpf ? i.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-';
         var discHtml = (i.disciplinas || []).map(function(d) { return '<span class="badge blue" style="font-size:10px;margin:1px">' + d + '</span>'; }).join(' ');
+        var cursosHtml = (i.cursos || []).map(function(c) { return '<span class="badge" style="font-size:10px;margin:1px;background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe">' + escHTML(c) + '</span>'; }).join(' ');
         return '<tr>' +
             '<td style="font-weight:600">' + (i.nome || '-') + (i.remanejadoDe ? ' <span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px">FORMADO</span>' : '') + '</td>' +
             '<td>' + (i.guerra || '-') + '</td>' +
@@ -8790,6 +8843,7 @@ function docenteListar() {
             '<td>' + (i.genero || '-') + '</td>' +
             '<td>' + (i.matricula || '-') + '</td>' +
             '<td>' + (discHtml || '-') + '</td>' +
+            '<td>' + (cursosHtml || '-') + '</td>' +
             '<td>' + (i.fone || '-') + '</td>' +
             '<td>' + (i.email || '-') + '</td>' +
             '<td><div class="actions-cell">' +
@@ -8824,6 +8878,7 @@ function docenteImprimir(id) {
         '.label{font-weight:700;min-width:140px;color:#555}' +
         '.val{color:#111}' +
         '.disc-tag{display:inline-block;background:#e3f2fd;color:#1565c0;padding:3px 10px;border-radius:4px;margin:2px;font-size:13px}' +
+        '.curso-tag{display:inline-block;background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe;padding:3px 10px;border-radius:4px;margin:2px;font-size:13px}' +
         '@media print{body{padding:20px}}' +
         '</style></head><body>' +
         '<h2><i class="fa-solid fa-chalkboard-user"></i> Ficha do Docente</h2>' +
@@ -8834,6 +8889,7 @@ function docenteImprimir(id) {
         '<div class="field"><span class="label">Fone:</span><span class="val">' + (i.fone || '-') + '</span></div>' +
         '<div class="field"><span class="label">Email:</span><span class="val">' + (i.email || '-') + '</span></div>' +
         '<div class="field"><span class="label">Disciplinas:</span><span class="val">' + ((i.disciplinas || []).map(function(d){ return '<span class="disc-tag">' + d + '</span>'; }).join(' ') || '-') + '</span></div>' +
+        '<div class="field"><span class="label">Cursos:</span><span class="val">' + ((i.cursos || []).map(function(c){ return '<span class="curso-tag">' + escHTML(c) + '</span>'; }).join(' ') || '-') + '</span></div>' +
         '<script>window.onload=function(){window.print();}<\/script></body></html>';
     var win = window.open('', '_blank', 'width=800,height=600');
     win.document.write(html);

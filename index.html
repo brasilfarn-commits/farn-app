@@ -1152,6 +1152,7 @@
                                             <th>Genero de Nascimento</th>
                                             <th>Matricula</th>
                                             <th>Disciplinas</th>
+                                            <th>Cursos</th>
                                             <th>Fone</th>
                                             <th>Email</th>
                                             <th>Acoes</th>
@@ -3434,6 +3435,20 @@
                         </div>
                     </div>
 
+                    <!-- CURSOS (MULTIPLA ESCOLHA - VINCULADO A SECAO CURSOS DO ADMIN) -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-book-open" style="color:#7c3aed"></i><h3>Cursos (Multipla Escolha)</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group full">
+                                <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Cursos em que o docente atua (selecione um ou mais)</label>
+                                <div id="intr-cursos-checks" class="intr-check-list" style="border-color:#ddd6fe;background:#faf5ff">
+                                    <span style="color:#7c3aed;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando cursos...</span>
+                                </div>
+                                <div style="margin-top:8px;color:#7c3aed;font-size:11px"><i class="fa-solid fa-circle-info"></i> Os cursos listados vem da secao "Cursos" do administrador.</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- DADOS PESSOAIS -->
                     <div class="form-section-card">
                         <div class="form-section-title"><i class="fa-solid fa-user"></i><h3>Dados Pessoais</h3></div>
@@ -4050,7 +4065,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=43"></script>
+    <script src="app.js?v=44"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
