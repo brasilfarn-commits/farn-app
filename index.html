@@ -3633,13 +3633,15 @@
                                 </div>
                                 <div style="flex:1;min-width:240px">
                                     <div style="font-size:12.5px;color:#64748b;line-height:1.5;margin-bottom:12px">
-                                        Mesmos campos do aluno ativo. A foto e comprimida para no maximo <b>900 KB</b> e aparece
-                                        na <b>Carteira do Portal do Docente</b> e na Ficha Geral. O docente tambem pode
-                                        enviar a propria foto pelo portal.
+                                        Mesmos campos do aluno ativo. Escolha a foto, <b>arraste e use o zoom</b> para
+                                        enquadrar o rosto e salve o recorte: o corte final e <b>3x4</b> (480x640)
+                                        e fica em no maximo <b>900 KB</b>. Aparece na <b>Carteira do Portal do Docente</b>
+                                        e na Ficha Geral. O docente tambem pode enviar a propria foto pelo portal.
                                     </div>
                                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                                         <input type="file" id="intr-foto-file" accept="image/*" style="display:none" onchange="docenteFotoOnFile(this.files)">
                                         <button type="button" class="btn-secondary" onclick="document.getElementById('intr-foto-file').click()"><i class="fa-solid fa-folder-open"></i> Selecionar foto</button>
+                                        <button type="button" class="btn-secondary" id="intr-foto-ajustar-btn" onclick="docenteFotoAjustar()" style="display:none"><i class="fa-solid fa-crop-simple"></i> Ajustar recorte</button>
                                         <button type="button" class="btn-secondary" id="intr-foto-limpar-btn" onclick="docenteFotoLimpar()" style="display:none"><i class="fa-solid fa-trash" style="color:#dc2626"></i> Remover foto</button>
                                     </div>
                                     <div id="intr-foto-status" style="font-size:12px;color:#64748b;margin-top:10px"></div>
@@ -4217,7 +4219,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=51"></script>
+    <script src="app.js?v=52"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

@@ -2950,11 +2950,15 @@ function foto3x4OnFile(fi, files) {
 var foto3x4EditorEstado = null;
 var foto3x4EditorListenersPresos = false;
 
-function foto3x4EditorAbrir(c, fi, img) {
-    foto3x4EditorEstado = { c: c, fi: fi, img: img, rot: 0, zoom: 1, offX: 0, offY: 0, arrastando: false, ultX: 0, ultY: 0, base: null };
+/* Abre o editor de recorte. `c`/`fi` identificam o aluno no fluxo antigo; para
+   outros usos (docente) basta passar opcoes.nome e opcoes.aoSalvar, e o
+   editor entrega o recorte 3x4 ja comprimido em JPEG para esse callback. */
+function foto3x4EditorAbrir(c, fi, img, opcoes) {
+    opcoes = opcoes || {};
+    foto3x4EditorEstado = { c: c, fi: fi, img: img, rot: 0, zoom: 1, offX: 0, offY: 0, arrastando: false, ultX: 0, ultY: 0, base: null, aoSalvar: opcoes.aoSalvar || null };
     foto3x4EditorRebater();
     const nomeEl = document.getElementById('foto3x4-editor-nome');
-    if (nomeEl) nomeEl.textContent = c.nome || 'Aluno';
+    if (nomeEl) nomeEl.textContent = opcoes.nome || (c && c.nome) || 'Aluno';
     const zoomEl = document.getElementById('foto3x4-editor-zoom');
     if (zoomEl) zoomEl.value = 100;
     const modal = document.getElementById('foto3x4-editor-modal');
@@ -3077,7 +3081,10 @@ function foto3x4EditorSalvar() {
         if (bytes <= 900 * 1024) { finalDataUrl = url; break; }
     }
     if (!finalDataUrl) finalDataUrl = out.toDataURL('image/jpeg', 0.1);
-    paFotoAdminSalvar(e.c, finalDataUrl, e.fi);
+    /* Quem abriu com callback (ex.: cadastro de docente) recebe o recorte e
+       decide onde gravar; sem callback continua o fluxo do aluno ativo. */
+    if (foto3x4EditorEstado.aoSalvar) foto3x4EditorEstado.aoSalvar(finalDataUrl);
+    else paFotoAdminSalvar(e.c, finalDataUrl, e.fi);
     const modal = document.getElementById('foto3x4-editor-modal');
     if (modal) modal.style.display = 'none';
     foto3x4EditorEstado = null;
@@ -8766,6 +8773,10 @@ function mascaraFone(el) {
    A foto comprime para no maximo 900 KB, como no portal do aluno. */
 var DOCENTE_FOTO_MAX_KB = 900;
 var docenteFotoPendente = { dataUrl: null, remover: false };
+/* Foto que esta na tela agora. Pode ser a que ja estava gravada no cadastro, e
+   por isso fica separada da pendente: so a pendente e gravada no Firestore. Serve
+   de origem para o botao "Ajustar recorte" reenquadrar a foto que ja existe. */
+var docenteFotoAtual = null;
 
 function docenteFotoCampos() {
     return ['photoDataUrl', 'hasPhoto', 'fotoVersao', 'fotoAtualizadaEm', 'fotoAtualizadaPor'];
@@ -8773,6 +8784,7 @@ function docenteFotoCampos() {
 
 /* Mostra (ou limpa) a previa do formulario. */
 function docenteFotoExibir(dataUrl) {
+    docenteFotoAtual = dataUrl || null;
     var img = document.getElementById('intr-foto-preview');
     var icon = document.getElementById('intr-foto-icon');
     if (img) {
@@ -8782,6 +8794,9 @@ function docenteFotoExibir(dataUrl) {
     if (icon) icon.style.display = dataUrl ? 'none' : 'block';
     var btn = document.getElementById('intr-foto-limpar-btn');
     if (btn) btn.style.display = dataUrl ? 'inline-flex' : 'none';
+    /* Com foto na tela, da para reabrir o editor e reenquadrar */
+    var btnAjustar = document.getElementById('intr-foto-ajustar-btn');
+    if (btnAjustar) btnAjustar.style.display = dataUrl ? 'inline-flex' : 'none';
 }
 
 /* Deixa o campo pronto para um cadastro novo ou para um cadastro sem foto. */
@@ -8800,7 +8815,7 @@ function docenteFotoVer(docente) {
     var url = docente && docente.photoDataUrl ? docente.photoDataUrl : null;
     docenteFotoExibir(url);
     var status = document.getElementById('intr-foto-status');
-    if (status && url) { status.textContent = 'Foto cadastrada. Selecione outra para substituir.'; status.style.color = '#16a34a'; }
+    if (status && url) { status.textContent = 'Foto cadastrada. Use "Ajustar recorte" para reenquadrar, ou selecione outra para substituir.'; status.style.color = '#16a34a'; }
 }
 
 function docenteFotoStatus(texto, cor) {
@@ -8810,7 +8825,8 @@ function docenteFotoStatus(texto, cor) {
     status.style.color = cor || '#64748b';
 }
 
-/* Reduz a imagem e devolve um data URL de JPEG dentro do limite. */
+/* Reduz a imagem e devolve um data URL de JPEG dentro do limite. Usado como
+   reserva: se o editor nao estiver na pagina, o campo ainda funciona. */
 function docenteFotoComprimir(arquivo, pronto) {
     var leitor = new FileReader();
     leitor.onerror = function () { pronto(null, 'Nao foi possivel ler a imagem.'); };
@@ -8844,6 +8860,66 @@ function docenteFotoComprimir(arquivo, pronto) {
     leitor.readAsDataURL(arquivo);
 }
 
+/* Recebe o recorte 3x4 do editor (ja sai em JPEG de 480x640, dentro de 900 KB)
+   e deixa pendente para o proximo Salvar do formulario. */
+function docenteFotoAplicarRecorte(dataUrl) {
+    var kb = Math.round(dataUrl.length * 3 / 4 / 1024);
+    docenteFotoPendente = { dataUrl: dataUrl, remover: false };
+    docenteFotoExibir(dataUrl);
+    docenteFotoStatus('Recorte aplicado (' + kb + ' KB). Clique em Salvar para gravar no cadastro.', '#16a34a');
+}
+
+/* Abre o mesmo editor de zoom/arrastar/recorte usado no aluno ativo. O corte e
+   sempre 3x4 e o resultado respeita o limite de 900 KB. */
+function docenteFotoAbrirEditor(src, nomeDocente, arquivoOriginal) {
+    /* Reserva: sem o editor na pagina, cai na compressao simples (que tambem
+       respeita os 900 KB e a proporcao fica por conta do object-fit da previa). */
+    if (typeof foto3x4EditorAbrir !== 'function') {
+        if (arquivoOriginal) {
+            docenteFotoStatus('Editor de recorte indisponivel. Aplicando a foto sem ajuste...', '#f57f17');
+            docenteFotoComprimir(arquivoOriginal, function (dataUrl, erro) {
+                if (erro || !dataUrl) { docenteFotoStatus(erro || 'Nao foi possivel processar a imagem.', '#dc2626'); return; }
+                var kb = Math.round(dataUrl.length * 3 / 4 / 1024);
+                docenteFotoPendente = { dataUrl: dataUrl, remover: false };
+                docenteFotoExibir(dataUrl);
+                docenteFotoStatus('Foto aplicada sem ajuste (' + kb + ' KB). Clique em Salvar.', '#16a34a');
+            });
+            return;
+        }
+        docenteFotoStatus('Editor de recorte indisponivel nesta tela.', '#dc2626');
+        return;
+    }
+    var img = new Image();
+    img.onload = function () {
+        foto3x4EditorAbrir(null, null, img, {
+            nome: nomeDocente || 'Docente',
+            aoSalvar: docenteFotoAplicarRecorte
+        });
+    };
+    img.onerror = function () {
+        docenteFotoStatus('Nao foi possivel abrir a imagem no editor.', '#dc2626');
+    };
+    img.src = src;
+}
+
+/* Reabre o editor sobre a foto que esta na tela (inclusive a que ja veio do
+   cadastro, do Portal do Docente ou do cadastro do formado), para reenquadrar.
+   Reenquadrar uma foto ja gravada so grava se o administrador clicar em Salvar:
+   ate la, a pendente continua vazia. */
+function docenteFotoAjustar() {
+    var atual = docenteFotoAtual;
+    var nomeEl = document.getElementById('intr-nome');
+    var nome = nomeEl ? nomeEl.value.trim() : '';
+    if (!atual) {
+        /* ainda nao ha foto: pede o arquivo, que cai no editor depois */
+        var input = document.getElementById('intr-foto-file');
+        if (input) input.click();
+        return;
+    }
+    docenteFotoStatus('Abrindo o editor de recorte...', '#64748b');
+    docenteFotoAbrirEditor(atual, nome || 'Docente');
+}
+
 function docenteFotoOnFile(arquivos) {
     if (!arquivos || !arquivos.length) return;
     var arquivo = arquivos[0];
@@ -8855,14 +8931,16 @@ function docenteFotoOnFile(arquivos) {
         docenteFotoStatus('Imagem maior que 8 MB. Escolha uma menor.', '#dc2626');
         return;
     }
-    docenteFotoStatus('Processando a foto...', '#64748b');
-    docenteFotoComprimir(arquivo, function (dataUrl, erro) {
-        if (erro || !dataUrl) { docenteFotoStatus(erro || 'Nao foi possivel processar a imagem.', '#dc2626'); return; }
-        var kb = Math.round(dataUrl.length * 3 / 4 / 1024);
-        docenteFotoPendente = { dataUrl: dataUrl, remover: false };
-        docenteFotoExibir(dataUrl);
-        docenteFotoStatus('Foto pronta (' + kb + ' KB). Clique em Salvar para gravar no cadastro.', '#16a34a');
-    });
+    docenteFotoStatus('Carregando para o editor de recorte...', '#64748b');
+    /* O arquivo original vai direto para o editor: comprimir antes deixaria a
+       imagem pior e ainda seria recortada de novo. */
+    var leitor = new FileReader();
+    leitor.onerror = function () { docenteFotoStatus('Nao foi possivel ler a imagem.', '#dc2626'); };
+    leitor.onload = function (ev) {
+        var nomeEl = document.getElementById('intr-nome');
+        docenteFotoAbrirEditor(ev.target.result, (nomeEl ? nomeEl.value.trim() : '') || 'Docente', arquivo);
+    };
+    leitor.readAsDataURL(arquivo);
 }
 
 function docenteFotoLimpar() {
