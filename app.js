@@ -1012,6 +1012,7 @@ function applyUserPermissions() {
         'admin-avaliacao': p.includes('avaliacao') || isGeral,
         'admin-criar-avaliacao': p.includes('avaliacao') || isGeral,
         'admin-whatfarn': isGeral,
+        'admin-cff-projetos': p.includes('cff') || isGeral,
         'admin-ficha-geral': p.includes('alunos') || p.includes('avaliacao') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
@@ -1672,7 +1673,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -8365,6 +8366,318 @@ async function cffAulaDelete(docId) {
     }
 }
 
+/* ===== PROJETO E TURMA EXCLUSIVOS DO CFF =====
+   Colecoes proprias (cffProjetos / cffTurmas) para que projeto e turma do CFF
+   nunca aparecam na secao Projetos nem no cadastro de alunos. */
+const FB_CFF_PROJETOS = 'cffProjetos';
+const FB_CFF_TURMAS = 'cffTurmas';
+let cffProjEditingId = null;
+let cffTurmaEditingId = null;
+
+function cffProjetosAbrirSecao() {
+    showAdminSection('admin-cff-projetos');
+    cffProjLoadList();
+    cffTurmaLoadProjetos();
+    cffTurmaLoadList();
+}
+
+function cffProjMsg(msg, type) {
+    var el = document.getElementById('cff-proj-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.background = type === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+    el.style.color = type === 'ok' ? '#4caf50' : '#f44336';
+    el.textContent = msg;
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+function cffTurmaMsg(msg, type) {
+    var el = document.getElementById('cff-turma-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.background = type === 'ok' ? 'rgba(76,175,80,.15)' : 'rgba(244,67,54,.15)';
+    el.style.color = type === 'ok' ? '#4caf50' : '#f44336';
+    el.textContent = msg;
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+async function cffProjSave() {
+    var nome = document.getElementById('cff-proj-nome').value.trim();
+    var responsavel = document.getElementById('cff-proj-responsavel').value.trim();
+    var btn = document.getElementById('cff-proj-save-btn');
+    if (!nome) { cffProjMsg('Informe o nome do projeto.', 'err'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+    try {
+        var dados = { nome: nome, responsavel: responsavel };
+        if (cffProjEditingId) {
+            await dbFirestore.collection(FB_CFF_PROJETOS).doc(cffProjEditingId).update(dados);
+            cffProjMsg('Projeto CFF atualizado com sucesso!', 'ok');
+            cffProjEditingId = null;
+        } else {
+            dados.data = new Date().toISOString();
+            dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+            await dbFirestore.collection(FB_CFF_PROJETOS).add(dados);
+            cffProjMsg('Projeto CFF cadastrado com sucesso!', 'ok');
+        }
+        document.getElementById('cff-proj-nome').value = '';
+        document.getElementById('cff-proj-responsavel').value = '';
+        var b = document.getElementById('cff-proj-save-btn');
+        if (b) b.innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Projeto CFF';
+        cffProjLoadList();
+        cffTurmaLoadProjetos();
+    } catch(e) {
+        console.error('Erro ao salvar projeto CFF:', e);
+        cffProjMsg('Erro: ' + e.message, 'err');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Cadastrar Projeto CFF';
+}
+
+async function cffProjLoadList() {
+    var container = document.getElementById('cff-proj-list');
+    if (!container) return;
+    try {
+        var snap = await dbFirestore.collection(FB_CFF_PROJETOS).orderBy('nome').get();
+        if (snap.empty) {
+            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-handshake" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhum projeto CFF cadastrado.</p></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(function(doc) {
+            var d = doc.data();
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(124,58,237,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-handshake" style="color:#7c3aed;font-size:18px"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                    '<div style="font-size:13px;font-weight:600;color:#1e293b;word-break:break-word">' + escHTML(d.nome || 'Projeto') + '</div>' +
+                    (d.responsavel ? '<div style="font-size:11px;color:#64748b;margin-top:2px"><i class="fa-solid fa-user" style="margin-right:3px"></i>' + escHTML(d.responsavel) + '</div>' : '') +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                    '<button onclick="cffProjEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="cffProjDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(card);
+        });
+    } catch(e) {
+        console.error('Erro ao listar projetos CFF:', e);
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar projetos CFF.</div>';
+    }
+}
+
+async function cffProjEdit(docId) {
+    try {
+        var doc = await dbFirestore.collection(FB_CFF_PROJETOS).doc(docId).get();
+        if (!doc.exists) { alert('Projeto CFF nao encontrado.'); return; }
+        var d = doc.data();
+        cffProjEditingId = docId;
+        document.getElementById('cff-proj-nome').value = d.nome || '';
+        document.getElementById('cff-proj-responsavel').value = d.responsavel || '';
+        var btn = document.getElementById('cff-proj-save-btn');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Projeto CFF';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(e) {
+        alert('Erro ao carregar projeto CFF: ' + e.message);
+    }
+}
+
+async function cffProjDelete(docId) {
+    if (!confirm('Excluir este projeto CFF? As turmas vinculadas permanecem cadastradas.')) return;
+    try {
+        await dbFirestore.collection(FB_CFF_PROJETOS).doc(docId).delete();
+        cffProjLoadList();
+        cffTurmaLoadProjetos();
+    } catch(e) {
+        alert('Erro ao excluir projeto CFF: ' + e.message);
+    }
+}
+
+/* Popula o select de projetos do formulario de turma CFF. */
+async function cffTurmaLoadProjetos(selecionado) {
+    var sel = document.getElementById('cff-turma-projeto');
+    if (!sel) return;
+    try {
+        var snap = await dbFirestore.collection(FB_CFF_PROJETOS).orderBy('nome').get();
+        sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+        snap.forEach(function(doc) {
+            var i = doc.data();
+            sel.innerHTML += '<option value="' + escHTML(i.nome || '') + '">' + escHTML(i.nome || '') + '</option>';
+        });
+        if (selecionado) sel.value = selecionado;
+    } catch(e) {
+        console.error('Erro ao carregar projetos CFF:', e);
+        sel.innerHTML = '<option value="">Erro ao carregar projetos</option>';
+    }
+}
+
+function cffTurmaLimparForm() {
+    ['cff-turma-nome', 'cff-turma-desc', 'cff-turma-inicio', 'cff-turma-previsao', 'cff-turma-dias', 'cff-turma-horarios'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    cffTurmaEditingId = null;
+    var add = document.getElementById('cff-turma-btn-add');
+    var sal = document.getElementById('cff-turma-btn-salvar');
+    if (add) add.style.display = '';
+    if (sal) sal.style.display = 'none';
+}
+
+async function cffTurmaSave() {
+    var nome = document.getElementById('cff-turma-nome').value.trim();
+    var projeto = document.getElementById('cff-turma-projeto').value.trim();
+    if (!nome) { cffTurmaMsg('Informe o nome da turma.', 'err'); return; }
+    if (!projeto) { cffTurmaMsg('Selecione o projeto da turma.', 'err'); return; }
+    var dias = document.getElementById('cff-turma-dias').value.split(',').map(function(d) { return d.trim(); }).filter(Boolean);
+    var dados = {
+        nome: nome,
+        projeto: projeto,
+        descricao: document.getElementById('cff-turma-desc').value.trim(),
+        inicio: document.getElementById('cff-turma-inicio').value.trim(),
+        previsao: document.getElementById('cff-turma-previsao').value.trim(),
+        dias: dias,
+        horarios: document.getElementById('cff-turma-horarios').value.trim()
+    };
+    try {
+        if (cffTurmaEditingId) {
+            await dbFirestore.collection(FB_CFF_TURMAS).doc(cffTurmaEditingId).update(dados);
+            cffTurmaMsg('Turma CFF atualizada com sucesso!', 'ok');
+        } else {
+            dados.data = new Date().toISOString();
+            dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+            await dbFirestore.collection(FB_CFF_TURMAS).add(dados);
+            cffTurmaMsg('Turma CFF cadastrada com sucesso!', 'ok');
+        }
+        cffTurmaLimparForm();
+        cffTurmaLoadList();
+    } catch(e) {
+        console.error('Erro ao salvar turma CFF:', e);
+        cffTurmaMsg('Erro: ' + e.message, 'err');
+    }
+}
+
+async function cffTurmaEdit(docId) {
+    try {
+        var doc = await dbFirestore.collection(FB_CFF_TURMAS).doc(docId).get();
+        if (!doc.exists) { alert('Turma CFF nao encontrada.'); return; }
+        var t = doc.data();
+        cffTurmaEditingId = docId;
+        cffTurmaLoadProjetos(t.projeto || '');
+        document.getElementById('cff-turma-nome').value = t.nome || '';
+        document.getElementById('cff-turma-desc').value = t.descricao || '';
+        document.getElementById('cff-turma-inicio').value = t.inicio || '';
+        document.getElementById('cff-turma-previsao').value = t.previsao || '';
+        document.getElementById('cff-turma-dias').value = (t.dias || []).join(', ');
+        document.getElementById('cff-turma-horarios').value = t.horarios || '';
+        var add = document.getElementById('cff-turma-btn-add');
+        var sal = document.getElementById('cff-turma-btn-salvar');
+        if (add) add.style.display = 'none';
+        if (sal) sal.style.display = '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(e) {
+        alert('Erro ao carregar turma CFF: ' + e.message);
+    }
+}
+
+async function cffTurmaDelete(docId) {
+    if (!confirm('Excluir esta turma CFF?')) return;
+    try {
+        await dbFirestore.collection(FB_CFF_TURMAS).doc(docId).delete();
+        cffTurmaLoadList();
+    } catch(e) {
+        alert('Erro ao excluir turma CFF: ' + e.message);
+    }
+}
+
+async function cffTurmaLoadList() {
+    var container = document.getElementById('cff-turma-list');
+    if (!container) return;
+    try {
+        var snap = await dbFirestore.collection(FB_CFF_TURMAS).orderBy('nome').get();
+        if (snap.empty) {
+            container.innerHTML = '<div style="text-align:center;color:#666;padding:30px"><i class="fa-solid fa-users" style="font-size:32px;margin-bottom:10px;display:block;opacity:.3"></i><p>Nenhuma turma CFF cadastrada.</p></div>';
+            return;
+        }
+        container.innerHTML = '';
+        snap.forEach(function(doc) {
+            var t = doc.data();
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px';
+            var chips = (t.dias || []).map(function(d) {
+                return '<span style="background:rgba(124,58,237,.1);color:#7c3aed;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">' + escHTML(d) + '</span>';
+            }).join(' ');
+            card.innerHTML = '<div style="width:42px;height:42px;background:rgba(124,58,237,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-users" style="color:#7c3aed;font-size:18px"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                    '<div style="font-size:13px;font-weight:600;color:#1e293b;word-break:break-word">' + escHTML(t.nome || 'Turma') + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;margin-top:2px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+                        (t.projeto ? '<span><i class="fa-solid fa-handshake" style="margin-right:3px"></i>' + escHTML(t.projeto) + '</span>' : '') +
+                        (t.inicio ? '<span><i class="fa-solid fa-calendar" style="margin-right:3px"></i>' + escHTML(t.inicio) + (t.previsao ? ' a ' + escHTML(t.previsao) : '') + '</span>' : '') +
+                        (t.horarios ? '<span><i class="fa-solid fa-clock" style="margin-right:3px"></i>' + escHTML(t.horarios) + '</span>' : '') +
+                        chips +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                    '<button onclick="cffTurmaEdit(\'' + doc.id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button onclick="cffTurmaDelete(\'' + doc.id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(card);
+        });
+    } catch(e) {
+        console.error('Erro ao listar turmas CFF:', e);
+        container.innerHTML = '<div style="text-align:center;color:#f44336;padding:30px">Erro ao carregar turmas CFF.</div>';
+    }
+}
+
+/* ===== PROJETO E TURMA NO FORMULARIO DE INSCRICAO DO CFF =====
+   Os selects sao carregados do Firestore, entao a edicao reaplica os valores
+   depois que as opcoes chegam (evita perder projeto/turma ao editar). */
+var cffProjTurmaToken = 0;
+
+function cffProjetosCarregar(projetoSel, turmaSel) {
+    var selProjeto = document.getElementById('cffc-projeto');
+    if (!selProjeto) return;
+    var token = ++cffProjTurmaToken;
+    dbFirestore.collection(FB_CFF_PROJETOS).orderBy('nome').get().then(function(snap) {
+        if (token !== cffProjTurmaToken) return;   /* uma chamada mais nova ja carregou */
+        selProjeto.innerHTML = '<option value="">Selecione o projeto...</option>';
+        snap.forEach(function(doc) {
+            var i = doc.data();
+            selProjeto.innerHTML += '<option value="' + escHTML(i.nome || '') + '">' + escHTML(i.nome || '') + '</option>';
+        });
+        if (projetoSel) selProjeto.value = projetoSel;
+        cffTurmasCarregar(selProjeto.value, turmaSel);
+    }).catch(function(e) {
+        if (token !== cffProjTurmaToken) return;
+        console.error('Erro ao carregar projetos CFF:', e);
+        selProjeto.innerHTML = '<option value="">Erro ao carregar projetos</option>';
+    });
+}
+
+function cffTurmasCarregar(projetoNome, turmaSel) {
+    var selTurma = document.getElementById('cffc-turma');
+    if (!selTurma) return;
+    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (!projetoNome) { if (turmaSel) selTurma.value = turmaSel; return; }
+    dbFirestore.collection(FB_CFF_TURMAS).orderBy('nome').get().then(function(snap) {
+        var html = '<option value="">Selecione a turma...</option>';
+        snap.forEach(function(doc) {
+            var t = doc.data();
+            if (t.projeto !== projetoNome) return;
+            html += '<option value="' + escHTML(t.nome || '') + '">' + escHTML(t.nome || '') + (t.descricao ? ' - ' + escHTML(t.descricao) : '') + '</option>';
+        });
+        selTurma.innerHTML = html;
+        if (turmaSel) selTurma.value = turmaSel;
+    }).catch(function(e) {
+        console.error('Erro ao carregar turmas CFF:', e);
+        selTurma.innerHTML = '<option value="">Erro ao carregar turmas</option>';
+    });
+}
+
+function cffProjetoOnTurmaChange() {
+    var selProjeto = document.getElementById('cffc-projeto');
+    if (!selProjeto) return;
+    cffTurmasCarregar(selProjeto.value, '');
+}
+
 /* ===== DOCENTES ===== */
 let docentes = [];
 let editingDocenteId = null;
@@ -11171,7 +11484,7 @@ function cursorFecharDetalhe() {
 
 /* ===== CFF - CURSO DE FORMACAO DE FORMADORES ===== */
 const FB_CFF = 'cffAlunos';
-const cffFormFields = ['cffc-nome','cffc-cpf','cffc-nascimento','cffc-idade','cffc-genero','cffc-estado-civil','cffc-nacionalidade','cffc-naturalidade','cffc-profissao','cffc-mae','cffc-pai','cffc-email','cffc-whatsapp','cffc-endereco','cffc-numero','cffc-bairro','cffc-cidade','cffc-estado','cffc-senha'];
+const cffFormFields = ['cffc-nome','cffc-cpf','cffc-nascimento','cffc-idade','cffc-genero','cffc-estado-civil','cffc-nacionalidade','cffc-naturalidade','cffc-profissao','cffc-mae','cffc-pai','cffc-email','cffc-whatsapp','cffc-endereco','cffc-numero','cffc-bairro','cffc-cidade','cffc-estado','cffc-projeto','cffc-turma','cffc-senha'];
 let cffAlunosList = [];
 let editingCffId = null;
 
@@ -11197,6 +11510,7 @@ function cffLimparForm() {
         if (el) el.value = '';
     });
     cffPopulateCursos([]);
+    cffProjetosCarregar('', '');
 }
 
 /* Cursos da inscricao do CFF (multipla escolha - vinculo com a secao Cursos) */
@@ -11213,7 +11527,7 @@ async function cffListLoad() {
     const emptyEl = document.getElementById('cff-empty');
     const listaEl = document.getElementById('cff-lista');
     if (!container) return;
-    container.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">Carregando inscrições...</td></tr>';
+    container.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">Carregando inscrições...</td></tr>';
     try {
         const snap = await dbFirestore.collection(FB_CFF).orderBy('criadoEm', 'desc').get();
         cffAlunosList = [];
@@ -11228,7 +11542,7 @@ async function cffListLoad() {
         cffRenderLista();
     } catch (e) {
         console.error('Erro ao carregar CFF:', e);
-        container.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar as inscrições do CFF.</td></tr>';
+        container.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar as inscrições do CFF.</td></tr>';
     }
 }
 
@@ -11244,6 +11558,7 @@ function cffRenderLista() {
             '<td>' + escHTML(d.whatsapp || '-') + '</td>' +
             '<td>' + escHTML(d.email || '-') + '</td>' +
             '<td>' + (cffCursosHTML(d.cursos) || '-') + '</td>' +
+            '<td>' + cffTurmaResumoHTML(d) + '</td>' +
             '<td>' + escHTML(d.dataCadastro || '-') + '</td>' +
             '<td style="text-align:center;white-space:nowrap">' +
                 '<button class="btn-outline btn-sm" title="Editar" onclick="cffEditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button> ' +
@@ -11251,6 +11566,15 @@ function cffRenderLista() {
             '</td>' +
         '</tr>';
     }).join('');
+}
+
+/* Projeto e turma do aluno do CFF, em etiquetas */
+function cffTurmaResumoHTML(d) {
+    if (!d.projeto && !d.turma) return '-';
+    var html = '';
+    if (d.projeto) html += '<span class="badge" style="font-size:10px;margin:1px;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe"><i class="fa-solid fa-handshake" style="margin-right:3px"></i>' + escHTML(d.projeto) + '</span>';
+    if (d.turma) html += '<span class="badge" style="font-size:10px;margin:1px;background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe"><i class="fa-solid fa-users" style="margin-right:3px"></i>' + escHTML(d.turma) + '</span>';
+    return html;
 }
 
 /* Cursos vinculados a inscricao do CFF, em etiquetas */
@@ -11275,13 +11599,14 @@ function cffListFiltrar() {
             '<td>' + escHTML(d.whatsapp || '-') + '</td>' +
             '<td>' + escHTML(d.email || '-') + '</td>' +
             '<td>' + (cffCursosHTML(d.cursos) || '-') + '</td>' +
+            '<td>' + cffTurmaResumoHTML(d) + '</td>' +
             '<td>' + escHTML(d.dataCadastro || '-') + '</td>' +
             '<td style="text-align:center;white-space:nowrap">' +
                 '<button class="btn-outline btn-sm" title="Editar" onclick="cffEditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button> ' +
                 '<button class="btn-danger btn-sm" title="Excluir" onclick="cffExcluir(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
             '</td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Nenhuma inscrição encontrada.</td></tr>';
+    }).join('') : '<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">Nenhuma inscrição encontrada.</td></tr>';
 }
 
 function cffEditar(id) {
@@ -11295,6 +11620,8 @@ function cffEditar(id) {
         el.value = item.d[key] || '';
     });
     cffPopulateCursos(item.d.cursos || []);
+    /* Projeto e turma vem do Firestore: reaplicados depois que os selects carregam */
+    cffProjetosCarregar(item.d.projeto || '', item.d.turma || '');
     document.getElementById('cff-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#7c3aed;margin-right:8px"></i> Editar Inscrição CFF';
     showAdminSection('admin-form-cff');
 }

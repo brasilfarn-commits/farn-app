@@ -3090,6 +3090,7 @@
                             <div class="header-actions">
                                 <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffAbrirForm()"><i class="fa-solid fa-plus"></i> Novo CFF</button>
                                 <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffDisciplinasAbrirSecao()"><i class="fa-solid fa-graduation-cap"></i> DISCIPLINA CFF</button>
+                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffProjetosAbrirSecao()"><i class="fa-solid fa-handshake"></i> PROJETO E TURMA CFF</button>
                                 <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="window.open('criar-avaliacao-cff.html','_blank')"><i class="fa-solid fa-list-check"></i> CRIAR AVALIAÇÃO CFF</button>
                                 <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="window.open('secao-avaliacao-cff.html','_blank')"><i class="fa-solid fa-clipboard-check"></i> SEÇÃO DE AVALIAÇÃO CFF</button>
                             </div>
@@ -3116,6 +3117,7 @@
                                             <th>WhatsApp</th>
                                             <th>Email</th>
                                             <th>Cursos</th>
+                                            <th>Projeto / Turma</th>
                                             <th>Data Cadastro</th>
                                             <th>Acoes</th>
                                         </tr>
@@ -3123,6 +3125,95 @@
                                     <tbody id="cff-table-body"></tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROJETO E TURMA EXCLUSIVOS DO CFF -->
+                <div id="admin-cff-projetos" class="admin-section">
+                    <div style="margin-bottom:16px">
+                        <a href="#" onclick="showAdminSection('admin-cff'); cffListLoad(); return false;" style="color:#7c3aed;font-size:13px;font-weight:700;text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Voltar para CFF</a>
+                    </div>
+                    <div style="padding:20px;background:linear-gradient(135deg,#f5f3ff 0%,#fdf4ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:20px">
+                        <h3 style="margin:0 0 6px;color:#7c3aed"><i class="fa-solid fa-handshake" style="margin-right:8px"></i> Novo Projeto CFF</h3>
+                        <p style="font-size:12px;color:#6d28d9;margin:0 0 14px;line-height:1.6"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i> Projetos e turmas criados aqui sao exclusivos do CFF e nao aparecem na secao Projetos nem no cadastro de alunos.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome do Projeto *</label>
+                                <input type="text" id="cff-proj-nome" class="config-input" placeholder="Ex: FORMACAO DE FORMADORES 2026">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Responsavel</label>
+                                <input type="text" id="cff-proj-responsavel" class="config-input" placeholder="Nome do responsavel">
+                            </div>
+                        </div>
+                        <button class="btn-primary" id="cff-proj-save-btn" onclick="cffProjSave()" style="height:42px;background:#7c3aed;border-color:#7c3aed">
+                            <i class="fa-solid fa-check"></i> Cadastrar Projeto CFF
+                        </button>
+                        <div id="cff-proj-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                    </div>
+
+                    <div class="card" style="margin-bottom:20px">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-handshake" style="color:#7c3aed;margin-right:8px"></i> Projetos CFF Cadastrados</h3>
+                        </div>
+                        <div id="cff-proj-list" style="padding:16px">
+                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
+                        </div>
+                    </div>
+
+                    <div style="padding:20px;background:linear-gradient(135deg,#f5f3ff 0%,#fdf4ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:20px">
+                        <h3 style="margin:0 0 14px;color:#7c3aed"><i class="fa-solid fa-users" style="margin-right:8px"></i> Nova Turma CFF</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
+                                <select id="cff-turma-projeto" class="config-input"><option value="">Selecione o projeto...</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Turma *</label>
+                                <input type="text" id="cff-turma-nome" class="config-input" placeholder="Ex: CFF - TURMA A">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Descricao</label>
+                            <input type="text" id="cff-turma-desc" class="config-input" placeholder="Opcional">
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Inicio</label>
+                                <input type="date" id="cff-turma-inicio" class="config-input">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Previsao</label>
+                                <input type="date" id="cff-turma-previsao" class="config-input">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Dias</label>
+                                <input type="text" id="cff-turma-dias" class="config-input" placeholder="Seg, Qua, Sex">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Horarios</label>
+                            <input type="text" id="cff-turma-horarios" class="config-input" placeholder="Ex: 19:00 as 22:00">
+                        </div>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn-primary" id="cff-turma-btn-add" onclick="cffTurmaSave()" style="height:42px;background:#7c3aed;border-color:#7c3aed">
+                                <i class="fa-solid fa-check"></i> Cadastrar Turma CFF
+                            </button>
+                            <button class="btn-outline" id="cff-turma-btn-salvar" onclick="cffTurmaSave()" style="display:none;height:42px">
+                                <i class="fa-solid fa-check"></i> Atualizar Turma CFF
+                            </button>
+                            <button class="btn-outline" onclick="cffTurmaLimparForm()" style="height:42px">Cancelar</button>
+                        </div>
+                        <div id="cff-turma-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-users" style="color:#7c3aed;margin-right:8px"></i> Turmas CFF Cadastradas</h3>
+                        </div>
+                        <div id="cff-turma-list" style="padding:16px">
+                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
                         </div>
                     </div>
                 </div>
@@ -3297,6 +3388,18 @@
                                                 </select>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <!-- PROJETO E TURMA (VINCULADO AO PROJETO E TURMA DO CFF) -->
+                                <div class="form-section-card">
+                                    <div class="form-section-title"><i class="fa-solid fa-handshake" style="color:#7c3aed"></i><h3>Projeto e Turma</h3></div>
+                                    <div class="form-section-body">
+                                        <div class="form-row">
+                                            <div class="form-group"><label>Projeto</label><select id="cffc-projeto" class="config-input"><option value="">Selecione o projeto...</option></select></div>
+                                            <div class="form-group"><label>Turma</label><select id="cffc-turma" class="config-input" onchange="cffProjetoOnTurmaChange()"><option value="">Selecione a turma...</option></select></div>
+                                        </div>
+                                        <span class="field-hint" style="color:#7c3aed"><i class="fa-solid fa-circle-info"></i> Projetos e turmas cadastrados em "PROJETO E TURMA CFF", exclusivos do Curso de Formação de Formadores.</span>
                                     </div>
                                 </div>
 
@@ -4083,7 +4186,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=46"></script>
+    <script src="app.js?v=47"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
