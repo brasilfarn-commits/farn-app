@@ -70,11 +70,17 @@
         };
     }
 
-    /* O rotulo e sempre derivado do codigo: renomear no futuro nao
-       quebra o que ja esta gravado. */
-    function rotuloDe(codigo) {
+    /* O rotulo. Quando a patente esta CADASTRADA, vale o nome que o
+       administrador deu a ela; sem cadastro, o texto sai do codigo, como
+       sempre foi. Por isso renomear uma patente funciona e nao quebra
+       cadastro nenhum. */
+    function rotuloDe(codigo, catalogo) {
         var c = String(codigo || '').trim().toUpperCase();
         if (!c) return '';
+        if (catalogo) {
+            var reg = catalogoAchado(catalogo, c);
+            if (reg && reg.nome) return reg.nome;
+        }
         if (c === 'OUT') return 'Outra patente';
         var p = partes(c);
         if (p.grupo === 'FOR') {
@@ -89,7 +95,7 @@
     }
 
     /* Tudo que da para filtrar e gerar relatorio, sem voce preencher. */
-    function derivar(codigo) {
+    function derivar(codigo, catalogo) {
         var c = String(codigo || '').trim().toUpperCase();
         var p = partes(c);
         var temCff = p.grupo === 'ACI' || p.mods.indexOf('ACI') >= 0
@@ -101,7 +107,7 @@
             cff: !!temCff,
             cargo: p.mods.indexOf('DGAG') >= 0 ? 'DIRETOR GERAL E ADMINISTRADOR GERAL'
                 : p.mods.indexOf('DIR') >= 0 ? 'DIRETOR' : '',
-            rotulo: rotuloDe(c)
+            rotulo: rotuloDe(c, catalogo)
         };
     }
 
@@ -153,13 +159,31 @@
         return lista;
     }
 
-    /* Preenche um <select> de patente. Se o valor atual nao estiver na
-       lista (classe removida, patente antiga), ele e acrescentado no
-       fim para o cadastro nao perder a informacao. */
-    function popular(el, classes, selecionado) {
+    /* As opcoes vindas do CATALOGO. Inativa continua aparecendo (a pessoa
+       ja tem essa patente gravada e o cadastro nao pode ficar sem ela),
+       so que marcada como inativa, para o administrador saber que ela
+       deixou de ser oferecida. */
+    function opcoesDoCatalogo(catalogo, classes) {
+        return catalogoEfetivo(catalogo, classes).map(function (r) {
+            return {
+                codigo: r.codigo,
+                rotulo: (r.nome || rotuloDe(r.codigo)) + (r.ativo === false ? ' (inativa)' : ''),
+                grupo: r.grupo,
+                classe: r.classe
+            };
+        });
+    }
+
+    /* Preenche um <select> de patente. Com `catalogo` vem da secao
+       PATENTES; sem ele, vem da lista derivada -- e e assim que o
+       formulario continua funcionando antes de existir catalogo. Se o
+       valor atual nao estiver na lista (classe removida, patente
+       antiga), ele e acrescentado no fim para o cadastro nao perder a
+       informacao. */
+    function popular(el, classes, selecionado, catalogo) {
         if (!el) return;
         var anterior = (selecionado != null ? selecionado : el.value) || '';
-        var opcoes = montarOpcoes(classes);
+        var opcoes = catalogo ? opcoesDoCatalogo(catalogo, classes) : montarOpcoes(classes);
         var tem = opcoes.some(function (o) { return o.codigo === anterior; });
         if (anterior && !tem) {
             opcoes.push({ codigo: anterior, rotulo: rotuloDe(anterior) + ' (fora da lista atual)', grupo: partes(anterior).grupo });
@@ -227,16 +251,16 @@
         else if (p.cff) { codigo = 'ACI'; motivo = 'aluno matriculado no CFF'; }
         else if (p.status === 'Ativo') { codigo = 'ACD'; motivo = 'aluno ativo'; }
         else { codigo = 'PRE'; motivo = 'pre-inscrito'; }
-        return { codigo: codigo, rotulo: rotuloDe(codigo), motivo: motivo };
+        return { codigo: codigo, rotulo: rotuloDe(codigo, p.catalogo), motivo: motivo };
     }
 
     /* Escreve os campos de patente no objeto que vai para o Firestore.
        Usa string vazia em vez de remover a chave, porque boa parte dos
        formularios grava com `merge: true` e a chave antiga voltaria. */
-    function aplicar(dados, codigo, quem, obs) {
+    function aplicar(dados, codigo, quem, obs, catalogo) {
         dados = dados || {};
         var anterior = dados.patente || '';
-        var d = derivar(codigo);
+        var d = derivar(codigo, catalogo);
         if (d.codigo && d.grupo) {
             dados.patente = d.codigo;
             dados.patenteNome = d.rotulo;
@@ -256,15 +280,196 @@
         }
         if (anterior && anterior !== dados.patente) {
             dados.patenteAnterior = anterior;
-            dados.patenteAnteriorNome = rotuloDe(anterior);
+            dados.patenteAnteriorNome = rotuloDe(anterior, catalogo);
             dados.patenteAlteradoEm = new Date().toISOString();
             dados.patenteAlteradoPor = quem || 'Administrador';
         }
         return dados;
     }
 
+    /* =================================================================
+       CATALOGO DE PATENTES
+       -----------------------------------------------------------------
+       A partir de agora cada patente e um REGISTRO, com insignia, ordem
+       de exibicao e Situacao (ativo/inativo). O registro continua tendo
+       o CODIGO como identidade: e por ele que o cadastro da pessoa
+       guarda a patente, entao cadastrar, renomear ou desativar uma
+       patente nunca quebra o que ja foi gravado nas pessoas.
+
+       Um registro tem esta forma:
+         { codigo, nome, grupo, classe, cff, cargo, obs,
+           insigniaUrl, ordem, ativo }
+
+       Se o catalogo estiver VAZIO (ninguem cadastrou ainda), os
+       formularios continuam usando a lista derivada de sempre. E por
+       isso que nada quebra no meio da implantacao.
+       ================================================================= */
+
+    /* A ordem em que os grupos aparecem, montada a partir dos dois
+       cadastros acima, para a lista do catalogo sair na ordem da
+       instituicao e nao em ordem alfabetica. */
+    var ORDEM_GRUPO = (function () {
+        var m = {}, n = 0;
+        SECOES.forEach(function (sec) {
+            sec.codigos.forEach(function (cod) {
+                if (!(cod in m)) m[cod] = n++;
+            });
+        });
+        GRUPOS.forEach(function (g) { if (!(g.codigo in m)) m[g.codigo] = n++; });
+        return m;
+    }());
+
+    function ordemDeGrupo(grupo) {
+        var g = String(grupo || '').toUpperCase();
+        return (g in ORDEM_GRUPO) ? ORDEM_GRUPO[g] : 999;
+    }
+
+    /* Converte o que veio do Firestore (ou do formulario) em registro
+       limpo: codigo em caixa alta, ordem numerica, ativo booleano,
+       sem duplicidade de codigo, na ordem da instituicao. */
+    function catalogoNormalizar(lista) {
+        var vistos = {};
+        var out = [];
+        (lista || []).forEach(function (bruto, i) {
+            if (!bruto) return;
+            var codigo = String(bruto.codigo || '').trim().toUpperCase();
+            if (!codigo) return;
+            if (vistos[codigo]) return;
+            vistos[codigo] = 1;
+            var d = derivar(codigo);
+            var ordem = parseInt(bruto.ordem, 10);
+            out.push({
+                codigo: codigo,
+                nome: String(bruto.nome || d.rotulo || codigo).trim(),
+                grupo: String(bruto.grupo || d.grupo || '').toUpperCase(),
+                classe: String(bruto.classe != null ? bruto.classe : d.classe || '').trim(),
+                cff: bruto.cff === undefined ? !!d.cff : !!bruto.cff,
+                cargo: String(bruto.cargo != null ? bruto.cargo : d.cargo || '').trim(),
+                obs: String(bruto.obs || '').trim(),
+                insigniaUrl: insigniaNormalizar(bruto.insigniaUrl),
+                ordem: isNaN(ordem) ? 999 : ordem,
+                ativo: bruto.ativo === undefined ? true : !!bruto.ativo
+            });
+        });
+        out.sort(function (a, b) {
+            if (a.ordem !== b.ordem) return a.ordem - b.ordem;
+            var oa = ordemDeGrupo(a.grupo), ob = ordemDeGrupo(b.grupo);
+            if (oa !== ob) return oa - ob;
+            if (a.classe !== b.classe) {
+                var na = parseInt(a.classe, 10), nb = parseInt(b.classe, 10);
+                if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+                return a.classe < b.classe ? -1 : 1;
+            }
+            return a.codigo < b.codigo ? -1 : a.codigo > b.codigo ? 1 : 0;
+        });
+        return out;
+    }
+
+    /* So aceita o que um <img> pode mostrar sem risco:
+         - http(s), que e o link do Storage;
+         - data:image de um formato debitmap, que e o fallback quando o
+           Storage nao esta disponivel.
+       Recusa `javascript:`, `vbscript:`, `data:text/html` e qualquer
+       outra coisa: um link colado no campo nao pode virar script.
+       O SVG fica de fora de proposito -- em <img> ele seria inofensivo,
+       mas e o unico formato que costuma dar problema se um dia a insignia
+       for desenhada com <object> em vez de <img>. */
+    var DATA_IMAGEM_OK = /^data:image\/(png|jpe?g|webp|gif);base64,[a-z0-9+/=\s]+$/i;
+    function insigniaNormalizar(url) {
+        var s = String(url || '').trim();
+        if (!s) return '';
+        if (/^https?:\/\//i.test(s)) return s;
+        if (DATA_IMAGEM_OK.test(s)) return s;
+        return '';
+    }
+
+    /* O catalogo inicial, derivado das classes, no formato de REGISTRO.
+       Usado (a) como fallback dos formularios quando o catalogo esta
+       vazio e (b) pela opcao "sugerir catalogo inicial" da secao, que
+       so mostra a proposta na tela -- quem grava e o administrador. */
+    function catalogoMontar(classes) {
+        var out = [];
+        montarOpcoes(classes).forEach(function (o, i) {
+            var d = derivar(o.codigo);
+            out.push({
+                codigo: o.codigo,
+                nome: o.rotulo,
+                grupo: d.grupo,
+                classe: d.classe,
+                cff: !!d.cff,
+                cargo: d.cargo || '',
+                obs: '',
+                insigniaUrl: '',
+                ordem: (i + 1) * 10,
+                ativo: true
+            });
+        });
+        return out;
+    }
+
+    /* O catalogo efetivo: o que esta cadastrado; se ninguem cadastrou
+       nada, a lista derivada. Assim os formularios nunca abrem vazios
+       e a secao PATENTES mostra quando esta rodando no modo derivado. */
+    function catalogoEfetivo(catalogo, classes) {
+        var cat = catalogoNormalizar(catalogo);
+        return cat.length ? cat : catalogoMontar(classes);
+    }
+
+    function catalogoAchado(catalogo, codigo) {
+        var c = String(codigo || '').trim().toUpperCase();
+        if (!c) return null;
+        var lista = catalogoNormalizar(catalogo);
+        for (var i = 0; i < lista.length; i++) if (lista[i].codigo === c) return lista[i];
+        return null;
+    }
+
+    /* A insignia de uma patente, resolvida pelo codigo que a pessoa ja
+       tem no cadastro. A pessoa nao guarda insignia: se a patente
+       trocar de imagem, a ficha troca junto, sem saves em lote. */
+    function insigniaDe(catalogo, codigo) {
+        var r = catalogoAchado(catalogo, codigo);
+        return (r && r.insigniaUrl) ? r.insigniaUrl : '';
+    }
+
+    /* Preenche os campos do formulario a partir do codigo digitado,
+       para quem cadastrar a patente nao precisar repetir o grupo. */
+    function catalogoSugerirCampos(codigo) {
+        var d = derivar(codigo);
+        return {
+            codigo: d.codigo,
+            nome: d.rotulo,
+            grupo: d.grupo,
+            classe: d.classe,
+            cff: !!d.cff,
+            cargo: d.cargo || '',
+            obs: ''
+        };
+    }
+
+    /* O que o formulario precisa ter para a patente ser cadastrada. */
+    function catalogoValidar(dados) {
+        var erros = [];
+        var codigo = String((dados && dados.codigo) || '').trim().toUpperCase();
+        if (!codigo) erros.push('Informe o codigo da patente.');
+        else if (!/^[A-Z]{2,4}(?:-C\d{2})?(?:-[A-Z]{1,6})*$/.test(codigo)) {
+            erros.push('Codigo invalido. Use letras maiusculas e o formato FOR-C03-ACI.');
+        }
+        if (!String((dados && dados.nome) || '').trim()) erros.push('Informe o nome da patente.');
+        if (!(dados && dados.grupo)) erros.push('Escolha o grupo da patente.');
+        else if (!grupoDe(dados.grupo)) erros.push('Grupo desconhecido: ' + dados.grupo);
+        var url = insigniaNormalizar(dados && dados.insigniaUrl);
+        if (String((dados && dados.insigniaUrl) || '').trim() && !url) {
+            erros.push('A insignia tem que ser um link http, https ou uma imagem.');
+        }
+        if (dados && dados.grupo === 'OUT' && !String(dados.obs || '').trim()) {
+            erros.push('Descreva a patente no campo de observacao.');
+        }
+        return { ok: !erros.length, erros: erros };
+    }
+
     global.PATENTES = {
         GRUPOS: GRUPOS,
+        SECOES: SECOES,
         grupoDe: grupoDe,
         rotuloDe: rotuloDe,
         derivar: derivar,
@@ -275,6 +480,17 @@
         sugerir: sugerir,
         classeDaTurma: classeDaTurma,
         aplicar: aplicar,
+        /* catalogo */
+        ordemDeGrupo: ordemDeGrupo,
+        insigniaNormalizar: insigniaNormalizar,
+        catalogoNormalizar: catalogoNormalizar,
+        catalogoMontar: catalogoMontar,
+        catalogoEfetivo: catalogoEfetivo,
+        catalogoAchado: catalogoAchado,
+        opcoesDoCatalogo: opcoesDoCatalogo,
+        insigniaDe: insigniaDe,
+        catalogoSugerirCampos: catalogoSugerirCampos,
+        catalogoValidar: catalogoValidar,
         esc: esc
     };
 })(typeof window !== 'undefined' ? window : this);

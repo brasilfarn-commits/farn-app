@@ -61,6 +61,10 @@ function showFirebaseStatus(ok) {
 function candidatoToDoc(c) {
     const copy = Object.assign({}, c);
     delete copy.photoDataUrl;
+    /* Derivado em memoria: a insignia vem do catalogo de patentes, nao do
+       cadastro da pessoa. Se fosse junto, cada backup gravaria uma copia
+       velha da insignia em quem ja tem patente. */
+    delete copy.patenteInsigniaUrl;
     Object.keys(copy).forEach(k => { if (copy[k] === undefined) delete copy[k]; });
     return copy;
 }
@@ -770,6 +774,10 @@ async function initApp() {
        01, 02 e 03; as definitivas chegam do Firestore logo depois. */
     patentePopularSelects();
     patenteClassesCarregar();
+    /* O catalogo de patentes: quem tem insignia, quem tem nome cadastrado
+       e quem esta inativa. Vem depois das classes porque a proposta do
+       catalogo inicial usa a lista de classes. */
+    patentesCarregar();
 
     if (restoreLoginState()) {
         document.body.classList.remove('landing-mode');
@@ -1021,7 +1029,15 @@ function applyUserPermissions() {
         'admin-criar-avaliacao': p.includes('avaliacao') || isGeral,
         'admin-whatfarn': isGeral,
         'admin-cff-projetos': p.includes('cff') || isGeral,
-        'admin-ficha-geral': p.includes('alunos') || p.includes('avaliacao') || isGeral
+        'admin-ficha-geral': p.includes('alunos') || p.includes('avaliacao') || isGeral,
+        /* O catalogo de patentes alimenta o campo de patente dos formularios
+           de aluno, docente e usuario. Quem mexe em um desses cadastros
+           precisa poder corrigir o nome e a insignia da patente; por isso
+           a secao fica visivel para quem tem qualquer um deles -- e para
+           quem so administra a instituicao. Quem nao tem nenhum, nao ve. */
+        'admin-patentes': p.includes('alunos') || p.includes('docentes')
+            || p.includes('formados') || p.includes('usuarios')
+            || p.includes('config') || isGeral
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -1681,7 +1697,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-patentes': 'Patentes' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -13246,6 +13262,9 @@ function condecImprimir() {
    ========================================================================== */
 let patenteClasses = ['01', '02', '03'];
 let patenteAlvo = null;
+/* O CATALOGO de patentes (secao PATENTES do admin). Vazio = os
+   formularios usam a lista derivada de sempre. */
+let patentesCatalogo = [];
 
 const PATENTE_FORMULARIOS = [
     { p: 'fc', sel: 'fc-patente', obs: 'fc-patente-obs' },
@@ -13262,7 +13281,7 @@ function patenteTemModulo() { return typeof PATENTES !== 'undefined'; }
    melhor um codigo na tela do que a tela inteira quebrar. */
 function patenteRotulo(codigo) {
     if (!codigo) return '';
-    return patenteTemModulo() ? PATENTES.rotuloDe(codigo) : String(codigo);
+    return patenteTemModulo() ? PATENTES.rotuloDe(codigo, patentesCatalogo) : String(codigo);
 }
 
 function patenteQuem() { return (currentUserData && currentUserData.nome) || 'Administrador'; }
@@ -13319,7 +13338,11 @@ function patentePopularSelects(porPrefixo) {
         if (!el) return;
         var obs = document.getElementById(cfg.obs);
         var m = marcados[cfg.p];
-        PATENTES.popular(el, patenteClasses, (m && m.codigo != null) ? m.codigo : el.value);
+        /* o 4o argumento e o catalogo da secao PATENTES. Vazio, o modulo
+           cai na lista derivada de sempre: os formularios nunca abrem
+           sem opcao por causa de uma colecao ainda nao cadastrada. */
+        PATENTES.popular(el, patenteClasses,
+            (m && m.codigo != null) ? m.codigo : el.value, patentesCatalogo);
         if (obs) {
             if (m && m.obs) obs.value = m.obs;
             patenteObsVisivel(cfg);
@@ -13348,7 +13371,7 @@ function patenteGravarNoObjeto(dados, prefixo) {
     if (!patenteTemModulo()) return dados;
     var lido = patenteLerDoFormulario(prefixo);
     if (!lido) return dados;
-    return PATENTES.aplicar(dados, lido.codigo, patenteQuem(), lido.obs);
+    return PATENTES.aplicar(dados, lido.codigo, patenteQuem(), lido.obs, patentesCatalogo);
 }
 
 /* ---- sugestao: no remanejamento o sistema SUGERE, nunca grava sozinho ---- */
@@ -13362,7 +13385,8 @@ function patenteSugerirPara(p, colecao) {
         /* `cff` e o estado do momento (acabou de entrar no CFF); `patenteCff`
            e o que esta gravado hoje. O que vier explicito manda. */
         cff: p.cff !== undefined ? !!p.cff : !!p.patenteCff,
-        cargo: p.patenteCargo || ''
+        cargo: p.patenteCargo || '',
+        catalogo: patentesCatalogo
     });
 }
 
@@ -13443,7 +13467,7 @@ function patenteRedesenhar() {
 }
 
 async function patentePersistir(colecao, p, codigo, obs) {
-    PATENTES.aplicar(p, codigo, patenteQuem(), obs);
+    PATENTES.aplicar(p, codigo, patenteQuem(), obs, patentesCatalogo);
     if (colecao === 'candidatos') {
         /* candidatos passam pelo mesmo caminho de gravacao do resto da tela */
         backupCandidatos();
@@ -13622,4 +13646,495 @@ async function patenteClassesCarregar() {
         /* Sem permissao ou sem rede: segue com as classes padrao. */
         console.warn('Nao foi possivel carregar as classes de patente:', e && e.message);
     }
+}
+
+/* =====================================================================
+   SECAO PATENTES (administrador)
+   ---------------------------------------------------------------------
+   Aqui a patente deixa de ser so um codigo e passa a ser um REGISTRO:
+   nome, grupo, classe, CFF, cargo, ordem, ativa/inativa e a INSIGNIA.
+
+   Onde a patente vive:
+     - `patentes`      (uma colecao nova; o id do documento e o codigo)
+     - `candidatos`, `docentes`, `usuarios`  (o codigo, como antes)
+
+   Duas garantias que valem a pena registrar:
+     1. COMO O CATALOGO ESTA VAZIO, NADA QUEBRA. Os formularios caem na
+        lista derivada de sempre. Por isso a secao pode comecar vazia e
+        ser preenchida uma a uma, semPressa.
+     2. A INSIGNIA PERTENCE A PATENTE, NAO A PESSOA. Ninguem copia a
+        imagem para o cadastro de ninguem: a Ficha Geral le `patente` da
+        pessoa e resolve a insignia no catalogo. Trocar a insignia de
+        uma patente aparece na hora em todas as fichas, sem saves em lote.
+   ===================================================================== */
+const PATENTES_COL = 'patentes';
+const PATENTES_INSIGNIA_LADO = 256;   /* saida do recorte, em quadrado */
+const PATENTES_INSIGNIA_KB = 120;     /* teto da insignia */
+
+/* O formulario: o que esta na tela agora. `dataUrl` e a insignia ja
+   recortada, esperando para ir para o Storage no momento de salvar. */
+let patenteForm = { codigo: '', insigniaUrl: '', dataUrl: '', houveRecorte: false, remover: false };
+
+function patenteInsigniaUrl(codigo) {
+    if (!patenteTemModulo() || !codigo) return '';
+    return PATENTES.insigniaDe(patentesCatalogo, codigo);
+}
+
+/* ---- carga do catalogo ---- */
+
+/* Chamado pelo botao do menu. Garante os seletores e a lista na tela. */
+function patentesInicializar() {
+    if (!patenteTemModulo()) return;
+    patentePopularSelects();
+    patentesListar();
+}
+
+function patentesCarregar() {
+    if (!dbFirestore || typeof dbFirestore.collection !== 'function') return;
+    try {
+        dbFirestore.collection(PATENTES_COL).onSnapshot(function (snap) {
+            const lista = [];
+            snap.forEach(function (d) {
+                if (d.id === '_index') return;
+                lista.push(Object.assign({ codigo: d.id }, d.data()));
+            });
+            patenteCatalogoRecebida(lista);
+        }, function (e) {
+            /* Sem permissao ou sem rede: a secao mostra a lista derivada
+               e os formularios continuam funcionando. */
+            console.warn('Nao foi possivel carregar o catalogo de patentes:', e && e.message);
+            patenteCatalogoRecebida([]);
+        });
+    } catch (e) {
+        console.warn('Catalogo de patentes indisponivel:', e && e.message);
+    }
+}
+
+function patenteCatalogoRecebida(lista) {
+    patentesCatalogo = patenteTemModulo() ? PATENTES.catalogoNormalizar(lista) : [];
+    /* os seletores passam a oferecer o que esta cadastrado */
+    patentePopularSelects();
+    /* e a Ficha Geral re-resolve a insignia de cada pessoa */
+    patenteFicharInsignias();
+    if (typeof patentesListar === 'function') patentesListar();
+    if (typeof patenteRedesenhar === 'function') patenteRedesenhar();
+}
+
+/* ---- a insignia na Ficha Geral ---- */
+
+/* Coloca (ou tira) em cada pessoa o link da insignia da patente dela.
+   É um campo DERIVADO, so em memoria: nunca vai para o Firestore (o
+   `candidatoToDoc` apaga o campo). */
+function patenteFicharInsignias() {
+    if (!Array.isArray(candidatos)) return;
+    candidatos.forEach(function (c) {
+        if (!c) return;
+        const url = patenteInsigniaUrl(c.patente);
+        if (url) c.patenteInsigniaUrl = url;
+        else delete c.patenteInsigniaUrl;
+    });
+}
+
+/* ---- a lista da secao ---- */
+
+function patentesContagem() {
+    const total = patentesCatalogo.length;
+    const comInsignia = patentesCatalogo.filter(r => r.insigniaUrl).length;
+    const ativas = patentesCatalogo.filter(r => r.ativo !== false).length;
+    return { total: total, comInsignia: comInsignia, ativas: ativas };
+}
+
+function patentesListar() {
+    const caixa = document.getElementById('patentes-lista');
+    if (!caixa) return;
+    const c = patentesContagem();
+    const aviso = document.getElementById('patentes-aviso-derivado');
+    if (aviso) aviso.style.display = c.total ? 'none' : '';
+
+    if (!c.total) {
+        caixa.innerHTML = '<div class="pat-vazio" style="grid-column:1/-1">'
+            + '<i class="fa-solid fa-medal" style="font-size:26px;display:block;margin-bottom:8px;opacity:.5"></i>'
+            + 'Nenhuma patente cadastrada ainda. Use <b>Nova Patente</b> para comecar, '
+            + 'ou <b>Sugerir lista inicial</b> para ver a proposta e revisar antes de gravar.'
+            + '</div>';
+        return;
+    }
+
+    caixa.innerHTML = patentesCatalogo.map(function (r) {
+        const g = (patenteTemModulo() && PATENTES.grupoDe(r.grupo)) || null;
+        const cor = g ? g.cor : '#334155';
+        const inativa = r.ativo === false;
+        const ins = r.insigniaUrl
+            ? '<img src="' + patenteEsc(r.insigniaUrl) + '" alt="" class="pat-ins-mini">'
+            : '<span class="pat-ins-vazia" title="Sem insignia"><i class="fa-solid fa-image"></i></span>';
+        const partes = [];
+        if (r.classe) partes.push('Classe ' + patenteEsc(r.classe));
+        if (r.cff) partes.push('com CFF');
+        if (r.cargo) partes.push(patenteEsc(r.cargo));
+        return '<div class="pat-cartao' + (inativa ? ' inativa' : '') + '">'
+            + '<div class="pat-cartao-ins">' + ins + '</div>'
+            + '<div class="pat-cartao-corpo">'
+            + '<div class="pat-cartao-cod" style="background:' + cor + '">' + patenteEsc(r.codigo) + '</div>'
+            + '<div class="pat-cartao-nome">' + patenteEsc(r.nome) + '</div>'
+            + '<div class="pat-cartao-detalhe">'
+            + patenteEsc((g ? g.nome : r.grupo) + (partes.length ? ' - ' + partes.join(' - ') : ''))
+            + '</div>'
+            + '<div class="pat-cartao-pe">'
+            + '<span class="pat-chip" style="background:' + cor + '22;color:' + cor + '">'
+            + (inativa ? 'Inativa' : 'Ativa') + '</span>'
+            + '<span class="pat-chip" title="Posicao na lista">ordem ' + r.ordem + '</span>'
+            + '</div>'
+            + '</div>'
+            + '<div class="pat-cartao-acoes">'
+            + '<button class="btn-icon" title="Editar patente" onclick="patentesAbrirForm(\'' + patenteEsc(r.codigo) + '\')">'
+            + '<i class="fa-solid fa-pen" style="color:#2563eb"></i></button>'
+            + '<button class="btn-icon" title="Excluir patente" onclick="patentesExcluir(\'' + patenteEsc(r.codigo) + '\')">'
+            + '<i class="fa-solid fa-trash" style="color:#b91c1c"></i></button>'
+            + '</div></div>';
+    }).join('');
+}
+
+/* ---- formulario ---- */
+
+function patenteFormLimpar() {
+    patenteForm = { codigo: '', insigniaUrl: '', dataUrl: '', houveRecorte: false, remover: false };
+    ['patente-form-codigo', 'patente-form-nome', 'patente-form-obs', 'patente-form-ordem']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const gr = document.getElementById('patente-form-grupo');
+    if (gr) gr.value = 'FOR';
+    const at = document.getElementById('patente-form-ativo');
+    if (at) at.checked = true;
+    const cf = document.getElementById('patente-form-cff');
+    if (cf) cf.checked = false;
+    patenteFormPreview();
+}
+
+function patenteFormTitulo() {
+    const t = document.getElementById('patente-form-title');
+    if (t) t.innerHTML = patenteForm.codigo
+        ? '<i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Editar Patente'
+        : '<i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Nova Patente';
+}
+
+function patenteAbrirForm(codigo) {
+    if (!patenteTemModulo()) return;
+    patenteFormLimpar();
+    if (codigo) {
+        const r = PATENTES.catalogoAchado(patentesCatalogo, codigo);
+        if (!r) { alert('Patente nao encontrada no catalogo.'); return; }
+        patenteForm.codigo = r.codigo;
+        patenteForm.insigniaUrl = r.insigniaUrl || '';
+        document.getElementById('patente-form-codigo').value = r.codigo;
+        document.getElementById('patente-form-codigo').readOnly = true;
+        document.getElementById('patente-form-nome').value = r.nome;
+        document.getElementById('patente-form-obs').value = r.obs || '';
+        document.getElementById('patente-form-ordem').value = r.ordem;
+        const gr = document.getElementById('patente-form-grupo');
+        if (gr) gr.value = r.grupo || 'FOR';
+        const at = document.getElementById('patente-form-ativo');
+        if (at) at.checked = r.ativo !== false;
+        const cf = document.getElementById('patente-form-cff');
+        if (cf) cf.checked = !!r.cff;
+    } else {
+        const cc = document.getElementById('patente-form-codigo');
+        if (cc) cc.readOnly = false;
+        const ord = document.getElementById('patente-form-ordem');
+        if (ord) ord.value = (patentesContagem().total + 1) * 10;
+    }
+    patenteFormTitulo();
+    patenteFormPreview();
+    const m = document.getElementById('patente-form-overlay');
+    if (m) m.classList.remove('hidden');
+}
+
+function patenteFecharForm() {
+    const m = document.getElementById('patente-form-overlay');
+    if (m) m.classList.add('hidden');
+    patenteFormLimpar();
+}
+
+/* Digitar o codigo preenche grupo, classe, CFF, cargo e o nome. O que o
+   administrador escreveu por cima nao e sobrescrito. */
+function patenteFormSugerirCampos() {
+    if (!patenteTemModulo()) return;
+    const el = document.getElementById('patente-form-codigo');
+    if (!el) return;
+    const codigo = (el.value || '').trim().toUpperCase();
+    if (!codigo) return;
+    const f = PATENTES.catalogoSugerirCampos(codigo);
+    if (f.grupo) {
+        const gr = document.getElementById('patente-form-grupo');
+        if (gr) gr.value = f.grupo;
+    }
+    const cf = document.getElementById('patente-form-cff');
+    if (cf) cf.checked = !!f.cff;
+    const nome = document.getElementById('patente-form-nome');
+    if (nome && !nome.value.trim()) nome.value = f.nome;
+}
+
+function patenteFormPreview() {
+    const cx = document.getElementById('patente-form-insignia');
+    if (!cx) return;
+    const fonte = patenteForm.dataUrl || patenteForm.insigniaUrl;
+    const removida = patenteForm.remover;
+    if (!fonte || removida) {
+        cx.innerHTML = '<i class="fa-solid fa-image" style="font-size:20px;color:#94a3b8"></i>';
+        return;
+    }
+    cx.innerHTML = '<img src="' + patenteEsc(fonte) + '" alt="Insignia da patente">';
+}
+
+/* ---- insignia: arquivo -> recorte 1x1 -> Storage ---- */
+
+function patenteEscolherArquivo() {
+    const inp = document.getElementById('patente-insignia-arquivo');
+    if (inp) inp.click();
+}
+
+async function patenteArquivoEscolhido(event) {
+    const inp = event && event.target ? event.target : null;
+    const arq = inp && inp.files && inp.files[0];
+    if (!arq) return;
+    /* Checagem de tipo sem regex: `arq.type` e sempre o MIME, e um
+       "image/" na frente ja diz que e imagem. */
+    if (String(arq.type || '').indexOf('image/') !== 0) {
+        alert('Escolha um arquivo de imagem (PNG ou JPG).');
+        if (inp) inp.value = '';
+        return;
+    }
+    if (arq.size > 12 * 1024 * 1024) {
+        alert('Imagem grande demais. Use um arquivo de ate 12 MB.');
+        if (inp) inp.value = '';
+        return;
+    }
+    const fonte = await patenteLerArquivo(arq);
+    if (inp) inp.value = '';
+    if (!fonte) return;
+    /* o mesmo editor do recorte da foto 3x4, so que em quadrado */
+    if (typeof Foto3x4Editor === 'undefined' || !Foto3x4Editor.abrir) {
+        /* sem editor: usa a imagem como veio, e o upload reduz depois */
+        patenteForm.dataUrl = fonte;
+        patenteForm.remover = false;
+        patenteFormPreview();
+        return;
+    }
+    Foto3x4Editor.abrir({
+        nome: 'Insignia da patente',
+        fonte: fonte,
+        largura: PATENTES_INSIGNIA_LADO,
+        altura: PATENTES_INSIGNIA_LADO,
+        limiteKb: PATENTES_INSIGNIA_KB,
+        aoConcluir: function (dataUrl) {
+            if (!dataUrl) return;
+            patenteForm.dataUrl = dataUrl;
+            patenteForm.remover = false;
+            patenteFormPreview();
+        }
+    });
+}
+
+function patenteLerArquivo(arq) {
+    return new Promise(function (res) {
+        const fr = new FileReader();
+        fr.onload = function () { res(fr.result); };
+        fr.onerror = function () { res(null); };
+        fr.readAsDataURL(arq);
+    });
+}
+
+function patenteRemoverInsignia() {
+    patenteForm.dataUrl = '';
+    patenteForm.houveRecorte = false;
+    /* so some da ficha depois de salvar */
+    patenteForm.remover = !!patenteForm.insigniaUrl;
+    patenteFormPreview();
+}
+
+function patenteDataUrlParaBlob(dataUrl) {
+    return new Promise(function (res, rej) {
+        const partes = String(dataUrl).split(',');
+        const mime = (partes[0].match(/:(.*?);/) || [, 'image/jpeg'])[1];
+        const bin = atob(partes[1] || '');
+        const buf = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+        res(new Blob([buf], { type: mime }));
+    });
+}
+
+/* Sobe a insignia para `patentes/insignias/` e devolve a URL publica.
+   Sem Storage configurado, cai para devolver a propria imagem em base64:
+   a insignia continua aparecendo, so que gasta mais espaco no documento. */
+async function patenteInsigniaSubir(dataUrl, codigo) {
+    if (typeof firebase === 'undefined' || !firebase.storage) return dataUrl;
+    try {
+        const blob = await patenteDataUrlParaBlob(dataUrl);
+        const ext = (blob.type.indexOf('png') >= 0) ? 'png' : 'jpg';
+        const ref = firebase.storage().ref('patentes/insignias/' + codigo + '_' + Date.now() + '.' + ext);
+        await ref.put(blob);
+        return await ref.getDownloadURL();
+    } catch (e) {
+        console.warn('Nao foi possivel subir a insignia para o Storage:', e && e.message);
+        return dataUrl;
+    }
+}
+
+/* ---- gravar e excluir ---- */
+
+async function patenteFormGravar() {
+    if (!patenteTemModulo()) return;
+    const el = id => document.getElementById(id);
+    const dados = {
+        codigo: (el('patente-form-codigo') ? el('patente-form-codigo').value : '').trim().toUpperCase(),
+        nome: (el('patente-form-nome') ? el('patente-form-nome').value : '').trim(),
+        grupo: el('patente-form-grupo') ? el('patente-form-grupo').value : '',
+        classe: (el('patente-form-classe') ? el('patente-form-classe').value : '').trim(),
+        cff: !!(el('patente-form-cff') && el('patente-form-cff').checked),
+        cargo: (el('patente-form-cargo') ? el('patente-form-cargo').value : '').trim(),
+        obs: (el('patente-form-obs') ? el('patente-form-obs').value : '').trim(),
+        ordem: parseInt(el('patente-form-ordem') ? el('patente-form-ordem').value : '', 10),
+        ativo: !!(el('patente-form-ativo') && el('patente-form-ativo').checked)
+    };
+    const check = PATENTES.catalogoValidar(dados);
+    if (!check.ok) { alert(check.erros.join('\n')); return; }
+
+    /* nao deixa dois registros com o mesmo codigo */
+    const existente = PATENTES.catalogoAchado(patentesCatalogo, dados.codigo);
+    if (existente && existente.codigo !== patenteForm.codigo) {
+        alert('Ja existe uma patente com o codigo ' + dados.codigo + '.');
+        return;
+    }
+
+    const reg = PATENTES.catalogoNormalizar([dados])[0];
+    if (!reg) { alert('Nao foi possivel ler a patente informada.'); return; }
+
+    try {
+        reg.insigniaUrl = patenteForm.remover ? '' : patenteForm.insigniaUrl;
+        if (patenteForm.dataUrl) reg.insigniaUrl = await patenteInsigniaSubir(patenteForm.dataUrl, reg.codigo);
+
+        /* A insignia pertence a patente, nao a pessoa: e aqui que ela
+           entra. Nenhum cadastro de pessoa e tocado aqui. */
+        await dbFirestore.collection(PATENTES_COL).doc(reg.codigo).set({
+            codigo: reg.codigo,
+            nome: reg.nome,
+            grupo: reg.grupo,
+            classe: reg.classe,
+            cff: reg.cff,
+            cargo: reg.cargo,
+            obs: reg.obs,
+            insigniaUrl: PATENTES.insigniaNormalizar(reg.insigniaUrl),
+            ordem: reg.ordem,
+            ativo: reg.ativo
+        }, { merge: true });
+
+        patenteFecharForm();
+        /* o onSnapshot redesenha a lista, os seletores e as fichas */
+        alert('Patente ' + reg.codigo + ' salva.');
+    } catch (e) {
+        console.error('Erro ao salvar a patente:', e);
+        alert('Erro ao salvar a patente: ' + e.message);
+    }
+}
+
+async function patentesExcluir(codigo) {
+    if (!patenteTemModulo()) return;
+    const r = PATENTES.catalogoAchado(patentesCatalogo, codigo);
+    if (!r) { alert('Patente nao encontrada.'); return; }
+    /* avisar quantas pessoas ficariam com uma patente fora do catalogo */
+    let pessoas = 0;
+    [candidatos, docentes, usuarios].forEach(function (lista) {
+        if (!Array.isArray(lista)) return;
+        lista.forEach(function (p) { if (p && p.patente === r.codigo) pessoas++; });
+    });
+
+    const aviso = pessoas
+        ? ('\n\nATENCAO: ' + pessoas + ' pessoa(s) ja tem(em) essa patente no cadastro. '
+            + 'Elas nao perdem a patente, mas ela deixa de aparecer com insignia '
+            + 'na Ficha Geral e passa a constar como "fora da lista atual".\n\n'
+            + 'Se a ideia e so parar de OFERECER essa patente, marque-a como INATIVA '
+            + 'em vez de excluir: e o mesmo efeito sem perder nada.')
+        : '';
+    if (!confirm('Excluir a patente ' + r.codigo + ' (' + r.nome + ')?' + aviso)) return;
+
+    try {
+        await dbFirestore.collection(PATENTES_COL).doc(r.codigo).delete();
+        /* a insignia vai junto, quando ela estiver no Storage */
+        if (r.insigniaUrl && typeof firebase !== 'undefined' && firebase.storage) {
+            try {
+                const ref = firebase.storage().refFromURL(r.insigniaUrl);
+                await ref.delete();
+            } catch (e) {
+                /* a insignia ja saiu do registro; arquivo orfao nao e problema */
+            }
+        }
+        alert('Patente excluida.');
+    } catch (e) {
+        console.error('Erro ao excluir a patente:', e);
+        alert('Erro ao excluir a patente: ' + e.message);
+    }
+}
+
+/* ---- a proposta do catalogo inicial (so mostra, nao grava) ---- */
+
+function patentesSugerirCatalogo() {
+    if (!patenteTemModulo()) return;
+    if (patentesContagem().total) {
+        if (!confirm('Ja existe patente cadastrada. Abrir a proposta mesmo assim?')) return;
+    }
+    const proposta = PATENTES.catalogoMontar(patenteClasses);
+    const cx = document.getElementById('patentes-proposta');
+    if (!cx) return;
+    cx.innerHTML = '<div class="pat-proposta-topo">'
+        + '<b>' + proposta.length + ' patentes sugeridas</b> a partir das classes '
+        + patenteClasses.join(', ') + '.'
+        + '<br><small>Nada foi gravado. Marque o que quiser e clique em salvar as marcadas.</small></div>'
+        + proposta.map(function (r, i) {
+            return '<label class="pat-proposta-item">'
+                + '<input type="checkbox" class="pat-proposta-chk" value="' + patenteEsc(r.codigo) + '" checked>'
+                + '<b>' + patenteEsc(r.codigo) + '</b> - ' + patenteEsc(r.nome)
+                + '</label>';
+        }).join('')
+        + '<div class="pat-proposta-pe">'
+        + '<button class="btn-outline btn-sm" onclick="patentesMarcarProposta(true)">Marcar todas</button>'
+        + '<button class="btn-outline btn-sm" onclick="patentesMarcarProposta(false)">Desmarcar todas</button>'
+        + '<button class="btn-primary btn-sm" onclick="patentesGravarProposta()">'
+        + '<i class="fa-solid fa-floppy-disk"></i> Salvar as marcadas</button>'
+        + '</div>';
+    cx.style.display = '';
+}
+
+function patentesMarcarProposta(marcado) {
+    document.querySelectorAll('#patentes-proposta .pat-proposta-chk')
+        .forEach(c => { c.checked = !!marcado; });
+}
+
+async function patentesGravarProposta() {
+    if (!patenteTemModulo()) return;
+    const marcados = Array.prototype.slice
+        .call(document.querySelectorAll('#patentes-proposta .pat-proposta-chk'))
+        .filter(c => c.checked)
+        .map(c => c.value);
+    if (!marcados.length) { alert('Nenhuma patente marcada.'); return; }
+    if (!confirm('Gravar ' + marcados.length + ' patente(s) no catalogo?')) return;
+
+    const proposta = PATENTES.catalogoMontar(patenteClasses);
+    let gravadas = 0, puladas = 0;
+    for (const codigo of marcados) {
+        const r = proposta.filter(x => x.codigo === codigo)[0];
+        if (!r) continue;
+        /* nunca sobrescreve uma patente que ja existe: e cadastro, nao rascunho */
+        if (PATENTES.catalogoAchado(patentesCatalogo, codigo)) { puladas++; continue; }
+        try {
+            await dbFirestore.collection(PATENTES_COL).doc(r.codigo).set({
+                codigo: r.codigo, nome: r.nome, grupo: r.grupo, classe: r.classe,
+                cff: r.cff, cargo: r.cargo, obs: '', insigniaUrl: '',
+                ordem: r.ordem, ativo: true
+            });
+            gravadas++;
+        } catch (e) {
+            puladas++;
+        }
+    }
+    const cx = document.getElementById('patentes-proposta');
+    if (cx) cx.style.display = 'none';
+    alert(gravadas + ' patente(s) gravada(s).' + (puladas ? '\n' + puladas + ' ja existiam e foram mantidas.' : ''));
 }

@@ -487,6 +487,25 @@ function fgChipContato(icone, rotulo, valor) {
         + '<span style="font-size:11px;font-weight:700;color:#0f172a;word-break:break-word">' + fgEsc(valor) + '</span></div>';
 }
 
+/* A insignia da patente, ao lado da foto 3x4.
+   A insignia pertence a PATENTE, e nao a pessoa: quem preencheu este
+   campo foi quem montou a ficha, resolvendo o codigo da patente no
+   catalogo. Como a condicao e `c.patenteInsigniaUrl`, quem nao marcar
+   esse campo -- o portal do aluno, por exemplo -- nao ve nenhuma
+   diferenca: e a mesma ficha de antes. */
+function fichaGeralInsignia(c) {
+    const url = (c && c.patenteInsigniaUrl) || '';
+    if (!url) return '';
+    return '<div style="margin-top:8px">'
+        + '<img src="' + fgEsc(url) + '" alt="Insignia da patente"'
+        + ' style="width:44px;height:44px;object-fit:contain;background:#fff;'
+        + 'border:1px solid #bae6fd;border-radius:8px;padding:3px;'
+        + '-webkit-print-color-adjust:exact;print-color-adjust:exact">'
+        + '<div style="font-size:8.5px;color:#0ea5e9;margin-top:3px;font-weight:800;'
+        + 'letter-spacing:.4px;white-space:nowrap">INSIGNIA</div>'
+        + '</div>';
+}
+
 /* Cabecalho institucional (espaco superior da ficha): logo, razao social,
    nome fantasia, contatos e o projeto/turma do aluno. */
 function fichaGeralCabecalho(inst, c, fotoHtml) {
@@ -519,6 +538,7 @@ function fichaGeralCabecalho(inst, c, fotoHtml) {
         + '</div>'
         + '<div style="flex-shrink:0;text-align:center">' + fotoHtml
         + '<div style="font-size:9px;color:#94a3b8;margin-top:4px;font-weight:700;letter-spacing:.5px">FOTO 3X4</div>'
+        + fichaGeralInsignia(c)
         + '</div></div>'
         + linha
         + '</div>';

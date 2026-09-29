@@ -8,17 +8,33 @@
      Foto3x4Editor.abrir({
        nome: 'Nome da pessoa',        // aparece no titulo
        fonte: dataUrl,                // imagem de origem
+       largura: 480,                   // opcional: saida (padrao 480x640)
+       altura: 640,                    // opcional: use 256 e 256 para a insignia
+       limiteKb: 900,                  // opcional: teto da saida (padrao 900)
        aoConcluir: function (dataUrl, recortado) { ... }
      });
-   AoConcluir recebe a imagem 3x4 de 480x640 (dentro de 900 KB) quando o
-   usuario salva o recorte, ou a imagem original com recortado=false
-   quando ele escolhe "Usar sem ajuste" (o portal entao comprime como
-   fazia antes). Cancelar nao chama nada: nada e gravado.              */
+   AoConcluir recebe a imagem recortada nas medidas pedidas (dentro do
+   limite) quando o usuario salva o recorte, ou a imagem original com
+   recortado=false quando ele escolhe "Usar sem ajuste" (o portal entao
+   comprime como fazia antes). Cancelar nao chama nada: nada e gravado. */
 (function (global) {
     'use strict';
 
     var LIMITE_KB = 900;
     var LARGURA = 480, ALTURA = 640;
+
+    /* O editor serve para qualquer proporcao: a 3x4 da foto do cadastro e
+       a 1x1 da insignia da patente usam a MESMA janela. Sem `proporcao`,
+       continua 3x4 em 480x640, exatamente como sempre foi. */
+    function dimensoes(opcoes) {
+        var l = Math.round(Number(opcoes && opcoes.largura) || LARGURA);
+        var a = Math.round(Number(opcoes && opcoes.altura) || ALTURA);
+        if (l < 16) l = LARGURA;
+        if (a < 16) a = ALTURA;
+        var kb = Number(opcoes && opcoes.limiteKb) || LIMITE_KB;
+        if (kb < 10) kb = LIMITE_KB;
+        return { largura: l, altura: a, limiteKb: kb };
+    }
 
     var ed = { aberto: false, estado: null, ligou: false };
 
@@ -154,7 +170,7 @@
         if (!e || !e.base) return null;
         var moldura = id('f3e-moldura');
         var vw = (moldura && moldura.clientWidth) || 280;
-        var vh = (moldura && moldura.clientHeight) || Math.round(vw * 4 / 3);
+        var vh = (moldura && moldura.clientHeight) || Math.round(vw * e.altura / e.largura);
         var iw = e.base.width || 1, ih = e.base.height || 1;
         var escala = Math.max(vw / iw, vh / ih);
         return { vw: vw, vh: vh, iw: iw, ih: ih, escala: escala };
@@ -220,16 +236,16 @@
         var srcW = Math.max(1, Math.min((m.vw / dw) * m.iw, m.iw - srcX));
         var srcH = Math.max(1, Math.min((m.vh / dh) * m.ih, m.ih - srcY));
         var out = document.createElement('canvas');
-        out.width = LARGURA; out.height = ALTURA;
+        out.width = e.largura; out.height = e.altura;
         var ctx = out.getContext('2d');
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, LARGURA, ALTURA);
-        ctx.drawImage(e.base, srcX, srcY, srcW, srcH, 0, 0, LARGURA, ALTURA);
+        ctx.fillRect(0, 0, e.largura, e.altura);
+        ctx.drawImage(e.base, srcX, srcY, srcW, srcH, 0, 0, e.largura, e.altura);
         var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
         var saida = null;
         for (var i = 0; i < qualidades.length; i++) {
             var url = out.toDataURL('image/jpeg', qualidades[i]);
-            if (Math.round(url.length * 3 / 4) <= LIMITE_KB * 1024) { saida = url; break; }
+            if (Math.round(url.length * 3 / 4) <= e.limiteKb * 1024) { saida = url; break; }
         }
         if (!saida) saida = out.toDataURL('image/jpeg', 0.1);
         concluir(saida, true);
@@ -254,17 +270,22 @@
         opcoes = opcoes || {};
         var fonte = opcoes.fonte;
         if (!fonte) return;
+        var dim = dimensoes(opcoes);
         garantirJanela();
         var img = new Image();
         img.onload = function () {
             ed.estado = {
                 base: img, fonte: fonte, zoom: 1, offX: 0, offY: 0, arrastando: false,
-                ultX: 0, ultY: 0, aoConcluir: opcoes.aoConcluir || null
+                ultX: 0, ultY: 0, aoConcluir: opcoes.aoConcluir || null,
+                largura: dim.largura, altura: dim.altura, limiteKb: dim.limiteKb
             };
             var nome = id('f3e-nome');
             if (nome) nome.textContent = opcoes.nome || 'Aluno';
             var z = id('f3e-zoom-range');
             if (z) z.value = 100;
+            /* a moldura segue a proporcao pedida (1x1 na insignia) */
+            var moldura = id('f3e-moldura');
+            if (moldura) moldura.style.aspectRatio = dim.largura + ' / ' + dim.altura;
             var tela = id('f3e-modal');
             if (tela) tela.style.display = 'flex';
             ed.aberto = true;
