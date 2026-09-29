@@ -725,6 +725,10 @@
                         <i class="fa-solid fa-graduation-cap"></i>
                         <span>Formados</span>
                     </a>
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-condecoracoes', this); condecInicializar()">
+                        <i class="fa-solid fa-award"></i>
+                        <span>Condecoracoes</span>
+                    </a>
                     <a href="#" class="nav-item" onclick="showAdminSection('admin-relatorios', this)">
                         <i class="fa-solid fa-chart-bar"></i>
                         <span>Relatorios</span>
@@ -1214,6 +1218,65 @@
                                     <tbody id="formados-table-body"></tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="admin-condecoracoes" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-award" style="color:#b45309;margin-right:8px"></i> Condecoracoes e Certificados</h3>
+                            <button class="btn-primary" onclick="condecAbrirForm()" style="height:38px;background:#b45309;border-color:#b45309;white-space:nowrap">
+                                <i class="fa-solid fa-plus"></i> NOVA CONDECORACAO
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div style="padding:14px;background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border:2px solid #b45309;border-radius:12px;margin-bottom:18px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                                    <i class="fa-solid fa-medal" style="color:#b45309;font-size:16px"></i>
+                                    <span style="color:#92400e;font-weight:700;font-size:14px">Condecoracoes e certificadinhos de Alunos, Docentes e Formados</span>
+                                    <span id="condec-count-badge" style="margin-left:auto;background:#b45309;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px"></span>
+                                </div>
+                                <p style="font-size:12px;color:#78350f;margin:0;line-height:1.6">
+                                    <i class="fa-solid fa-circle-info" style="margin-right:4px"></i>
+                                    Registre a condecoracao ou o certificado de uma pessoa, com a data, o local, a instituicao e a medalha da fita.
+                                    As fotos anexadas ficam guardadas junto do registro, sem ocupar o cadastro da pessoa.
+                                </p>
+                            </div>
+
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+                                <div class="form-group" style="margin:0;min-width:200px">
+                                    <label style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px;display:block">Projeto</label>
+                                    <select id="condec-filtro-projeto" class="config-input" style="width:100%;border-color:#b45309" onchange="condecFiltroTurma()">
+                                        <option value="">Todos os projetos</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin:0;min-width:170px">
+                                    <label style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px;display:block">Turma</label>
+                                    <select id="condec-filtro-turma" class="config-input" style="width:100%;border-color:#b45309" onchange="condecRender()">
+                                        <option value="">Todas as turmas</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin:0;min-width:170px">
+                                    <label style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px;display:block">Tipo</label>
+                                    <select id="condec-filtro-tipo" class="config-input" style="width:100%;border-color:#b45309" onchange="condecRender()">
+                                        <option value="">Aluno, Docente e Formado</option>
+                                        <option value="A">Somente Aluno ativo</option>
+                                        <option value="D">Somente Docente</option>
+                                        <option value="F">Somente Formado</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin:0;flex:1;min-width:200px">
+                                    <label style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px;display:block">Buscar</label>
+                                    <input type="text" id="condec-filtro-busca" class="config-input" style="width:100%;border-color:#b45309" placeholder="Nome, CPF, condecoracao ou instituicao..." oninput="condecRender()">
+                                </div>
+                            </div>
+
+                            <div id="condec-empty" class="empty-state" style="display:none;padding:40px">
+                                <i class="fa-solid fa-award" style="font-size:48px;color:#f59e0b;margin-bottom:12px"></i>
+                                <p style="color:#475569">Nenhuma condecoracao cadastrada</p>
+                            </div>
+                            <div id="condec-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px"></div>
                         </div>
                     </div>
                 </div>
@@ -3455,6 +3518,190 @@
         </div>
     </div>
 
+    <!-- CSS DAS CONDECORACOES E CERTIFICADOS -->
+    <style id="condec-css">
+        .condec-medalhas { display: flex; flex-wrap: wrap; gap: 6px; }
+        .condec-medal-btn { width: 34px; height: 40px; padding: 0; border: 2px solid transparent; border-radius: 8px;
+            background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .condec-medal-btn:hover { border-color: #fcd34d; }
+        .condec-medal-btn.sel { border-color: #b45309; box-shadow: 0 0 0 2px #fef3c7; }
+        .condec-medal-btn svg { display: block; }
+        .condec-anexo-box { position: relative; width: 74px; height: 96px; border: 2px dashed #cbd5e1; border-radius: 8px;
+            background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 6px; }
+        .condec-anexo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .condec-anexo-box .fa-image { font-size: 20px; color: #94a3b8; }
+        .condec-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 12px; background: #f8fafc; position: relative; }
+        .condec-item-titulo { font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .condec-pessoa-btn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px;
+            border: 2px solid #e2e8f0; border-radius: 10px; background: #fff; cursor: pointer; }
+        .condec-pessoa-btn:hover { border-color: #fcd34d; }
+        .condec-pessoa-foto { width: 46px; height: 61px; border-radius: 6px; background: #f1f5f9; flex: 0 0 46px;
+            display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .condec-pessoa-foto img { width: 100%; height: 100%; object-fit: cover; }
+        .condec-cartao { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff; margin-bottom: 14px; }
+        .condec-cartao-topo { display: flex; gap: 12px; padding: 12px; background: linear-gradient(135deg,#fffbeb,#fef3c7); border-bottom: 1px solid #fde68a; }
+        .condec-cartao-foto { width: 100%; max-height: 220px; object-fit: contain; background: #0f172a; display: block; }
+        @media print {
+            body.condec-imprimindo .sidebar, body.condec-imprimindo .modal-header { display: none !important; }
+        }
+    </style>
+
+    <!-- MODAL CONDECORACAO E CERTIFICADO - FORMULARIO -->
+    <div id="condec-form-overlay" class="modal-overlay hidden" onclick="if(event.target===this)condecFecharForm()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:880px;max-height:94vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-award" style="color:#b45309;margin-right:8px"></i> <span id="condec-form-titulo">Nova Condecoracao</span></h3>
+                <button class="modal-close" onclick="condecFecharForm()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="condec-form" onsubmit="return condecSalvar(event)">
+
+                    <!-- INDIVIDUO -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-user" style="color:#b45309"></i><h3>Individuo</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Opcao de escolha *</label>
+                                    <select id="condec-tipo" class="config-input" onchange="condecOnTipoChange()">
+                                        <option value="">Selecione...</option>
+                                        <option value="A">Aluno ativo</option>
+                                        <option value="D">Docente</option>
+                                        <option value="F">Formado</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Pesquisar pessoa</label>
+                                    <button type="button" id="condec-btn-pesquisar" class="config-input" onclick="condecAbrirBusca()" disabled
+                                            style="text-align:left;cursor:not-allowed;opacity:.55;height:38px;font-weight:600;color:#b45309">
+                                        <i class="fa-solid fa-magnifying-glass" style="margin-right:6px"></i> PESQUISAR
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>CPF</label>
+                                    <input type="text" id="condec-cpf" class="config-input" readonly placeholder="Vem da pesquisa">
+                                </div>
+                                <div class="form-group">
+                                    <label>Matricula</label>
+                                    <input type="text" id="condec-matricula" class="config-input" readonly placeholder="Vem da pesquisa">
+                                </div>
+                                <div class="form-group">
+                                    <label>Nome</label>
+                                    <input type="text" id="condec-nome" class="config-input" readonly placeholder="Vem da pesquisa">
+                                </div>
+                            </div>
+                            <div class="form-row" style="align-items:flex-start">
+                                <div class="form-group" style="max-width:130px;flex:0 0 130px">
+                                    <label>Foto 3x4</label>
+                                    <div style="width:105px;height:140px;border:2px dashed #b45309;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
+                                        <i id="condec-foto-icon" class="fa-solid fa-user" style="font-size:30px;color:#b45309"></i>
+                                        <img id="condec-foto-preview" src="" alt="Foto 3x4" style="display:none;width:100%;height:100%;object-fit:cover">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="flex:1">
+                                    <label>Ajustar a foto</label>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                                        <button type="button" class="btn-icon" id="condec-foto-ajustar-btn" onclick="condecAjustarFoto()" style="display:none" title="Abrir o editor de zoom e recorte 3x4">
+                                            <i class="fa-solid fa-crop-simple"></i> Ajustar recorte
+                                        </button>
+                                        <span id="condec-foto-status" class="field-hint" style="color:#b45309;display:block">A foto 3x4 vem da pessoa escolhida na pesquisa.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CONDECORACOES -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-medal" style="color:#b45309"></i><h3>Condecoracoes</h3></div>
+                        <div class="form-section-body">
+                            <div id="condec-itens-condecoracao"></div>
+                            <div id="condec-vazio-condecoracao" style="text-align:center;color:#94a3b8;font-size:12px;padding:14px;border:1px dashed #cbd5e1;border-radius:10px;margin-bottom:10px">
+                                <i class="fa-solid fa-plus" style="margin-right:5px"></i>Nenhuma condecoracao adicionada
+                            </div>
+                            <button type="button" class="btn-icon" onclick="condecAddItem('condecoracao')" style="background:#b45309;color:#fff;border-color:#b45309">
+                                <i class="fa-solid fa-plus"></i> ADICIONAR CONDECORACAO
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CERTIFICADOS -->
+                    <div class="form-section-card">
+                        <div class="form-section-title"><i class="fa-solid fa-certificate" style="color:#2563eb"></i><h3>Certificadinhos</h3></div>
+                        <div class="form-section-body">
+                            <div id="condec-itens-certificado"></div>
+                            <div id="condec-vazio-certificado" style="text-align:center;color:#94a3b8;font-size:12px;padding:14px;border:1px dashed #cbd5e1;border-radius:10px;margin-bottom:10px">
+                                <i class="fa-solid fa-plus" style="margin-right:5px"></i>Nenhum certificado adicionado
+                            </div>
+                            <button type="button" class="btn-icon" onclick="condecAddItem('certificado')" style="background:#2563eb;color:#fff;border-color:#2563eb">
+                                <i class="fa-solid fa-plus"></i> ADICIONAR CERTIFICADO
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="condec-form-msg" style="display:none;margin-top:12px;padding:10px;border-radius:8px;font-size:13px"></div>
+                </form>
+            </div>
+            <div class="modal-header" style="border-top:1px solid #e2e8f0;border-bottom:none;justify-content:flex-end;gap:10px;padding:14px 20px">
+                <button type="button" class="btn-icon" onclick="condecFecharForm()">Cancelar</button>
+                <button type="button" class="btn-primary" id="condec-salvar-btn" onclick="condecSalvar(event)" style="height:38px;background:#b45309;border-color:#b45309">
+                    <i class="fa-solid fa-floppy-disk"></i> SALVAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONDECORACAO - PESQUISA DE PESSOA -->
+    <div id="condec-busca-overlay" class="modal-overlay hidden" onclick="if(event.target===this)condecFecharBusca()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:860px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-magnifying-glass" style="color:#b45309;margin-right:8px"></i> <span id="condec-busca-titulo">Pesquisar aluno ativo</span></h3>
+                <button class="modal-close" onclick="condecFecharBusca()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+                    <div class="form-group" id="condec-busca-projeto-box" style="margin:0;min-width:200px;flex:1">
+                        <label style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px;display:block">Projeto</label>
+                        <select id="condec-busca-projeto" class="config-input" style="width:100%;border-color:#b45309" onchange="condecBuscaTurma()">
+                            <option value="">Todos os projetos</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="condec-busca-turma-box" style="margin:0;min-width:170px;flex:1">
+                        <label style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px;display:block">Turma</label>
+                        <select id="condec-busca-turma" class="config-input" style="width:100%;border-color:#b45309" onchange="condecBuscaListar()">
+                            <option value="">Todas as turmas</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;min-width:200px;flex:1">
+                        <label style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px;display:block">Buscar</label>
+                        <input type="text" id="condec-busca-texto" class="config-input" style="width:100%;border-color:#b45309" placeholder="Nome, CPF ou matricula..." oninput="condecBuscaListar()">
+                    </div>
+                </div>
+                <div id="condec-busca-resumo" style="font-size:12px;color:#78350f;margin-bottom:10px"></div>
+                <div id="condec-busca-lista" style="max-height:52vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONDECORACAO - VISUALIZAR -->
+    <div id="condec-ver-overlay" class="modal-overlay hidden" onclick="if(event.target===this)condecFecharVer()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:860px;max-height:92vh;overflow-y:auto">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-award" style="color:#b45309;margin-right:8px"></i> Condecoracao e Certificados</h3>
+                <button class="modal-close" onclick="condecFecharVer()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="condec-ver-body"></div>
+            <div class="modal-header" style="border-top:1px solid #e2e8f0;border-bottom:none;justify-content:flex-end;gap:10px;padding:14px 20px">
+                <button type="button" class="btn-icon" onclick="condecFecharVer()">Fechar</button>
+                <button type="button" class="btn-icon" onclick="condecImprimir()" style="background:#b45309;color:#fff;border-color:#b45309">
+                    <i class="fa-solid fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL FOTO CERTIFICADO RECAD - GIRAR/ZOOM/SALVAR -->
     <div id="recad-photo-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.94);align-items:center;justify-content:center;flex-direction:column;padding:20px" onclick="recadClosePhoto(event)">
         <div style="position:absolute;top:16px;right:16px;display:flex;gap:8px;z-index:11">
@@ -4219,7 +4466,7 @@
     </div>
 
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=52"></script>
+    <script src="app.js?v=53"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

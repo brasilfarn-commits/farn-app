@@ -12236,3 +12236,913 @@ async function fichaGeralImprimirUma(idx) {
 fichaGeralImprimirHandler = fichaGeralImprimirUma;
 
 
+/* ==========================================================================
+   CONDECORACOES E CERTIFICADOS (ADMIN)
+   --------------------------------------------------------------------------
+   Registra condecoracoes e certificadinhos de Aluno ativo, Docente e Formado.
+   A pessoa vem de uma janela de pesquisa (por projeto e turma nos alunos e
+   formados; pela lista de docentes cadastrados nos docentes). As fotos
+   anexadas ficam guardadas junto do registro, sem ocupar o cadastro dela.
+
+   Limite de tamanho: o Firestore aceita 1 MiB por documento. Por isso as
+   fotos anexadas sao reduzidas antes de gravar, e o `condecSalvar` recusa o
+   registro em vez de deixar o Firestore estourar o limite.
+   ========================================================================== */
+const CONDEC_COLECAO = 'condecoracoes';
+const CONDEC_DOC_MAX_BYTES = 1000000;   /* folga sobre o limite de 1 MiB */
+const CONDEC_ANEXO_MAX_KB = 220;
+const CONDEC_ANEXO_MAX_LADO = 1600;
+const CONDEC_FOTO3X4_MAX_KB = 120;
+const CONDEC_FOTO3X4_LADO = 400;
+
+/* Fitas ilustrativas por cor. A fita e sempre mais escura que a medalha, para
+   o desenho aparecer nos dois casos; a branca ganha contorno para nao sumir. */
+const CONDEC_MEDALHAS = [
+    { v: 'vermelha', r: 'Vermelha', cor: '#dc2626', fita: '#991b1b' },
+    { v: 'amarela',  r: 'Amarela',  cor: '#facc15', fita: '#ca8a04' },
+    { v: 'verde',    r: 'Verde',    cor: '#16a34a', fita: '#15803d' },
+    { v: 'roxa',     r: 'Roxa',     cor: '#9333ea', fita: '#6b21a8' },
+    { v: 'azul',     r: 'Azul',     cor: '#2563eb', fita: '#1e40af' },
+    { v: 'branca',   r: 'Branca',   cor: '#f8fafc', fita: '#cbd5e1', contorno: '#94a3b8' },
+    { v: 'preta',    r: 'Preta',    cor: '#1e293b', fita: '#0f172a' },
+    { v: 'rosa',     r: 'Rosa',     cor: '#ec4899', fita: '#be185d' },
+    { v: 'marrom',   r: 'Marrom',   cor: '#92400e', fita: '#78350f' },
+    { v: 'laranja',  r: 'Laranja',  cor: '#f97316', fita: '#c2410c' }
+];
+
+const CONDEC_TIPOS = {
+    A: { rotulo: 'Aluno ativo',  icone: 'fa-user-graduate',  cor: '#2563eb', colecao: 'candidatos', busca: 'aluno ativo' },
+    D: { rotulo: 'Docente',      icone: 'fa-chalkboard-user', cor: '#16a34a', colecao: 'docentes',  busca: 'docente cadastrado' },
+    F: { rotulo: 'Formado',      icone: 'fa-user-graduate',  cor: '#7c3aed', colecao: 'candidatos', busca: 'formado cadastrado' }
+};
+
+let condecItens = [];      /* itens em edicao no formulario */
+let condecPessoa = null;   /* pessoa escolhida na pesquisa */
+let condecEditarId = null; /* id do registro em edicao (null = novo) */
+let condecListaCache = []; /* registros vindos do Firestore */
+let condecVerAtual = null; /* registro aberto na janela de visualizacao */
+
+/* -----------pequenos auxiliares ---------- */
+function condecEsc(str) { return escHTML(str); }
+
+function condecCpfBr(cpf) {
+    var d = String(cpf == null ? '' : cpf).replace(/\D/g, '');
+    if (d.length !== 11) return d || '-';
+    return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+/* O input type=date devolve AAAA-MM-DD; a impressao e a lista mostram dd/mm/aaaa. */
+function condecDataBr(iso) {
+    if (!iso) return '';
+    var p = String(iso).split('-');
+    if (p.length === 3) return p[2] + '/' + p[1] + '/' + p[0];
+    return String(iso);
+}
+
+function condecMedalha(valor) {
+    for (var i = 0; i < CONDEC_MEDALHAS.length; i++) {
+        if (CONDEC_MEDALHAS[i].v === valor) return CONDEC_MEDALHAS[i];
+    }
+    return null;
+}
+
+/* Medalinha desenhada: as duas alcas da fita e o disco. */
+function condecMedalSvg(m) {
+    var contorno = m.contorno ? ' stroke="' + m.contorno + '" stroke-width="1.5"' : '';
+    return '<svg viewBox="0 0 28 34" width="26" height="32" aria-hidden="true" focusable="false">' +
+        '<path d="M7 2 L12.5 2 L11.5 16 L6 13 Z" fill="' + m.fita + '"/>' +
+        '<path d="M21 2 L15.5 2 L16.5 16 L22 13 Z" fill="' + m.fita + '" opacity="0.8"/>' +
+        '<circle cx="14" cy="24" r="9" fill="' + m.cor + '"' + contorno + '/>' +
+        '<circle cx="14" cy="24" r="5.4" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="1.2"/>' +
+        '</svg>';
+}
+
+/* Projeto e turma podem ser texto (aluno/formado) ou lista (docente). */
+function condecTemProjeto(reg, nome) {
+    if (!nome) return true;
+    var p = reg.projeto;
+    if (Array.isArray(p)) return p.indexOf(nome) !== -1;
+    return p === nome;
+}
+function condecTemTurma(reg, nome) {
+    if (!nome) return true;
+    var t = reg.turma;
+    if (Array.isArray(t)) return t.indexOf(nome) !== -1;
+    return t === nome;
+}
+function condecListaTexto(v) {
+    if (Array.isArray(v)) return v.filter(function (x) { return !!x; }).join(', ');
+    return v || '';
+}
+
+/* Foto 3x4 da pessoa: o recorte do registro quando existe, senao o cadastro. */
+function condecFotoDaPessoa(p) {
+    if (!p) return null;
+    if (p.tipo === 'D') {
+        var d = docentes.find(function (x) { return String(x.cpf) === String(p.cpf); });
+        return (d && d.photoDataUrl) || null;
+    }
+    var c = candidatos.find(function (x) { return x.cpf === p.cpf; });
+    return (c && c.photoDataUrl) || null;
+}
+function condecFotoDoRegistro(reg) {
+    if (!reg) return null;
+    return reg.foto3x4 || condecFotoDaPessoa({ tipo: reg.pessoaTipo, cpf: reg.pessoaCpf });
+}
+
+/* ---------- reducao de imagens (o registro tem limite de 1 MiB) ---------- */
+function condecAjustarQualidade(canvas, limiteBytes) {
+    var qualidades = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.12];
+    for (var i = 0; i < qualidades.length; i++) {
+        var url = canvas.toDataURL('image/jpeg', qualidades[i]);
+        if (Math.round(url.length * 3 / 4) <= limiteBytes) return url;
+    }
+    return canvas.toDataURL('image/jpeg', 0.12);
+}
+
+/* Reduz a imagem para caber em `maxLado`/`limiteBytes` e devolve uma Promise. */
+function condecReduzir(dataUrl, maxLado, limiteBytes) {
+    return new Promise(function (resolve) {
+        var img = new Image();
+        img.onload = function () {
+            var out = document.createElement('canvas');
+            var escala = Math.min(1, maxLado / Math.max(img.width || 1, img.height || 1));
+            out.width = Math.max(1, Math.round((img.width || 1) * escala));
+            out.height = Math.max(1, Math.round((img.height || 1) * escala));
+            var ctx = out.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, out.width, out.height);
+            ctx.drawImage(img, 0, 0, out.width, out.height);
+            resolve(condecAjustarQualidade(out, limiteBytes));
+        };
+        img.onerror = function () { resolve(dataUrl); };
+        img.src = dataUrl;
+    });
+}
+function condecReduzirAnexo(dataUrl) {
+    return condecReduzir(dataUrl, CONDEC_ANEXO_MAX_LADO, CONDEC_ANEXO_MAX_KB * 1024);
+}
+function condecReduzirFoto3x4(dataUrl) {
+    return condecReduzir(dataUrl, CONDEC_FOTO3X4_LADO, CONDEC_FOTO3X4_MAX_KB * 1024);
+}
+
+/* ---------- avisos do formulario ---------- */
+function condecOcultarMsg() {
+    var m = document.getElementById('condec-form-msg');
+    if (m) { m.style.display = 'none'; m.textContent = ''; }
+}
+function condecAviso(texto, erro) {
+    var m = document.getElementById('condec-form-msg');
+    if (!m) { alert(texto); return; }
+    m.style.display = 'block';
+    m.textContent = texto;
+    m.style.background = erro ? '#fef2f2' : '#f0fdf4';
+    m.style.border = '1px solid ' + (erro ? '#fecaca' : '#bbf7d0');
+    m.style.color = erro ? '#b91c1c' : '#15803d';
+}
+function condecAjustarStatus(texto, cor) {
+    var s = document.getElementById('condec-foto-status');
+    if (!s) return;
+    s.textContent = texto;
+    s.style.color = cor || '#b45309';
+}
+
+/* ---------- lista e filtros da secao ---------- */
+function condecInicializar() {
+    condecPopularFiltroProjetos();
+    condecCarregarLista();
+}
+
+function condecPopularFiltroProjetos() {
+    var sel = document.getElementById('condec-filtro-projeto');
+    if (!sel) return;
+    /* A secao pode ser aberta antes de o Firestore entregar os projetos. Por
+       isso so se marca como pronta quando veio alguma coisa: se a lista ainda
+       estiver vazia, a proxima vez que a secao for aberta monta de novo. */
+    var quantos = projetos.length;
+    if (!quantos) return;
+    if (sel.getAttribute('data-pronto') === String(quantos)) return;
+    var anterior = sel.value;
+    sel.innerHTML = '<option value="">Todos os projetos</option>';
+    projetos.forEach(function (p) {
+        var nome = p.nome || '';
+        if (!nome) return;
+        sel.innerHTML += '<option value="' + condecEsc(nome) + '">' + condecEsc(nome) + '</option>';
+    });
+    sel.setAttribute('data-pronto', String(quantos));
+    /* o filtro escolhido continua valendo depois de remontar a lista */
+    if (anterior) {
+        var existe = false;
+        for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === anterior) { existe = true; break; }
+        }
+        if (existe) sel.value = anterior;
+    }
+    condecFiltroTurma();
+}
+
+function condecFiltroTurma() {
+    var selP = document.getElementById('condec-filtro-projeto');
+    var selT = document.getElementById('condec-filtro-turma');
+    if (!selT) return;
+    var anterior = selT.value;
+    var projeto = selP ? selP.value : '';
+    var nomes = turmas.filter(function (t) { return !projeto || t.projeto === projeto; })
+        .map(function (t) { return t.nome; })
+        .filter(function (v, i, a) { return v && a.indexOf(v) === i; })
+        .sort();
+    selT.innerHTML = '<option value="">Todas as turmas</option>';
+    nomes.forEach(function (n) {
+        selT.innerHTML += '<option value="' + condecEsc(n) + '">' + condecEsc(n) + '</option>';
+    });
+    if (nomes.indexOf(anterior) !== -1) selT.value = anterior;
+    condecRender();
+}
+
+function condecCarregarLista() {
+    dbFirestore.collection(CONDEC_COLECAO).get().then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) {
+            var o = d.data() || {};
+            o.id = d.id;
+            out.push(o);
+        });
+        out.sort(function (a, b) {
+            return String(b.atualizadoEm || b.criadoEm || '').localeCompare(String(a.atualizadoEm || a.criadoEm || ''));
+        });
+        condecListaCache = out;
+        condecRender();
+    }).catch(function (e) {
+        console.error('Erro ao carregar condecoracoes:', e);
+        condecListaCache = [];
+        condecRender();
+    });
+}
+
+/* Texto livre da lista: nome, cpf, e o que foi condecorado/certificado. */
+function condecTextoBusca(reg) {
+    var partes = [reg.pessoaNome, reg.pessoaCpf, reg.pessoaMatricula, reg.pessoaProjeto, reg.pessoaTurma];
+    (reg.itens || []).forEach(function (it) {
+        partes.push(it.nome, it.instituicao, it.local);
+    });
+    return partes.filter(function (v) { return !!v; }).join(' ').toLowerCase();
+}
+
+function condecRender() {
+    var listaEl = document.getElementById('condec-lista');
+    if (!listaEl) return;
+    var projeto = (document.getElementById('condec-filtro-projeto') || {}).value || '';
+    var turma = (document.getElementById('condec-filtro-turma') || {}).value || '';
+    var tipo = (document.getElementById('condec-filtro-tipo') || {}).value || '';
+    var busca = String(((document.getElementById('condec-filtro-busca') || {}).value) || '').trim().toLowerCase();
+
+    var filtrados = condecListaCache.filter(function (reg) {
+        if (tipo && reg.pessoaTipo !== tipo) return false;
+        if (!condecTemProjeto({ projeto: reg.pessoaProjeto }, projeto)) return false;
+        if (!condecTemTurma({ turma: reg.pessoaTurma }, turma)) return false;
+        if (busca && condecTextoBusca(reg).indexOf(busca) === -1) return false;
+        return true;
+    });
+
+    var badge = document.getElementById('condec-count-badge');
+    if (badge) badge.textContent = filtrados.length + ' registro' + (filtrados.length !== 1 ? 's' : '');
+
+    var empty = document.getElementById('condec-empty');
+    if (!filtrados.length) {
+        if (empty) empty.style.display = 'block';
+        listaEl.innerHTML = '';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    listaEl.innerHTML = filtrados.map(condecCardHtml).join('');
+}
+
+function condecCardHtml(reg) {
+    var cfg = CONDEC_TIPOS[reg.pessoaTipo] || CONDEC_TIPOS.A;
+    var foto = condecFotoDoRegistro(reg);
+    var itens = reg.itens || [];
+    var resumo = itens.map(function (it) {
+        var m = condecMedalha(it.medalha);
+        var ehCondec = it.tipo === 'condecoracao';
+        return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid #e2e8f0;font-size:12px">' +
+            (m ? '<span style="width:12px;height:12px;border-radius:50%;background:' + m.cor + ';flex:0 0 12px' +
+                (m.contorno ? ';box-shadow:0 0 0 1px ' + m.contorno : '') + '"></span>' : '') +
+            '<i class="fa-solid ' + (ehCondec ? 'fa-medal' : 'fa-certificate') + '" style="color:' + (ehCondec ? '#b45309' : '#2563eb') + ';font-size:11px"></i>' +
+            '<span style="font-weight:600;color:#334155;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + condecEsc(it.nome) + '</span>' +
+            '<span style="color:#94a3b8;font-size:10px">' + condecEsc(condecDataBr(it.data)) + '</span>' +
+            '</div>';
+    }).join('');
+
+    return '<div class="condec-item">' +
+        '<div class="condec-item-titulo">' +
+            '<i class="fa-solid ' + cfg.icone + '"></i> ' + condecEsc(cfg.rotulo) +
+            '<span style="margin-left:auto;font-weight:600;color:#64748b;text-transform:none">' + itens.length + ' item' + (itens.length !== 1 ? 's' : '') + '</span>' +
+        '</div>' +
+        '<button type="button" class="condec-pessoa-btn" onclick="condecAbrirVer(\'' + reg.id + '\')">' +
+            '<span class="condec-pessoa-foto">' + (foto ? '<img src="' + foto + '" alt="Foto 3x4">' : '<i class="fa-solid fa-user" style="color:#94a3b8"></i>') + '</span>' +
+            '<span style="min-width:0;flex:1">' +
+                '<span style="display:block;font-weight:700;color:#0f172a;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + condecEsc(reg.pessoaNome) + '</span>' +
+                '<span style="display:block;font-size:11px;color:#64748b">CPF ' + condecEsc(condecCpfBr(reg.pessoaCpf)) + ' | Mat. ' + condecEsc(reg.pessoaMatricula || '-') + '</span>' +
+                '<span style="display:block;font-size:11px;color:#b45309">' + condecEsc(condecLocalRotulo(reg)) + '</span>' +
+            '</span>' +
+        '</button>' +
+        '<div style="margin-top:8px">' + (resumo || '<div style="font-size:12px;color:#94a3b8">Sem itens</div>') + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">' +
+            '<button class="btn-icon btn-info" title="Visualizar" onclick="condecAbrirVer(\'' + reg.id + '\')"><i class="fa-solid fa-eye"></i></button>' +
+            '<button class="btn-icon" title="Editar" onclick="condecAbrirForm(\'' + reg.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+            '<button class="btn-icon btn-success" title="Imprimir" onclick="condecAbrirVer(\'' + reg.id + '\');condecImprimir()"><i class="fa-solid fa-print"></i></button>' +
+            '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="condecExcluir(\'' + reg.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+        '</div>' +
+    '</div>';
+}
+
+function condecLocalRotulo(reg) {
+    var partes = [];
+    var proj = condecListaTexto(reg.pessoaProjeto);
+    var tur = condecListaTexto(reg.pessoaTurma);
+    if (proj) partes.push(proj);
+    if (tur) partes.push(tur);
+    return partes.join(' - ') || 'Sem projeto/turma';
+}
+
+/* ---------- formulario ---------- */
+function condecAbrirForm(id) {
+    condecEditarId = id || null;
+    condecItens = [];
+    condecPessoa = null;
+    condecOcultarMsg();
+
+    var t = document.getElementById('condec-form-titulo');
+    if (t) t.textContent = id ? 'Editar Condecoracao' : 'Nova Condecoracao';
+    var tipo = document.getElementById('condec-tipo');
+    if (tipo) tipo.value = '';
+    ['condec-cpf', 'condec-matricula', 'condec-nome'].forEach(function (idEl) {
+        var e = document.getElementById(idEl);
+        if (e) e.value = '';
+    });
+    condecExibirFoto(null);
+    condecAjustarStatus('A foto 3x4 vem da pessoa escolhida na pesquisa.');
+    condecAtualizarBotaoPesquisar();
+    condecRenderItens();
+
+    if (id) condecPreencherForm(id);
+
+    var ov = document.getElementById('condec-form-overlay');
+    if (ov) ov.classList.remove('hidden');
+}
+
+function condecFecharForm() {
+    var ov = document.getElementById('condec-form-overlay');
+    if (ov) ov.classList.add('hidden');
+    condecOcultarMsg();
+}
+
+function condecAtualizarBotaoPesquisar() {
+    var btn = document.getElementById('condec-btn-pesquisar');
+    if (!btn) return;
+    var tipo = (document.getElementById('condec-tipo') || {}).value || '';
+    var pode = CONDEC_TIPOS[tipo] ? true : false;
+    btn.disabled = !pode;
+    btn.style.opacity = pode ? '1' : '.55';
+    btn.style.cursor = pode ? 'pointer' : 'not-allowed';
+}
+
+/* Trocar o tipo zera a pessoa: evita gravar a condecoracao de um aluno na
+   ficha de um docente (ou de outro projeto). */
+function condecOnTipoChange() {
+    condecPessoa = null;
+    ['condec-cpf', 'condec-matricula', 'condec-nome'].forEach(function (idEl) {
+        var e = document.getElementById(idEl);
+        if (e) e.value = '';
+    });
+    condecExibirFoto(null);
+    condecAjustarStatus('A foto 3x4 vem da pessoa escolhida na pesquisa.');
+    condecAtualizarBotaoPesquisar();
+}
+
+function condecExibirFoto(dataUrl) {
+    var img = document.getElementById('condec-foto-preview');
+    var icon = document.getElementById('condec-foto-icon');
+    var btn = document.getElementById('condec-foto-ajustar-btn');
+    var tem = !!dataUrl;
+    if (img) {
+        if (tem) { img.src = dataUrl; img.style.display = 'block'; }
+        else { img.removeAttribute('src'); img.style.display = 'none'; }
+    }
+    if (icon) icon.style.display = tem ? 'none' : '';
+    if (btn) btn.style.display = tem ? '' : 'none';
+}
+
+/* Abre o mesmo editor de zoom e recorte 3x4 usado no cadastro de docente.
+   O recorte vale so para esta condecoracao: o cadastro da pessoa nao muda. */
+function condecAjustarFoto() {
+    if (!condecPessoa) { alert('Escolha a pessoa primeiro.'); return; }
+    var atual = condecPessoa.foto || condecFotoDaPessoa(condecPessoa);
+    if (!atual) { alert('Esta pessoa nao tem foto 3x4 cadastrada.'); return; }
+    condecExibirFoto(atual);
+    if (typeof foto3x4EditorAbrir !== 'function') {
+        if (confirm('O editor de recorte nao esta disponivel nesta tela. Abrir a foto em nova aba?')) {
+            window.open(atual, '_blank');
+        }
+        return;
+    }
+    var img = new Image();
+    img.onload = function () {
+        foto3x4EditorAbrir(null, null, img, {
+            nome: condecPessoa.nome || 'Pessoa',
+            aoSalvar: function (dataUrl) {
+                condecReduzirFoto3x4(dataUrl).then(function (pequena) {
+                    condecPessoa.foto = pequena;
+                    condecExibirFoto(pequena);
+                    condecAjustarStatus('Foto reenquadrada. Ela vale so para esta condecoracao; o cadastro da pessoa continua com a foto original.', '#16a34a');
+                });
+            }
+        });
+    };
+    img.onerror = function () { condecAjustarStatus('Nao foi possivel abrir a imagem no editor.', '#dc2626'); };
+    img.src = atual;
+}
+
+/* ---------- janela de pesquisa da pessoa ---------- */
+function condecAbrirBusca() {
+    var tipo = (document.getElementById('condec-tipo') || {}).value || '';
+    var cfg = CONDEC_TIPOS[tipo];
+    if (!cfg) { alert('Escolha primeiro a opcao do individuo.'); return; }
+
+    var tit = document.getElementById('condec-busca-titulo');
+    if (tit) tit.textContent = 'Pesquisar ' + cfg.busca;
+
+    /* Projeto e turma so se aplicam a aluno e formado; docente nao tem os dois. */
+    var comProjTurma = (tipo === 'A' || tipo === 'F');
+    var boxP = document.getElementById('condec-busca-projeto-box');
+    var boxT = document.getElementById('condec-busca-turma-box');
+    if (boxP) boxP.style.display = comProjTurma ? '' : 'none';
+    if (boxT) boxT.style.display = comProjTurma ? '' : 'none';
+
+    var txt = document.getElementById('condec-busca-texto');
+    if (txt) txt.value = '';
+
+    condecBuscaPopularProjetos(tipo);
+    condecBuscaTurma();
+
+    var ov = document.getElementById('condec-busca-overlay');
+    if (ov) ov.classList.remove('hidden');
+    condecBuscaListar();
+}
+
+function condecFecharBusca() {
+    var ov = document.getElementById('condec-busca-overlay');
+    if (ov) ov.classList.add('hidden');
+}
+
+function condecBuscaPopularProjetos(tipo) {
+    var sel = document.getElementById('condec-busca-projeto');
+    if (!sel) return;
+    var status = (tipo === 'F') ? 'Concluido' : 'Em Andamento';
+    sel.innerHTML = '<option value="">Todos os projetos</option>';
+    projetos.filter(function (p) { return (p.status || 'Em Andamento') === status; })
+        .forEach(function (p) {
+            var nome = p.nome || '';
+            if (!nome) return;
+            sel.innerHTML += '<option value="' + condecEsc(nome) + '">' + condecEsc(nome) + '</option>';
+        });
+    var selT = document.getElementById('condec-busca-turma');
+    if (selT) selT.innerHTML = '<option value="">Todas as turmas</option>';
+}
+
+function condecBuscaTurma() {
+    var selP = document.getElementById('condec-busca-projeto');
+    var selT = document.getElementById('condec-busca-turma');
+    if (!selT) return;
+    var projeto = selP ? selP.value : '';
+    var nomes = turmas.filter(function (t) { return !projeto || t.projeto === projeto; })
+        .map(function (t) { return t.nome; })
+        .filter(function (v, i, a) { return v && a.indexOf(v) === i; })
+        .sort();
+    selT.innerHTML = '<option value="">Todas as turmas</option>';
+    nomes.forEach(function (n) {
+        selT.innerHTML += '<option value="' + condecEsc(n) + '">' + condecEsc(n) + '</option>';
+    });
+    condecBuscaListar();
+}
+
+/* Aluno ativo e Formado moram em `candidatos` (separados por tipoPessoa/status);
+   Docente vem da colecao `docentes`. As regras de status sao as mesmas das
+   abas Alunos e Formados do admin, para a lista bater com o que ja existe. */
+function condecBuscaListar() {
+    var tipo = (document.getElementById('condec-tipo') || {}).value || '';
+    var cfg = CONDEC_TIPOS[tipo];
+    var listaEl = document.getElementById('condec-busca-lista');
+    if (!cfg || !listaEl) return;
+
+    var projeto = (document.getElementById('condec-busca-projeto') || {}).value || '';
+    var turma = (document.getElementById('condec-busca-turma') || {}).value || '';
+    var texto = String(((document.getElementById('condec-busca-texto') || {}).value) || '').trim().toLowerCase();
+
+    var base = (tipo === 'D') ? docentes : candidatos;
+    var achados = base.filter(function (p) {
+        if (tipo === 'A') {
+            if ((p.tipoPessoa || 'A') === 'F') return false;
+            if (p.status !== 'Ativo') return false;
+        } else if (tipo === 'F') {
+            if (p.tipoPessoa !== 'F') return false;
+            if (p.status !== 'Ativo') return false;
+        }
+        if (!condecTemProjeto(p, projeto)) return false;
+        if (!condecTemTurma(p, turma)) return false;
+        if (texto) {
+            var alvo = ((p.nome || '') + ' ' + (p.guerra || '') + ' ' + (p.cpf || '') + ' ' + (p.matricula || '')).toLowerCase();
+            if (alvo.indexOf(texto) === -1) return false;
+        }
+        return true;
+    }).sort(function (a, b) { return String(a.nome || '').localeCompare(String(b.nome || '')); });
+
+    var resumo = document.getElementById('condec-busca-resumo');
+    if (resumo) {
+        resumo.textContent = achados.length + ' ' + cfg.busca + (achados.length === 1 ? '' : 's') + ' encontrado' + (achados.length === 1 ? '' : 's') +
+            (projeto ? ' no projeto ' + projeto : '') + (turma ? ' / turma ' + turma : '') + '.';
+    }
+
+    if (!achados.length) {
+        listaEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;font-size:13px;padding:26px;border:1px dashed #cbd5e1;border-radius:10px">' +
+            '<i class="fa-solid fa-magnifying-glass" style="font-size:26px;display:block;margin-bottom:8px"></i>' +
+            'Nenhum registro encontrado com esses filtros.</div>';
+        return;
+    }
+
+    listaEl.innerHTML = achados.map(function (p) {
+        var foto = p.photoDataUrl || '';
+        var projTur = [condecListaTexto(p.projeto), condecListaTexto(p.turma)].filter(function (v) { return !!v; }).join(' - ');
+        return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff;display:flex;gap:10px;align-items:center">' +
+            '<span class="condec-pessoa-foto">' + (foto ? '<img src="' + foto + '" alt="Foto 3x4">' : '<i class="fa-solid fa-user" style="color:#94a3b8"></i>') + '</span>' +
+            '<span style="min-width:0;flex:1">' +
+                '<span style="display:block;font-weight:700;color:#0f172a;font-size:13px">' + condecEsc(p.nome) + '</span>' +
+                '<span style="display:block;font-size:11px;color:#64748b">CPF ' + condecEsc(condecCpfBr(p.cpf)) + ' | Mat. ' + condecEsc(p.matricula || '-') + '</span>' +
+                (projTur ? '<span style="display:block;font-size:11px;color:#b45309">' + condecEsc(projTur) + '</span>' : '') +
+            '</span>' +
+            '<button type="button" class="btn-icon" title="Selecionar" style="background:' + cfg.cor + ';color:#fff;border-color:' + cfg.cor + '" ' +
+                'onclick="condecEscolherPessoa(\'' + tipo + '\',\'' + String(p.cpf || '').replace(/'/g, '') + '\')">' +
+                '<i class="fa-solid fa-check"></i></button>' +
+        '</div>';
+    }).join('');
+}
+
+function condecEscolherPessoa(tipo, cpf) {
+    var cfg = CONDEC_TIPOS[tipo];
+    if (!cfg) return;
+    var base = (tipo === 'D') ? docentes : candidatos;
+    var p = base.find(function (x) { return String(x.cpf) === String(cpf); });
+    if (!p) { alert('Pessoa nao encontrada na lista. Atualize a pagina e tente de novo.'); return; }
+
+    condecPessoa = {
+        tipo: tipo,
+        cpf: p.cpf || '',
+        nome: p.nome || '',
+        matricula: p.matricula || '',
+        projeto: p.projeto || '',
+        turma: p.turma || '',
+        colecao: cfg.colecao,
+        docId: (p.id != null) ? String(p.id) : '',
+        foto: null
+    };
+    var eCpf = document.getElementById('condec-cpf');
+    var eMat = document.getElementById('condec-matricula');
+    var eNome = document.getElementById('condec-nome');
+    if (eCpf) eCpf.value = condecPessoa.cpf;
+    if (eMat) eMat.value = condecPessoa.matricula;
+    if (eNome) eNome.value = condecPessoa.nome;
+
+    var foto = condecFotoDaPessoa(condecPessoa);
+    condecExibirFoto(foto);
+    condecAjustarStatus(foto
+        ? 'Pessoa escolhida. A foto 3x4 vem do cadastro dela; use "Ajustar recorte" se quiser reenquadrar.'
+        : 'Pessoa escolhida. Este cadastro nao tem foto 3x4.');
+    condecFecharBusca();
+}
+
+/* ---------- itens (condecoracoes e certificados) ---------- */
+function condecCampoHtml(label, type, valor, indice, campo, placeholder) {
+    return '<div class="form-group"><label>' + label + '</label>' +
+        '<input type="' + type + '" class="config-input" value="' + condecEsc(valor || '') + '"' +
+        (placeholder ? ' placeholder="' + condecEsc(placeholder) + '"' : '') +
+        ' oninput="condecItemCampo(' + indice + ',\'' + campo + '\',this.value)"></div>';
+}
+
+function condecItemHtml(it) {
+    var i = condecItens.indexOf(it);
+    var ehCondec = it.tipo === 'condecoracao';
+    var cor = ehCondec ? '#b45309' : '#2563eb';
+    var verbo = ehCondec ? 'da condecoracao' : 'do certificado';
+    var medals = CONDEC_MEDALHAS.map(function (m) {
+        return '<button type="button" class="condec-medal-btn' + (it.medalha === m.v ? ' sel' : '') + '"' +
+            ' title="Fita ' + m.r + '" aria-label="Fita ' + m.r + '"' +
+            ' onclick="condecMedalEscolher(' + i + ',\'' + m.v + '\')">' + condecMedalSvg(m) + '</button>';
+    }).join('');
+
+    return '<div class="condec-item" style="border-left:4px solid ' + cor + '">' +
+        '<div class="condec-item-titulo" style="color:' + cor + '">' +
+            '<i class="fa-solid ' + (ehCondec ? 'fa-medal' : 'fa-certificate') + '"></i>' +
+            (ehCondec ? 'Condecoracao' : 'Certificado') + ' ' + (i + 1) +
+            '<button type="button" class="btn-icon btn-danger-icon" style="margin-left:auto" title="Remover" ' +
+                'onclick="condecRemoverItem(' + i + ')"><i class="fa-solid fa-trash"></i></button>' +
+        '</div>' +
+        '<div class="form-row">' +
+            condecCampoHtml('Nome ' + verbo + ' *', 'text', it.nome, i, 'nome', ehCondec ? 'Ex.: Medalha de Merito' : 'Ex.: Participacao em brigadeiros') +
+            condecCampoHtml('Data *', 'date', it.data, i, 'data', '') +
+        '</div>' +
+        '<div class="form-row">' +
+            condecCampoHtml('Local', 'text', it.local, i, 'local', 'Ex.: Sede do FARN') +
+            condecCampoHtml('Instituicao ' + (ehCondec ? 'condecoradora' : 'certificadora') + ' *', 'text', it.instituicao, i, 'instituicao', 'Ex.: FARN') +
+        '</div>' +
+        '<div class="form-group"><label>Medalha com fita</label><div class="condec-medalhas">' + medals + '</div></div>' +
+        '<div class="form-group"><label>Foto ' + verbo + '</label>' +
+            '<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">' +
+                '<div class="condec-anexo-box">' + (it.foto ? '<img src="' + it.foto + '" alt="Foto">' : '<i class="fa-solid fa-image"></i>') + '</div>' +
+                '<div>' +
+                    '<label for="condec-anexo-' + i + '" style="display:inline-block;padding:8px 14px;border:2px solid ' + cor + ';' +
+                        'border-radius:8px;color:' + cor + ';font-weight:700;font-size:12px;cursor:pointer">' +
+                        '<i class="fa-solid fa-paperclip"></i> ' + (it.foto ? 'TROCAR FOTO' : 'ANEXAR FOTO') + '</label>' +
+                    '<input type="file" id="condec-anexo-' + i + '" accept="image/*" style="display:none" onchange="condecAnexoOnFile(' + i + ', this)">' +
+                    (it.foto ? '<button type="button" class="btn-icon" style="margin-left:8px" onclick="condecRemoverFoto(' + i + ')">' +
+                        '<i class="fa-solid fa-xmark"></i> Remover</button>' : '') +
+                    '<div style="font-size:11px;color:#64748b;margin-top:6px">A foto e reduzida para caber no registro (limite de ' + CONDEC_ANEXO_MAX_KB + ' KB).</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+    '</div>';
+}
+
+function condecRenderItens() {
+    ['condecoracao', 'certificado'].forEach(function (tipo) {
+        var box = document.getElementById('condec-itens-' + tipo);
+        var vazio = document.getElementById('condec-vazio-' + tipo);
+        if (!box) return;
+        var meus = condecItens.filter(function (it) { return it.tipo === tipo; });
+        if (vazio) vazio.style.display = meus.length ? 'none' : '';
+        box.innerHTML = meus.map(condecItemHtml).join('');
+    });
+}
+
+function condecAddItem(tipo) {
+    if (tipo !== 'condecoracao' && tipo !== 'certificado') return;
+    condecItens.push({ tipo: tipo, nome: '', data: '', local: '', instituicao: '', medalha: '', foto: null });
+    condecRenderItens();
+}
+
+/* Atualiza o array sem redesenhar: redesenhar no oninput roubaria o foco. */
+function condecItemCampo(indice, campo, valor) {
+    var it = condecItens[indice];
+    if (it) it[campo] = valor;
+}
+
+function condecMedalEscolher(indice, cor) {
+    var it = condecItens[indice];
+    if (!it) return;
+    it.medalha = (it.medalha === cor) ? '' : cor;
+    condecRenderItens();
+}
+
+function condecRemoverItem(indice) {
+    var it = condecItens[indice];
+    if (!it) return;
+    if (!confirm('Remover ' + (it.tipo === 'condecoracao' ? 'esta condecoracao' : 'este certificado') + '?')) return;
+    condecItens.splice(indice, 1);
+    condecRenderItens();
+}
+
+function condecAnexoOnFile(indice, input) {
+    var it = condecItens[indice];
+    var arq = input && input.files && input.files[0];
+    if (!it || !arq) return;
+    if (String(arq.type || '').indexOf('image/') !== 0) {
+        alert('Escolha um arquivo de imagem.');
+        input.value = '';
+        return;
+    }
+    var leitor = new FileReader();
+    leitor.onload = function (ev) {
+        condecReduzirAnexo(ev.target.result).then(function (url) {
+            it.foto = url;
+            condecRenderItens();
+        });
+    };
+    leitor.onerror = function () { alert('Nao foi possivel ler a imagem.'); };
+    leitor.readAsDataURL(arq);
+    input.value = '';
+}
+
+function condecRemoverFoto(indice) {
+    var it = condecItens[indice];
+    if (!it) return;
+    it.foto = null;
+    condecRenderItens();
+}
+
+/* ---------- gravar ---------- */
+function condecMontarDados() {
+    var agora = new Date().toISOString();
+    var cfg = CONDEC_TIPOS[condecPessoa.tipo] || CONDEC_TIPOS.A;
+    var dados = {
+        pessoaTipo: condecPessoa.tipo,
+        pessoaNome: condecPessoa.nome,
+        pessoaCpf: condecPessoa.cpf,
+        pessoaMatricula: condecPessoa.matricula,
+        pessoaProjeto: condecPessoa.projeto,
+        pessoaTurma: condecPessoa.turma,
+        pessoaColecao: cfg.colecao,
+        pessoaDocId: condecPessoa.docId,
+        foto3x4: condecPessoa.foto || null,
+        itens: condecItens.map(function (it) {
+            return {
+                tipo: it.tipo,
+                nome: String(it.nome || '').trim(),
+                data: it.data || '',
+                local: String(it.local || '').trim(),
+                instituicao: String(it.instituicao || '').trim(),
+                medalha: it.medalha || '',
+                foto: it.foto || null
+            };
+        }),
+        atualizadoEm: agora,
+        atualizadoPor: currentUserData ? (currentUserData.nome || 'Administrador') : 'Administrador'
+    };
+    if (!condecEditarId) dados.criadoEm = agora;
+    return dados;
+}
+
+async function condecSalvar(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    condecOcultarMsg();
+
+    if (!condecPessoa) {
+        condecAviso('Escolha o individuo (aluno ativo, docente ou formado) pela pesquisa.', true);
+        return;
+    }
+    if (!condecItens.length) {
+        condecAviso('Adicione pelo menos uma condecoracao ou um certificado.', true);
+        return;
+    }
+    for (var i = 0; i < condecItens.length; i++) {
+        var it = condecItens[i];
+        var nomeItem = it.tipo === 'condecoracao' ? 'condecoracao' : 'certificado';
+        if (!String(it.nome || '').trim()) { condecAviso('Preencha o nome do ' + nomeItem + ' ' + (i + 1) + '.', true); return; }
+        if (!it.data) { condecAviso('Preencha a data do ' + nomeItem + ' ' + (i + 1) + '.', true); return; }
+        if (!String(it.instituicao || '').trim()) { condecAviso('Preencha a instituicao do ' + nomeItem + ' ' + (i + 1) + '.', true); return; }
+    }
+
+    var btn = document.getElementById('condec-salvar-btn');
+    var rotuloOriginal = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SALVANDO...'; }
+
+    try {
+        var dados = condecMontarDados();
+        /* Firestore aceita 1 MiB por documento: recusa aqui, com uma mensagem
+            util, em vez de deixar a escrita estourar o limite la no servidor. */
+        var bytes = JSON.stringify(dados).length;
+        if (bytes > CONDEC_DOC_MAX_BYTES) {
+            throw new Error('O registro ficaria com ' + Math.round(bytes / 1024) + ' KB e o limite e ' +
+                Math.round(CONDEC_DOC_MAX_BYTES / 1024) + ' KB. Troque as fotos anexadas por imagens menores.');
+        }
+        if (condecEditarId) {
+            await dbFirestore.collection(CONDEC_COLECAO).doc(condecEditarId).set(dados, { merge: true });
+        } else {
+            var ref = await dbFirestore.collection(CONDEC_COLECAO).add(dados);
+            condecEditarId = ref.id;
+        }
+        condecFecharForm();
+        alert('Condecoracao salva com sucesso!');
+        condecCarregarLista();
+    } catch (e) {
+        console.error('Erro ao salvar condecoracao:', e);
+        condecAviso('Erro ao salvar: ' + (e && e.message ? e.message : e), true);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = rotuloOriginal; }
+    }
+}
+
+/* ---------- editar / excluir ---------- */
+function condecPreencherForm(id) {
+    var reg = condecListaCache.find(function (r) { return r.id === id; });
+    if (!reg) { alert('Registro nao encontrado. Atualize a lista.'); return; }
+    var tipo = document.getElementById('condec-tipo');
+    if (tipo) { tipo.value = reg.pessoaTipo || ''; condecAtualizarBotaoPesquisar(); }
+    condecPessoa = {
+        tipo: reg.pessoaTipo,
+        cpf: reg.pessoaCpf,
+        nome: reg.pessoaNome,
+        matricula: reg.pessoaMatricula,
+        projeto: reg.pessoaProjeto,
+        turma: reg.pessoaTurma,
+        colecao: reg.pessoaColecao,
+        docId: reg.pessoaDocId,
+        foto: reg.foto3x4 || null
+    };
+    var eCpf = document.getElementById('condec-cpf');
+    var eMat = document.getElementById('condec-matricula');
+    var eNome = document.getElementById('condec-nome');
+    if (eCpf) eCpf.value = reg.pessoaCpf || '';
+    if (eMat) eMat.value = reg.pessoaMatricula || '';
+    if (eNome) eNome.value = reg.pessoaNome || '';
+
+    var foto = reg.foto3x4 || condecFotoDaPessoa(condecPessoa);
+    condecExibirFoto(foto);
+    condecAjustarStatus(reg.foto3x4
+        ? 'Foto reenquadrada nesta condecoracao.'
+        : 'A foto 3x4 vem do cadastro da pessoa; use "Ajustar recorte" para reenquadrar so aqui.');
+
+    condecItens = (reg.itens || []).map(function (it) {
+        return {
+            tipo: it.tipo === 'certificado' ? 'certificado' : 'condecoracao',
+            nome: it.nome || '', data: it.data || '', local: it.local || '',
+            instituicao: it.instituicao || '', medalha: it.medalha || '', foto: it.foto || null
+        };
+    });
+    condecRenderItens();
+}
+
+async function condecExcluir(id) {
+    if (!confirm('Excluir esta condecoracao e todos os certificados dela?')) return;
+    try {
+        await dbFirestore.collection(CONDEC_COLECAO).doc(id).delete();
+        if (condecEditarId === id) condecEditarId = null;
+        alert('Condecoracao excluida.');
+        condecCarregarLista();
+    } catch (e) {
+        console.error('Erro ao excluir condecoracao:', e);
+        alert('Erro ao excluir: ' + (e && e.message ? e.message : e));
+    }
+}
+
+/* ---------- visualizar e imprimir ---------- */
+function condecAbrirVer(id) {
+    var reg = condecListaCache.find(function (r) { return r.id === id; });
+    var body = document.getElementById('condec-ver-body');
+    if (!reg || !body) return;
+    condecVerAtual = reg;
+    var cfg = CONDEC_TIPOS[reg.pessoaTipo] || CONDEC_TIPOS.A;
+    var foto = condecFotoDoRegistro(reg);
+
+    var cabecalho = '<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:12px;border:2px solid #b45309;border-radius:12px;background:#fffbeb">' +
+        (foto
+            ? '<img src="' + foto + '" alt="Foto 3x4" style="width:84px;height:112px;object-fit:cover;border-radius:8px;border:2px solid #fde68a">'
+            : '<div style="width:84px;height:112px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#b45309;flex:0 0 84px"><i class="fa-solid fa-user" style="font-size:26px"></i></div>') +
+        '<div style="min-width:0">' +
+            '<div style="font-weight:700;color:#0f172a;font-size:16px">' + condecEsc(reg.pessoaNome) + '</div>' +
+            '<div style="font-size:12px;color:#475569">' + condecEsc(cfg.rotulo) + ' &middot; CPF ' + condecEsc(condecCpfBr(reg.pessoaCpf)) + ' &middot; Matricula ' + condecEsc(reg.pessoaMatricula || '-') + '</div>' +
+            '<div style="font-size:12px;color:#92400e">' + condecEsc(condecLocalRotulo(reg)) + '</div>' +
+        '</div></div>';
+
+    var itens = (reg.itens || []).map(function (it) { return condecCartaoHtml(it, cfg); }).join('');
+    body.innerHTML = cabecalho + (itens || '<div style="text-align:center;color:#94a3b8;padding:24px">Sem itens registrados.</div>');
+
+    var ov = document.getElementById('condec-ver-overlay');
+    if (ov) ov.classList.remove('hidden');
+}
+
+function condecCartaoHtml(it, cfg) {
+    var m = condecMedalha(it.medalha);
+    var ehCondec = it.tipo !== 'certificado';
+    var cor = ehCondec ? '#b45309' : '#2563eb';
+    var linhas = [
+        ['Data', condecDataBr(it.data)],
+        ['Local', it.local || '-'],
+        ['Instituicao ' + (ehCondec ? 'condecoradora' : 'certificadora'), it.instituicao || '-'],
+        ['Medalha', m ? m.r : 'Nao escolhida']
+    ].map(function (l) {
+        return '<div style="display:flex;gap:6px;font-size:12px;margin-top:3px">' +
+            '<span style="color:#64748b;min-width:118px">' + condecEsc(l[0]) + ':</span>' +
+            '<span style="color:#0f172a;font-weight:600">' + condecEsc(l[1]) + '</span></div>';
+    }).join('');
+
+    return '<div class="condec-cartao">' +
+        '<div class="condec-cartao-topo" style="align-items:flex-start">' +
+            (m ? '<span style="flex:0 0 26px">' + condecMedalSvg(m) + '</span>' : '') +
+            '<span style="flex:1;min-width:0">' +
+                '<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:' + cor + ';text-transform:uppercase">' +
+                    '<i class="fa-solid ' + (ehCondec ? 'fa-medal' : 'fa-certificate') + '"></i> ' + (ehCondec ? 'Condecoracao' : 'Certificado') + '</span>' +
+                '<span style="display:block;font-size:16px;font-weight:700;color:#0f172a;margin-top:2px">' + condecEsc(it.nome) + '</span>' +
+                linhas +
+            '</span>' +
+        '</div>' +
+        (it.foto ? '<img class="condec-cartao-foto" src="' + it.foto + '" alt="Foto ' + condecEsc(it.nome) + '">' : '') +
+    '</div>';
+}
+
+function condecFecharVer() {
+    var ov = document.getElementById('condec-ver-overlay');
+    if (ov) ov.classList.add('hidden');
+    condecVerAtual = null;
+}
+
+function condecImprimir() {
+    if (!condecVerAtual) return;
+    document.body.classList.add('condec-imprimindo');
+    var limpar = function () {
+        document.body.classList.remove('condec-imprimindo');
+        window.removeEventListener('afterprint', limpar);
+    };
+    window.addEventListener('afterprint', limpar);
+    window.print();
+}
+
+
