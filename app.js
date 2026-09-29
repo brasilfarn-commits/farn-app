@@ -13674,6 +13674,11 @@ async function patenteClassesCarregar() {
 const PATENTES_COL = 'patentes';
 const PATENTES_INSIGNIA_LADO = 256;   /* saida do recorte, em quadrado */
 const PATENTES_INSIGNIA_KB = 120;     /* teto da insignia */
+const PATENTE_UPLOAD_MS = 20000;      /* teto do upload da insignia no Storage */
+/* Um documento do Firestore chega a 1 MiB e nao ha margem: a patente tem
+   codigo, nome, grupo e mais, entao a insignia embutida em base64 tem de
+   caber com folga. Este e o teto real, bem abaixo do limite do banco. */
+const PATENTE_INSIGNIA_BYTES = 120 * 1024;
 
 /* O formulario: o que esta na tela agora. `dataUrl` e a insignia ja
    recortada, esperando para ir para o Storage no momento de salvar. */
@@ -14013,6 +14018,12 @@ function patenteAbrirForm(codigo) {
 function patenteFecharForm() {
     const m = document.getElementById('patente-form-overlay');
     if (m) m.classList.add('hidden');
+    /* A janela de recorte e criada no corpo da pagina, por cima de tudo.
+       Se o formulario fechar com ela aberta, ela fica la ocupando a tela
+       inteira sem ninguem para fechar: e o sintoma de "nao fecha". */
+    try {
+        if (typeof Foto3x4Editor !== 'undefined' && Foto3x4Editor.fechar) Foto3x4Editor.fechar();
+    } catch (e) { /* o editor pode nao existir nesta tela */ }
     patenteFormLimpar();
 }
 
@@ -14044,7 +14055,14 @@ function patenteFormPreview() {
         cx.innerHTML = '<i class="fa-solid fa-image" style="font-size:20px;color:#94a3b8"></i>';
         return;
     }
-    cx.innerHTML = '<img src="' + patenteEsc(fonte) + '" alt="Insignia da patente">';
+    /* o tamanho aparece junto: e a unica forma de o administrador ver que
+       a imagem foi mesmo anexada antes de salvar */
+    const tam = patenteBytesDoDataUrl(fonte);
+    const rot = fonte.indexOf('data:') === 0
+        ? '<span style="font-size:11px;color:#64748b">'
+        + (tam > 1024 ? Math.round(tam / 1024) + ' KB' : tam + ' B') + '</span>'
+        : '<span style="font-size:11px;color:#64748b">imagem ja gravada</span>';
+    cx.innerHTML = '<img src="' + patenteEsc(fonte) + '" alt="Insignia da patente">' + rot;
 }
 
 /* ---- insignia: arquivo -> recorte 1x1 -> Storage ---- */
@@ -14075,21 +14093,25 @@ async function patenteArquivoEscolhido(event) {
     if (!fonte) return;
     /* o mesmo editor do recorte da foto 3x4, so que em quadrado */
     if (typeof Foto3x4Editor === 'undefined' || !Foto3x4Editor.abrir) {
-        /* sem editor: usa a imagem como veio, e o upload reduz depois */
-        patenteForm.dataUrl = fonte;
+        /* sem editor: ja entra comprimida, pelo mesmo caminho do upload */
+        patenteForm.dataUrl = await patenteComprimir(fonte, PATENTES_INSIGNIA_LADO, PATENTE_INSIGNIA_BYTES);
         patenteForm.remover = false;
         patenteFormPreview();
         return;
     }
     Foto3x4Editor.abrir({
+        titulo: 'Enquadrar a insignia',
         nome: 'Insignia da patente',
         fonte: fonte,
         largura: PATENTES_INSIGNIA_LADO,
         altura: PATENTES_INSIGNIA_LADO,
         limiteKb: PATENTES_INSIGNIA_KB,
-        aoConcluir: function (dataUrl) {
+        /* "Usar sem ajuste" devolve a imagem original, que num celular tem
+           megabytes. Comprimir aqui evita carregar isso na memoria e deixa
+           o tamanho mostrado embaixo da previa verdadeiro. */
+        aoConcluir: async function (dataUrl) {
             if (!dataUrl) return;
-            patenteForm.dataUrl = dataUrl;
+            patenteForm.dataUrl = await patenteComprimir(dataUrl, PATENTES_INSIGNIA_LADO, PATENTE_INSIGNIA_BYTES);
             patenteForm.remover = false;
             patenteFormPreview();
         }
@@ -14124,21 +14146,90 @@ function patenteDataUrlParaBlob(dataUrl) {
     });
 }
 
+/* Quantos bytes a imagem realmente ocupa. O base64 cresce 4/3, entao da
+   para saber o tamanho pelo comprimento da string, sem decodificar. */
+function patenteBytesDoDataUrl(dataUrl) {
+    const s = String(dataUrl || '');
+    const i = s.indexOf(',');
+    if (i < 0) return s.length;
+    return Math.round((s.length - i - 1) * 3 / 4);
+}
+
+/* Reduz a insignia para o que cabe no documento, seja ela qual for a
+   origem. Isto fecha o buraco do "Usar sem ajuste": esse botao devolve a
+   imagem ORIGINAL, que num celular tem 2 a 5 MB, e um documento do
+   Firestore passa de 1 MiB -- o save era recusado pelo banco e a patente
+   nao saia. Aqui a insignia sempre entra em 256x256 e dentro do teto,
+   venha de onde vier. */
+function patenteComprimir(dataUrl, lado, bytes) {
+    return new Promise(function (res) {
+        const img = new Image();
+        img.onload = function () {
+            try {
+                const cv = document.createElement('canvas');
+                cv.width = lado; cv.height = lado;
+                const c = cv.getContext('2d');
+                c.fillStyle = '#ffffff';
+                c.fillRect(0, 0, lado, lado);
+                /* a insignia e 1x1: pega o quadrado do meio da imagem */
+                const m = Math.min(img.width || lado, img.height || lado);
+                c.drawImage(img, ((img.width || lado) - m) / 2, ((img.height || lado) - m) / 2,
+                    m, m, 0, 0, lado, lado);
+                const qualidades = [0.92, 0.85, 0.75, 0.6, 0.5, 0.4, 0.3, 0.2];
+                for (let i = 0; i < qualidades.length; i++) {
+                    const u = cv.toDataURL('image/jpeg', qualidades[i]);
+                    if (patenteBytesDoDataUrl(u) <= bytes) return res(u);
+                }
+                res(cv.toDataURL('image/jpeg', 0.2));
+            } catch (e) {
+                res('');
+            }
+        };
+        img.onerror = function () { res(''); };
+        img.src = dataUrl;
+    });
+}
+
+/* Nao espera para sempre. Um upload que trava nao pode segurar o
+   formulario aberto: depois de `ms` a insignia segue embutida em base64,
+   que e o jeito que sempre funcionou. */
+function patenteComPrazo(promessa, ms) {
+    return new Promise(function (res) {
+        let respondeu = false;
+        const t = setTimeout(function () {
+            if (respondeu) return;
+            respondeu = true;
+            res(null);
+        }, ms);
+        promessa.then(function (v) {
+            if (respondeu) return;
+            respondeu = true; clearTimeout(t); res(v);
+        }, function () {
+            if (respondeu) return;
+            respondeu = true; clearTimeout(t); res(null);
+        });
+    });
+}
+
 /* Sobe a insignia para `patentes/insignias/` e devolve a URL publica.
-   Sem Storage configurado, cai para devolver a propria imagem em base64:
-   a insignia continua aparecendo, so que gasta mais espaco no documento. */
+   Sem Storage (ou se o upload falhar ou demorar), devolve a propria imagem
+   em base64 -- mas ja comprimida, para nunca estourar o documento. */
 async function patenteInsigniaSubir(dataUrl, codigo) {
-    if (typeof firebase === 'undefined' || !firebase.storage) return dataUrl;
+    const embutida = await patenteComprimir(dataUrl, PATENTES_INSIGNIA_LADO, PATENTE_INSIGNIA_BYTES);
+    if (!embutida) return '';
+    if (typeof firebase === 'undefined' || !firebase.storage) return embutida;
     try {
-        const blob = await patenteDataUrlParaBlob(dataUrl);
+        const blob = await patenteDataUrlParaBlob(embutida);
         const ext = (blob.type.indexOf('png') >= 0) ? 'png' : 'jpg';
         const ref = firebase.storage().ref('patentes/insignias/' + codigo + '_' + Date.now() + '.' + ext);
-        await ref.put(blob);
-        return await ref.getDownloadURL();
+        const url = await patenteComPrazo(ref.put(blob).then(function () { return ref.getDownloadURL(); }),
+            PATENTE_UPLOAD_MS);
+        if (url && typeof url === 'string' && url.indexOf('http') === 0) return url;
+        console.warn('Upload da insignia nao devolveu URL; a insignia vai embutida no documento.');
     } catch (e) {
         console.warn('Nao foi possivel subir a insignia para o Storage:', e && e.message);
-        return dataUrl;
     }
+    return embutida;
 }
 
 /* ---- gravar e excluir ---- */
@@ -14171,8 +14262,24 @@ async function patenteFormGravar() {
     if (!reg) { alert('Nao foi possivel ler a patente informada.'); return; }
 
     try {
-        reg.insigniaUrl = patenteForm.remover ? '' : patenteForm.insigniaUrl;
-        if (patenteForm.dataUrl) reg.insigniaUrl = await patenteInsigniaSubir(patenteForm.dataUrl, reg.codigo);
+        let insignia = patenteForm.remover ? '' : patenteForm.insigniaUrl;
+        let aviso = '';
+        if (patenteForm.dataUrl) {
+            insignia = await patenteInsigniaSubir(patenteForm.dataUrl, reg.codigo);
+            /* Ultima rede antes de gravar: um documento do Firestore nao
+               passa de 1 MiB. Se ainda assim a insignia embutida for grande
+               demais, ela sai fora e a patente entra do mesmo jeito -- e o
+               aviso diz o que aconteceu. Perder a patente inteira por causa
+               de uma imagem e o pior resultado possivel aqui. */
+            if (insignia && insignia.indexOf('data:') === 0 &&
+                patenteBytesDoDataUrl(insignia) > PATENTE_INSIGNIA_BYTES) {
+                insignia = '';
+                aviso = '\n\nA insignia era grande demais para caber no registro e nao foi gravada. A patente foi salva sem ela.'
+            } else if (!insignia) {
+                aviso = '\n\nNao foi possivel ler a imagem da insignia. A patente foi salva sem ela.'
+            }
+        }
+        const insigniaFinal = PATENTES.insigniaNormalizar(insignia);
 
         /* A insignia pertence a patente, nao a pessoa: e aqui que ela
            entra. Nenhum cadastro de pessoa e tocado aqui. */
@@ -14184,17 +14291,23 @@ async function patenteFormGravar() {
             cff: reg.cff,
             cargo: reg.cargo,
             obs: reg.obs,
-            insigniaUrl: PATENTES.insigniaNormalizar(reg.insigniaUrl),
+            insigniaUrl: insigniaFinal,
             ordem: reg.ordem,
             ativo: reg.ativo
         }, { merge: true });
 
         patenteFecharForm();
         /* o onSnapshot redesenha a lista, os seletores e as fichas */
-        alert('Patente ' + reg.codigo + ' salva.');
+        alert('Patente ' + reg.codigo + ' salva.' + aviso);
     } catch (e) {
         console.error('Erro ao salvar a patente:', e);
-        alert('Erro ao salvar a patente: ' + e.message);
+        /* o que o admin precisa saber: se foi a imagem ou a patente. A
+           insignia ja foi reduzida e enviada antes deste ponto, entao
+           quase sempre e o documento que passou do limite do banco. */
+        alert('Nao foi possivel gravar a patente ' + reg.codigo + '.\n\n' +
+            (e && e.message ? e.message : String(e)) +
+            '\n\nSe voce recem anexou uma insignia, tente uma imagem menor: ' +
+            'o registro tem limite de tamanho.');
     }
 }
 

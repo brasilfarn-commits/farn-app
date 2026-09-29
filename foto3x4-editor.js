@@ -83,13 +83,14 @@
             '<div id="f3e-caixa">' +
             '<div id="f3e-topo">' +
             '<h3><i class="fa-solid fa-crop-simple" style="color:#2563eb;margin-right:8px"></i>' +
-            ' Editar Foto 3x4 (<span id="f3e-nome">Aluno</span>)</h3>' +
+            ' <span id="f3e-titulo">Editar Foto 3x4</span> (<span id="f3e-nome">Aluno</span>)</h3>' +
             '<button id="f3e-fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>' +
             '</div>' +
             '<p id="f3e-dica"><i class="fa-solid fa-info-circle" style="color:#2563eb"></i> ' +
-            'Arraste a imagem para enquadrar o rosto e use o controle para <strong>ampliar ou reduzir</strong>. ' +
-            'A moldura e o corte 3x4 final. Se preferir a foto como ela esta, toque em <strong>Usar sem ajuste</strong>.' +
-            '</p>' +
+            '<span id="f3e-dica-texto">Arraste a imagem para enquadrar o rosto e use o controle para ' +
+            '<strong>ampliar ou reduzir</strong>. ' +
+            'A moldura e o corte 3x4 final. Se preferir a foto como ela esta, toque em ' +
+            '<strong>Usar sem ajuste</strong>.</span></p>' +
             '<div id="f3e-moldura"><img id="f3e-img" alt="Imagem para recorte"></div>' +
             '<div id="f3e-zoom">' +
             '<i class="fa-solid fa-magnifying-glass-minus" style="color:#64748b"></i>' +
@@ -281,6 +282,16 @@
             };
             var nome = id('f3e-nome');
             if (nome) nome.textContent = opcoes.nome || 'Aluno';
+            /* O titulo e a dica falam de foto 3x4 por padrao, que e o uso
+               principal. Quem reaproveita o editor (a insignia da patente)
+               pode trocar os dois. */
+            var tit = id('f3e-titulo');
+            if (tit) tit.textContent = opcoes.titulo || 'Editar Foto 3x4';
+            var dica = id('f3e-dica-texto');
+            if (dica) dica.innerHTML = opcoes.dica || ('Arraste a imagem para enquadrar o rosto e use o controle para ' +
+                '<strong>ampliar ou reduzir</strong>. ' +
+                'A moldura e o corte 3x4 final. Se preferir a foto como ela esta, toque em ' +
+                '<strong>Usar sem ajuste</strong>.');
             var z = id('f3e-zoom-range');
             if (z) z.value = 100;
             /* a moldura segue a proporcao pedida (1x1 na insignia) */
