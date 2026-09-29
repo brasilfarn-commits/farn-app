@@ -322,6 +322,7 @@ async function recadMoverParaFormados(docId, r, matricula) {
 
         var existentes = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).get();
         var destino = 'formados';
+        var docMovido = null;
         if (!existentes.empty) {
             var docExistente = null;
             existentes.forEach(function(d) { docExistente = d; });
@@ -332,9 +333,10 @@ async function recadMoverParaFormados(docId, r, matricula) {
             novoFormado.tipoPessoa = tipoAtual === 'F' ? 'F' : 'A';
             destino = tipoAtual === 'F' ? 'formados' : 'alunos';
             await docExistente.ref.update(novoFormado);
+            docMovido = docExistente;
         } else {
             novoFormado.tipoPessoa = 'F';
-            await dbFirestore.collection('candidatos').add(novoFormado);
+            docMovido = await dbFirestore.collection('candidatos').add(novoFormado);
         }
 
         await dbFirestore.collection('recadastramentos').doc(docId).delete();
@@ -343,6 +345,14 @@ async function recadMoverParaFormados(docId, r, matricula) {
         recadUpdateCounts();
         showAdminSection('admin-recadastramento');
         alert('Recadastrado ativado e ' + (destino === 'alunos' ? 'mantido como ALUNO ativo!' : 'enviado para o banco dos formados ativos!') + (matricula ? '\nMatricula gerada: ' + matricula : ''));
+        /* Acabou de virar formado: oferece a patente da classe. Nada e gravado
+           sem confirmacao. O doc so existe na tela depois do onSnapshot. */
+        if (typeof patenteOferecer === 'function' && docMovido && docMovido.id) {
+            setTimeout(function() {
+                patenteOferecer('candidatos', docMovido.id,
+                    '"' + (r.nome || 'O recadastrado') + '" foi ativado como ' + (destino === 'alunos' ? 'aluno ativo' : 'formado') + '.');
+            }, 400);
+        }
     } catch (e) {
         console.error('Erro ao mover para formados:', e);
         alert('Erro ao mover para formados: ' + e.message);

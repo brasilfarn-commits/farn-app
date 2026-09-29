@@ -1996,6 +1996,14 @@
                                             <option value="diretor-pedagogico">Diretor (Pedagogico)</option>
                                         </select>
                                     </div>
+                                    <div class="patente-bloco">
+                                        <div class="patente-bloco-topo">
+                                            <i class="fa-solid fa-medal"></i>
+                                            <span>Patente / Posto</span>
+                                        </div>
+                                        <select id="uf-patente" class="config-input" onchange="patenteOnChange('uf')"></select>
+                                        <input type="text" id="uf-patente-obs" class="config-input" style="display:none;margin-top:8px" placeholder="Descreva a patente">
+                                    </div>
                                 </div>
                                 <div class="form-section" style="margin-top:20px">
                                     <label style="font-weight:600;color:#1e293b;margin-bottom:12px;display:block"><i class="fa-solid fa-lock" style="color:#16a34a;margin-right:6px"></i> Permissoes de Acesso</label>
@@ -2297,15 +2305,30 @@
                                                 <img id="fc-matricula-qr" src="" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff;display:none;">
                                                 <div style="display:flex;flex-direction:column;gap:6px;margin-left:8px">
                                                     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#f0fdf4;transition:all .2s" id="fc-tipo-academico-label">
-                                                        <input type="radio" name="fc-tipo-pessoa" value="A" style="accent-color:#16a34a" checked>
+                                                        <input type="radio" name="fc-tipo-pessoa" value="A" style="accent-color:#16a34a" checked onchange="patenteSugerirNoFormulario()">
                                                         <span style="color:#2563eb;font-weight:700;font-size:13px">Academico (A)</span>
                                                     </label>
                                                     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#f0fdf4;transition:all .2s" id="fc-tipo-formado-label">
-                                                        <input type="radio" name="fc-tipo-pessoa" value="F" style="accent-color:#16a34a">
+                                                        <input type="radio" name="fc-tipo-pessoa" value="F" style="accent-color:#16a34a" onchange="patenteSugerirNoFormulario()">
                                                         <span style="color:#16a34a;font-weight:700;font-size:13px">Formado (A)</span>
                                                     </label>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        <!-- PATENTE / POSTO -->
+                                        <div class="patente-bloco">
+                                            <div class="patente-bloco-topo">
+                                                <i class="fa-solid fa-medal"></i>
+                                                <span>Patente / Posto</span>
+                                            </div>
+                                            <div class="patente-bloco-dica">
+                                                Voce escolhe a patente. A classe de formacao sai das turmas cadastradas
+                                                e o sistema sugere uma quando a pessoa e remanejada. Voce confirma ou troca.
+                                            </div>
+                                            <select id="fc-patente" class="config-input" onchange="patenteOnChange('fc')"></select>
+                                            <input type="text" id="fc-patente-obs" class="config-input" style="display:none;margin-top:8px" placeholder="Descreva a patente">
+                                            <div class="patente-sugestao" id="fc-patente-sugestao" style="display:none"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -3866,6 +3889,15 @@
                                 <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Mae</label><input type="text" id="intr-mae" class="config-input"></div>
                                 <div class="form-group"><label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Pai</label><input type="text" id="intr-pai" class="config-input"></div>
                             </div>
+                            <div class="patente-bloco">
+                                <div class="patente-bloco-topo">
+                                    <i class="fa-solid fa-medal"></i>
+                                    <span>Patente / Posto</span>
+                                </div>
+                                <select id="intr-patente" class="config-input" onchange="patenteOnChange('intr')"></select>
+                                <input type="text" id="intr-patente-obs" class="config-input" style="display:none;margin-top:8px" placeholder="Descreva a patente">
+                                <div class="patente-sugestao" id="intr-patente-sugestao" style="display:none"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -4465,8 +4497,64 @@
         </div>
     </div>
 
+    <!-- ===================== PATENTES / POSTOS ===================== -->
+    <style id="patente-css">
+        .patente-bloco { margin-top:12px;padding:12px 14px;border:2px solid #cbd5e1;border-radius:10px;background:#f8fafc }
+        .patente-bloco-topo { display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px }
+        .patente-bloco-topo i { color:#b45309;font-size:15px }
+        .patente-bloco-dica { font-size:11px;color:#64748b;line-height:1.5;margin-bottom:8px }
+        .patente-sugestao { margin-top:9px;padding:9px 11px;border-radius:8px;background:#fffbeb;border:1px solid #fcd34d;color:#92400e;font-size:12px;line-height:1.6 }
+        .patente-sugestao b { color:#b45309 }
+        .patente-sugestao .btn-mini { border:1px solid #b45309;background:#b45309;color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;margin:0 4px }
+        .patente-sugestao .btn-mini.sec { background:#fff;color:#92400e }
+        .patente-badge { display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:11px;background:var(--pat,#334155);color:#fff;font-size:10px;font-weight:800;letter-spacing:.4px;vertical-align:middle;white-space:nowrap }
+        .patente-badge .pat-classe { background:rgba(255,255,255,.3);padding:0 5px;border-radius:8px;font-weight:700 }
+        .patente-badge i { font-size:9px }
+        .patente-badge.clara { background:#fff;color:var(--pat,#334155);border:1.5px solid var(--pat,#334155) }
+        .pat-vazio { color:#94a3b8;font-size:10px;font-style:italic }
+        .pat-btn { border:1px solid #b45309;background:#fff;color:#b45309;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap }
+        .pat-btn:hover { background:#b45309;color:#fff }
+        .pat-btn.sel { background:#b45309;color:#fff }
+    </style>
+
+    <div id="patente-modal" class="modal-overlay hidden" onclick="if(event.target===this)patenteFechar()">
+        <div class="modal-content" style="max-width:520px">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Patentear</h3>
+                <button class="modal-close" onclick="patenteFechar()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="patente-alvo" style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px"></div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:5px">Patente / Posto</label>
+                <select id="patente-select" class="config-input" onchange="patenteObsOnChange()"></select>
+                <div id="patente-obs-box" style="display:none;margin-top:10px">
+                    <label style="display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:5px">Descreva a patente</label>
+                    <input type="text" id="patente-obs" class="config-input" placeholder="Ex.: Posto de Sentinela">
+                </div>
+                <div id="patente-sugestao" class="patente-sugestao" style="display:none;margin-top:12px"></div>
+                <div id="patente-historico" style="margin-top:12px;font-size:11px;color:#64748b"></div>
+                <div style="margin-top:14px;padding:10px 12px;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#475569;cursor:pointer;margin-bottom:8px">
+                        <input type="checkbox" id="patente-editar-classes" style="width:15px;height:15px;cursor:pointer" onchange="patenteEditarClasses(this.checked)">
+                        Editar as classes de formacao que geram as patentes
+                    </label>
+                    <div id="patente-classes-box" style="display:none">
+                        <input type="text" id="patente-classes" class="config-input" placeholder="01, 02, 03">
+                        <div style="font-size:10px;color:#94a3b8;margin-top:4px">Separe por virgula. Cada classe gera 4 patentes: Formado, Aspirante a Instrutor, Diretor e Diretor Geral.</div>
+                        <button class="btn-outline btn-sm" style="margin-top:8px;font-size:11px" onclick="patenteSalvarClasses()"><i class="fa-solid fa-floppy-disk"></i> Salvar Classes</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="patenteFechar()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                <button class="btn-primary" style="background:#b45309;border-color:#b45309" onclick="patenteGravar()"><i class="fa-solid fa-check"></i> Salvar Patente</button>
+            </div>
+        </div>
+    </div>
+
     <script src="ficha-geral-compartilhar.js?v=5"></script>
-    <script src="app.js?v=53"></script>
+    <script src="patentes.js?v=1"></script>
+    <script src="app.js?v=54"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

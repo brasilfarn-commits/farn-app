@@ -256,6 +256,9 @@ function configInstituicaoCarregar() {
                 if (img) { img.src = d.logo; img.style.display = 'block'; }
                 if (icon) icon.style.display = 'none';
             }
+            /* As classes de formacao que geram as patentes de formado.
+               Se ainda nao houver nada cadastrado, a instituicao suggeste 01-03. */
+            patenteClassesRecebidas(d.patentesClasses);
         }
     }).catch(function(e) { console.error('Erro ao carregar dados da instituicao:', e); });
 }
@@ -762,6 +765,11 @@ async function initApp() {
     candidatos.forEach(c => { c.cadastradoPor = 'OZIEL'; });
     candidatos.forEach(c => { if (!c.dataHoraCadastro && c.dataCadastro) c.dataHoraCadastro = c.dataCadastro + ' 00:00'; });
     backupCandidatos();
+    /* Monta os seletores de patente assim que a tela existe, para nenhum
+       formulario abrir com o campo vazio. Ele ja funciona com as classes
+       01, 02 e 03; as definitivas chegam do Firestore logo depois. */
+    patentePopularSelects();
+    patenteClassesCarregar();
 
     if (restoreLoginState()) {
         document.body.classList.remove('landing-mode');
@@ -1739,6 +1747,9 @@ async function openFormCandidato() {
     resetFormCandidato();
     await populateTurmaSelect();
     populateProjetoSelect();
+    /* Pre-inscricao nova: comeca como PRE, o administrador ajusta depois. */
+    patentePopularSelects({ fc: { codigo: 'PRE' } });
+    patenteIgnorarSugestao();
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) btnAtualizar.style.display = 'none';
     fcFormularioModo('pre-inscricao', '', true);
@@ -1870,6 +1881,9 @@ async function editCandidato(index, origem) {
         document.getElementById('fc-senha').required = false;
     }
     document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#16a34a;margin-right:8px"></i> Editar - ' + c.nome;
+    /* Patente: o codigo gravado volta para o select, o texto e re-derivado. */
+    patentePopularSelects({ fc: { codigo: c.patente || '', obs: c.patenteObs || '' } });
+    patenteIgnorarSugestao();
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) {
         btnAtualizar.style.display = '';
@@ -1910,6 +1924,10 @@ function resetFormCandidato() {
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
     // No formulario vazio, nenhum curso deve permanecer selecionado.
     if (typeof fcCursosCarregar === 'function') fcCursosCarregar([]);
+    /* A patente e um campo a parte: nao entra no formFields, porque precisa
+       gerar o rotulo e guardar o historico. */
+    patentePopularSelects({ fc: { codigo: '' } });
+    patenteIgnorarSugestao();
     uploadedFiles = [];
     renderFilesList();
 }
@@ -1961,14 +1979,23 @@ async function handleCandidatoSubmit(event) {
     }
 
     if (editingIndex !== null) {
-        data.id = candidatos[editingIndex].id;
-        data.photoDataUrl = candidatos[editingIndex].photoDataUrl || null;
-        data.hasPhoto = candidatos[editingIndex].hasPhoto || false;
+        const anterior = candidatos[editingIndex];
+        data.id = anterior.id;
+        data.photoDataUrl = anterior.photoDataUrl || null;
+        data.hasPhoto = anterior.hasPhoto || false;
+        /* Carrega a patente antiga para que o modulo registre a troca
+           (patenteAnterior / patenteAlteradoPor) em vez de fingir
+           que sempre foi essa. */
+        data.patente = anterior.patente || '';
+        patenteGravarNoObjeto(data, 'fc');
         candidatos[editingIndex] = data;
         editingIndex = null;
     } else {
         data.id = Date.now();
         data.cadastradoPor = currentUserData ? currentUserData.nome : 'Desconhecido';
+        /* Cadastro novo: a patente escolhida na tela vira a primeira. */
+        data.patente = '';
+        patenteGravarNoObjeto(data, 'fc');
         candidatos.push(data);
     }
 
@@ -2166,7 +2193,7 @@ function renderList() {
         const nomeStyle = c.pediuBaixa ? 'color:#dc2626;font-weight:700' : (c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '');
         const baixaTag = c.pediuBaixa ? ' <span style="background:rgba(220,38,38,.12);color:#dc2626;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-power-off"></i> PEDI BAIXA</span>' : '';
         return `<tr>
-            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}${patenteTag(c)}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td>${c.nascimento || '-'}</td>
             <td>${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '-'}</td>
@@ -2178,6 +2205,7 @@ function renderList() {
             <td><div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i}, 'pre-inscricao')"><i class="fa-solid fa-pen"></i></button>
+                ${patenteBotao("'candidatos'," + c.id)}
                 <button class="btn-icon" title="Mudar Turma" onclick="mudarTurmaCandidato(${i})"><i class="fa-solid fa-arrows-left-right"></i></button>
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidato(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
@@ -2201,6 +2229,7 @@ function viewCandidato(i) {
         <div class="detail-grid">
             <div class="detail-section-title">Dados Pessoais</div>
             <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value"${c.pediuBaixa ? ' style="color:#dc2626;font-weight:700"' : (c.atualizarCadastro ? ' style="color:#a5d6a7;font-weight:700"' : '')}>${c.nome}${c.pediuBaixa ? ' <i class="fa-solid fa-power-off" style="font-size:11px;color:#dc2626"></i>' : ''}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:11px;color:#66bb6a"></i>' : ''}</span></div>
+            <div class="detail-item full"><span class="detail-label">Patente / Posto</span><span class="detail-value">${c.patente ? patenteTag(c) + '<span style="color:#64748b;font-size:12px;margin-left:6px">' + patenteEsc(patenteRotulo(c.patente) + (c.patenteObs ? ' - ' + c.patenteObs : '')) + '</span>' : '<span class="pat-vazio">sem patente</span>'}</span></div>
             <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value">${formatCPFDisplay(c.cpf)}</span></div>
             <div class="detail-item"><span class="detail-label">Nascimento</span><span class="detail-value">${c.nascimento||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Idade</span><span class="detail-value">${calcularIdade(c.nascimento) ? calcularIdade(c.nascimento) + ' anos' : '---'}</span></div>
@@ -2752,6 +2781,7 @@ function renderAlunosList() {
         const actionsHtml = `<div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
                 <button class="btn-icon" title="Editar" onclick="editCandidato(${i}, 'alunos')"><i class="fa-solid fa-pen"></i></button>
+                ${patenteBotao("'candidatos'," + c.id)}
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
                 <button class="btn-icon" title="Copiar para a seção CFF" onclick="alunosCopyParaCff(${i})" style="color:#7c3aed"><i class="fa-solid fa-chalkboard"></i></button>
@@ -2773,7 +2803,7 @@ function renderAlunosList() {
 
         if (isAprovados) {
             return `<tr>
-                <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+                <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}${patenteTag(c)}</td>
                 <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
                 <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
                 <td>${actionsHtml}</td>
@@ -2781,7 +2811,7 @@ function renderAlunosList() {
         }
 
         return `<tr>
-            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}${patenteTag(c)}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>
@@ -5218,12 +5248,13 @@ function renderUsuariosList() {
         const statusBadge = u.ativo === false ? '<span style="color:#dc2626;font-size:11px;font-weight:600">Inativo</span>' : '<span style="color:#16a34a;font-size:11px;font-weight:600">Ativo</span>';
         return `<div class="usuario-row">
             <div class="usuario-info">
-                <div class="usuario-nome">${u.nome || ''} ${tipoBadge} ${statusBadge}</div>
+                <div class="usuario-nome">${u.nome || ''} ${tipoBadge} ${statusBadge}${patenteTag(u)}</div>
                 <div class="usuario-cpf">CPF: ${formatCPFDisplay(u.cpf)}</div>
                 <div class="usuario-permissoes">${permTags}</div>
             </div>
             <div class="usuario-actions">
                 <button class="btn-outline btn-sm" onclick="editUsuario('${u.docId}')"><i class="fa-solid fa-pen"></i></button>
+                ${patenteBotao("'usuarios','" + u.docId + "'")}
                 <button class="btn-outline btn-sm" onclick="toggleUsuarioAtivo('${u.docId}', ${u.ativo !== false})" title="${u.ativo !== false ? 'Desativar' : 'Ativar'}"><i class="fa-solid fa-${u.ativo !== false ? 'ban' : 'check'}"></i></button>
                 <button class="btn-outline btn-sm btn-danger" onclick="deleteUsuario('${u.docId}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
             </div>
@@ -5251,9 +5282,12 @@ function openUsuarioForm(docId) {
                 if (p.includes(cb.value)) cb.checked = true;
             });
             if (allCheck) allCheck.checked = document.querySelectorAll('.uf-perm-check:checked').length === document.querySelectorAll('.uf-perm-check').length;
+            /* Patente do usuario: volta o codigo gravado, o texto e re-derivado. */
+            patentePopularSelects({ uf: { codigo: u.patente || '', obs: u.patenteObs || '' } });
         }
     } else {
         document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#2563eb;margin-right:8px"></i> Novo Usuario';
+        patentePopularSelects({ uf: { codigo: '' } });
     }
     showAdminSection('admin-form-usuario', null);
 }
@@ -5275,6 +5309,10 @@ async function handleSaveUsuario(event) {
     document.querySelectorAll('.uf-perm-check:checked').forEach(cb => permissoes.push(cb.value));
     if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
     const userData = { nome, cpf, senha, tipo, permissoes, ativo: true };
+    /* Patente: carrega a anterior para registrar a troca, depois grava a da tela. */
+    const usuarioAnterior = editingUsuarioDocId ? usuarios.find(u => u.docId === editingUsuarioDocId) : null;
+    userData.patente = usuarioAnterior ? (usuarioAnterior.patente || '') : '';
+    patenteGravarNoObjeto(userData, 'uf');
     try {
         if (editingUsuarioDocId) {
             await dbFirestore.collection(FB_USUARIOS).doc(editingUsuarioDocId).set(userData, { merge: true });
@@ -9031,10 +9069,15 @@ function docenteAbrirModal(id) {
         docentePopulateDisciplinas(inst.disciplinas || []);
         docentePopulateCursos(inst.cursos || []);
         docenteFotoVer(inst);
+        /* Patente do docente: so o codigo e gravado, o rotulo e re-derivado. */
+        patentePopularSelects({ intr: { codigo: inst.patente || '', obs: inst.patenteObs || '' } });
+        var boxs = document.getElementById('intr-patente-sugestao');
+        if (boxs) boxs.style.display = 'none';
     } else {
         titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color:#4caf50;margin-right:8px"></i> Novo Docente';
         docentePopulateDisciplinas([]);
         docentePopulateCursos([]);
+        patentePopularSelects({ intr: { codigo: '' } });
     }
     document.getElementById('modal-docente-overlay').classList.remove('hidden');
 }
@@ -9131,7 +9174,7 @@ function renderFormadosList() {
             ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>'
             : '<span style="color:#94a3b8;font-size:11px">---</span>';
         return '<tr>' +
-            '<td style="font-weight:600">' + (c.nome || '-') + '</td>' +
+            '<td style="font-weight:600">' + (c.nome || '-') + patenteTag(c) + '</td>' +
             '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
             '<td>' + (c.turma || '-') + '</td>' +
             '<td style="color:#ff9800;font-weight:600">' + (c.projeto || '-') + '</td>' +
@@ -9141,6 +9184,7 @@ function renderFormadosList() {
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(' + i + ')"><i class="fa-solid fa-eye"></i></button>' +
                 '<button class="btn-icon" title="Editar" onclick="editCandidato(' + i + ', \'formados\')"><i class="fa-solid fa-pen"></i></button>' +
+                patenteBotao("'candidatos'," + c.id) +
                 (!c.remanejadoDocente ? '<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
             '</div></td></tr>';
     }).join('');
@@ -9247,7 +9291,30 @@ function docenteAbrirRemanejado(c) {
     docentePopulateDisciplinas([]);
     /* O candidato ja tem os cursos marcados na inscricao; reaproveita ao remanejar */
     docentePopulateCursos(c.cursos || []);
+    /* O remanejamento nao decide a patente: mantem a que a pessoa ja tinha e
+       sugere DOC ao lado, para o administrador escolher. */
+    patentePopularSelects({ intr: { codigo: c.patente || '', obs: c.patenteObs || '' } });
+    patenteSugestaoNoDocente();
     document.getElementById('modal-docente-overlay').classList.remove('hidden');
+}
+
+/* Aviso de sugestão dentro do formulario de docente. */
+function patenteSugestaoNoDocente() {
+    var box = document.getElementById('intr-patente-sugestao');
+    var sel = document.getElementById('intr-patente');
+    if (!patenteTemModulo() || !box || !sel) return;
+    var s = patenteSugerirPara({ tipoPessoa: 'D' }, 'docentes');
+    if (!s || !s.codigo || s.codigo === sel.value) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    box.innerHTML = '<b>Sugestao:</b> ' + patenteEsc(s.rotulo) + ' <span style="opacity:.75">(' + patenteEsc(s.motivo) + ')</span><br>'
+        + '<button class="btn-mini" onclick="patenteUsarSugestaoDocente()"><i class="fa-solid fa-check"></i> Usar esta</button>';
+}
+
+function patenteUsarSugestaoDocente() {
+    var sel = document.getElementById('intr-patente');
+    if (sel) { sel.value = 'DOC'; patenteOnChange('intr'); }
+    var box = document.getElementById('intr-patente-sugestao');
+    if (box) box.style.display = 'none';
 }
 
 function docentePopulateDisciplinas(selectedArr) {
@@ -9386,6 +9453,10 @@ async function docenteSalvar(e) {
         for (var chaveFoto in fotoDados) dados[chaveFoto] = fotoDados[chaveFoto];
     }
     var origemCandidato = document.getElementById('intr-origem').value;
+    /* Patente: carrega a anterior para registrar a troca, depois grava a da tela. */
+    var docenteAnterior = editingDocenteId ? docentes.find(function (i) { return i.id === editingDocenteId; }) : null;
+    dados.patente = docenteAnterior ? (docenteAnterior.patente || '') : '';
+    patenteGravarNoObjeto(dados, 'intr');
     try {
         if (editingDocenteId) {
             await dbFirestore.collection('docentes').doc(editingDocenteId).update(dados);
@@ -9441,6 +9512,9 @@ async function docenteSalvar(e) {
         docenteListar();
         renderList();
         document.getElementById('modal-overlay').classList.add('hidden');
+        /* A patente do docente foi definida no formulario (que ja mostrou a
+           sugestao DOC). O candidato segue formado no `candidatos`, entao a
+           patente dele nao muda aqui. */
     } catch (e) {
         console.error('Erro ao salvar docente:', e);
         alert('Erro ao salvar docente: ' + e.message);
@@ -9464,7 +9538,7 @@ function docenteListar() {
         var discHtml = (i.disciplinas || []).map(function(d) { return '<span class="badge blue" style="font-size:10px;margin:1px">' + d + '</span>'; }).join(' ');
         var cursosHtml = (i.cursos || []).map(function(c) { return '<span class="badge" style="font-size:10px;margin:1px;background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe">' + escHTML(c) + '</span>'; }).join(' ');
         return '<tr>' +
-            '<td style="font-weight:600">' + (i.nome || '-') + (i.remanejadoDe ? ' <span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px">FORMADO</span>' : '') + '</td>' +
+            '<td style="font-weight:600">' + (i.nome || '-') + (i.remanejadoDe ? ' <span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px">FORMADO</span>' : '') + patenteTag(i) + '</td>' +
             '<td>' + (i.guerra || '-') + '</td>' +
             '<td>' + cpfFmt + '</td>' +
             '<td>' + (i.genero || '-') + '</td>' +
@@ -9475,6 +9549,7 @@ function docenteListar() {
             '<td>' + (i.email || '-') + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon" title="Editar" onclick="docenteAbrirModal(\'' + i.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                patenteBotao("'docentes','" + i.id + "'") +
                 '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="docenteExcluir(\'' + i.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '<button class="btn-icon" title="Imprimir" onclick="docenteImprimir(\'' + i.id + '\')" style="color:#4caf50"><i class="fa-solid fa-print"></i></button>' +
             '</div></td></tr>';
@@ -12020,6 +12095,14 @@ async function alunosCopyParaCff(i) {
             ? 'Cadastro copiado e ATUALIZADO na seção CFF! Senha de acesso: ' + senhaCopia
             : 'Cadastro copiado para a seção CFF! Senha de acesso: ' + senhaCopia);
         if (typeof cffListLoad === 'function') cffListLoad();
+        /* Entrou no CFF: a patente ACI (aspirante) passa a fazer sentido.
+           O sistema so sugere; cancelar mantem a patente atual. */
+        const idxCff = candidatos.findIndex(function (x) { return String(x.id) === String(c.id); });
+        if (idxCff !== -1) {
+            await patenteOferecer('candidatos', c.id,
+                '"' + (c.nome || 'A pessoa') + '" foi matriculado no CFF (aspirante a instrutor).',
+                { cff: true });
+        }
     } catch (e) {
         console.error('Erro ao copiar para o CFF:', e);
         alert('Erro ao copiar o cadastro para o CFF: ' + e.message);
@@ -13146,3 +13229,397 @@ function condecImprimir() {
 }
 
 
+
+/* ==========================================================================
+   PATENTES / POSTOS (ADMIN)
+   --------------------------------------------------------------------------
+   A patente e UMA por pessoa e vive no cadastro dela:
+     - `candidatos`  (aluno ativo, pre-inscrito e formado ficam na mesma colecao)
+     - `docentes`
+     - `usuarios`
+   No banco grava-se so o CODIGO ('FOR-C03-ACI'); o texto visivel e sempre
+   re-derivado pelo modulo `patentes.js`. Assim renomear uma patente no futuro
+   nao quebra nenhum cadastro ja gravado, e da para filtrar por grupo, classe,
+   CFF e cargo sem digitar nada.
+   No remanejamento (virou formado, entrou no CFF, virou docente) o sistema
+   apenas SUGERE a patente nova. Quem decide e o administrador.
+   ========================================================================== */
+let patenteClasses = ['01', '02', '03'];
+let patenteAlvo = null;
+
+const PATENTE_FORMULARIOS = [
+    { p: 'fc', sel: 'fc-patente', obs: 'fc-patente-obs' },
+    { p: 'intr', sel: 'intr-patente', obs: 'intr-patente-obs' },
+    { p: 'uf', sel: 'uf-patente', obs: 'uf-patente-obs' }
+];
+
+const PATENTES_CHAVES = ['patente', 'patenteNome', 'patenteGrupo', 'patenteClasse',
+    'patenteCff', 'patenteCargo', 'patenteObs', 'patenteAnterior',
+    'patenteAnteriorNome', 'patenteAlteradoEm', 'patenteAlteradoPor'];
+
+function patenteTemModulo() { return typeof PATENTES !== 'undefined'; }
+/* Rotulo legivel da patente. Se o modulo nao carregou, mostra o codigo --
+   melhor um codigo na tela do que a tela inteira quebrar. */
+function patenteRotulo(codigo) {
+    if (!codigo) return '';
+    return patenteTemModulo() ? PATENTES.rotuloDe(codigo) : String(codigo);
+}
+
+function patenteQuem() { return (currentUserData && currentUserData.nome) || 'Administrador'; }
+function patenteEsc(s) { return patenteTemModulo() ? PATENTES.esc(s) : escHTML(s); }
+
+function patenteCfgDe(prefixo) {
+    for (var i = 0; i < PATENTE_FORMULARIOS.length; i++) {
+        if (PATENTE_FORMULARIOS[i].p === prefixo) return PATENTE_FORMULARIOS[i];
+    }
+    return null;
+}
+
+function patenteRef(colecao) {
+    if (colecao === 'docentes') return 'docentes';
+    if (colecao === 'usuarios') return FB_USUARIOS;
+    return FB_CANDIDATOS;
+}
+
+/* A chave do documento no Firestore. Candidatos e docentes entram com `id`
+   (candidatos: `parseInt(doc.id) || doc.id`); usuarios sao indexados pelo
+   `docId`, que e o id do documento, e nao por um `id` antigo do dado. */
+function patenteChaveDoDoc(p, colecao) {
+    if (!p) return '';
+    if (colecao === 'usuarios') return p.docId != null ? p.docId : p.id;
+    return p.id != null ? p.id : p.docId;
+}
+
+/* A etiqueta colorida que aparece ao lado do nome nas listagens. */
+function patenteTag(p) {
+    if (!patenteTemModulo() || !p || !p.patente) return '';
+    return ' ' + PATENTES.badge(p.patente);
+}
+
+/* O botao PATENTEAR das listagens. `alvo` ja vem no formato "colecao",id. */
+function patenteBotao(alvo) {
+    if (!patenteTemModulo()) return '';
+    return '<button class="btn-icon" title="Patentear" onclick="patenteAbrir(' + alvo + ')" style="color:#b45309"><i class="fa-solid fa-medal"></i></button>';
+}
+
+/* ---- campos dentro dos formularios ---- */
+
+function patenteObsVisivel(cfg) {
+    var sel = document.getElementById(cfg.sel);
+    var obs = document.getElementById(cfg.obs);
+    if (!sel || !obs) return;
+    obs.style.display = sel.value === 'OUT' ? '' : 'none';
+}
+
+function patentePopularSelects(porPrefixo) {
+    if (!patenteTemModulo()) return;
+    var marcados = porPrefixo || {};
+    PATENTE_FORMULARIOS.forEach(function (cfg) {
+        var el = document.getElementById(cfg.sel);
+        if (!el) return;
+        var obs = document.getElementById(cfg.obs);
+        var m = marcados[cfg.p];
+        PATENTES.popular(el, patenteClasses, (m && m.codigo != null) ? m.codigo : el.value);
+        if (obs) {
+            if (m && m.obs) obs.value = m.obs;
+            patenteObsVisivel(cfg);
+        }
+    });
+}
+
+function patenteOnChange(prefixo) {
+    var cfg = patenteCfgDe(prefixo);
+    if (cfg) patenteObsVisivel(cfg);
+    if (prefixo === 'fc') patenteSugestaoForm();
+}
+
+/* Le o que esta na tela e devolve para gravar. */
+function patenteLerDoFormulario(prefixo) {
+    var cfg = patenteCfgDe(prefixo);
+    if (!cfg) return null;
+    var sel = document.getElementById(cfg.sel);
+    var obs = document.getElementById(cfg.obs);
+    if (!sel) return null;
+    return { codigo: sel.value, obs: obs ? obs.value : '' };
+}
+
+/* Grava no objeto que vai para o Firestore, guardando o historico. */
+function patenteGravarNoObjeto(dados, prefixo) {
+    if (!patenteTemModulo()) return dados;
+    var lido = patenteLerDoFormulario(prefixo);
+    if (!lido) return dados;
+    return PATENTES.aplicar(dados, lido.codigo, patenteQuem(), lido.obs);
+}
+
+/* ---- sugestao: no remanejamento o sistema SUGERE, nunca grava sozinho ---- */
+
+function patenteSugerirPara(p, colecao) {
+    if (!patenteTemModulo() || !p) return null;
+    return PATENTES.sugerir({
+        tipo: colecao === 'docentes' ? 'D' : (p.tipoPessoa || 'A'),
+        status: p.status || (colecao === 'usuarios' ? 'Ativo' : ''),
+        turma: p.turma || '',
+        /* `cff` e o estado do momento (acabou de entrar no CFF); `patenteCff`
+           e o que esta gravado hoje. O que vier explicito manda. */
+        cff: p.cff !== undefined ? !!p.cff : !!p.patenteCff,
+        cargo: p.patenteCargo || ''
+    });
+}
+
+function patenteSugerirNoFormulario() { patenteSugestaoForm(); }
+
+function patenteSugestaoForm() {
+    var box = document.getElementById('fc-patente-sugestao');
+    var sel = document.getElementById('fc-patente');
+    if (!patenteTemModulo() || !box || !sel) return;
+    var atual = editingIndex !== null ? (candidatos[editingIndex] || {}) : {};
+    var radio = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
+    var turmaEl = document.getElementById('fc-turma');
+    var s = patenteSugerirPara({
+        tipoPessoa: radio ? radio.value : 'A',
+        status: atual.status || 'Pendente',
+        turma: turmaEl ? turmaEl.value : (atual.turma || ''),
+        patenteCff: atual.patenteCff,
+        patenteCargo: atual.patenteCargo
+    }, 'candidatos');
+    if (!s || !s.codigo || s.codigo === sel.value) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    box.innerHTML = '<b>Sugestao:</b> ' + patenteEsc(s.rotulo)
+        + ' <span style="opacity:.75">(' + patenteEsc(s.motivo) + ')</span><br>'
+        + '<button class="btn-mini" onclick="patenteUsarSugestao(\'' + s.codigo + '\')"><i class="fa-solid fa-check"></i> Usar esta</button>'
+        + '<button class="btn-mini sec" onclick="patenteIgnorarSugestao()">Manter como esta</button>';
+}
+
+function patenteUsarSugestao(codigo) {
+    var sel = document.getElementById('fc-patente');
+    if (sel) { sel.value = codigo; patenteOnChange('fc'); }
+    patenteIgnorarSugestao();
+}
+
+function patenteIgnorarSugestao() {
+    var box = document.getElementById('fc-patente-sugestao');
+    if (box) box.style.display = 'none';
+}
+
+function patenteSugestaoModal() {
+    var box = document.getElementById('patente-sugestao');
+    if (!patenteTemModulo() || !box || !patenteAlvo) { if (box) box.style.display = 'none'; return; }
+    var s = patenteSugerirPara(patenteAlvo.dados, patenteAlvo.colecao);
+    var sel = document.getElementById('patente-select');
+    if (!s || !s.codigo || s.codigo === (sel ? sel.value : '')) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    box.innerHTML = '<b>Sugestao:</b> ' + patenteEsc(s.rotulo)
+        + ' <span style="opacity:.75">(' + patenteEsc(s.motivo) + ')</span><br>'
+        + '<button class="btn-mini" onclick="patenteUsarSugestaoModal(\'' + s.codigo + '\')"><i class="fa-solid fa-check"></i> Usar esta</button>'
+        + '<button class="btn-mini sec" onclick="patenteIgnorarSugestaoModal()">Manter como esta</button>';
+}
+
+function patenteUsarSugestaoModal(codigo) {
+    var sel = document.getElementById('patente-select');
+    if (sel) { sel.value = codigo; patenteObsOnChange(); }
+    patenteIgnorarSugestaoModal();
+}
+
+function patenteIgnorarSugestaoModal() {
+    var box = document.getElementById('patente-sugestao');
+    if (box) box.style.display = 'none';
+}
+
+/* ---- persistencia ---- */
+
+function patenteCampos(p) {
+    var out = {};
+    PATENTES_CHAVES.forEach(function (k) { out[k] = p[k] === undefined ? '' : p[k]; });
+    out.patenteCff = !!p.patenteCff;
+    return out;
+}
+
+function patenteRedesenhar() {
+    if (typeof renderList === 'function') renderList();
+    if (typeof renderAlunosList === 'function') renderAlunosList();
+    if (typeof renderFormadosList === 'function') renderFormadosList();
+    if (typeof docenteListar === 'function') docenteListar();
+    if (typeof renderUsuariosList === 'function') renderUsuariosList();
+}
+
+async function patentePersistir(colecao, p, codigo, obs) {
+    PATENTES.aplicar(p, codigo, patenteQuem(), obs);
+    if (colecao === 'candidatos') {
+        /* candidatos passam pelo mesmo caminho de gravacao do resto da tela */
+        backupCandidatos();
+    } else {
+        await dbFirestore.collection(patenteRef(colecao)).doc(String(patenteChaveDoDoc(p, colecao)))
+            .set(patenteCampos(p), { merge: true });
+    }
+    patenteRedesenhar();
+}
+
+/* Apos um remanejamento, oferece a patente que combina com a nova situacao.
+   `ajustes` completa a situacao da pessoa no momento do remanejamento
+   (ex.: { cff: true } quando acabou de matricular no CFF).
+   Nada e gravado sem confirmacao: cancelar mantem a patente atual. */
+async function patenteOferecer(colecao, id, mensagem, ajustes) {
+    if (!patenteTemModulo()) return;
+    var p = patenteAchar(colecao, id);
+    if (!p) return;
+    var situacao = { nome: p.nome };
+    for (var k in p) if (Object.prototype.hasOwnProperty.call(p, k)) situacao[k] = p[k];
+    for (var j in ajustes) if (Object.prototype.hasOwnProperty.call(ajustes, j)) situacao[j] = ajustes[j];
+    var s = patenteSugerirPara(situacao, colecao);
+    if (!s || !s.codigo || p.patente === s.codigo) return;
+    var r = confirm((mensagem || 'A pessoa foi remanejada.')
+        + '\n\nPatente sugerida: ' + s.rotulo + '\n(' + s.motivo + ')'
+        + '\n\nQuer aplicar agora? Cancelar mantem a patente atual.');
+    if (!r) return;
+    try {
+        await patentePersistir(colecao, p, s.codigo, '');
+        patentePopularSelects();
+        alert('Patente aplicada: ' + s.rotulo);
+    } catch (e) {
+        console.error('Erro ao aplicar a patente sugerida:', e);
+        alert('Erro ao aplicar a patente: ' + e.message);
+    }
+}
+
+/* ---- modal PATENTEAR ---- */
+
+function patenteAchar(colecao, id) {
+    var lista = colecao === 'docentes' ? docentes : (colecao === 'usuarios' ? usuarios : candidatos);
+    for (var i = 0; i < lista.length; i++) {
+        if (String(patenteChaveDoDoc(lista[i], colecao)) === String(id)) return lista[i];
+    }
+    return null;
+}
+
+function patenteAbrir(colecao, id) {
+    if (!patenteTemModulo()) return;
+    var p = patenteAchar(colecao, id);
+    if (!p) { alert('Cadastro nao encontrado.'); return; }
+    patenteAlvo = { colecao: colecao, id: id, dados: p };
+
+    var alvoEl = document.getElementById('patente-alvo');
+    if (alvoEl) {
+        var linhas = '<div style="flex:1;min-width:0">'
+            + '<div style="font-weight:700;font-size:14px;color:#0f172a">' + patenteEsc(p.nome || 'Sem nome') + '</div>'
+            + '<div style="font-size:11px;color:#64748b">CPF: ' + patenteEsc(formatCPFDisplay(p.cpf || '')) + '</div>'
+            + '<div style="font-size:11px;color:#64748b">' + patenteEsc(p.matricula || '') + '</div>'
+            + '</div>'
+            + '<div style="text-align:right">' + (p.patente
+                ? PATENTES.badge(p.patente)
+                : '<span class="pat-vazio">sem patente</span>') + '</div>';
+        alvoEl.innerHTML = linhas;
+    }
+
+    var sel = document.getElementById('patente-select');
+    PATENTES.popular(sel, patenteClasses, p.patente || '');
+    var obs = document.getElementById('patente-obs');
+    if (obs) obs.value = p.patenteObs || '';
+    patenteObsOnChange();
+
+    var hist = document.getElementById('patente-historico');
+    if (hist) {
+        hist.innerHTML = p.patenteAlteradoEm
+            ? '<i class="fa-solid fa-clock-rotate-left"></i> Antes: <b>' + patenteEsc(patenteRotulo(p.patenteAnterior) || 'sem patente')
+            + '</b> &middot; trocada por <b>' + patenteEsc(patenteRotulo(p.patente) || 'sem patente') + '</b>'
+            + ' em ' + patenteEsc(p.patenteAlteradoEm.slice(0, 10)) + ' por ' + patenteEsc(p.patenteAlteradoPor || '?') + '.'
+            : '<i class="fa-solid fa-circle-info"></i> A patente nunca foi alterada neste cadastro.';
+    }
+
+    var chk = document.getElementById('patente-editar-classes');
+    if (chk) chk.checked = false;
+    var boxCls = document.getElementById('patente-classes-box');
+    if (boxCls) boxCls.style.display = 'none';
+    var inpCls = document.getElementById('patente-classes');
+    if (inpCls) inpCls.value = patenteClasses.join(', ');
+
+    patenteSugestaoModal();
+
+    var modal = document.getElementById('patente-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function patenteFechar() {
+    var modal = document.getElementById('patente-modal');
+    if (modal) modal.classList.add('hidden');
+    patenteAlvo = null;
+}
+
+function patenteObsOnChange() {
+    var sel = document.getElementById('patente-select');
+    var box = document.getElementById('patente-obs-box');
+    if (!sel || !box) return;
+    box.style.display = sel.value === 'OUT' ? '' : 'none';
+}
+
+/* A lista de classes fica recolhida no modal: so aparece quando o
+   administrador pede para editar. */
+function patenteEditarClasses(ligado) {
+    var box = document.getElementById('patente-classes-box');
+    if (!box) return;
+    box.style.display = ligado ? '' : 'none';
+    if (!ligado) return;
+    var inp = document.getElementById('patente-classes');
+    if (inp && !inp.value) inp.value = patenteClasses.join(', ');
+}
+
+async function patenteGravar() {
+    if (!patenteTemModulo() || !patenteAlvo) return;
+    var sel = document.getElementById('patente-select');
+    var obs = document.getElementById('patente-obs');
+    try {
+        await patentePersistir(patenteAlvo.colecao, patenteAlvo.dados, sel ? sel.value : '',
+            obs ? obs.value : '');
+        patentePopularSelects();
+        patenteFechar();
+        alert('Patente salva!');
+    } catch (e) {
+        console.error('Erro ao salvar a patente:', e);
+        alert('Erro ao salvar a patente: ' + e.message);
+    }
+}
+
+async function patenteSalvarClasses() {
+    if (!patenteTemModulo()) return;
+    var inp = document.getElementById('patente-classes');
+    var lista = (inp && inp.value ? inp.value : '').split(',')
+        .map(function (s) { return s.trim(); }).filter(function (s) { return !!s; });
+    if (!lista.length) { alert('Informe pelo menos uma classe.'); return; }
+    patenteClasses = lista;
+    try {
+        await dbFirestore.collection('configuracoes').doc('instituicao')
+            .set({ patentesClasses: lista }, { merge: true });
+        patentePopularSelects();
+        var sel = document.getElementById('patente-select');
+        if (sel) PATENTES.popular(sel, patenteClasses, sel.value);
+        var box = document.getElementById('patente-classes-box');
+        if (box) box.style.display = 'none';
+        var chk = document.getElementById('patente-editar-classes');
+        if (chk) chk.checked = false;
+        alert('Classes salvas. As patentes de formado foram atualizadas.');
+    } catch (e) {
+        console.error('Erro ao salvar as classes de patente:', e);
+        alert('Erro ao salvar as classes: ' + e.message);
+    }
+}
+
+/* Chamado pela configuracao da instituicao quando o Firestore entrega as
+   classes cadastradas. */
+function patenteClassesRecebidas(lista) {
+    if (!Array.isArray(lista) || !lista.length) return;
+    patenteClasses = lista;
+    patentePopularSelects();
+}
+
+/* Le as classes do documento de configuracao da instituicao. Roda uma vez no
+   arranque: a configuracao so e lida de novo quando alguem abre a tela de
+   configuracao, e as patentes precisam existir antes disso. */
+async function patenteClassesCarregar() {
+    if (!patenteTemModulo() || !dbFirestore) return;
+    try {
+        const doc = await dbFirestore.collection('configuracoes').doc('instituicao').get();
+        if (doc.exists) patenteClassesRecebidas(doc.data().patentesClasses);
+    } catch (e) {
+        /* Sem permissao ou sem rede: segue com as classes padrao. */
+        console.warn('Nao foi possivel carregar as classes de patente:', e && e.message);
+    }
+}
