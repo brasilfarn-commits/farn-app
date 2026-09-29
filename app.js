@@ -13464,6 +13464,10 @@ function patenteRedesenhar() {
     if (typeof renderFormadosList === 'function') renderFormadosList();
     if (typeof docenteListar === 'function') docenteListar();
     if (typeof renderUsuariosList === 'function') renderUsuariosList();
+    /* a lista de patentes conta as pessoas que tem cada codigo: se a
+       patente de alguem acabou de mudar, os cartacos "ja em uso" destao
+       com um numero velho senao */
+    if (typeof patentesListar === 'function') patentesListar();
 }
 
 async function patentePersistir(colecao, p, codigo, obs) {
@@ -13737,11 +13741,122 @@ function patenteFicharInsignias() {
 
 /* ---- a lista da secao ---- */
 
+/* As patentes que as pessoas JA tem nao moram numa lista: moram no campo
+   `patente` de cada documento de candidato, docente e usuario. Sao esses
+   tres arrays -- que os onSnapshot do app ja mantem vivos -- que dizem
+   quais codigos estao de fato em uso e quantas pessoas tem cada um. Sem
+   varrer isso, a secao abre vazia mesmo com a instituicao patentada. */
+function patentesEmUso() {
+    const mapa = {};
+    [candidatos, docentes, usuarios].forEach(function (lista) {
+        if (!Array.isArray(lista)) return;
+        lista.forEach(function (p) {
+            const codigo = p && p.patente ? String(p.patente) : '';
+            if (!codigo) return;
+            if (!mapa[codigo]) mapa[codigo] = { total: 0, obs: {}, obsTop: '' };
+            const reg = mapa[codigo];
+            reg.total++;
+            /* a observacao que as pessoas gravaram e a melhor pista do
+               nome real (ex.: "Posto de Sentinela" no codigo OUT). A mais
+               repetida entra como SUGESTAO no formulario, nunca como
+               verdade: quem decide o nome e o cadastro da patente. */
+            const obs = p.patenteObs ? String(p.patenteObs).trim() : '';
+            if (obs) {
+                reg.obs[obs] = (reg.obs[obs] || 0) + 1;
+                if (!reg.obsTop || reg.obs[obs] > (reg.obs[reg.obsTop] || 0)) reg.obsTop = obs;
+            }
+        });
+    });
+    return mapa;
+}
+
+function patenteTemRegistro(codigo) {
+    if (!patenteTemModulo() || !codigo) return false;
+    return !!PATENTES.catalogoAchado(patentesCatalogo, codigo);
+}
+
 function patentesContagem() {
     const total = patentesCatalogo.length;
     const comInsignia = patentesCatalogo.filter(r => r.insigniaUrl).length;
     const ativas = patentesCatalogo.filter(r => r.ativo !== false).length;
-    return { total: total, comInsignia: comInsignia, ativas: ativas };
+    /* quantos codigos ja em uso ainda nao viraram registro: e o que separa
+       "a secao esta vazia mesmo" de "ninguem cadastrou patente aqui ainda".
+       Nenhum registro e criado por conta propria -- a lista so mostra, e a
+       criacao acontece quando voce abre a patente e salva. */
+    const emUso = Object.keys(patentesEmUso()).filter(c => !patenteTemRegistro(c));
+    return {
+        total: total, comInsignia: comInsignia, ativas: ativas,
+        emUso: emUso,
+        /* vazia de verdade so quando nao ha registro E ninguem tem patente */
+        vazia: !total && !emUso.length
+    };
+}
+
+function patenteCartao(r) {
+    const g = (patenteTemModulo() && PATENTES.grupoDe(r.grupo)) || null;
+    const cor = g ? g.cor : '#334155';
+    const inativa = r.ativo === false;
+    const ins = r.insigniaUrl
+        ? '<img src="' + patenteEsc(r.insigniaUrl) + '" alt="" class="pat-ins-mini">'
+        : '<span class="pat-ins-vazia" title="Sem insignia"><i class="fa-solid fa-image"></i></span>';
+    const partes = [];
+    if (r.classe) partes.push('Classe ' + patenteEsc(r.classe));
+    if (r.cff) partes.push('com CFF');
+    if (r.cargo) partes.push(patenteEsc(r.cargo));
+    return '<div class="pat-cartao' + (inativa ? ' inativa' : '') + '">'
+        + '<div class="pat-cartao-ins">' + ins + '</div>'
+        + '<div class="pat-cartao-corpo">'
+        + '<div class="pat-cartao-cod" style="background:' + cor + '">' + patenteEsc(r.codigo) + '</div>'
+        + '<div class="pat-cartao-nome">' + patenteEsc(r.nome) + '</div>'
+        + '<div class="pat-cartao-detalhe">'
+        + patenteEsc((g ? g.nome : (r.grupo || '')) + (partes.length ? ' - ' + partes.join(' - ') : ''))
+        + '</div>'
+        + '<div class="pat-cartao-pe">'
+        + '<span class="pat-chip" style="background:' + cor + '22;color:' + cor + '">'
+        + (inativa ? 'Inativa' : 'Ativa') + '</span>'
+        + '<span class="pat-chip" title="Posicao na lista">ordem ' + r.ordem + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<div class="pat-cartao-acoes">'
+        + '<button class="btn-icon" title="Editar patente" onclick="patenteAbrirForm(\'' + patenteEsc(r.codigo) + '\')">'
+        + '<i class="fa-solid fa-pen" style="color:#2563eb"></i></button>'
+        + '<button class="btn-icon" title="Excluir patente" onclick="patentesExcluir(\'' + patenteEsc(r.codigo) + '\')">'
+        + '<i class="fa-solid fa-trash" style="color:#b91c1c"></i></button>'
+        + '</div></div>';
+}
+
+/* O cartao de um codigo que as pessoas JA tem mas que ainda nao virou
+   registro. Aparece na lista para o cadastro nao ficar invisivel, e o
+   lapis abre o formulario ja preenchido com o codigo -- que e a identidade
+   -- e com a observacao mais repetida como sugestao de nome. Ninguem perde
+   a patente: o formulario grava o REGISTRO da patente, nao o cadastro de
+   ninguem. E nada e criado sozinho: so quando voce salvar. */
+function patenteCartaoEmUso(codigo, uso) {
+    if (!patenteTemModulo()) return '';
+    const f = PATENTES.catalogoSugerirCampos(codigo);
+    const g = PATENTES.grupoDe(f.grupo);
+    const cor = (g && g.cor) || '#b45309';
+    const pessoas = uso.total === 1 ? '1 pessoa' : (uso.total + ' pessoas');
+    const nome = uso.obsTop || f.nome;
+    return '<div class="pat-cartao sem-registro">'
+        + '<div class="pat-cartao-ins">'
+        + '<span class="pat-ins-vazia" title="Sem insignia"><i class="fa-solid fa-image"></i></span></div>'
+        + '<div class="pat-cartao-corpo">'
+        + '<div class="pat-cartao-cod" style="background:' + cor + '">' + patenteEsc(codigo) + '</div>'
+        + '<div class="pat-cartao-nome"' + (uso.obsTop ? ' style="color:#92400e"' : '') + '>'
+        + patenteEsc(nome) + '</div>'
+        + '<div class="pat-cartao-detalhe">'
+        + '<b style="color:#b45309">Em uso, ainda sem registro</b> - ' + pessoas
+        + (uso.obsTop ? '' : '. Clique no lapis para dar o nome e a insignia.')
+        + '</div>'
+        + '<div class="pat-cartao-pe">'
+        + '<span class="pat-chip" style="background:#fef3c7;color:#92400e">' + pessoas + '</span>'
+        + '<span class="pat-chip">sem insignia</span>'
+        + '</div></div>'
+        + '<div class="pat-cartao-acoes">'
+        + '<button class="btn-icon" title="Cadastrar esta patente" onclick="patenteAbrirForm(\'' + patenteEsc(codigo) + '\')">'
+        + '<i class="fa-solid fa-pen" style="color:#b45309"></i></button>'
+        + '</div></div>';
 }
 
 function patentesListar() {
@@ -13749,9 +13864,12 @@ function patentesListar() {
     if (!caixa) return;
     const c = patentesContagem();
     const aviso = document.getElementById('patentes-aviso-derivado');
-    if (aviso) aviso.style.display = c.total ? 'none' : '';
+    /* O aviso some quando existe registro OU ja existe gente com patente.
+       Com gente usando e nenhum registro, a secao nao esta "vazia": ela
+       esta por cadastrar. */
+    if (aviso) aviso.style.display = c.vazia ? '' : 'none';
 
-    if (!c.total) {
+    if (c.vazia) {
         caixa.innerHTML = '<div class="pat-vazio" style="grid-column:1/-1">'
             + '<i class="fa-solid fa-medal" style="font-size:26px;display:block;margin-bottom:8px;opacity:.5"></i>'
             + 'Nenhuma patente cadastrada ainda. Use <b>Nova Patente</b> para comecar, '
@@ -13760,45 +13878,35 @@ function patentesListar() {
         return;
     }
 
-    caixa.innerHTML = patentesCatalogo.map(function (r) {
-        const g = (patenteTemModulo() && PATENTES.grupoDe(r.grupo)) || null;
-        const cor = g ? g.cor : '#334155';
-        const inativa = r.ativo === false;
-        const ins = r.insigniaUrl
-            ? '<img src="' + patenteEsc(r.insigniaUrl) + '" alt="" class="pat-ins-mini">'
-            : '<span class="pat-ins-vazia" title="Sem insignia"><i class="fa-solid fa-image"></i></span>';
-        const partes = [];
-        if (r.classe) partes.push('Classe ' + patenteEsc(r.classe));
-        if (r.cff) partes.push('com CFF');
-        if (r.cargo) partes.push(patenteEsc(r.cargo));
-        return '<div class="pat-cartao' + (inativa ? ' inativa' : '') + '">'
-            + '<div class="pat-cartao-ins">' + ins + '</div>'
-            + '<div class="pat-cartao-corpo">'
-            + '<div class="pat-cartao-cod" style="background:' + cor + '">' + patenteEsc(r.codigo) + '</div>'
-            + '<div class="pat-cartao-nome">' + patenteEsc(r.nome) + '</div>'
-            + '<div class="pat-cartao-detalhe">'
-            + patenteEsc((g ? g.nome : r.grupo) + (partes.length ? ' - ' + partes.join(' - ') : ''))
-            + '</div>'
-            + '<div class="pat-cartao-pe">'
-            + '<span class="pat-chip" style="background:' + cor + '22;color:' + cor + '">'
-            + (inativa ? 'Inativa' : 'Ativa') + '</span>'
-            + '<span class="pat-chip" title="Posicao na lista">ordem ' + r.ordem + '</span>'
-            + '</div>'
-            + '</div>'
-            + '<div class="pat-cartao-acoes">'
-            + '<button class="btn-icon" title="Editar patente" onclick="patentesAbrirForm(\'' + patenteEsc(r.codigo) + '\')">'
-            + '<i class="fa-solid fa-pen" style="color:#2563eb"></i></button>'
-            + '<button class="btn-icon" title="Excluir patente" onclick="patentesExcluir(\'' + patenteEsc(r.codigo) + '\')">'
-            + '<i class="fa-solid fa-trash" style="color:#b91c1c"></i></button>'
-            + '</div></div>';
-    }).join('');
+    const emUso = patentesEmUso();
+    const html = [];
+
+    if (c.total) {
+        html.push(patentesCatalogo.map(patenteCartao).join(''));
+    }
+
+    /* os codigos que as pessoas ja tem e que ainda nao viraram registro */
+    const pendentes = c.emUso.slice().sort();
+    if (pendentes.length) {
+        html.push('<div class="pat-divisor">ja em uso no cadastro, ainda sem registro'
+            + ' (' + pendentes.length + ')</div>');
+        html.push(pendentes.map(function (codigo) {
+            return patenteCartaoEmUso(codigo, emUso[codigo] || { total: 0, obs: {}, obsTop: '' });
+        }).join(''));
+    }
+
+    caixa.innerHTML = html.join('');
 }
 
 /* ---- formulario ---- */
 
 function patenteFormLimpar() {
-    patenteForm = { codigo: '', insigniaUrl: '', dataUrl: '', houveRecorte: false, remover: false };
-    ['patente-form-codigo', 'patente-form-nome', 'patente-form-obs', 'patente-form-ordem']
+    patenteForm = { codigo: '', insigniaUrl: '', dataUrl: '', houveRecorte: false, remover: false, ehRegistro: false, emUso: null };
+    /* classe e cargo entram aqui tambem: o formulario os GRAVA, entao
+       deixar os dois de fora fazia o valor de uma edicao anterior vazar
+       para a proxima patente nova. */
+    ['patente-form-codigo', 'patente-form-nome', 'patente-form-classe',
+        'patente-form-cargo', 'patente-form-obs', 'patente-form-ordem']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     const gr = document.getElementById('patente-form-grupo');
     if (gr) gr.value = 'FOR';
@@ -13811,35 +13919,90 @@ function patenteFormLimpar() {
 
 function patenteFormTitulo() {
     const t = document.getElementById('patente-form-title');
-    if (t) t.innerHTML = patenteForm.codigo
-        ? '<i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Editar Patente'
-        : '<i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Nova Patente';
+    if (!t) return;
+    /* tres situacoes: edicao de um registro que ja existe, cadastro de um
+       codigo que as pessoas JA tem (so falta dar nome e insignia) e
+       patente totalmente nova. */
+    if (patenteForm.codigo && patenteForm.ehRegistro) {
+        t.innerHTML = '<i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Editar Patente';
+    } else if (patenteForm.codigo) {
+        const u = patenteForm.emUso;
+        const n = u ? (u.total === 1 ? '1 pessoa' : u.total + ' pessoas') : '';
+        t.innerHTML = '<i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Cadastrar Patente '
+            + patenteEsc(patenteForm.codigo)
+            + (n ? ' <small style="color:#92400e;font-weight:600"> - ja usada por ' + n + '</small>' : '');
+    } else {
+        t.innerHTML = '<i class="fa-solid fa-medal" style="color:#b45309;margin-right:8px"></i> Nova Patente';
+    }
 }
 
 function patenteAbrirForm(codigo) {
     if (!patenteTemModulo()) return;
     patenteFormLimpar();
+    const cc = document.getElementById('patente-form-codigo');
+    const gr = document.getElementById('patente-form-grupo');
+    const at = document.getElementById('patente-form-ativo');
+    const cf = document.getElementById('patente-form-cff');
+    const campo = function (id) { const el = document.getElementById(id); return el || null; };
+
     if (codigo) {
         const r = PATENTES.catalogoAchado(patentesCatalogo, codigo);
-        if (!r) { alert('Patente nao encontrada no catalogo.'); return; }
-        patenteForm.codigo = r.codigo;
-        patenteForm.insigniaUrl = r.insigniaUrl || '';
-        document.getElementById('patente-form-codigo').value = r.codigo;
-        document.getElementById('patente-form-codigo').readOnly = true;
-        document.getElementById('patente-form-nome').value = r.nome;
-        document.getElementById('patente-form-obs').value = r.obs || '';
-        document.getElementById('patente-form-ordem').value = r.ordem;
-        const gr = document.getElementById('patente-form-grupo');
-        if (gr) gr.value = r.grupo || 'FOR';
-        const at = document.getElementById('patente-form-ativo');
-        if (at) at.checked = r.ativo !== false;
-        const cf = document.getElementById('patente-form-cff');
-        if (cf) cf.checked = !!r.cff;
+        if (r) {
+            /* registro que ja existe: edicao normal */
+            patenteForm.codigo = r.codigo;
+            patenteForm.ehRegistro = true;
+            patenteForm.insigniaUrl = r.insigniaUrl || '';
+            if (cc) cc.value = r.codigo;
+            const no = campo('patente-form-nome'); if (no) no.value = r.nome;
+            const cl = campo('patente-form-classe'); if (cl) cl.value = r.classe || '';
+            const cg = campo('patente-form-cargo'); if (cg) cg.value = r.cargo || '';
+            const ob = campo('patente-form-obs'); if (ob) ob.value = r.obs || '';
+            const od = campo('patente-form-ordem'); if (od) od.value = r.ordem;
+            if (gr) gr.value = r.grupo || 'FOR';
+            if (at) at.checked = r.ativo !== false;
+            if (cf) cf.checked = !!r.cff;
+        } else {
+            /* codigo que as pessoas JA tem mas que ainda nao virou registro.
+               Antes isto era "Patente nao encontrada" e o cadastro sumia da
+               tela mesmo existindo gente com ele. Agora abre preenchido: o
+               codigo vai travado (e a identidade, e o id do documento), o
+               grupo vem do que da para deduzir do proprio codigo e o nome
+               recebe a observacao mais repetida como sugestao. */
+            const emUso = patentesEmUso()[codigo];
+            /* So promoted quando alguem realmente tem o codigo. Um codigo
+               que nao esta no catalogo E nao esta em uso e lixo digitado:
+               abrir um formulario para ele seria aceitar qualquer besteira
+               como se fosse uma patente existente. */
+            if (!emUso) { alert('Patente nao encontrada.'); return; }
+            const f = PATENTES.catalogoSugerirCampos(codigo);
+            patenteForm.codigo = codigo;
+            patenteForm.ehRegistro = false;
+            patenteForm.emUso = emUso;
+            if (cc) cc.value = codigo;
+            const no = campo('patente-form-nome');
+            if (no) no.value = (emUso && emUso.obsTop) || '';
+            /* A observacao que as pessoas gravaram tambem entra como texto da
+               patente quando o grupo e OUT: o catalogo exige descricao nesse
+               grupo (e nao existe outra fonte para ela), e sem isso o cadastro
+               do que ja esta em uso seria impossivel de salvar. Nos outros
+               grupos ela fica vazia, para nao repetir o nome duas vezes. */
+            const precisaObs = (f.grupo || 'FOR') === 'OUT';
+            const ob = campo('patente-form-obs');
+            if (ob) ob.value = precisaObs ? ((emUso && emUso.obsTop) || '') : '';
+            if (gr) gr.value = f.grupo || 'FOR';
+            if (cf) cf.checked = !!f.cff;
+            if (at) at.checked = true;
+            const od = campo('patente-form-ordem');
+            if (od) od.value = (patentesContagem().total + 1) * 10;
+        }
+        /* nas duas situacoes o codigo e o id do documento: nao da para trocar */
+        if (cc) cc.readOnly = true;
     } else {
-        const cc = document.getElementById('patente-form-codigo');
+        patenteForm.ehRegistro = false;
+        patenteForm.emUso = null;
         if (cc) cc.readOnly = false;
-        const ord = document.getElementById('patente-form-ordem');
-        if (ord) ord.value = (patentesContagem().total + 1) * 10;
+        const od = campo('patente-form-ordem');
+        if (od) od.value = (patentesContagem().total + 1) * 10;
     }
     patenteFormTitulo();
     patenteFormPreview();
