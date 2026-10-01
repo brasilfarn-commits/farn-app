@@ -512,20 +512,23 @@ function fichaGeralInsigniaUrl(codigo) {
     return fichaGeralInsignias[c] || '';
 }
 
-/* A insignia da patente, ao lado da foto 3x4.
-   O campo que a tela ja trouxe tem precedencia (o admin o resolve ao
-   montar a lista); quando ele nao vem, o nucleo resolve pelo codigo da
+/* A insignia da patente, do MESMO tamanho da foto 3x4 e a ESQUERDA dela.
+   A moldura repete a declaracao da foto -- 86x114 com a mesma borda de
+   2px -- para as duas ficarem iguais de olho. A insignia e quadrada
+   (recorte 1x1), entao entra com `contain`: preenche o que cabe sem
+   esticar nem cortar o desenho. O campo que a tela ja trouxe tem
+   precedencia; quando ele nao vem, o nucleo resolve pelo codigo da
    patente que a pessoa tem. */
 function fichaGeralInsignia(c) {
     const url = (c && c.patenteInsigniaUrl) || fichaGeralInsigniaUrl(c && c.patente);
     if (!url) return '';
-    return '<div style="margin-top:8px">'
+    return '<div style="text-align:center">'
         + '<img src="' + fgEsc(url) + '" alt="Insignia da patente"'
-        + ' style="width:44px;height:44px;object-fit:contain;background:#fff;'
-        + 'border:1px solid #bae6fd;border-radius:8px;padding:3px;'
+        + ' style="width:86px;height:114px;object-fit:contain;background:#fff;'
+        + 'border:2px solid #0ea5e9;border-radius:8px;padding:2px;'
         + '-webkit-print-color-adjust:exact;print-color-adjust:exact">'
-        + '<div style="font-size:8.5px;color:#0ea5e9;margin-top:3px;font-weight:800;'
-        + 'letter-spacing:.4px;white-space:nowrap">INSIGNIA</div>'
+        + '<div style="font-size:9px;color:#0ea5e9;margin-top:4px;font-weight:700;'
+        + 'letter-spacing:.5px">INSIGNIA</div>'
         + '</div>';
 }
 
@@ -559,9 +562,12 @@ function fichaGeralCabecalho(inst, c, fotoHtml) {
         + (inst.nomeFantasia ? '<div style="font-size:12.5px;font-weight:700;color:#0ea5e9;margin-top:2px">' + fgEsc(inst.nomeFantasia) + '</div>' : '')
         + '<div style="font-size:9.5px;font-weight:700;color:#475569;letter-spacing:.9px;margin-top:5px">FICHA GERAL DO CADASTRO E AVALIACOES</div>'
         + '</div>'
-        + '<div style="flex-shrink:0;text-align:center">' + fotoHtml
-        + '<div style="font-size:9px;color:#94a3b8;margin-top:4px;font-weight:700;letter-spacing:.5px">FOTO 3X4</div>'
+        /* Foto 3x4 e insignia lado a lado, com a insignia na ESQUERDA.
+           Quem nao tem patente fica so com a foto, como sempre. */
+        + '<div style="flex-shrink:0;display:flex;align-items:flex-start;gap:9px">'
         + fichaGeralInsignia(c)
+        + '<div style="text-align:center">' + fotoHtml
+        + '<div style="font-size:9px;color:#94a3b8;margin-top:4px;font-weight:700;letter-spacing:.5px">FOTO 3X4</div>'
         + '</div></div>'
         + linha
         + '</div>';
