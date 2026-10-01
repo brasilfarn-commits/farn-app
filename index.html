@@ -802,6 +802,13 @@
                         <i class="fa-solid fa-medal"></i>
                         <span>Patentes</span>
                     </a>
+                    <!-- Fica no fim da lista de proposito: os cards do Inicio
+                         addressam os itens por .nav-item:nth-child(N), e so
+                         acrescentar depois nao desloca nenhum desses indices. -->
+                    <a href="#" class="nav-item" onclick="showAdminSection('admin-individuo', this)">
+                        <i class="fa-solid fa-id-card"></i>
+                        <span>Individuo</span>
+                    </a>
                 </nav>
                 <div class="sidebar-footer">
                     <button class="btn-logout" onclick="handleLogout()">
@@ -3563,6 +3570,22 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- SECAO INDIVIDUO -->
+                <div id="admin-individuo" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-id-card" style="color:#0891b2;margin-right:8px"></i> Individuo</h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="text-align:center;padding:60px 20px;color:#94a3b8">
+                                <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#0891b2"></i>
+                                <h3 style="font-size:18px;color:#334155;margin-bottom:8px">Em Construcao</h3>
+                                <p style="font-size:13px;color:#94a3b8">Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -4697,7 +4720,7 @@
     <script src="ficha-geral-compartilhar.js?v=8"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=58"></script>
+    <script src="app.js?v=59"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
