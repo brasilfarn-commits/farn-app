@@ -30,7 +30,8 @@
       "**/*.exe",
       "**/*.cmd",
       "**/*.ps1",
-      "**/*.apk"
+      "**/*.apk",
+      "ISIGNEAS/**"
     ]
   },
   "firestore": {

@@ -9,5 +9,8 @@ firebase-debug.log
 # Fotos da carteira (LOCALSERV) - ficam somente no dispositivo
 fotos-carteira/
 
+# Insignias em trabalho - controle interno, nao vao para o repo nem para o site
+ISIGNEAS/
+
 # APK gerado (baixado via Firestore, nao vai para o hosting)
 whatfarn.apk
