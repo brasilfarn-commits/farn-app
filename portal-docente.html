@@ -260,6 +260,84 @@
             body.pd-imprimindo-carteira .pf-carteira-card { box-shadow:none; max-width:100%; transform:none; }
             body.pd-imprimindo-carteira .pf-center { padding:0; }
         }
+
+        /* ===== VIDEO AULA (CSS) =====
+           O desenho dos tres quadros vem de video-aula-compartilhar.js, que
+           injeta o proprio estilo (vac-grade, vac-quadro, vac-presenca). Aqui
+           fica so o que e da tela do DOCENTE: a lista, o cartao, os avisos e
+           os dois modais.
+
+           O "(CSS)" e de proposito: o bloco JS da secao comeca com uma
+           estrela-dupla-igual antes de "VIDEO AULA" e os guardas recortam por
+           esse texto. Com os dois cabecalhos iguais, o recorte comecaria no CSS
+           e o guarda passaria CSS para o interpretador de JavaScript. */
+
+        /* O aviso e uma unica caixa no topo da secao. Tres tipos, porque ha
+           tres noticias diferentes a dar: onde o aluno esta (info), que a
+           coisa deu certo (ok) e que ela nao deu (erro). */
+        .pd-va-aviso{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.5}
+        .pd-va-aviso.info{background:#eff6ff;border-color:#93c5fd;color:#1e40af}
+        .pd-va-aviso.ok{background:#f0fdf4;border-color:#86efac;color:#166534}
+        .pd-va-aviso.erro{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+        .pd-va-aviso strong{font-weight:800}
+
+        .pd-va-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px}
+        .pd-va-card.ao-vivo{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+        .pd-va-card-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+        .pd-va-nome{font-size:15px;font-weight:700;color:#0f172a;line-height:1.3}
+        .pd-va-pauta{font-size:12.5px;color:#475569;line-height:1.45;margin-bottom:8px}
+        .pd-va-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+        .pd-va-chip{background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+        .pd-va-chip.doc{background:#ede9fe;border-color:#ddd6fe;color:#5b21b6}
+        .pd-va-chip.ala{background:#dcfce7;border-color:#bbf7d0;color:#166534}
+        .pd-va-chip.esp{background:#f1f5f9;color:#64748b}
+        .pd-va-chip.vivo{background:#dcfce7;border-color:#22c55e;color:#14532d}
+        .pd-va-chip.sem{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+        .pd-va-acoes{display:flex;flex-wrap:wrap;gap:8px}
+        .pd-va-btn{border:0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+        .pd-va-btn.ver{background:#16a34a;color:#fff}
+        .pd-va-btn.azul{background:#1d4ed8;color:#fff}
+        .pd-va-btn.vin{background:#7c3aed;color:#fff}
+        .pd-va-btn.vaz{background:#fff;border:1px solid #dc2626;color:#dc2626}
+        .pd-va-btn.cinza{background:#fff;border:1px solid #cbd5e1;color:#475569}
+        .pd-va-btn:disabled{opacity:.45;cursor:not-allowed}
+        .pd-va-tela{margin-top:14px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px}
+        .pd-va-tela-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+        .pd-va-tela-nome{font-size:14px;font-weight:700;color:#0f172a}
+        .pd-va-tela-info{font-size:11.5px;color:#64748b;margin-top:2px}
+        /* Os dois modais ficam FORA da .pf-section de proposito: uma secao
+           inativa e display:none, e um modal dentro dela sumiria junto. */
+        .pd-va-modal{position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px}
+        .pd-va-modal-caixa{background:#fff;border-radius:14px;width:100%;max-width:720px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+        .pd-va-modal-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid #e2e8f0}
+        .pd-va-modal-topo h3{font-size:15px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px}
+        .pd-va-modal-x{border:0;background:#f1f5f9;color:#475569;width:30px;height:30px;border-radius:8px;cursor:pointer;flex:0 0 auto}
+        .pd-va-modal-corpo{padding:18px;overflow-y:auto;flex:1;background:#f8fafc}
+        .pd-va-modal-rodape{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #e2e8f0;background:#fff}
+        .pd-va-dica{font-size:12px;color:#64748b;line-height:1.5}
+        /* Escolher arquivo e um <label>: o input fica escondido porque o botao
+           nativo de arquivo e feio e deixa o celular abrir qualquer coisa. */
+        .pd-va-arq{display:inline-flex;align-items:center;gap:8px;margin-top:12px;background:#1d4ed8;color:#fff;border-radius:8px;padding:9px 15px;font-size:12px;font-weight:700;cursor:pointer}
+        .pd-va-lista-arquivos{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+        .pd-va-arq-item{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;font-size:12.5px;color:#0f172a}
+        .pd-va-arq-item .pd-va-arq-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .pd-va-arq-item .pd-va-arq-peso{color:#94a3b8;font-size:11px;flex:0 0 auto}
+        .pd-va-arq-vazio{font-size:12px;color:#94a3b8;padding:8px 2px}
+        .pd-va-campo{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#0f172a;background:#fff}
+        .pd-va-campo:focus{outline:none;border-color:#1d4ed8}
+        .pd-va-q{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:12px;margin-bottom:10px}
+        .pd-va-q-topo{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+        .pd-va-q-num{font-size:11px;font-weight:800;color:#64748b;letter-spacing:.4px;text-transform:uppercase}
+        .pd-va-q textarea{width:100%;min-height:56px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;color:#0f172a;background:#fff}
+        .pd-va-q textarea:focus{outline:none;border-color:#1d4ed8}
+        .pd-va-q-alt{display:flex;align-items:center;gap:9px;margin-top:6px}
+        .pd-va-q-alt input[type=text]{flex:1;min-width:0}
+        /* A alternativa correta e marcada por um botao de radio de verdade --
+          exclusivo por natureza. Duas caixas de marcar permitiriam duas
+          corretas, e a nota sairia sempre errada sem ninguem perceber. */
+        .pd-va-q-ok{flex:0 0 auto;width:30px;height:30px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#94a3b8;cursor:pointer;font-size:13px}
+        .pd-va-q-ok.on{background:#16a34a;border-color:#16a34a;color:#fff}
+        .pd-va-q-x{border:0;background:#fee2e2;color:#b91c1c;width:30px;height:30px;border-radius:8px;cursor:pointer;flex:0 0 auto}
     </style>
 </head>
 <body>
@@ -398,10 +476,142 @@
                     <i class="fa-solid fa-circle-play"></i>
                     <h2>Video Aula</h2>
                 </div>
-                <div class="pf-em-construcao">
-                    <i class="fa-solid fa-film"></i>
-                    <h3>Em Construcao</h3>
-                    <p>Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
+                <div id="pd-va-aviso" class="pd-va-aviso info" style="display:none"></div>
+
+                <div id="pd-va-lista"></div>
+
+                <!-- A tela da aula fica escondida ate o docente apertar Iniciar.
+                     Os tres quadros usam o desenho do nucleo compartilhado, e o
+                     video do quadro 03 e o PREVIEW do proprio docente: e ele quem
+                     precisa ver se a camera pegou, antes de acreditar que os
+                     alunos estao vendo. -->
+                <div id="pd-va-tela" class="pd-va-tela" style="display:none">
+                    <div class="pd-va-tela-topo">
+                        <div>
+                            <div id="pd-va-tela-nome" class="pd-va-tela-nome"></div>
+                            <div id="pd-va-tela-info" class="pd-va-tela-info"></div>
+                        </div>
+                        <div class="pd-va-acoes">
+                            <button class="pd-va-btn azul" onclick="pdVaEnviarAlunos()">
+                                <i class="fa-solid fa-paper-plane"></i> Enviar Video Aula
+                            </button>
+                            <button class="pd-va-btn vaz" onclick="pdVaEncerrar()">
+                                <i class="fa-solid fa-phone-slash"></i> Encerrar Video Aula
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="vac-grade">
+                        <!-- 02: quem esta na sala agora -->
+                        <div class="vac-quadro">
+                            <div class="vac-quadro-titulo">
+                                <i class="fa-solid fa-users"></i> Alunos da turma
+                                <span id="pd-va-conta-online" style="margin-left:auto"></span>
+                            </div>
+                            <div class="vac-quadro-corpo">
+                                <div id="pd-va-presenca" style="display:flex;width:100%"></div>
+                            </div>
+                        </div>
+                        <!-- 03: a camera do docente -->
+                        <div class="vac-quadro">
+                            <div class="vac-quadro-titulo">
+                                <i class="fa-solid fa-video"></i> Imagem do docente
+                            </div>
+                            <div class="vac-quadro-corpo">
+                                <video id="pd-va-camera" autoplay playsinline muted></video>
+                                <div id="pd-va-camera-caixa"
+                                    style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#020617">
+                                    <i class="fa-solid fa-camera" style="color:#475569;font-size:24px"></i>
+                                    <button class="pd-va-btn ver" onclick="pdVaLigarCamera()">
+                                        <i class="fa-solid fa-video"></i> Ligar minha camera
+                                    </button>
+                                    <span style="color:#64748b;font-size:11px;text-align:center;max-width:200px;line-height:1.4">
+                                        Sem camera a aula continua: os alunos veem o material.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 04: o material que o docente liberou -->
+                    <div class="vac-quadro" style="margin-top:12px">
+                        <div class="vac-quadro-titulo">
+                            <i class="fa-solid fa-display"></i> Material na tela
+                            <span id="pd-va-material-nome" style="margin-left:auto"></span>
+                        </div>
+                        <div class="vac-quadro-corpo" id="pd-va-material"></div>
+                    </div>
+
+                    <div class="pd-va-acoes" style="margin-top:12px">
+                        <button class="pd-va-btn cinza" onclick="pdVaProgramar()">
+                            <i class="fa-solid fa-paperclip"></i> Programar Video Aula
+                        </button>
+                        <button class="pd-va-btn cinza" onclick="pdVaMostrarMidia()">
+                            <i class="fa-solid fa-display"></i> Exibir material
+                        </button>
+                        <button class="pd-va-btn cinza" onclick="pdVaLimparMidia()">
+                            <i class="fa-solid fa-eye-slash"></i> Tirar material da tela
+                        </button>
+                        <button class="pd-va-btn cinza" onclick="pdVaAvaliacao()">
+                            <i class="fa-solid fa-clipboard-check"></i> Criar Avaliacao
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Os dois modais ficam fora da .pf-section: uma secao inativa e
+                 display:none, e um modal dentro dela sumiria junto. -->
+            <div id="pd-va-modal-programar" class="pd-va-modal" style="display:none">
+                <div class="pd-va-modal-caixa">
+                    <div class="pd-va-modal-topo">
+                        <h3><i class="fa-solid fa-paperclip"></i> Programar Video Aula</h3>
+                        <button class="pd-va-modal-x" onclick="pdVaFecharModal('programar')">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="pd-va-modal-corpo">
+                        <p class="pd-va-dica">
+                            Anexe a imagem ou o video que sera exibido no quadro da aula.
+                            Limite de <strong>1MB</strong> por arquivo.
+                        </p>
+                        <div id="pd-va-midias" class="pd-va-lista-arquivos"></div>
+                        <label class="pd-va-arq" for="pd-va-arquivo">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Escolher arquivo
+                        </label>
+                        <input type="file" id="pd-va-arquivo" accept="image/*,video/*" style="display:none"
+                            onchange="pdVaEscolherArquivo(this)">
+                        <div id="pd-va-upload-msg" class="pd-va-dica" style="margin-top:10px"></div>
+                    </div>
+                    <div class="pd-va-modal-rodape">
+                        <button class="pd-va-btn cinza" onclick="pdVaFecharModal('programar')">Fechar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pd-va-modal-avaliacao" class="pd-va-modal" style="display:none">
+                <div class="pd-va-modal-caixa">
+                    <div class="pd-va-modal-topo">
+                        <h3><i class="fa-solid fa-clipboard-check"></i> Criar Avaliacao</h3>
+                        <button class="pd-va-modal-x" onclick="pdVaFecharModal('avaliacao')">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="pd-va-modal-corpo">
+                        <p class="pd-va-dica">
+                            Ate <strong>10 questoes</strong>, com 4 alternativas e uma correta.
+                            O aluno responde durante a aula ou depois no portal.
+                        </p>
+                        <div id="pd-va-av-q"></div>
+                        <button class="pd-va-btn azul" onclick="pdVaAvAddQ()" style="margin-top:10px">
+                            <i class="fa-solid fa-plus"></i> Adicionar questao
+                        </button>
+                    </div>
+                    <div class="pd-va-modal-rodape">
+                        <button class="pd-va-btn cinza" onclick="pdVaFecharModal('avaliacao')">Cancelar</button>
+                        <button class="pd-va-btn ver" onclick="pdVaAvSalvar()">
+                            <i class="fa-solid fa-check"></i> Salvar avaliacao
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1110,6 +1320,7 @@
             if (section === 'responderavpratica') pdAvPraticaInit();
             if (section === 'apostilasextras') pdLoadApostExtras();
             if (section === 'carteira') pdGenerateCarteira();
+            if (section === 'video-aula') pdVaInit();
         }
 
         function pdToggleSidebar() {
@@ -4304,6 +4515,788 @@
             } catch (e) {
                 console.error('Erro ao salvar:', e);
                 alert('Erro ao salvar as respostas.');
+            }
+        }
+
+        /* ===== VIDEO AULA =====
+           O que o docente recebe do administrador e a Video Aula marcada com
+           enviadoDocenteEm. A partir desse ponto ela e dele: ele programa o
+           material, cria a avaliacao, libera aos alunos e conduz a sala.
+
+           A camada ao vivo vem de video-aula-compartilhar.js -- o mesmo
+           arquivo que o portal do aluno carrega, de proposito: sao duas metades
+           da mesma tela, e nao duas telas parecidas. Aqui ficam so a lista e as
+           acoes, que sao diferentes de la. */
+
+        var pdVaLista = [];
+        var pdVaAtual = null;
+        var pdVaRoster = [];
+        var pdVaPresencas = {};
+        /* O que esta no quadro 04 agora. Precisa ser guardado alem da tela: o
+           "Exibir" do modal e acionado depois do modal fechar, e e este valor
+           que diz se o material removido era o que os alunos estavam vendo. */
+        var pdVaQuadro04 = null;
+
+        function pdVaAviso(tipo, texto) {
+            var el = document.getElementById('pd-va-aviso');
+            if (!el) return;
+            el.className = 'pd-va-aviso' + (tipo ? ' ' + tipo : '');
+            /* O aviso vai como texto, nunca como comando: o nome da Video Aula e
+               do Firestore e o texto inteiro pode ser montado com o nome dentro
+               de uma tag. pdEsc fecha a porta, e textContent fecharia o resto. */
+            el.textContent = texto || '';
+            el.style.display = texto ? 'block' : 'none';
+        }
+
+        function pdVaLimparAviso() {
+            var el = document.getElementById('pd-va-aviso');
+            if (el) { el.textContent = ''; el.style.display = 'none'; }
+        }
+
+        /* A camada ao vivo esta no video-aula-compartilhar.js. Se ele nao
+           carregou -- cache velho no navegador, CDN, script barrado -- todas as
+           funcoes `vac*` somem e QUALQUER chamada estoura "vacX is not a
+           function", o que deixa o docente olhando uma tela morta sem nenhuma
+           pista do que aconteceu.
+
+           Por isso a checagem mora aqui, num lugar so, e nao espalhada em cada
+           funcao: uma funcao que esquece de checar produz um erro ilegivel em
+           vez do aviso que resolve o problema em um clique. */
+        function pdVaTemNucleo() {
+            return typeof vacObservarPresenca === 'function'
+                && typeof vacTurma === 'function'
+                && typeof vacEntrar === 'function'
+                && typeof vacEncerrarTudo === 'function'
+                && typeof vacLiberarMidia === 'function'
+                && typeof vacAbrirCamera === 'function'
+                && typeof vacIniciarQuadro === 'function'
+                && typeof vacDesenharPresenca === 'function'
+                && typeof vacGravarSessao === 'function';
+        }
+
+        function pdVaAvisoNucleo() {
+            pdVaAviso('erro', 'A camada ao vivo nao carregou. Recarregue a pagina: sem ela nao '
+                + 'aparece ninguem na sala, a imagem do docente nao chega e o material nao abre.');
+            return false;
+        }
+
+        /* Onde esta a Video Aula que o administrador mandou para este docente. */
+        function pdVaDocenteCpf() {
+            var eu = pdDocenteAtual();
+            if (!eu || !eu.cpf) return '';
+            return String(eu.cpf).replace(/\D/g, '');
+        }
+
+        function pdVaInit() {
+            /* O estilo dos quadros mora no nucleo e so entra quando alguem pede
+               -- sem esta chamada a tela abriria com os tres quadros sem
+               formatacao nenhuma. */
+            if (typeof vacAplicarEstilo === 'function') vacAplicarEstilo();
+            /* A lista vem do Firestore e nao do nucleo: ela carrega mesmo sem a
+               camada ao vivo, para o docente ver o que tem programado. E o aviso
+               do nucleo sai na hora que ele aperta Iniciar, que e onde a
+               ausencia dele doe. */
+            pdVaCarregar().catch(function () { /* ja pintado na lista */ });
+        }
+
+        /* Devolve a Promise de proposito. O "await pdVaCarregar()" logo apos
+           salvar aparece em varias funcoes, e sem a Promise o await voltaria
+           na hora: o docente leria "avaliacao salva" enquanto a lista ainda
+           mostrava a versao antiga, e apertaria Enviar duas vezes. */
+        function pdVaCarregar() {
+            var caixa = document.getElementById('pd-va-lista');
+            if (!caixa) return Promise.resolve();
+            var meu = pdVaDocenteCpf();
+            var eu = pdDocenteAtual();
+            if (!eu) {
+                pdVaAviso('erro', 'Sua sessao expirou. Entre de novo para ver as video aulas.');
+                return Promise.resolve();
+            }
+            if (!meu) {
+                pdVaAviso('erro', 'Nao achei seu CPF na sessao. Entre de novo para ver as video aulas.');
+                return Promise.resolve();
+            }
+
+            /* So a igualdade entra na consulta. O "!= null" do Firestore nao
+               distingue "campo vazio" de "campo que nao existe", e o que
+               precisamos e exatamente essa distincao: uma Video Aula que o
+               administrador ainda nao mandou tem o campo ausente, e nao vazio.
+               Filtrar aqui tambem evita depender de indice composto para uma
+               consulta que roda uma vez por visita a secao. */
+            var termo = (eu && eu.isAdmin)
+                ? dbFirestore.collection('videoAulas').get()
+                : dbFirestore.collection('videoAulas').where('docenteCpf', '==', meu).get();
+
+            /* Retorna a cadeia inteira, nao so o then: quem espera precisa
+               esperar tambem o tratamento de erro, senao um .catch() chamado
+               logo depois receberia null em vez da Promise. */
+            return termo.then(function (snap) {
+                var itens = [];
+                snap.forEach(function (doc) {
+                    var d = doc.data() || {};
+                    /* Aula que o administrador ainda nao mandou para o portal
+                       nao aparece: ela esta com ele. Sem este filtro o docente
+                       leria a pauta antes de ela estar liberada, e o trabalho do
+                       administrador viraria trabalho do docente. */
+                    if (!d.enviadoDocenteEm) return;
+                    d._id = doc.id;
+                    itens.push(d);
+                });
+                /* O Firestore devolve em ordem de id, que nao diz nada. A ordem
+                   que o docente espera e a da data da aula -- e a mais proxima
+                   em cima, que e a que ele tem que ver primeiro. */
+                itens.sort(function (a, b) {
+                    var ka = (a.data || '') + 'T' + (a.hora || '');
+                    var kb = (b.data || '') + 'T' + (b.hora || '');
+                    return kb.localeCompare(ka);
+                });
+                pdVaLista = itens;
+                pdVaDesenharLista(caixa);
+            }).catch(function (e) {
+                console.error('Video Aula: falha ao carregar do Firestore:', e);
+                caixa.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i>'
+                    + '<p>Nao consegui carregar as video aulas. Recarregue a pagina.</p></div>';
+                /* O erro volta a subir depois de pintar a mensagem. Engole-lo aqui
+                   faria o `await pdVaCarregar()` que vem logo apos um envio
+                   resolver como se tudo tivesse dado certo, e o docente leria
+                   "enviada aos alunos" com a lista ainda desatualizada. */
+                throw e;
+            });
+        }
+
+        /* ---------- lista e cartoes ---------- */
+
+        function pdVaDesenharLista(caixa) {
+            if (!caixa) return;
+            if (!pdVaLista.length) {
+                caixa.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-film"></i>'
+                    + '<p>Nenhuma video aula foi enviada para voce ate agora.</p></div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < pdVaLista.length; i++) html += pdVaCardHTML(pdVaLista[i]);
+            caixa.innerHTML = html;
+        }
+
+        /* Quantos da turma estao na sala agora. O numero vai no titulo do quadro
+           02 porque e a unica pergunta que o docente faz olhando para ele --
+           "quantos falta?" -- e ela nao esta em nenhum outro lugar da tela. */
+        function pdVaContarOnline() {
+            var dentro = 0;
+            if (typeof vacCpf !== 'function') return 0;
+            for (var i = 0; i < pdVaRoster.length; i++) {
+                var p = pdVaPresencas[vacCpf(pdVaRoster[i].cpf)];
+                if (p && p.online) dentro++;
+            }
+            return dentro;
+        }
+
+        function pdVaDesenharPresenca() {
+            var el = document.getElementById('pd-va-presenca');
+            if (!el || !pdVaAtual) return;
+            if (typeof vacDesenharPresenca !== 'function') return;
+            vacDesenharPresenca(el, pdVaRoster, pdVaPresencas, {});
+            var conta = document.getElementById('pd-va-conta-online');
+            if (conta) conta.textContent = pdVaContarOnline() + ' de ' + pdVaRoster.length + ' online';
+        }
+
+        function pdVaCardHTML(d) {
+            /* Tudo que vem do Firestore passa por pdEsc. O nome da Video Aula e
+               a pauta sao digitados pelo administrador e caem num innerHTML: um
+               nome chamado <img src=x onerror=...> executaria no navegador de
+               todo mundo que abrisse a lista. */
+            var chips = '';
+            chips += '<span class="pd-va-chip doc"><i class="fa-solid fa-user-tie"></i> ' + pdEsc(d.docente || 'Sem docente') + '</span>';
+            if (d.data) chips += '<span class="pd-va-chip"><i class="fa-solid fa-calendar"></i> ' + pdEsc(d.data) + '</span>';
+            if (d.hora) chips += '<span class="pd-va-chip"><i class="fa-solid fa-clock"></i> ' + pdEsc(d.hora) + '</span>';
+            if (d.turma) chips += '<span class="pd-va-chip"><i class="fa-solid fa-users"></i> ' + pdEsc(d.turma) + '</span>';
+            if (d.avaliacao === 'Sim') chips += '<span class="pd-va-chip"><i class="fa-solid fa-list-check"></i> Com avaliacao</span>';
+
+            var estado = d.enviadoAlunosEm
+                ? '<span class="pd-va-chip ala"><i class="fa-solid fa-paper-plane"></i> Enviada aos alunos</span>'
+                : '<span class="pd-va-chip esp">Nao enviada aos alunos</span>';
+
+            var pauta = d.pauta
+                ? '<div class="pd-va-pauta">' + pdEsc(d.pauta) + '</div>'
+                : '<div class="pd-va-pauta" style="color:#94a3b8"><i>Sem pauta informada.</i></div>';
+
+            /* A id vai para dentro de um onclick entre apostrofos. Id de
+               documento do Firestore so tem letras e digitos, mas o onclick
+               concatenado sem cuidado e um lugar classico de script injetado;
+               pdEsc nao salva sozinha, porque escapa aspas com &quot; e o
+               navegador le &quot; como aspas de novo dentro do atributo. Por
+               isso o onclick recebe a id por uma funcao, e nao pela
+               concatenacao direta. */
+            var id = pdEsc(d._id);
+
+            var vivo = d.statusSessao === 'ao_vivo'
+                ? '<span class="pd-va-chip vivo"><i class="fa-solid fa-circle"></i> Em andamento</span>'
+                : (d.statusSessao === 'encerrada' && d.sessaoEncerradaEm
+                    ? '<span class="pd-va-chip sem">Encerrada</span>' : '');
+
+            var acoes = '<button class="pd-va-btn ver" onclick="pdVaAbrir(\'' + id + '\')">'
+                + '<i class="fa-solid fa-play"></i> Iniciar Video Aula</button>'
+                + '<button class="pd-va-btn cinza" onclick="pdVaProgramar(\'' + id + '\')">'
+                + '<i class="fa-solid fa-paperclip"></i> Programar Video Aula</button>'
+                + '<button class="pd-va-btn cinza" onclick="pdVaAvaliacao(\'' + id + '\')">'
+                + '<i class="fa-solid fa-clipboard-check"></i> Criar Avaliacao</button>'
+                + '<button class="pd-va-btn azul" onclick="pdVaEnviarAlunos(\'' + id + '\')">'
+                + '<i class="fa-solid fa-paper-plane"></i> Enviar Video Aula</button>';
+
+            /* "Encerrar" fica na lista e nao so na tela aberta. Uma aula
+               esquecida como "em andamento" por um fechamento de aba nao tem
+               tela para clicar: o botao na lista e o unico jeito de sair
+               dela. */
+            if (d.statusSessao === 'ao_vivo') {
+                acoes += '<button class="pd-va-btn vaz" onclick="pdVaEncerrarLista(\'' + id + '\')">'
+                    + '<i class="fa-solid fa-phone-slash"></i> Encerrar Video Aula</button>';
+            }
+
+            return '<div class="pd-va-card' + (d.statusSessao === 'ao_vivo' ? ' ao-vivo' : '') + '">'
+                + '<div class="pd-va-card-topo">'
+                + '<div class="pd-va-nome">' + pdEsc(d.nome || 'Sem nome') + '</div>'
+                + vivo
+                + '</div>'
+                + pauta
+                + '<div class="pd-va-meta">' + chips + estado + '</div>'
+                + '<div class="pd-va-acoes">' + acoes + '</div>'
+                + '</div>';
+        }
+
+        /* ---------- a tela ao vivo ---------- */
+
+        function pdVaAbrir(id) {
+            var d = null;
+            for (var i = 0; i < pdVaLista.length; i++) {
+                if (pdVaLista[i]._id === id) { d = pdVaLista[i]; break; }
+            }
+            if (!d) { pdVaAviso('erro', 'Nao achei essa video aula na lista. Atualize a pagina.'); return; }
+            pdVaTelaAbrir(d);
+        }
+
+        /* Monta a tela ao vivo. Separada de pdVaAbrir porque "Exibir material"
+           chega aqui pelo outro caminho: a tela precisa estar montada para o
+           quadro 04 ter onde aparecer, mesmo sem o docente ter apertado Iniciar. */
+        function pdVaTelaAbrir(d) {
+            pdVaAtual = d;
+
+            var tela = document.getElementById('pd-va-tela');
+            if (!tela) return;
+            tela.style.display = 'block';
+
+            document.getElementById('pd-va-tela-nome').textContent = d.nome || 'Video Aula';
+            document.getElementById('pd-va-tela-info').textContent =
+                [d.docente, d.data, d.hora, d.turma].filter(Boolean).join('  |  ');
+
+            /* A camera so e ligada por um botao. Pedir a permissao assim que a
+               tela abre faria o navegador pedir a camera no momento em que o
+               docente esta lendo a pauta -- e um "recusar" ali ja corta a aula,
+               porque ninguem percebe depois que era preciso apertar de novo. */
+            var caixa = document.getElementById('pd-va-camera-caixa');
+            if (caixa) caixa.style.display = 'flex';
+
+            /* A checagem do nucleo vem ANTES de qualquer chamada. Ela estava
+               depois de vacTurma, e nessa ordem o erro chegava cru -- "vacTurma
+               is not a function" -- num bloco cujo recado e justamente dizer ao
+               docente que ele so precisa recarregar. */
+            if (!pdVaTemNucleo()) { pdVaAvisoNucleo(); return; }
+
+            /* O quadro 02 e montado a partir da turma, nao do Firestore da
+               Video Aula: o que o quadro 02 tem que mostrar e a turma de hoje,
+               com quem entrou e quem nao entrou agora. */
+            vacTurma(d.projeto, d.turma, d.origem).then(function (roster) {
+                pdVaRoster = roster;
+                pdVaDesenharPresenca();
+            }).catch(function (e) {
+                console.error('Video Aula: falha ao ler a turma:', e);
+                pdVaRoster = [];
+                pdVaDesenharPresenca();
+                /* O quadro 02 vazio SEM aviso e pior que um erro visivel: o
+                   docente leria "ninguem entrou" e continuaria dando aula para
+                   uma sala que ele nem consegue ver. O console some quando a
+                   aba e fechada, entao a noticia vai para a tela. */
+                pdVaAviso('erro', 'Nao consegui ler a turma '
+                    + (d.turma || '') + ', entao o quadro de alunos ficou vazio. '
+                    + 'A aula continua, mas confira se o projeto e a turma ainda existem.');
+            });
+
+            var cpf = pdVaDocenteCpf();
+            var eu = pdDocenteAtual();
+
+            vacEntrar(d._id, { cpf: cpf, nome: eu && eu.nome ? eu.nome : '', papel: 'docente' })
+                .then(function () {
+                    vacObservarPresenca(d._id, function (mapa) {
+                        pdVaPresencas = mapa || {};
+                        pdVaDesenharPresenca();
+                    });
+                    vacObservarQuadro04(d._id, function (m) {
+                        pdVaQuadro04 = m;
+                        vacDesenharQuadroMidia(document.getElementById('pd-va-material'), m);
+                        var nome = document.getElementById('pd-va-material-nome');
+                        if (nome) nome.textContent = m && m.nome ? ' - ' + m.nome : '';
+                    });
+                    pdVaDesenharPresenca();
+                })
+                .catch(function (e) {
+                    console.error('Video Aula: falha ao entrar na sala:', e);
+                    pdVaAviso('erro', 'Nao consegui entrar na sala ao vivo. Tente de novo.');
+                });
+        }
+
+        function pdVaLigarCamera() {
+            if (!pdVaAtual) return;
+            if (!pdVaTemNucleo()) { pdVaAvisoNucleo(); return; }
+            var video = document.getElementById('pd-va-camera');
+            var cpf = pdVaDocenteCpf();
+            var eu = pdDocenteAtual();
+            var euId = { cpf: cpf, nome: eu && eu.nome ? eu.nome : '', papel: 'docente' };
+
+            /* Sem imagem a aula ainda acontece -- o docente fala e o quadro 04
+               mostra o material. Entao camera negada e aviso, e nao recusa de
+               abrir a sala: quem nao autorizou a camera no celular nao fica
+               impedido de ensinar. */
+            /* Devolve a Promise. O botao esta num onclick, entao o valor
+               descartado nao muda nada na tela -- mas uma funcao que nao
+               devolve nada tambem nao pode ser esperada por um teste, e e
+               justamente no caminho da recusa (que so pinta aviso) que o
+               silencio seria pior. */
+            return vacAbrirCamera(video).then(function () {
+                vacIniciarQuadro(pdVaAtual._id, euId);
+                document.getElementById('pd-va-camera-caixa').style.display = 'none';
+                pdVaLimparAviso();
+            }).catch(function (e) {
+                console.warn('Video Aula: camera nao ligou:', e);
+                var why = e && e.name === 'NotAllowedError'
+                    ? 'Voce nao autorizou a camera. A aula continua sem imagem.'
+                    : 'Nao consegui ligar a camera. A aula continua sem imagem.';
+                pdVaAviso('erro', why);
+            });
+        }
+
+        function pdVaEncerrar() {
+            if (!pdVaAtual) return;
+            var cpf = pdVaDocenteCpf();
+            var id = pdVaAtual._id;
+            /* A tela e fechada MESMO sem o nucleo. Sem o nucleo nao ha camera
+               nem presenca para derrubar -- mas ha uma Video Aula marcada como
+               em andamento no Firestore, e essa sai de qualquer jeito. Ficar
+               preso nela por causa de um script que nao carregou seria pior. */
+            var tela = document.getElementById('pd-va-tela');
+            if (tela) tela.style.display = 'none';
+            pdVaAtual = null;
+            pdVaRoster = [];
+            pdVaPresencas = {};
+
+            /* Encerrar e a operacao que mais precisa de todos os caminhos: sai a
+               presenca, para a camera, para o laco de quadros e solta os
+               ouvintes. Um caminho esquecido aqui deixa o docente marcado como
+               online na propria sala ate a janela de 60 segundos expirar, e o
+               proximo aluno a abrir a aula ve um docente fantasma online. */
+            if (typeof vacEncerrarTudo === 'function') vacEncerrarTudo(id, cpf);
+            if (typeof vacGravarSessao === 'function') {
+                vacGravarSessao(id, { status: 'encerrada', encerradaEm: Date.now() });
+            }
+
+            /* O Firestore guarda que a aula terminou. E o que sobrevive a um
+               fechamento de aba no meio: sem isso, a proxima vez que o docente
+               abrir a lista a aula continuaria marcada como em andamento. */
+            dbFirestore.collection('videoAulas').doc(id).update({
+                sessaoEncerradaEm: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(function (e) { console.warn('Video Aula: Firestore nao gravou o encerramento:', e); });
+
+            pdVaAviso('info', 'Video aula encerrada.');
+        }
+
+        /* O "Encerrar" da lista: uma aula que ficou como "em andamento" por um
+           fechamento de aba nao tem tela aberta para clicar. Aqui ele marca o
+           documento e deixa a lista recarregar, sem fingir que derrubou uma
+           camera que so existia na aba que ja morreu. */
+        function pdVaEncerrarLista(id) {
+            if (!id) return;
+            if (!confirm('Encerrar a video aula e tirar todo mundo da sala?')) return;
+            dbFirestore.collection('videoAulas').doc(id).update({
+                statusSessao: 'encerrada',
+                sessaoEncerradaEm: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function () {
+                return pdVaCarregar();
+            }).then(function () {
+                pdVaAviso('ok', 'Video aula encerrada.');
+            }).catch(function (e) {
+                console.error('Video Aula: encerramento pela lista falhou:', e);
+                pdVaAviso('erro', 'Nao consegui encerrar. Tente de novo.');
+            });
+        }
+
+        /* Envia a Video Aula para os alunos da turma. E o mesmo botao que o
+           administrador tem no cartao, e com a mesma consequencia: os alunos
+           passam a ver a Video Aula na porta deles. Por isso ele avisa antes --
+           nao ha como desfazer do lado de la. */
+        async function pdVaEnviarAlunos(id) {
+            if (!id) id = pdVaAtual && pdVaAtual._id;
+            if (!id) return;
+            var nome = '';
+            for (var i = 0; i < pdVaLista.length; i++) {
+                if (pdVaLista[i]._id === id) { nome = pdVaLista[i].nome; break; }
+            }
+            if (!confirm('Enviar "' + (nome || 'esta video aula') + '" para os alunos da turma?\n\n'
+                + 'Eles vao ver a Video Aula no portal deles. Nao da para desfazer.')) return;
+
+            /* update e nunca set: o material programado e a avaliacao moram no
+               mesmo documento, e um set aqui apagaria os dois no primeiro
+               reenvio. */
+            try {
+                await dbFirestore.collection('videoAulas').doc(id).update({
+                    enviadoAlunosEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    enviadoAlunosPor: pdDocenteAtual() ? pdDocenteAtual().nome || '' : '',
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await pdVaCarregar();
+                pdVaAviso('ok', 'Video aula enviada aos alunos da turma.');
+            } catch (e) {
+                console.error('Video Aula: envio aos alunos falhou:', e);
+                pdVaAviso('erro', 'Nao consegui enviar aos alunos. Tente de novo.');
+            }
+        }
+
+        /* ---------- programa e material (quadro 04) ---------- */
+
+        /* 1MB e o teto do quadro 04. Acima disso o aluno com 3G ve a imagem
+           carregando pela metade -- ou nunca. O arquivo vai para o Storage e
+           so a URL vai para o Firestore: base64 dentro do documento estouraria
+           o limite de 1MB do proprio Firestore, que e onde a Video Aula mora. */
+        var PD_VA_MIDIA_MAX = 1048576;
+        var pdVaProgramando = null;
+        var pdVaUploadando = false;
+
+        function pdVaAtualId() {
+            return pdVaAtual ? pdVaAtual._id : '';
+        }
+
+        function pdVaFecharModal(qual) {
+            var el = document.getElementById('pd-va-modal-' + qual);
+            if (el) el.style.display = 'none';
+            if (qual === 'programar') {
+                var arq = document.getElementById('pd-va-arquivo');
+                if (arq) arq.value = '';
+                pdVaProgramando = null;
+            }
+        }
+
+        function pdVaProgramar(id) {
+            if (!id) id = pdVaAtualId();
+            if (!id) { pdVaAviso('erro', 'Abra a video aula antes de programar o material.'); return; }
+            var alvo = null;
+            for (var i = 0; i < pdVaLista.length; i++) {
+                if (pdVaLista[i]._id === id) { alvo = pdVaLista[i]; break; }
+            }
+            if (!alvo) { pdVaAviso('erro', 'Nao achei essa video aula na lista.'); return; }
+            pdVaProgramando = alvo;
+            pdVaMensagemUpload('');
+            pdVaDesenharMidias();
+            document.getElementById('pd-va-modal-programar').style.display = 'flex';
+        }
+
+        function pdVaMensagemUpload(texto) {
+            var el = document.getElementById('pd-va-upload-msg');
+            if (el) el.textContent = texto || '';
+        }
+
+        function pdVaDesenharMidias() {
+            var caixa = document.getElementById('pd-va-midias');
+            if (!caixa || !pdVaProgramando) return;
+            var lista = pdVaProgramando.midia || [];
+            if (!lista.length) {
+                caixa.innerHTML = '<div class="pd-va-arq-vazio">Nenhum material anexado ainda.</div>';
+                return;
+            }
+            caixa.innerHTML = lista.map(function (m, i) {
+                return '<div class="pd-va-arq-item">'
+                    + '<i class="fa-solid ' + (m.tipo === 'video' ? 'fa-video' : 'fa-image') + '"></i>'
+                    + '<span class="pd-va-arq-nome">' + pdEsc(m.nome || 'arquivo') + '</span>'
+                    + '<span class="pd-va-arq-peso">' + pdVaPeso(m.bytes) + '</span>'
+                    + '<button class="pd-va-btn cinza" onclick="pdVaExibirMidia(' + i + ')">Exibir</button>'
+                    + '<button class="pd-va-btn cinza" onclick="pdVaRemoverMidia(' + i + ')">Remover</button>'
+                    + '</div>';
+            }).join('');
+        }
+
+        function pdVaPeso(bytes) {
+            var n = Number(bytes) || 0;
+            if (n < 1024) return n + ' B';
+            if (n < 1048576) return Math.round(n / 1024) + ' KB';
+            return (n / 1048576).toFixed(1) + ' MB';
+        }
+
+        /* O onchange fica num atributo do input, entao o handler recebe o
+           elemento e nao um evento -- e o que deixa o codigo de upload
+           testavel sem um navegador de verdade. */
+        function pdVaEscolherArquivo(input) {
+            var f = input.files && input.files[0];
+            if (!f) return;
+            if (!pdVaProgramando) { pdVaMensagemUpload('Abra a video aula antes de anexar.'); return; }
+
+            /* O tamanho e conferido ANTES de qualquer upload. Um video de 300MB
+               que subisse inteiro so descobriria o limite no fim. */
+            if (f.size > PD_VA_MIDIA_MAX) {
+                pdVaMensagemUpload('Arquivo de ' + pdVaPeso(f.size) + '. O limite e 1MB por arquivo.');
+                input.value = '';
+                return;
+            }
+            var tipo = (f.type || '').indexOf('video/') === 0 ? 'video'
+                : (f.type || '').indexOf('image/') === 0 ? 'imagem' : '';
+            if (!tipo) {
+                pdVaMensagemUpload('So entram imagem ou video.');
+                input.value = '';
+                return;
+            }
+            if (pdVaUploadando) { pdVaMensagemUpload('Ja tem um arquivo subindo. Espere terminar.'); input.value = ''; return; }
+
+            pdVaUploadando = true;
+            pdVaMensagemUpload('Subindo...');
+            var id = pdVaProgramando._id;
+            /* O nome do arquivo vai para a URL e nao para o dado. Um nome com
+               acento ou espaco quebraria a URL, e o Firebase nao recusa: so
+               entrega um link que ninguem consegue abrir. */
+            var limpo = String(f.name || 'arquivo').replace(/[^A-Za-z0-9._-]/g, '_');
+            var caminho = 'videoaulas/' + id + '/' + Date.now() + '_' + limpo;
+
+            /* Devolve a cadeia, para que quem chama possa esperar o upload
+               terminar. O `onchange` do input descarta o valor, entao na tela
+               nao muda nada -- mas sem isso o caminho do erro (que so escreve
+               na tela quando a Promise rejeita) fica impossivel de conferir. */
+            return firebase.storage().ref(caminho).put(f).then(function (snap) {
+                return snap.ref.getDownloadURL();
+            }).then(function (url) {
+                var item = { id: caminho, url: url, tipo: tipo, nome: f.name || 'arquivo', bytes: f.size };
+                return dbFirestore.collection('videoAulas').doc(id).update({
+                    midia: firebase.firestore.FieldValue.arrayUnion(item),
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(function () {
+                    /* A copia local e atualizada a mao, e nao pela releitura do
+                       Firestore: o Firestore devolve o array com o item, mas
+                       demorar um segundo para aparecer o arquivo que acabou de
+                       subir faz o docente achar que o upload falhou. */
+                    pdVaProgramando.midia = (pdVaProgramando.midia || []).concat([item]);
+                    pdVaDesenharMidias();
+                    pdVaMensagemUpload('Material anexado. Use "Exibir" para colocar na tela.');
+                });
+            }).catch(function (e) {
+                console.error('Video Aula: upload do material falhou:', e);
+                pdVaMensagemUpload('Nao consegui subir o arquivo: ' + (e && e.message ? e.message : e));
+            }).then(function () {
+                pdVaUploadando = false;
+                var arq = document.getElementById('pd-va-arquivo');
+                if (arq) arq.value = '';
+            });
+        }
+
+        function pdVaRemoverMidia(i) {
+            if (!pdVaProgramando) return;
+            var lista = pdVaProgramando.midia || [];
+            var m = lista[i];
+            if (!m) return;
+            if (!confirm('Remover "' + (m.nome || 'este material') + '" da lista?')) return;
+
+            dbFirestore.collection('videoAulas').doc(pdVaProgramando._id).update({
+                midia: firebase.firestore.FieldValue.arrayRemove(m)
+            }).then(function () {
+                pdVaProgramando.midia = lista.filter(function (x, j) { return j !== i; });
+                pdVaDesenharMidias();
+                /* Se o material removido era o que estava na tela dos alunos, a
+                   tela ficaria mostrando um link que ninguem mais pode abrir --
+                   pior que vazio. Entao a liberacao tambem e limpa. */
+                if (pdVaAtual && pdVaQuadro04 && pdVaQuadro04.midiaId === m.id) pdVaLimparMidia();
+            }).catch(function (e) {
+                console.error('Video Aula: remocao do material falhou:', e);
+                pdVaMensagemUpload('Nao consegui remover. Tente de novo.');
+            });
+        }
+
+        function pdVaExibirMidia(i) {
+            if (!pdVaProgramando) return;
+            var m = (pdVaProgramando.midia || [])[i];
+            if (!m) return;
+            /* Checagem ANTES de pdVaTelaAbrir. A tela aborta sozinha sem o
+               nucleo, e a linha de baixo liberaria a midia em um vazio -- o
+               erro apareceria depois do aviso que resolve o problema. */
+            if (!pdVaTemNucleo()) { pdVaFecharModal('programar'); pdVaAvisoNucleo(); return; }
+            pdVaFecharModal('programar');
+            pdVaAtual = pdVaProgramando;
+            pdVaTelaAbrir(pdVaProgramando);
+            vacLiberarMidia(pdVaProgramando._id, m).then(function () {
+                pdVaAviso('ok', 'Material liberado. Os alunos estao vendo.');
+            }).catch(function (e) {
+                console.error('Video Aula: liberacao do material falhou:', e);
+                pdVaAviso('erro', 'Nao consegui liberar o material: ' + (e && e.message ? e.message : e));
+            });
+        }
+
+        /* ---------- material: o que esta na tela agora ---------- */
+
+        function pdVaMostrarMidia() {
+            if (!pdVaAtual) { pdVaAviso('erro', 'Abra a video aula primeiro.'); return; }
+            var lista = pdVaAtual.midia || [];
+            if (!lista.length) { pdVaAviso('info', 'Nenhum material anexado. Use Programar Video Aula.'); return; }
+            if (lista.length === 1) { pdVaLiberar(lista[0]); return; }
+            /* Com varios arquivos, um prompt e mais honesto que um segundo
+               modal: a escolha aqui e de um item so, e o caminho de um clique
+               importa mais que a beleza da tela. */
+            var linhas = lista.map(function (m, i) { return (i + 1) + ') ' + (m.nome || 'arquivo'); }).join('\n');
+            var escolha = prompt('Qual material exibir?\n\n' + linhas, '1');
+            var n = parseInt(escolha, 10);
+            if (!n || n < 1 || n > lista.length) return;
+            pdVaLiberar(lista[n - 1]);
+        }
+
+        function pdVaLiberar(m) {
+            if (!pdVaAtual || !m) return;
+            if (typeof vacLiberarMidia !== 'function') { pdVaAvisoNucleo(); return; }
+            vacLiberarMidia(pdVaAtual._id, m).then(function () {
+                pdVaAviso('ok', 'Material liberado. Os alunos estao vendo.');
+            }).catch(function (e) {
+                console.error('Video Aula: liberacao do material falhou:', e);
+                pdVaAviso('erro', 'Nao consegui liberar o material: ' + (e && e.message ? e.message : e));
+            });
+        }
+
+        function pdVaLimparMidia() {
+            if (!pdVaAtual) return;
+            if (typeof vacLiberarMidia !== 'function') { pdVaAvisoNucleo(); return; }
+            /* Passar null apaga o quadro 04 inteiro. Sem o parametro a funcao
+               nao teria como saber que o alvo e "tirar da tela" e nao
+               "atualizar". */
+            vacLiberarMidia(pdVaAtual._id, null).then(function () {
+                pdVaAviso('info', 'Material retirado da tela.');
+            }).catch(function (e) {
+                console.error('Video Aula: limpeza do quadro 04 falhou:', e);
+                pdVaAviso('erro', 'Nao consegui tirar o material da tela.');
+            });
+        }
+
+        /* ---------- avaliacao ---------- */
+
+        var PD_VA_QMAX = 10;
+        var PD_VA_ALTERNATIVAS = 4;
+        var pdVaQ = [];
+
+        function pdVaAvaliacao(id) {
+            if (!id) id = pdVaAtualId();
+            if (!id) { pdVaAviso('erro', 'Abra a video aula antes de criar a avaliacao.'); return; }
+            var alvo = null;
+            for (var i = 0; i < pdVaLista.length; i++) {
+                if (pdVaLista[i]._id === id) { alvo = pdVaLista[i]; break; }
+            }
+            if (!alvo) { pdVaAviso('erro', 'Nao achei essa video aula na lista.'); return; }
+
+            /* A avaliacao vive dentro do proprio documento da Video Aula e nao
+               em `avaliacoes`. Motivo: ela existe para ESTA aula e some com
+               ela. Uma colecao propria exigiria apagar a avaliacao junto com a
+               Video Aula, e essa limpeza ninguem faria. */
+            pdVaQ = (alvo.questoes || []).map(function (q) {
+                var alts = (q.alternativas || []).slice(0, PD_VA_ALTERNATIVAS);
+                while (alts.length < PD_VA_ALTERNATIVAS) alts.push('');
+                return { enunciado: q.enunciado || '', alternativas: alts, correta: Number(q.correta) || 0 };
+            });
+            if (!pdVaQ.length) pdVaQ.push(pdVaQNova());
+            pdVaDesenharQ();
+            document.getElementById('pd-va-modal-avaliacao').style.display = 'flex';
+        }
+
+        function pdVaQNova() {
+            return { enunciado: '', alternativas: ['', '', '', ''], correta: 0 };
+        }
+
+        function pdVaAvAddQ() {
+            if (pdVaQ.length >= PD_VA_QMAX) {
+                alert('O limite e ' + PD_VA_QMAX + ' questoes.');
+                return;
+            }
+            pdVaQ.push(pdVaQNova());
+            pdVaDesenharQ();
+        }
+
+        function pdVaAvRemoverQ(i) {
+            if (i < 0 || i >= pdVaQ.length) return;
+            pdVaQ.splice(i, 1);
+            if (!pdVaQ.length) return;
+            pdVaDesenharQ();
+        }
+
+        /* A alternativa correta e marcada por um botao, nao por um <select>: o
+           docente ve as quatro linhas e a marcada ao mesmo tempo, e nao uma
+           lista para escolher. */
+        function pdVaDesenharQ() {
+            var caixa = document.getElementById('pd-va-av-q');
+            if (!caixa) return;
+            caixa.innerHTML = pdVaQ.map(function (q, i) {
+                var alts = '';
+                for (var a = 0; a < PD_VA_ALTERNATIVAS; a++) {
+                    alts += '<div class="pd-va-q-alt">'
+                        + '<input type="text" class="pd-va-campo" value="' + pdEsc(q.alternativas[a]) + '"'
+                        + ' oninput="pdVaQSet(' + i + ',' + a + ',this.value)"'
+                        + ' placeholder="Alternativa ' + (a + 1) + '">'
+                        + '<button class="pd-va-q-ok' + (q.correta === a ? ' on' : '') + '"'
+                        + ' onclick="pdVaQCorrigir(' + i + ',' + a + ')"'
+                        + ' title="Marcar como correta"><i class="fa-solid fa-check"></i></button>'
+                        + '</div>';
+                }
+                return '<div class="pd-va-q">'
+                    + '<div class="pd-va-q-topo">'
+                    + '<span class="pd-va-q-num">Questao ' + (i + 1) + '</span>'
+                    + '<button class="pd-va-q-x" onclick="pdVaAvRemoverQ(' + i + ')" title="Remover questao">'
+                    + '<i class="fa-solid fa-trash"></i></button>'
+                    + '</div>'
+                    + '<textarea oninput="pdVaQSet(' + i + ',-1,this.value)"'
+                    + ' placeholder="Enunciado da questao">' + pdEsc(q.enunciado) + '</textarea>'
+                    + alts
+                    + '</div>';
+            }).join('');
+        }
+
+        function pdVaQSet(i, a, valor) {
+            if (i < 0 || i >= pdVaQ.length) return;
+            if (a < 0) pdVaQ[i].enunciado = valor;
+            else if (a < PD_VA_ALTERNATIVAS) pdVaQ[i].alternativas[a] = valor;
+        }
+
+        function pdVaQCorrigir(i, a) {
+            if (i < 0 || i >= pdVaQ.length) return;
+            pdVaQ[i].correta = a;
+            pdVaDesenharQ();
+        }
+
+        async function pdVaAvSalvar() {
+            if (!pdVaQ.length) { alert('Adicione pelo menos uma questao.'); return; }
+            /* Validar antes de gravar: um enunciado vazio ou uma alternativa em
+               branco chegariam ao aluno como um "--" na frente da resposta
+               certa, e ele escolheria no chute. Recusar aqui e mais honesto. */
+            for (var i = 0; i < pdVaQ.length; i++) {
+                var q = pdVaQ[i];
+                if (!q.enunciado.trim()) { alert('Questao ' + (i + 1) + ': escreva o enunciado.'); return; }
+                for (var a = 0; a < PD_VA_ALTERNATIVAS; a++) {
+                    if (!String(q.alternativas[a]).trim()) {
+                        alert('Questao ' + (i + 1) + ': preencha a alternativa ' + (a + 1) + '.');
+                        return;
+                    }
+                }
+            }
+            var id = pdVaAtualId();
+            if (!id) { alert('Abra a video aula antes de salvar.'); return; }
+            var eu = pdDocenteAtual();
+            try {
+                await dbFirestore.collection('videoAulas').doc(id).update({
+                    avaliacao: 'Sim',
+                    questoes: pdVaQ,
+                    avaliacaoCriadaEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    avaliacaoCriadaPor: eu ? eu.nome || '' : '',
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                pdVaFecharModal('avaliacao');
+                await pdVaCarregar();
+                pdVaAviso('ok', 'Avaliacao salva com ' + pdVaQ.length + ' questao(oes).');
+            } catch (e) {
+                console.error('Video Aula: avaliacao nao salvou:', e);
+                alert('Nao consegui salvar a avaliacao. Tente de novo.');
             }
         }
 
