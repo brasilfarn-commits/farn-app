@@ -20,6 +20,12 @@
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
         ]
+      },
+      {
+        "source": "/video-aula-compartilhar.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
       }
     ],
     "ignore": [
