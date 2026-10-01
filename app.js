@@ -1698,8 +1698,19 @@ function closeDownloadModal(e) {
 function showAdminSection(sectionId, navEl) {
     const el = document.getElementById(sectionId);
     if (!el) return;
+    /* Sair da secao Individual devolve a pagina emprestada ao lugar dela.
+       Sem isto a secao de origem ficaria escondida dentro da Individual e
+       sumiria do admin. Voltar para a Individual nao devolve: quem saiu e
+       voltou reencontra a lista que estava vendo. */
+    if (sectionId !== 'admin-individuo' && individuoEmprestado) individuoDevolver();
     document.querySelectorAll('#screen-admin .admin-section').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
+    /* A pagina emprestada continua morando dentro da Individual, e o laco
+       acima acabou de tirar o .active dela -- sem isto ela some da tela
+       assim que o usuario clica em Individuo no menu. */
+    if (sectionId === 'admin-individuo' && individuoEmprestado && individuoEmprestado.no) {
+        individuoEmprestado.no.classList.add('active');
+    }
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
@@ -14423,4 +14434,85 @@ async function patentesGravarProposta() {
     const cx = document.getElementById('patentes-proposta');
     if (cx) cx.style.display = 'none';
     alert(gravadas + ' patente(s) gravada(s).' + (puladas ? '\n' + puladas + ' ja existiam e foram mantidas.' : ''));
+}
+
+/* ===================== SECAO INDIVIDUO =====================
+
+   Esta secao nao COPIA o html das outras: ela PEGA EMPRESTADA a secao de
+   verdade e devolve depois. Copiar duplicaria os id -- o select de
+   projeto, o nome da lista, o contador -- e o getElementById passaria a
+   devolver a copia, quebrando a secao de origem. Assim o que aparece
+   aqui e literalmente a pagina original, com os mesmos campos e filtros. */
+
+var INDIVIDUO_SECOES = {
+    aluno:   { id: 'admin-alunos',        rotulo: 'Aluno Ativo',  iniciar: 'alunosInicializar' },
+    pre:     { id: 'admin-pre-inscricao', rotulo: 'Pre-inscrito', iniciar: 'preInicializar' },
+    formado: { id: 'admin-formados',      rotulo: 'Formado',      iniciar: 'formadosInicializar' },
+    docente: { id: 'admin-docentes',      rotulo: 'Docente',      iniciar: 'docentesInicializar' },
+    usuario: { id: 'admin-usuarios',      rotulo: 'Usuario',      iniciar: 'renderUsuariosList' }
+};
+
+/* Onde a secao emprestada estava antes de se deslocar, para devolver ao
+   exato lugar. `var` e nao `let` de proposito: o showAdminSection chama o
+   devolver bem antes deste bloco rodar. */
+var individuoEmprestado = null;
+
+function individuoDevolver() {
+    if (!individuoEmprestado) return;
+    var e = individuoEmprestado;
+    individuoEmprestado = null;
+    if (e.no && e.no.parentNode) e.pai.insertBefore(e.no, e.proximo);
+    if (e.no) e.no.classList.toggle('active', e.tinhaActive);
+    var vazio = document.getElementById('individuo-vazio');
+    if (vazio) vazio.style.display = '';
+    document.querySelectorAll('#individuo-botoes .individuo-opcao').forEach(function (b) {
+        b.style.background = '';
+        b.style.borderColor = '';
+        b.style.color = '';
+        var ic = b.querySelector('i');
+        if (ic) ic.style.color = b.getAttribute('data-cor') || '';
+    });
+}
+
+function individuoEscolher(tipo) {
+    var cfg = INDIVIDUO_SECOES[tipo];
+    var painel = document.getElementById('individuo-painel');
+    if (!cfg || !painel) return;
+    var no = document.getElementById(cfg.id);
+    if (!no) {
+        console.warn('Secao de origem nao encontrada para "' + tipo + '": ' + cfg.id);
+        return;
+    }
+
+    /* devolver a anterior ANTES de pegar outra: a pagina antiga tem de
+       voltar para o lugar dela antes de a nova sair dali */
+    individuoDevolver();
+
+    var ficha = {
+        no: no,
+        pai: no.parentNode,
+        proximo: no.nextSibling,
+        tinhaActive: no.classList.contains('active')
+    };
+    painel.appendChild(no);
+    /* sem isto a pagina emprestada continua escondida: no style.css so
+       .admin-section.active aparece */
+    no.classList.add('active');
+    individuoEmprestado = ficha;
+
+    var vazio = document.getElementById('individuo-vazio');
+    if (vazio) vazio.style.display = 'none';
+
+    /* marcar a opcao escolhida, na cor da pagina de destino */
+    document.querySelectorAll('#individuo-botoes .individuo-opcao').forEach(function (b) {
+        if (b.getAttribute('data-tipo') !== tipo) return;
+        var cor = b.getAttribute('data-cor') || '#0891b2';
+        b.style.background = cor;
+        b.style.borderColor = cor;
+        b.style.color = '#fff';
+        var ic = b.querySelector('i');
+        if (ic) ic.style.color = '#fff';
+    });
+
+    if (typeof window[cfg.iniciar] === 'function') window[cfg.iniciar]();
 }

@@ -3576,15 +3576,44 @@
                     <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-id-card" style="color:#0891b2;margin-right:8px"></i> Individuo</h3>
+                            <small>Escolha o tipo de individuo. A lista que abre abaixo e a pagina de origem, com os mesmos campos e os mesmos filtros.</small>
                         </div>
                         <div class="card-body">
-                            <div style="text-align:center;padding:60px 20px;color:#94a3b8">
-                                <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#0891b2"></i>
+                            <div id="individuo-botoes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px">
+                                <button type="button" class="individuo-opcao" data-tipo="aluno" data-cor="#16a34a" onclick="individuoEscolher('aluno')">
+                                    <i class="fa-solid fa-user-graduate" style="color:#16a34a"></i>
+                                    <span>Aluno Ativo<small>Escolhe projeto e turma</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="pre" data-cor="#16a34a" onclick="individuoEscolher('pre')">
+                                    <i class="fa-solid fa-user-clock" style="color:#16a34a"></i>
+                                    <span>Pre-inscrito<small>Escolhe projeto e turma</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="formado" data-cor="#2563eb" onclick="individuoEscolher('formado')">
+                                    <i class="fa-solid fa-graduation-cap" style="color:#2563eb"></i>
+                                    <span>Formado<small>Lista dos formados</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="docente" data-cor="#f44336" onclick="individuoEscolher('docente')">
+                                    <i class="fa-solid fa-chalkboard-user" style="color:#f44336"></i>
+                                    <span>Docente<small>Lista dos docentes</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="usuario" data-cor="#2563eb" onclick="individuoEscolher('usuario')">
+                                    <i class="fa-solid fa-users-gear" style="color:#2563eb"></i>
+                                    <span>Usuario<small>Usuarios cadastrados</small></span>
+                                </button>
+                            </div>
+                            <div id="individuo-vazio" style="text-align:center;padding:50px 20px;color:#94a3b8">
+                                <i class="fa-solid fa-id-card" style="font-size:48px;display:block;margin-bottom:16px;color:#0891b2"></i>
                                 <h3 style="font-size:18px;color:#334155;margin-bottom:8px">Em Construcao</h3>
                                 <p style="font-size:13px;color:#94a3b8">Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
                             </div>
                         </div>
                     </div>
+                    <!-- A pagina escolhida entra aqui INTEIRA: e a secao de
+                         origem que se desloca para ca, e nao uma copia dela.
+                         Copiar o HTML duplicaria os id (o select de projeto, o
+                         nome da lista) e o getElementById passaria a apontar
+                         para a copia, quebrando a secao de origem. -->
+                    <div id="individuo-painel"></div>
                 </div>
             </main>
         </div>
@@ -3615,6 +3644,22 @@
         .condec-cartao-foto { width: 100%; max-height: 220px; object-fit: contain; background: #0f172a; display: block; }
         @media print {
             body.condec-imprimindo .sidebar, body.condec-imprimindo .modal-header { display: none !important; }
+        }
+    </style>
+
+    <!-- CSS DA SECAO INDIVIDUO -->
+    <style id="individuo-css">
+        .individuo-opcao {
+            display: flex; align-items: center; gap: 10px; text-align: left;
+            padding: 12px 14px; border-radius: 10px; cursor: pointer;
+            border: 1px solid #cbd5e1; background: #fff; color: #334155;
+            font-size: 13px; font-weight: 700; transition: .15s;
+        }
+        .individuo-opcao:hover { background: #f8fafc; border-color: #94a3b8; }
+        .individuo-opcao i { font-size: 18px; flex-shrink: 0; }
+        .individuo-opcao small {
+            display: block; font-weight: 400; font-size: 11px;
+            color: #64748b; margin-top: 2px; letter-spacing: .1px;
         }
     </style>
 
@@ -4720,7 +4765,7 @@
     <script src="ficha-geral-compartilhar.js?v=8"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=59"></script>
+    <script src="app.js?v=60"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
