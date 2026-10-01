@@ -487,14 +487,37 @@ function fgChipContato(icone, rotulo, valor) {
         + '<span style="font-size:11px;font-weight:700;color:#0f172a;word-break:break-word">' + fgEsc(valor) + '</span></div>';
 }
 
+/* ---- insignia da patente: resolvida AQUI, e nao em cada tela ----
+   A insignia pertence a PATENTE, nao a pessoa. Quem monta a ficha
+   entrega o catalogo uma vez, e o nucleo resolve o codigo que a pessoa
+   tem. E o que mantem o administrador e o portal do aluno com a mesma
+   ficha: nenhum dos dois precisa lembrar de preencher nada, e o que
+   entrar no nucleo vale para os dois por construcao. */
+var fichaGeralInsignias = {};
+
+function fichaGeralCatalogoRecebido(catalogo) {
+    fichaGeralInsignias = {};
+    (Array.isArray(catalogo) ? catalogo : []).forEach(function (p) {
+        if (!p) return;
+        var codigo = String(p.codigo || '').trim();
+        var url = String(p.insigniaUrl || '').trim();
+        if (codigo && url) fichaGeralInsignias[codigo] = url;
+    });
+    return fichaGeralInsignias;
+}
+
+function fichaGeralInsigniaUrl(codigo) {
+    var c = String(codigo || '').trim();
+    if (!c) return '';
+    return fichaGeralInsignias[c] || '';
+}
+
 /* A insignia da patente, ao lado da foto 3x4.
-   A insignia pertence a PATENTE, e nao a pessoa: quem preencheu este
-   campo foi quem montou a ficha, resolvendo o codigo da patente no
-   catalogo. Como a condicao e `c.patenteInsigniaUrl`, quem nao marcar
-   esse campo -- o portal do aluno, por exemplo -- nao ve nenhuma
-   diferenca: e a mesma ficha de antes. */
+   O campo que a tela ja trouxe tem precedencia (o admin o resolve ao
+   montar a lista); quando ele nao vem, o nucleo resolve pelo codigo da
+   patente que a pessoa tem. */
 function fichaGeralInsignia(c) {
-    const url = (c && c.patenteInsigniaUrl) || '';
+    const url = (c && c.patenteInsigniaUrl) || fichaGeralInsigniaUrl(c && c.patente);
     if (!url) return '';
     return '<div style="margin-top:8px">'
         + '<img src="' + fgEsc(url) + '" alt="Insignia da patente"'

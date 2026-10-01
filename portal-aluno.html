@@ -1052,7 +1052,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="ficha-geral-compartilhar.js?v=6"></script>
+    <script src="ficha-geral-compartilhar.js?v=7"></script>
 <script src="foto3x4-editor.js?v=3"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
@@ -2196,6 +2196,26 @@
         } catch (e) { return null; }
     }
 
+    /* A insignia da patente vive no catalogo, e nao no cadastro da pessoa.
+       A Ficha Geral e a MESMA no portal e no administrador, entao quem monta
+       a ficha entrega o catalogo ao nucleo compartilhado em vez de resolver
+       por conta. Le so o documento da patente que o aluno tem: e uma leitura
+       pequena, e nao a colecao inteira. */
+    async function paFichaGeralCatalogo() {
+        var codigo = paUser && paUser.patente ? String(paUser.patente).trim() : '';
+        if (!codigo) { fichaGeralCatalogoRecebido([]); return; }
+        try {
+            var snap = await dbFirestore.collection('patentes').doc(codigo).get();
+            fichaGeralCatalogoRecebido(snap.exists
+                ? [Object.assign({ codigo: codigo }, snap.data())] : []);
+        } catch (e) {
+            /* Sem rede ou sem permissao: a ficha aparece sem a insignia,
+               que e o mesmo que acontece com quem nao tem patente. */
+            fichaGeralCatalogoRecebido([]);
+            console.warn('Catalogo de patentes indisponivel para a ficha:', e && e.message);
+        }
+    }
+
     async function paFichaGeralCarregar(forcar) {
         var cont = document.getElementById('pf-ficha-geral-conteudo');
         if (!cont || !paUser) return;
@@ -2206,6 +2226,7 @@
         try {
             var c = paUser;
             fichaGeralAulasCache = null;
+            await paFichaGeralCatalogo();
             var aulas = await fichaGeralCarregarAulas(c.projeto, c.turma);
             await fichaGeralCarregarInstituicao();
             var dados = await fichaGeralDadosAluno(c);

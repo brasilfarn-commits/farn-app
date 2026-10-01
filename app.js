@@ -13721,6 +13721,10 @@ function patentesCarregar() {
 
 function patenteCatalogoRecebida(lista) {
     patentesCatalogo = patenteTemModulo() ? PATENTES.catalogoNormalizar(lista) : [];
+    /* O nucleo da Ficha Geral resolve a insignia por conta propria, a
+       partir do catalogo. E o que faz o administrador e o portal do aluno
+       mostrarem a mesma coisa sem nenhum dos dois ter que fazer isso. */
+    if (typeof fichaGeralCatalogoRecebido === 'function') fichaGeralCatalogoRecebido(patentesCatalogo);
     /* os seletores passam a oferecer o que esta cadastrado */
     patentePopularSelects();
     /* e a Ficha Geral re-resolve a insignia de cada pessoa */
