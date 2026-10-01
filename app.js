@@ -8159,6 +8159,13 @@ let cffAulaEditingId = null;
 
 function cffDisciplinasAbrirSecao() {
     showAdminSection('admin-cff-disciplinas');
+    cffDisciplinasSecaoCarregar();
+}
+
+/* Mesma separacao do cffAbrirForm: a troca de tela fica em um lugar e so a
+   carga das listas no outro, para a secao Individuo poder emprestar a pagina
+   e manter tudo dentro dela. */
+function cffDisciplinasSecaoCarregar() {
     cffDiscLoadList();
     cffAulaLoadList();
 }
@@ -8462,6 +8469,10 @@ let cffTurmaEditingId = null;
 
 function cffProjetosAbrirSecao() {
     showAdminSection('admin-cff-projetos');
+    cffProjetosSecaoCarregar();
+}
+
+function cffProjetosSecaoCarregar() {
     cffProjLoadList();
     cffTurmaLoadProjetos();
     cffTurmaLoadList();
@@ -11917,10 +11928,19 @@ function cffToggleSenha() {
 }
 
 function cffAbrirForm() {
+    cffFormPreparar();
+    showAdminSection('admin-form-cff');
+}
+
+/* Separado do cffAbrirForm de proposito: a secao Individuo empresta a
+   pagina do formulario em vez de trocar de tela. Se ela chamasse o
+   cffAbrirForm inteiro, o showAdminSection de dentro expulsaria do painel a
+   pagina emprestada. Aqui fica so a preparacao do formulario, que e
+   exatamente o que o cffAbrirForm faz antes de trocar de tela. */
+function cffFormPreparar() {
     editingCffId = null;
     cffLimparForm();
     document.getElementById('cff-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#7c3aed;margin-right:8px"></i> Novo CFF';
-    showAdminSection('admin-form-cff');
 }
 
 function cffLimparForm() {
@@ -14457,7 +14477,31 @@ var INDIVIDUO_SECOES = {
     pre:     { id: 'admin-pre-inscricao', rotulo: 'Pre-inscrito', iniciar: 'preInicializar' },
     formado: { id: 'admin-formados',      rotulo: 'Formado',      iniciar: 'formadosInicializar' },
     docente: { id: 'admin-docentes',      rotulo: 'Docente',      iniciar: 'docentesInicializar' },
-    usuario: { id: 'admin-usuarios',      rotulo: 'Usuario',      iniciar: 'renderUsuariosList' }
+    usuario: { id: 'admin-usuarios',      rotulo: 'Usuario',      iniciar: 'renderUsuariosList' },
+
+    /* --- grupo CFF -------------------------------------------------------
+       O CFF entrou no Individuo porque lista pessoas tambem: a inscricao e
+       de uma pessoa, mesmo sendo de formacao de formadores.
+
+       Repare que NAO se copia a pagina e NAO se usa os botoes do CFF: os
+       botoes do CFF chamam showAdminSection, que expulsaria do painel a
+       pagina emprestada. Aqui cada entrada empresta a pagina e roda so a
+       parte que carrega dados (cffFormPreparar, cffDisciplinasSecaoCarregar,
+       cffProjetosSecaoCarregar). Sao exatamente as metades que os botoes do CFF
+       executam antes de trocar de tela. */
+
+    /* Alunos CFF: a lista de todo mundo cadastrado no CFF */
+    cff:        { id: 'admin-cff',             rotulo: 'Alunos CFF',          iniciar: 'cffListLoad' },
+    /* Novo CFF: o formulario de inscricao, ja limpo como o cffAbrirForm deixa */
+    cffNovo:    { id: 'admin-form-cff',        rotulo: 'Novo CFF',            iniciar: 'cffFormPreparar' },
+    cffDisc:    { id: 'admin-cff-disciplinas', rotulo: 'Disciplina CFF',      iniciar: 'cffDisciplinasSecaoCarregar' },
+    cffProj:    { id: 'admin-cff-projetos',    rotulo: 'Projeto e Turma CFF',  iniciar: 'cffProjetosSecaoCarregar' },
+
+    /* Criar Avaliacao CFF e Secao de Avaliacao CFF NAO sao secoes do admin:
+       sao paginas soltas que o proprio CFF abre em outra aba. Nao ha nada
+       para emprestar aqui, entao abrimos do mesmo jeito que o CFF abre. */
+    cffAval:    { pagina: 'criar-avaliacao-cff.html',    rotulo: 'Criar Avaliacao CFF' },
+    cffSecAval: { pagina: 'secao-avaliacao-cff.html',     rotulo: 'Secao de Avaliacao CFF' }
 };
 
 /* Onde a secao emprestada estava antes de se deslocar, para devolver ao
@@ -14486,6 +14530,15 @@ function individuoEscolher(tipo) {
     var cfg = INDIVIDUO_SECOES[tipo];
     var painel = document.getElementById('individuo-painel');
     if (!cfg || !painel) return;
+
+    /*pagina solta (Criar Avaliacao CFF, Secao de Avaliacao CFF): nao ha
+       pagina emprestavel, entao so abre a aba e devolve. O painel fica como
+       estava -- marcar a opcao aqui seria mentir, nada foi aberto nele. */
+    if (cfg.pagina) {
+        window.open(cfg.pagina, '_blank');
+        return;
+    }
+
     var no = document.getElementById(cfg.id);
     if (!no) {
         console.warn('Secao de origem nao encontrada para "' + tipo + '": ' + cfg.id);
@@ -14522,5 +14575,11 @@ function individuoEscolher(tipo) {
         if (ic) ic.style.color = '#fff';
     });
 
-    if (typeof window[cfg.iniciar] === 'function') window[cfg.iniciar]();
+    /* `iniciar` pode ser um nome so ou uma lista, quando a pagina de origem
+       carrega mais de uma coisa (a de Disciplinas e a de Projetos do CFF
+       carregam varias listas cada uma) */
+    var aChamar = typeof cfg.iniciar === 'string' ? [cfg.iniciar] : (cfg.iniciar || []);
+    aChamar.forEach(function (fn) {
+        if (typeof window[fn] === 'function') window[fn]();
+    });
 }

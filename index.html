@@ -3566,10 +3566,11 @@
                     <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-id-card" style="color:#0891b2;margin-right:8px"></i> Individuo</h3>
-                            <small>Escolha o tipo de individuo. A lista que abre abaixo e a pagina de origem, com os mesmos campos e os mesmos filtros.</small>
+                            <small>Escolha o tipo de individuo. A lista que abre abaixo e a pagina de origem, com os mesmos campos e os mesmos filtros. As duas telas de avaliacao do CFF sao paginas soltas e abrem em outra aba, como fazem dentro do CFF.</small>
                         </div>
                         <div class="card-body">
                             <div id="individuo-botoes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px">
+                                <span class="individuo-grupo">Pessoas</span>
                                 <button type="button" class="individuo-opcao" data-tipo="aluno" data-cor="#16a34a" onclick="individuoEscolher('aluno')">
                                     <i class="fa-solid fa-user-graduate" style="color:#16a34a"></i>
                                     <span>Aluno Ativo<small>Escolhe projeto e turma</small></span>
@@ -3589,6 +3590,32 @@
                                 <button type="button" class="individuo-opcao" data-tipo="usuario" data-cor="#2563eb" onclick="individuoEscolher('usuario')">
                                     <i class="fa-solid fa-users-gear" style="color:#2563eb"></i>
                                     <span>Usuario<small>Usuarios cadastrados</small></span>
+                                </button>
+
+                                <span class="individuo-grupo">CFF &mdash; Curso de Formacao de Formadores</span>
+                                <button type="button" class="individuo-opcao" data-tipo="cff" data-cor="#7c3aed" onclick="individuoEscolher('cff')">
+                                    <i class="fa-solid fa-chalkboard" style="color:#7c3aed"></i>
+                                    <span>Alunos CFF<small>Todos os cadastrados</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="cffNovo" data-cor="#7c3aed" onclick="individuoEscolher('cffNovo')">
+                                    <i class="fa-solid fa-user-plus" style="color:#7c3aed"></i>
+                                    <span>Novo CFF<small>Formulario de inscricao</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="cffDisc" data-cor="#7c3aed" onclick="individuoEscolher('cffDisc')">
+                                    <i class="fa-solid fa-graduation-cap" style="color:#7c3aed"></i>
+                                    <span>Disciplina CFF<small>Disciplinas e aulas</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="cffProj" data-cor="#7c3aed" onclick="individuoEscolher('cffProj')">
+                                    <i class="fa-solid fa-handshake" style="color:#7c3aed"></i>
+                                    <span>Projeto e Turma CFF<small>Projetos e turmas</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="cffAval" data-cor="#7c3aed" onclick="individuoEscolher('cffAval')">
+                                    <i class="fa-solid fa-list-check" style="color:#7c3aed"></i>
+                                    <span>Criar Avaliacao CFF<small>Abre em outra aba</small></span>
+                                </button>
+                                <button type="button" class="individuo-opcao" data-tipo="cffSecAval" data-cor="#7c3aed" onclick="individuoEscolher('cffSecAval')">
+                                    <i class="fa-solid fa-clipboard-check" style="color:#7c3aed"></i>
+                                    <span>Secao de Avaliacao CFF<small>Abre em outra aba</small></span>
                                 </button>
                             </div>
                             <div id="individuo-vazio" style="text-align:center;padding:50px 20px;color:#94a3b8">
@@ -3651,6 +3678,14 @@
             display: block; font-weight: 400; font-size: 11px;
             color: #64748b; margin-top: 2px; letter-spacing: .1px;
         }
+        /* divisoria entre os grupos do grid (pessoas / CFF): ocupa a linha toda */
+        .individuo-grupo {
+            grid-column: 1 / -1; font-size: 11px; font-weight: 800;
+            letter-spacing: .8px; text-transform: uppercase;
+            color: #94a3b8; margin: 8px 0 2px;
+            border-top: 1px solid #e2e8f0; padding-top: 10px;
+        }
+        .individuo-grupo:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
     </style>
 
     <!-- MODAL CONDECORACAO E CERTIFICADO - FORMULARIO -->
@@ -4755,7 +4790,7 @@
     <script src="ficha-geral-compartilhar.js?v=8"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=61"></script>
+    <script src="app.js?v=62"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
