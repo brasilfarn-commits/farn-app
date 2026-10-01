@@ -701,113 +701,103 @@
                     <button class="sidebar-close" onclick="closeAdminSidebar()" title="Fechar menu"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <nav class="sidebar-nav">
-                    <a href="#" class="nav-item active" onclick="showAdminSection('admin-home', this)">
+                    <a href="#" class="nav-item active" data-secao="admin-home" onclick="showAdminSection('admin-home', this)">
                         <i class="fa-solid fa-house"></i>
                         <span>Inicio</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-pre-inscricao', this); preInicializar()">
-                        <i class="fa-solid fa-file-pen"></i>
-                        <span>Pre-Inscricao</span>
+                    <!-- Os cards do Inicio procuram este item por data-secao, e
+                         nao por .nav-item:nth-child(N). nth-child e POSICAO: da
+                         vez que um item entra no meio da lista, todos os
+                         numeros abaixo passam a apontar para o item errado.
+                         O data-secao e identidade e sobrevive a reordenacao. -->
+                    <a href="#" class="nav-item" data-secao="admin-individuo" onclick="showAdminSection('admin-individuo', this)">
+                        <i class="fa-solid fa-id-card"></i>
+                        <span>Individuo</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-alunos', this); alunosInicializar()">
-                        <i class="fa-solid fa-user-graduate"></i>
-                        <span>Alunos</span>
-                    </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-foto3x4', this); foto3x4Inicializar()">
+                    <!-- Aluno ativo, pre-inscrito, docente e formado saem daqui
+                         de proposito: as listas deles passaram a viver dentro
+                         da secao Individuo, que fica logo acima. As secoes
+                         continuam existindo e continuam alcancaveis por ela. -->
+                    <a href="#" class="nav-item" data-secao="admin-foto3x4" onclick="showAdminSection('admin-foto3x4', this); foto3x4Inicializar()">
                         <i class="fa-solid fa-id-card"></i>
                         <span>Foto 3x4</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-docentes', this); docentesInicializar()">
-                        <i class="fa-solid fa-chalkboard-user"></i>
-                        <span>Docentes</span>
-                    </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-formados', this); formadosInicializar()">
-                        <i class="fa-solid fa-graduation-cap"></i>
-                        <span>Formados</span>
-                    </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-condecoracoes', this); condecInicializar()">
+                    <a href="#" class="nav-item" data-secao="admin-condecoracoes" onclick="showAdminSection('admin-condecoracoes', this); condecInicializar()">
                         <i class="fa-solid fa-award"></i>
                         <span>Condecoracoes</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-relatorios', this)">
+                    <a href="#" class="nav-item" data-secao="admin-relatorios" onclick="showAdminSection('admin-relatorios', this)">
                         <i class="fa-solid fa-chart-bar"></i>
                         <span>Relatorios</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-projetos', this); renderProjetosList()">
+                    <a href="#" class="nav-item" data-secao="admin-projetos" onclick="showAdminSection('admin-projetos', this); renderProjetosList()">
                         <i class="fa-solid fa-handshake"></i>
                         <span>Projetos</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-config', this)">
+                    <a href="#" class="nav-item" data-secao="admin-config" onclick="showAdminSection('admin-config', this)">
                         <i class="fa-solid fa-gear"></i>
                         <span>Configuracoes</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-apontamento', this); apontamentoInicializar()">
+                    <a href="#" class="nav-item" data-secao="admin-apontamento" onclick="showAdminSection('admin-apontamento', this); apontamentoInicializar()">
                         <i class="fa-solid fa-clipboard-check"></i>
                         <span>Apontamento</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-tfm', this); tfmInicializar()">
+                    <a href="#" class="nav-item" data-secao="admin-tfm" onclick="showAdminSection('admin-tfm', this); tfmInicializar()">
                         <i class="fa-solid fa-dumbbell"></i>
                         <span>TFM do Aluno</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-recadastramento', this); recadLoadAll()">
+                    <a href="#" class="nav-item" data-secao="admin-recadastramento" onclick="showAdminSection('admin-recadastramento', this); recadLoadAll()">
                         <i class="fa-solid fa-rotate"></i>
                         <span>Recadastramento</span>
                     </a>
 
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-apostilas', this); apostilasLoadList()">
+                    <a href="#" class="nav-item" data-secao="admin-apostilas" onclick="showAdminSection('admin-apostilas', this); apostilasLoadList()">
                         <i class="fa-solid fa-book-open"></i>
                         <span>Apostilas</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-disciplinas', this); discLoadList(); aulaLoadList()">
+                    <a href="#" class="nav-item" data-secao="admin-disciplinas" onclick="showAdminSection('admin-disciplinas', this); discLoadList(); aulaLoadList()">
                         <i class="fa-solid fa-graduation-cap"></i>
                         <span>Disciplinas</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-noticias', this); blogInicializar()">
+                    <a href="#" class="nav-item" data-secao="admin-noticias" onclick="showAdminSection('admin-noticias', this); blogInicializar()">
                         <i class="fa-solid fa-newspaper"></i>
                         <span>Blog</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-galeria', this); galeriaAdminInicializar()">
+                    <a href="#" class="nav-item" data-secao="admin-galeria" onclick="showAdminSection('admin-galeria', this); galeriaAdminInicializar()">
                         <i class="fa-solid fa-images"></i>
                         <span>Galeria</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-atelie', this)">
+                    <a href="#" class="nav-item" data-secao="admin-atelie" onclick="showAdminSection('admin-atelie', this)">
                         <i class="fa-solid fa-palette"></i>
                         <span>Atelie</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-avaliacao', this)">
+                    <a href="#" class="nav-item" data-secao="admin-avaliacao" onclick="showAdminSection('admin-avaliacao', this)">
                         <i class="fa-solid fa-clipboard-check"></i>
                         <span>Seção de Avaliação</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-criar-avaliacao', this); cavLoadList(); cavEscolherTipo()">
+                    <a href="#" class="nav-item" data-secao="admin-criar-avaliacao" onclick="showAdminSection('admin-criar-avaliacao', this); cavLoadList(); cavEscolherTipo()">
                         <i class="fa-solid fa-list-check"></i>
                         <span>Criar Avaliação</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-cursos', this); cursoListLoad(); cursoEpiRender()">
+                    <a href="#" class="nav-item" data-secao="admin-cursos" onclick="showAdminSection('admin-cursos', this); cursoListLoad(); cursoEpiRender()">
                         <i class="fa-solid fa-book"></i>
                         <span>Cursos</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-whatfarn', this); wfIniciar('admin')">
+                    <a href="#" class="nav-item" data-secao="admin-whatfarn" onclick="showAdminSection('admin-whatfarn', this); wfIniciar('admin')">
                         <i class="fa-brands fa-whatsapp"></i>
                         <span>WhatFarn</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-cff', this); cffListLoad()">
+                    <a href="#" class="nav-item" data-secao="admin-cff" onclick="showAdminSection('admin-cff', this); cffListLoad()">
                         <i class="fa-solid fa-chalkboard"></i>
                         <span>CFF</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-ficha-geral', this); fichaGeralInicializar()">
+                    <a href="#" class="nav-item" data-secao="admin-ficha-geral" onclick="showAdminSection('admin-ficha-geral', this); fichaGeralInicializar()">
                         <i class="fa-solid fa-folder-open"></i>
                         <span>Ficha Geral</span>
                     </a>
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-patentes', this); patentesInicializar()">
+                    <a href="#" class="nav-item" data-secao="admin-patentes" onclick="showAdminSection('admin-patentes', this); patentesInicializar()">
                         <i class="fa-solid fa-medal"></i>
                         <span>Patentes</span>
-                    </a>
-                    <!-- Fica no fim da lista de proposito: os cards do Inicio
-                         addressam os itens por .nav-item:nth-child(N), e so
-                         acrescentar depois nao desloca nenhum desses indices. -->
-                    <a href="#" class="nav-item" onclick="showAdminSection('admin-individuo', this)">
-                        <i class="fa-solid fa-id-card"></i>
-                        <span>Individuo</span>
                     </a>
                 </nav>
                 <div class="sidebar-footer">
@@ -857,27 +847,27 @@
                             <div id="admin-home-email" style="font-size:12px;color:rgba(255,255,255,.7)"></div>
                         </div>
                         <div class="admin-home-grid">
-                            <div class="admin-home-card" onclick="showAdminSection('admin-pre-inscricao', document.querySelector('.nav-item:nth-child(2)')); preInicializar()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-pre-inscricao', document.querySelector('.nav-item[data-secao="admin-pre-inscricao"]'))); preInicializar()">
                                 <i class="fa-solid fa-file-pen"></i>
                                 <span>Pre-Inscrição</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-alunos', document.querySelector('.nav-item:nth-child(3)')); alunosInicializar()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-alunos', document.querySelector('.nav-item[data-secao="admin-alunos"]'))); alunosInicializar()">
                                 <i class="fa-solid fa-user-graduate"></i>
                                 <span>Alunos</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-docentes', document.querySelector('.nav-item:nth-child(4)')); docentesInicializar()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-docentes', document.querySelector('.nav-item[data-secao="admin-docentes"]'))); docentesInicializar()">
                                 <i class="fa-solid fa-chalkboard-user"></i>
                                 <span>Docentes</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-formados', document.querySelector('.nav-item:nth-child(5)')); formadosInicializar()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-formados', document.querySelector('.nav-item[data-secao="admin-formados"]'))); formadosInicializar()">
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Formados</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item:nth-child(6)'))">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item[data-secao="admin-relatorios"]')))">
                                 <i class="fa-solid fa-chart-bar"></i>
                                 <span>Relatórios</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item:nth-child(7)')); renderProjetosList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item[data-secao="admin-projetos"]'))); renderProjetosList()">
                                 <i class="fa-solid fa-handshake"></i>
                                 <span>Projetos</span>
                             </div>
@@ -885,40 +875,40 @@
                                 <i class="fa-solid fa-mobile-screen-button"></i>
                                 <span>Baixar App Android</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item:nth-child(10)')); recadLoadAll()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item[data-secao="admin-recadastramento"]'))); recadLoadAll()">
                                 <i class="fa-solid fa-rotate"></i>
                                 <span>Recadastramento</span>
                             </div>
 
-                            <div class="admin-home-card" onclick="showAdminSection('admin-apostilas', document.querySelector('.nav-item:nth-child(13)')); apostilasLoadList()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-apostilas', document.querySelector('.nav-item[data-secao="admin-apostilas"]'))); apostilasLoadList()">
                                 <i class="fa-solid fa-book-open"></i>
                                 <span>Apostilas</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item:nth-child(14)')); discLoadList(); aulaLoadList()">>
+                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item[data-secao="admin-disciplinas"]'))); discLoadList(); aulaLoadList()">>
                                 <i class="fa-solid fa-graduation-cap"></i>
                                 <span>Disciplinas</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item:nth-child(15)')); blogInicializar()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item[data-secao="admin-noticias"]'))); blogInicializar()">
                                 <i class="fa-solid fa-newspaper"></i>
                                 <span>Blog</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-atelie', document.querySelector('.nav-item:nth-child(17)'));">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-atelie', document.querySelector('.nav-item[data-secao="admin-atelie"]')));">
                                 <i class="fa-solid fa-palette"></i>
                                 <span>Atelie</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-avaliacao', document.querySelector('.nav-item:nth-child(18)'));">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-avaliacao', document.querySelector('.nav-item[data-secao="admin-avaliacao"]')));">
                                 <i class="fa-solid fa-clipboard-check"></i>
                                 <span>Seção de Avaliação</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-criar-avaliacao', document.querySelector('.nav-item:nth-child(19)')); cavLoadList(); cavEscolherTipo()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-criar-avaliacao', document.querySelector('.nav-item[data-secao="admin-criar-avaliacao"]'))); cavLoadList(); cavEscolherTipo()">
                                 <i class="fa-solid fa-list-check"></i>
                                 <span>Criar Avaliação</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-whatfarn', document.querySelector('.nav-item:nth-child(20)')); wfIniciar('admin')">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-whatfarn', document.querySelector('.nav-item[data-secao="admin-whatfarn"]'))); wfIniciar('admin')">
                                 <i class="fa-brands fa-whatsapp"></i>
                                 <span>WhatFarn</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-cff', document.querySelector('.nav-item:nth-child(21)')); cffListLoad()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-cff', document.querySelector('.nav-item[data-secao="admin-cff"]'))); cffListLoad()">
                                 <i class="fa-solid fa-chalkboard"></i>
                                 <span>CFF</span>
                             </div>
@@ -4765,7 +4755,7 @@
     <script src="ficha-geral-compartilhar.js?v=8"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=60"></script>
+    <script src="app.js?v=61"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

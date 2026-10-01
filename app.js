@@ -794,7 +794,12 @@ async function initApp() {
         carregarEstadoPortais();
         apontamentoCarregarHistorico();
         if (restoreFormState()) {
-            showAdminSection('admin-form-candidato', document.querySelector('.nav-item:nth-child(2)'));
+            /* Antes isto destacava o item "Pre-Inscricao" do menu, achado por
+               posicao. Esse item saiu do menu (a lista agora vive na secao
+               Individuo), e o formulario tambem nao tem item proprio, entao
+               nao ha nada a destacar. Passa null em vez de um seletor que
+               procuraria um item que nao existe mais. */
+            showAdminSection('admin-form-candidato', null);
             await populateTurmaSelect();
             populateProjetoSelect();
         }
@@ -1030,12 +1035,15 @@ function applyUserPermissions() {
         'admin-whatfarn': isGeral,
         'admin-cff-projetos': p.includes('cff') || isGeral,
         'admin-ficha-geral': p.includes('alunos') || p.includes('avaliacao') || isGeral,
-        /* Individuo: secao em construcao, sem dado nenhum ainda. Fica com
-           a mesma visao das pessoas que Patentes e Ficha Geral, porque e
-           onde o cadastro de cada um vai morar. Quando ela ganhar
-           conteudo, a regra pode ser aperta por permissao propria. */
+        /* Individuo: e onde vivem agora as listas de aluno ativo,
+           pre-inscrito, docente e formado, que sairam do menu. Aparece para
+           quem tem qualquer uma dessas quatro permissoes -- e tambem para
+           quem so tem "usuarios", que ganha assim a lista de usuarios que
+           antes so aparecia em Configuracoes. Sem isto, quem tivesse apenas
+           "pre-inscricao" perderia o acesso as listas ao sairrem do menu. */
         'admin-individuo': p.includes('alunos') || p.includes('docentes')
-            || p.includes('formados') || isGeral,
+            || p.includes('formados') || p.includes('pre-inscricao')
+            || p.includes('usuarios') || isGeral,
         /* O catalogo de patentes alimenta o campo de patente dos formularios
            de aluno, docente e usuario. Quem mexe em um desses cadastros
            precisa poder corrigir o nome e a insignia da patente; por isso
