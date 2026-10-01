@@ -14621,3 +14621,507 @@ function individuoEscolher(tipo) {
         if (typeof window[fn] === 'function') window[fn]();
     });
 }
+
+/* ===== VIDEO AULA (ADMIN) =====
+   O que esta secao cria, em uma frase: um ESPACO de video aula para uma TURMA
+   inteira, nao para uma pessoa. O caminho e sempre o mesmo --
+     1. de onde vem o individuo (Alunos Ativos ou Alunos CFF);
+     2. qual projeto e qual turma, procurados nessa origem;
+     3. o formulario, que so abre depois que os dois foram escolhidos.
+
+   Isso e tambem o que os dados exigem: tanto `candidatos` (status Ativo) quanto
+   `cffAlunos` guardam projeto e turma em cada documento. Uma Video Aula sempre
+   pertence a um par projeto/turma -- nao a um CPF solto -- entao o grupo nao
+   pode mudar depois de salvar.
+
+   Os dois selects sao montados a partir dos proprios individuos, e nao das
+   colecoes de projetos/turmas. O que interessa aqui e achar QUEM esta na
+   turma: um projeto cadastrado sem ninguem nao serve para nada, e uma turma
+   cadastrada no CFF que nao tem inscricao nao tem aluno para video aula.
+   Quem nao tem projeto nem turma gravado cai em "(sem)", em vez de sumir. */
+const FB_VIDEO_AULAS = 'videoAulas';
+const VA_SEM = '(sem)';
+
+var vaOrigem = '';       /* '' | 'alunos' | 'cff' */
+var vaIndiv = [];
+/* Trocar a origem no meio da leitura nao pode misturar: o resultado velho
+   chegando depois pintaria o formulario do grupo novo. O token descarta. */
+var vaIndivToken = 0;
+var vaProjeto = '';
+var vaTurma = '';
+var vaEditandoId = null;
+
+function vaInicializar() {
+    vaLoadList();
+}
+
+function vaAbrirCriacao() {
+    var box = document.getElementById('va-criacao');
+    if (!box) return;
+    box.style.display = '';
+    vaLimparTudo();
+    var p1 = document.getElementById('va-passo-origem');
+    if (p1) p1.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function vaCancelar() {
+    vaLimparTudo();
+    var box = document.getElementById('va-criacao');
+    if (box) box.style.display = 'none';
+}
+
+/* Volta tudo ao passo 1: nenhum grupo escolhido, nenhum campo preenchido. */
+function vaLimparTudo() {
+    vaOrigem = '';
+    vaProjeto = '';
+    vaTurma = '';
+    vaEditandoId = null;
+
+    document.querySelectorAll('#va-origem-botoes .individuo-opcao').forEach(function (b) {
+        var cor = b.getAttribute('data-cor') || '';
+        b.style.background = '';
+        b.style.borderColor = '';
+        b.style.color = '';
+        var ic = b.querySelector('i');
+        if (ic) ic.style.color = cor;
+    });
+
+    ['va-passo-busca', 'va-form-box'].forEach(function (id) {
+        var e = document.getElementById(id);
+        if (e) e.style.display = 'none';
+    });
+
+    ['va-busca', 'va-nome', 'va-pauta', 'va-data', 'va-hora'].forEach(function (id) {
+        var e = document.getElementById(id);
+        if (e) e.value = '';
+    });
+    var av = document.getElementById('va-avaliacao');
+    if (av) av.value = 'Sim';
+    var dc = document.getElementById('va-docente');
+    if (dc) dc.value = '';
+
+    var proj = document.getElementById('va-projeto');
+    if (proj) proj.innerHTML = '<option value="">Selecione o projeto...</option>';
+    var tur = document.getElementById('va-turma');
+    if (tur) tur.innerHTML = '<option value="">Selecione a turma...</option>';
+
+    var tit = document.getElementById('va-form-titulo');
+    if (tit) tit.textContent = 'Nova Video Aula';
+    var btn = document.getElementById('va-save-btn');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvar Video Aula';
+    }
+
+    var ctx = document.getElementById('va-contexto');
+    if (ctx) ctx.innerHTML = '';
+    var msg = document.getElementById('va-msg');
+    if (msg) msg.style.display = 'none';
+    var res = document.getElementById('va-indiv-resumo');
+    if (res) res.innerHTML = '';
+    var lis = document.getElementById('va-indiv-lista');
+    if (lis) lis.innerHTML = '';
+}
+
+/* Garante que um valor continue selecionavel mesmo tendo saido da lista.
+   Abrir um Video Aula ja salvo nao pode trocar o grupo da Video Aula só porque
+   um aluno saiu da turma no meio da tarde. */
+function vaGarantirOpcao(sel, valor) {
+    if (!sel || !valor) return;
+    if (sel.value === valor) return;
+    var tem = false;
+    for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === valor) { tem = true; break; }
+    }
+    if (!tem) sel.innerHTML += '<option value="' + escHTML(valor) + '">' + escHTML(valor) + ' (0)</option>';
+    sel.value = valor;
+}
+
+function vaEscolherOrigem(origem) {
+    if (origem !== 'alunos' && origem !== 'cff') return;
+    vaOrigem = origem;
+    vaProjeto = '';
+    vaTurma = '';
+    vaEditandoId = null;
+
+    document.querySelectorAll('#va-origem-botoes .individuo-opcao').forEach(function (b) {
+        var cor = b.getAttribute('data-cor') || '';
+        var escolhido = b.getAttribute('data-origem') === origem;
+        b.style.background = escolhido ? cor : '';
+        b.style.borderColor = escolhido ? cor : '';
+        b.style.color = escolhido ? '#fff' : '';
+        var ic = b.querySelector('i');
+        if (ic) ic.style.color = escolhido ? '#fff' : cor;
+    });
+
+    var passo = document.getElementById('va-passo-busca');
+    if (passo) passo.style.display = '';
+    var box = document.getElementById('va-form-box');
+    if (box) box.style.display = 'none';
+    var tit = document.getElementById('va-form-titulo');
+    if (tit) tit.textContent = 'Nova Video Aula';
+    var btn = document.getElementById('va-save-btn');
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvar Video Aula';
+
+    return vaCarregarIndiv();
+}
+
+async function vaCarregarIndiv() {
+    var token = ++vaIndivToken;
+    var proj = document.getElementById('va-projeto');
+    var tur = document.getElementById('va-turma');
+    var res = document.getElementById('va-indiv-resumo');
+    if (proj) proj.innerHTML = '<option value="">Carregando...</option>';
+    if (tur) tur.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (res) res.innerHTML = '';
+    try {
+        /* Alunos Ativos moram em `candidatos` com status Ativo; o CFF tem colecao
+           propria (FB_CFF = cffAlunos) e nao usa status. */
+        var snap = vaOrigem === 'cff'
+            ? await dbFirestore.collection(FB_CFF).get()
+            : await dbFirestore.collection(FB_CANDIDATOS).where('status', '==', 'Ativo').get();
+        if (token !== vaIndivToken) return;
+
+        var lista = [];
+        snap.forEach(function (doc) {
+            var d = doc.data() || {};
+            lista.push({
+                id: doc.id,
+                nome: d.nome || '(sem nome)',
+                cpf: d.cpf || '',
+                projeto: d.projeto || VA_SEM,
+                turma: d.turma || VA_SEM
+            });
+        });
+        vaIndiv = lista;
+        vaPopularProjetos();
+    } catch (e) {
+        if (token !== vaIndivToken) return;
+        console.error('Erro ao carregar os individuos da Video Aula:', e);
+        vaIndiv = [];
+        if (proj) proj.innerHTML = '<option value="">Erro ao carregar</option>';
+        if (res) {
+            res.innerHTML = '<span style="color:#b91c1c">Erro ao carregar os individuos: '
+                + escHTML(e.message) + '</span>';
+        }
+    }
+}
+
+function vaGrupoNome() {
+    return vaOrigem === 'cff' ? 'inscritos no CFF' : 'alunos ativos';
+}
+
+function vaValoresDistintos(chave) {
+    var conta = {};
+    vaIndiv.forEach(function (i) {
+        var v = i[chave] || VA_SEM;
+        conta[v] = (conta[v] || 0) + 1;
+    });
+    return Object.keys(conta).sort(function (a, b) {
+        /* "(sem)" e o resto, nao uma escolha de verdade: fica no fim. */
+        if (a === VA_SEM) return 1;
+        if (b === VA_SEM) return -1;
+        return a.localeCompare(b, 'pt-BR');
+    });
+}
+
+function vaPopularProjetos() {
+    var sel = document.getElementById('va-projeto');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione o projeto...</option>';
+    var conta = {};
+    vaIndiv.forEach(function (i) { conta[i.projeto || VA_SEM] = (conta[i.projeto || VA_SEM] || 0) + 1; });
+    vaValoresDistintos('projeto').forEach(function (nome) {
+        sel.innerHTML += '<option value="' + escHTML(nome) + '">' + escHTML(nome) + ' (' + conta[nome] + ')</option>';
+    });
+}
+
+function vaOnProjetoChange() {
+    var sel = document.getElementById('va-projeto');
+    vaProjeto = sel ? sel.value : '';
+    vaTurma = '';
+    var box = document.getElementById('va-form-box');
+    if (box) box.style.display = 'none';
+
+    var tur = document.getElementById('va-turma');
+    if (tur) tur.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (vaProjeto) {
+        /* So as turmas que tem alguem DENTRO do projeto escolhido. */
+        var conta = {};
+        vaIndiv.forEach(function (i) {
+            if (i.projeto !== vaProjeto) return;
+            var v = i.turma || VA_SEM;
+            conta[v] = (conta[v] || 0) + 1;
+        });
+        Object.keys(conta).sort(function (a, b) {
+            if (a === VA_SEM) return 1;
+            if (b === VA_SEM) return -1;
+            return a.localeCompare(b, 'pt-BR');
+        }).forEach(function (nome) {
+            tur.innerHTML += '<option value="' + escHTML(nome) + '">' + escHTML(nome) + ' (' + conta[nome] + ')</option>';
+        });
+    }
+    vaRenderIndiv();
+}
+
+/* Chegou em projeto e turma: e agora que o formulario abre. */
+function vaOnTurmaChange() {
+    var sel = document.getElementById('va-turma');
+    vaTurma = sel ? sel.value : '';
+    vaRenderIndiv();
+    if (vaProjeto && vaTurma) vaAbrirForm();
+}
+
+function vaFiltrados() {
+    var campo = document.getElementById('va-busca');
+    var termo = ((campo ? campo.value : '') || '').trim().toLowerCase();
+    return vaIndiv.filter(function (i) {
+        if (vaProjeto && i.projeto !== vaProjeto) return false;
+        if (vaTurma && i.turma !== vaTurma) return false;
+        if (!termo) return true;
+        return (i.nome || '').toLowerCase().indexOf(termo) !== -1
+            || String(i.cpf || '').indexOf(termo) !== -1;
+    });
+}
+
+/* Quem esta no grupo escolhido. E a conferencia de que o espaco vai para as
+   pessoas certas antes de sair um Video Aula em nome delas. */
+function vaRenderIndiv() {
+    var res = document.getElementById('va-indiv-resumo');
+    var lis = document.getElementById('va-indiv-lista');
+    if (!res || !lis) return;
+
+    if (!vaProjeto) {
+        res.innerHTML = vaOrigem
+            ? 'Escolha o projeto e a turma para ver quem esta neles. Sao ' + vaIndiv.length + ' ' + vaGrupoNome() + ' no total.'
+            : '';
+        lis.innerHTML = '';
+        return;
+    }
+
+    var f = vaFiltrados();
+    res.innerHTML = '<b>' + f.length + '</b> de ' + vaIndiv.length + ' ' + vaGrupoNome()
+        + ' em <b>' + escHTML(vaProjeto) + '</b>'
+        + (vaTurma ? ' / <b>' + escHTML(vaTurma) + '</b>' : '')
+        + (f.length ? '' : ' - nenhum encontrado com esse filtro.');
+
+    if (!f.length) { lis.innerHTML = ''; return; }
+    var linhas = f.map(function (i) {
+        return '<tr style="border-bottom:1px solid #f1f5f9">'
+            + '<td style="padding:5px 8px;color:#1e293b">' + escHTML(i.nome) + '</td>'
+            + '<td style="padding:5px 8px;color:#475569">' + escHTML(i.cpf || '-') + '</td>'
+            + '<td style="padding:5px 8px;color:#475569">' + escHTML(i.projeto) + '</td>'
+            + '<td style="padding:5px 8px;color:#475569">' + escHTML(i.turma) + '</td></tr>';
+    }).join('');
+    lis.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        + '<tr style="background:#e0e7ff;color:#1e3a8a;font-weight:600">'
+        + '<th style="text-align:left;padding:6px 8px">Nome</th>'
+        + '<th style="text-align:left;padding:6px 8px">CPF</th>'
+        + '<th style="text-align:left;padding:6px 8px">Projeto</th>'
+        + '<th style="text-align:left;padding:6px 8px">Turma</th></tr>'
+        + linhas + '</table>';
+}
+
+function vaAbrirForm() {
+    if (!vaProjeto || !vaTurma) return;
+    /* Mesmo carregador das telas do CFF: le `docentes` por nome e poe o nome no
+       value. Um segundo carregador aqui seria a mesma funcao com outro nome. */
+    cffCarregarDocentes(['va-docente']);
+
+    var ctx = document.getElementById('va-contexto');
+    if (ctx) {
+        ctx.innerHTML = '<b>Espaco da turma:</b> ' + escHTML(vaProjeto) + ' / ' + escHTML(vaTurma) + '<br>'
+            + '<b>Origem:</b> ' + (vaOrigem === 'cff' ? 'Alunos CFF' : 'Alunos Ativos')
+            + ' &middot; <b>' + vaFiltrados().length + '</b> ' + vaGrupoNome() + ' neste grupo<br>'
+            + '<span style="font-size:11.5px">O espaco e da turma inteira. Depois de salvo, o grupo nao muda.</span>';
+    }
+    var box = document.getElementById('va-form-box');
+    if (box) {
+        box.style.display = '';
+        box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function vaMsg(msg, tipo) {
+    var el = document.getElementById('va-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    if (tipo === 'ok') {
+        el.style.background = '#f0fdf4';
+        el.style.border = '1px solid #bbf7d0';
+        el.style.color = '#15803d';
+    } else {
+        el.style.background = '#fef2f2';
+        el.style.border = '1px solid #fecaca';
+        el.style.color = '#b91c1c';
+    }
+    el.textContent = msg;
+}
+
+async function vaSalvar() {
+    var nome = (document.getElementById('va-nome').value || '').trim();
+    var pauta = (document.getElementById('va-pauta').value || '').trim();
+    var data = document.getElementById('va-data').value || '';
+    var hora = document.getElementById('va-hora').value || '';
+    var avaliacao = document.getElementById('va-avaliacao').value || 'Sim';
+    var docente = (document.getElementById('va-docente').value || '').trim();
+    var btn = document.getElementById('va-save-btn');
+
+    if (!vaProjeto || !vaTurma) { vaMsg('Escolha o projeto e a turma antes de salvar.', 'err'); return; }
+    if (!nome) { vaMsg('Informe o nome da Video Aula.', 'err'); return; }
+    if (!data) { vaMsg('Informe a data.', 'err'); return; }
+    if (!hora) { vaMsg('Informe a hora.', 'err'); return; }
+    if (!docente) { vaMsg('Selecione o docente.', 'err'); return; }
+
+    var editando = vaEditandoId;
+    var dados = {
+        nome: nome,
+        pauta: pauta,
+        data: data,
+        hora: hora,
+        avaliacao: avaliacao === 'Sim' ? 'Sim' : 'Nao',
+        docente: docente,
+        origem: vaOrigem,
+        projeto: vaProjeto,
+        turma: vaTurma,
+        qtdAlunos: vaFiltrados().length,
+        atualizadoEm: new Date().toISOString()
+    };
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+    try {
+        var col = dbFirestore.collection(FB_VIDEO_AULAS);
+        if (editando) {
+            await col.doc(editando).update(dados);
+        } else {
+            dados.criadoEm = new Date().toISOString();
+            await col.add(dados);
+        }
+        /* Limpa antes da mensagem: vaLimparTudo esconde o va-msg, e a ordem
+            errada deixaria o "salvo com sucesso" invisivel. */
+        vaLimparTudo();
+        vaMsg(editando ? 'Video Aula atualizada com sucesso!' : 'Video Aula cadastrada com sucesso!', 'ok');
+        vaLoadList();
+    } catch (e) {
+        console.error('Erro ao salvar Video Aula:', e);
+        vaMsg('Erro ao salvar: ' + e.message, 'err');
+        btn.disabled = false;
+        btn.innerHTML = editando
+            ? '<i class="fa-solid fa-check"></i> Atualizar Video Aula'
+            : '<i class="fa-solid fa-check"></i> Salvar Video Aula';
+    }
+}
+
+async function vaLoadList() {
+    var cx = document.getElementById('va-lista');
+    if (!cx) return;
+    try {
+        var snap = await dbFirestore.collection(FB_VIDEO_AULAS).orderBy('data', 'desc').get();
+        if (snap.empty) {
+            cx.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 20px">'
+                + '<i class="fa-solid fa-film" style="font-size:44px;display:block;margin-bottom:14px;color:#7c3aed;opacity:.35"></i>'
+                + '<p style="font-size:14px;color:#475569;font-weight:600;margin-bottom:4px">Nenhuma Video Aula cadastrada.</p>'
+                + '<p style="font-size:12.5px">Use o botao <b>Criar Espaco de Video Aula</b> para montar o primeiro.</p>'
+                + '</div>';
+            return;
+        }
+        var itens = [];
+        snap.forEach(function (doc) { itens.push(vaCardHTML(doc.id, doc.data() || {})); });
+        cx.innerHTML = itens.join('');
+    } catch (e) {
+        console.error('Erro ao carregar as Video Aulas:', e);
+        cx.innerHTML = '<div style="text-align:center;color:#b91c1c;padding:30px">Erro ao carregar as Video Aulas.</div>';
+    }
+}
+
+/* "2026-10-01" -> "01/10/2026". O <input type="date"> sempre entrega esse
+   formato, entao nao ha fuso para brigar aqui. */
+function vaDataBR(iso) {
+    var p = String(iso || '').slice(0, 10).split('-');
+    if (p.length !== 3) return String(iso || '');
+    return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function vaCardHTML(id, d) {
+    var origem = d.origem === 'cff'
+        ? '<span style="background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-chalkboard" style="margin-right:3px"></i>Alunos CFF</span>'
+        : '<span style="background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-user-graduate" style="margin-right:3px"></i>Alunos Ativos</span>';
+    var avaliacao = d.avaliacao === 'Sim'
+        ? '<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600"><i class="fa-solid fa-clipboard-check" style="margin-right:3px"></i>Avaliacao: Sim</span>'
+        : '<span style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">Avaliacao: Nao</span>';
+
+    var etiquetas = origem + avaliacao
+        + '<span><i class="fa-solid fa-handshake" style="margin-right:3px"></i>' + escHTML(d.projeto || '-') + '</span>'
+        + '<span><i class="fa-solid fa-users" style="margin-right:3px"></i>' + escHTML(d.turma || '-') + '</span>';
+    if (d.data) etiquetas += '<span><i class="fa-regular fa-calendar" style="margin-right:3px"></i>' + vaDataBR(d.data) + '</span>';
+    if (d.hora) etiquetas += '<span><i class="fa-regular fa-clock" style="margin-right:3px"></i>' + escHTML(d.hora) + '</span>';
+    if (d.docente) {
+        etiquetas += '<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">'
+            + '<i class="fa-solid fa-chalkboard-user" style="margin-right:3px"></i>' + escHTML(d.docente) + '</span>';
+    }
+    if (d.qtdAlunos !== undefined && d.qtdAlunos !== null && d.qtdAlunos !== '') {
+        etiquetas += '<span><i class="fa-solid fa-user-group" style="margin-right:3px"></i>' + escHTML(String(d.qtdAlunos)) + ' pessoas</span>';
+    }
+
+    return '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px">'
+        + '<div style="width:42px;height:42px;background:rgba(124,58,237,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+        + '<i class="fa-solid fa-circle-play" style="color:#7c3aed;font-size:18px"></i></div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;font-weight:600;color:#1e293b">' + escHTML(d.nome || 'Video Aula') + '</div>'
+        + '<div style="font-size:11px;color:#64748b;display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap">' + etiquetas + '</div>'
+        + (d.pauta ? '<div style="font-size:11.5px;color:#475569;margin-top:6px;line-height:1.55;border-left:3px solid #ddd6fe;padding-left:8px">' + escHTML(d.pauta) + '</div>' : '')
+        + '</div>'
+        + '<div style="display:flex;gap:6px;flex-shrink:0">'
+        + '<button onclick="vaEdit(\'' + id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background=\'rgba(245,127,23,.25)\'" onmouseout="this.style.background=\'rgba(245,127,23,.1)\'"><i class="fa-solid fa-pen"></i></button>'
+        + '<button onclick="vaDelete(\'' + id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background=\'rgba(220,38,38,.25)\'" onmouseout="this.style.background=\'rgba(220,38,38,.1)\'"><i class="fa-solid fa-trash"></i></button>'
+        + '</div></div>';
+}
+
+async function vaEdit(docId) {
+    try {
+        var doc = await dbFirestore.collection(FB_VIDEO_AULAS).doc(docId).get();
+        if (!doc.exists) { alert('Video Aula nao encontrada.'); return; }
+        var d = doc.data() || {};
+
+        var box = document.getElementById('va-criacao');
+        if (box) box.style.display = '';
+        await vaEscolherOrigem(d.origem === 'cff' ? 'cff' : 'alunos');
+
+        /* Os selects so conhecem quem esta la hoje. O projeto e a turma salvos
+           entram na lista mesmo assim: editar uma Video Aula nao pode trocar o
+           grupo dela porque alguem saiu da turma. */
+        vaGarantirOpcao(document.getElementById('va-projeto'), d.projeto || VA_SEM);
+        vaOnProjetoChange();
+        vaGarantirOpcao(document.getElementById('va-turma'), d.turma || VA_SEM);
+        vaTurma = (document.getElementById('va-turma') || {}).value || '';
+        vaRenderIndiv();
+
+        document.getElementById('va-nome').value = d.nome || '';
+        document.getElementById('va-pauta').value = d.pauta || '';
+        document.getElementById('va-data').value = d.data || '';
+        document.getElementById('va-hora').value = String(d.hora || '').slice(0, 5);
+        document.getElementById('va-avaliacao').value = d.avaliacao === 'Nao' ? 'Nao' : 'Sim';
+        var tit = document.getElementById('va-form-titulo');
+        if (tit) tit.textContent = 'Editar Video Aula';
+        var btn = document.getElementById('va-save-btn');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizar Video Aula';
+
+        vaAbrirForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+        console.error('Erro ao abrir a Video Aula:', e);
+        alert('Erro ao carregar a Video Aula: ' + e.message);
+    }
+}
+
+async function vaDelete(docId) {
+    if (!confirm('Excluir esta Video Aula?')) return;
+    try {
+        await dbFirestore.collection(FB_VIDEO_AULAS).doc(docId).delete();
+        if (vaEditandoId === docId) vaLimparTudo();
+        vaLoadList();
+    } catch (e) {
+        alert('Erro ao excluir: ' + e.message);
+    }
+}

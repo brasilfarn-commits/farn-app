@@ -759,7 +759,7 @@
                         <i class="fa-solid fa-graduation-cap"></i>
                         <span>Disciplinas</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-video-aula" onclick="showAdminSection('admin-video-aula', this)">
+                    <a href="#" class="nav-item" data-secao="admin-video-aula" onclick="showAdminSection('admin-video-aula', this); vaInicializar()">
                         <i class="fa-solid fa-circle-play"></i>
                         <span>Video Aula</span>
                     </a>
@@ -2764,18 +2764,124 @@
                     </div>
                 </div>
 
-                <!-- VIDEO AULA (em construcao) -->
+                <!-- VIDEO AULA -->
                 <div id="admin-video-aula" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-circle-play" style="color:#7c3aed;margin-right:8px"></i> Video Aula</h3>
+                            <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="vaAbrirCriacao()"><i class="fa-solid fa-plus"></i> Criar Espaco de Video Aula</button>
                         </div>
                         <div class="card-body">
-                            <div style="text-align:center;padding:60px 20px;color:#94a3b8">
-                                <i class="fa-solid fa-film" style="font-size:48px;display:block;margin-bottom:16px;color:#7c3aed"></i>
-                                <h3 style="font-size:18px;color:#334155;margin-bottom:8px">Em Construcao</h3>
-                                <p style="font-size:13px;color:#94a3b8">Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
+
+                            <!-- A criacao so aparece depois do botao. Sem isso a
+                                 tela abriria com os tres passos e dois selects
+                                 vazios, e ninguem saberia de onde comecar. -->
+                            <div id="va-criacao" style="display:none">
+                                <div id="va-msg" style="display:none;border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6;margin-bottom:16px"></div>
+
+                                <!-- PASSO 1: de onde vem o individuo -->
+                                <div id="va-passo-origem" style="padding:18px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:18px">
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                                        <i class="fa-solid fa-user-group" style="color:#16a34a;font-size:16px"></i>
+                                        <span style="color:#16a34a;font-weight:700;font-size:14px">Passo 1 - Escolha de onde vem o individuo</span>
+                                    </div>
+                                    <div id="va-origem-botoes" style="display:flex;gap:12px;flex-wrap:wrap">
+                                        <button type="button" class="individuo-opcao" data-origem="alunos" data-cor="#2563eb" onclick="vaEscolherOrigem('alunos')">
+                                            <i class="fa-solid fa-user-graduate" style="color:#2563eb"></i>
+                                            <span>Alunos Ativos<small>Candidatos com status Ativo</small></span>
+                                        </button>
+                                        <button type="button" class="individuo-opcao" data-origem="cff" data-cor="#7c3aed" onclick="vaEscolherOrigem('cff')">
+                                            <i class="fa-solid fa-chalkboard" style="color:#7c3aed"></i>
+                                            <span>Alunos CFF<small>Todos os inscritos no CFF</small></span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- PASSO 2: pesquisa por projeto e turma -->
+                                <div id="va-passo-busca" style="display:none;padding:18px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #2563eb;border-radius:12px;margin-bottom:18px">
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                                        <i class="fa-solid fa-filter" style="color:#2563eb;font-size:16px"></i>
+                                        <span style="color:#2563eb;font-weight:700;font-size:14px">Passo 2 - Pesquise o individuo por projeto e turma</span>
+                                    </div>
+                                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                        <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                            <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Projeto *</label>
+                                            <select id="va-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="vaOnProjetoChange()">
+                                                <option value="">Selecione o projeto...</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                            <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Turma *</label>
+                                            <select id="va-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="vaOnTurmaChange()">
+                                                <option value="">Selecione a turma...</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                                            <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Filtrar por nome ou CPF</label>
+                                            <input type="text" id="va-busca" class="config-input" style="width:100%;border-color:#2563eb" placeholder="Opcional" oninput="vaRenderIndiv()">
+                                        </div>
+                                    </div>
+                                    <div id="va-indiv-resumo" style="margin-top:12px;font-size:12.5px;color:#1e40af;line-height:1.6"></div>
+                                    <div id="va-indiv-lista" style="margin-top:10px;max-height:280px;overflow:auto"></div>
+                                </div>
+
+                                <!-- PASSO 3: formulario da Video Aula -->
+                                <div id="va-form-box" style="display:none;padding:20px;background:linear-gradient(135deg,#faf5ff 0%,#f3e8ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:18px">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+                                        <h3 style="margin:0;color:#5b21b6"><i class="fa-solid fa-circle-play" style="margin-right:8px"></i><span id="va-form-titulo">Nova Video Aula</span></h3>
+                                        <button class="btn-outline btn-sm" onclick="vaCancelar()"><i class="fa-solid fa-xmark"></i> Fechar formulario</button>
+                                    </div>
+
+                                    <!-- O grupo escolhido vem preenchido e travado: o
+                                         formulario cria o espaco DELE, e nao de outro. -->
+                                    <div id="va-contexto" style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.3);border-radius:10px;padding:11px 13px;font-size:12.5px;color:#5b21b6;line-height:1.7;margin-bottom:16px"></div>
+
+                                    <div class="form-group">
+                                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Video Aula *</label>
+                                        <input type="text" id="va-nome" class="config-input" placeholder="Ex:teija do fogo - partie 1">
+                                    </div>
+
+                                    <div class="form-group" style="margin-top:12px">
+                                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Pauta da Video Aula</label>
+                                        <textarea id="va-pauta" class="config-input" rows="4" placeholder="O que sera abandonado nesta video aula..."></textarea>
+                                    </div>
+
+                                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+                                        <div class="form-group" style="flex:1;min-width:160px;margin:0">
+                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data *</label>
+                                            <input type="date" id="va-data" class="config-input" style="width:100%">
+                                        </div>
+                                        <div class="form-group" style="flex:1;min-width:160px;margin:0">
+                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Hora *</label>
+                                            <input type="time" id="va-hora" class="config-input" style="width:100%">
+                                        </div>
+                                        <div class="form-group" style="flex:1;min-width:160px;margin:0">
+                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Avaliacao Video Aula *</label>
+                                            <select id="va-avaliacao" class="config-input" style="width:100%">
+                                                <option value="Sim">Sim</option>
+                                                <option value="Nao">Nao</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" style="margin-top:12px">
+                                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Docente *</label>
+                                        <select id="va-docente" class="config-input" style="width:100%">
+                                            <option value="">Selecione o docente...</option>
+                                        </select>
+                                    </div>
+
+                                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+                                        <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" id="va-save-btn" onclick="vaSalvar()"><i class="fa-solid fa-check"></i> Salvar Video Aula</button>
+                                        <button class="btn-outline" onclick="vaCancelar()">Cancelar</button>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- As Video Aulas ja criadas. Sem esta lista o que
+                                 foi salvo nao teria volta: o formulario so
+                                 existe para escrever, e ninguem veria. -->
+                            <div id="va-lista"></div>
                         </div>
                     </div>
                 </div>
@@ -4810,7 +4916,7 @@
     <script src="ficha-geral-compartilhar.js?v=8"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=64"></script>
+    <script src="app.js?v=65"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
