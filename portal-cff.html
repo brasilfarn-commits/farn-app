@@ -148,6 +148,7 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
         <a href="#" id="cff-nav-inicio" onclick="cffShowSecao('inicio'); cffCloseMenu(); return false;"><i class="fa-solid fa-house"></i> Início</a>
         <a href="#" id="cff-nav-apostilas" onclick="cffShowSecao('apostilas'); cffCloseMenu(); return false;"><i class="fa-solid fa-book-open"></i> Apostilas</a>
         <a href="#" id="cff-nav-aulas" onclick="cffShowSecao('aulas'); cffCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
+        <a href="#" id="cff-nav-video-aula" onclick="cffShowSecao('video-aula'); cffCloseMenu(); return false;"><i class="fa-solid fa-circle-play"></i> Vídeo Aula <span class="em-breve">EM BREVE</span></a>
         <a href="#" id="cff-nav-avaliacoes" onclick="cffShowSecao('avaliacoes'); cffCloseMenu(); return false;"><i class="fa-solid fa-list-check"></i> Avaliações</a>
         <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-newspaper"></i> Notícias <span class="em-breve">EM BREVE</span></a>
         <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-graduation-cap"></i> Certificação <span class="em-breve">EM BREVE</span></a>
@@ -249,6 +250,26 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
             <div class="dados-body">
                 <div id="cff-aula-list">
                     <div class="cff-aula-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIDEO AULA -->
+    <div class="sec" id="cff-sec-video-aula">
+        <div class="box">
+            <div class="dados-head">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                    <h3 style="margin:0"><i class="fa-solid fa-circle-play" style="color:#7c3aed;margin-right:6px"></i> Vídeo Aula</h3>
+                    <span class="badge-const"><i class="fa-solid fa-hammer"></i> EM CONSTRUÇÃO</span>
+                </div>
+                <p style="margin-top:8px">Acompanhe as vídeo aulas do Curso de Formação de Formadores.</p>
+            </div>
+            <div class="dados-body">
+                <div class="cff-aula-empty">
+                    <i class="fa-solid fa-film" style="font-size:40px;display:block;margin-bottom:14px"></i>
+                    <h3 style="font-size:17px;font-weight:800;color:#1e1b4b;margin-bottom:8px">Em construção</h3>
+                    <p style="font-size:12.5px">Esta seção está sendo desenvolvida e estará disponível em breve.</p>
                 </div>
             </div>
         </div>
@@ -432,7 +453,7 @@ var cffUser = null;
         document.querySelectorAll('.sec').forEach(function(s) { s.classList.remove('ativo'); });
         var alvo = document.getElementById('cff-sec-' + nome);
         if (alvo) alvo.classList.add('ativo');
-        var navs = { inicio: 'cff-nav-inicio', dados: 'cff-nav-dados', apostilas: 'cff-nav-apostilas', aulas: 'cff-nav-aulas', avaliacoes: 'cff-nav-avaliacoes' };
+        var navs = { inicio: 'cff-nav-inicio', dados: 'cff-nav-dados', apostilas: 'cff-nav-apostilas', aulas: 'cff-nav-aulas', avaliacoes: 'cff-nav-avaliacoes', 'video-aula': 'cff-nav-video-aula' };
         for (var key in navs) {
             var n = document.getElementById(navs[key]);
             if (n) n.classList.toggle('ativo', nome === key);

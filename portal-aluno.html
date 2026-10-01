@@ -514,6 +514,7 @@
                 <a href="#" onclick="paShowSection('noticias',this); paCloseMenu(); return false;"><i class="fa-solid fa-newspaper"></i> Blog</a>
                 <a href="#" onclick="paShowSection('galeria',this); paCloseMenu(); return false;"><i class="fa-solid fa-images"></i> Galeria</a>
                 <a href="#" onclick="paShowSection('aulas',this); paCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
+                <a href="#" onclick="paShowSection('video-aula',this); paCloseMenu(); return false;"><i class="fa-solid fa-circle-play"></i> Vídeo Aula</a>
                 <a href="#" onclick="paShowSection('docente',this); paCloseMenu(); return false;"><i class="fa-solid fa-chalkboard-user"></i> Informações do Docente</a>
                 <a href="#" onclick="paShowSection('apontamento',this); paCloseMenu(); return false;"><i class="fa-solid fa-clipboard-check"></i> Apontamento</a>
                 <a href="#" onclick="paShowSection('carteira',this); paCloseMenu(); return false;"><i class="fa-solid fa-id-card"></i> Carteira</a>
@@ -531,21 +532,25 @@
 
             <!-- SIDEBAR -->
             <div class="pf-sidebar">
-                <div class="pf-nav-item active" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i> Inicio</div>
-                <div class="pf-nav-item" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i> Blog</div>
-                <div class="pf-nav-item" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
-                <div class="pf-nav-item" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
-                <div class="pf-nav-item" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
-                <div class="pf-nav-item" onclick="paShowSection('docente',this)"><i class="fa-solid fa-chalkboard-user"></i> Informações do Docente</div>
+                <!-- data-secao em todos: e por ele que os cards do Inicio acham o item do menu,
+                     para nao depender da posicao. O item novo entrava antes de
+                     Aulas e deslocava o indice, que e o bug do item errado. -->
+                <div class="pf-nav-item active" data-secao="inicio" onclick="paShowSection('inicio',this)"><i class="fa-solid fa-house"></i> Inicio</div>
+                <div class="pf-nav-item" data-secao="noticias" onclick="paShowSection('noticias',this)"><i class="fa-solid fa-newspaper"></i> Blog</div>
+                <div class="pf-nav-item" data-secao="galeria" onclick="paShowSection('galeria',this)"><i class="fa-solid fa-images"></i> Galeria</div>
+                <div class="pf-nav-item" data-secao="apostila" onclick="paShowSection('apostila',this)"><i class="fa-solid fa-book-open"></i> Apostilas</div>
+                <div class="pf-nav-item" data-secao="aulas" onclick="paShowSection('aulas',this)"><i class="fa-solid fa-chalkboard"></i> Aulas</div>
+                <div class="pf-nav-item" data-secao="video-aula" onclick="paShowSection('video-aula',this)"><i class="fa-solid fa-circle-play"></i> Vídeo Aula</div>
+                <div class="pf-nav-item" data-secao="docente" onclick="paShowSection('docente',this)"><i class="fa-solid fa-chalkboard-user"></i> Informações do Docente</div>
                 <div class="pf-nav-divider"></div>
-                <div class="pf-nav-item" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
-                <div class="pf-nav-item" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
-                <div class="pf-nav-item" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i> Declaracoes</div>
-                <div class="pf-nav-item" onclick="paShowSection('responder-avaliacao',this)"><i class="fa-solid fa-list-check"></i> Responder Avaliacao</div>
-                <div class="pf-nav-item" onclick="paShowSection('ficha-geral',this)"><i class="fa-solid fa-folder-open"></i> Ficha Geral</div>
-                <div class="pf-nav-item" onclick="paShowSection('whatfarn',this)"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>
-                <div class="pf-nav-item" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
-                <div class="pf-nav-item" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
+                <div class="pf-nav-item" data-secao="apontamento" onclick="paShowSection('apontamento',this)"><i class="fa-solid fa-clipboard-check"></i> Apontamento</div>
+                <div class="pf-nav-item" data-secao="carteira" onclick="paShowSection('carteira',this)"><i class="fa-solid fa-id-card"></i> Carteira</div>
+                <div class="pf-nav-item" data-secao="decl" onclick="paShowSection('decl',this)"><i class="fa-solid fa-file-lines"></i> Declaracoes</div>
+                <div class="pf-nav-item" data-secao="responder-avaliacao" onclick="paShowSection('responder-avaliacao',this)"><i class="fa-solid fa-list-check"></i> Responder Avaliacao</div>
+                <div class="pf-nav-item" data-secao="ficha-geral" onclick="paShowSection('ficha-geral',this)"><i class="fa-solid fa-folder-open"></i> Ficha Geral</div>
+                <div class="pf-nav-item" data-secao="whatfarn" onclick="paShowSection('whatfarn',this)"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>
+                <div class="pf-nav-item" data-secao="dados" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
+                <div class="pf-nav-item" data-secao="app" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
             </div>
 
             <!-- CONTENT -->
@@ -564,17 +569,17 @@
                     </div>
 
                     <div class="pf-stats-row">
-                        <div class="pf-stat-card" onclick="paShowSection('noticias', document.querySelectorAll('.pf-nav-item')[1])">
+                        <div class="pf-stat-card" onclick="paShowSection('noticias', paNavEl('noticias'))">
                             <i class="fa-solid fa-newspaper"></i>
                             <div class="pf-stat-val">--</div>
                             <div class="pf-stat-label">Blog</div>
                         </div>
-                        <div class="pf-stat-card" onclick="paShowSection('aulas', document.querySelectorAll('.pf-nav-item')[4])">
+                        <div class="pf-stat-card" onclick="paShowSection('aulas', paNavEl('aulas'))">
                             <i class="fa-solid fa-chalkboard"></i>
                             <div class="pf-stat-val">--</div>
                             <div class="pf-stat-label">Aulas</div>
                         </div>
-                        <div class="pf-stat-card" onclick="paShowSection('apostila', document.querySelectorAll('.pf-nav-item')[3])">
+                        <div class="pf-stat-card" onclick="paShowSection('apostila', paNavEl('apostila'))">
                             <i class="fa-solid fa-book-open"></i>
                             <div class="pf-stat-val">--</div>
                             <div class="pf-stat-label">Apostilas</div>
@@ -655,6 +660,19 @@
                     <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as aulas do seu projeto e turma.</p>
                     <div id="pf-aula-list">
                         <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                    </div>
+                </div>
+
+                <!-- VIDEO AULA (em construcao) -->
+                <div class="pf-section" id="pf-section-video-aula">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                        <h3 style="font-size:16px;color:var(--green);margin:0"><i class="fa-solid fa-circle-play"></i> Vídeo Aula</h3>
+                    </div>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as video aulas gravadas.</p>
+                    <div class="pf-em-construcao">
+                        <i class="fa-solid fa-film"></i>
+                        <h3>Em construcao</h3>
+                        <p>Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
                     </div>
                 </div>
 
@@ -1847,6 +1865,13 @@
             var m = document.getElementById('wf-bv-modal');
             if (m) m.classList.add('show');
         }, 900);
+    }
+
+    /* Procura o item do menu pelo data-secao, e nao pela posicao: os cards do
+       Inicio usavam querySelectorAll('.pf-nav-item')[1], [3] e [4], que
+       quebram assim que entra um item novo antes deles. */
+    function paNavEl(secao) {
+        return document.querySelector('.pf-nav-item[data-secao="' + secao + '"]');
     }
 
     function paShowSection(section, el) {
