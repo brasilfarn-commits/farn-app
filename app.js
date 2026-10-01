@@ -14479,19 +14479,23 @@ var INDIVIDUO_SECOES = {
     docente: { id: 'admin-docentes',      rotulo: 'Docente',      iniciar: 'docentesInicializar' },
     usuario: { id: 'admin-usuarios',      rotulo: 'Usuario',      iniciar: 'renderUsuariosList' },
 
-    /* --- grupo CFF -------------------------------------------------------
+    /* --- CFF --------------------------------------------------------------
        O CFF entrou no Individuo porque lista pessoas tambem: a inscricao e
        de uma pessoa, mesmo sendo de formacao de formadores.
+
+       So o "Aluno CFF" fica na grade de escolha. Os outros cinco ficam numa
+       segunda grade que so aparece depois que a lista de Aluno CFF abre --
+       estar com 11 botoes na escolha nao era o que foi pedido.
 
        Repare que NAO se copia a pagina e NAO se usa os botoes do CFF: os
        botoes do CFF chamam showAdminSection, que expulsaria do painel a
        pagina emprestada. Aqui cada entrada empresta a pagina e roda so a
        parte que carrega dados (cffFormPreparar, cffDisciplinasSecaoCarregar,
-       cffProjetosSecaoCarregar). Sao exatamente as metades que os botoes do CFF
-       executam antes de trocar de tela. */
+       cffProjetosSecaoCarregar). Sao exatamente as metades que os botoes do
+       CFF executam antes de trocar de tela. */
 
-    /* Alunos CFF: a lista de todo mundo cadastrado no CFF */
-    cff:        { id: 'admin-cff',             rotulo: 'Alunos CFF',          iniciar: 'cffListLoad' },
+    /* Aluno CFF: a lista de todo mundo cadastrado no CFF */
+    cff:        { id: 'admin-cff',             rotulo: 'Aluno CFF',          iniciar: 'cffListLoad' },
     /* Novo CFF: o formulario de inscricao, ja limpo como o cffAbrirForm deixa */
     cffNovo:    { id: 'admin-form-cff',        rotulo: 'Novo CFF',            iniciar: 'cffFormPreparar' },
     cffDisc:    { id: 'admin-cff-disciplinas', rotulo: 'Disciplina CFF',      iniciar: 'cffDisciplinasSecaoCarregar' },
@@ -14503,6 +14507,44 @@ var INDIVIDUO_SECOES = {
     cffAval:    { pagina: 'criar-avaliacao-cff.html',    rotulo: 'Criar Avaliacao CFF' },
     cffSecAval: { pagina: 'secao-avaliacao-cff.html',     rotulo: 'Secao de Avaliacao CFF' }
 };
+
+/* Os botoes estao em duas grades: a de escolha (individuo-botoes) e a de
+   telas do CFF (individuo-cff-botoes), que so aparece depois que a lista de
+   Aluno CFF abre. Sem o Aluno CFF seriam 11 botoes na tela de escolha, que
+   e o que nao foi pedido. */
+function individuoBotoes() {
+    var lista = [];
+    ['individuo-botoes', 'individuo-cff-botoes'].forEach(function (id) {
+        document.querySelectorAll('#' + id + ' .individuo-opcao').forEach(function (b) { lista.push(b); });
+    });
+    return lista;
+}
+
+/* Quais tipos sao telas do CFF. O botao de Aluno CFF fica na grade de
+   escolha; os outros nao, entao a grade deles precisa aparecer sozinha. */
+var INDIVIDUO_CFF_TIPOS = ['cff', 'cffNovo', 'cffDisc', 'cffProj'];
+
+function individuoCffMostrar(mostrar) {
+    var cx = document.getElementById('individuo-cff-botoes');
+    if (cx) cx.style.display = mostrar ? '' : 'none';
+}
+
+/* marcar a opcao escolhida, na cor da pagina de destino. Em modo CFF o
+   botao de Aluno CFF tambem fica marcado, senao a pessoa que abriu a tela
+   de Disciplinas nao teria mais sinal de que esta dentro do CFF. */
+function individuoMarcar(tipo) {
+    individuoBotoes().forEach(function (b) {
+        var t = b.getAttribute('data-tipo');
+        var escolhido = t === tipo || (INDIVIDUO_CFF_TIPOS.indexOf(tipo) >= 0 && t === 'cff' && t !== tipo);
+        if (!escolhido) return;
+        var cor = b.getAttribute('data-cor') || '#0891b2';
+        b.style.background = cor;
+        b.style.borderColor = cor;
+        b.style.color = '#fff';
+        var ic = b.querySelector('i');
+        if (ic) ic.style.color = '#fff';
+    });
+}
 
 /* Onde a secao emprestada estava antes de se deslocar, para devolver ao
    exato lugar. `var` e nao `let` de proposito: o showAdminSection chama o
@@ -14517,7 +14559,8 @@ function individuoDevolver() {
     if (e.no) e.no.classList.toggle('active', e.tinhaActive);
     var vazio = document.getElementById('individuo-vazio');
     if (vazio) vazio.style.display = '';
-    document.querySelectorAll('#individuo-botoes .individuo-opcao').forEach(function (b) {
+    individuoCffMostrar(false);
+    individuoBotoes().forEach(function (b) {
         b.style.background = '';
         b.style.borderColor = '';
         b.style.color = '';
@@ -14564,16 +14607,10 @@ function individuoEscolher(tipo) {
     var vazio = document.getElementById('individuo-vazio');
     if (vazio) vazio.style.display = 'none';
 
-    /* marcar a opcao escolhida, na cor da pagina de destino */
-    document.querySelectorAll('#individuo-botoes .individuo-opcao').forEach(function (b) {
-        if (b.getAttribute('data-tipo') !== tipo) return;
-        var cor = b.getAttribute('data-cor') || '#0891b2';
-        b.style.background = cor;
-        b.style.borderColor = cor;
-        b.style.color = '#fff';
-        var ic = b.querySelector('i');
-        if (ic) ic.style.color = '#fff';
-    });
+    /* as telas do CFF so ficam a mostra enquanto uma pagina do CFF esta aberta;
+       trocar por um tipo de pessoa esconde de novo */
+    individuoCffMostrar(INDIVIDUO_CFF_TIPOS.indexOf(tipo) >= 0);
+    individuoMarcar(tipo);
 
     /* `iniciar` pode ser um nome so ou uma lista, quando a pagina de origem
        carrega mais de uma coisa (a de Disciplinas e a de Projetos do CFF
