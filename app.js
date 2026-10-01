@@ -14650,6 +14650,10 @@ var vaIndivToken = 0;
 var vaProjeto = '';
 var vaTurma = '';
 var vaEditandoId = null;
+/* Os docentes nao mudam de hora em hora e o select pode ser reaberto varias
+   vezes seguidas (abrir, fechar, abrir de novo). Sem o cache, cada abertura
+   seria uma leitura do Firestore a toa. */
+var vaDocentesCache = null;
 
 function vaInicializar() {
     vaLoadList();
@@ -14922,11 +14926,130 @@ function vaRenderIndiv() {
         + linhas + '</table>';
 }
 
+/* O value e o CPF, e nao o nome. O nome sozinho nao serve para nada aqui: o
+   portal do docente precisa achar "a Video Aula que e MINHA", e ele se
+   identifica pelo CPF. Pior, dois docentes com o mesmo nome (o cadastro tem
+   quem repita sobrenome) colidiriam no select e uma Video Aula iria para a
+   pessoa errada sem nenhum aviso.
+
+   Nao da para reaproveitar cffCarregarDocentes: ele poe o nome no value, e o
+   que o Video Aula precisa e o inverso -- o nome na option, o CPF no value. */
+function vaDesenharDocentes(lista) {
+    var sel = document.getElementById('va-docente');
+    if (!sel) return;
+    var anterior = sel.value;
+    sel.innerHTML = '<option value="">Selecione o docente...</option>';
+    (lista || []).forEach(function (d) {
+        if (!d.cpf) return;
+        sel.innerHTML += '<option value="' + escHTML(d.cpf) + '" data-nome="' + escHTML(d.nome || '') + '">'
+            + escHTML(d.nome || '(sem nome)') + (d.guerra ? ' (' + escHTML(d.guerra) + ')' : '') + '</option>';
+    });
+    if (anterior) sel.value = anterior;
+}
+
+function vaCarregarDocentes(forcar) {
+    var sel = document.getElementById('va-docente');
+    if (!sel) return Promise.resolve([]);
+    if (vaDocentesCache && !forcar) {
+        vaDesenharDocentes(vaDocentesCache);
+        return Promise.resolve(vaDocentesCache);
+    }
+    var anterior = sel.value;
+    sel.innerHTML = '<option value="">Carregando docentes...</option>';
+    return dbFirestore.collection('docentes').orderBy('nome').get().then(function (snap) {
+        var lista = [];
+        snap.forEach(function (doc) {
+            var d = doc.data() || {};
+            if (d.cpf) lista.push({ cpf: d.cpf, nome: d.nome || '', guerra: d.guerra || '' });
+        });
+        vaDocentesCache = lista;
+        vaDesenharDocentes(lista);
+        if (anterior) sel.value = anterior;
+        return lista;
+    }).catch(function (e) {
+        console.error('Erro ao carregar os docentes da Video Aula:', e);
+        sel.innerHTML = '<option value="">Erro ao carregar os docentes</option>';
+        return [];
+    });
+}
+
+/* Garante que o docente do registro continue selecionavel. Vale tanto para
+   quem saiu do cadastro quanto para as Video Aulas antigas, que so guardavam
+   o nome: sem esta linha, editar uma delas trocaria o docente calado. */
+function vaGarantirDocente(cpf, nome) {
+    var sel = document.getElementById('va-docente');
+    if (!sel || !cpf) return;
+    for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === cpf) { sel.value = cpf; return; }
+    }
+    sel.innerHTML += '<option value="' + escHTML(cpf) + '" data-nome="' + escHTML(nome || '') + '">'
+        + escHTML(nome || cpf) + ' (fora do cadastro)</option>';
+    sel.value = cpf;
+}
+
+/* Nome do docente a partir do option escolhido. Guarda o nome junto do CPF no
+   documento: o portal mostra nome para o humano e compara CPF para a
+   maquina, e nenhum dos dois da para inferir do outro. */
+function vaDocenteEscolhido() {
+    var sel = document.getElementById('va-docente');
+    if (!sel || !sel.value) return { cpf: '', nome: '' };
+    var opt = sel.options[sel.selectedIndex];
+    return { cpf: sel.value, nome: (opt && opt.getAttribute('data-nome')) || '' };
+}
+
+/* Procura o docente pelo NOME. Existe para as Video Aulas gravadas antes do
+   docenteCpf existir: elas so tem o nome, e sem isto o botao de enviar
+   recusaria uma aula recem-criada.
+
+   Devolve uma lista, e nao o primeiro achado: com dois docentes de mesmo
+   nome nao existe resposta certa, e escolher o primeiro seria entregar a
+   Video Aula para a pessoa errada sem ninguem perceber. Quem chama e que tem de
+   tratar a ambiguidade. */
+function vaDocentesPorNome(nome) {
+    if (!nome) return Promise.resolve([]);
+    return dbFirestore.collection('docentes').where('nome', '==', nome).get().then(function (snap) {
+        var lista = [];
+        snap.forEach(function (doc) {
+            var d = doc.data() || {};
+            if (d.cpf) lista.push({ cpf: d.cpf, nome: d.nome || '', guerra: d.guerra || '' });
+        });
+        return lista;
+    }).catch(function (e) {
+        console.error('Erro ao procurar docente por nome:', e);
+        return [];
+    });
+}
+
+/* Descobre o CPF de uma Video Aula, venha ele do registro ou de uma busca pelo
+   nome. Devolve {ok, cpf, nome, motivo}. `motivo` e o texto para mostrar ao
+   admin quando nao da para saber -- silenciar aqui seria pior: o admin
+   apertaria "enviar", veria um sucesso, e a aula nunca chegaria em lugar
+   nenhum. */
+function vaResolverDocente(d) {
+    if (d.docenteCpf) return Promise.resolve({ ok: true, cpf: d.docenteCpf, nome: d.docente || '' });
+    return vaDocentesPorNome(d.docente).then(function (achados) {
+        if (achados.length === 1) {
+            return { ok: true, cpf: achados[0].cpf, nome: achados[0].nome, recovered: true };
+        }
+        if (achados.length > 1) {
+            return {
+                ok: false,
+                motivo: 'Ha ' + achados.length + ' docentes com o nome "' + (d.docente || '') + '" no '
+                    + 'cadastro, entao nao da para saber para quem enviar. Edite a Video Aula e escolha o '
+                    + 'docente na mao.'
+            };
+        }
+        return {
+            ok: false,
+            motivo: 'O docente "' + (d.docente || '') + '" nao esta no cadastro de docentes, entao nao ha '
+                + 'para quem enviar. Edite a Video Aula e escolha o docente na mao.'
+        };
+    });
+}
+
 function vaAbrirForm() {
     if (!vaProjeto || !vaTurma) return;
-    /* Mesmo carregador das telas do CFF: le `docentes` por nome e poe o nome no
-       value. Um segundo carregador aqui seria a mesma funcao com outro nome. */
-    cffCarregarDocentes(['va-docente']);
+    vaCarregarDocentes();
 
     var ctx = document.getElementById('va-contexto');
     if (ctx) {
@@ -14964,14 +15087,15 @@ async function vaSalvar() {
     var data = document.getElementById('va-data').value || '';
     var hora = document.getElementById('va-hora').value || '';
     var avaliacao = document.getElementById('va-avaliacao').value || 'Sim';
-    var docente = (document.getElementById('va-docente').value || '').trim();
+    var escolhido = vaDocenteEscolhido();
     var btn = document.getElementById('va-save-btn');
 
     if (!vaProjeto || !vaTurma) { vaMsg('Escolha o projeto e a turma antes de salvar.', 'err'); return; }
     if (!nome) { vaMsg('Informe o nome da Video Aula.', 'err'); return; }
     if (!data) { vaMsg('Informe a data.', 'err'); return; }
     if (!hora) { vaMsg('Informe a hora.', 'err'); return; }
-    if (!docente) { vaMsg('Selecione o docente.', 'err'); return; }
+    if (!escolhido.cpf) { vaMsg('Selecione o docente.', 'err'); return; }
+    if (!escolhido.nome) { vaMsg('O docente selecionado veio sem nome no cadastro. Corrija o cadastro de docentes.', 'err'); return; }
 
     var editando = vaEditandoId;
     var dados = {
@@ -14980,7 +15104,8 @@ async function vaSalvar() {
         data: data,
         hora: hora,
         avaliacao: avaliacao === 'Sim' ? 'Sim' : 'Nao',
-        docente: docente,
+        docente: escolhido.nome,
+        docenteCpf: escolhido.cpf,
         origem: vaOrigem,
         projeto: vaProjeto,
         turma: vaTurma,
@@ -15064,6 +15189,31 @@ function vaCardHTML(id, d) {
         etiquetas += '<span><i class="fa-solid fa-user-group" style="margin-right:3px"></i>' + escHTML(String(d.qtdAlunos)) + ' pessoas</span>';
     }
 
+    /* O destino fica visivel no card, e nao so no historico: enquanto o
+       "enviado" nao aparecer, o admin nao tem como saber se a Video Aula ja
+       chegou no portal do docente ou se ele so apertou o botao. */
+    var destino;
+    if (d.enviadoAlunosEm) {
+        destino = '<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">'
+            + '<i class="fa-solid fa-check-double" style="margin-right:3px"></i>Enviada aos alunos</span>';
+    } else if (d.enviadoDocenteEm) {
+        destino = '<span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">'
+            + '<i class="fa-solid fa-paper-plane" style="margin-right:3px"></i>No portal do docente</span>';
+    } else {
+        destino = '<span style="background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600">'
+            + '<i class="fa-solid fa-paper-plane" style="margin-right:3px"></i>Nao enviada</span>';
+    }
+    etiquetas += destino;
+
+    /* Enviar e um botao de texto, e nao um icone: e o passo que decide para
+       quem a aula vai, e quem clica precisa ler isso antes de clicar. */
+    var enviar = '<button onclick="vaEnviarDocente(\'' + id + '\')" title="Enviar Video Aula para o portal do docente" '
+        + 'style="background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);color:#7c3aed;height:32px;'
+        + 'padding:0 11px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;'
+        + 'gap:5px;white-space:nowrap" onmouseover="this.style.background=\'rgba(124,58,237,.22)\'" '
+        + 'onmouseout="this.style.background=\'rgba(124,58,237,.1)\'">'
+        + '<i class="fa-solid fa-paper-plane"></i>Enviar Video Aula</button>';
+
     return '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px">'
         + '<div style="width:42px;height:42px;background:rgba(124,58,237,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
         + '<i class="fa-solid fa-circle-play" style="color:#7c3aed;font-size:18px"></i></div>'
@@ -15072,10 +15222,51 @@ function vaCardHTML(id, d) {
         + '<div style="font-size:11px;color:#64748b;display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap">' + etiquetas + '</div>'
         + (d.pauta ? '<div style="font-size:11.5px;color:#475569;margin-top:6px;line-height:1.55;border-left:3px solid #ddd6fe;padding-left:8px">' + escHTML(d.pauta) + '</div>' : '')
         + '</div>'
-        + '<div style="display:flex;gap:6px;flex-shrink:0">'
+        + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">' + enviar
         + '<button onclick="vaEdit(\'' + id + '\')" title="Editar" style="background:rgba(245,127,23,.1);border:1px solid rgba(245,127,23,.25);color:#f57f17;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background=\'rgba(245,127,23,.25)\'" onmouseout="this.style.background=\'rgba(245,127,23,.1)\'"><i class="fa-solid fa-pen"></i></button>'
         + '<button onclick="vaDelete(\'' + id + '\')" title="Excluir" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background=\'rgba(220,38,38,.25)\'" onmouseout="this.style.background=\'rgba(220,38,38,.1)\'"><i class="fa-solid fa-trash"></i></button>'
         + '</div></div>';
+}
+
+/* "Enviar Video Aula" nao cria nada: ele marca a Video Aula como entregue no
+   portal do docente. O docente ve a lista dela na secao Video Aula e assume
+   dali (programar, criar avaliacao, liberar aos alunos).
+
+   O CPF e o que faz o roteamento, e ele e gravado junto. As Video Aulas
+   antigas so tem o nome; quando ha um unico docente com aquele nome no
+   cadastro, o CPF e recuperado agora, para o admin nao ter que editar e
+   escolher de novo so para conseguir enviar. */
+async function vaEnviarDocente(docId) {
+    try {
+        var doc = await dbFirestore.collection(FB_VIDEO_AULAS).doc(docId).get();
+        if (!doc.exists) { alert('Video Aula nao encontrada.'); return; }
+        var d = doc.data() || {};
+
+        var achado = await vaResolverDocente(d);
+        if (!achado.ok) {
+            alert(achado.motivo);
+            return;
+        }
+
+        var quem = currentUserData && currentUserData.nome ? currentUserData.nome : '';
+        var dados = {
+            docente: achado.nome || d.docente || '',
+            docenteCpf: achado.cpf,
+            enviadoDocenteEm: new Date().toISOString(),
+            enviadoDocentePor: quem,
+            atualizadoEm: new Date().toISOString()
+        };
+        await dbFirestore.collection(FB_VIDEO_AULAS).doc(docId).update(dados);
+        vaLoadList();
+        alert('Video Aula enviada para o portal do docente ' + (dados.docente || '') + '!');
+
+        if (achado.recovered) {
+            console.warn('Video Aula ' + docId + ': docenteCpf recuperado pelo nome "' + d.docente + '".');
+        }
+    } catch (e) {
+        console.error('Erro ao enviar a Video Aula para o docente:', e);
+        alert('Erro ao enviar: ' + e.message);
+    }
 }
 
 async function vaEdit(docId) {
@@ -15102,6 +15293,19 @@ async function vaEdit(docId) {
         document.getElementById('va-data').value = d.data || '';
         document.getElementById('va-hora').value = String(d.hora || '').slice(0, 5);
         document.getElementById('va-avaliacao').value = d.avaliacao === 'Nao' ? 'Nao' : 'Sim';
+
+        /* O docente primeiro: o select precisa estar desenhado antes de escolher
+           nele, senao o .value cai em '' e o registro perde o docente. */
+        await vaCarregarDocentes();
+        var cpfDoDocente = d.docenteCpf;
+        if (!cpfDoDocente) {
+            /* Video Aula antiga: so tem o nome. Procura no cadastro para nao
+               obrigar o admin a escolher de novo so para editar a pauta. */
+            var achados = await vaDocentesPorNome(d.docente);
+            if (achados.length === 1) cpfDoDocente = achados[0].cpf;
+        }
+        vaGarantirDocente(cpfDoDocente, d.docente);
+
         var tit = document.getElementById('va-form-titulo');
         if (tit) tit.textContent = 'Editar Video Aula';
         var btn = document.getElementById('va-save-btn');
