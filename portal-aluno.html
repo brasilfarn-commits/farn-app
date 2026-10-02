@@ -287,6 +287,68 @@
         .pf-em-construcao h3{font-size:17px;color:var(--gray500);margin-bottom:6px;font-weight:600}
         .pf-em-construcao p{font-size:13px;color:var(--gray400)}
 
+        /* ===== VIDEO AULA (CSS) =====
+           O desenho dos tres quadros vem de video-aula-compartilhar.js, que
+           injeta o proprio estilo (vac-grade, vac-quadro, vac-presenca). Aqui
+           fica so o que e da tela do ALUNO: a lista, o cartao, os avisos e o
+           modal da avaliacao.
+
+           O "(CSS)" e de proposito: o bloco JS da secao comeca com uma
+           estrela-dupla-igual antes de "VIDEO AULA" e os guardas recortam por
+           esse texto. Com os dois cabecalhos iguais, o recorte comecaria no CSS
+           e o guarda passaria CSS para o interpretador de JavaScript. */
+
+        /* O aviso e uma unica caixa no topo da secao. Tres tipos, porque ha
+           tres noticias diferentes a dar: onde o aluno esta (info), que a
+           coisa deu certo (ok) e que ela nao deu (erro). */
+        .pa-va-aviso{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.5}
+        .pa-va-aviso.info{background:#eff6ff;border-color:#93c5fd;color:#1e40af}
+        .pa-va-aviso.ok{background:#f0fdf4;border-color:#86efac;color:#166534}
+        .pa-va-aviso.erro{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+
+        .pa-va-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px}
+        .pa-va-card.ao-vivo{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+        .pa-va-card-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+        .pa-va-nome{font-size:15px;font-weight:700;color:#0f172a;line-height:1.3}
+        .pa-va-pauta{font-size:12.5px;color:#475569;line-height:1.45;margin-bottom:8px}
+        .pa-va-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+        .pa-va-chip{background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+        .pa-va-chip.doc{background:#ede9fe;border-color:#ddd6fe;color:#5b21b6}
+        .pa-va-chip.esp{background:#f1f5f9;color:#64748b}
+        .pa-va-chip.vivo{background:#dcfce7;border-color:#22c55e;color:#14532d}
+        .pa-va-chip.sem{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+        .pa-va-chip.resp{background:#dbeafe;border-color:#bfdbfe;color:#1d4ed8}
+        .pa-va-acoes{display:flex;flex-wrap:wrap;gap:8px}
+        .pa-va-btn{border:0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+        .pa-va-btn.ver{background:#16a34a;color:#fff}
+        .pa-va-btn.azul{background:#1d4ed8;color:#fff}
+        .pa-va-btn.vaz{background:#fff;border:1px solid #dc2626;color:#dc2626}
+        .pa-va-btn.cinza{background:#fff;border:1px solid #cbd5e1;color:#475569}
+        .pa-va-btn:disabled{opacity:.45;cursor:not-allowed}
+        .pa-va-tela{margin-top:14px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px}
+        .pa-va-tela-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+        .pa-va-tela-nome{font-size:14px;font-weight:700;color:#0f172a}
+        .pa-va-tela-info{font-size:11.5px;color:#64748b;margin-top:2px}
+        /* O modal da avaliacao fica FORA da .pf-section de proposito: uma secao
+           inativa e display:none, e um modal dentro dela sumiria junto. */
+        .pa-va-modal{position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px}
+        .pa-va-modal-caixa{background:#fff;border-radius:14px;width:100%;max-width:720px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+        .pa-va-modal-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid #e2e8f0}
+        .pa-va-modal-topo h3{font-size:15px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px}
+        .pa-va-modal-x{border:0;background:#f1f5f9;color:#475569;width:30px;height:30px;border-radius:8px;cursor:pointer;flex:0 0 auto}
+        .pa-va-modal-corpo{padding:18px;overflow-y:auto;flex:1;background:#f8fafc}
+        .pa-va-modal-rodape{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #e2e8f0;background:#fff}
+        .pa-va-dica{font-size:12px;color:#64748b;line-height:1.5}
+        .pa-va-q{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:12px;margin-bottom:10px}
+        .pa-va-q-num{font-size:11px;font-weight:800;color:#64748b;letter-spacing:.4px;text-transform:uppercase;display:block;margin-bottom:8px}
+        .pa-va-q-enunciado{font-size:13.5px;font-weight:700;color:#0f172a;line-height:1.4;margin-bottom:10px}
+        .pa-va-q-alt{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;margin-bottom:7px;cursor:pointer;background:#f8fafc}
+        .pa-va-q-alt.sel{border-color:#1d4ed8;background:#eff6ff}
+        .pa-va-q-alt input[type=radio]{width:17px;height:17px;flex-shrink:0;cursor:pointer}
+        .pa-va-q-alt span{font-size:13px;color:#1e293b;flex:1}
+        .pa-va-q-alt .pa-va-q-letra{width:24px;height:24px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;flex-shrink:0}
+        .pa-va-q-alt.sel .pa-va-q-letra{background:#1d4ed8;color:#fff}
+
         /* Baixar App */
         .pf-app-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:600px;margin:0 auto}
         .pf-app-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:.3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
@@ -663,16 +725,125 @@
                     </div>
                 </div>
 
-                <!-- VIDEO AULA (em construcao) -->
+                <!-- VIDEO AULA -->
                 <div class="pf-section" id="pf-section-video-aula">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                        <h3 style="font-size:16px;color:var(--green);margin:0"><i class="fa-solid fa-circle-play"></i> Vídeo Aula</h3>
+                        <h3 style="font-size:16px;color:var(--green);margin:0"><i class="fa-solid fa-circle-play"></i> Video Aula</h3>
+                        <button onclick="paVaRecarregar()" style="background:#fff;border:1px solid var(--green);color:var(--green);padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button>
                     </div>
-                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as video aulas gravadas.</p>
-                    <div class="pf-em-construcao">
-                        <i class="fa-solid fa-film"></i>
-                        <h3>Em construcao</h3>
-                        <p>Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Acompanhe as video aulas do seu projeto e turma.</p>
+
+                    <div id="pa-va-aviso" class="pa-va-aviso info" style="display:none"></div>
+
+                    <div id="pa-va-lista">
+                        <div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando video aulas...</p></div>
+                    </div>
+
+                    <!-- A tela da aula fica escondida ate o aluno apertar Iniciar.
+                         Os quadros usam o desenho do nucleo compartilhado. O
+                         quadro 03 e o que o aluno VE do docente; a camera do
+                         aluno fica em um quadro proprio, menor, e so publica
+                         quando ele aperta o botao. -->
+                    <div id="pa-va-tela" class="pa-va-tela" style="display:none">
+                        <div class="pa-va-tela-topo">
+                            <div>
+                                <div id="pa-va-tela-nome" class="pa-va-tela-nome"></div>
+                                <div id="pa-va-tela-info" class="pa-va-tela-info"></div>
+                            </div>
+                            <div class="pa-va-acoes">
+                                <button class="pa-va-btn azul" onclick="paVaResponder()">
+                                    <i class="fa-solid fa-clipboard-check"></i> Responder Avaliacao
+                                </button>
+                                <button class="pa-va-btn vaz" onclick="paVaEncerrar()">
+                                    <i class="fa-solid fa-phone-slash"></i> Encerrar Video Aula
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="vac-grade">
+                            <!-- 03: o que o aluno ve do docente -->
+                            <div class="vac-quadro">
+                                <div class="vac-quadro-titulo">
+                                    <i class="fa-solid fa-video"></i> Imagem do docente
+                                </div>
+                                <div class="vac-quadro-corpo" id="pa-va-quadro03"></div>
+                            </div>
+                            <!-- A camera do aluno e pequena de proposito: ele nao
+                                 esta dando aula, so respondendo. E ela precisa
+                                 ficar VISIVEL, e nao em display:none, porque o
+                                 navegador deixa de decodificar quadro de video
+                                 escondido e o recorte sai preto. -->
+                            <div class="vac-quadro">
+                                <div class="vac-quadro-titulo">
+                                    <i class="fa-solid fa-camera"></i> Minha imagem
+                                </div>
+                                <div class="vac-quadro-corpo">
+                                    <video id="pa-va-camera" autoplay playsinline muted
+                                        style="width:100%;height:100%;object-fit:cover;background:#000"></video>
+                                    <div id="pa-va-camera-caixa"
+                                        style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#020617;padding:10px">
+                                        <i class="fa-solid fa-camera" style="color:#475569;font-size:20px"></i>
+                                        <button class="pa-va-btn cinza" onclick="paVaLigarCamera()">
+                                            <i class="fa-solid fa-video"></i> Ligar camera
+                                        </button>
+                                        <span style="color:#64748b;font-size:10.5px;text-align:center;max-width:190px;line-height:1.4">
+                                            Opcional. Sem camera voce acompanha a aula do mesmo jeito.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 04: o material que o docente liberou -->
+                        <div class="vac-quadro" style="margin-top:12px">
+                            <div class="vac-quadro-titulo">
+                                <i class="fa-solid fa-display"></i> Material na tela
+                                <span id="pa-va-material-nome" style="margin-left:auto"></span>
+                            </div>
+                            <div class="vac-quadro-corpo" id="pa-va-material"></div>
+                        </div>
+
+                        <!-- 02: quem esta na sala. No aluno vai em pequeno e no
+                             fim da tela: e informacao de acompanhamento, nao o
+                             que ele esta fazendo. -->
+                        <div class="vac-quadro" style="margin-top:12px">
+                            <div class="vac-quadro-titulo">
+                                <i class="fa-solid fa-users"></i> Quem esta na sala
+                                <span id="pa-va-conta-online" style="margin-left:auto"></span>
+                            </div>
+                            <div class="vac-quadro-corpo" style="min-height:90px">
+                                <div id="pa-va-presenca" style="display:flex;width:100%"></div>
+                            </div>
+                        </div>
+
+                        <div class="pa-va-acoes" style="margin-top:12px">
+                            <button class="pa-va-btn cinza" onclick="paVaEnviarImagem()">
+                                <i class="fa-solid fa-paper-plane"></i> Enviar minha imagem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- O modal da avaliacao fica fora da .pf-section: uma secao
+                     inativa e display:none, e um modal dentro dela sumiria junto. -->
+                <div id="pa-va-modal-avaliacao" class="pa-va-modal" style="display:none">
+                    <div class="pa-va-modal-caixa">
+                        <div class="pa-va-modal-topo">
+                            <h3><i class="fa-solid fa-clipboard-check"></i> Avaliacao da Video Aula</h3>
+                            <button class="pa-va-modal-x" onclick="paVaFecharModal()">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div class="pa-va-modal-corpo">
+                            <p class="pa-va-dica" id="pa-va-av-info"></p>
+                            <div id="pa-va-av-q"></div>
+                        </div>
+                        <div class="pa-va-modal-rodape">
+                            <button class="pa-va-btn cinza" onclick="paVaFecharModal()">Fechar</button>
+                            <button class="pa-va-btn ver" onclick="paVaAvSalvar()">
+                                <i class="fa-solid fa-check"></i> Enviar respostas
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1894,6 +2065,7 @@
         else document.getElementById('pf-section-construcao').classList.add('active');
 
         if (section === 'apontamento') { paLoadApontamento(); paLoadInicioAulas(); setTimeout(paGenerateQR, 200); }
+        if (section === 'video-aula') paVaInit();
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
         if (section === 'responder-avaliacao') { paLoadResponderAvaliacao(); }
@@ -4921,6 +5093,607 @@
         w.document.close();
         w.focus();
         w.onload = function() { w.print(); };
+    }
+
+    /* ===== VIDEO AULA =====
+       O aluno ve a Video Aula que o docente liberou -- ou seja, a que tem
+       enviadoAlunosEm -- e so a do projeto e da turma dele. Antes disso ela
+       esta com o docente, e mostrar aqui seria ler a pauta antes da hora.
+
+       A camada ao vivo vem de video-aula-compartilhar.js -- o mesmo arquivo
+       que o portal do docente carrega, de proposito: sao duas metades da
+       mesma tela, e nao duas telas parecidas. Aqui ficam a lista, a sala e a
+       avaliacao, que sao diferentes de la. */
+
+    var paVaLista = [];
+    var paVaAtual = null;
+    var paVaRoster = [];
+    var paVaPresencas = {};
+    /* O que esta no quadro 04 agora. O aluno nao escreve nele, mas precisa
+       saber o que chegou para mostrar o nome do material no titulo. */
+    var paVaQuadro04 = null;
+    /* As respostas da avaliacao ficam em memoria ate o envio. O Firestore e o
+       lugar delas, e nao uma variavel de sessao: recarregar a pagina no meio
+       da avaliacao e exatamente o que o aluno faz em 3G. */
+    var paVaRespostas = {};
+    var paVaQ = [];
+    var paVaRespondida = false;
+    /* A aula cuja avaliacao esta na tela. E SEPARADO de paVaAtual de proposito:
+       responder a avaliacao NAO e entrar na sala, e quem responde "depois" no
+       portal nunca entrou. Se os dois fossem o mesmo, apertar "Responder
+       Avaliacao" na lista colocaria o aluno como online no quadro 02 do docente
+       sem ele estar na aula. */
+    var paVaAvaliando = null;
+
+    function paVaAviso(tipo, texto) {
+        var el = document.getElementById('pa-va-aviso');
+        if (!el) return;
+        el.className = 'pa-va-aviso' + (tipo ? ' ' + tipo : '');
+        /* O aviso vai como texto, nunca como comando: o nome da Video Aula e
+           do Firestore e o texto inteiro pode ser montado com o nome dentro
+           de uma tag. paEsc fecha a porta, e textContent fecharia o resto. */
+        el.textContent = texto || '';
+        el.style.display = texto ? 'block' : 'none';
+    }
+
+    function paVaLimparAviso() {
+        var el = document.getElementById('pa-va-aviso');
+        if (el) { el.textContent = ''; el.style.display = 'none'; }
+    }
+
+    /* A camada ao vivo esta no video-aula-compartilhar.js. Se ele nao
+       carregou -- cache velho no navegador, CDN, script barrado -- todas as
+       funcoes `vac*` somem e QUALQUER chamada estoura "vacX is not a
+       function", o que deixa o aluno olhando uma tela morta sem nenhuma pista
+       do que aconteceu.
+
+       Por isso a checagem mora aqui, num lugar so, e nao espalhada em cada
+       funcao: uma funcao que esquece de checar produz um erro ilegivel em vez
+       do aviso que resolve o problema em um clique. */
+    function paVaTemNucleo() {
+        return typeof vacObservarPresenca === 'function'
+            && typeof vacTurma === 'function'
+            && typeof vacEntrar === 'function'
+            && typeof vacEncerrarTudo === 'function'
+            && typeof vacObservarQuadro03 === 'function'
+            && typeof vacDesenharQuadroDocente === 'function'
+            && typeof vacObservarQuadro04 === 'function'
+            && typeof vacDesenharQuadroMidia === 'function'
+            && typeof vacDesenharPresenca === 'function'
+            && typeof vacAbrirCamera === 'function'
+            && typeof vacPublicarQuadro === 'function';
+    }
+
+    function paVaAvisoNucleo() {
+        paVaAviso('erro', 'A camada ao vivo nao carregou. Recarregue a pagina: sem ela nao '
+            + 'aparece a imagem do docente, o material nao abre e sua presenca fica faltando.');
+        return false;
+    }
+
+    /* O CPF do aluno, so digitos. E a chave da presenca e do quadro 03 no
+       Realtime Database, e la nao cabem pontos nem traco. */
+    function paVaCpf() {
+        if (!paUser || !paUser.cpf) return '';
+        return String(paUser.cpf).replace(/\D/g, '');
+    }
+
+    function paVaInit() {
+        /* O estilo dos quadros mora no nucleo e so entra quando alguem pede
+           -- sem esta chamada a tela abriria com os quadros sem formatacao
+           nenhuma. */
+        if (typeof vacAplicarEstilo === 'function') vacAplicarEstilo();
+        /* A lista vem do Firestore e nao do nucleo: ela carrega mesmo sem a
+           camada ao vivo, para o aluno ver o que esta agendado. E o aviso do
+           nucleo sai na hora que ele aperta Iniciar, que e onde a ausencia
+           dele doe. */
+        paVaCarregar().catch(function () { /* ja pintado na lista */ });
+    }
+
+    function paVaRecarregar() {
+        paVaCarregar().catch(function () { /* ja pintado na lista */ });
+    }
+
+    /* Devolve a Promise de proposito. O "await paVaCarregar()" logo apos
+       enviar a avaliacao depende disso: sem a Promise o await voltaria na hora
+       e o aluno leria "respostas enviadas" com a lista ainda desatualizada. */
+    function paVaCarregar() {
+        var caixa = document.getElementById('pa-va-lista');
+        if (!caixa) return Promise.resolve();
+        if (!paUser) {
+            caixa.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-right-to-bracket"></i>'
+                + '<h3>Entre no portal</h3><p>As video aulas aparecem depois do login.</p></div>';
+            return Promise.resolve();
+        }
+
+        /* A consulta vai pela turma do aluno e nao pelo projeto e pela turma
+           separados. Duas igualdades no mesmo `where` exigiriam indice
+           composto, e o Firestore recusaria a consulta com um erro que o
+           aluno nao pode corrigir. A origem tambem entra: uma Video Aula de
+           CFF nao pertence a um aluno de candidato, e vice-versa. */
+        var minhaTurma = (paUser.turma || '').trim();
+        var meuProjeto = (paUser.projeto || '').trim();
+        var termo = dbFirestore.collection('videoAulas').where('turma', '==', minhaTurma).get();
+
+        /* Retorna a cadeia inteira, nao so o then: quem espera precisa
+           esperar tambem o tratamento de erro, senao um .catch() chamado logo
+           depois receberia null em vez da Promise. */
+        return termo.then(function (snap) {
+            var itens = [];
+            var meuCpf = paVaCpf();
+            snap.forEach(function (doc) {
+                var d = doc.data() || {};
+                /* Aula que o docente ainda nao liberou nao aparece: ela esta
+                   com ele. Sem este filtro o aluno leria a pauta antes da hora,
+                   e o trabalho do docente viraria trabalho do aluno. */
+                if (!d.enviadoAlunosEm) return;
+                /* O projeto ainda e conferido aqui, do lado do cliente. A
+                   consulta traz todas as Video Aulas da turma, e a turma se
+                   repete entre projetos: sem esta linha o aluno veria a aula
+                   do projeto vizinho. */
+                if (meuProjeto && String(d.projeto || '').trim() !== meuProjeto) return;
+                /* Video Aula de CFF nao aparece aqui. Este portal faz login
+                   apenas em `candidatos` -- o aluno do CFF entra pelo
+                   portal-cff.html, que tem a tela dele. Como o CFF tem
+                   horario e turma proprios, uma Video Aula de CFF cairia na
+                   lista de um aluno de candidato so porque as duas turmas
+                  happem de ter o mesmo nome. */
+                if (d.origem === 'cff') return;
+                d._id = doc.id;
+                d._cpf = meuCpf;
+                itens.push(d);
+            });
+            /* O Firestore devolve em ordem de id, que nao diz nada. A ordem
+               que o aluno espera e a da data da aula -- e a mais proxima em
+               cima, que e a que ele tem que ver primeiro. */
+            itens.sort(function (a, b) {
+                var ka = (a.data || '') + 'T' + (a.hora || '');
+                var kb = (b.data || '') + 'T' + (b.hora || '');
+                return kb.localeCompare(ka);
+            });
+            paVaLista = itens;
+            paVaDesenharLista(caixa);
+        }).catch(function (e) {
+            console.error('Video Aula: falha ao carregar do Firestore:', e);
+            caixa.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-triangle-exclamation"></i>'
+                + '<p>Nao consegui carregar as video aulas. Recarregue a pagina.</p></div>';
+            /* O erro volta a subir depois de pintar a mensagem. Engole-lo aqui
+               faria o `await paVaCarregar()` que vem logo apos o envio
+               resolver como se tudo tivesse dado certo. */
+            throw e;
+        });
+    }
+
+    /* ---------- lista e cartoes ---------- */
+
+    function paVaDesenharLista(caixa) {
+        if (!caixa) return;
+        if (!paVaLista.length) {
+            caixa.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-film"></i>'
+                + '<p>Nenhuma video aula foi liberada para a sua turma ate agora.</p></div>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < paVaLista.length; i++) html += paVaCardHTML(paVaLista[i]);
+        caixa.innerHTML = html;
+    }
+
+    /* Quantos da turma estao na sala agora. */
+    function paVaContarOnline() {
+        var dentro = 0;
+        if (typeof vacCpf !== 'function') return 0;
+        for (var i = 0; i < paVaRoster.length; i++) {
+            var p = paVaPresencas[vacCpf(paVaRoster[i].cpf)];
+            if (p && p.online) dentro++;
+        }
+        return dentro;
+    }
+
+    function paVaDesenharPresenca() {
+        var el = document.getElementById('pa-va-presenca');
+        if (!el || !paVaAtual) return;
+        if (typeof vacDesenharPresenca !== 'function') return;
+        /* "pequeno": o quadro 02 do aluno e informativo, nao e a tela dele. Com
+           o tamanho cheio, vinte e cinco alunos empurrariam o material para
+           fora da dobra em cima do celular. */
+        vacDesenharPresenca(el, paVaRoster, paVaPresencas, { pequeno: true });
+        var conta = document.getElementById('pa-va-conta-online');
+        if (conta) conta.textContent = paVaContarOnline() + ' de ' + paVaRoster.length + ' online';
+    }
+
+    function paVaCardHTML(d) {
+        /* Tudo que vem do Firestore passa por paEsc. O nome da Video Aula e a
+           pauta sao digitados no cadastro e caem num innerHTML: um nome
+           chamado <img src=x onerror=...> executaria no navegador de todo
+           mundo que abrisse a lista. */
+        var chips = '';
+        if (d.docente) chips += '<span class="pa-va-chip doc"><i class="fa-solid fa-user-tie"></i> ' + paEsc(d.docente) + '</span>';
+        if (d.data) chips += '<span class="pa-va-chip"><i class="fa-solid fa-calendar"></i> ' + paEsc(paVaDataBR(d.data)) + '</span>';
+        if (d.hora) chips += '<span class="pa-va-chip"><i class="fa-solid fa-clock"></i> ' + paEsc(d.hora) + '</span>';
+        if (d.projeto) chips += '<span class="pa-va-chip"><i class="fa-solid fa-handshake"></i> ' + paEsc(d.projeto) + '</span>';
+
+        var temAv = d.avaliacao === 'Sim' && d.questoes && d.questoes.length;
+        if (temAv) chips += '<span class="pa-va-chip"><i class="fa-solid fa-list-check"></i> Com avaliacao</span>';
+
+        var vivo = d.statusSessao === 'ao_vivo'
+            ? '<span class="pa-va-chip vivo"><i class="fa-solid fa-circle"></i> Em andamento</span>'
+            : (d.statusSessao === 'encerrada' && d.sessaoEncerradaEm
+                ? '<span class="pa-va-chip sem">Encerrada</span>' : '');
+
+        var pauta = d.pauta
+            ? '<div class="pa-va-pauta">' + paEsc(d.pauta) + '</div>'
+            : '<div class="pa-va-pauta" style="color:#94a3b8"><i>Sem pauta informada.</i></div>';
+
+        /* A id vai para dentro de um onclick entre apostrofos. Id de documento
+           do Firestore so tem letras e digitos, mas o onclick concatenado sem
+           cuidado e um lugar classico de script injetado; paEsc nao salva
+           sozinha, porque escapa aspas com &quot; e o navegador le &quot; como
+           aspas de novo dentro do atributo. Por isso o onclick recebe a id
+           por uma funcao, e nao pela concatenacao direta. */
+        var id = paEsc(d._id);
+
+        var acoes = '<button class="pa-va-btn ver" onclick="paVaAbrir(\'' + id + '\')">'
+            + '<i class="fa-solid fa-play"></i> Iniciar Video Aula</button>';
+        if (temAv) {
+            acoes += '<button class="pa-va-btn cinza" onclick="paVaResponder(\'' + id + '\')">'
+                + '<i class="fa-solid fa-clipboard-check"></i> Responder Avaliacao</button>';
+        }
+
+        /* "Encerrar" fica na lista e nao so na tela aberta. Uma aula esquecida
+           como "em andamento" por um fechamento de aba do docente nao tem tela
+           para clicar de la, e o aluno precisa poder sair sozinho. */
+        if (d.statusSessao === 'ao_vivo') {
+            acoes += '<button class="pa-va-btn vaz" onclick="paVaEncerrarLista(\'' + id + '\')">'
+                + '<i class="fa-solid fa-phone-slash"></i> Sair da Video Aula</button>';
+        }
+
+        return '<div class="pa-va-card' + (d.statusSessao === 'ao_vivo' ? ' ao-vivo' : '') + '">'
+            + '<div class="pa-va-card-topo">'
+            + '<div class="pa-va-nome">' + paEsc(d.nome || 'Sem nome') + '</div>'
+            + vivo
+            + '</div>'
+            + pauta
+            + '<div class="pa-va-meta">' + chips + '</div>'
+            + '<div class="pa-va-acoes">' + acoes + '</div>'
+            + '</div>';
+    }
+
+    /* "2026-10-01" -> "01/10/2026". O <input type="date"> sempre entrega esse
+       formato, entao nao ha fuso para brigar aqui. A data crua "2026-10-01"
+       arriving no cartao do aluno seria ilegivel para ele. */
+    function paVaDataBR(iso) {
+        var p = String(iso || '').slice(0, 10).split('-');
+        if (p.length !== 3) return String(iso || '');
+        return p[2] + '/' + p[1] + '/' + p[0];
+    }
+
+    /* ---------- a sala ---------- */
+
+    function paVaAbrir(id) {
+        var d = null;
+        for (var i = 0; i < paVaLista.length; i++) {
+            if (paVaLista[i]._id === id) { d = paVaLista[i]; break; }
+        }
+        if (!d) { paVaAviso('erro', 'Nao achei essa video aula na lista. Atualize a pagina.'); return; }
+        paVaTelaAbrir(d);
+    }
+
+    /* Monta a sala. So o "Iniciar Video Aula" chega aqui: entrar na sala e uma
+       decisao do aluno, e nao efeito colateral de apertar outra coisa. */
+    function paVaTelaAbrir(d) {
+        paVaAtual = d;
+
+        var tela = document.getElementById('pa-va-tela');
+        if (!tela) return;
+        tela.style.display = 'block';
+
+        document.getElementById('pa-va-tela-nome').textContent = d.nome || 'Video Aula';
+        document.getElementById('pa-va-tela-info').textContent =
+            [d.docente, paVaDataBR(d.data), d.hora, d.turma].filter(Boolean).join('  |  ');
+
+        /* A camera so e ligada por um botao. Pedir a permissao assim que a
+           tela abre faria o navegador pedir a camera no momento em que o
+           aluno esta lendo a pauta -- e um "recusar" ali ja corta a aula,
+           porque ninguem percebe depois que era preciso apertar de novo. */
+        var caixa = document.getElementById('pa-va-camera-caixa');
+        if (caixa) caixa.style.display = 'flex';
+
+        /* O botao de avaliacao so aparece quando existe avaliacao. Doente sem
+           questoes nao e "uma Video Aula sem avaliacao": e o botao quebrado. */
+        var btnAv = document.querySelector('#pa-va-tela .pa-va-btn.azul');
+        if (btnAv) btnAv.style.display = (d.avaliacao === 'Sim' && d.questoes && d.questoes.length) ? '' : 'none';
+
+        /* A checagem do nucleo vem ANTES de qualquer chamada. Ela estava
+           depois de vacTurma, e nessa ordem o erro chegava cru -- "vacTurma is
+           not a function" -- num bloco cujo recado e justamente dizer ao aluno
+           que ele so precisa recarregar. */
+        if (!paVaTemNucleo()) { paVaAvisoNucleo(); return; }
+
+        /* O quadro 02 e montado a partir da turma, e nao do Firestore da Video
+           Aula: o que ele tem que mostrar e a turma de hoje, com quem entrou e
+           quem nao entrou agora. */
+        vacTurma(d.projeto, d.turma, d.origem).then(function (roster) {
+            paVaRoster = roster;
+            paVaDesenharPresenca();
+        }).catch(function (e) {
+            console.error('Video Aula: falha ao ler a turma:', e);
+            paVaRoster = [];
+            paVaDesenharPresenca();
+            /* O quadro 02 vazio SEM aviso e pior que um erro visivel: o aluno
+               leria "ninguem entrou" e continuaria achando que a sala estava
+               vazia de verdade. O console some quando a aba e fechada, entao a
+               noticia vai para a tela. */
+            paVaAviso('erro', 'Nao consegui ler a turma '
+                + (d.turma || '') + ', entao a lista de quem esta na sala ficou vazia. '
+                + 'A aula continua, mas confira se o projeto e a turma ainda existem.');
+        });
+
+        var cpf = paVaCpf();
+        var eu = { cpf: cpf, nome: (paUser && paUser.nome) || '', papel: 'aluno' };
+
+        vacEntrar(d._id, eu)
+            .then(function () {
+                vacObservarPresenca(d._id, function (mapa) {
+                    paVaPresencas = mapa || {};
+                    paVaDesenharPresenca();
+                });
+                vacObservarQuadro03(d._id, function (mapa) {
+                    vacDesenharQuadroDocente(document.getElementById('pa-va-quadro03'), mapa);
+                });
+                vacObservarQuadro04(d._id, function (m) {
+                    paVaQuadro04 = m;
+                    vacDesenharQuadroMidia(document.getElementById('pa-va-material'), m);
+                    var nome = document.getElementById('pa-va-material-nome');
+                    if (nome) nome.textContent = m && m.nome ? ' - ' + m.nome : '';
+                });
+                paVaDesenharPresenca();
+                paVaAviso('info', 'Voce entrou na sala. Pode acompanhar a aula por aqui.');
+            })
+            .catch(function (e) {
+                console.error('Video Aula: falha ao entrar na sala:', e);
+                paVaAviso('erro', 'Nao consegui entrar na sala ao vivo. Tente de novo.');
+            });
+    }
+
+    /* Liga a camera do aluno. Sem imagem a aula continua -- o aluno acompanha o
+       quadro do docente e o material do mesmo jeito -- entao camera negada e
+       aviso, e nao recusa de abrir a sala. */
+    function paVaLigarCamera() {
+        if (!paVaAtual) return;
+        if (!paVaTemNucleo()) { paVaAvisoNucleo(); return; }
+        var video = document.getElementById('pa-va-camera');
+        var eu = { cpf: paVaCpf(), nome: (paUser && paUser.nome) || '', papel: 'aluno' };
+
+        /* Devolve a Promise. O botao esta num onclick, entao o valor
+           descartado nao muda nada na tela -- mas uma funcao que nao devolve
+           nada tambem nao pode ser esperada por um teste, e e justamente no
+           caminho da recusa (que so pinta aviso) que o silencio seria pior. */
+        return vacAbrirCamera(video).then(function () {
+            var caixa = document.getElementById('pa-va-camera-caixa');
+            if (caixa) caixa.style.display = 'none';
+            paVaLimparAviso();
+            /* A camera ligada NAO publica nada sozinha. O aluno so aparece no
+               quadro 02 do docente quando aperta "Enviar minha imagem": um
+               laco por aluno transformaria a aula em trinta envios a cada 2,5
+               segundos, e o Realtime Database nao e um servidor de
+               transmissao. */
+            paVaAviso('info', 'Camera ligada. Aperte "Enviar minha imagem" para o docente te ver.');
+        }).catch(function (e) {
+            console.warn('Video Aula: camera nao ligou:', e);
+            var why = e && e.name === 'NotAllowedError'
+                ? 'Voce nao autorizou a camera. Voce pode acompanhar a aula do mesmo jeito.'
+                : 'Nao consegui ligar a camera. Voce pode acompanhar a aula do mesmo jeito.';
+            paVaAviso('erro', why);
+        });
+    }
+
+    /* Publica UM quadro do aluno. E a unica coisa que o aluno escreve no
+       quadro 03, e e o que o docente ve no quadro 02. */
+    function paVaEnviarImagem() {
+        if (!paVaAtual) { paVaAviso('erro', 'Abra a video aula primeiro.'); return; }
+        if (!paVaTemNucleo()) { paVaAvisoNucleo(); return; }
+        var eu = { cpf: paVaCpf(), nome: (paUser && paUser.nome) || '', papel: 'aluno' };
+        return vacPublicarQuadro(paVaAtual._id, eu).then(function (r) {
+            /* vacPublicarQuadro devolve o que aconteceu em vez de estourar: a
+               camera desligada e uma situacao normal -- e nao um erro do
+               sistema -- e merece uma frase diferente de "falhou". */
+            if (r && r.ok) { paVaAviso('ok', 'Imagem enviada. O docente esta vendo.'); return; }
+            paVaAviso('erro', (r && r.motivo ? r.motivo : 'Nao consegui enviar sua imagem.') +
+                ' Voce pode acompanhar a aula do mesmo jeito.');
+        }).catch(function (e) {
+            console.error('Video Aula: publicacao da imagem falhou:', e);
+            paVaAviso('erro', 'Nao consegui enviar sua imagem. Tente de novo.');
+        });
+    }
+
+    function paVaEncerrar() {
+        if (!paVaAtual) return;
+        var cpf = paVaCpf();
+        var id = paVaAtual._id;
+        /* A tela e fechada MESMO sem o nucleo. Sem o nucleo nao ha camera nem
+           presenca para derrubar -- mas ha uma Video Aula marcada como em
+           andamento, e o aluno sair dela e o que ele espera de um botao com
+           esse nome. Ficar preso nela por causa de um script que nao carregou
+           seria pior. */
+        var tela = document.getElementById('pa-va-tela');
+        if (tela) tela.style.display = 'none';
+        paVaAtual = null;
+        paVaRoster = [];
+        paVaPresencas = {};
+
+        /* Encerrar e a operacao que mais precisa de todos os caminhos: sai a
+           presenca, para a camera e solta os ouvintes. Um caminho esquecido
+           aqui deixa o aluno marcado como online na propria sala ate a janela
+           de 60 segundos expirar, e o proximo aluno a abrir a aula ve um
+           colega fantasma. */
+        if (typeof vacEncerrarTudo === 'function') vacEncerrarTudo(id, cpf);
+
+        /* O aluno NAO grava o encerramento da aula no Firestore. Quem decide
+           que a aula acabou e o docente -- se o aluno pudesse marcar
+           "encerrada", um aluno qualquer encerraria a aula de todo mundo. */
+        paVaAviso('info', 'Voce saiu da video aula.');
+    }
+
+    /* O "Sair" da lista: uma aula que ficou como "em andamento" por um
+       fechamento de aba do docente nao tem tela aberta para clicar. Aqui ele
+       sai da sala e recarrega a lista. */
+    function paVaEncerrarLista(id) {
+        if (!id) return;
+        if (typeof vacEncerrarTudo !== 'function') { paVaAvisoNucleo(); return; }
+        vacEncerrarTudo(id, paVaCpf());
+        /* A lista recarrega para o "Em andamento" sair, mas quem responde por
+           isso e o docente. O Firestore nao e tocado aqui. */
+        paVaCarregar().then(function () {
+            paVaAviso('ok', 'Voce saiu da video aula.');
+        }).catch(function () { /* ja pintado na lista */ });
+    }
+
+    /* ---------- avaliacao ---------- */
+
+    /* O id da resposta e CPF + id da Video Aula, e nao um id aleatorio. A
+       mesma convencao de avaliacoesRespostas: recarregar a pagina e clicar de
+       novo leva ao MESMO documento, e nao cria um segundo registro do mesmo
+       aluno na mesma aula. */
+    function paVaRespId(vaId) {
+        var cpf = paVaCpf() || 'anonimo';
+        return cpf + '_' + String(vaId || '');
+    }
+
+    function paVaFecharModal() {
+        var el = document.getElementById('pa-va-modal-avaliacao');
+        if (el) el.style.display = 'none';
+    }
+
+    /* Abre a avaliacao. Antes de desenhar as questoes ela procura uma resposta
+       ja gravada: quem respondeu durante a aula e volta no portal depois
+       precisa ver o que respondeu, e nao uma prova em branco para preencher de
+       novo. */
+    function paVaResponder(id) {
+        if (!id) id = paVaAtual && paVaAtual._id;
+        if (!id) { paVaAviso('erro', 'Abra a video aula antes de responder a avaliacao.'); return; }
+        var alvo = null;
+        for (var i = 0; i < paVaLista.length; i++) {
+            if (paVaLista[i]._id === id) { alvo = paVaLista[i]; break; }
+        }
+        if (!alvo) { paVaAviso('erro', 'Nao achei essa video aula na lista.'); return; }
+        if (!(alvo.questoes && alvo.questoes.length)) {
+            paVaAviso('info', 'Esta video aula nao tem avaliacao.');
+            return;
+        }
+
+        /* Nao chama paVaTelaAbrir aqui. Responder a avaliacao no portal, sem
+           estar na aula, e o caminho previsto -- e ele nao pode marcar presenca
+           de um aluno que nunca entrou na sala. */
+        paVaAvaliando = alvo;
+
+        paVaQ = alvo.questoes;
+        paVaRespostas = {};
+        paVaRespondida = false;
+
+        var info = document.getElementById('pa-va-av-info');
+        if (info) {
+            info.textContent = paVaQ.length + ' questao(oes). Voce pode responder agora ou depois, no portal. '
+                + 'Cada questao respondida vale para o registro da sua participacao.';
+        }
+        paVaDesenharQ();
+        var modal = document.getElementById('pa-va-modal-avaliacao');
+        if (modal) modal.style.display = 'flex';
+        paVaAviso('info', 'Carregando as suas respostas...');
+
+        /* As respostas vao para o Firestore, e nao para a memoria: quem
+           responde durante a aula e fecha a aba antes de clicar em enviar
+           precisa encontrar a resposta quando voltar. */
+        dbFirestore.collection('videoAulaRespostas').doc(paVaRespId(alvo._id)).get().then(function (doc) {
+            if (doc && doc.exists) {
+                var r = doc.data() || {};
+                var salvas = r.respostas || {};
+                Object.keys(salvas).forEach(function (k) { paVaRespostas[k] = salvas[k]; });
+                paVaRespondida = true;
+                paVaDesenharQ();
+            }
+            paVaLimparAviso();
+        }).catch(function (e) {
+            console.warn('Video Aula: nao consegui ler as respostas salvas:', e);
+            paVaLimparAviso();
+        });
+    }
+
+    function paVaDesenharQ() {
+        var caixa = document.getElementById('pa-va-av-q');
+        if (!caixa) return;
+        if (paVaRespondida) {
+            caixa.innerHTML = '<div class="pa-va-dica" style="background:#f0fdf4;border:1px solid #86efac;color:#166534;border-radius:9px;padding:11px 13px">'
+                + '<i class="fa-solid fa-circle-check"></i> Voce ja respondeu esta avaliacao. As respostas abaixo sao as que ficaram gravadas.'
+                + '</div>' + paVaQHTML(true);
+            return;
+        }
+        caixa.innerHTML = paVaQHTML(false);
+    }
+
+    /* O desenho das questoes e o mesmo nos dois estados; o que muda e a
+       mensagem e se os radios respondem. Desenhar duas vezes o mesmo HTML
+       faria as duas copias divergirem assim que uma questao fosse marcada. */
+    function paVaQHTML(mostrando) {
+        return paVaQ.map(function (q, i) {
+            var alts = q.alternativas || [];
+            var marcadas = '';
+            for (var a = 0; a < alts.length; a++) {
+                var sel = String(paVaRespostas[i]) === String(a);
+                marcadas += '<label class="pa-va-q-alt' + (sel ? ' sel' : '') + '">'
+                    + '<input type="radio" name="pa-va-q-' + i + '" value="' + a + '"'
+                    + (sel ? ' checked' : '')
+                    + (mostrando ? ' disabled' : ' onchange="paVaMarcar(' + i + ',this.value)"') + '>'
+                    + '<span class="pa-va-q-letra">' + 'ABCD'.charAt(a) + '</span>'
+                    + '<span>' + paEsc(alts[a] || '') + '</span>'
+                    + '</label>';
+            }
+            return '<div class="pa-va-q">'
+                + '<span class="pa-va-q-num">Questao ' + (i + 1) + '</span>'
+                + '<div class="pa-va-q-enunciado">' + paEsc(q.enunciado || '') + '</div>'
+                + marcadas
+                + '</div>';
+        }).join('');
+    }
+
+    function paVaMarcar(i, valor) {
+        paVaRespostas[i] = valor;
+    }
+
+    async function paVaAvSalvar() {
+        if (!paVaAvaliando) { alert('Abra a video aula antes de enviar.'); return; }
+        if (paVaRespondida) { paVaAviso('info', 'Voce ja respondeu esta avaliacao.'); return; }
+        if (!paVaQ.length) { alert('Esta video aula nao tem avaliacao.'); return; }
+        /* Validar antes de gravar: uma questao em branco nao e resposta, e
+           fingir que conta como uma delas so distorce o registro. Recusar
+           aqui e mais honesto do que gravar parcial. */
+        for (var i = 0; i < paVaQ.length; i++) {
+            if (paVaRespostas[i] === undefined || paVaRespostas[i] === '') {
+                alert('Responda a questao ' + (i + 1) + '.');
+                return;
+            }
+        }
+        try {
+            var id = paVaAvaliando._id;
+            /* set e nao update: cada documento desta colecao e uma resposta
+               inteira de um aluno numa aula. Nao ha o que preservar de um
+               registro anterior -- e o id ja garante que e este aluno nesta
+               aula. */
+            await dbFirestore.collection('videoAulaRespostas').doc(paVaRespId(id)).set({
+                cpf: paVaCpf(),
+                nome: (paUser && paUser.nome) || '',
+                videoAulaId: id,
+                videoAula: paVaAvaliando.nome || '',
+                projeto: paVaAvaliando.projeto || '',
+                turma: paVaAvaliando.turma || '',
+                respostas: paVaRespostas,
+                respondidaEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            paVaRespondida = true;
+            paVaDesenharQ();
+            paVaAviso('ok', 'Respostas enviadas. Obrigado pela participacao.');
+        } catch (e) {
+            console.error('Video Aula: resposta nao salvou:', e);
+            alert('Nao consegui enviar suas respostas. Tente de novo.');
+        }
     }
     </script>
     <script src="noticias-slider.js"></script>
