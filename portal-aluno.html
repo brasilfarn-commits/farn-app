@@ -4686,12 +4686,96 @@
         return card;
     }
 
+    /* ===== FALTAS DO ALUNO E PRESENCA NO DIA DA AV ===== */
+
+    /* Carrega as presencas (apontamentos) do CPF do aluno. Retorna null em caso de erro. */
+    async function paCarregarPresencas() {
+        if (!paUser || !paUser.cpf) return [];
+        try {
+            var snap = await dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).get();
+            var registros = [];
+            snap.forEach(function(doc) { registros.push(doc.data() || {}); });
+            return registros;
+        } catch (e) {
+            console.error('Falha ao carregar presencas do aluno:', e);
+            return null;
+        }
+    }
+
+    /* Converte Timestamp/Date/string para 'YYYY-MM-DD' sem deslocar o dia por UTC. */
+    function paDataISO(v) {
+        if (!v) return '';
+        if (typeof v === 'string') {
+            var m = v.match(/^(\d{4}-\d{2}-\d{2})/);
+            return m ? m[1] : '';
+        }
+        try {
+            var dt = (typeof v.toDate === 'function') ? v.toDate() : (v instanceof Date ? v : new Date(v));
+            if (isNaN(dt.getTime())) return '';
+            var mes = dt.getMonth() + 1;
+            var dia = dt.getDate();
+            return dt.getFullYear() + '-' + (mes < 10 ? '0' + mes : mes) + '-' + (dia < 10 ? '0' + dia : dia);
+        } catch (e) { return ''; }
+    }
+
+    /* Quantidade de faltas SEM justificar (status 'Falta') em qualquer turma do CPF. */
+    async function paFaltasSemJustificar() {
+        var regs = await paCarregarPresencas();
+        if (regs === null) return 0;
+        var n = 0;
+        regs.forEach(function(p) { if (p.status === 'Falta') n++; });
+        return n;
+    }
+
+    /* Dia da AV: aula vinculada (aulas.data); senao data de ativacao/envio/criacao. */
+    async function paAvDiaAV(d) {
+        if (d && d.aulaId) {
+            try {
+                var aDoc = await dbFirestore.collection('aulas').doc(d.aulaId).get();
+                if (aDoc.exists) {
+                    var iso = paDataISO((aDoc.data() || {}).data || '');
+                    if (iso) return iso;
+                }
+            } catch (e) { console.error('Falha ao carregar aula da avaliacao:', e); }
+        }
+        return paDataISO(d && d.ativadaEm) || paDataISO(d && d.enviadaEm) || paDataISO(d && d.criadoEm);
+    }
+
+    /* Tarefa 3: so permite RESPONDER a AV Teorica/Pratica se o aluno esteve
+       PRESENTE (ou com falta Justificada) no dia da AV. Em caso de falha de
+       leitura ou dia indeterminado, nao bloqueia (nao quebra o fluxo). */
+    async function paAvPodeResponder(d) {
+        try {
+            var dia = await paAvDiaAV(d);
+            if (!dia) return { ok: true, dia: '' };
+            var regs = await paCarregarPresencas();
+            if (regs === null) return { ok: true, dia: dia };
+            var daAula = (d && d.aulaId) ? regs.filter(function(p) { return p.aulaId === d.aulaId; }) : [];
+            var base = daAula.length ? daAula : regs.filter(function(p) { return String(p.dataAula || '') === dia; });
+            var presente = base.some(function(p) { return p.status === 'Presente' || p.status === 'Justificada'; });
+            return { ok: presente, dia: dia };
+        } catch (e) {
+            console.error('Falha ao conferir presenca na AV:', e);
+            return { ok: true, dia: '' };
+        }
+    }
+
     async function paLoadResponderAvaliacao() {
         var lista = document.getElementById('pf-rav-lista');
         if (!lista || !paUser) return;
         var myTurma = (paUser.turma || '').trim();
         lista.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliações...</p></div>';
         try {
+            // Tarefa 2: com falta sem justificar, esconde a previa das AVs (Teorica e Pratica)
+            var faltasSemJustificar = await paFaltasSemJustificar();
+            if (faltasSemJustificar > 0) {
+                lista.innerHTML = '<div class="pf-em-construcao" style="padding:30px 20px">' +
+                    '<i class="fa-solid fa-triangle-exclamation" style="font-size:42px;color:#f59e0b;margin-bottom:10px"></i>' +
+                    '<h3 style="font-size:17px;color:#0f172a;margin-bottom:6px">Justifique suas faltas</h3>' +
+                    '<p style="font-size:13px;color:#64748b">Voce tem ' + faltasSemJustificar + ' falta(s) sem justificativa. As avaliacoes (AV Teorica e AV Pratica) ficam escondidas ate que todas as faltas sejam justificadas. Acesse o menu Apontamento e use o botao JUSTIFICAR FALTA.</p>' +
+                    '</div>';
+                return;
+            }
             var snap = await dbFirestore.collection('avaliacoes').orderBy('criadoEm', 'desc').get();
             var teoria = [];
             var pratica = [];
@@ -4793,6 +4877,16 @@
                     });
                 }
             } catch (e) { console.error('Falha ao verificar respostas salvas:', e); }
+
+            // Tarefa 3: so permite RESPONDER se esteve PRESENTE (ou Justificada) no dia da AV
+            if (!jaRespondeu) {
+                var podeResponder = await paAvPodeResponder(d);
+                if (!podeResponder.ok) {
+                    paRavAtual = null;
+                    alert('Para responder esta avaliacao voce precisa estar PRESENTE no dia da aula da AV (ou com falta justificada).');
+                    return;
+                }
+            }
 
             if (jaRespondeu) {
                 document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Você já respondeu esta avaliação';
@@ -5007,6 +5101,14 @@
                         if (men) { manual = men.respostas || {}; nota = (men.nota != null ? Number(men.nota) : null); }
                     }
                 } catch (e) { console.error('Falha ao ler ficha p/ visualizar prática:', e); }
+                // Tarefa 3: sem nota registrada, so permite se esteve PRESENTE (ou Justificada) no dia da AV
+                if (nota == null) {
+                    var podePratica = await paAvPodeResponder(d);
+                    if (!podePratica.ok) {
+                        conteudo.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-triangle-exclamation" style="font-size:34px;color:#f59e0b;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Acesso bloqueado</h4><p style="font-size:13px">Para responder a AV Pratica voce precisa estar PRESENTE no dia da aula da avaliacao (ou com falta justificada).</p></div>';
+                        return;
+                    }
+                }
                 var notaHtml = '';
                 if (nota != null) {
                     notaHtml = '<div style="background:linear-gradient(135deg,#16a34a,#059669);border-radius:12px;padding:16px;text-align:center;color:#fff;margin-bottom:16px">' +

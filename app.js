@@ -5841,6 +5841,66 @@ function apontamentoPararScanner() {
     document.getElementById('apt-scan-btn-area').style.display = 'block';
 }
 
+/* ===== CHECAGEM DE FALTAS NO APONTAMENTO (aviso ao administrador) =====
+   Antes de marcar presente, o admin e avisado se o aluno esta em dias.
+   Enquanto houver falta SEM justificar (status 'Falta') o apontamento e
+   BLOQUEADO; com todas as faltas justificadas, avisa quantas justificadas
+   tem e libera. Mesmo criterio do lado do aluno: olha TODAS as
+   presencasAlunos do CPF, de qualquer turma. Falha de leitura nao trava
+   o apontamento (mesmo criterio do QR do aluno). */
+let aptChecandoFaltas = false;
+const aptBloqueadoAte = {};
+
+async function apontamentoConsultarFaltas(cpf) {
+    const r = { faltas: 0, justificadas: 0, bloqueado: false, erro: null };
+    if (!cpf) return r;
+    try {
+        const snap = await dbFirestore.collection('presencasAlunos').where('cpf', '==', cpf).limit(200).get();
+        snap.forEach(doc => {
+            const p = doc.data();
+            if (p.status === 'Falta') r.faltas++;
+            else if (p.status === 'Justificada') r.justificadas++;
+        });
+        r.bloqueado = r.faltas > 0;
+    } catch (e) {
+        r.erro = e;
+        console.error('Erro ao checar faltas do aluno no apontamento:', e);
+    }
+    return r;
+}
+
+/* Ponto unico de entrada do QR e da matricula digitada: checa as faltas,
+   avisa o admin e so entao marca presente. Enquanto o admin le o aviso o
+   scanner nao e parado -- a leitura continua. */
+async function apontamentoApontarComChecagem(aluno) {
+    if (aptChecandoFaltas) return;
+    aptChecandoFaltas = true;
+    try {
+        const situacao = await apontamentoConsultarFaltas(aluno.cpf);
+        if (situacao.bloqueado) {
+            /* Cooldown por aluno: o scanner relendo o mesmo QR logo apos o
+               aviso nao abre uma pilha de alertas em cima. */
+            const chave = aluno.cpf || aluno.matricula || aluno.nome || '';
+            const ultima = aptBloqueadoAte[chave] || 0;
+            if (Date.now() - ultima > 3000) {
+                aptBloqueadoAte[chave] = Date.now();
+                alert('APONTAMENTO BLOQUEADO - ' + (aluno.nome || aluno.matricula || 'Aluno') + '\n\n' +
+                    'Faltas sem justificar: ' + situacao.faltas + '\n' +
+                    'Faltas justificadas: ' + situacao.justificadas + '\n\n' +
+                    'O aluno so pode apontar depois que justificar todas as faltas.');
+            }
+            return;
+        }
+        if (situacao.justificadas > 0) {
+            alert((aluno.nome || aluno.matricula || 'Aluno') + ' - ' + situacao.justificadas +
+                ' falta(s) justificada(s). Aluno em dias: apontamento liberado.');
+        }
+        apontamentoMarcarPresente(aluno);
+    } finally {
+        aptChecandoFaltas = false;
+    }
+}
+
 function apontamentoOnQrSuccess(decodedText) {
     const matricula = decodedText.trim().toUpperCase();
     let encontrado = apontamentoBuscarAlunoPorMatricula(matricula);
@@ -5848,7 +5908,7 @@ function apontamentoOnQrSuccess(decodedText) {
         alert('Aluno com matrícula ' + matricula + ' não encontrado nesta turma');
         return;
     }
-    apontamentoMarcarPresente(encontrado);
+    apontamentoApontarComChecagem(encontrado);
 }
 
 function apontamentoBuscarMatricula() {
@@ -5860,7 +5920,7 @@ function apontamentoBuscarMatricula() {
         alert('Aluno com matrícula ' + matricula + ' não encontrado nesta turma');
         return;
     }
-    apontamentoMarcarPresente(encontrado);
+    apontamentoApontarComChecagem(encontrado);
     input.value = '';
     input.focus();
 }
