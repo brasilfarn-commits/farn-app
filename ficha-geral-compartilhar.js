@@ -653,6 +653,27 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         fgCampoDestaque('Cursos', cursos.join(', '))
     )));
 
+    // Secao - Baixa e Reingresso (registro de baixa do aluno e pedido de reingresso)
+    const temBaixa = !!(c.pediuBaixa || c.obsBaixa || c.obsReingresso || c.reingressoSolicitado || c.pediuBaixaEm || c.reingressoEm);
+    if (temBaixa) {
+        const statusBaixa = c.pediuBaixa
+            ? (c.reingressoSolicitado ? 'Aguardando autorizacao de reingresso' : 'Baixa solicitada - acesso bloqueado')
+            : 'Regular';
+        const obsFull = function (rotulo, valor) {
+            const v = (valor === null || valor === undefined || valor === '') ? '—' : String(valor);
+            return '<div style="grid-column:1/-1;border:1px solid #fbcfe8;border-radius:8px;padding:6px 9px;background:#fdf2f8;min-width:0">'
+                + '<div style="font-size:8.5px;font-weight:700;color:#9d174d;text-transform:uppercase;letter-spacing:.4px">' + fgEsc(rotulo) + '</div>'
+                + '<div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:2px;word-break:break-word;white-space:pre-wrap">' + fgEsc(v) + '</div></div>';
+        };
+        secoes.push(fgSecao('fa-power-off', 'Baixa e Reingresso', fgGrid(
+            fgCampo('Situacao', statusBaixa) +
+            fgCampo('Solicitou Baixa em', c.pediuBaixaEm ? new Date(c.pediuBaixaEm).toLocaleString('pt-BR') : '') +
+            fgCampo('Reingresso em', c.reingressoEm ? new Date(c.reingressoEm).toLocaleString('pt-BR') : '') +
+            obsFull('OBS. BAIXA', c.obsBaixa) +
+            obsFull('OBS. REINGRESSO', c.obsReingresso)
+        )));
+    }
+
     // Secao 7 - Avaliacoes
     const corAp = fichaGeralCorNota(calc.notaAp);
     const corComp = calc.pontosComp >= 0 ? '#16a34a' : '#dc2626';

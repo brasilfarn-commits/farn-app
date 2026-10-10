@@ -12,7 +12,7 @@
             }
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -940,6 +940,9 @@
                         <div class="alunos-tabs">
                             <button class="alunos-tab active" data-tab="aprovados" onclick="switchAlunosTab('aprovados', this)">
                                 <i class="fa-solid fa-check-circle"></i> Ativos <span class="tab-count" id="tab-count-aprovados">0</span>
+                            </button>
+                            <button class="alunos-tab" data-tab="pediu-baixa" onclick="switchAlunosTab('pediu-baixa', this)">
+                                <i class="fa-solid fa-user-xmark"></i> Aluno que pediu baixa <span class="tab-count" id="tab-count-pediu-baixa">0</span>
                             </button>
                             <button class="alunos-tab" data-tab="inativo-falta" onclick="switchAlunosTab('inativo-falta', this)">
                                 <i class="fa-solid fa-user-slash"></i> Inativo por Falta <span class="tab-count" id="tab-count-inativo-falta">0</span>
@@ -4901,10 +4904,10 @@
         </div>
     </div>
 
-    <script src="ficha-geral-compartilhar.js?v=8"></script>
+    <script src="ficha-geral-compartilhar.js?v=9"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=67"></script>
+    <script src="app.js?v=68"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

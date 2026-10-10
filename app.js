@@ -2318,7 +2318,7 @@ function viewCandidato(i) {
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
             ${c.status === 'Ativo' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
-            ${c.pediuBaixa ? `<div style="grid-column:1/-1;margin-top:12px;padding:16px;border:2px solid #dc2626;border-radius:10px;background:rgba(220,38,38,.06)"><p style="font-size:13px;color:#991b1b;margin-bottom:6px;font-weight:800"><i class="fa-solid fa-power-off"></i> ALUNO SOLICITOU BAIXA DO CURSO</p><p style="font-size:12px;color:#7f1d1d;margin-bottom:12px">Solicitado em ${c.pediuBaixaEm ? new Date(c.pediuBaixaEm).toLocaleString('pt-BR') : '---'}. O aluno esta com o acesso ao portal bloqueado.</p><button class="btn-primary" style="background:linear-gradient(135deg,#16a34a,#15803d)" onclick="autorizarBaixa(${i})"><i class="fa-solid fa-check"></i> Autorizar Retorno</button></div>` : ''}
+            ${c.pediuBaixa ? `<div style="grid-column:1/-1;margin-top:12px;padding:16px;border:2px solid #dc2626;border-radius:10px;background:rgba(220,38,38,.06)"><p style="font-size:13px;color:#991b1b;margin-bottom:6px;font-weight:800"><i class="fa-solid fa-power-off"></i> ALUNO SOLICITOU BAIXA DO CURSO</p><p style="font-size:12px;color:#7f1d1d;margin-bottom:10px">Solicitado em ${c.pediuBaixaEm ? new Date(c.pediuBaixaEm).toLocaleString('pt-BR') : '---'}. O aluno esta com o acesso ao portal bloqueado.</p>${c.obsBaixa ? `<div style="background:#fff;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#7f1d1d"><b>Obs. Baixa:</b> ${escHTML(c.obsBaixa)}</div>` : ''}${c.reingressoSolicitado ? `<div style="background:#fff;border:1px solid #93c5fd;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#1e3a8a"><p style="font-weight:800;margin-bottom:4px"><i class="fa-solid fa-rotate"></i> PEDIDO DE REINGRESSO PENDENTE</p><p style="margin-bottom:4px">Solicitado em ${c.reingressoEm ? new Date(c.reingressoEm).toLocaleString('pt-BR') : '---'}.</p>${c.obsReingresso ? `<p><b>Obs. Reingresso:</b> ${escHTML(c.obsReingresso)}</p>` : ''}</div>` : ''}<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn-primary" style="background:linear-gradient(135deg,#16a34a,#15803d)" onclick="autorizarBaixa(${i})"><i class="fa-solid fa-check"></i> Autorizar Retorno</button>${c.reingressoSolicitado ? `<button class="btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca" onclick="recusarReingresso(${i})"><i class="fa-solid fa-xmark"></i> Recusar Reingresso</button>` : ''}</div></div>` : ''}
             ${(c.tipoPessoa || 'A') === 'F' ? (c.remanejadoDocente ? `<div class="detail-item full" style="margin-top:8px"><span class="detail-label">Remanejamento</span><span class="detail-value" style="color:#1d4ed8;font-weight:700">Formado remanejado como Docente em ${c.remanejadoEm || '---'} por ${c.remanejadoPor || '---'}</span></div>` : `<div style="grid-column:1/-1;text-align:center;margin-top:14px;padding:16px;border:1px dashed #2563eb;border-radius:10px;background:rgba(37,99,235,.04)"><p style="font-size:13px;color:#475569;margin-bottom:10px;font-weight:600">Formado elegivel para entrar no corpo de docentes.</p><button class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" onclick="remanejarFormado(${i})"><i class="fa-solid fa-arrows-rotate"></i> Remanejar como Docente</button></div>`) : ''}
         </div>`;
     });
@@ -2333,16 +2333,40 @@ async function autorizarBaixa(i) {
     try {
         await dbFirestore.collection(FB_CANDIDATOS).doc(String(c.id)).update({
             pediuBaixa: firebase.firestore.FieldValue.delete(),
-            pediuBaixaEm: firebase.firestore.FieldValue.delete()
+            pediuBaixaEm: firebase.firestore.FieldValue.delete(),
+            reingressoSolicitado: firebase.firestore.FieldValue.delete(),
+            reingressoEm: firebase.firestore.FieldValue.delete()
         });
         delete c.pediuBaixa;
         delete c.pediuBaixaEm;
+        delete c.reingressoSolicitado;
+        delete c.reingressoEm;
         renderList();
         renderAlunosList();
         closeModal();
         alert('Retorno autorizado! O aluno pode acessar o portal novamente.');
     } catch(e) {
         alert('Erro ao autorizar retorno: ' + e.message);
+    }
+}
+
+async function recusarReingresso(i) {
+    const c = candidatos[i]; if (!c) return;
+    const senha = prompt('Digite a senha do administrador para recusar o pedido de reingresso:');
+    if (!senha) return;
+    if (senha !== ADMIN_SENHA) { alert('Senha incorreta! Acao cancelada.'); return; }
+    try {
+        await dbFirestore.collection(FB_CANDIDATOS).doc(String(c.id)).update({
+            reingressoSolicitado: firebase.firestore.FieldValue.delete(),
+            reingressoEm: firebase.firestore.FieldValue.delete()
+        });
+        delete c.reingressoSolicitado;
+        delete c.reingressoEm;
+        renderAlunosList();
+        closeModal();
+        alert('Reingresso recusado. O aluno continua com a baixa solicitada.');
+    } catch(e) {
+        alert('Erro ao recusar reingresso: ' + e.message);
     }
 }
 
@@ -2722,8 +2746,23 @@ const STATUS_MAP = {
     'inativo-falta': 'Inativo por Falta',
     'pendentes': 'Pendente',
     'reprovados': 'Rejeitado',
-    'segunda-chamada': 'Segunda Chamada'
+    'segunda-chamada': 'Segunda Chamada',
+    'pediu-baixa': 'Pediu Baixa'
 };
+
+/* Filtro comum das guias de Alunos (tabela, exportar e imprimir).
+   A guia "Aluno que pediu baixa" filtra pelo flag pediuBaixa e o aluno
+   sai da guia de Ativos (aprovados). */
+function alunosFiltrarPorAba(statusFilter, turmaFiltro) {
+    const tab = currentAlunosTab;
+    return candidatos.filter(c => {
+        if ((c.tipoPessoa || 'A') === 'F') return false;
+        if (turmaFiltro && c.turma !== turmaFiltro) return false;
+        if (tab === 'pediu-baixa') return !!c.pediuBaixa;
+        if (tab === 'aprovados') return c.status === statusFilter && !c.pediuBaixa;
+        return c.status === statusFilter;
+    });
+}
 
 function alunosInicializar() {
     const selProj = document.getElementById('alunos-selecao-projeto');
@@ -2777,15 +2816,22 @@ function renderAlunosList() {
 
     const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
+    const filtered = alunosFiltrarPorAba(statusFilter, turmaFiltro);
     const isAprovados = currentAlunosTab === 'aprovados' || currentAlunosTab === 'inativo-falta';
 
     const allByTurma = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && (!turmaFiltro || c.turma === turmaFiltro));
-    document.getElementById('tab-count-aprovados').textContent = allByTurma.filter(c => c.status === 'Ativo').length;
-    document.getElementById('tab-count-inativo-falta').textContent = allByTurma.filter(c => c.status === 'Inativo por Falta').length;
-    document.getElementById('tab-count-pendentes').textContent = allByTurma.filter(c => c.status === 'Pendente').length;
-    document.getElementById('tab-count-reprovados').textContent = allByTurma.filter(c => c.status === 'Rejeitado').length;
-    document.getElementById('tab-count-segunda-chamada').textContent = allByTurma.filter(c => c.status === 'Segunda Chamada').length;
+    const elContAprovados = document.getElementById('tab-count-aprovados');
+    if (elContAprovados) elContAprovados.textContent = allByTurma.filter(c => c.status === 'Ativo' && !c.pediuBaixa).length;
+    const elContInativo = document.getElementById('tab-count-inativo-falta');
+    if (elContInativo) elContInativo.textContent = allByTurma.filter(c => c.status === 'Inativo por Falta').length;
+    const elContPendentes = document.getElementById('tab-count-pendentes');
+    if (elContPendentes) elContPendentes.textContent = allByTurma.filter(c => c.status === 'Pendente').length;
+    const elContReprovados = document.getElementById('tab-count-reprovados');
+    if (elContReprovados) elContReprovados.textContent = allByTurma.filter(c => c.status === 'Rejeitado').length;
+    const elContSegunda = document.getElementById('tab-count-segunda-chamada');
+    if (elContSegunda) elContSegunda.textContent = allByTurma.filter(c => c.status === 'Segunda Chamada').length;
+    const elContPediuBaixa = document.getElementById('tab-count-pediu-baixa');
+    if (elContPediuBaixa) elContPediuBaixa.textContent = allByTurma.filter(c => c.pediuBaixa).length;
 
     if (thead) {
         if (isAprovados) {
@@ -2819,6 +2865,7 @@ function renderAlunosList() {
         const isOnline = onlineCpfs.has(c.cpf);
         const onlineDot = isOnline ? ' <span class="online-dot" title="Online"></span>' : '';
         const baixaTag = c.pediuBaixa ? ' <span style="background:rgba(220,38,38,.12);color:#dc2626;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-power-off"></i> PEDI BAIXA</span>' : '';
+        const reingressoTag = (c.pediuBaixa && c.reingressoSolicitado) ? ' <span style="background:rgba(37,99,235,.12);color:#1d4ed8;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-rotate"></i> REINGRESSO PENDENTE</span>' : '';
 
         const actionsHtml = `<div class="actions-cell">
                 <button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(${i})"><i class="fa-solid fa-eye"></i></button>
@@ -2827,6 +2874,7 @@ function renderAlunosList() {
                 <button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoAlunos(${i})"><i class="fa-solid fa-trash"></i></button>
                 <button class="btn-icon btn-success" title="Imprimir" onclick="printCandidato(${i})"><i class="fa-solid fa-print"></i></button>
                 <button class="btn-icon" title="Copiar para a seção CFF" onclick="alunosCopyParaCff(${i})" style="color:#7c3aed"><i class="fa-solid fa-chalkboard"></i></button>
+                ${c.pediuBaixa && c.reingressoSolicitado ? `<button class="btn-icon" title="Recusar Reingresso" onclick="recusarReingresso(${i})" style="color:#dc2626"><i class="fa-solid fa-xmark"></i></button>` : ''}
                 ${c.pediuBaixa ? `<button class="btn-icon btn-success" title="Autorizar Retorno" onclick="autorizarBaixa(${i})" style="color:#16a34a"><i class="fa-solid fa-check"></i></button>` : ''}
                 ${c.status === 'Ativo' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
                 <div class="status-dropdown">
@@ -2845,7 +2893,7 @@ function renderAlunosList() {
 
         if (isAprovados) {
             return `<tr>
-                <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}${patenteTag(c)}</td>
+                <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${reingressoTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}${patenteTag(c)}</td>
                 <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
                 <td style="color:#ff9800;font-weight:600">${c.projeto || '-'}</td>
                 <td>${actionsHtml}</td>
@@ -2853,7 +2901,7 @@ function renderAlunosList() {
         }
 
         return `<tr>
-            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}${patenteTag(c)}</td>
+            <td${nomeStyle ? ' style="' + nomeStyle + '"' : ''}>${c.nome}${baixaTag}${reingressoTag}${onlineDot}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:10px;color:#66bb6a"></i>' : ''}${patenteTag(c)}</td>
             <td>${formatCPFDisplay(c.cpf)}</td>
             <td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace;font-size:13px">${mat || '-'}</td>
             <td>${c.turma || '-'}</td>
@@ -3451,7 +3499,7 @@ function foto3x4FecharModal() {
 function exportExcelAlunos() {
     const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
+    const filtered = alunosFiltrarPorAba(statusFilter, turmaFiltro);
     if (!filtered.length) { alert('Nenhum aluno para exportar nesta aba.'); return; }
     let csv = 'Nome,CPF,Matricula,Nascimento,Turma,Projeto,Status,Data Cadastro,Data/Hora 1o Cadastro\n';
     filtered.forEach(c => {
@@ -3464,7 +3512,7 @@ function exportExcelAlunos() {
 function printTableAlunos() {
     const turmaFiltro = document.getElementById('alunos-selecao-turma') ? document.getElementById('alunos-selecao-turma').value : '';
     const statusFilter = STATUS_MAP[currentAlunosTab];
-    const filtered = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === statusFilter && (!turmaFiltro || c.turma === turmaFiltro));
+    const filtered = alunosFiltrarPorAba(statusFilter, turmaFiltro);
     if (!filtered.length) { alert('Nenhum aluno para imprimir nesta aba.'); return; }
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - Alunos - ${statusFilter}</title><style>

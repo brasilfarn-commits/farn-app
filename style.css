@@ -2196,6 +2196,7 @@ select.config-input option {
 .alunos-tab[data-tab="pendentes"].active { background: linear-gradient(135deg, #ca8a04, #eab308); box-shadow: 0 2px 10px rgba(202,138,4,0.3); }
 .alunos-tab[data-tab="reprovados"].active { background: linear-gradient(135deg, #c62828, #e53935); box-shadow: 0 2px 10px rgba(198,40,40,0.3); }
 .alunos-tab[data-tab="segunda-chamada"].active { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 2px 10px rgba(37,99,235,0.3); }
+.alunos-tab[data-tab="pediu-baixa"].active { background: linear-gradient(135deg, #ec4899, #be185d); box-shadow: 0 2px 10px rgba(190,24,93,0.3); }
 
 .tab-count {
     display: inline-flex;
