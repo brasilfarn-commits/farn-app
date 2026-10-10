@@ -90,46 +90,76 @@ body {
 
 .admin-home-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    max-width: 600px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    max-width: 980px;
     width: 100%;
 }
 
 .admin-home-card {
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 28px 16px;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 8px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    gap: 8px;
     cursor: pointer;
-    transition: all 0.3s;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+    transition: all 0.25s;
 }
 
 .admin-home-card:hover {
-    border-color: #16a34a;
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(22,163,74,0.25);
-    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.3);
+    filter: brightness(1.08);
 }
 
 .admin-home-card i {
-    font-size: 28px;
-    color: #2563eb;
+    font-size: 15px;
+    color: #fff;
 }
 
 .admin-home-card span {
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.25;
+}
+
+/* cores individuais dos botoes do Inicio (o 7 e o Baixar App, verde) */
+.admin-home-card:nth-child(1) { background: linear-gradient(135deg, #2563eb, #1e40af); }
+.admin-home-card:nth-child(2) { background: linear-gradient(135deg, #16a34a, #15803d); }
+.admin-home-card:nth-child(3) { background: linear-gradient(135deg, #d97706, #b45309); }
+.admin-home-card:nth-child(4) { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.admin-home-card:nth-child(5) { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+.admin-home-card:nth-child(6) { background: linear-gradient(135deg, #0284c7, #0369a1); }
+.admin-home-card:nth-child(8) { background: linear-gradient(135deg, #e11d48, #be123c); }
+.admin-home-card:nth-child(9) { background: linear-gradient(135deg, #2563eb, #1e40af); }
+.admin-home-card:nth-child(10) { background: linear-gradient(135deg, #16a34a, #15803d); }
+.admin-home-card:nth-child(11) { background: linear-gradient(135deg, #d97706, #b45309); }
+.admin-home-card:nth-child(12) { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.admin-home-card:nth-child(13) { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+.admin-home-card:nth-child(14) { background: linear-gradient(135deg, #0284c7, #0369a1); }
+.admin-home-card:nth-child(15) { background: linear-gradient(135deg, #e11d48, #be123c); }
+.admin-home-card:nth-child(16) { background: linear-gradient(135deg, #2563eb, #1e40af); }
+.admin-home-card:nth-child(17) { background: linear-gradient(135deg, #16a34a, #15803d); }
+
+@media (max-width: 768px) {
+    .admin-home-grid { grid-template-columns: repeat(4, 1fr); gap: 9px; max-width: 100%; }
 }
 
 @media (max-width: 600px) {
-    .admin-home-grid { grid-template-columns: repeat(2, 1fr); }
+    .admin-home-grid { grid-template-columns: repeat(3, 1fr); }
     .admin-home-title { font-size: 24px; }
+    .admin-home-container { padding: 28px 18px; }
+}
+
+@media (max-width: 480px) {
+    .admin-home-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ===== LOGIN ===== */
@@ -3473,17 +3503,18 @@ select.config-input option {
 /* ===== MODAL DOWNLOAD APP ===== */
 
 .admin-home-card-download {
-    border-color: rgba(22,163,74,0.3) !important;
-    color: #16a34a !important;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border: none;
+    color: #fff !important;
 }
 
 .admin-home-card-download i {
-    color: #16a34a !important;
+    color: #fff !important;
 }
 
 .admin-home-card-download:hover {
-    border-color: #16a34a !important;
-    background: rgba(22,163,74,0.08) !important;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    filter: brightness(1.08);
 }
 
 .download-steps {
@@ -3985,7 +4016,7 @@ select.config-input option {
         padding: 16px 12px;
     }
     .admin-home-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 10px;
     }
     .admin-home-title {
@@ -4109,7 +4140,7 @@ select.config-input option {
 
 @media (max-width: 480px) {
     .admin-home-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
     .stats-grid {
         grid-template-columns: 1fr;
