@@ -2331,16 +2331,32 @@ async function autorizarBaixa(i) {
     if (!senha) return;
     if (senha !== ADMIN_SENHA) { alert('Senha incorreta! Autorizacao cancelada.'); return; }
     try {
+        const agora = new Date().toISOString();
+        /* Historico: a baixa em aberto (SOLICITADA) passa para AUTORIZADA e o
+           reingresso pendente (SOLICITADO) passa para AUTORIZADO. Se nao houver
+           pendencia, registra o evento de autorizacao mesmo assim. */
+        const histB = Array.isArray(c.historicoBaixa) ? c.historicoBaixa.slice() : [];
+        const ultB = histB.length ? histB[histB.length - 1] : null;
+        if (ultB && ultB.acao === 'SOLICITADA') { ultB.acao = 'AUTORIZADA'; ultB.dataFim = agora; }
+        else histB.push({ data: agora, acao: 'AUTORIZADA', obs: '', dataFim: agora });
+        const histR = Array.isArray(c.historicoReingresso) ? c.historicoReingresso.slice() : [];
+        const ultR = histR.length ? histR[histR.length - 1] : null;
+        if (ultR && ultR.acao === 'SOLICITADO') { ultR.acao = 'AUTORIZADO'; ultR.dataFim = agora; }
+        else histR.push({ data: agora, acao: 'AUTORIZADO', obs: '', dataFim: agora });
         await dbFirestore.collection(FB_CANDIDATOS).doc(String(c.id)).update({
             pediuBaixa: firebase.firestore.FieldValue.delete(),
             pediuBaixaEm: firebase.firestore.FieldValue.delete(),
             reingressoSolicitado: firebase.firestore.FieldValue.delete(),
-            reingressoEm: firebase.firestore.FieldValue.delete()
+            reingressoEm: firebase.firestore.FieldValue.delete(),
+            historicoBaixa: histB,
+            historicoReingresso: histR
         });
         delete c.pediuBaixa;
         delete c.pediuBaixaEm;
         delete c.reingressoSolicitado;
         delete c.reingressoEm;
+        c.historicoBaixa = histB;
+        c.historicoReingresso = histR;
         renderList();
         renderAlunosList();
         closeModal();
@@ -2356,12 +2372,21 @@ async function recusarReingresso(i) {
     if (!senha) return;
     if (senha !== ADMIN_SENHA) { alert('Senha incorreta! Acao cancelada.'); return; }
     try {
+        const agora = new Date().toISOString();
+        /* Historico: o reingresso pendente (SOLICITADO) passa para RECUSADO e o
+           aluno permanece com a baixa em aberto. */
+        const histR = Array.isArray(c.historicoReingresso) ? c.historicoReingresso.slice() : [];
+        const ultR = histR.length ? histR[histR.length - 1] : null;
+        if (ultR && ultR.acao === 'SOLICITADO') { ultR.acao = 'RECUSADO'; ultR.dataFim = agora; }
+        else histR.push({ data: agora, acao: 'RECUSADO', obs: '', dataFim: agora });
         await dbFirestore.collection(FB_CANDIDATOS).doc(String(c.id)).update({
             reingressoSolicitado: firebase.firestore.FieldValue.delete(),
-            reingressoEm: firebase.firestore.FieldValue.delete()
+            reingressoEm: firebase.firestore.FieldValue.delete(),
+            historicoReingresso: histR
         });
         delete c.reingressoSolicitado;
         delete c.reingressoEm;
+        c.historicoReingresso = histR;
         renderAlunosList();
         closeModal();
         alert('Reingresso recusado. O aluno continua com a baixa solicitada.');

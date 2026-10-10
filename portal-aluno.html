@@ -1278,7 +1278,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="ficha-geral-compartilhar.js?v=9"></script>
+    <script src="ficha-geral-compartilhar.js?v=10"></script>
 <script src="foto3x4-editor.js?v=3"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
     <script>
@@ -1718,20 +1718,25 @@
         if (!senha) { errEl.textContent = 'Informe sua senha para confirmar.'; errEl.style.display = 'block'; return; }
         if (!paUser || senha !== paUser.senha) { errEl.textContent = 'Senha incorreta.'; errEl.style.display = 'block'; return; }
         try {
+            var agora = new Date().toISOString();
+            var histB = Array.isArray(paUser.historicoBaixa) ? paUser.historicoBaixa.slice() : [];
+            histB.push({ data: agora, acao: 'SOLICITADA', obs: obsBaixa });
             await dbFirestore.collection('candidatos').doc(paUser._docId).update({
                 pediuBaixa: true,
-                pediuBaixaEm: new Date().toISOString(),
+                pediuBaixaEm: agora,
                 obsBaixa: obsBaixa,
                 reingressoSolicitado: false,
                 reingressoEm: '',
-                obsReingresso: ''
+                obsReingresso: '',
+                historicoBaixa: histB
             });
             paUser.pediuBaixa = true;
-            paUser.pediuBaixaEm = new Date().toISOString();
+            paUser.pediuBaixaEm = agora;
             paUser.obsBaixa = obsBaixa;
             paUser.reingressoSolicitado = false;
             paUser.reingressoEm = '';
             paUser.obsReingresso = '';
+            paUser.historicoBaixa = histB;
             document.getElementById('pf-baixa-overlay').classList.remove('show');
             document.getElementById('pf-baixa-senha').value = '';
             document.getElementById('pf-baixa-obs').value = '';
@@ -1787,14 +1792,18 @@
         if (!paUser || !paUser._docId) { errEl.textContent = 'Sessao invalida. Entre novamente.'; errEl.style.display = 'block'; return; }
         try {
             var agora = new Date().toISOString();
+            var histR = Array.isArray(paUser.historicoReingresso) ? paUser.historicoReingresso.slice() : [];
+            histR.push({ data: agora, acao: 'SOLICITADO', obs: obs });
             await dbFirestore.collection('candidatos').doc(paUser._docId).update({
                 reingressoSolicitado: true,
                 reingressoEm: agora,
-                obsReingresso: obs
+                obsReingresso: obs,
+                historicoReingresso: histR
             });
             paUser.reingressoSolicitado = true;
             paUser.reingressoEm = agora;
             paUser.obsReingresso = obs;
+            paUser.historicoReingresso = histR;
             paVerificarBaixa();
         } catch(e) {
             errEl.textContent = 'Erro ao enviar o pedido de reingresso: ' + e.message;

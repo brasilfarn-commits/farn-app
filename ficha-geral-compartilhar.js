@@ -653,8 +653,14 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         fgCampoDestaque('Cursos', cursos.join(', '))
     )));
 
-    // Secao - Baixa e Reingresso (registro de baixa do aluno e pedido de reingresso)
-    const temBaixa = !!(c.pediuBaixa || c.obsBaixa || c.obsReingresso || c.reingressoSolicitado || c.pediuBaixaEm || c.reingressoEm);
+    /* ===== Secao - Baixa e Reingresso =====
+       Registra TODAS as solicitacoes de baixa e reingresso (historico
+       completo) e separa o STATUS POR GUIA (Guia Baixa / Guia Reingresso /
+       guias de alunos em que o aluno aparece). O nucleo e compartilhado:
+       portal do aluno e administrador leem os mesmos dados. */
+    const histBaixa = Array.isArray(c.historicoBaixa) ? c.historicoBaixa : [];
+    const histReingresso = Array.isArray(c.historicoReingresso) ? c.historicoReingresso : [];
+    const temBaixa = !!(c.pediuBaixa || c.obsBaixa || c.obsReingresso || c.reingressoSolicitado || c.pediuBaixaEm || c.reingressoEm || histBaixa.length || histReingresso.length);
     if (temBaixa) {
         const statusBaixa = c.pediuBaixa
             ? (c.reingressoSolicitado ? 'Aguardando autorizacao de reingresso' : 'Baixa solicitada - acesso bloqueado')
@@ -665,12 +671,50 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
                 + '<div style="font-size:8.5px;font-weight:700;color:#9d174d;text-transform:uppercase;letter-spacing:.4px">' + fgEsc(rotulo) + '</div>'
                 + '<div style="font-size:12px;font-weight:600;color:#0f172a;margin-top:2px;word-break:break-word;white-space:pre-wrap">' + fgEsc(v) + '</div></div>';
         };
+        /* Guias de alunos em que o aluno aparece hoje (status por guia) */
+        const guiasAtuais = (function () {
+            const g = [];
+            if (c.pediuBaixa) g.push('Aluno que pediu baixa');
+            if (c.status === 'Ativo' && !c.pediuBaixa) g.push('Ativos');
+            if (c.status === 'Inativo por Falta') g.push('Inativo por Falta');
+            if (c.status === 'Pendente') g.push('Pendentes');
+            if (c.status === 'Rejeitado') g.push('Reprovados');
+            if (c.status === 'Segunda Chamada') g.push('Segunda Chamada');
+            return g.length ? g.join(', ') : (c.status || 'Pre-Inscricao');
+        })();
+        const statusGuiaBaixa = c.pediuBaixa ? 'Baixa em aberto - na guia "Aluno que pediu baixa"' : 'Baixa resolvida / sem baixa em aberto';
+        const statusGuiaReingresso = c.reingressoSolicitado ? 'Reingresso em analise pela administracao' : (c.pediuBaixa ? 'Disponivel para solicitar' : 'Sem reingresso pendente');
+        /* Render do historico por guia: Data/hora + Acao + Obs */
+        const fgTabelaHist = function (lista, corAcao) {
+            if (!lista.length) return '<div style="font-size:11px;color:#94a3b8;padding:4px 2px">Nenhuma solicitacao registrada neste guia.</div>';
+            const linhas = lista.map(function (ev) {
+                const d = ev && ev.data ? new Date(ev.data).toLocaleString('pt-BR') : '---';
+                const fim = ev && ev.dataFim ? ' ate ' + new Date(ev.dataFim).toLocaleString('pt-BR') : '';
+                const obs = ev && ev.obs ? String(ev.obs) : '';
+                const acao = ev && ev.acao ? fgEsc(String(ev.acao)) : '---';
+                return '<div style="display:grid;grid-template-columns:150px 1fr;gap:6px;padding:5px 2px;border-bottom:1px dashed #fbcfe8;font-size:11px;align-items:start">'
+                    + '<div style="display:flex;flex-direction:column;min-width:0"><span style="color:' + corAcao + ';font-weight:800;text-transform:uppercase;letter-spacing:.4px">' + acao + '</span><span style="color:#94a3b8;font-size:10px">' + d + fim + '</span></div>'
+                    + '<span style="color:#334155;word-break:break-word;white-space:pre-wrap;min-width:0">' + (obs ? fgEsc(obs) : '—') + '</span></div>';
+            }).join('');
+            return linhas;
+        };
+        const fgGuiaHist = function (titulo, icone, lista, corBase) {
+            return '<div style="grid-column:1/-1;border:1px solid #fbcfe8;border-radius:10px;padding:8px 10px;background:#fdf2f8;min-width:0">'
+                + '<div style="display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;color:#9d174d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px"><i class="fa-solid ' + icone + '" style="color:' + corBase + '"></i> ' + fgEsc(titulo) + ' <span style="margin-left:auto;background:' + corBase + ';color:#fff;border-radius:20px;padding:1px 8px;font-size:9px;font-weight:800;white-space:nowrap">' + lista.length + ' registro(s)</span></div>'
+                + fgTabelaHist(lista, corBase)
+                + '</div>';
+        };
         secoes.push(fgSecao('fa-power-off', 'Baixa e Reingresso', fgGrid(
-            fgCampo('Situacao', statusBaixa) +
+            fgCampo('Situacao Atual', statusBaixa) +
+            fgCampo('Guias de Alunos', guiasAtuais) +
+            fgCampo('Guia Baixa', statusGuiaBaixa) +
+            fgCampo('Guia Reingresso', statusGuiaReingresso) +
             fgCampo('Solicitou Baixa em', c.pediuBaixaEm ? new Date(c.pediuBaixaEm).toLocaleString('pt-BR') : '') +
             fgCampo('Reingresso em', c.reingressoEm ? new Date(c.reingressoEm).toLocaleString('pt-BR') : '') +
             obsFull('OBS. BAIXA', c.obsBaixa) +
-            obsFull('OBS. REINGRESSO', c.obsReingresso)
+            obsFull('OBS. REINGRESSO', c.obsReingresso) +
+            fgGuiaHist('Guia Baixa - Historico de Solicitacoes', 'fa-power-off', histBaixa, '#be185d') +
+            fgGuiaHist('Guia Reingresso - Historico de Solicitacoes', 'fa-rotate', histReingresso, '#9d174d')
         )));
     }
 
