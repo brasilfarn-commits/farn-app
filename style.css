@@ -130,13 +130,14 @@ body {
     line-height: 1.25;
 }
 
-/* cores individuais dos botoes do Inicio (o 7 e o Baixar App, verde) */
+/* cores individuais dos botoes do Inicio (posicao 4 e o Baixar App, verde) */
 .admin-home-card:nth-child(1) { background: linear-gradient(135deg, #2563eb, #1e40af); }
 .admin-home-card:nth-child(2) { background: linear-gradient(135deg, #16a34a, #15803d); }
 .admin-home-card:nth-child(3) { background: linear-gradient(135deg, #d97706, #b45309); }
-.admin-home-card:nth-child(4) { background: linear-gradient(135deg, #dc2626, #b91c1c); }
-.admin-home-card:nth-child(5) { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
-.admin-home-card:nth-child(6) { background: linear-gradient(135deg, #0284c7, #0369a1); }
+.admin-home-card:nth-child(4) { background: linear-gradient(135deg, #16a34a, #15803d); }
+.admin-home-card:nth-child(5) { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.admin-home-card:nth-child(6) { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+.admin-home-card:nth-child(7) { background: linear-gradient(135deg, #0284c7, #0369a1); }
 .admin-home-card:nth-child(8) { background: linear-gradient(135deg, #e11d48, #be123c); }
 .admin-home-card:nth-child(9) { background: linear-gradient(135deg, #2563eb, #1e40af); }
 .admin-home-card:nth-child(10) { background: linear-gradient(135deg, #16a34a, #15803d); }
@@ -144,9 +145,6 @@ body {
 .admin-home-card:nth-child(12) { background: linear-gradient(135deg, #dc2626, #b91c1c); }
 .admin-home-card:nth-child(13) { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
 .admin-home-card:nth-child(14) { background: linear-gradient(135deg, #0284c7, #0369a1); }
-.admin-home-card:nth-child(15) { background: linear-gradient(135deg, #e11d48, #be123c); }
-.admin-home-card:nth-child(16) { background: linear-gradient(135deg, #2563eb, #1e40af); }
-.admin-home-card:nth-child(17) { background: linear-gradient(135deg, #16a34a, #15803d); }
 
 @media (max-width: 768px) {
     .admin-home-grid { grid-template-columns: repeat(4, 1fr); gap: 9px; max-width: 100%; }
@@ -3503,7 +3501,7 @@ select.config-input option {
 /* ===== MODAL DOWNLOAD APP ===== */
 
 .admin-home-card-download {
-    background: linear-gradient(135deg, #16a34a, #15803d);
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
     border: none;
     color: #fff !important;
 }
@@ -3513,7 +3511,7 @@ select.config-input option {
 }
 
 .admin-home-card-download:hover {
-    background: linear-gradient(135deg, #16a34a, #15803d);
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
     filter: brightness(1.08);
 }
 
