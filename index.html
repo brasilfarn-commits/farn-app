@@ -1329,6 +1329,78 @@
                                     <span style="font-size:13px">Alunos com Faltas</span>
                                     <small>Faltas por turma com detalhes</small>
                                 </div>
+                                <div class="config-card" onclick="viagemAbrir()" style="padding:16px;max-width:220px;border-left:3px solid #0ea5e9">
+                                    <i class="fa-solid fa-bus" style="font-size:20px;color:#0ea5e9"></i>
+                                    <span style="font-size:13px">Criar Lista de Viagem</span>
+                                    <small>Escolha a turma, marque os presentes e gere a lista de embarque</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- MODAL CRIAR LISTA DE VIAGEM -->
+                <div id="modal-listagem-viagem-overlay" class="modal-overlay hidden" onclick="viagemFechar(event)">
+                    <div class="modal-content" style="max-width:780px;max-height:92vh;overflow-y:auto">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-bus" style="color:#0ea5e9;margin-right:8px"></i> Criar Lista de Viagem</h3>
+                            <button class="modal-close" onclick="viagemFechar()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- PASSO 1: projeto e turma -->
+                            <div id="viagem-passo1">
+                                <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0 0 10px"><i class="fa-solid fa-filter" style="color:#0ea5e9;margin-right:6px"></i> Passo 1 - Escolha o projeto e a turma</p>
+                                <div class="form-grid">
+                                    <div class="form-group" style="grid-column:span 1">
+                                        <label>Projeto *</label>
+                                        <select id="viagem-projeto" class="config-input" onchange="viagemOnProjetoChange()">
+                                            <option value="">Selecione o projeto...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="grid-column:span 1">
+                                        <label>Turma *</label>
+                                        <select id="viagem-turma" class="config-input">
+                                            <option value="">Selecione a turma...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+                                    <button type="button" class="btn-primary" onclick="viagemCarregarAlunos()"><i class="fa-solid fa-users"></i> Carregar Alunos da Turma</button>
+                                </div>
+                            </div>
+                            <!-- PASSO 2: selecao dos alunos presentes + dados da viagem -->
+                            <div id="viagem-passo2" style="display:none">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                                    <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0"><i class="fa-solid fa-user-check" style="color:#0ea5e9;margin-right:6px"></i> Passo 2 - Selecione os alunos presentes (embarque no onibus)</p>
+                                    <div style="display:flex;gap:6px">
+                                        <button type="button" class="btn-outline btn-sm" onclick="viagemSelecionarTodos(true)"><i class="fa-solid fa-check-double"></i> Marcar Todos</button>
+                                        <button type="button" class="btn-outline btn-sm" onclick="viagemSelecionarTodos(false)"><i class="fa-solid fa-xmark"></i> Desmarcar</button>
+                                    </div>
+                                </div>
+                                <div id="viagem-alunos-lista" style="max-height:210px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-bottom:14px;background:#f8fafc"></div>
+                                <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0 0 8px"><i class="fa-solid fa-route" style="color:#0ea5e9;margin-right:6px"></i> Passo 3 - Dados da Viagem</p>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Data da Viagem</label>
+                                        <input type="date" id="viagem-data" class="config-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Local de Saida e Hora *</label>
+                                        <input type="text" id="viagem-saida" class="config-input" placeholder="Ex: Praca do Derby, Recife - 06:30">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Local de Destino *</label>
+                                        <input type="text" id="viagem-destino" class="config-input" placeholder="Ex: Centro de Formacao FARN - Olinda/PE">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Local de Retorno *</label>
+                                        <input type="text" id="viagem-retorno" class="config-input" placeholder="Ex: Praca do Derby, Recife - 18:00">
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:14px;border-top:1px solid #e2e8f0;padding-top:14px">
+                                    <span id="viagem-contador" style="font-size:12px;font-weight:700;color:#475569;margin-right:auto">0 aluno(s) selecionado(s)</span>
+                                    <button type="button" class="btn-outline" onclick="viagemVoltarPasso1()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                                    <button type="button" class="btn-primary" onclick="viagemGerar()"><i class="fa-solid fa-bus"></i> Gerar Lista de Viagem</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4907,7 +4979,7 @@
     <script src="ficha-geral-compartilhar.js?v=10"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=69"></script>
+    <script src="app.js?v=70"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

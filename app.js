@@ -4539,6 +4539,314 @@ function gerarRelatorioPersonalizado() {
     w.document.close();
 }
 
+/* ===== CRIAR LISTA DE VIAGEM ===== */
+/* Fluxo (Relatorios > Criar Lista de Viagem):
+   1) escola projeto e turma;
+   2) marca os alunos presentes que embarcarao no onibus;
+   3) preenche Local de Saida e Hora, Local de Destino e Local de Retorno;
+   4) gera uma janela organizada para impressao com DUAS paginas:
+      Pagina 1 - lista de embarque (foto 3x4, nome, CPF, matricula, fator RH,
+                  idade) com cabecalho dos dados da instituicao (Configuracoes);
+      Pagina 2 - dados da viagem e oficio com os mesmos dados da instituicao,
+                  data/local/hora e assinaturas (responsavel pela escola e
+                  responsavel pela conducao com CNH). */
+var viagemAlunosDaTurma = [];
+
+function viagemEscHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function viagemFormatarData(iso) {
+    if (!iso) return '';
+    var v = String(iso);
+    if (/^\d{4}-\d{2}-\d{2}/.test(v)) {
+        var p = v.slice(0, 10).split('-');
+        return p[2] + '/' + p[1] + '/' + p[0];
+    }
+    var d = new Date(v + (v.length === 10 ? 'T00:00:00' : ''));
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR');
+}
+
+function viagemAbrir() {
+    var selProj = document.getElementById('viagem-projeto');
+    if (!selProj) return;
+    selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
+    var lista = (Array.isArray(projetos) ? projetos : []).filter(function(p) { return p && p.nome; }).slice();
+    lista.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+    lista.forEach(function(p) {
+        selProj.innerHTML += '<option value="' + viagemEscHtml(p.nome) + '">' + viagemEscHtml(p.nome + (p.responsavel ? ' - ' + p.responsavel : '')) + '</option>';
+    });
+    var selTurma = document.getElementById('viagem-turma');
+    if (selTurma) selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    var box = document.getElementById('viagem-alunos-lista');
+    if (box) box.innerHTML = '';
+    var passo1 = document.getElementById('viagem-passo1');
+    var passo2 = document.getElementById('viagem-passo2');
+    if (passo1) passo1.style.display = '';
+    if (passo2) passo2.style.display = 'none';
+    viagemAlunosDaTurma = [];
+    var cont = document.getElementById('viagem-contador');
+    if (cont) cont.textContent = '0 aluno(s) selecionado(s)';
+    var overlay = document.getElementById('modal-listagem-viagem-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+}
+
+function viagemFechar(e) {
+    if (e && e.target !== e.currentTarget) return;
+    var overlay = document.getElementById('modal-listagem-viagem-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+function viagemOnProjetoChange() {
+    var projetoNome = document.getElementById('viagem-projeto').value;
+    var selTurma = document.getElementById('viagem-turma');
+    if (!selTurma) return;
+    selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+    if (projetoNome) {
+        (Array.isArray(turmas) ? turmas : []).filter(function(t) { return t && t.nome && t.projeto === projetoNome; }).forEach(function(t) {
+            selTurma.innerHTML += '<option value="' + viagemEscHtml(t.nome) + '">' + viagemEscHtml(t.nome + (t.descricao ? ' - ' + t.descricao : '')) + '</option>';
+        });
+    }
+}
+
+function viagemCarregarAlunos() {
+    var projetoNome = document.getElementById('viagem-projeto').value;
+    var turmaNome = document.getElementById('viagem-turma').value;
+    if (!projetoNome || !turmaNome) { alert('Selecione o projeto e a turma.'); return; }
+    var alunos = (Array.isArray(candidatos) ? candidatos : []).filter(function(c) {
+        return c && c.projeto === projetoNome && c.turma === turmaNome
+            && (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo';
+    });
+    alunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+    if (!alunos.length) { alert('Nenhum aluno ativo encontrado nessa turma.'); return; }
+    viagemAlunosDaTurma = alunos;
+    var box = document.getElementById('viagem-alunos-lista');
+    if (!box) return;
+    box.innerHTML = alunos.map(function(c, i) {
+        var mat = c.matricula || generateMatricula(c.cpf) || '---';
+        return '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px;color:#334155;background:#fff;border:1px solid #e2e8f0;margin-bottom:4px">'
+            + '<input type="checkbox" class="viagem-aluno-check" value="' + i + '" onchange="viagemAtualizarContador()" style="accent-color:#0ea5e9;width:15px;height:15px;flex-shrink:0">'
+            + '<span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + viagemEscHtml(c.nome || '---') + '</span>'
+            + '<span style="color:#64748b;font-size:11px;flex-shrink:0">' + viagemEscHtml(mat) + '</span>'
+            + '</label>';
+    }).join('');
+    var passo1 = document.getElementById('viagem-passo1');
+    var passo2 = document.getElementById('viagem-passo2');
+    if (passo1) passo1.style.display = 'none';
+    if (passo2) passo2.style.display = '';
+    viagemAtualizarContador();
+}
+
+function viagemVoltarPasso1() {
+    var passo1 = document.getElementById('viagem-passo1');
+    var passo2 = document.getElementById('viagem-passo2');
+    if (passo1) passo1.style.display = '';
+    if (passo2) passo2.style.display = 'none';
+}
+
+function viagemSelecionarTodos(marcar) {
+    document.querySelectorAll('.viagem-aluno-check').forEach(function(cb) { cb.checked = marcar; });
+    viagemAtualizarContador();
+}
+
+function viagemAtualizarContador() {
+    var n = document.querySelectorAll('.viagem-aluno-check:checked').length;
+    var cont = document.getElementById('viagem-contador');
+    if (cont) cont.textContent = n + ' aluno(s) selecionado(s)';
+}
+
+async function viagemGerar() {
+    var checks = Array.prototype.slice.call(document.querySelectorAll('.viagem-aluno-check:checked'));
+    if (!checks.length) { alert('Selecione pelo menos um aluno para embarcar.'); return; }
+    var saida = document.getElementById('viagem-saida').value.trim();
+    var destino = document.getElementById('viagem-destino').value.trim();
+    var retorno = document.getElementById('viagem-retorno').value.trim();
+    if (!saida || !destino || !retorno) { alert('Preencha Local de Saida e Hora, Local de Destino e Local de Retorno.'); return; }
+    var alunosSel = checks.map(function(cb) { return viagemAlunosDaTurma[Number(cb.value)]; }).filter(Boolean);
+    if (!alunosSel.length) { alert('Selecione pelo menos um aluno para embarcar.'); return; }
+    var projetoNome = document.getElementById('viagem-projeto').value;
+    var turmaNome = document.getElementById('viagem-turma').value;
+    var dataViagem = document.getElementById('viagem-data').value || '';
+
+    /* Dados da instituicao: mesmos da secao Configuracoes > Dados da Instituicao */
+    try {
+        if (typeof fichaGeralCarregarInstituicao === 'function') {
+            await fichaGeralCarregarInstituicao(true);
+        }
+    } catch (e) { /* segue com o cache/default */ }
+    var inst = {};
+    if (typeof fichaGeralDadosInstituicao === 'function') {
+        inst = fichaGeralDadosInstituicao() || {};
+    }
+    var logo = inst.logo || FARN_LOGO || '';
+    var razao = inst.razaoSocial || 'FARN - FORCA AUXILIAR DE RESGATE NACIONAL';
+    var fantasia = inst.nomeFantasia || 'FARN';
+    var cnpjL = inst.cnpj || '43.327.929/0001-32';
+    var foneL = inst.fone || '';
+    var emailL = inst.email || '';
+
+    /* Fotos 3x4 ja cadastradas (getFoto resolve do local ou do Firestore) */
+    var comFotos = await Promise.all(alunosSel.map(function(c) {
+        return getFoto(c.cpf).then(function(src) { return { c: c, foto: src || null }; });
+    }));
+
+    var html = viagemMontarHTML({
+        projeto: projetoNome, turma: turmaNome, dataViagem: dataViagem,
+        saida: saida, destino: destino, retorno: retorno
+    }, {
+        razaoSocial: razao, nomeFantasia: fantasia, cnpj: cnpjL, fone: foneL, email: emailL, logo: logo
+    }, comFotos);
+
+    var w = window.open('', '_blank');
+    if (!w) { alert('Permita pop-ups para gerar a lista de viagem.'); return; }
+    w.document.write(html);
+    w.document.close();
+}
+
+/* Monta o documento de DUAS paginas da lista de viagem. Separado da captura
+   dos campos para poder ser testado com dados falsos. */
+function viagemMontarHTML(dados, inst, comFotos) {
+    var projeto = dados.projeto || '';
+    var turma = dados.turma || '';
+    var dataBR = viagemFormatarData(dados.dataViagem) || new Date().toLocaleDateString('pt-BR');
+    var razao = inst.razaoSocial || 'FARN - FORCA AUXILIAR DE RESGATE NACIONAL';
+    var fantasia = inst.nomeFantasia || 'FARN';
+    var cnpjL = inst.cnpj || '';
+    var foneL = inst.fone || '';
+    var emailL = inst.email || '';
+    var logo = inst.logo || '';
+    var total = comFotos.length;
+
+    var header = '<div class="header">'
+        + (logo ? '<img src="' + String(logo).replace(/"/g, '&quot;') + '" alt="Logo da instituicao">' : '<div class="logo-fallback"><i class="fa-solid fa-building-columns"></i></div>')
+        + '<div class="title-line">' + viagemEscHtml(razao.toUpperCase()) + '</div>'
+        + (fantasia ? '<div class="sub-line">' + viagemEscHtml(fantasia.toUpperCase()) + '</div>' : '')
+        + '<div class="info-line">'
+        + (cnpjL ? 'CNPJ: ' + viagemEscHtml(cnpjL) : '')
+        + (cnpjL && foneL ? ' &nbsp;|&nbsp; ' : '')
+        + (foneL ? 'Telefone: ' + viagemEscHtml(foneL) : '')
+        + (emailL ? ' &nbsp;|&nbsp; Email: ' + viagemEscHtml(emailL) : '')
+        + '</div></div>';
+
+    var rows = comFotos.map(function(item, i) {
+        var c = item.c;
+        var foto = item.foto
+            ? '<img src="' + String(item.foto).replace(/"/g, '&quot;') + '" alt="Foto 3x4" style="width:50px;height:64px;object-fit:cover;border:1px solid #64748b;border-radius:4px">'
+            : '<div style="width:50px;height:64px;border:1px dashed #cbd5e1;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#94a3b8;background:#f8fafc;font-size:14px"><i class="fa-solid fa-user"></i></div>';
+        var idade = '';
+        if (c.idade != null && c.idade !== '') idade = String(c.idade);
+        else if (typeof calcularIdade === 'function') idade = String(calcularIdade(c.nascimento) || '');
+        idade = idade.trim();
+        return '<tr class="aluno-row">'
+            + '<td class="center">' + (i + 1) + '</td>'
+            + '<td class="foto-cell center">' + foto + '</td>'
+            + '<td class="nome">' + viagemEscHtml(c.nome || '---') + '</td>'
+            + '<td class="cpf">' + viagemEscHtml(typeof formatCPFDisplay === 'function' ? (formatCPFDisplay(c.cpf) || '---') : (c.cpf || '---')) + '</td>'
+            + '<td class="matricula">' + viagemEscHtml(c.matricula || (typeof generateMatricula === 'function' ? (generateMatricula(c.cpf) || '---') : '---')) + '</td>'
+            + '<td class="center">' + viagemEscHtml(c.fatorRh || '---') + '</td>'
+            + '<td class="center">' + (idade ? viagemEscHtml(idade) + ' anos' : '---') + '</td>'
+            + '</tr>';
+    }).join('');
+
+    /* Pagina 1 - Lista de Embarque */
+    var pagina1 = '<div class="page">'
+        + header
+        + '<div class="doc-title doc-title-1">Lista de Viagem - Embarque no Onibus</div>'
+        + '<div class="info-bar">'
+        + '<span><b>Projeto:</b> ' + viagemEscHtml(projeto) + '</span>'
+        + '<span><b>Turma:</b> ' + viagemEscHtml(turma) + '</span>'
+        + '<span><b>Data:</b> ' + viagemEscHtml(dataBR) + '</span>'
+        + '<span><b>Total:</b> ' + total + ' aluno(s)</span>'
+        + '</div>'
+        + '<table>'
+        + '<thead><tr><th style="width:4%">#</th><th style="width:66px">Foto 3x4</th><th>Nome</th><th style="width:16%">CPF</th><th style="width:13%">Matricula</th><th style="width:10%">Fator RH</th><th style="width:8%">Idade</th></tr></thead>'
+        + '<tbody>' + rows + '</tbody>'
+        + '</table>'
+        + '<div class="total">Total de embarcados: ' + total + ' aluno(s)</div>';
+    pagina1 += '<div style="margin-top:26px;display:flex;justify-content:space-between;align-items:flex-end;gap:30px">'
+        + '<div style="flex:1;border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px">Responsavel pela Escola - <b>Assinatura</b></div>'
+        + '<div style="flex:1;border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px">Responsavel pela Conducao (CNH) - <b>Assinatura</b></div>'
+        + '</div>'
+        + '<div class="footer">Documento gerado em ' + new Date().toLocaleString('pt-BR') + ' | ' + viagemEscHtml(razao) + '</div>'
+        + '</div>';
+
+    /* Pagina 2 - Dados da Viagem e Oficio */
+    var pagina2 = '<div class="page page-break">'
+        + header
+        + '<div class="doc-title doc-title-2">Dados da Viagem e Oficio</div>'
+        + '<div class="oficio-box">'
+        + '<div class="oficio-cab">OFICIO N&ordm; ______/______</div>'
+        + '<p class="oficio-corpo">A <b>' + viagemEscHtml(razao) + '</b>, por meio deste oficio, comunica a realizacao de viagem de '
+        + '<b>' + total + ' aluno(s)</b> da turma <b>' + viagemEscHtml(turma) + '</b> do projeto <b>' + viagemEscHtml(projeto) + '</b>, '
+        + 'no dia <b>' + viagemEscHtml(dataBR) + '</b>, conforme os dados abaixo, para fins de apoio e autorizacao do deslocamento em onibus de conducao.</p>'
+        + '<table class="dados-viagem">'
+        + '<tr><td class="rot">Local de Saida e Hora:</td><td class="val">' + viagemEscHtml(dados.saida || '') + '</td></tr>'
+        + '<tr><td class="rot">Local de Destino:</td><td class="val">' + viagemEscHtml(dados.destino || '') + '</td></tr>'
+        + '<tr><td class="rot">Local de Retorno:</td><td class="val">' + viagemEscHtml(dados.retorno || '') + '</td></tr>'
+        + '<tr><td class="rot">Data da Viagem:</td><td class="val">' + viagemEscHtml(dataBR) + '</td></tr>'
+        + '<tr><td class="rot">Projeto / Turma:</td><td class="val">' + viagemEscHtml(projeto) + ' / ' + viagemEscHtml(turma) + '</td></tr>'
+        + '<tr><td class="rot">Numero de Alunos:</td><td class="val">' + total + ' aluno(s)</td></tr>'
+        + '</table>'
+        + '<div class="data-local-hora"><span>Data: __________ de ______________ de 20____</span><span>Local: ____________________</span><span>Hora: __________</span></div>'
+        + '<div class="assinaturas">'
+        + '<div class="assinatura-item"><div class="linha-ass">_________________________________________</div><div class="rot-ass">Responsavel pela Escola</div></div>'
+        + '<div class="assinatura-item"><div class="linha-ass">_________________________________________</div><div class="rot-ass">Responsavel pela Conducao<br>CNH N&ordm;: ______________________</div></div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="footer">' + viagemEscHtml(razao) + ' | Oficio gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
+        + '</div>';
+
+    return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Lista de Viagem - ' + viagemEscHtml(projeto) + ' / ' + viagemEscHtml(turma) + '</title>'
+        + '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">'
+        + '<style>'
+        + '@page{size:A4 portrait;margin:12mm}'
+        + '*{margin:0;padding:0;box-sizing:border-box}'
+        + 'body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;font-size:11px}'
+        + '.page{padding:4px 6px 14px}'
+        + '.page-break{page-break-before:always}'
+        + '.header{text-align:center;padding:10px 8px;border-bottom:3px solid #0ea5e9;margin-bottom:12px}'
+        + '.header img{max-height:58px;max-width:120px;object-fit:contain;margin-bottom:4px}'
+        + '.logo-fallback{width:58px;height:58px;margin:0 auto 6px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px}'
+        + '.header .title-line{font-size:13px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:.8px}'
+        + '.header .sub-line{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:2px;margin-top:2px}'
+        + '.header .info-line{font-size:9.5px;color:#64748b;margin-top:4px}'
+        + '.doc-title{text-align:center;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;padding:7px 10px;border-radius:6px;margin:0 0 8px}'
+        + '.doc-title-1{color:#0369a1;border:2px solid #0ea5e9}'
+        + '.doc-title-2{color:#7c3aed;border:2px solid #8b5cf6}'
+        + '.info-bar{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:10.5px;color:#334155;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:6px 10px;margin-bottom:10px}'
+        + 'table{width:100%;border-collapse:collapse}'
+        + 'th{background:#0369a1;color:#fff;padding:7px 6px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.4px;vertical-align:middle;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+        + 'td{padding:6px;border-bottom:1px solid #e2e8f0;font-size:10.5px;vertical-align:middle}'
+        + 'tr:nth-child(even){background:#f0f9ff}'
+        + '.aluno-row{page-break-inside:avoid}'
+        + 'td.nome{font-weight:700;color:#0f172a}'
+        + 'td.cpf{font-family:"Courier New",monospace;font-weight:600;color:#334155;letter-spacing:.3px}'
+        + 'td.matricula{font-family:"Courier New",monospace;font-weight:800;color:#0369a1;letter-spacing:.8px}'
+        + 'td.center{text-align:center}'
+        + 'td.foto-cell{text-align:center}'
+        + '.total{text-align:right;font-size:11px;font-weight:800;color:#0369a1;margin-top:8px}'
+        + '.footer{margin-top:14px;text-align:center;font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:6px}'
+        + '.oficio-box{border:1.5px solid #8b5cf6;border-radius:10px;padding:18px 20px;background:#faf5ff}'
+        + '.oficio-cab{text-align:right;font-size:11px;font-weight:800;color:#6d28d9;margin-bottom:12px;letter-spacing:.5px}'
+        + '.oficio-corpo{font-size:11.5px;line-height:1.7;color:#334155;text-align:justify;margin-bottom:16px}'
+        + 'table.dados-viagem{width:100%;border-collapse:collapse;margin-bottom:18px}'
+        + 'table.dados-viagem td{border:1px solid #ddd6fe;padding:8px 10px;font-size:11px}'
+        + 'table.dados-viagem td.rot{background:#ede9fe;font-weight:800;color:#4c1d95;width:42%;text-transform:uppercase;font-size:9.5px;letter-spacing:.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+        + 'table.dados-viagem td.val{font-weight:700;color:#1e1b4b}'
+        + '.data-local-hora{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;font-weight:700;color:#334155;margin-bottom:26px;flex-wrap:wrap}'
+        + '.assinaturas{display:flex;justify-content:space-between;gap:36px;flex-wrap:wrap}'
+        + '.assinatura-item{flex:1;min-width:200px;text-align:center}'
+        + '.linha-ass{font-size:12px;color:#334155;letter-spacing:.5px;white-space:nowrap;margin-bottom:4px}'
+        + '.rot-ass{font-size:9.5px;font-weight:800;text-transform:uppercase;color:#4c1d95;letter-spacing:.6px;line-height:1.5}'
+        + '.print-bar{text-align:center;padding:14px 0;border-bottom:1px dashed #cbd5e1;margin-bottom:10px}'
+        + '.print-bar button{padding:12px 34px;background:#0369a1;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+        + '@media print{.print-bar{display:none}body{font-size:10px}.page{padding:0}th{background:#0369a1 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#f0f9ff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}table.dados-viagem td.rot{background:#ede9fe !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page-break{break-before:page}}'
+        + '</style></head><body>'
+        + '<div class="print-bar"><button onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Lista de Viagem</button></div>'
+        + pagina1 + pagina2
+        + '</body></html>';
+}
+
 /* ===== PROJETOS CRUD ===== */
 
 let editingProjetoIndex = null;
