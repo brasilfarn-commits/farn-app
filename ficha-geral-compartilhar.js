@@ -363,7 +363,13 @@ async function fichaGeralDadosAluno(c) {
    3. AV Teorica e AV Pratica continuam como medias das notas das aulas (0-10).
    4. AV Final = media (Teorica + Pratica) / 2 com os pontos do
       comportamento, na escala de 0 a 10.
-   5. Aprovacao: AV Final >= corte abaixo. */
+   5. AV Final Teorica/Pratica (provas finais do Criar Avaliacao):
+      FIN = (AV Final Teorica + AV Final Pratica) / 2; sem provas finais,
+      contam como zero (provisoria).
+   6. Nota Certificadora (Situacao Final) = (media (T+P)/2 + FIN) / 2.
+   7. Aprovacao: Nota Certificadora >= corte abaixo. Este nucleo e
+      compartilhado pelo admin E pelo portal do aluno, entao a regra e
+      exatamente a mesma nos dois lados. */
 var FG_AV_CORTE_APROVACAO = 7;
 
 /* Media final de um bloco: valor manual se preenchido; senao a media
