@@ -547,16 +547,18 @@
             var fin = temFinal ? (((temFT ? avFTnum : 0) + (temFP ? avFPnum : 0)) / 2) : 0;
             fin = Math.round(fin * 10) / 10;
             var notaCertificadora = temFinal ? Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10 : null;
+            // Situacao Final: a Nota Certificadora decide a aprovacao quando existe; senao, a AV Final.
+            var notaSituacao = (notaCertificadora == null) ? avFinal : notaCertificadora;
             return {
                 mTeoricaManual: mT, mPraticaManual: mP,
                 teorOriginal: teor, pratOriginal: prat,
                 mediaFinal: mediaFinal,
                 foP: compR.foP, foN: compR.foN, comp: comp,
-                avFinal: avFinal, aprovado: avFinal >= AV_CORTE_APROVACAO,
+                avFinal: avFinal, aprovado: notaSituacao >= AV_CORTE_APROVACAO,
                 avFinalTeorica: temFT ? Math.round(avFTnum * 10) / 10 : '',
                 avFinalPratica: temFP ? Math.round(avFPnum * 10) / 10 : '',
                 fin: fin, temFinal: temFinal,
-                notaCertificadora: notaCertificadora
+                notaCertificadora: notaCertificadora, notaSituacao: notaSituacao
             };
         }
 
@@ -798,10 +800,10 @@
                     '<span class="valor">' + (r.notaCertificadora == null ? '—' : avNum(r.notaCertificadora)) + '</span>' +
                 '</div>' +
                 '<div class="media-destaque" style="border-color:' + (r.aprovado ? 'rgba(34,197,94,.6)' : 'rgba(248,113,113,.6)') + '">' +
-                    '<span class="rotulo">Situação (corte ' + AV_CORTE_APROVACAO + ')</span>' +
+                    '<span class="rotulo">Situação (corte ' + AV_CORTE_APROVACAO + ')' + (r.temFinal ? ' — pela Nota Certificadora ' + avNum(r.notaSituacao) : ' — pela AV Final ' + avNum(r.avFinal)) + '</span>' +
                     '<span class="valor" style="color:' + (r.aprovado ? '#4ade80' : '#f87171') + '">' + (r.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</span>' +
                 '</div>' +
-                '<p style="font-size:11px;color:#c9c7d4;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10. A Nota Certificadora é a média entre a Média e a FIN (média das provas finais).</p>';
+                '<p style="font-size:11px;color:#c9c7d4;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10. A Nota Certificadora é a média entre a Média e a FIN (média das provas finais). A Situação Final (APROVADO/NÃO APROVADO) usa a Nota Certificadora quando existir; senão, a AV Final.</p>';
             document.getElementById('aba-final').innerHTML = html;
         }
 

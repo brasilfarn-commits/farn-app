@@ -413,7 +413,6 @@ function fichaGeralCalcular(c, dados, aulas) {
     // AV Final = media (T+P)/2 com os pontos do comportamento, na escala 0-10.
     const mediaFinal = Math.round(((mT + mP) / 2) * 10) / 10;
     const avFinal = Math.max(0, Math.min(10, Math.round((mediaFinal + pontosComp) * 10) / 10));
-    const aprovado = avFinal >= FG_AV_CORTE_APROVACAO;
     // AV Final Teorica/Pratica (provas finais criadas em Criar Avaliacao).
     // FIN = (AV Final Teorica + AV Final Pratica) / 2.
     const avFTnum = parseFloat(String(av.avFinalTeorica == null ? '' : av.avFinalTeorica).replace(',', '.'));
@@ -425,6 +424,9 @@ function fichaGeralCalcular(c, dados, aulas) {
     fin = Math.round(fin * 10) / 10;
     // Nota certificadora: (media (T+P)/2 + FIN) / 2. Sem provas finais, fica nula.
     const notaCertificadora = temFinal ? Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10 : null;
+    // Situacao Final: a Nota Certificadora decide a aprovacao quando existe; senao, a AV Final.
+    const notaSituacao = (notaCertificadora == null) ? avFinal : notaCertificadora;
+    const aprovado = notaSituacao >= FG_AV_CORTE_APROVACAO;
     return {
         av: av,
         presencas: dados.presencas || [],
@@ -437,7 +439,8 @@ function fichaGeralCalcular(c, dados, aulas) {
         avFinalTeorica: temFT ? Math.round(avFTnum * 10) / 10 : '',
         avFinalPratica: temFP ? Math.round(avFPnum * 10) / 10 : '',
         fin: fin, temFinal: temFinal,
-        notaCertificadora: notaCertificadora
+        notaCertificadora: notaCertificadora,
+        notaSituacao: notaSituacao
     };
 }
 
@@ -830,7 +833,9 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + fgNotaPill('AV Final', fichaGeralNum(calc.avFinal) + ' / 10,0', corAV)
         + '</div>'
         + '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-        + '<span style="font-size:10px;color:#475569">A AV Final e a media (teorica+pratica)/2 com os pontos do comportamento, na escala 0-10. Aprovacao: AV Final >= ' + FG_AV_CORTE_APROVACAO + '.</span>'
+        + '<span style="font-size:10px;color:#475569">' + (calc.temFinal
+            ? 'SITUACAO FINAL pela Nota Certificadora (corte ' + FG_AV_CORTE_APROVACAO + '): ' + fichaGeralNum(calc.notaSituacao) + ' / 10,0. A AV Final e a media (teorica+pratica)/2 + comportamento.'
+            : 'A AV Final e a media (teorica+pratica)/2 com os pontos do comportamento, na escala 0-10. Aprovacao: AV Final >= ' + FG_AV_CORTE_APROVACAO + '.') + '</span>'
         + '<span style="background:' + corAprov + ';color:#fff;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:800">' + (calc.aprovado ? 'APROVADO' : 'NAO APROVADO') + '</span>'
         + '</div>'
         + '<div style="margin-top:10px;border-top:1px dashed #bae6fd;padding-top:8px">'
