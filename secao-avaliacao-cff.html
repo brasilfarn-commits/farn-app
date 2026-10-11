@@ -470,6 +470,12 @@
             } catch (e) { console.error('Erro ao sincronizar notas automaticas CFF:', e); }
         }
 
+        /* Regra de pontuacao reformada: o apontamento NAO gera nota; o
+           comportamento soma/tira pontos na AV Final (10 FO+ = +1, 5 FO- = -1);
+           a AV Final e a media (teorica+pratica)/2 com os pontos, na escala
+           0-10. Corte de aprovacao abaixo. */
+        var AV_CORTE_APROVACAO = 7;
+
         function avCalcularApontamento() {
             var aulas = (avAulasCache && avAulasCache.todas) || [];
             var totalAulas = aulas.length;
@@ -480,8 +486,7 @@
                 else if (p.status === 'Justificada') just++;
             });
             var pct = totalAulas ? Math.min(100, Math.round(((pres + just) / totalAulas) * 100)) : 0;
-            var nota = totalAulas ? Math.min(10, Math.round(((pres + just) / totalAulas) * 100) / 10) : 0;
-            return { totalAulas: totalAulas, pres: pres, fal: fal, just: just, pct: pct, nota: nota };
+            return { totalAulas: totalAulas, pres: pres, fal: fal, just: just, pct: pct };
         }
 
         function avCalcularComportamento() {
@@ -494,30 +499,33 @@
         function avCalcularMedia(tipo) {
             var notas = tipo === 'teorica' ? (avAvaliacao.notasTeoricas || {}) : (avAvaliacao.notasPraticas || {});
             var aulas = tipo === 'teorica' ? (avAulasCache.teorica || []) : (avAulasCache.pratica || []);
-            var soma = 0, qtd = 0;
+            /* Media do bloco: soma de todas as notas registradas dividida pela
+               quantidade de aulas daquele tipo (aula sem nota conta 0). */
+            var soma = 0;
             aulas.forEach(function(a) {
                 var n = parseFloat(notas[a._id]);
-                if (!isNaN(n) && n >= 0) { soma += n; qtd++; }
+                if (!isNaN(n) && n >= 0) { soma += n; }
             });
-            return qtd ? Math.round((soma / qtd) * 10) / 10 : 0;
+            return aulas.length ? Math.round((soma / aulas.length) * 10) / 10 : 0;
         }
 
         function avCalcularFinal() {
-            var mTeoricaManual = parseFloat((avAvaliacao.mediaTeoricaManual || '').replace(',', '.'));
-            var mPraticaManual = parseFloat((avAvaliacao.mediaPraticaManual || '').replace(',', '.'));
-            if (isNaN(mTeoricaManual)) mTeoricaManual = 0;
-            if (isNaN(mPraticaManual)) mPraticaManual = 0;
-            var mediaFinal = (mTeoricaManual + mPraticaManual) / 2;
-            var ap = avCalcularApontamento().nota;
-            var comp = avCalcularComportamento().pontos;
             var teor = avCalcularMedia('teorica');
             var prat = avCalcularMedia('pratica');
-            var mediaSala = (ap + comp + teor + prat) / 4;
-            var mediaCertificada = (mediaFinal + mediaSala) / 2;
+            var mTeorManual = parseFloat((avAvaliacao.mediaTeoricaManual || '').replace(',', '.'));
+            var mPratManual = parseFloat((avAvaliacao.mediaPraticaManual || '').replace(',', '.'));
+            var mT = isNaN(mTeorManual) ? teor : Math.max(0, Math.min(10, mTeorManual));
+            var mP = isNaN(mPratManual) ? prat : Math.max(0, Math.min(10, mPratManual));
+            var mediaFinal = Math.round(((mT + mP) / 2) * 10) / 10;
+            var compR = avCalcularComportamento();
+            var comp = compR.pontos;
+            var avFinal = Math.round(Math.max(0, Math.min(10, mediaFinal + comp)) * 10) / 10;
             return {
-                mTeoricaManual: mTeoricaManual, mPraticaManual: mPraticaManual,
-                mediaFinal: mediaFinal, ap: ap, comp: comp, teor: teor, prat: prat,
-                mediaSala: mediaSala, mediaCertificada: mediaCertificada
+                mTeoricaManual: mT, mPraticaManual: mP,
+                teorOriginal: teor, pratOriginal: prat,
+                mediaFinal: mediaFinal,
+                foP: compR.foP, foN: compR.foN, comp: comp,
+                avFinal: avFinal, aprovado: avFinal >= AV_CORTE_APROVACAO
             };
         }
 
@@ -572,11 +580,11 @@
                     '<div class="av-bar-rotulo"><span>Presença</span><span>' + r.pct + '%</span></div>' +
                     avBar(r.pct, cor, r.pct + '%') +
                     '<div class="media-destaque">' +
-                        '<span class="rotulo">Nota de Apontamento (para a AV Final)</span>' +
-                        '<span class="valor">' + avNum(r.nota) + '</span>' +
+                        '<span class="rotulo">Presença (informativa)</span>' +
+                        '<span class="valor">' + r.pct + '%</span>' +
                     '</div>' +
                 '</div>' +
-                '<p style="font-size:11px;color:#c9c7d4"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>O total de aulas cadastradas equivale a 100%. Cada presença eleva o gráfico; cada falta o reduz. Presenças e faltas justificadas contam como presença.</p>';
+                '<p style="font-size:11px;color:#c9c7d4"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>O apontamento registra a frequência e NÃO gera nota na AV Final. O total de aulas cadastradas equivale a 100%; presenças e faltas justificadas contam como presença.</p>';
             document.getElementById('aba-apontamento').innerHTML = html;
         }
 
@@ -710,38 +718,37 @@
                     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
                         '<div>' +
                             '<label style="font-size:11px;font-weight:700;color:#ddd6fe;display:block;margin-bottom:5px">Média Teórica</label>' +
-                            '<input type="number" step="0.1" min="0" max="10" class="av-nota-input" style="width:100%" value="' + (avAvaliacao.mediaTeoricaManual !== '' ? avAvaliacao.mediaTeoricaManual : '') + '" placeholder="' + avNum(r.teor) + ' (auto)" onchange="avSalvarCampoManual(\'mediaTeoricaManual\',this)">' +
-                            '<small style="color:#c9c7d4;font-size:11px;display:block;margin-top:4px">Auto: ' + avNum(r.teor) + ' (média das notas teóricas)</small>' +
+                            '<input type="number" step="0.1" min="0" max="10" class="av-nota-input" style="width:100%" value="' + (avAvaliacao.mediaTeoricaManual !== '' ? avAvaliacao.mediaTeoricaManual : '') + '" placeholder="' + avNum(r.teorOriginal) + ' (auto)" onchange="avSalvarCampoManual(\'mediaTeoricaManual\',this)">' +
+                            '<small style="color:#c9c7d4;font-size:11px;display:block;margin-top:4px">Auto: ' + avNum(r.teorOriginal) + ' (soma das notas ÷ todas as aulas teóricas; usada quando o campo estiver vazio)</small>' +
                         '</div>' +
                         '<div>' +
                             '<label style="font-size:11px;font-weight:700;color:#ddd6fe;display:block;margin-bottom:5px">Média Prática</label>' +
-                            '<input type="number" step="0.1" min="0" max="10" class="av-nota-input" style="width:100%" value="' + (avAvaliacao.mediaPraticaManual !== '' ? avAvaliacao.mediaPraticaManual : '') + '" placeholder="' + avNum(r.prat) + ' (auto)" onchange="avSalvarCampoManual(\'mediaPraticaManual\',this)">' +
-                            '<small style="color:#c9c7d4;font-size:11px;display:block;margin-top:4px">Auto: ' + avNum(r.prat) + ' (média das notas práticas)</small>' +
+                            '<input type="number" step="0.1" min="0" max="10" class="av-nota-input" style="width:100%" value="' + (avAvaliacao.mediaPraticaManual !== '' ? avAvaliacao.mediaPraticaManual : '') + '" placeholder="' + avNum(r.pratOriginal) + ' (auto)" onchange="avSalvarCampoManual(\'mediaPraticaManual\',this)">' +
+                            '<small style="color:#c9c7d4;font-size:11px;display:block;margin-top:4px">Auto: ' + avNum(r.pratOriginal) + ' (soma das notas ÷ todas as aulas práticas; usada quando o campo estiver vazio)</small>' +
                         '</div>' +
                     '</div>' +
                     '<div class="media-destaque">' +
-                        '<span class="rotulo">MÉDIA FINAL (teórica + prática ÷ 2)</span>' +
+                        '<span class="rotulo">MÉDIA (TEÓRICA + PRÁTICA ÷ 2)</span>' +
                         '<span class="valor">' + avNum(r.mediaFinal) + '</span>' +
                     '</div>' +
                 '</div>' +
                 '<div class="av-card">' +
-                    '<h4><i class="fa-solid fa-chart-pie"></i> Pontos das Avaliações</h4>' +
+                    '<h4><i class="fa-solid fa-chart-pie"></i> Pontos do Comportamento</h4>' +
                     '<div class="av-grid">' +
-                        miniCard('AV Apontamento', avNum(r.ap), '#4ade80') +
-                        miniCard('AV Comportamento', (r.comp >= 0 ? '+' : '') + r.comp, r.comp >= 0 ? '#4ade80' : '#f87171') +
-                        miniCard('AV Teórica', avNum(r.teor), '#ddd6fe') +
-                        miniCard('AV Prática', avNum(r.prat), '#ddd6fe') +
-                    '</div>' +
-                    '<div class="media-destaque">' +
-                        '<span class="rotulo">MÉDIA DE SALA (soma dos pontos ÷ 4)</span>' +
-                        '<span class="valor">' + avNum(r.mediaSala) + '</span>' +
+                        miniCard('FO+ (10 = +1)', r.foP, '#4ade80') +
+                        miniCard('FO- (5 = -1)', r.foN, '#f87171') +
+                        miniCard('Pontos', (r.comp >= 0 ? '+' : '') + r.comp, r.comp >= 0 ? '#4ade80' : '#f87171') +
                     '</div>' +
                 '</div>' +
                 '<div class="media-destaque" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)">' +
-                    '<span class="rotulo">MÉDIA CERTIFICADA (AV Final + Média de Sala ÷ 2)</span>' +
-                    '<span class="valor">' + avNum(r.mediaCertificada) + '</span>' +
+                    '<span class="rotulo">AV FINAL = Média + Pontos do Comportamento (0 a 10)</span>' +
+                    '<span class="valor">' + avNum(r.avFinal) + '</span>' +
                 '</div>' +
-                '<p style="font-size:11px;color:#c9c7d4;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática automaticamente; você pode digitá-los manualmente se preferir.</p>';
+                '<div class="media-destaque" style="border-color:' + (r.aprovado ? 'rgba(34,197,94,.6)' : 'rgba(248,113,113,.6)') + '">' +
+                    '<span class="rotulo">Situação (corte ' + AV_CORTE_APROVACAO + ')</span>' +
+                    '<span class="valor" style="color:' + (r.aprovado ? '#4ade80' : '#f87171') + '">' + (r.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</span>' +
+                '</div>' +
+                '<p style="font-size:11px;color:#c9c7d4;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10.</p>';
             document.getElementById('aba-final').innerHTML = html;
         }
 

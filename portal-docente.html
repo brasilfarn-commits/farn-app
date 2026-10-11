@@ -4181,11 +4181,11 @@
                 var n = parseFloat(val);
                 if (!isNaN(n) && n >= 0) { soma += n; qtd++; }
             });
-            var media = qtd ? Math.round((soma / qtd) * 10) / 10 : 0;
+            var media = aulas.length ? Math.round((soma / aulas.length) * 10) / 10 : 0;
             html += '<div class="pd-av-media-box">' +
                 '<div class="media-label">Média ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '</div>' +
-                '<div class="media-valor">' + (qtd ? media.toFixed(1) : '—') + '</div>' +
-                '<div style="font-size:11px;color:#64748b;margin-top:4px">' + qtd + ' nota(s) lancada(s)</div>' +
+                '<div class="media-valor">' + (aulas.length ? media.toFixed(1) : '—') + '</div>' +
+                '<div style="font-size:11px;color:#64748b;margin-top:4px">' + qtd + ' de ' + aulas.length + ' nota(s) lancada(s)</div>' +
                 '</div>';
             container.innerHTML = html;
         }

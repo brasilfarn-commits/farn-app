@@ -356,9 +356,27 @@ async function fichaGeralDadosAluno(c) {
     return { av: av, presencas: presencas };
 }
 
+/* Regra de pontuacao reformada (tambem na Secao de Avaliacao):
+   1. O apontamento registra a presenca e NAO gera nota na AV Final.
+   2. Comportamento: a cada 10 FO+ soma 1 ponto na AV Final; a cada 5 FO-
+      tira 1 ponto (os pontos somam/subtraem da media).
+   3. AV Teorica e AV Pratica continuam como medias das notas das aulas (0-10).
+   4. AV Final = media (Teorica + Pratica) / 2 com os pontos do
+      comportamento, na escala de 0 a 10.
+   5. Aprovacao: AV Final >= corte abaixo. */
+var FG_AV_CORTE_APROVACAO = 7;
+
+/* Media final de um bloco: valor manual se preenchido; senao a media
+   automatica das aulas. */
+function fichaGeralMediaFinal(manual, automatica) {
+    const v = parseFloat(String(manual == null ? '' : manual).replace(',', '.'));
+    if (isNaN(v)) return automatica;
+    return Math.round(Math.max(0, Math.min(10, v)) * 10) / 10;
+}
+
 function fichaGeralCalcular(c, dados, aulas) {
     const av = dados.av || {};
-    // AV Apontamento
+    // Presenca registrada (apontamento). NAO gera nota na AV Final.
     const totalAulas = (aulas.todas || []).length;
     const presencasTurma = (dados.presencas || []).filter(p => p.turma === c.turma && p.projeto === c.projeto);
     let pres = 0, fal = 0, just = 0;
@@ -368,32 +386,34 @@ function fichaGeralCalcular(c, dados, aulas) {
         else if (p.status === 'Justificada') just++;
     });
     const pct = totalAulas ? Math.min(100, Math.round(((pres + just) / totalAulas) * 100)) : 0;
-    const notaAp = totalAulas ? Math.min(10, Math.round(((pres + just) / totalAulas) * 100) / 10) : 0;
-    // AV Comportamento
+    // AV Comportamento: pontos que somam ou retiram da AV Final.
     const foP = (av.foPositivos || []).length;
     const foN = (av.foNegativos || []).length;
     const pontosComp = Math.floor(foP / 10) - Math.floor(foN / 5);
-    // AV Teorica / Pratica (medias automaticas)
-    let somaT = 0, qtdT = 0;
+    // AV Teorica / Pratica (medias automaticas): soma de todas as notas
+    // registradas dividida pela quantidade de aulas daquele tipo (aula sem
+    // nota conta 0 no denominador).
+    let somaT = 0;
+    const totalT = (aulas.teorica || []).length;
     (aulas.teorica || []).forEach(a => {
         const n = parseFloat((av.notasTeoricas || {})[a._id]);
-        if (!isNaN(n) && n >= 0) { somaT += n; qtdT++; }
+        if (!isNaN(n) && n >= 0) somaT += n;
     });
-    const notaTeor = qtdT ? Math.round((somaT / qtdT) * 10) / 10 : 0;
-    let somaP = 0, qtdP = 0;
+    const notaTeor = totalT ? Math.round((somaT / totalT) * 10) / 10 : 0;
+    let somaP = 0;
+    const totalP = (aulas.pratica || []).length;
     (aulas.pratica || []).forEach(a => {
         const n = parseFloat((av.notasPraticas || {})[a._id]);
-        if (!isNaN(n) && n >= 0) { somaP += n; qtdP++; }
+        if (!isNaN(n) && n >= 0) somaP += n;
     });
-    const notaPrat = qtdP ? Math.round((somaP / qtdP) * 10) / 10 : 0;
-    // AV Final
-    let mT = parseFloat(String(av.mediaTeoricaManual || '').replace(',', '.'));
-    let mP = parseFloat(String(av.mediaPraticaManual || '').replace(',', '.'));
-    if (isNaN(mT)) mT = 0;
-    if (isNaN(mP)) mP = 0;
+    const notaPrat = totalP ? Math.round((somaP / totalP) * 10) / 10 : 0;
+    // Media teorica e pratica finais: manual se preenchida; senao automatica.
+    const mT = fichaGeralMediaFinal(av.mediaTeoricaManual, notaTeor);
+    const mP = fichaGeralMediaFinal(av.mediaPraticaManual, notaPrat);
+    // AV Final = media (T+P)/2 com os pontos do comportamento, na escala 0-10.
     const mediaFinal = Math.round(((mT + mP) / 2) * 10) / 10;
-    const mediaSala = Math.round(((notaAp + pontosComp + notaTeor + notaPrat) / 4) * 10) / 10;
-    const mediaCertificada = Math.round(((mediaFinal + mediaSala) / 2) * 10) / 10;
+    const avFinal = Math.max(0, Math.min(10, Math.round((mediaFinal + pontosComp) * 10) / 10));
+    const aprovado = avFinal >= FG_AV_CORTE_APROVACAO;
     return {
         av: av,
         presencas: dados.presencas || [],
@@ -401,8 +421,8 @@ function fichaGeralCalcular(c, dados, aulas) {
         totalAulas: totalAulas, pres: pres, fal: fal, just: just, pct: pct,
         foP: foP, foN: foN, pontosComp: pontosComp,
         notaTeor: notaTeor, notaPrat: notaPrat,
-        mT: mT, mP: mP, mediaFinal: mediaFinal, mediaSala: mediaSala,
-        mediaCertificada: mediaCertificada, notaAp: notaAp
+        mT: mT, mP: mP, mediaFinal: mediaFinal,
+        avFinal: avFinal, aprovado: aprovado
     };
 }
 
@@ -719,25 +739,25 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     }
 
     // Secao 7 - Avaliacoes
-    const corAp = fichaGeralCorNota(calc.notaAp);
+    const corPres = calc.pct >= 75 ? '#16a34a' : (calc.pct >= 50 ? '#d97706' : '#dc2626');
     const corComp = calc.pontosComp >= 0 ? '#16a34a' : '#dc2626';
     const corTeor = fichaGeralCorNota(calc.notaTeor);
     const corPrat = fichaGeralCorNota(calc.notaPrat);
     const corMF = fichaGeralCorNota(calc.mediaFinal);
-    const corMs = fichaGeralCorNota(calc.mediaSala);
-    const corMc = fichaGeralCorNota(calc.mediaCertificada);
+    const corAV = fichaGeralCorNota(calc.avFinal);
+    const corAprov = calc.aprovado ? '#16a34a' : '#dc2626';
 
     let avHtml = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
-        + fgNotaPill('AV Apontamento', fichaGeralNum(calc.notaAp) + ' / 10,0', corAp)
+        + fgNotaPill('Presenca', calc.pct + '%', corPres)
         + fgNotaPill('AV Comportamento', (calc.pontosComp >= 0 ? '+' : '') + calc.pontosComp + ' pts', corComp)
         + fgNotaPill('AV Teorica', fichaGeralNum(calc.notaTeor) + ' / 10,0', corTeor)
         + fgNotaPill('AV Pratica', fichaGeralNum(calc.notaPrat) + ' / 10,0', corPrat)
         + '</div>';
 
-    // Detalhe apontamento
+    // Detalhe presenca (apontamento) - informativo, nao gera nota
     avHtml += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
         + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fa-solid fa-clipboard-user" style="color:#0ea5e9;font-size:12px"></i>'
-        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">Detalhe - AV Apontamento</span></div>'
+        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">Detalhe - Presenca (Apontamento)</span></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
         + fgCampo('Aulas da Turma', calc.totalAulas + ' aula(s)')
         + fgCampo('Presentes', calc.pres)
@@ -745,7 +765,8 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + fgCampo('Justificadas', calc.just)
         + fgCampo('Presenca', calc.pct + '%')
         + '</div>'
-        + fgBarra(calc.pct, corAp)
+        + fgBarra(calc.pct, corPres)
+        + '<div style="font-size:10px;color:#64748b;margin:-4px 0 6px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>O apontamento registra a presenca e NAO gera nota na AV Final.</div>'
         /* Aulas da turma com o apontamento e a observacao da justificativa */
         + fgTabelaApontamento(aulasRef.todas, calc.presencasTurma)
         + '</div>';
@@ -754,11 +775,11 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     avHtml += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
         + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap"><i class="fa-solid fa-face-smile" style="color:#0ea5e9;font-size:12px"></i>'
         + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">Detalhe - AV Comportamento (FO+ / FO-)</span>'
-        + '<span style="font-size:9.5px;color:#94a3b8">totais acima; abaixo somente os registros com observacao</span></div>'
+        + '<span style="font-size:9.5px;color:#94a3b8">a cada 10 FO+ soma 1 ponto; a cada 5 FO- tira 1 ponto da AV Final</span></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
         + fgCampo('Total FO+', calc.foP)
         + fgCampo('Total FO-', calc.foN)
-        + fgCampo('Pontos (FO+/10 - FO-/5)', (calc.pontosComp >= 0 ? '+' : '') + calc.pontosComp)
+        + fgCampo('Pontos (10 FO+ = +1 / 5 FO- = -1)', (calc.pontosComp >= 0 ? '+' : '') + calc.pontosComp)
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
         + fgFOLista(calc.av.foPositivos, true)
@@ -785,13 +806,17 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-medal" style="color:#0ea5e9;font-size:13px"></i>'
         + '<span style="font-size:12px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">AV Final</span></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
-        + fgCampo('Media Teorica (manual)', calc.mT ? fichaGeralNum(calc.mT) : '')
-        + fgCampo('Media Pratica (manual)', calc.mP ? fichaGeralNum(calc.mP) : '')
+        + fgCampo('Media Teorica (manual ou auto)', fichaGeralNum(calc.mT != null ? calc.mT : ''))
+        + fgCampo('Media Pratica (manual ou auto)', fichaGeralNum(calc.mP != null ? calc.mP : ''))
         + '</div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-        + fgNotaPill('Media Final (T+P)/2', fichaGeralNum(calc.mediaFinal), corMF)
-        + fgNotaPill('Media de Sala /4', fichaGeralNum(calc.mediaSala) + ' pts', corMs)
-        + fgNotaPill('Media Certificada', fichaGeralNum(calc.mediaCertificada), corMc)
+        + fgNotaPill('Media (T+P)/2', fichaGeralNum(calc.mediaFinal), corMF)
+        + fgNotaPill('Comportamento', (calc.pontosComp >= 0 ? '+' : '') + calc.pontosComp + ' pts', corComp)
+        + fgNotaPill('AV Final', fichaGeralNum(calc.avFinal) + ' / 10,0', corAV)
+        + '</div>'
+        + '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span style="font-size:10px;color:#475569">A AV Final e a media (teorica+pratica)/2 com os pontos do comportamento, na escala 0-10. Aprovacao: AV Final >= ' + FG_AV_CORTE_APROVACAO + '.</span>'
+        + '<span style="background:' + corAprov + ';color:#fff;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:800">' + (calc.aprovado ? 'APROVADO' : 'NAO APROVADO') + '</span>'
         + '</div>'
         + '</div>';
     secoes.push(fgSecao('fa-clipboard-check', 'Avaliacoes', avHtml));
