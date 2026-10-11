@@ -3073,7 +3073,7 @@
                         <div class="card-body" style="text-align:center;padding:40px 20px">
                             <i class="fa-solid fa-file-circle-check" style="font-size:48px;color:#16a34a;margin-bottom:14px;display:block"></i>
                             <p style="font-size:14px;color:#475569;margin-bottom:20px;line-height:1.6">A Seção de Avaliação abre em uma janela própria, onde você seleciona o projeto e a turma e avalia cada aluno ativo com as 5 avaliações.</p>
-                            <button class="btn-primary" onclick="window.open('secao-avaliacao.html?v=2','_blank')" style="padding:12px 24px;font-size:14px"><i class="fa-solid fa-external-link-alt"></i> Abrir Seção de Avaliação</button>
+                            <button class="btn-primary" onclick="window.open('secao-avaliacao.html?v=3','_blank')" style="padding:12px 24px;font-size:14px"><i class="fa-solid fa-external-link-alt"></i> Abrir Seção de Avaliação</button>
                         </div>
                     </div>
                 </div>
@@ -3089,7 +3089,7 @@
 
                             <!-- Toolbar de avaliações salvas -->
                             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
-                                <button id="cav-nova-btn" class="btn-primary btn-sm" onclick="cavNovaAvaliacao()"><i class="fa-solid fa-plus"></i> Nova AV Teórica</button>
+                                <button id="cav-nova-btn" class="btn-primary btn-sm" onclick="cavEscolherTipo()"><i class="fa-solid fa-plus"></i> Nova Avaliação</button>
                                 <button class="btn-outline btn-sm" onclick="cavLoadList()"><i class="fa-solid fa-rotate"></i> Atualizar Lista</button>
                             </div>
                             <div id="cav-list" style="margin-bottom:24px">
@@ -3108,7 +3108,7 @@
                                     <div class="form-section-title"><i class="fa-solid fa-folder-open"></i><h3>Dados da Avaliação</h3></div>
                                     <div class="form-section-body">
                                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
-                                            <div style="grid-column:span 2">
+                                            <div id="cav-aula-wrap" style="grid-column:span 2">
                                                 <label id="cav-nome-label" style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Nome da Avaliação (selecione a aula com AV Teórica)</label>
                                                 <input type="text" id="cav-aula-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Selecione a turma para buscar as aulas com AV Teórica..." oninput="cavFiltrarAulas(this.value)" disabled>
                                                 <select id="cav-nome" class="config-input" style="width:100%" onchange="cavOnNomeChange()"><option value="">Selecione primeiro a turma...</option></select>
@@ -3220,6 +3220,16 @@
                                     <i class="fa-solid fa-flask" style="font-size:28px"></i>
                                     <span style="font-size:14px;font-weight:800">AV Prática</span>
                                     <span style="font-size:11px;opacity:.85">Aulas com AV Prática = Sim</span>
+                                </button>
+                                <button onclick="cavEscolherTipoConfirmar('final_teorica')" style="background:#7c3aed;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
+                                    <i class="fa-solid fa-graduation-cap" style="font-size:28px"></i>
+                                    <span style="font-size:14px;font-weight:800">AV Final Teórica</span>
+                                    <span style="font-size:11px;opacity:.85">Prova final (nota certificadora)</span>
+                                </button>
+                                <button onclick="cavEscolherTipoConfirmar('final_pratica')" style="background:#0891b2;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
+                                    <i class="fa-solid fa-graduation-cap" style="font-size:28px"></i>
+                                    <span style="font-size:14px;font-weight:800">AV Final Prática</span>
+                                    <span style="font-size:11px;opacity:.85">Prova final (nota certificadora)</span>
                                 </button>
                             </div>
                         </div>
@@ -3368,7 +3378,7 @@
                                 <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffDisciplinasAbrirSecao()"><i class="fa-solid fa-graduation-cap"></i> DISCIPLINA CFF</button>
                                 <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffProjetosAbrirSecao()"><i class="fa-solid fa-handshake"></i> PROJETO E TURMA CFF</button>
                                 <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="window.open('criar-avaliacao-cff.html','_blank')"><i class="fa-solid fa-list-check"></i> CRIAR AVALIAÇÃO CFF</button>
-                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="window.open('secao-avaliacao-cff.html?v=2','_blank')"><i class="fa-solid fa-clipboard-check"></i> SEÇÃO DE AVALIAÇÃO CFF</button>
+                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="window.open('secao-avaliacao-cff.html?v=3','_blank')"><i class="fa-solid fa-clipboard-check"></i> SEÇÃO DE AVALIAÇÃO CFF</button>
                             </div>
                         </div>
                         <div class="card-body">
@@ -4976,10 +4986,10 @@
         </div>
     </div>
 
-    <script src="ficha-geral-compartilhar.js?v=11"></script>
+    <script src="ficha-geral-compartilhar.js?v=12"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=70"></script>
+    <script src="app.js?v=71"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

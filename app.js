@@ -11151,25 +11151,45 @@ let cavAulasFiltro = '';
 let cavTipo = 'teorica';
 
 // retorna o campo da aula que identifica o tipo de avaliacao (avTeorica/avPratica)
+// Prova final (certificadora): nao se vincula a aula; a nota vira o campo
+// avFinalTeorica / avFinalPratica da Ficha de Avaliacao.
+function cavEhFinal(tipo) {
+    return tipo === 'final_teorica' || tipo === 'final_pratica';
+}
 function cavCampoAV(tipo) {
-    return (tipo === 'pratica') ? 'avPratica' : 'avTeorica';
+    if (tipo === 'pratica') return 'avPratica';
+    if (tipo === 'final_teorica') return 'avFinalTeorica';
+    if (tipo === 'final_pratica') return 'avFinalPratica';
+    return 'avTeorica';
 }
 // retorna o rotulo do tipo para mensagens/exibicao
 function cavRotuloAV(tipo) {
-    return (tipo === 'pratica') ? 'Prática' : 'Teórica';
+    if (tipo === 'pratica') return 'Prática';
+    if (tipo === 'final_teorica') return 'Final Teórica';
+    if (tipo === 'final_pratica') return 'Final Prática';
+    return 'Teórica';
 }
 // atualiza os rotulos do formulario conforme o tipo atual
 function cavAplicarRotuloTipo() {
     const tipo = cavTipo;
-    const rotulo = cavRotuloAV(tipo);
-    const rotuloCampo = (tipo === 'pratica') ? 'Prática' : 'Teórica';
+    const isFinal = cavEhFinal(tipo);
+    const rotuloCampo = cavRotuloAV(tipo);
     const label = document.getElementById('cav-nome-label');
-    if (label) label.textContent = 'Nome da Avaliação (selecione a aula com AV ' + rotuloCampo + ')';
+    if (label) label.textContent = isFinal
+        ? 'Prova Final (por turma — sem vínculo com aula)'
+        : 'Nome da Avaliação (selecione a aula com AV ' + rotuloCampo + ')';
     const busca = document.getElementById('cav-aula-busca');
-    if (busca) busca.placeholder = 'Selecione a turma para buscar as aulas com AV ' + rotuloCampo + '...';
+    if (busca) {
+        busca.placeholder = 'Selecione a turma para buscar as aulas com AV ' + rotuloCampo + '...';
+        busca.disabled = isFinal;
+        if (isFinal) busca.value = '';
+    }
+    const wrap = document.getElementById('cav-aula-wrap');
+    if (wrap) wrap.style.display = isFinal ? 'none' : '';
+    const selNome = document.getElementById('cav-nome');
+    if (isFinal && selNome) selNome.innerHTML = '<option value="">Prova final da turma (sem aula)</option>';
     const novoBtn = document.getElementById('cav-nova-btn');
     if (novoBtn) novoBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Nova AV ' + rotuloCampo;
-    void rotulo;
 }
 
 function cavLoadList() {
@@ -11179,7 +11199,7 @@ function cavLoadList() {
     dbFirestore.collection(FB_AVALIACOES).orderBy('criadoEm', 'desc').get().then(snap => {
         if (snap.empty) {
             container.innerHTML = '<div class="empty-state" style="text-align:center;padding:30px"><p style="color:#64748b;margin-bottom:12px">Nenhuma avaliação criada ainda.</p>' +
-                '<button class="btn-primary btn-sm" onclick="cavNovaAvaliacao()"><i class="fa-solid fa-plus"></i> Criar primeira avaliação</button></div>';
+                '<button class="btn-primary btn-sm" onclick="cavEscolherTipo()"><i class="fa-solid fa-plus"></i> Criar primeira avaliação</button></div>';
             return;
         }
         const avs = [];
@@ -11215,6 +11235,7 @@ function cavLoadList() {
             const qtd = (d.questoes || []).length;
             const respondidas = contagem[id] || 0;
             const isPratica = (d.tipo === 'pratica');
+            const isFinal = cavEhFinal(d.tipo);
             let cor, rotuloEstado;
             if (respondidas > 0) { cor = '#16a34a'; rotuloEstado = 'Respondida :: ' + respondidas + (rotulos[id] ? ' (' + rotulos[id] + ')' : ' aluno(s)'); }
             else if (!isPratica && d.ativa) { cor = '#f59e0b'; rotuloEstado = 'Ativa · aguardando respostas'; }
@@ -11228,7 +11249,7 @@ function cavLoadList() {
             card.innerHTML =
                 '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + cor + '"><i class="fa-solid fa-' + (respondidas > 0 ? 'check-double' : (d.ativa ? 'pen-to-square' : (!isPratica ? 'clock' : (d.enviada ? 'paper-plane' : 'file-lines')))) + '" style="color:#fff;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:170px">' +
-                    '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + envBadge + '</div>' +
+                    '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + (isFinal ? ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:800;background:#7c3aed;color:#fff">FINAL</span>' : '') + envBadge + '</div>' +
                     '<div style="font-size:11.5px;color:#64748b;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">' +
                         (d.projeto ? '<span><i class="fa-solid fa-folder-open" style="margin-right:3px"></i>' + escHTML(d.projeto) + '</span>' : '') +
                         (d.turma ? '<span><i class="fa-solid fa-users" style="margin-right:3px"></i>' + escHTML(d.turma) + '</span>' : '') +
@@ -11239,8 +11260,8 @@ function cavLoadList() {
                 '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
                     '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>' +
                     '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + id + '\')"><i class="fa-solid fa-print"></i></button>' +
-                    (!isPratica && !d.ativa ? '<button class="btn-success btn-sm" title="Liberar esta AV Teórica para os alunos responderem no Portal do Aluno" onclick="cavAtivarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-play"></i> ATIVAR AV TEORICA</button>' : '') +
-                    (!isPratica && d.ativa ? '<button class="btn-danger btn-sm" title="Desativar esta AV Teórica — os alunos não poderão mais ler as questões nem responder. A avaliação volta ao estado inativo." onclick="cavDesativarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-pause"></i> DESATIVAR PARA RESPOSTAS</button>' : '') +
+                    (!isPratica && !d.ativa ? '<button class="btn-success btn-sm" title="Liberar esta ' + (isFinal ? 'AV Final' : 'AV Teórica') + ' para os alunos responderem no Portal do Aluno" onclick="cavAtivarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-play"></i> ATIVAR ' + (isFinal ? 'AV FINAL' : 'AV TEORICA') + '</button>' : '') +
+                    (!isPratica && d.ativa ? '<button class="btn-danger btn-sm" title="Desativar esta ' + (isFinal ? 'AV Final' : 'AV Teórica') + ' — os alunos não poderão mais ler as questões nem responder." onclick="cavDesativarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-pause"></i> DESATIVAR PARA RESPOSTAS</button>' : '') +
                     '<button class="btn-warning btn-sm" title="Comunicar que a AV estará disponível em breve (os alunos ainda não poderão responder)" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
                     '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
                     '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
@@ -11262,11 +11283,12 @@ function cavAtivarAVTeorica(id) {
     dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
         if (!doc.exists) { alert('Avaliação não encontrada.'); return null; }
         const data = doc.data();
+        const rotulo = 'AV ' + cavRotuloAV(data.tipo);
         if (!data.turma) { alert('Envie antes a avaliação (botão Enviar) para vincular a turma e avisar os alunos.'); return null; }
-        if (!confirm('Ativar esta AV Teórica para responder? Os alunos da turma "' + data.turma + '" poderão abrir e responder no Portal do Aluno.')) return null;
+        if (!confirm('Ativar esta ' + rotulo + ' para responder? Os alunos da turma "' + data.turma + '" poderão abrir e responder no Portal do Aluno.')) return null;
         return dbFirestore.collection(FB_AVALIACOES).doc(id).update({ ativa: true, ativadaEm: new Date() });
     }).then(res => {
-        if (res) { alert('AV Teórica ativada! Os alunos já podem respondê-la.'); cavLoadList(); }
+        if (res) { alert('Avaliação ativada! Os alunos já podem respondê-la.'); cavLoadList(); }
     }).catch(e => alert('Erro: ' + e.message));
 }
 
@@ -11275,11 +11297,12 @@ function cavDesativarAVTeorica(id) {
     dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
         if (!doc.exists) { alert('Avaliação não encontrada.'); return null; }
         const data = doc.data();
+        const rotulo = 'AV ' + cavRotuloAV(data.tipo);
         if (!data.turma) { alert('Envie antes a avaliação (botão Enviar) para vincular a turma.'); return null; }
-        if (!confirm('Desativar esta AV Teórica? Os alunos da turma "' + data.turma + '" não poderão mais ler as questões nem responder no Portal do Aluno. As respostas já enviadas são mantidas.')) return null;
+        if (!confirm('Desativar esta ' + rotulo + '? Os alunos da turma "' + data.turma + '" não poderão mais ler as questões nem responder no Portal do Aluno. As respostas já enviadas são mantidas.')) return null;
         return dbFirestore.collection(FB_AVALIACOES).doc(id).update({ ativa: false, desativadaEm: new Date() });
     }).then(res => {
-        if (res) { alert('AV Teórica desativada! Os alunos não poderão mais ler as questões nem responder.'); cavLoadList(); }
+        if (res) { alert('Avaliação desativada! Os alunos não poderão mais ler as questões nem responder.'); cavLoadList(); }
     }).catch(e => alert('Erro: ' + e.message));
 }
 
@@ -11675,6 +11698,14 @@ function cavColetarDados() {
     const turma = document.getElementById('cav-turma').value;
     const docente = document.getElementById('cav-docente').value;
     const questoes = cavGetQuestoes();
+    // Prova final: sem aula vinculada; nome fixo; nota vai para o campo de AV Final.
+    if (cavEhFinal(cavTipo)) {
+        return {
+            nome: 'AV ' + cavRotuloAV(cavTipo),
+            projeto: projeto, turma: turma, disciplina: '', aula: '', aulaId: '',
+            docente: docente, questoes: questoes, tipo: cavTipo
+        };
+    }
     return { nome, projeto, turma, disciplina, aula, aulaId: nomeId, docente, questoes, tipo: cavTipo };
 }
 
@@ -11736,7 +11767,7 @@ function cavEditarAvaliacao(id) {
 
 function cavPreencherForm(id, d) {
     cavEditingId = id;
-    cavTipo = (d.tipo === 'pratica') ? 'pratica' : 'teorica';
+    cavTipo = (['pratica', 'final_teorica', 'final_pratica'].indexOf(d.tipo) !== -1) ? d.tipo : 'teorica';
     cavNomeAtual = d.nome || '';
     cavQMax = ([4, 6, 8, 10, 20].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
     const limiteSel = document.getElementById('cav-q-limite');
@@ -11744,7 +11775,7 @@ function cavPreencherForm(id, d) {
     const qMaxEl = document.getElementById('cav-q-max');
     if (qMaxEl) qMaxEl.textContent = cavQMax;
     const busca = document.getElementById('cav-aula-busca');
-    if (busca) { busca.value = ''; busca.disabled = false; }
+    if (busca) { busca.value = ''; busca.disabled = cavEhFinal(cavTipo); }
     document.getElementById('cav-nome').innerHTML = '<option value="">Carregando...</option>';
     document.getElementById('cav-form').style.display = 'block';
     document.getElementById('cav-form-titulo').textContent = 'Editar AV ' + cavRotuloAV(cavTipo);
@@ -11756,7 +11787,7 @@ function cavPreencherForm(id, d) {
     document.getElementById('cav-gabarito').style.display = 'none';
     cavPopulateProjetos(d.projeto || '');
     cavPopulateTurmas(d.projeto || '', d.turma || '');
-    cavLoadAulasNome(d.projeto || '', d.turma || '', d.nome || '');
+    if (!cavEhFinal(cavTipo)) cavLoadAulasNome(d.projeto || '', d.turma || '', d.nome || '');
     if (d.docente) {
         const selD = document.getElementById('cav-docente');
         selD.innerHTML = '<option value="">Selecione o docente...</option>';
@@ -12107,12 +12138,14 @@ function cavEscolherTipo() {
 }
 
 function cavEscolherTipoConfirmar(tipo) {
-    cavTipo = (tipo === 'pratica') ? 'pratica' : 'teorica';
+    cavTipo = (['pratica', 'final_teorica', 'final_pratica'].indexOf(tipo) !== -1) ? tipo : 'teorica';
     const o = document.getElementById('cav-tipo-overlay');
     if (o) o.classList.add('hidden');
     const titulo = document.getElementById('cav-form-titulo');
     if (titulo) titulo.textContent = 'Nova AV ' + cavRotuloAV(cavTipo);
     cavAplicarRotuloTipo();
+    // abre um formulario em branco ja com o tipo escolhido
+    cavNovaAvaliacao();
 }
 
 function cavFecharTipo() {

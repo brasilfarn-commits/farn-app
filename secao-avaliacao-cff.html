@@ -407,7 +407,9 @@
                     notasTeoricas: {},
                     notasPraticas: {},
                     mediaTeoricaManual: '',
-                    mediaPraticaManual: ''
+                    mediaPraticaManual: '',
+                    avFinalTeorica: '',
+                    avFinalPratica: ''
                 };
             }
         }
@@ -422,6 +424,8 @@
                 notasPraticas: avAvaliacao.notasPraticas || {},
                 mediaTeoricaManual: avAvaliacao.mediaTeoricaManual || '',
                 mediaPraticaManual: avAvaliacao.mediaPraticaManual || '',
+                avFinalTeorica: (avAvaliacao.avFinalTeorica === '' || avAvaliacao.avFinalTeorica == null) ? '' : avAvaliacao.avFinalTeorica,
+                avFinalPratica: (avAvaliacao.avFinalPratica === '' || avAvaliacao.avFinalPratica == null) ? '' : avAvaliacao.avFinalPratica,
                 atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
             };
             try {
@@ -440,30 +444,44 @@
                 var alterou = [false];
                 var snap = await db.collection('cffAvaliacoes').where('enviada', '==', true).get();
                 var promessas = [];
+                var lerNotaResposta = function(avId, avDq) {
+                    var peso = avDq.length === 10 ? 1.0 : (avDq.length === 20 ? 0.5 : (avDq.length > 0 ? 10 / avDq.length : 0));
+                    return db.collection('cffAvaliacoesRespostas').doc(cpf + '_' + avId).get().then(function(rDoc) {
+                        if (!rDoc.exists) return null;
+                        var r = rDoc.data() || {};
+                        var certas = r.respostasCertas != null ? Number(r.respostasCertas) : 0;
+                        var naoMarcadas = r.respostasMarcadas != null ? (Number(r.totalQuestoes || avDq.length) - Number(r.respostasMarcadas)) : 0;
+                        var pontos = r.pontos != null ? Number(r.pontos) : (certas * peso - naoMarcadas * peso);
+                        var nota = Math.max(0, Math.min(10, pontos));
+                        return Math.round(nota * 10) / 10;
+                    }).catch(function() { return null; });
+                };
                 snap.forEach(function(doc) {
                     var avD = doc.data() || {};
+                    var tipo = avD.tipo || '';
+                    var ehFinal = (tipo === 'final_teorica' || tipo === 'final_pratica');
+                    var avDq = avD.questoes || [];
+                    var avId = doc.id;
+                    if (ehFinal) {
+                        var campo = (tipo === 'final_teorica') ? 'avFinalTeorica' : 'avFinalPratica';
+                        if (avAvaliacao[campo] != null && avAvaliacao[campo] !== '') return; // mantem valor ja gravado
+                        promessas.push(lerNotaResposta(avId, avDq).then(function(nota) {
+                            if (nota != null && (avAvaliacao[campo] == null || avAvaliacao[campo] === '')) {
+                                avAvaliacao[campo] = nota;
+                                alterou[0] = true;
+                            }
+                        }));
+                        return;
+                    }
                     var aulaId = avD.aulaId;
                     if (!aulaId) return;
                     if (avAvaliacao.notasTeoricas[aulaId] != null) return; // mantem nota manual ja existente
-                    var avDq = avD.questoes || [];
-                    var peso = avDq.length === 10 ? 1.0 : (avDq.length === 20 ? 0.5 : (avDq.length > 0 ? 10 / avDq.length : 0));
-                    var avId = doc.id;
-                    promessas.push(
-                        db.collection('cffAvaliacoesRespostas').doc(cpf + '_' + avId).get().then(function(rDoc) {
-                            if (rDoc.exists) {
-                                var r = rDoc.data() || {};
-                                var certas = r.respostasCertas != null ? Number(r.respostasCertas) : 0;
-                                var naoMarcadas = r.respostasMarcadas != null ? (Number(r.totalQuestoes || avDq.length) - Number(r.respostasMarcadas)) : 0;
-                                var pontos = r.pontos != null ? Number(r.pontos) : (certas * peso - naoMarcadas * peso);
-                                var nota = Math.max(0, Math.min(10, pontos));
-                                nota = Math.round(nota * 10) / 10;
-                                if (avAvaliacao.notasTeoricas[aulaId] == null) {
-                                    avAvaliacao.notasTeoricas[aulaId] = nota;
-                                    alterou[0] = true;
-                                }
-                            }
-                        })
-                    );
+                    promessas.push(lerNotaResposta(avId, avDq).then(function(nota) {
+                        if (nota != null && avAvaliacao.notasTeoricas[aulaId] == null) {
+                            avAvaliacao.notasTeoricas[aulaId] = nota;
+                            alterou[0] = true;
+                        }
+                    }));
                 });
                 await Promise.all(promessas);
                 if (alterou[0]) await avSalvarAvaliacao();
@@ -520,12 +538,25 @@
             var compR = avCalcularComportamento();
             var comp = compR.pontos;
             var avFinal = Math.round(Math.max(0, Math.min(10, mediaFinal + comp)) * 10) / 10;
+            // AV Final Teorica/Pratica (provas finais criadas em Criar Avaliacao CFF).
+            var avFTnum = parseFloat(String(avAvaliacao.avFinalTeorica == null ? '' : avAvaliacao.avFinalTeorica).replace(',', '.'));
+            var avFPnum = parseFloat(String(avAvaliacao.avFinalPratica == null ? '' : avAvaliacao.avFinalPratica).replace(',', '.'));
+            var temFT = !isNaN(avFTnum);
+            var temFP = !isNaN(avFPnum);
+            var temFinal = temFT || temFP;
+            var fin = temFinal ? (((temFT ? avFTnum : 0) + (temFP ? avFPnum : 0)) / 2) : 0;
+            fin = Math.round(fin * 10) / 10;
+            var notaCertificadora = temFinal ? Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10 : null;
             return {
                 mTeoricaManual: mT, mPraticaManual: mP,
                 teorOriginal: teor, pratOriginal: prat,
                 mediaFinal: mediaFinal,
                 foP: compR.foP, foN: compR.foN, comp: comp,
-                avFinal: avFinal, aprovado: avFinal >= AV_CORTE_APROVACAO
+                avFinal: avFinal, aprovado: avFinal >= AV_CORTE_APROVACAO,
+                avFinalTeorica: temFT ? Math.round(avFTnum * 10) / 10 : '',
+                avFinalPratica: temFP ? Math.round(avFPnum * 10) / 10 : '',
+                fin: fin, temFinal: temFinal,
+                notaCertificadora: notaCertificadora
             };
         }
 
@@ -740,15 +771,37 @@
                         miniCard('Pontos', (r.comp >= 0 ? '+' : '') + r.comp, r.comp >= 0 ? '#4ade80' : '#f87171') +
                     '</div>' +
                 '</div>' +
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid fa-graduation-cap"></i> AV Final Teórica e AV Final Prática</h4>' +
+                    '<p style="font-size:11px;color:#c9c7d4;margin-bottom:10px">Preenchidas automaticamente ao responder as provas finais criadas em Criar Avaliação CFF.</p>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+                        '<div>' +
+                            '<label style="font-size:11px;font-weight:700;color:#ddd6fe;display:block;margin-bottom:5px">AV Final Teórica</label>' +
+                            '<input type="text" class="av-nota-input" style="width:100%" value="' + (r.avFinalTeorica === '' ? '' : avNum(r.avFinalTeorica)) + '" placeholder="—" disabled>' +
+                        '</div>' +
+                        '<div>' +
+                            '<label style="font-size:11px;font-weight:700;color:#ddd6fe;display:block;margin-bottom:5px">AV Final Prática</label>' +
+                            '<input type="text" class="av-nota-input" style="width:100%" value="' + (r.avFinalPratica === '' ? '' : avNum(r.avFinalPratica)) + '" placeholder="—" disabled>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="media-destaque" style="margin-top:12px">' +
+                        '<span class="rotulo">FIN = (AV Final Teórica + AV Final Prática) ÷ 2</span>' +
+                        '<span class="valor">' + (r.temFinal ? avNum(r.fin) : '—') + '</span>' +
+                    '</div>' +
+                '</div>' +
                 '<div class="media-destaque" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)">' +
                     '<span class="rotulo">AV FINAL = Média + Pontos do Comportamento (0 a 10)</span>' +
                     '<span class="valor">' + avNum(r.avFinal) + '</span>' +
+                '</div>' +
+                '<div class="media-destaque" style="background:rgba(124,58,237,.18);border-color:rgba(124,58,237,.5)">' +
+                    '<span class="rotulo">NOTA CERTIFICADORA (SITUAÇÃO FINAL) = (Média + FIN) ÷ 2</span>' +
+                    '<span class="valor">' + (r.notaCertificadora == null ? '—' : avNum(r.notaCertificadora)) + '</span>' +
                 '</div>' +
                 '<div class="media-destaque" style="border-color:' + (r.aprovado ? 'rgba(34,197,94,.6)' : 'rgba(248,113,113,.6)') + '">' +
                     '<span class="rotulo">Situação (corte ' + AV_CORTE_APROVACAO + ')</span>' +
                     '<span class="valor" style="color:' + (r.aprovado ? '#4ade80' : '#f87171') + '">' + (r.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</span>' +
                 '</div>' +
-                '<p style="font-size:11px;color:#c9c7d4;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10.</p>';
+                '<p style="font-size:11px;color:#c9c7d4;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10. A Nota Certificadora é a média entre a Média e a FIN (média das provas finais).</p>';
             document.getElementById('aba-final').innerHTML = html;
         }
 

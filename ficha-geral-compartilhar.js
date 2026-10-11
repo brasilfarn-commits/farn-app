@@ -342,8 +342,8 @@ function fichaGeralCarregarAulas(projeto, turma) {
 
 async function fichaGeralDadosAluno(c) {
     const db = fgDb();
-    if (!db) return { av: { foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '' }, presencas: [] };
-    let av = { foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '' };
+    if (!db) return { av: { foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '', avFinalTeorica: '', avFinalPratica: '' }, presencas: [] };
+    let av = { foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '', avFinalTeorica: '', avFinalPratica: '' };
     let presencas = [];
     try {
         const doc = await db.collection('avaliacoesAlunos').doc(String(c.cpf)).get();
@@ -414,6 +414,17 @@ function fichaGeralCalcular(c, dados, aulas) {
     const mediaFinal = Math.round(((mT + mP) / 2) * 10) / 10;
     const avFinal = Math.max(0, Math.min(10, Math.round((mediaFinal + pontosComp) * 10) / 10));
     const aprovado = avFinal >= FG_AV_CORTE_APROVACAO;
+    // AV Final Teorica/Pratica (provas finais criadas em Criar Avaliacao).
+    // FIN = (AV Final Teorica + AV Final Pratica) / 2.
+    const avFTnum = parseFloat(String(av.avFinalTeorica == null ? '' : av.avFinalTeorica).replace(',', '.'));
+    const avFPnum = parseFloat(String(av.avFinalPratica == null ? '' : av.avFinalPratica).replace(',', '.'));
+    const temFT = !isNaN(avFTnum);
+    const temFP = !isNaN(avFPnum);
+    const temFinal = temFT || temFP;
+    let fin = temFinal ? (((temFT ? avFTnum : 0) + (temFP ? avFPnum : 0)) / 2) : 0;
+    fin = Math.round(fin * 10) / 10;
+    // Nota certificadora: (media (T+P)/2 + FIN) / 2. Sem provas finais, fica nula.
+    const notaCertificadora = temFinal ? Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10 : null;
     return {
         av: av,
         presencas: dados.presencas || [],
@@ -422,7 +433,11 @@ function fichaGeralCalcular(c, dados, aulas) {
         foP: foP, foN: foN, pontosComp: pontosComp,
         notaTeor: notaTeor, notaPrat: notaPrat,
         mT: mT, mP: mP, mediaFinal: mediaFinal,
-        avFinal: avFinal, aprovado: aprovado
+        avFinal: avFinal, aprovado: aprovado,
+        avFinalTeorica: temFT ? Math.round(avFTnum * 10) / 10 : '',
+        avFinalPratica: temFP ? Math.round(avFPnum * 10) / 10 : '',
+        fin: fin, temFinal: temFinal,
+        notaCertificadora: notaCertificadora
     };
 }
 
@@ -817,6 +832,16 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + '<span style="font-size:10px;color:#475569">A AV Final e a media (teorica+pratica)/2 com os pontos do comportamento, na escala 0-10. Aprovacao: AV Final >= ' + FG_AV_CORTE_APROVACAO + '.</span>'
         + '<span style="background:' + corAprov + ';color:#fff;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:800">' + (calc.aprovado ? 'APROVADO' : 'NAO APROVADO') + '</span>'
+        + '</div>'
+        + '<div style="margin-top:10px;border-top:1px dashed #bae6fd;padding-top:8px">'
+        + '<div style="font-size:10px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Provas finais (nota certificadora)</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+        + fgNotaPill('AV Final Teorica', calc.avFinalTeorica === '' ? '—' : fichaGeralNum(calc.avFinalTeorica) + ' / 10,0', corComp)
+        + fgNotaPill('AV Final Pratica', calc.avFinalPratica === '' ? '—' : fichaGeralNum(calc.avFinalPratica) + ' / 10,0', corComp)
+        + fgNotaPill('FIN (media das duas)', calc.temFinal ? fichaGeralNum(calc.fin) : '—', corMF)
+        + fgNotaPill('Nota Certificadora', calc.notaCertificadora == null ? '—' : fichaGeralNum(calc.notaCertificadora) + ' / 10,0', corAV)
+        + '</div>'
+        + '<div style="font-size:10px;color:#475569;margin-top:6px">FIN = (AV Final Teorica + AV Final Pratica) / 2. Nota Certificadora = (Media (T+P)/2 + FIN) / 2.</div>'
         + '</div>'
         + '</div>';
     secoes.push(fgSecao('fa-clipboard-check', 'Avaliacoes', avHtml));

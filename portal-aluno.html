@@ -1278,7 +1278,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="ficha-geral-compartilhar.js?v=11"></script>
+    <script src="ficha-geral-compartilhar.js?v=12"></script>
 <script src="foto3x4-editor.js?v=3"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
     <script>
@@ -4894,14 +4894,16 @@
             var snap = await dbFirestore.collection('avaliacoes').orderBy('criadoEm', 'desc').get();
             var teoria = [];
             var pratica = [];
+            var finais = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
                 if (d.enviada === true && d.turma === myTurma) {
                     if (d.tipo === 'pratica') pratica.push({ id: doc.id, data: d });
+                    else if (d.tipo === 'final_teorica' || d.tipo === 'final_pratica') finais.push({ id: doc.id, data: d });
                     else teoria.push({ id: doc.id, data: d });
                 }
             });
-            if (teoria.length === 0 && pratica.length === 0) {
+            if (teoria.length === 0 && pratica.length === 0 && finais.length === 0) {
                 lista.innerHTML = '<div class="pf-em-construcao" style="padding:30px 20px"><i class="fa-solid fa-file-circle-question" style="font-size:42px;color:#cbd5e1;margin-bottom:10px"></i><h3 style="font-size:17px;color:#0f172a;margin-bottom:6px">Nenhuma avaliação disponível</h3><p style="font-size:13px;color:#64748b">Não há avaliações enviadas para a sua turma no momento.</p></div>';
                 return;
             }
@@ -4950,6 +4952,18 @@
                     lista.appendChild(paRavMontarCard(avTe, avalTe));
                 }
             }
+            if (finais.length > 0) {
+                lista.insertAdjacentHTML('beforeend', montarSecao('AV Final (Certificação)', 'fa-graduation-cap', '#7c3aed', finais.length));
+                for (var m = 0; m < finais.length; m++) {
+                    var avFi = finais[m];
+                    var avalFi = false;
+                    try {
+                        var rfDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avFi.id).get();
+                        if (rfDoc.exists) avalFi = true;
+                    } catch (e) { console.error('Falha ao verificar resposta de', avFi.id, e); }
+                    lista.appendChild(paRavMontarCard(avFi, avalFi));
+                }
+            }
         } catch (e) {
             lista.innerHTML = '<div class="pf-em-construcao"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
         }
@@ -4993,8 +5007,10 @@
                 }
             } catch (e) { console.error('Falha ao verificar respostas salvas:', e); }
 
-            // Tarefa 3: so permite RESPONDER se esteve PRESENTE (ou Justificada) no dia da AV
-            if (!jaRespondeu) {
+            // Tarefa 3: so permite RESPONDER se esteve PRESENTE (ou Justificada) no dia da AV.
+            // Prova final (AV Final Teorica/Pratica) nao se vincula a aula, entao nao exige presenca.
+            var isFinal = (d.tipo === 'final_teorica' || d.tipo === 'final_pratica');
+            if (!jaRespondeu && !isFinal) {
                 var podeResponder = await paAvPodeResponder(d);
                 if (!podeResponder.ok) {
                     paRavAtual = null;
@@ -5150,23 +5166,42 @@
             document.getElementById('pf-rav-res-sub').textContent = 'Respostas calculadas, mas ainda não foi possível gravar no servidor. Tente novamente em instantes.';
         });
 
-        // envia a nota para a Ficha de Avaliacao do aluno (guia AV Teorica da aula avaliada)
+        // envia a nota para a Ficha de Avaliacao do aluno
+        var tipoAv = paRavAtual.conteudo.tipo || 'teorica';
         var aulaId = paRavAtual.conteudo.aulaId || '';
-        if (aulaId && cpf !== 'anonimo') {
-            var nota = Math.max(0, Math.min(10, pontos));
-            nota = Math.round(nota * 10) / 10;
-            var notasTeoricas = {};
-            notasTeoricas[aulaId] = nota;
-            dbFirestore.collection('avaliacoesAlunos').doc(paUser.cpf || cpf).set({
-                nome: paUser.nome || '',
-                turma: (paUser.turma || '').trim(),
-                projeto: (paUser.projeto || '').trim(),
-                notasTeoricas: notasTeoricas
-            }, { merge: true }).then(function() {
-                console.log('Nota da AV Teorica gravada na ficha (aula', aulaId + '):', nota);
-            }).catch(function(erro) {
-                console.error('Erro ao gravar nota na ficha:', erro);
-            });
+        var cpfDoc = paUser.cpf || cpf;
+        if (cpf !== 'anonimo') {
+            var notaFicha = Math.max(0, Math.min(10, pontos));
+            notaFicha = Math.round(notaFicha * 10) / 10;
+            if (tipoAv === 'final_teorica' || tipoAv === 'final_pratica') {
+                // Prova final: a nota alimenta o campo AV Final Teorica/Pratica da Ficha de Avaliacao.
+                var campoFinal = (tipoAv === 'final_teorica') ? 'avFinalTeorica' : 'avFinalPratica';
+                var updFinal = {
+                    nome: paUser.nome || '',
+                    turma: (paUser.turma || '').trim(),
+                    projeto: (paUser.projeto || '').trim()
+                };
+                updFinal[campoFinal] = notaFicha;
+                dbFirestore.collection('avaliacoesAlunos').doc(cpfDoc).set(updFinal, { merge: true }).then(function() {
+                    console.log('Nota da AV Final gravada na ficha (' + campoFinal + '):', notaFicha);
+                }).catch(function(erro) {
+                    console.error('Erro ao gravar nota da AV Final na ficha:', erro);
+                });
+            } else if (aulaId) {
+                // AV Teorica da aula avaliada.
+                var notasTeoricas = {};
+                notasTeoricas[aulaId] = notaFicha;
+                dbFirestore.collection('avaliacoesAlunos').doc(cpfDoc).set({
+                    nome: paUser.nome || '',
+                    turma: (paUser.turma || '').trim(),
+                    projeto: (paUser.projeto || '').trim(),
+                    notasTeoricas: notasTeoricas
+                }, { merge: true }).then(function() {
+                    console.log('Nota da AV Teorica gravada na ficha (aula', aulaId + '):', notaFicha);
+                }).catch(function(erro) {
+                    console.error('Erro ao gravar nota na ficha:', erro);
+                });
+            }
         }
     }
 

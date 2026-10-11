@@ -1073,14 +1073,16 @@ var cffUser = null;
             var snap = await dbFirestore.collection('cffAvaliacoes').orderBy('criadoEm', 'desc').get();
             var teoria = [];
             var pratica = [];
+            var finais = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
                 if (d.enviada === true) {
                     if (d.tipo === 'pratica') pratica.push({ id: doc.id, data: d });
+                    else if (d.tipo === 'final_teorica' || d.tipo === 'final_pratica') finais.push({ id: doc.id, data: d });
                     else teoria.push({ id: doc.id, data: d });
                 }
             });
-            if (teoria.length === 0 && pratica.length === 0) {
+            if (teoria.length === 0 && pratica.length === 0 && finais.length === 0) {
                 lista.innerHTML = '<div class="cff-aula-empty" style="padding:30px 20px"><i class="fa-solid fa-file-circle-question" style="font-size:42px;color:#cbd5e1;margin-bottom:10px"></i><p style="font-size:15px;color:#0f172a;margin-bottom:6px">Nenhuma avaliação disponível</p><p style="font-size:13px">Não há avaliações enviadas para os cadastrados do CFF no momento.</p></div>';
                 return;
             }
@@ -1127,6 +1129,18 @@ var cffUser = null;
                         if (rDoc.exists) avalTe = true;
                     } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
                     lista.appendChild(cffRavMontarCard(avTe, avalTe));
+                }
+            }
+            if (finais.length > 0) {
+                lista.insertAdjacentHTML('beforeend', montarSecao('AV Final (Certificação)', 'fa-graduation-cap', '#7c3aed', finais.length));
+                for (var m = 0; m < finais.length; m++) {
+                    var avFi = finais[m];
+                    var avalFi = false;
+                    try {
+                        var rfDoc = await dbFirestore.collection('cffAvaliacoesRespostas').doc(cpfPre + '_' + avFi.id).get();
+                        if (rfDoc.exists) avalFi = true;
+                    } catch (e) { console.error('Falha ao verificar resposta de', avFi.id, e); }
+                    lista.appendChild(cffRavMontarCard(avFi, avalFi));
                 }
             }
         } catch (e) {
@@ -1311,21 +1325,33 @@ var cffUser = null;
             document.getElementById('cff-rav-res-sub').textContent = 'Respostas calculadas, mas ainda não foi possível gravar no servidor. Tente novamente em instantes.';
         });
 
+        var tipoAv = cffRavAtual.conteudo.tipo || 'teorica';
         var aulaId = cffRavAtual.conteudo.aulaId || '';
-        if (aulaId && cpfPre !== 'anonimo') {
-            var nota = Math.max(0, Math.min(10, pontos));
-            nota = Math.round(nota * 10) / 10;
-            var notasTeoricas = {};
-            notasTeoricas[aulaId] = nota;
-            dbFirestore.collection('cffAvaliacoesAlunos').doc(cpfPre).set({
-                cpf: usuario.cpf || '',
-                nome: usuario.nome || '',
-                notasTeoricas: notasTeoricas
-            }, { merge: true }).then(function() {
-                console.log('Nota da AV Teorica gravada na ficha CFF (aula', aulaId + '):', nota);
-            }).catch(function(erro) {
-                console.error('Erro ao gravar nota na ficha CFF:', erro);
-            });
+        if (cpfPre !== 'anonimo') {
+            var notaFicha = Math.max(0, Math.min(10, pontos));
+            notaFicha = Math.round(notaFicha * 10) / 10;
+            if (tipoAv === 'final_teorica' || tipoAv === 'final_pratica') {
+                var campoFinal = (tipoAv === 'final_teorica') ? 'avFinalTeorica' : 'avFinalPratica';
+                var updFinal = { cpf: usuario.cpf || '', nome: usuario.nome || '' };
+                updFinal[campoFinal] = notaFicha;
+                dbFirestore.collection('cffAvaliacoesAlunos').doc(cpfPre).set(updFinal, { merge: true }).then(function() {
+                    console.log('Nota da AV Final gravada na ficha CFF (' + campoFinal + '):', notaFicha);
+                }).catch(function(erro) {
+                    console.error('Erro ao gravar nota da AV Final na ficha CFF:', erro);
+                });
+            } else if (aulaId) {
+                var notasTeoricas = {};
+                notasTeoricas[aulaId] = notaFicha;
+                dbFirestore.collection('cffAvaliacoesAlunos').doc(cpfPre).set({
+                    cpf: usuario.cpf || '',
+                    nome: usuario.nome || '',
+                    notasTeoricas: notasTeoricas
+                }, { merge: true }).then(function() {
+                    console.log('Nota da AV Teorica gravada na ficha CFF (aula', aulaId + '):', notaFicha);
+                }).catch(function(erro) {
+                    console.error('Erro ao gravar nota na ficha CFF:', erro);
+                });
+            }
         }
     }
 
