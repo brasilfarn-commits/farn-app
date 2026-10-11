@@ -6978,6 +6978,7 @@ function tfmInicializar() {
     if (selecaoWrap) selecaoWrap.style.display = 'none';
     const listaWrap = document.getElementById('tfm-lista-wrap');
     if (listaWrap) listaWrap.style.display = '';
+    tfmRelProjetoOptions();
     tfmCarregarLista();
 }
 
@@ -7971,6 +7972,119 @@ function tfmExportarCSV() {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'tfm_' + turma.replace(/[^a-zA-Z0-9]+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+    link.click();
+}
+
+/* ===== RELATORIO DO TFM POR DATA (consulta) =====
+   Consulta transversal: le a colecao tfmAlunos uma vez e filtra pela data da
+   prova (dataProva) ou, na falta dela, pela data do resultado. Mostra projeto,
+   turma, aluno, matricula, os quatro resultados (A/B/C/D) e Apto/Inapto. */
+var tfmRelatorioLinhas = [];
+
+function tfmRelProjetoOptions() {
+    var sel = document.getElementById('tfm-rel-projeto');
+    if (!sel) return;
+    if (sel.options.length > 1) return; /* ja populado */
+    sel.innerHTML = '<option value="">Todos os projetos</option>';
+    projetos.slice().sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); })
+        .forEach(function(p) {
+            sel.innerHTML += '<option value="' + tfmEsc(p.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(p.nome) + '</option>';
+        });
+}
+
+function tfmRelDataDoRegistro(e) {
+    /* Prefere a data agendada da prova; senao cai na data do resultado salvo. */
+    if (e && e.dataProva) {
+        var s = String(e.dataProva);
+        var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return m[1] + '-' + m[2] + '-' + m[3];
+    }
+    if (e && e.dataResultado) {
+        var d = new Date(e.dataResultado);
+        if (!isNaN(d.getTime())) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+    }
+    return '';
+}
+
+async function tfmGerarRelatorioPorData() {
+    tfmRelProjetoOptions();
+    var data = document.getElementById('tfm-rel-data') ? document.getElementById('tfm-rel-data').value : '';
+    var projeto = document.getElementById('tfm-rel-projeto') ? document.getElementById('tfm-rel-projeto').value : '';
+    var turmaFiltro = document.getElementById('tfm-rel-turma') ? String(document.getElementById('tfm-rel-turma').value || '').trim().toLowerCase() : '';
+    var tbody = document.getElementById('tfm-rel-body');
+    var countEl = document.getElementById('tfm-rel-count');
+    if (!data) { alert('Escolha a data do TFM para gerar o relatorio.'); return; }
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
+    var registros = [];
+    try {
+        var snap = await dbFirestore.collection('tfmAlunos').get();
+        snap.forEach(function(doc) {
+            var e = Object.assign({ docId: doc.id }, doc.data());
+            if (tfmRelDataDoRegistro(e) !== data) return;
+            if (projeto && String(e.projeto || '') !== projeto) return;
+            if (turmaFiltro && String(e.turma || '').toLowerCase().indexOf(turmaFiltro) === -1) return;
+            registros.push(e);
+        });
+    } catch (err) {
+        console.error('Erro no relatorio do TFM:', err);
+        if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#dc2626;padding:24px;font-size:13px">Erro ao carregar os TFM. Tente novamente.</td></tr>';
+        return;
+    }
+    registros.sort(function(a, b) {
+        return String(a.projeto || '').localeCompare(b.projeto || '')
+            || String(a.turma || '').localeCompare(b.turma || '')
+            || String(a.nome || '').localeCompare(b.nome || '');
+    });
+    tfmRelatorioLinhas = registros;
+    if (countEl) countEl.textContent = registros.length + ' registro(s)';
+    if (!registros.length) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM encontrado para essa data/filtros.</td></tr>';
+        return;
+    }
+    if (tbody) {
+        tbody.innerHTML = registros.map(function(e) {
+            var res = e.resultado || 'Pendente';
+            var cor = res === 'Apto' ? '#16a34a' : res === 'Inapto' ? '#dc2626' : '#ca8a04';
+            var dt = e.dataProva || (e.dataResultado ? new Date(e.dataResultado).toLocaleDateString('pt-BR') : '-');
+            return '<tr>'
+                + '<td>' + tfmEsc(e.projeto || '-') + '</td>'
+                + '<td>' + tfmEsc(e.turma || '-') + '</td>'
+                + '<td style="font-weight:600">' + tfmEsc(e.nome || e.cpf || '-') + '</td>'
+                + '<td>' + tfmEsc(e.matricula || '-') + '</td>'
+                + '<td>' + (e.flexoes != null ? e.flexoes : '-') + '</td>'
+                + '<td>' + (e.abdominais != null ? e.abdominais : '-') + '</td>'
+                + '<td>' + (e.corridaSeg != null ? e.corridaSeg : '-') + '</td>'
+                + '<td>' + tfmEsc(e.deslocamentoConcluiu || '-') + '</td>'
+                + '<td><span class="badge" style="background:' + cor + '15;color:' + cor + ';border:1px solid ' + cor + '30">' + tfmEsc(res) + '</span></td>'
+                + '<td style="font-size:12px;color:#64748b">' + tfmEsc(dt) + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+}
+
+function tfmExportarRelatorioCSV() {
+    if (!tfmRelatorioLinhas.length) { alert('Gere o relatorio antes de exportar.'); return; }
+    var data = document.getElementById('tfm-rel-data') ? document.getElementById('tfm-rel-data').value : '';
+    var csv = 'Projeto;Turma;Aluno;Matricula;Flexoes (1min);Abdominais (1min);Corrida (seg);Desloc. Concluiu;Resultado;Data\n';
+    tfmRelatorioLinhas.forEach(function(e) {
+        var dt = e.dataProva || (e.dataResultado ? new Date(e.dataResultado).toLocaleDateString('pt-BR') : '');
+        csv += '"' + String(e.projeto || '').replace(/"/g, '""') + '";'
+            + '"' + String(e.turma || '').replace(/"/g, '""') + '";'
+            + '"' + String(e.nome || '').replace(/"/g, '""') + '";'
+            + '"' + String(e.matricula || '').replace(/"/g, '""') + '";'
+            + (e.flexoes != null ? e.flexoes : '') + ';'
+            + (e.abdominais != null ? e.abdominais : '') + ';'
+            + (e.corridaSeg != null ? e.corridaSeg : '') + ';'
+            + '"' + String(e.deslocamentoConcluiu || '').replace(/"/g, '""') + '";'
+            + '"' + String(e.resultado || 'Pendente').replace(/"/g, '""') + '";'
+            + '"' + dt + '"\n';
+    });
+    var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'tfm_relatorio_' + String(data || 'todos').replace(/[^a-zA-Z0-9]+/g, '_') + '.csv';
     link.click();
 }
 
