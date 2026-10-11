@@ -422,10 +422,10 @@ function fichaGeralCalcular(c, dados, aulas) {
     const temFinal = temFT || temFP;
     let fin = temFinal ? (((temFT ? avFTnum : 0) + (temFP ? avFPnum : 0)) / 2) : 0;
     fin = Math.round(fin * 10) / 10;
-    // Nota certificadora: (media (T+P)/2 + FIN) / 2. Sem provas finais, fica nula.
-    const notaCertificadora = temFinal ? Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10 : null;
-    // Situacao Final: a Nota Certificadora decide a aprovacao quando existe; senao, a AV Final.
-    const notaSituacao = (notaCertificadora == null) ? avFinal : notaCertificadora;
+    // Nota certificadora: (media (T+P)/2 + FIN) / 2. Sem AV Final Teorica/Pratica, conta como zero (provisoria).
+    const notaCertificadora = Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10;
+    // Situacao Final: a Nota Certificadora decide a aprovacao quando ha provas finais; senao, a AV Final.
+    const notaSituacao = temFinal ? notaCertificadora : avFinal;
     const aprovado = notaSituacao >= FG_AV_CORTE_APROVACAO;
     return {
         av: av,
@@ -843,8 +843,8 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
         + fgNotaPill('AV Final Teorica', calc.avFinalTeorica === '' ? '—' : fichaGeralNum(calc.avFinalTeorica) + ' / 10,0', corComp)
         + fgNotaPill('AV Final Pratica', calc.avFinalPratica === '' ? '—' : fichaGeralNum(calc.avFinalPratica) + ' / 10,0', corComp)
-        + fgNotaPill('FIN (media das duas)', calc.temFinal ? fichaGeralNum(calc.fin) : '—', corMF)
-        + fgNotaPill('Nota Certificadora', calc.notaCertificadora == null ? '—' : fichaGeralNum(calc.notaCertificadora) + ' / 10,0', corAV)
+        + fgNotaPill('FIN (media das duas)', calc.temFinal ? fichaGeralNum(calc.fin) : '0,0', corMF)
+        + fgNotaPill('Nota Certificadora', fichaGeralNum(calc.notaCertificadora) + ' / 10,0' + (calc.temFinal ? '' : ' (provisoria)'), corAV)
         + '</div>'
         + '<div style="font-size:10px;color:#475569;margin-top:6px">FIN = (AV Final Teorica + AV Final Pratica) / 2. Nota Certificadora = (Media (T+P)/2 + FIN) / 2.</div>'
         + '</div>'

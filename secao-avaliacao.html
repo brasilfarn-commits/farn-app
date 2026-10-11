@@ -586,10 +586,10 @@
             var temFinal = temFT || temFP;
             var fin = temFinal ? (((temFT ? avFTnum : 0) + (temFP ? avFPnum : 0)) / 2) : 0;
             fin = Math.round(fin * 10) / 10;
-            // Nota certificadora: (media (T+P)/2 + FIN) / 2. Sem provas finais, nao ha nota certificadora.
-            var notaCertificadora = temFinal ? Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10 : null;
-            // Situacao Final: a Nota Certificadora decide a aprovacao quando existe; senao, a AV Final.
-            var notaSituacao = (notaCertificadora == null) ? avFinal : notaCertificadora;
+            // Nota certificadora: (media (T+P)/2 + FIN) / 2. Sem AV Final Teorica/Pratica, conta como zero (provisoria).
+            var notaCertificadora = Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10;
+            // Situacao Final: a Nota Certificadora decide a aprovacao quando ha provas finais; senao, a AV Final.
+            var notaSituacao = temFinal ? notaCertificadora : avFinal;
             return {
                 mTeoricaManual: mT, mPraticaManual: mP,
                 teorOriginal: teor, pratOriginal: prat,
@@ -828,8 +828,8 @@
                         '</div>' +
                     '</div>' +
                     '<div class="media-destaque" style="margin-top:12px">' +
-                        '<span class="rotulo">FIN = (AV Final Teórica + AV Final Prática) ÷ 2</span>' +
-                        '<span class="valor">' + (r.temFinal ? avNum(r.fin) : '—') + '</span>' +
+                        '<span class="rotulo">FIN = (AV Final Teórica + AV Final Prática) ÷ 2' + (r.temFinal ? '' : ' — provisória (0)') + '</span>' +
+                        '<span class="valor">' + avNum(r.fin) + '</span>' +
                     '</div>' +
                 '</div>' +
                 '<div class="media-destaque" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)">' +
@@ -837,14 +837,14 @@
                     '<span class="valor">' + avNum(r.avFinal) + '</span>' +
                 '</div>' +
                 '<div class="media-destaque" style="background:rgba(124,58,237,.18);border-color:rgba(124,58,237,.5)">' +
-                    '<span class="rotulo">NOTA CERTIFICADORA (SITUAÇÃO FINAL) = (Média + FIN) ÷ 2</span>' +
-                    '<span class="valor">' + (r.notaCertificadora == null ? '—' : avNum(r.notaCertificadora)) + '</span>' +
+                    '<span class="rotulo">NOTA CERTIFICADORA (SITUAÇÃO FINAL) = (Média + FIN) ÷ 2' + (r.temFinal ? '' : ' — provisória (AV Final T/P = 0)') + '</span>' +
+                    '<span class="valor">' + avNum(r.notaCertificadora) + '</span>' +
                 '</div>' +
                 '<div class="media-destaque" style="border-color:' + (r.aprovado ? 'rgba(34,197,94,.6)' : 'rgba(248,113,113,.6)') + '">' +
                     '<span class="rotulo">Situação (corte ' + AV_CORTE_APROVACAO + ')' + (r.temFinal ? ' — pela Nota Certificadora ' + avNum(r.notaSituacao) : ' — pela AV Final ' + avNum(r.avFinal)) + '</span>' +
                     '<span class="valor" style="color:' + (r.aprovado ? '#4ade80' : '#f87171') + '">' + (r.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</span>' +
                 '</div>' +
-                '<p style="font-size:11px;color:#b9d4bd;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10. A Nota Certificadora é a média entre a Média e a FIN (média das provas finais). A Situação Final (APROVADO/NÃO APROVADO) usa a Nota Certificadora quando existir; senão, a AV Final.</p>';
+                '<p style="font-size:11px;color:#b9d4bd;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10. A Nota Certificadora é a média entre a Média e a FIN (média das provas finais). A Situação Final (APROVADO/NÃO APROVADO) usa a Nota Certificadora quando existir; senão, a AV Final. Enquanto não houver notas de AV Final Teórica/Prática, elas contam como zero, e a Nota Certificadora aparece como provisória.</p>';
             document.getElementById('aba-final').innerHTML = html;
         }
 
