@@ -8008,6 +8008,42 @@ function tfmRelDataDoRegistro(e) {
     return '';
 }
 
+/* Procura as provas praticas (tipo 'pratica') cuja AULA e do dia escolhido.
+   A data vem da aula vinculada (avaliacoes.aulaId -> aulas.data); e a prova
+   pratica que o docente marca CERTA/PARCIAL/NAO REALIZOU. */
+async function tfmCarregarPraticaDoDia(data) {
+    var lista = [];
+    try {
+        var aulasMap = {};
+        var snapAulas = await dbFirestore.collection('aulas').get();
+        snapAulas.forEach(function(doc) { aulasMap[doc.id] = doc.data() || {}; });
+        var snapAv = await dbFirestore.collection('avaliacoes').get();
+        snapAv.forEach(function(doc) {
+            var av = doc.data() || {};
+            if (av.tipo !== 'pratica') return;
+            var aula = av.aulaId ? aulasMap[av.aulaId] : null;
+            var dataAula = aula ? String(aula.data || '').slice(0, 10) : '';
+            if (dataAula !== data) return;
+            lista.push({ avId: doc.id, aulaId: av.aulaId || '', projeto: av.projeto || '', turma: av.turma || '' });
+        });
+    } catch (e) { console.error('Erro ao carregar provas praticas do dia:', e); }
+    return lista;
+}
+
+/* Nota da prova pratica do aluno no dia: avPraticaManual[avId].nota; se
+   faltar, cai para a nota pratica da aula (notasPraticas[aulaId]). */
+function tfmNotaPraticaDoAluno(ficha, praticas) {
+    if (!ficha || !praticas || !praticas.length) return null;
+    var man = ficha.avPraticaManual || {};
+    var np = ficha.notasPraticas || {};
+    for (var i = 0; i < praticas.length; i++) {
+        var p = praticas[i];
+        if (man[p.avId] && man[p.avId].nota != null && man[p.avId].nota !== '') return Math.round(Number(man[p.avId].nota) * 10) / 10;
+        if (p.aulaId && np[p.aulaId] != null && np[p.aulaId] !== '') return Math.round(Number(np[p.aulaId]) * 10) / 10;
+    }
+    return null;
+}
+
 async function tfmGerarRelatorioPorData() {
     tfmRelProjetoOptions();
     var data = document.getElementById('tfm-rel-data') ? document.getElementById('tfm-rel-data').value : '';
@@ -8016,7 +8052,7 @@ async function tfmGerarRelatorioPorData() {
     var tbody = document.getElementById('tfm-rel-body');
     var countEl = document.getElementById('tfm-rel-count');
     if (!data) { alert('Escolha a data do TFM para gerar o relatorio.'); return; }
-    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
     var registros = [];
     try {
         var snap = await dbFirestore.collection('tfmAlunos').get();
@@ -8029,7 +8065,7 @@ async function tfmGerarRelatorioPorData() {
         });
     } catch (err) {
         console.error('Erro no relatorio do TFM:', err);
-        if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#dc2626;padding:24px;font-size:13px">Erro ao carregar os TFM. Tente novamente.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#dc2626;padding:24px;font-size:13px">Erro ao carregar os TFM. Tente novamente.</td></tr>';
         return;
     }
     registros.sort(function(a, b) {
@@ -8037,10 +8073,22 @@ async function tfmGerarRelatorioPorData() {
             || String(a.turma || '').localeCompare(b.turma || '')
             || String(a.nome || '').localeCompare(b.nome || '');
     });
+    /* Nota da prova pratica do dia, por aluno: busca as provas praticas com
+       aula na data e le a ficha (avaliacoesAlunos) de cada CPF uma vez. */
+    var praticas = await tfmCarregarPraticaDoDia(data);
+    var cpfsUnicos = {};
+    registros.forEach(function(e) { if (e.cpf) cpfsUnicos[String(e.cpf)] = true; });
+    var fichas = {};
+    await Promise.all(Object.keys(cpfsUnicos).map(function(cpf) {
+        return dbFirestore.collection('avaliacoesAlunos').doc(cpf).get().then(function(doc) {
+            fichas[cpf] = doc.exists ? doc.data() : null;
+        }).catch(function() { fichas[cpf] = null; });
+    }));
+    registros.forEach(function(e) { e.notaPratica = tfmNotaPraticaDoAluno(fichas[String(e.cpf || '')], praticas); });
     tfmRelatorioLinhas = registros;
     if (countEl) countEl.textContent = registros.length + ' registro(s)';
     if (!registros.length) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM encontrado para essa data/filtros.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Nenhum TFM encontrado para essa data/filtros.</td></tr>';
         return;
     }
     if (tbody) {
@@ -8048,6 +8096,7 @@ async function tfmGerarRelatorioPorData() {
             var res = e.resultado || 'Pendente';
             var cor = res === 'Apto' ? '#16a34a' : res === 'Inapto' ? '#dc2626' : '#ca8a04';
             var dt = e.dataProva || (e.dataResultado ? new Date(e.dataResultado).toLocaleDateString('pt-BR') : '-');
+            var notaPrTxt = (e.notaPratica == null) ? '-' : String(e.notaPratica).replace('.', ',');
             return '<tr>'
                 + '<td>' + tfmEsc(e.projeto || '-') + '</td>'
                 + '<td>' + tfmEsc(e.turma || '-') + '</td>'
@@ -8057,6 +8106,7 @@ async function tfmGerarRelatorioPorData() {
                 + '<td>' + (e.abdominais != null ? e.abdominais : '-') + '</td>'
                 + '<td>' + (e.corridaSeg != null ? e.corridaSeg : '-') + '</td>'
                 + '<td>' + tfmEsc(e.deslocamentoConcluiu || '-') + '</td>'
+                + '<td style="font-weight:700;color:#be185d">' + tfmEsc(notaPrTxt) + '</td>'
                 + '<td><span class="badge" style="background:' + cor + '15;color:' + cor + ';border:1px solid ' + cor + '30">' + tfmEsc(res) + '</span></td>'
                 + '<td style="font-size:12px;color:#64748b">' + tfmEsc(dt) + '</td>'
                 + '</tr>';
@@ -8067,7 +8117,7 @@ async function tfmGerarRelatorioPorData() {
 function tfmExportarRelatorioCSV() {
     if (!tfmRelatorioLinhas.length) { alert('Gere o relatorio antes de exportar.'); return; }
     var data = document.getElementById('tfm-rel-data') ? document.getElementById('tfm-rel-data').value : '';
-    var csv = 'Projeto;Turma;Aluno;Matricula;Flexoes (1min);Abdominais (1min);Corrida (seg);Desloc. Concluiu;Resultado;Data\n';
+    var csv = 'Projeto;Turma;Aluno;Matricula;Flexoes (1min);Abdominais (1min);Corrida (seg);Desloc. Concluiu;AV Pratica (nota);Resultado;Data\n';
     tfmRelatorioLinhas.forEach(function(e) {
         var dt = e.dataProva || (e.dataResultado ? new Date(e.dataResultado).toLocaleDateString('pt-BR') : '');
         csv += '"' + String(e.projeto || '').replace(/"/g, '""') + '";'
@@ -8078,6 +8128,7 @@ function tfmExportarRelatorioCSV() {
             + (e.abdominais != null ? e.abdominais : '') + ';'
             + (e.corridaSeg != null ? e.corridaSeg : '') + ';'
             + '"' + String(e.deslocamentoConcluiu || '').replace(/"/g, '""') + '";'
+            + '"' + (e.notaPratica == null ? '' : String(e.notaPratica).replace('.', ',')) + '";'
             + '"' + String(e.resultado || 'Pendente').replace(/"/g, '""') + '";'
             + '"' + dt + '"\n';
     });
