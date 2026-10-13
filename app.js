@@ -662,6 +662,7 @@ async function initFirebaseListeners() {
             if (firebaseReady) {
                 populateTurmaSelect();
                 populateProjetoSelect();
+                if (typeof cavRefrescarFiltro === 'function') cavRefrescarFiltro();
                 if (galeriaAdminVisivel()) galeriaAdminCarregarTurmas();
                 const fcProjeto = document.getElementById('fc-projeto');
                 if (fcProjeto && fcProjeto.value) {
@@ -715,6 +716,7 @@ async function initFirebaseListeners() {
                 if (typeof renderProjetosList === 'function') renderProjetosList();
                 populateProjetoSelect();
                 populateTurmaSelect();
+                if (typeof cavRefrescarFiltro === 'function') cavRefrescarFiltro();
                 if (galeriaAdminVisivel()) galeriaAdminCarregarProjetos();
                 const fcProjeto = document.getElementById('fc-projeto');
                 if (fcProjeto && fcProjeto.value) {
@@ -11363,6 +11365,8 @@ function cavAplicarRotuloTipo() {
 function cavLoadList() {
     const container = document.getElementById('cav-list');
     if (!container) return;
+    cavPopulateFiltroProjetos();
+    cavPopulateFiltroTurmas();
     container.innerHTML = '<div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>';
     dbFirestore.collection(FB_AVALIACOES).orderBy('criadoEm', 'desc').get().then(snap => {
         if (snap.empty) {
@@ -11379,6 +11383,14 @@ function cavLoadList() {
             return { avs: avs, respostas: rSnap, avaliacoesAlunos: aSnap };
         });
     }).then(({ avs, respostas, avaliacoesAlunos }) => {
+        const avsFiltradas = avs.filter(a => cavAvPassaFiltro(a.d));
+        const infoEl = document.getElementById('cav-filtro-info');
+        if (infoEl) infoEl.textContent = cavFiltroAtivo() ? ('Mostrando ' + avsFiltradas.length + ' de ' + avs.length) : '';
+        if (!avsFiltradas.length) {
+            container.innerHTML = '<div class="empty-state" style="text-align:center;padding:30px"><p style="color:#64748b;margin-bottom:12px">Nenhuma avaliação para o filtro selecionado.</p>' +
+                '<button class="btn-outline btn-sm" onclick="cavLimparFiltro()"><i class="fa-solid fa-eraser"></i> Limpar filtro</button></div>';
+            return;
+        }
         const teoricas = [];
         const praticas = [];
         const contagem = {};
@@ -11404,7 +11416,7 @@ function cavLoadList() {
                 });
             });
         }
-        avs.forEach(({ id, d }) => {
+        avsFiltradas.forEach(({ id, d }) => {
             const qtd = (d.questoes || []).length;
             const respondidas = contagem[id] || 0;
             const isPratica = (d.tipo === 'pratica');
@@ -11646,6 +11658,107 @@ function cavOnTurmaChange() {
     cavNomeAula = {};
     cavLoadAulasNome(proj, turma);
     cavLoadAlunos(proj, turma, []); /* troca de turma limpa a selecao de alunos */
+}
+
+/* ===== FILTRO DA LISTA DE AV (projeto/turma) =====
+   Mostra apenas projetos/turmas EM ANDAMENTO (status do projeto). Sem escolha = todas. */
+let cavFiltroProjeto = '';
+let cavFiltroTurma = '';
+
+function cavProjetoEmAndamento(nome) {
+    const p = (projetos || []).find(function (x) { return String(x.nome || '') === String(nome || ''); });
+    if (!p) return false;
+    return (p.status || 'Em Andamento') === 'Em Andamento';
+}
+
+function cavPopulateFiltroProjetos() {
+    const sel = document.getElementById('cav-filtro-projeto');
+    if (!sel) return;
+    const atual = sel.value || cavFiltroProjeto || '';
+    sel.innerHTML = '<option value="">Todos os projetos</option>';
+    const nomes = [];
+    (projetos || []).forEach(function (p) {
+        if ((p.status || 'Em Andamento') !== 'Em Andamento') return;
+        const nome = p.nome || '';
+        if (!nome || nomes.indexOf(nome) !== -1) return;
+        nomes.push(nome);
+        const opt = document.createElement('option');
+        opt.value = nome;
+        opt.textContent = nome + (p.responsavel ? ' - ' + p.responsavel : '');
+        sel.appendChild(opt);
+    });
+    sel.value = nomes.indexOf(atual) !== -1 ? atual : '';
+    cavFiltroProjeto = sel.value;
+}
+
+function cavPopulateFiltroTurmas() {
+    const sel = document.getElementById('cav-filtro-turma');
+    if (!sel) return;
+    const atual = sel.value || cavFiltroTurma || '';
+    sel.innerHTML = '<option value="">Todas as turmas</option>';
+    const nomes = [];
+    (turmas || []).forEach(function (t) {
+        if (cavFiltroProjeto && String(t.projeto || '').trim() !== String(cavFiltroProjeto).trim()) return;
+        if (!cavProjetoEmAndamento(t.projeto)) return;
+        const nome = t.nome || '';
+        if (!nome || nomes.indexOf(nome) !== -1) return;
+        nomes.push(nome);
+        const opt = document.createElement('option');
+        opt.value = nome;
+        opt.textContent = nome;
+        sel.appendChild(opt);
+    });
+    sel.value = nomes.indexOf(atual) !== -1 ? atual : '';
+    cavFiltroTurma = sel.value;
+}
+
+function cavOnFiltroProjetoChange() {
+    const sel = document.getElementById('cav-filtro-projeto');
+    cavFiltroProjeto = sel ? sel.value : '';
+    cavFiltroTurma = '';
+    const tsel = document.getElementById('cav-filtro-turma');
+    if (tsel) tsel.value = '';
+    cavPopulateFiltroTurmas();
+    cavLoadList();
+}
+
+function cavOnFiltroTurmaChange() {
+    const sel = document.getElementById('cav-filtro-turma');
+    cavFiltroTurma = sel ? sel.value : '';
+    cavLoadList();
+}
+
+function cavLimparFiltro() {
+    cavFiltroProjeto = '';
+    cavFiltroTurma = '';
+    const ps = document.getElementById('cav-filtro-projeto'); if (ps) ps.value = '';
+    const ts = document.getElementById('cav-filtro-turma'); if (ts) ts.value = '';
+    cavPopulateFiltroProjetos();
+    cavPopulateFiltroTurmas();
+    cavLoadList();
+}
+
+function cavFiltroAtivo() {
+    return !!(cavFiltroProjeto || cavFiltroTurma);
+}
+
+function cavAvPassaFiltro(d) {
+    if (cavFiltroProjeto && String((d || {}).projeto || '').trim() !== String(cavFiltroProjeto).trim()) return false;
+    if (cavFiltroTurma && String((d || {}).turma || '').trim() !== String(cavFiltroTurma).trim()) return false;
+    return true;
+}
+
+/* Repovoa o filtro quando projetos/turmas chegam do Firestore. */
+function cavRefrescarFiltro() {
+    try {
+        if (!document.getElementById('cav-filtro')) return;
+        const pAntes = cavFiltroProjeto, tAntes = cavFiltroTurma;
+        cavPopulateFiltroProjetos();
+        cavPopulateFiltroTurmas();
+        if ((pAntes !== cavFiltroProjeto || tAntes !== cavFiltroTurma) && cavModoAtual !== 'final' && document.getElementById('cav-list')) {
+            cavLoadList();
+        }
+    } catch (e) { /* ignora */ }
 }
 
 /* ===== ALUNOS DA AV (recuperacao) =====
@@ -12644,13 +12757,16 @@ function cavModo(modo) {
     const list = document.getElementById('cav-list');
     const finalMenu = document.getElementById('cav-final-menu');
     const form = document.getElementById('cav-form');
+    const filtro = document.getElementById('cav-filtro');
     if (cavModoAtual === 'final') {
         if (toolbar) toolbar.style.display = 'none';
+        if (filtro) filtro.style.display = 'none';
         if (list) list.style.display = 'none';
         if (finalMenu) finalMenu.style.display = 'block';
         if (form) form.style.display = 'none';
     } else {
         if (toolbar) toolbar.style.display = 'flex';
+        if (filtro) filtro.style.display = 'flex';
         if (finalMenu) finalMenu.style.display = 'none';
         if (list) list.style.display = '';
         cavLoadList();

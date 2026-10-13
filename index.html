@@ -3160,6 +3160,20 @@
                                 </div>
                             </div>
 
+                            <!-- Filtro por projeto e turma (so projetos/turmas em andamento) -->
+                            <div id="cav-filtro" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px">
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block"><i class="fa-solid fa-folder-open" style="margin-right:4px"></i>Filtrar por Projeto</label>
+                                    <select id="cav-filtro-projeto" class="config-input" style="min-width:230px" onchange="cavOnFiltroProjetoChange()"><option value="">Todos os projetos</option></select>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block"><i class="fa-solid fa-users" style="margin-right:4px"></i>Filtrar por Turma</label>
+                                    <select id="cav-filtro-turma" class="config-input" style="min-width:210px" onchange="cavOnFiltroTurmaChange()"><option value="">Todas as turmas</option></select>
+                                </div>
+                                <button type="button" class="btn-outline btn-sm" onclick="cavLimparFiltro()" style="margin-bottom:1px"><i class="fa-solid fa-eraser"></i> Limpar filtro</button>
+                                <span id="cav-filtro-info" style="margin-left:auto;font-size:11px;font-weight:700;color:#64748b"></span>
+                            </div>
+
                             <div id="cav-list" style="margin-bottom:24px">
                                 <div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>
                             </div>
@@ -5089,7 +5103,7 @@
     <script src="ficha-geral-compartilhar.js?v=16"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=78"></script>
+    <script src="app.js?v=79"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
