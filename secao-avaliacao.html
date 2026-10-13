@@ -487,8 +487,7 @@
                         if (!rDoc.exists) return null;
                         var r = rDoc.data() || {};
                         var certas = r.respostasCertas != null ? Number(r.respostasCertas) : 0;
-                        var naoMarcadas = r.respostasMarcadas != null ? (Number(r.totalQuestoes || avDq.length) - Number(r.respostasMarcadas)) : 0;
-                        var pontos = r.pontos != null ? Number(r.pontos) : (certas * peso - naoMarcadas * peso);
+                        var pontos = r.pontos != null ? Number(r.pontos) : (certas * peso);
                         var nota = Math.max(0, Math.min(10, pontos));
                         return Math.round(nota * 10) / 10;
                     }).catch(function() { return null; });
