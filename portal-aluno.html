@@ -2706,10 +2706,10 @@
         items.sort(function(x, y) {
             var dx = x.data ? new Date(x.data + 'T12:00:00').getTime() : 0;
             var dy = y.data ? new Date(y.data + 'T12:00:00').getTime() : 0;
-            if (dx !== dy) return dx - dy;
+            if (dx !== dy) return dy - dx;
             var hx = (x.horario || '').replace(/\D/g, '').substring(0, 4);
             var hy = (y.horario || '').replace(/\D/g, '').substring(0, 4);
-            return hx.localeCompare(hy);
+            return hy.localeCompare(hx);
         });
         container.innerHTML = '';
         var count = 0;
