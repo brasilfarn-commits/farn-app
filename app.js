@@ -11381,7 +11381,8 @@ function cavLoadList() {
             return { avs: avs, respostas: rSnap, avaliacoesAlunos: aSnap };
         });
     }).then(({ avs, respostas, avaliacoesAlunos }) => {
-        container.innerHTML = '';
+        const teoricas = [];
+        const praticas = [];
         const contagem = {};
         const rotulos = {};
         if (respostas) {
@@ -11438,8 +11439,36 @@ function cavLoadList() {
                     (!isPratica ? '<button class="btn-outline btn-sm" title="Escolher quais alunos podem FAZER ou REFAZER esta AV (recuperação)" onclick="cavRecuperacaoAbrir(\'' + id + '\')"><i class="fa-solid fa-rotate-right"></i> ' + ((d.alunosSelecionados && d.alunosSelecionados.length) ? 'Recuperação (' + d.alunosSelecionados.length + ')' : 'Ativar Recuperação') + '</button>' : '') +
                     '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
-            container.appendChild(card);
+            if (d.tipo === 'pratica' || d.tipo === 'final_pratica') praticas.push(card);
+            else teoricas.push(card);
         });
+
+        /* Duas colunas: AV Teoricas | AV Praticas */
+        const grid = document.createElement('div');
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;align-items:start';
+        const montarColuna = (titulo, icone, cor, arr) => {
+            const col = document.createElement('div');
+            col.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px';
+            const head = document.createElement('div');
+            head.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid ' + cor;
+            head.innerHTML = '<i class="fa-solid ' + icone + '" style="color:' + cor + '"></i>' +
+                '<span style="font-size:13px;font-weight:800;color:#0f172a">' + titulo + '</span>' +
+                '<span style="margin-left:auto;font-size:11px;font-weight:700;color:' + cor + ';background:' + cor + '1a;padding:2px 9px;border-radius:20px">' + arr.length + '</span>';
+            col.appendChild(head);
+            if (arr.length === 0) {
+                const vazio = document.createElement('div');
+                vazio.style.cssText = 'text-align:center;color:#94a3b8;font-size:12px;padding:18px 6px';
+                vazio.textContent = 'Nenhuma avaliação aqui.';
+                col.appendChild(vazio);
+            } else {
+                arr.forEach(c => col.appendChild(c));
+            }
+            return col;
+        };
+        grid.appendChild(montarColuna('AV Teóricas', 'fa-square-check', '#16a34a', teoricas));
+        grid.appendChild(montarColuna('AV Práticas', 'fa-screwdriver-wrench', '#2563eb', praticas));
+        container.innerHTML = '';
+        container.appendChild(grid);
     }).catch(() => {
         container.innerHTML = '<div class="empty-state" style="text-align:center;padding:20px"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
     });
