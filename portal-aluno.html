@@ -4785,29 +4785,49 @@
         } catch (e) { return true; }
     }
 
-    function paRavMontarCard(av, jaAvaliada) {
+    /* Recuperacao por AV: true somente quando a AV tem lista de alunos escolhidos
+       no admin e o aluno logado esta nessa lista. Sem lista, e a turma inteira. */
+    function paRavAlunoSelecionado(d) {
+        try {
+            var sel = d && d.alunosSelecionados;
+            if (!sel || !sel.length) return false;
+            var meu = String((paUser && paUser.cpf) || '').replace(/[^0-9a-zA-Z]/g, '');
+            for (var i = 0; i < sel.length; i++) {
+                if (String(sel[i] || '').replace(/[^0-9a-zA-Z]/g, '') === meu) return true;
+            }
+            return false;
+        } catch (e) { return false; }
+    }
+
+    function paRavMontarCard(av, jaAvaliada, recuperacao) {
         var d = av.data;
         var isPratica = (d.tipo === 'pratica');
-        var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true);
-        var cor = emBreve ? '#dc2626' : (jaAvaliada ? '#556B2F' : '#6B8E23');
+        var rec = (recuperacao === true);
+        var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true && !rec);
+        var cor = rec ? '#7c3aed' : (emBreve ? '#dc2626' : (jaAvaliada ? '#556B2F' : '#6B8E23'));
+        var btnVisualizar = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#6B8E23,#2F3D14);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+        var btnRec = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-rotate-right" style="margin-right:4px"></i>' + (jaAvaliada ? 'Refazer Avaliação' : 'Fazer Recuperação') + '</button>';
         var btn;
         if (isPratica) {
-            btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#6B8E23,#2F3D14);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+            btn = btnVisualizar;
+        } else if (rec) {
+            btn = btnRec + (jaAvaliada ? '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:#eef2f7;color:#475569;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Ver última</button>' : '');
         } else if (jaAvaliada) {
-            btn = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#6B8E23,#2F3D14);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+            btn = btnVisualizar;
         } else if (emBreve) {
             btn = '<span style="display:inline-flex;align-items:center;gap:5px;background:#dc2626;color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid fa-hourglass-half" style="margin-right:4px"></i>Em breve</span>';
         } else {
             btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
         }
-        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (emBreve ? 'Em breve' : (jaAvaliada ? 'Avaliada' : 'Disponível')) + '</span>';
+        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (rec ? 'Recuperação' : (emBreve ? 'Em breve' : (jaAvaliada ? 'Avaliada' : 'Disponível'))) + '</span>';
         var card = document.createElement('div');
         card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
         card.innerHTML =
-            '<div style="width:42px;height:42px;background:' + cor + ';border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-lines" style="color:#fff;font-size:17px"></i></div>' +
+            '<div style="width:42px;height:42px;background:' + cor + ';border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-' + (rec ? 'rotate-right' : 'file-lines') + '" style="color:#fff;font-size:17px"></i></div>' +
             '<div style="flex:1;min-width:160px">' +
                 '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
                 '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
+                (rec ? '<div style="font-size:11px;color:#7c3aed;margin-top:2px">Liberada para recuperação — você pode ' + (jaAvaliada ? 'refazer' : 'fazer') + ' esta avaliação.</div>' : '') +
                 (emBreve ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Disponível em breve para responder.</div>' : '') +
                 (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
             '</div>' +
@@ -4963,7 +4983,7 @@
                         var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avTe.id).get();
                         if (rDoc.exists) avalTe = true;
                     } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
-                    lista.appendChild(paRavMontarCard(avTe, avalTe));
+                    lista.appendChild(paRavMontarCard(avTe, avalTe, paRavAlunoSelecionado(avTe.data)));
                 }
             }
             if (finais.length > 0) {
@@ -4975,7 +4995,7 @@
                         var rfDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avFi.id).get();
                         if (rfDoc.exists) avalFi = true;
                     } catch (e) { console.error('Falha ao verificar resposta de', avFi.id, e); }
-                    lista.appendChild(paRavMontarCard(avFi, avalFi));
+                    lista.appendChild(paRavMontarCard(avFi, avalFi, paRavAlunoSelecionado(avFi.data)));
                 }
             }
         } catch (e) {
@@ -5000,7 +5020,8 @@
             if (d.enviada !== true || d.turma !== (paUser.turma || '').trim()) { alert('Esta avaliação não está disponível para a sua turma.'); return; }
             if (!paRavAlunoPermitido(d)) { alert('Esta avaliação não está disponível para você.'); return; }
             if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
-            if (d.ativa !== true) { alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return; }
+            var rec = paRavAlunoSelecionado(d);
+            if (d.ativa !== true && !rec) { alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return; }
             paRavAtual = { id: avId, conteudo: d };
             paRavRespostas = {};
             paRavCorretas = {};
@@ -5025,7 +5046,7 @@
             // Tarefa 3: so permite RESPONDER se esteve PRESENTE (ou Justificada) no dia da AV.
             // Prova final (AV Final Teorica/Pratica) nao se vincula a aula, entao nao exige presenca.
             var isFinal = (d.tipo === 'final_teorica' || d.tipo === 'final_pratica');
-            if (!jaRespondeu && !isFinal) {
+            if (!jaRespondeu && !isFinal && !rec) {
                 var podeResponder = await paAvPodeResponder(d);
                 if (!podeResponder.ok) {
                     paRavAtual = null;
@@ -5034,10 +5055,15 @@
                 }
             }
 
-            if (jaRespondeu) {
+            var refazer = (jaRespondeu && rec);
+            if (jaRespondeu && !refazer) {
                 document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Você já respondeu esta avaliação';
                 document.getElementById('pf-rav-enviar-btn').disabled = true;
                 document.getElementById('pf-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-circle-check"></i> Já respondida';
+            } else if (refazer) {
+                document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Recuperação: responda novamente (a nova nota substitui a anterior)';
+                document.getElementById('pf-rav-enviar-btn').disabled = false;
+                document.getElementById('pf-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Enviar Novamente';
             } else {
                 document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Tempo limite de 30 minutos';
                 document.getElementById('pf-rav-enviar-btn').disabled = false;
@@ -5047,7 +5073,7 @@
             lista.style.display = 'none';
             prova.style.display = 'block';
             document.getElementById('pf-section-responder-avaliacao').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (!jaRespondeu) paRavIniciarTimer();
+            if (!jaRespondeu || refazer) paRavIniciarTimer();
         } catch (e) {
             alert('Erro ao abrir avaliação.');
         }
@@ -5165,6 +5191,7 @@
             totalQuestoes: total,
             pontos: pontos,
             finalizadaPorTempo: porTempo ? true : false,
+            recuperacao: (paRavAtual && paRavAtual.conteudo) ? paRavAlunoSelecionado(paRavAtual.conteudo) : false,
             enviadoEm: new Date()
         };
         // backup local (evita perda em caso de falha de rede/regras)

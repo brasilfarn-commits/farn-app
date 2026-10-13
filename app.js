@@ -11425,6 +11425,7 @@ function cavLoadList() {
                         (d.turma ? '<span><i class="fa-solid fa-users" style="margin-right:3px"></i>' + escHTML(d.turma) + '</span>' : '') +
                         (d.disciplina ? '<span><i class="fa-solid fa-book" style="margin-right:3px"></i>' + escHTML(d.disciplina) + '</span>' : '') +
                         '<span><i class="fa-solid fa-list-check" style="margin-right:3px"></i>' + qtd + ' questões</span>' +
+                        (d.alunosSelecionados && d.alunosSelecionados.length ? '<span style="color:#7c3aed;font-weight:700"><i class="fa-solid fa-rotate-right" style="margin-right:3px"></i>Recuperação: ' + d.alunosSelecionados.length + ' aluno(s)</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
@@ -11434,6 +11435,7 @@ function cavLoadList() {
                     (!isPratica && d.ativa ? '<button class="btn-danger btn-sm" title="Desativar esta ' + (isFinal ? 'AV Final' : 'AV Teórica') + ' — os alunos não poderão mais ler as questões nem responder." onclick="cavDesativarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-pause"></i> DESATIVAR PARA RESPOSTAS</button>' : '') +
                     '<button class="btn-warning btn-sm" title="Comunicar que a AV estará disponível em breve (os alunos ainda não poderão responder)" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
                     '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
+                    (!isPratica ? '<button class="btn-outline btn-sm" title="Escolher quais alunos podem FAZER ou REFAZER esta AV (recuperação)" onclick="cavRecuperacaoAbrir(\'' + id + '\')"><i class="fa-solid fa-rotate-right"></i> ' + ((d.alunosSelecionados && d.alunosSelecionados.length) ? 'Recuperação (' + d.alunosSelecionados.length + ')' : 'Ativar Recuperação') + '</button>' : '') +
                     '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
             container.appendChild(card);
@@ -11679,6 +11681,141 @@ function cavAtualizarAlunosCount() {
     if (!el) return;
     const n = Object.keys(cavAlunosSel || {}).length;
     el.textContent = n ? '· ' + n + ' selecionado(s)' : '· turma inteira';
+}
+
+/* ===== RECUPERACAO DE UMA AV JA CRIADA =====
+   Botao "Ativar Recuperacao" na lista de AVs: abre a lista de alunos da turma
+   da AV para o admin escolher quem podera FAZER ou REFAZER a mesma AV.
+   Grava avaliacoes.<id>.alunosSelecionados (lista de CPFs sem pontuacao), que e
+   a mesma base lida pelo Portal do Aluno. Lista vazia = turma inteira. */
+let cavRecAvId = null;
+let cavRecSel = {};
+let cavRecDisp = [];
+let cavRecFiltro = '';
+
+function cavRecuperacaoAbrir(id) {
+    const overlay = document.getElementById('cav-recuperacao-overlay');
+    if (!overlay) return;
+    cavRecAvId = id;
+    cavRecSel = {};
+    cavRecDisp = [];
+    cavRecFiltro = '';
+    const busca = document.getElementById('cav-rec-busca');
+    if (busca) busca.value = '';
+    const nomeEl = document.getElementById('cav-rec-av-nome');
+    if (nomeEl) nomeEl.textContent = 'Carregando...';
+    const lista = document.getElementById('cav-rec-lista');
+    if (lista) lista.innerHTML = '<p style="font-size:12px;color:#94a3b8;margin:6px">Carregando alunos...</p>';
+    const countEl = document.getElementById('cav-rec-count');
+    if (countEl) countEl.textContent = '';
+    overlay.classList.remove('hidden');
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); cavRecFechar(); return; }
+        const d = doc.data() || {};
+        if (d.tipo === 'pratica' || d.tipo === 'final_pratica') {
+            alert('A recuperação se aplica a AV Teórica.');
+            cavRecFechar();
+            return;
+        }
+        (d.alunosSelecionados || []).forEach(function (c) { const k = cavCpfLimpo(c); if (k) cavRecSel[k] = true; });
+        const fonte = (typeof candidatos !== 'undefined' && candidatos) ? candidatos : [];
+        fonte.forEach(function (c) {
+            if (!c) return;
+            if (String(c.projeto || '').trim() !== String(d.projeto || '').trim()) return;
+            if (String(c.turma || '').trim() !== String(d.turma || '').trim()) return;
+            cavRecDisp.push({ cpf: c.cpf || '', nome: c.nome || c.cpf || '', matricula: c.matricula || '' });
+        });
+        cavRecDisp.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome)); });
+        if (nomeEl) {
+            const extra = (d.enviada === true) ? '' : ' <span style="color:#dc2626;font-weight:700">(AV ainda não enviada — use Enviar antes, senão os alunos não a veem)</span>';
+            nomeEl.innerHTML = '<b>' + escHTML(d.nome || 'Avaliação') + '</b>'
+                + (d.turma ? ' · ' + escHTML(d.turma) : '')
+                + (d.projeto ? ' · ' + escHTML(d.projeto) : '')
+                + extra;
+        }
+        if (!cavRecDisp.length) {
+            if (lista) lista.innerHTML = '<p style="font-size:12px;color:#94a3b8;margin:6px">Nenhum aluno nesta turma (verifique se a turma de envio está correta).</p>';
+        } else {
+            cavRecRender();
+        }
+        cavRecCount();
+    }).catch(e => { alert('Erro ao abrir recuperação: ' + e.message); cavRecFechar(); });
+}
+
+function cavRecRender() {
+    const lista = document.getElementById('cav-rec-lista');
+    if (!lista) return;
+    const f = (cavRecFiltro || '').trim().toLowerCase();
+    lista.innerHTML = '';
+    let mostrados = 0;
+    cavRecDisp.forEach(function (a) {
+        const k = cavCpfLimpo(a.cpf);
+        if (!k) return;
+        if (!cavAlunoVisivel(a, f)) return;
+        mostrados++;
+        const marcado = cavRecSel[k] ? ' checked' : '';
+        const item = document.createElement('label');
+        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:#1e293b';
+        item.innerHTML =
+            '<input type="checkbox" value="' + escHTML(k) + '"' + marcado + ' onchange="cavRecToggle(this.value,this.checked)" style="width:16px;height:16px;flex-shrink:0;cursor:pointer">' +
+            '<span style="flex:1">' + escHTML(a.nome) + '</span>' +
+            (a.matricula ? '<span style="font-size:11px;color:#94a3b8;font-family:monospace">' + escHTML(a.matricula) + '</span>' : '');
+        lista.appendChild(item);
+    });
+    if (!mostrados) lista.innerHTML = '<p style="font-size:12px;color:#94a3b8;margin:6px">Nenhum aluno encontrado para a busca.</p>';
+    cavRecCount();
+}
+
+function cavRecFiltrar(t) { cavRecFiltro = t || ''; cavRecRender(); }
+
+function cavRecToggle(cpf, marcado) {
+    const k = cavCpfLimpo(cpf);
+    if (!k) return;
+    if (marcado) cavRecSel[k] = true; else delete cavRecSel[k];
+    cavRecCount();
+}
+
+function cavRecMarcarTodos(v) {
+    const f = (cavRecFiltro || '').trim().toLowerCase();
+    if (v) {
+        cavRecDisp.forEach(function (a) {
+            if (!cavAlunoVisivel(a, f)) return;
+            const k = cavCpfLimpo(a.cpf);
+            if (k) cavRecSel[k] = true;
+        });
+    } else {
+        cavRecSel = {};
+    }
+    cavRecRender();
+}
+
+function cavRecCount() {
+    const el = document.getElementById('cav-rec-count');
+    if (!el) return;
+    const n = Object.keys(cavRecSel || {}).length;
+    el.textContent = n ? n + ' aluno(s) marcado(s)' : 'turma inteira (sem recuperação)';
+}
+
+function cavRecFechar() {
+    const overlay = document.getElementById('cav-recuperacao-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+function cavRecSalvar() {
+    const id = cavRecAvId;
+    if (!id) return;
+    const sel = Object.keys(cavRecSel || {});
+    const msg = sel.length
+        ? 'Ativar recuperação para ' + sel.length + ' aluno(s)? Somente os marcados verão, responderão e poderão REFAZER esta AV no Portal do Aluno (mesmo com a AV desativada).'
+        : 'Salvar SEM alunos marcados? Isso REMOVE a recuperação e libera a AV para a turma inteira.';
+    if (!confirm(msg)) return;
+    dbFirestore.collection(FB_AVALIACOES).doc(id).update({ alunosSelecionados: sel, recuperacaoEm: new Date() })
+        .then(() => {
+            alert(sel.length ? 'Recuperação ativada para ' + sel.length + ' aluno(s)!' : 'Recuperação removida (turma inteira).');
+            cavRecFechar();
+            cavLoadList();
+        })
+        .catch(e => alert('Erro ao salvar recuperação: ' + e.message));
 }
 
 // lista de aulas com AV Teorica 'Sim' da turma selecionada para preencher o nome da avaliacao
