@@ -11358,8 +11358,6 @@ function cavAplicarRotuloTipo() {
     if (wrap) wrap.style.display = isFinal ? 'none' : '';
     const selNome = document.getElementById('cav-nome');
     if (isFinal && selNome) selNome.innerHTML = '<option value="">Prova final da turma (sem aula)</option>';
-    const novoBtn = document.getElementById('cav-nova-btn');
-    if (novoBtn) novoBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Nova AV ' + rotuloCampo;
 }
 
 function cavLoadList() {
@@ -11456,7 +11454,7 @@ function cavLoadList() {
         /* Duas colunas: AV Teoricas | AV Praticas */
         const grid = document.createElement('div');
         grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;align-items:start';
-        const montarColuna = (titulo, icone, cor, arr) => {
+        const montarColuna = (titulo, icone, cor, arr, tipoCriar) => {
             const col = document.createElement('div');
             col.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px';
             const head = document.createElement('div');
@@ -11465,6 +11463,14 @@ function cavLoadList() {
                 '<span style="font-size:13px;font-weight:800;color:#0f172a">' + titulo + '</span>' +
                 '<span style="margin-left:auto;font-size:11px;font-weight:700;color:' + cor + ';background:' + cor + '1a;padding:2px 9px;border-radius:20px">' + arr.length + '</span>';
             col.appendChild(head);
+            if (tipoCriar) {
+                const btnNova = document.createElement('button');
+                btnNova.className = 'btn-outline btn-sm';
+                btnNova.style.cssText = 'width:100%;margin-bottom:10px;justify-content:center';
+                btnNova.innerHTML = '<i class="fa-solid fa-plus"></i> ' + (tipoCriar === 'pratica' ? 'Nova AV Prática' : 'Nova AV Teórica');
+                btnNova.onclick = function () { cavEscolherTipoConfirmar(tipoCriar); };
+                col.appendChild(btnNova);
+            }
             if (arr.length === 0) {
                 const vazio = document.createElement('div');
                 vazio.style.cssText = 'text-align:center;color:#94a3b8;font-size:12px;padding:18px 6px';
@@ -11475,8 +11481,8 @@ function cavLoadList() {
             }
             return col;
         };
-        grid.appendChild(montarColuna('AV Teóricas', 'fa-square-check', '#16a34a', teoricas));
-        grid.appendChild(montarColuna('AV Práticas', 'fa-screwdriver-wrench', '#2563eb', praticas));
+        grid.appendChild(montarColuna('AV Teóricas', 'fa-square-check', '#16a34a', teoricas, 'teorica'));
+        grid.appendChild(montarColuna('AV Práticas', 'fa-screwdriver-wrench', '#2563eb', praticas, 'pratica'));
         container.innerHTML = '';
         container.appendChild(grid);
     }).catch(() => {
@@ -12622,9 +12628,40 @@ function cavFecharRespostas() {
 }
 
 /* ===== SELECAO DE TIPO DE AVALIACAO (TEORICA / PRATICA) ===== */
+let cavModoAtual = 'lista'; // 'lista' = colunas Teorica/Pratica | 'final' = area limpa de AV Final
+
+/* Abre o dialogo inicial com os DOIS grupos: AV Teorica/Pratica e AV Final Teorica/Pratica. */
 function cavEscolherTipo() {
     const o = document.getElementById('cav-tipo-overlay');
     if (o) o.classList.remove('hidden');
+}
+
+/* Alterna a tela: 'lista' mostra as duas colunas (Teoricas | Praticas) com os botoes de
+   criar no topo de cada coluna; 'final' esconde a lista e mostra a area limpa da AV Final. */
+function cavModo(modo) {
+    cavModoAtual = (modo === 'final') ? 'final' : 'lista';
+    const toolbar = document.getElementById('cav-toolbar');
+    const list = document.getElementById('cav-list');
+    const finalMenu = document.getElementById('cav-final-menu');
+    const form = document.getElementById('cav-form');
+    if (cavModoAtual === 'final') {
+        if (toolbar) toolbar.style.display = 'none';
+        if (list) list.style.display = 'none';
+        if (finalMenu) finalMenu.style.display = 'block';
+        if (form) form.style.display = 'none';
+    } else {
+        if (toolbar) toolbar.style.display = 'flex';
+        if (finalMenu) finalMenu.style.display = 'none';
+        if (list) list.style.display = '';
+        cavLoadList();
+    }
+}
+
+/* Escolha do dialogo inicial: 'lista' (AV Teorica/Pratica) ou 'final' (AV Final Teorica/Pratica). */
+function cavEscolherModo(modo) {
+    cavFecharTipo();
+    cavModo(modo);
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
 }
 
 function cavEscolherTipoConfirmar(tipo) {

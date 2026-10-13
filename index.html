@@ -779,7 +779,7 @@
                         <i class="fa-solid fa-clipboard-check"></i>
                         <span>Seção de Avaliação</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-criar-avaliacao" onclick="showAdminSection('admin-criar-avaliacao', this); cavLoadList(); cavEscolherTipo()">
+                    <a href="#" class="nav-item" data-secao="admin-criar-avaliacao" onclick="showAdminSection('admin-criar-avaliacao', this); cavModo('lista'); cavEscolherTipo()">
                         <i class="fa-solid fa-list-check"></i>
                         <span>Criar Avaliação</span>
                     </a>
@@ -892,7 +892,7 @@
                                 <i class="fa-solid fa-clipboard-check"></i>
                                 <span>Seção de Avaliação</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-criar-avaliacao', document.querySelector('.nav-item[data-secao="admin-criar-avaliacao"]'))); cavLoadList(); cavEscolherTipo()">
+                            <div class="admin-home-card" onclick="showAdminSection('admin-criar-avaliacao', document.querySelector('.nav-item[data-secao=admin-criar-avaliacao]')); cavModo('lista'); cavEscolherTipo()">
                                 <i class="fa-solid fa-list-check"></i>
                                 <span>Criar Avaliação</span>
                             </div>
@@ -3142,10 +3142,24 @@
                         <div class="card-body">
 
                             <!-- Toolbar de avaliações salvas -->
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+                            <div id="cav-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
                                 <button id="cav-nova-btn" class="btn-primary btn-sm" onclick="cavEscolherTipo()"><i class="fa-solid fa-plus"></i> Nova Avaliação</button>
                                 <button class="btn-outline btn-sm" onclick="cavLoadList()"><i class="fa-solid fa-rotate"></i> Atualizar Lista</button>
                             </div>
+
+                            <!-- Area limpa do modo AV Final (sem lista) -->
+                            <div id="cav-final-menu" style="display:none;margin-bottom:24px">
+                                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px">
+                                    <h4 style="font-size:14px;color:#0f172a;margin:0 0 4px"><i class="fa-solid fa-graduation-cap" style="color:#7c3aed;margin-right:6px"></i> AV Final (nota certificadora)</h4>
+                                    <p style="font-size:12px;color:#64748b;margin:0 0 12px">Prova final por turma, sem vínculo com aula. Escolha o tipo para abrir o formulário abaixo:</p>
+                                    <div style="display:flex;gap:10px;flex-wrap:wrap">
+                                        <button onclick="cavEscolherTipoConfirmar('final_teorica')" style="background:#7c3aed;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><i class="fa-solid fa-plus"></i> Nova AV Final Teórica</button>
+                                        <button onclick="cavEscolherTipoConfirmar('final_pratica')" style="background:#0891b2;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><i class="fa-solid fa-plus"></i> Nova AV Final Prática</button>
+                                        <button class="btn-outline btn-sm" onclick="cavModo('lista')" style="margin-left:auto"><i class="fa-solid fa-arrow-left"></i> Voltar para a lista</button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div id="cav-list" style="margin-bottom:24px">
                                 <div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>
                             </div>
@@ -3297,33 +3311,24 @@
                     </div>
                 </div>
 
-                <!-- MODAL SELECAO TIPO AVALIACAO -->
-                <div id="cav-tipo-overlay" class="modal-overlay hidden" onclick="if(event.target===this)">
-                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:480px">
+                <!-- MODAL SELECAO TIPO AVALIACAO (2 grupos) -->
+                <div id="cav-tipo-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharTipo()">
+                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:520px">
                         <div class="modal-header">
-                            <h3><i class="fa-solid fa-clipboard-list" style="margin-right:6px"></i> Qual tipo de Avaliação?</h3>
+                            <h3><i class="fa-solid fa-clipboard-list" style="margin-right:6px"></i> O que você vai criar?</h3>
+                            <button class="modal-close" onclick="cavFecharTipo()"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                         <div class="modal-body">
-                            <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6">Selecione o tipo de avaliação que deseja criar. A página se adapta ao vínculo das aulas com o tipo escolhido.</p>
+                            <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6"><b>AV Teórica / Prática</b> abre a lista em duas colunas (AV Teóricas e AV Práticas). <b>AV Final Teórica / Prática</b> abre uma área limpa, sem lista, para a prova final.</p>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                                <button onclick="cavEscolherTipoConfirmar('teorica')" style="background:#2563eb;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
-                                    <i class="fa-solid fa-book-open" style="font-size:28px"></i>
-                                    <span style="font-size:14px;font-weight:800">AV Teórica</span>
-                                    <span style="font-size:11px;opacity:.85">Aulas com AV Teórica = Sim</span>
+                                <button onclick="cavEscolherModo('lista')" style="background:#2563eb;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
+                                    <i class="fa-solid fa-table-columns" style="font-size:28px"></i>
+                                    <span style="font-size:14px;font-weight:800">AV Teórica / Prática</span>
+                                    <span style="font-size:11px;opacity:.85">Duas colunas: Teóricas e Práticas</span>
                                 </button>
-                                <button onclick="cavEscolherTipoConfirmar('pratica')" style="background:#16a34a;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
-                                    <i class="fa-solid fa-flask" style="font-size:28px"></i>
-                                    <span style="font-size:14px;font-weight:800">AV Prática</span>
-                                    <span style="font-size:11px;opacity:.85">Aulas com AV Prática = Sim</span>
-                                </button>
-                                <button onclick="cavEscolherTipoConfirmar('final_teorica')" style="background:#7c3aed;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
+                                <button onclick="cavEscolherModo('final')" style="background:#7c3aed;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
                                     <i class="fa-solid fa-graduation-cap" style="font-size:28px"></i>
-                                    <span style="font-size:14px;font-weight:800">AV Final Teórica</span>
-                                    <span style="font-size:11px;opacity:.85">Prova final (nota certificadora)</span>
-                                </button>
-                                <button onclick="cavEscolherTipoConfirmar('final_pratica')" style="background:#0891b2;color:#fff;border:none;border-radius:14px;padding:22px 12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px">
-                                    <i class="fa-solid fa-graduation-cap" style="font-size:28px"></i>
-                                    <span style="font-size:14px;font-weight:800">AV Final Prática</span>
+                                    <span style="font-size:14px;font-weight:800">AV Final Teórica / Prática</span>
                                     <span style="font-size:11px;opacity:.85">Prova final (nota certificadora)</span>
                                 </button>
                             </div>
@@ -5084,7 +5089,7 @@
     <script src="ficha-geral-compartilhar.js?v=16"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=77"></script>
+    <script src="app.js?v=78"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
