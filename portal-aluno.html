@@ -4799,17 +4799,29 @@
         } catch (e) { return false; }
     }
 
-    function paRavMontarCard(av, jaAvaliada, recuperacao) {
+    /* Recuperacao PARADA: o admin encerrou manualmente a janela de respostas.
+       O aluno selecionado deixa de responder/refazer e passa a SOMENTE visualizar
+       (e apenas se ja concluiu). Reabre quando o admin salva a recuperacao de novo. */
+    function paRavRecuperacaoParada(d) {
+        return !!(d && d.recuperacaoParada === true);
+    }
+
+    function paRavMontarCard(av, jaAvaliada, recuperacao, parada) {
         var d = av.data;
         var isPratica = (d.tipo === 'pratica');
         var rec = (recuperacao === true);
+        var recParada = (parada === true) && rec;
         var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true && !rec);
-        var cor = rec ? '#7c3aed' : (emBreve ? '#dc2626' : (jaAvaliada ? '#556B2F' : '#6B8E23'));
+        var cor = recParada ? '#64748b' : (rec ? '#7c3aed' : (emBreve ? '#dc2626' : (jaAvaliada ? '#556B2F' : '#6B8E23')));
         var btnVisualizar = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#6B8E23,#2F3D14);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
         var btnRec = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-rotate-right" style="margin-right:4px"></i>' + (jaAvaliada ? 'Refazer Avaliação' : 'Fazer Recuperação') + '</button>';
         var btn;
         if (isPratica) {
             btn = btnVisualizar;
+        } else if (recParada) {
+            btn = jaAvaliada
+                ? btnVisualizar
+                : '<span style="display:inline-flex;align-items:center;gap:5px;background:#64748b;color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid fa-hand" style="margin-right:4px"></i>Recuperação encerrada</span>';
         } else if (rec) {
             btn = btnRec + (jaAvaliada ? '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:#eef2f7;color:#475569;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Ver última</button>' : '');
         } else if (jaAvaliada) {
@@ -4819,7 +4831,7 @@
         } else {
             btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
         }
-        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (rec ? 'Recuperação' : (emBreve ? 'Em breve' : (jaAvaliada ? 'Avaliada' : 'Disponível'))) + '</span>';
+        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (recParada ? 'Recuperação encerrada' : (rec ? 'Recuperação' : (emBreve ? 'Em breve' : (jaAvaliada ? 'Avaliada' : 'Disponível')))) + '</span>';
         var card = document.createElement('div');
         card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
         card.innerHTML =
@@ -4827,7 +4839,7 @@
             '<div style="flex:1;min-width:160px">' +
                 '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
                 '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
-                (rec ? '<div style="font-size:11px;color:#7c3aed;margin-top:2px">Liberada para recuperação — você pode ' + (jaAvaliada ? 'refazer' : 'fazer') + ' esta avaliação.</div>' : '') +
+                (rec ? '<div style="font-size:11px;color:' + (recParada ? '#64748b' : '#7c3aed') + ';margin-top:2px">' + (recParada ? ('Recuperação encerrada — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'a janela de respostas foi encerrada pelo instrutor.')) : ('Liberada para recuperação — você pode ' + (jaAvaliada ? 'refazer' : 'fazer') + ' esta avaliação.')) + '</div>' : '') +
                 (emBreve ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Disponível em breve para responder.</div>' : '') +
                 (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
             '</div>' +
@@ -4983,7 +4995,7 @@
                         var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avTe.id).get();
                         if (rDoc.exists) avalTe = true;
                     } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
-                    lista.appendChild(paRavMontarCard(avTe, avalTe, paRavAlunoSelecionado(avTe.data)));
+                    lista.appendChild(paRavMontarCard(avTe, avalTe, paRavAlunoSelecionado(avTe.data), paRavRecuperacaoParada(avTe.data)));
                 }
             }
             if (finais.length > 0) {
@@ -4995,7 +5007,7 @@
                         var rfDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avFi.id).get();
                         if (rfDoc.exists) avalFi = true;
                     } catch (e) { console.error('Falha ao verificar resposta de', avFi.id, e); }
-                    lista.appendChild(paRavMontarCard(avFi, avalFi, paRavAlunoSelecionado(avFi.data)));
+                    lista.appendChild(paRavMontarCard(avFi, avalFi, paRavAlunoSelecionado(avFi.data), paRavRecuperacaoParada(avFi.data)));
                 }
             }
         } catch (e) {
@@ -5021,6 +5033,7 @@
             if (!paRavAlunoPermitido(d)) { alert('Esta avaliação não está disponível para você.'); return; }
             if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
             var rec = paRavAlunoSelecionado(d);
+            if (rec && paRavRecuperacaoParada(d)) { paRavVisualizar(avId); return; }
             if (d.ativa !== true && !rec) { alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return; }
             paRavAtual = { id: avId, conteudo: d };
             paRavRespostas = {};
@@ -5322,6 +5335,8 @@
                         '</div>';
                 });
                 resumoHtml = notaHtml + qHtml2;
+            } else if (paRavRecuperacaoParada(d) && !respDoc.exists) {
+                resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-hand" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Recuperação encerrada</h4><p style="font-size:13px">A recuperação desta avaliação foi encerrada pelo instrutor e você não enviou respostas.</p></div>';
             } else if (!respDoc.exists) {
                 resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-file-circle-question" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Ainda não respondida</h4><p style="font-size:13px">Você ainda não enviou respostas para esta avaliação.</p></div>';
             } else {

@@ -11385,11 +11385,15 @@ function cavLoadList() {
         const praticas = [];
         const contagem = {};
         const rotulos = {};
+        const respondentesPorAv = {}; // avId -> { cpfDigitos: true }
         if (respostas) {
             respostas.forEach(rDoc => {
-                const avId = (rDoc.data() || {}).avaliacaoId;
+                const r = rDoc.data() || {};
+                const avId = r.avaliacaoId;
                 if (!avId) return;
                 contagem[avId] = (contagem[avId] || 0) + 1;
+                const c = String(r.cpf || '').replace(/\D/g, '');
+                if (c) { (respondentesPorAv[avId] = respondentesPorAv[avId] || {})[c] = true; }
             });
         }
         if (avaliacoesAlunos) {
@@ -11407,6 +11411,11 @@ function cavLoadList() {
             const respondidas = contagem[id] || 0;
             const isPratica = (d.tipo === 'pratica');
             const isFinal = cavEhFinal(d.tipo);
+            const selRec = d.alunosSelecionados || [];
+            const temRec = selRec.length > 0;
+            const recParada = (d.recuperacaoParada === true);
+            const respSet = respondentesPorAv[id] || {};
+            const pendentes = selRec.filter(c => !respSet[String(c || '').replace(/\D/g, '')]).length;
             let cor, rotuloEstado;
             if (respondidas > 0) { cor = '#16a34a'; rotuloEstado = 'Respondida :: ' + respondidas + (rotulos[id] ? ' (' + rotulos[id] + ')' : ' aluno(s)'); }
             else if (!isPratica && d.ativa) { cor = '#f59e0b'; rotuloEstado = 'Ativa · aguardando respostas'; }
@@ -11426,7 +11435,7 @@ function cavLoadList() {
                         (d.turma ? '<span><i class="fa-solid fa-users" style="margin-right:3px"></i>' + escHTML(d.turma) + '</span>' : '') +
                         (d.disciplina ? '<span><i class="fa-solid fa-book" style="margin-right:3px"></i>' + escHTML(d.disciplina) + '</span>' : '') +
                         '<span><i class="fa-solid fa-list-check" style="margin-right:3px"></i>' + qtd + ' questões</span>' +
-                        (d.alunosSelecionados && d.alunosSelecionados.length ? '<span style="color:#7c3aed;font-weight:700"><i class="fa-solid fa-rotate-right" style="margin-right:3px"></i>Recuperação: ' + d.alunosSelecionados.length + ' aluno(s)</span>' : '') +
+                        (temRec ? '<span style="color:' + (recParada ? '#64748b' : '#7c3aed') + ';font-weight:700"><i class="fa-solid fa-rotate-right" style="margin-right:3px"></i>Recuperação: ' + pendentes + ' pendente(s) de ' + selRec.length + (recParada ? ' · PARADA' : '') + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
@@ -11436,7 +11445,8 @@ function cavLoadList() {
                     (!isPratica && d.ativa ? '<button class="btn-danger btn-sm" title="Desativar esta ' + (isFinal ? 'AV Final' : 'AV Teórica') + ' — os alunos não poderão mais ler as questões nem responder." onclick="cavDesativarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-pause"></i> DESATIVAR PARA RESPOSTAS</button>' : '') +
                     '<button class="btn-warning btn-sm" title="Comunicar que a AV estará disponível em breve (os alunos ainda não poderão responder)" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
                     '<button class="btn-primary btn-sm" title="Listar avaliados" onclick="cavListarAvaliados(\'' + id + '\')"><i class="fa-solid fa-users"></i> Listar Avaliados</button>' +
-                    (!isPratica ? '<button class="btn-outline btn-sm" title="Escolher quais alunos podem FAZER ou REFAZER esta AV (recuperação)" onclick="cavRecuperacaoAbrir(\'' + id + '\')"><i class="fa-solid fa-rotate-right"></i> ' + ((d.alunosSelecionados && d.alunosSelecionados.length) ? 'Recuperação (' + d.alunosSelecionados.length + ')' : 'Ativar Recuperação') + '</button>' : '') +
+                    (!isPratica ? '<button class="btn-outline btn-sm" title="Escolher quais alunos podem FAZER ou REFAZER esta AV (recuperação). Salvar reabre a recuperação se estiver parada." onclick="cavRecuperacaoAbrir(\'' + id + '\')"><i class="fa-solid fa-rotate-right"></i> ' + (temRec ? (recParada ? 'Reabrir Recuperação (' + pendentes + ')' : 'Recuperação (' + pendentes + ')') : 'Ativar Recuperação') + '</button>' : '') +
+                    (!isPratica && temRec && !recParada ? '<button class="btn-danger btn-sm" title="Parar a recuperação: os alunos selecionados deixam de responder/refazer; somente quem já concluiu poderá visualizar" onclick="cavPararRecuperacao(\'' + id + '\')"><i class="fa-solid fa-hand"></i> Parar Recuperação</button>' : '') +
                     '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
             if (d.tipo === 'pratica' || d.tipo === 'final_pratica') praticas.push(card);
@@ -11472,6 +11482,25 @@ function cavLoadList() {
     }).catch(() => {
         container.innerHTML = '<div class="empty-state" style="text-align:center;padding:20px"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
     });
+    cavListAutoRefresh();
+}
+
+let cavListRespWatch = null;
+let cavListRefreshTimer = null;
+
+/* Mantem o numero de pendentes em recuperacao atualizado: quando um aluno envia
+   a resposta (avaliacoesRespostas muda), a lista e recarregada sozinha. */
+function cavListAutoRefresh() {
+    if (cavListRespWatch) return;
+    try {
+        cavListRespWatch = dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).onSnapshot(function() {
+            if (cavListRefreshTimer) clearTimeout(cavListRefreshTimer);
+            cavListRefreshTimer = setTimeout(function() {
+                cavListRefreshTimer = null;
+                if (document.getElementById('cav-list')) cavLoadList();
+            }, 1500);
+        }, function() {});
+    } catch (e) { /* ignora ambientes sem Realtime Database */ }
 }
 
 function cavAbrirEnvioPorId(id) {
@@ -11835,16 +11864,33 @@ function cavRecSalvar() {
     if (!id) return;
     const sel = Object.keys(cavRecSel || {});
     const msg = sel.length
-        ? 'Ativar recuperação para ' + sel.length + ' aluno(s)? Somente os marcados verão, responderão e poderão REFAZER esta AV no Portal do Aluno (mesmo com a AV desativada).'
+        ? 'Ativar recuperação para ' + sel.length + ' aluno(s)? Somente os marcados verão, responderão e poderão REFAZER esta AV no Portal do Aluno (mesmo com a AV desativada). Salvar também REABRE a recuperação, caso esteja parada.'
         : 'Salvar SEM alunos marcados? Isso REMOVE a recuperação e libera a AV para a turma inteira.';
     if (!confirm(msg)) return;
-    dbFirestore.collection(FB_AVALIACOES).doc(id).update({ alunosSelecionados: sel, recuperacaoEm: new Date() })
+    dbFirestore.collection(FB_AVALIACOES).doc(id).update({ alunosSelecionados: sel, recuperacaoEm: new Date(), recuperacaoParada: false, recuperacaoParadaEm: null })
         .then(() => {
             alert(sel.length ? 'Recuperação ativada para ' + sel.length + ' aluno(s)!' : 'Recuperação removida (turma inteira).');
             cavRecFechar();
             cavLoadList();
         })
         .catch(e => alert('Erro ao salvar recuperação: ' + e.message));
+}
+
+/* Para a recuperacao de uma AV: os alunos selecionados deixam de responder/refazer
+   e passam a SOMENTE visualizar (e apenas se ja concluiram). Reabre pelo botao
+   "Ativar Recuperacao" (que zera a marca ao salvar). */
+function cavPararRecuperacao(id) {
+    dbFirestore.collection(FB_AVALIACOES).doc(id).get().then(doc => {
+        if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+        const d = doc.data() || {};
+        const n = (d.alunosSelecionados || []).length;
+        if (!n) { alert('Esta AV não está em recuperação.'); return; }
+        if (d.recuperacaoParada === true) { alert('A recuperação desta AV já está parada.'); return; }
+        if (!confirm('Parar a recuperação de "' + (d.nome || 'Avaliação') + '"?\n\nOs ' + n + ' aluno(s) selecionado(s) deixarão de responder/refazer. Apenas quem JÁ concluiu poderá visualizar.\n\nVocê pode reabrir depois pelo botão Ativar Recuperação.')) return;
+        dbFirestore.collection(FB_AVALIACOES).doc(id).update({ recuperacaoParada: true, recuperacaoParadaEm: new Date() })
+            .then(() => { alert('Recuperação parada. Os alunos agora só visualizam (quem já concluiu).'); cavLoadList(); })
+            .catch(e => alert('Erro ao parar recuperação: ' + e.message));
+    }).catch(e => alert('Erro ao parar recuperação: ' + e.message));
 }
 
 // lista de aulas com AV Teorica 'Sim' da turma selecionada para preencher o nome da avaliacao
