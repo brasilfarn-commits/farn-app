@@ -3183,6 +3183,22 @@
                                     </div>
                                 </div>
 
+                                <!-- Alunos que farao a AV (recuperacao) -->
+                                <div class="form-section-card" style="margin-bottom:18px" id="cav-alunos-card">
+                                    <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                                        <h3 style="display:flex;align-items:center;gap:6px;margin:0"><i class="fa-solid fa-user-check"></i> Alunos que farão esta AV <span id="cav-alunos-count" style="font-size:12px;font-weight:700;color:#475569"></span></h3>
+                                    </div>
+                                    <div class="form-section-body">
+                                        <p style="font-size:12px;color:#64748b;margin:0 0 10px">Deixe <b>nenhum aluno marcado</b> para liberar a avaliação para a <b>turma inteira</b>. Ao marcar alunos, <b>somente os escolhidos</b> verão e responderão esta AV no Portal do Aluno (ideal para recuperação).</p>
+                                        <input type="text" id="cav-alunos-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Selecione a turma para listar os alunos..." oninput="cavFiltrarAlunos(this.value)" disabled>
+                                        <div id="cav-alunos-lista" style="max-height:230px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#f8fafc"><p style="font-size:12px;color:#94a3b8;margin:6px">Selecione projeto e turma acima.</p></div>
+                                        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                                            <button type="button" class="btn-outline btn-sm" onclick="cavAlunosMarcarTodos(true)"><i class="fa-solid fa-check-double"></i> Marcar todos</button>
+                                            <button type="button" class="btn-outline btn-sm" onclick="cavAlunosMarcarTodos(false)"><i class="fa-solid fa-eraser"></i> Limpar seleção</button>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Questoes -->
                                 <div class="form-section-card" style="margin-bottom:18px">
                                     <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -5043,7 +5059,7 @@
     <script src="ficha-geral-compartilhar.js?v=16"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="app.js?v=73"></script>
+    <script src="app.js?v=74"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

@@ -4771,6 +4771,20 @@
     var paRavRespostas = {};
     var paRavCorretas = {};
 
+    /* Recuperacao: a AV pode ser restrita a alunos escolhidos no admin
+       (avaliacoes.alunosSelecionados = [cpf...]). Sem lista, vale a turma toda. */
+    function paRavAlunoPermitido(d) {
+        try {
+            var sel = d && d.alunosSelecionados;
+            if (!sel || !sel.length) return true;
+            var meu = String((paUser && paUser.cpf) || '').replace(/[^0-9a-zA-Z]/g, '');
+            for (var i = 0; i < sel.length; i++) {
+                if (String(sel[i] || '').replace(/[^0-9a-zA-Z]/g, '') === meu) return true;
+            }
+            return false;
+        } catch (e) { return true; }
+    }
+
     function paRavMontarCard(av, jaAvaliada) {
         var d = av.data;
         var isPratica = (d.tipo === 'pratica');
@@ -4897,7 +4911,7 @@
             var finais = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
-                if (d.enviada === true && d.turma === myTurma) {
+                if (d.enviada === true && d.turma === myTurma && paRavAlunoPermitido(d)) {
                     if (d.tipo === 'pratica') pratica.push({ id: doc.id, data: d });
                     else if (d.tipo === 'final_teorica' || d.tipo === 'final_pratica') finais.push({ id: doc.id, data: d });
                     else teoria.push({ id: doc.id, data: d });
@@ -4984,6 +4998,7 @@
             if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
             var d = doc.data();
             if (d.enviada !== true || d.turma !== (paUser.turma || '').trim()) { alert('Esta avaliação não está disponível para a sua turma.'); return; }
+            if (!paRavAlunoPermitido(d)) { alert('Esta avaliação não está disponível para você.'); return; }
             if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
             if (d.ativa !== true) { alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return; }
             paRavAtual = { id: avId, conteudo: d };
@@ -5226,7 +5241,7 @@
             if (!avDoc.exists) { conteudo.innerHTML = '<p style="color:#dc2626">Avaliação não encontrada.</p>'; return; }
             var d = avDoc.data() || {};
             var questoes = d.questoes || [];
-            var mostrar = (d.enviada === true && d.turma === (paUser.turma || '').trim());
+            var mostrar = (d.enviada === true && d.turma === (paUser.turma || '').trim()) && paRavAlunoPermitido(d);
             var r = respDoc.exists ? respDoc.data() : {};
             var respostas = r.respostas || {};
             var respostasCertas = (r.respostasCertas != null ? r.respostasCertas : '-');

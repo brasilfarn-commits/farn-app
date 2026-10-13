@@ -11314,6 +11314,11 @@ let cavQMax = 20;
 let cavAulasOptions = [];
 let cavAulasFiltro = '';
 let cavTipo = 'teorica';
+/* Recuperacao: alunos autorizados a responder esta AV. Mapa cpf-limpo -> true.
+   Vazio = sem restricao (a turma inteira responde, comportamento original). */
+let cavAlunosSel = {};
+let cavAlunosDisp = [];
+let cavAlunosFiltro = '';
 
 // retorna o campo da aula que identifica o tipo de avaliacao (avTeorica/avPratica)
 // Prova final (certificadora): nao se vincula a aula; a nota vira o campo
@@ -11475,6 +11480,8 @@ function cavNovaAvaliacao() {
     cavEditingId = null;
     cavNomeAula = {};
     cavNomeAtual = '';
+    cavAlunosSel = {};
+    cavAlunosDisp = [];
     document.getElementById('cav-nome').innerHTML = '<option value="">Selecione primeiro a turma...</option>';
     const busca = document.getElementById('cav-aula-busca');
     if (busca) busca.value = '';
@@ -11497,6 +11504,7 @@ function cavNovaAvaliacao() {
     cavAtualizarQCount();
     cavPopulateProjetos();
     cavPopulateDocentes();
+    cavLoadAlunos('', '', []);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -11560,6 +11568,7 @@ function cavOnProjetoChange() {
     const busca = document.getElementById('cav-aula-busca');
     if (busca) { busca.value = ''; busca.disabled = true; }
     cavNomeAula = {};
+    cavLoadAlunos('', '', []); /* troca de projeto limpa a selecao de alunos */
 }
 
 function cavOnTurmaChange() {
@@ -11570,6 +11579,106 @@ function cavOnTurmaChange() {
     if (busca) { busca.value = ''; busca.disabled = !turma; }
     cavNomeAula = {};
     cavLoadAulasNome(proj, turma);
+    cavLoadAlunos(proj, turma, []); /* troca de turma limpa a selecao de alunos */
+}
+
+/* ===== ALUNOS DA AV (recuperacao) =====
+   Lista os alunos da turma para o admin escolher quem podera responder
+   esta AV. Sem ninguem marcado, a AV fica liberada para a turma inteira. */
+function cavCpfLimpo(cpf) {
+    return String(cpf == null ? '' : cpf).replace(/[^0-9a-zA-Z_-]/g, '');
+}
+
+function cavLoadAlunos(proj, turma, selecionados) {
+    const lista = document.getElementById('cav-alunos-lista');
+    const busca = document.getElementById('cav-alunos-busca');
+    cavAlunosDisp = [];
+    cavAlunosFiltro = '';
+    if (busca) { busca.value = ''; busca.disabled = !(proj && turma); }
+    if (selecionados !== undefined && selecionados !== null) {
+        cavAlunosSel = {};
+        (selecionados || []).forEach(function (c) { const k = cavCpfLimpo(c); if (k) cavAlunosSel[k] = true; });
+    }
+    if (!lista) return;
+    if (!proj || !turma) {
+        lista.innerHTML = '<p style="font-size:12px;color:#94a3b8;margin:6px">Selecione projeto e turma acima.</p>';
+        cavAtualizarAlunosCount();
+        return;
+    }
+    const fonte = (typeof candidatos !== 'undefined' && candidatos) ? candidatos : [];
+    fonte.forEach(function (c) {
+        if (!c) return;
+        if (String(c.projeto || '').trim() !== String(proj).trim()) return;
+        if (String(c.turma || '').trim() !== String(turma).trim()) return;
+        cavAlunosDisp.push({ cpf: c.cpf || '', nome: c.nome || c.cpf || '', matricula: c.matricula || '' });
+    });
+    cavAlunosDisp.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome)); });
+    cavRenderAlunos();
+}
+
+function cavAlunoVisivel(a, f) {
+    if (!f) return true;
+    return String(a.nome || '').toLowerCase().indexOf(f) !== -1
+        || String(a.matricula || '').toLowerCase().indexOf(f) !== -1;
+}
+
+function cavRenderAlunos() {
+    const lista = document.getElementById('cav-alunos-lista');
+    if (!lista) return;
+    if (!cavAlunosDisp.length) {
+        lista.innerHTML = '<p style="font-size:12px;color:#94a3b8;margin:6px">Nenhum aluno nesta turma.</p>';
+        cavAtualizarAlunosCount();
+        return;
+    }
+    const f = (cavAlunosFiltro || '').trim().toLowerCase();
+    lista.innerHTML = '';
+    let mostrados = 0;
+    cavAlunosDisp.forEach(function (a) {
+        const k = cavCpfLimpo(a.cpf);
+        if (!k) return;
+        if (!cavAlunoVisivel(a, f)) return;
+        mostrados++;
+        const marcado = cavAlunosSel[k] ? ' checked' : '';
+        const item = document.createElement('label');
+        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:#1e293b';
+        item.innerHTML =
+            '<input type="checkbox" value="' + escHTML(k) + '"' + marcado + ' onchange="cavToggleAluno(this.value,this.checked)" style="width:16px;height:16px;flex-shrink:0;cursor:pointer">' +
+            '<span style="flex:1">' + escHTML(a.nome) + '</span>' +
+            (a.matricula ? '<span style="font-size:11px;color:#94a3b8;font-family:monospace">' + escHTML(a.matricula) + '</span>' : '');
+        lista.appendChild(item);
+    });
+    if (!mostrados) lista.innerHTML = '<p style="font-size:12px;color:#94a3b8;margin:6px">Nenhum aluno encontrado para a busca.</p>';
+    cavAtualizarAlunosCount();
+}
+
+function cavFiltrarAlunos(t) { cavAlunosFiltro = t || ''; cavRenderAlunos(); }
+
+function cavToggleAluno(cpf, marcado) {
+    const k = cavCpfLimpo(cpf);
+    if (!k) return;
+    if (marcado) cavAlunosSel[k] = true; else delete cavAlunosSel[k];
+    cavAtualizarAlunosCount();
+}
+
+function cavAlunosMarcarTodos(v) {
+    const f = (cavAlunosFiltro || '').trim().toLowerCase();
+    if (v) {
+        cavAlunosDisp.forEach(function (a) {
+            if (!cavAlunoVisivel(a, f)) return;
+            const k = cavCpfLimpo(a.cpf);
+            if (k) cavAlunosSel[k] = true;
+        });
+    } else {
+        cavAlunosSel = {};
+    }
+    cavRenderAlunos();
+}
+
+function cavAtualizarAlunosCount() {
+    const el = document.getElementById('cav-alunos-count');
+    if (!el) return;
+    const n = Object.keys(cavAlunosSel || {}).length;
+    el.textContent = n ? '· ' + n + ' selecionado(s)' : '· turma inteira';
 }
 
 // lista de aulas com AV Teorica 'Sim' da turma selecionada para preencher o nome da avaliacao
@@ -11863,15 +11972,17 @@ function cavColetarDados() {
     const turma = document.getElementById('cav-turma').value;
     const docente = document.getElementById('cav-docente').value;
     const questoes = cavGetQuestoes();
+    const alunosSelecionados = Object.keys(cavAlunosSel || {});
     // Prova final: sem aula vinculada; nome fixo; nota vai para o campo de AV Final.
     if (cavEhFinal(cavTipo)) {
         return {
             nome: 'AV ' + cavRotuloAV(cavTipo),
             projeto: projeto, turma: turma, disciplina: '', aula: '', aulaId: '',
-            docente: docente, questoes: questoes, tipo: cavTipo
+            docente: docente, questoes: questoes, tipo: cavTipo,
+            alunosSelecionados: alunosSelecionados
         };
     }
-    return { nome, projeto, turma, disciplina, aula, aulaId: nomeId, docente, questoes, tipo: cavTipo };
+    return { nome, projeto, turma, disciplina, aula, aulaId: nomeId, docente, questoes, tipo: cavTipo, alunosSelecionados: alunosSelecionados };
 }
 
 function cavSalvar() {
@@ -11898,6 +12009,7 @@ function cavSalvar() {
         docente: d.docente || '',
         tipo: d.tipo || cavTipo || 'teorica',
         questoes: d.questoes,
+        alunosSelecionados: d.alunosSelecionados || [],
         atualizadoEm: new Date()
     };
     const salvar = (ref, update) => {
@@ -11953,6 +12065,7 @@ function cavPreencherForm(id, d) {
     cavPopulateProjetos(d.projeto || '');
     cavPopulateTurmas(d.projeto || '', d.turma || '');
     if (!cavEhFinal(cavTipo)) cavLoadAulasNome(d.projeto || '', d.turma || '', d.nome || '');
+    cavLoadAlunos(d.projeto || '', d.turma || '', d.alunosSelecionados || []);
     if (d.docente) {
         const selD = document.getElementById('cav-docente');
         selD.innerHTML = '<option value="">Selecione o docente...</option>';
