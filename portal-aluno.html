@@ -4823,7 +4823,7 @@
                 ? btnVisualizar
                 : '<span style="display:inline-flex;align-items:center;gap:5px;background:#64748b;color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid fa-hand" style="margin-right:4px"></i>Recuperação encerrada</span>';
         } else if (rec) {
-            btn = btnRec + (jaAvaliada ? '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:#eef2f7;color:#475569;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Ver última</button>' : '');
+            btn = jaAvaliada ? btnVisualizar : btnRec;
         } else if (jaAvaliada) {
             btn = btnVisualizar;
         } else if (emBreve) {
@@ -4839,7 +4839,7 @@
             '<div style="flex:1;min-width:160px">' +
                 '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
                 '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
-                (rec ? '<div style="font-size:11px;color:' + (recParada ? '#64748b' : '#7c3aed') + ';margin-top:2px">' + (recParada ? ('Recuperação encerrada — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'a janela de respostas foi encerrada pelo instrutor.')) : ('Liberada para recuperação — você pode ' + (jaAvaliada ? 'refazer' : 'fazer') + ' esta avaliação.')) + '</div>' : '') +
+                (rec ? '<div style="font-size:11px;color:' + (recParada ? '#64748b' : '#7c3aed') + ';margin-top:2px">' + (recParada ? ('Recuperação encerrada — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'a janela de respostas foi encerrada pelo instrutor.')) : (jaAvaliada ? 'Recuperação respondida — use Visualizar para ver o resultado.' : 'Liberada para recuperação — você pode fazer esta avaliação.')) + '</div>' : '') +
                 (emBreve ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Disponível em breve para responder.</div>' : '') +
                 (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
             '</div>' +
@@ -5055,6 +5055,9 @@
                     });
                 }
             } catch (e) { console.error('Falha ao verificar respostas salvas:', e); }
+
+            // Recuperacao: quem JA respondeu nao pode REFAZER — apenas visualizar.
+            if (rec && jaRespondeu) { paRavVisualizar(avId); return; }
 
             // Tarefa 3: so permite RESPONDER se esteve PRESENTE (ou Justificada) no dia da AV.
             // Prova final (AV Final Teorica/Pratica) nao se vincula a aula, entao nao exige presenca.
