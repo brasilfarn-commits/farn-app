@@ -4998,20 +4998,6 @@
         lista.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliações...</p></div>';
         try {
             var snap = await dbFirestore.collection('avaliacoes').orderBy('criadoEm', 'desc').get();
-            var teoria = [];
-            var pratica = [];
-            snap.forEach(function(doc) {
-                var d = doc.data();
-                if (d.enviada === true && d.turma === myTurma && paRavAlunoPermitido(d)) {
-                    // AV Final entra na coluna da sua modalidade (final_teorica -> Teorica; final_pratica -> Pratica)
-                    if (d.tipo === 'pratica' || d.tipo === 'final_pratica') pratica.push({ id: doc.id, data: d });
-                    else teoria.push({ id: doc.id, data: d });
-                }
-            });
-            if (teoria.length === 0 && pratica.length === 0) {
-                lista.innerHTML = '<div class="pf-em-construcao" style="padding:30px 20px"><i class="fa-solid fa-file-circle-question" style="font-size:42px;color:#cbd5e1;margin-bottom:10px"></i><h3 style="font-size:17px;color:#0f172a;margin-bottom:6px">Nenhuma avaliação disponível</h3><p style="font-size:13px;color:#64748b">Não há avaliações enviadas para a sua turma no momento.</p></div>';
-                return;
-            }
             var cpfLimpo = (paUser.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '') || 'anonimo';
             var fichaPraDoc = null;
             try {
@@ -5020,40 +5006,50 @@
             var fichaPra = (fichaPraDoc && fichaPraDoc.exists) ? (fichaPraDoc.data() || {}) : null;
             var manPra = (fichaPra && fichaPra.avPraticaManual) ? fichaPra.avPraticaManual : {};
 
+            // AV da turma que ja foram enviadas. A restricao (alunosSelecionados) decide DEPOIS
+            // quem entra, e quem JA RESPONDEU entra SEMPRE: assim uma AV ja feita nao desaparece
+            // da lista quando o instrutor marca a recuperacao para outros alunos.
+            var candidatas = [];
+            snap.forEach(function(doc) {
+                var d = doc.data();
+                if (d.enviada === true && d.turma === myTurma) candidatas.push({ id: doc.id, data: d });
+            });
+
+            // "Ja respondida" por aluno: pratica = nota do instrutor (avPraticaManual);
+            // teorica/final = doc em avaliacoesRespostas. Leituras em paralelo.
+            var jaResp = await Promise.all(candidatas.map(function(av) {
+                if (av.data.tipo === 'pratica') return Promise.resolve(manPra[av.id] ? true : false);
+                return dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + av.id).get()
+                    .then(function(r) { return r.exists === true; })
+                    .catch(function(e) { console.error('Falha ao verificar resposta de', av.id, e); return false; });
+            }));
+            candidatas.forEach(function(av, k) { av.jaAvaliada = (jaResp[k] === true); });
+
+            // Duas colunas: AV Final entra na coluna da sua modalidade
+            // (final_teorica -> Teorica; final_pratica -> Pratica)
+            var teoria = [];
+            var pratica = [];
+            candidatas.forEach(function(av) {
+                if (!av.jaAvaliada && !paRavAlunoPermitido(av.data)) return; /* restrita a outros alunos e ainda nao respondida */
+                if (av.data.tipo === 'pratica' || av.data.tipo === 'final_pratica') pratica.push(av);
+                else teoria.push(av);
+            });
+            if (teoria.length === 0 && pratica.length === 0) {
+                lista.innerHTML = '<div class="pf-em-construcao" style="padding:30px 20px"><i class="fa-solid fa-file-circle-question" style="font-size:42px;color:#cbd5e1;margin-bottom:10px"></i><h3 style="font-size:17px;color:#0f172a;margin-bottom:6px">Nenhuma avaliação disponível</h3><p style="font-size:13px;color:#64748b">Não há avaliações enviadas para a sua turma no momento.</p></div>';
+                return;
+            }
+
             // Presencas do aluno (uma leitura) + dia da aula de cada AV (cache por aulaId)
             var presencas = await paCarregarPresencas();
             var diaMap = await paCarregarDiasAV(teoria.concat(pratica));
 
             // Monta um card por AV e distribui em duas colunas: AV Teorica | AV Pratica
-            var cardsTe = [];
-            for (var k = 0; k < teoria.length; k++) {
-                var avTe = teoria[k];
-                var avalTe = false;
-                try {
-                    var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avTe.id).get();
-                    if (rDoc.exists) avalTe = true;
-                } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
-                var recTe = paRavAlunoSelecionado(avTe.data);
-                var faltaTe = paAvSemPresenca(avTe.data, presencas, diaMap);
-                cardsTe.push(paRavMontarCard(avTe, avalTe, recTe, paRavRecuperacaoParada(avTe.data), faltaTe));
-            }
-            var cardsPr = [];
-            for (var j = 0; j < pratica.length; j++) {
-                var avPr = pratica[j];
-                var avalPr = false;
-                if (avPr.data.tipo === 'pratica') {
-                    // AV Pratica: "respondida" = nota registrada pelo instrutor (avPraticaManual)
-                    avalPr = manPra[avPr.id] ? true : false;
-                } else {
-                    // AV Final Pratica e respondida pelo aluno (avaliacoesRespostas), como a teorica
-                    try {
-                        var rpDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avPr.id).get();
-                        if (rpDoc.exists) avalPr = true;
-                    } catch (e) { console.error('Falha ao verificar resposta de', avPr.id, e); }
-                }
-                var faltaPr = paAvSemPresenca(avPr.data, presencas, diaMap);
-                cardsPr.push(paRavMontarCard(avPr, avalPr, paRavAlunoSelecionado(avPr.data), paRavRecuperacaoParada(avPr.data), faltaPr));
-            }
+            var cardsTe = teoria.map(function(avTe) {
+                return paRavMontarCard(avTe, avTe.jaAvaliada, paRavAlunoSelecionado(avTe.data), paRavRecuperacaoParada(avTe.data), paAvSemPresenca(avTe.data, presencas, diaMap));
+            });
+            var cardsPr = pratica.map(function(avPr) {
+                return paRavMontarCard(avPr, avPr.jaAvaliada, paRavAlunoSelecionado(avPr.data), paRavRecuperacaoParada(avPr.data), paAvSemPresenca(avPr.data, presencas, diaMap));
+            });
 
             var grid = document.createElement('div');
             grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;align-items:start';
@@ -5072,6 +5068,24 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    /* O aluno JA respondeu esta AV? Teorica (e finais) = doc em avaliacoesRespostas;
+       Pratica = nota registrada pelo instrutor em avaliacoesAlunos.avPraticaManual.
+       Garante que uma AV ja feita continue listada/visualizavel, mesmo que hoje ela
+       esteja restrita a outros alunos (recuperacao) ou desativada. */
+    async function paRavJaRespondeu(d, avId) {
+        if (!d || !avId || !paUser) return false;
+        var cpfLimpo = (paUser.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '') || 'anonimo';
+        try {
+            if (d.tipo === 'pratica') {
+                var fDoc = await dbFirestore.collection('avaliacoesAlunos').doc(paUser.cpf || cpfLimpo).get();
+                if (!fDoc.exists) return false;
+                return (((fDoc.data() || {}).avPraticaManual) || {})[avId] ? true : false;
+            }
+            var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avId).get();
+            return rDoc.exists === true;
+        } catch (e) { console.error('Falha ao verificar se ja respondeu', avId, e); return false; }
+    }
+
     async function paRavAbrir(avId) {
         var prova = document.getElementById('pf-rav-prova');
         var lista = document.getElementById('pf-rav-lista');
@@ -5081,11 +5095,17 @@
             if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
             var d = doc.data();
             if (d.enviada !== true || d.turma !== (paUser.turma || '').trim()) { alert('Esta avaliação não está disponível para a sua turma.'); return; }
-            if (!paRavAlunoPermitido(d)) { alert('Esta avaliação não está disponível para você.'); return; }
+            // Quem JA RESPONDEU continua abrindo (somente para visualizar), mesmo que a AV hoje
+            // esteja restrita a outros alunos ou desativada: AV ja feita nunca desaparece.
+            var jaRespondeuAntes = await paRavJaRespondeu(d, avId);
+            if (!paRavAlunoPermitido(d) && !jaRespondeuAntes) { alert('Esta avaliação não está disponível para você.'); return; }
             if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
             var rec = paRavAlunoSelecionado(d);
             if (rec && paRavRecuperacaoParada(d)) { paRavVisualizar(avId); return; }
-            if (d.ativa !== true && !rec) { alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return; }
+            if (d.ativa !== true && !rec) {
+                if (jaRespondeuAntes) { paRavVisualizar(avId); return; }
+                alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return;
+            }
             paRavAtual = { id: avId, conteudo: d };
             paRavRespostas = {};
             paRavCorretas = {};
@@ -5334,7 +5354,16 @@
             if (!avDoc.exists) { conteudo.innerHTML = '<p style="color:#dc2626">Avaliação não encontrada.</p>'; return; }
             var d = avDoc.data() || {};
             var questoes = d.questoes || [];
-            var mostrar = (d.enviada === true && d.turma === (paUser.turma || '').trim()) && paRavAlunoPermitido(d);
+            // Quem ja respondeu (teorica: doc de respostas; pratica: nota do instrutor) sempre
+            // visualiza o resultado, mesmo que a AV hoje esteja restrita a outros alunos.
+            var jaRespondeuVis = respDoc.exists === true;
+            if (!jaRespondeuVis && d.tipo === 'pratica') {
+                try {
+                    var fPraDoc = await dbFirestore.collection('avaliacoesAlunos').doc(cpfLimpo).get();
+                    jaRespondeuVis = !!(fPraDoc.exists && (((fPraDoc.data() || {}).avPraticaManual) || {})[avId]);
+                } catch (e) { console.error('Falha ao verificar AV pratica respondida:', e); }
+            }
+            var mostrar = (d.enviada === true && d.turma === (paUser.turma || '').trim()) && (paRavAlunoPermitido(d) || jaRespondeuVis);
             var r = respDoc.exists ? respDoc.data() : {};
             var respostas = r.respostas || {};
             var respostasCertas = (r.respostasCertas != null ? r.respostasCertas : '-');
