@@ -122,6 +122,11 @@
         /* Pedi Baixa */
         .pf-baixa-banner{display:none;background:rgba(62,79,28,.1);border:1px solid rgba(62,79,28,.4);color:#26300F;border-radius:var(--radius-sm);padding:12px 16px;font-size:12px;font-weight:700;text-align:center;margin-top:14px}
         .pf-pedi-baixa-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:14px;background:linear-gradient(135deg,#556B2F,#3E4F1C);border:2px solid rgba(255,255,255,.45);color:#fff;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 22px rgba(62,79,28,.4);transition:.25s;line-height:1.35;font-family:inherit;max-width:220px;flex-shrink:0;text-align:center}
+        /* Foto 3x4 no INICIO, ao lado do botao "Solicitar Baixa" (mesma foto da carteira) */
+        .pf-inicio-foto-wrap{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+        .pf-inicio-foto-box{width:84px;aspect-ratio:3/4;flex:0 0 auto;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.45);border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(62,79,28,.35)}
+        .pf-inicio-foto-box img{width:100%;height:100%;object-fit:cover;display:none}
+        .pf-inicio-foto-box .fa-user{font-size:30px;color:rgba(255,255,255,.6)}
         .pf-pedi-baixa-btn i{font-size:16px;margin-bottom:0}
         .pf-pedi-baixa-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(62,79,28,.55)}
         .pf-pedi-baixa-note{text-align:center;font-size:11px;color:var(--gray500);margin-bottom:8px}
@@ -634,7 +639,13 @@
                                 <p style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.7)">Bem-vindo(a), <span id="pf-welcome-name" style="color:var(--yellow-xl);font-weight:700">Aluno</span>! Acompanhe suas noticias, galeria de fotos e converse com a administracao.</p>
                                 <div class="pf-baixa-banner" id="pf-baixa-banner"><i class="fa-solid fa-triangle-exclamation"></i> Voce solicitou a baixa do curso. Seu acesso ao portal esta bloqueado ate a administracao autorizar o retorno.</div>
                             </div>
-                            <button class="pf-pedi-baixa-btn" id="pf-pedi-baixa-btn" onclick="paPediBaixa()"><i class="fa-solid fa-power-off"></i>Solicitar Baixa<br>do Curso</button>
+                            <div class="pf-inicio-foto-wrap">
+                                <div class="pf-inicio-foto-box" id="pf-inicio-foto-box" title="Foto 3x4 da carteira do aluno">
+                                    <img id="pf-inicio-foto" src="" alt="Foto 3x4">
+                                    <i id="pf-inicio-foto-icon" class="fa-solid fa-user"></i>
+                                </div>
+                                <button class="pf-pedi-baixa-btn" id="pf-pedi-baixa-btn" onclick="paPediBaixa()"><i class="fa-solid fa-power-off"></i>Solicitar Baixa<br>do Curso</button>
+                            </div>
                         </div>
                     </div>
 
@@ -1453,6 +1464,9 @@
 
             /* Aluno com baixa: banner + bloqueio com caixa de REINGRESSO */
             paVerificarBaixa();
+
+            /* Foto 3x4 da carteira tambem aparece no INICIO, ao lado do botao "Solicitar Baixa" */
+            paFotoCarregar();
 
             /* Verifica regimento - bloqueia ate aceitar */
             var aceiteSnap = await dbFirestore.collection('regimentoAceites').doc(paUser.cpf).get();
@@ -3467,6 +3481,13 @@
         if (icon) icon.style.display = src ? 'none' : 'block';
         if (src && pv) { pv.src = src; pv.style.display = 'block'; }
         if (pvIcon) pvIcon.style.display = src ? 'none' : 'flex';
+        /* Mesma foto 3x4 da carteira aparece no INICIO, ao lado de "Solicitar Baixa" */
+        var iniImg = document.getElementById('pf-inicio-foto');
+        var iniIcon = document.getElementById('pf-inicio-foto-icon');
+        if (iniImg) {
+            if (src) { iniImg.src = src; iniImg.style.display = 'block'; } else { iniImg.style.display = 'none'; }
+        }
+        if (iniIcon) iniIcon.style.display = src ? 'none' : 'block';
     }
 
     function paFotoCarregar() {
