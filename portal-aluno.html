@@ -4830,7 +4830,7 @@
         if (isPratica) {
             btn = btnVisualizar;
         } else if (recParada) {
-            btn = jaAvaliada ? btnVisualizar : selo('Recuperação encerrada', 'fa-hand');
+            btn = jaAvaliada ? btnVisualizar : selo('Recuperação em breve', 'fa-hourglass-half');
         } else if (rec) {
             btn = jaAvaliada ? btnVisualizar : btnRec;
         } else if (jaAvaliada) {
@@ -4843,7 +4843,7 @@
             btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
         }
         var statusTxt = jaAvaliada ? 'Avaliada'
-            : (rec ? (recParada ? 'Recuperação encerrada' : 'Recuperação')
+            : (rec ? (recParada ? 'Recuperação em breve' : 'Recuperação')
             : (emBreve ? 'Em breve'
             : (semPresenca ? 'Falta' : 'Disponível')));
         var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + statusTxt + '</span>' +
@@ -4855,7 +4855,7 @@
             '<div style="flex:1;min-width:160px">' +
                 '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
                 '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
-                (rec ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + (recParada ? ('Recuperação encerrada — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'a janela de respostas foi encerrada pelo instrutor.')) : (jaAvaliada ? 'Recuperação respondida — use Visualizar para ver o resultado.' : 'Liberada para recuperação — você pode fazer esta avaliação.')) + '</div>' : '') +
+                (rec ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + (recParada ? ('Recuperação em breve — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'aguarde a liberação do instrutor para responder.')) : (jaAvaliada ? 'Recuperação respondida — use Visualizar para ver o resultado.' : 'Liberada para recuperação — você pode fazer esta avaliação.')) + '</div>' : '') +
                 (emBreve ? '<div style="font-size:11px;color:#ea580c;margin-top:2px">Disponível em breve para responder.</div>' : '') +
                 (semPresenca ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Você não esteve presente no dia desta AV. Procure o instrutor para orientações.</div>' : '') +
                 (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
@@ -5390,7 +5390,7 @@
                 });
                 resumoHtml = notaHtml + qHtml2;
             } else if (paRavRecuperacaoParada(d) && !respDoc.exists) {
-                resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-hand" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Recuperação encerrada</h4><p style="font-size:13px">A recuperação desta avaliação foi encerrada pelo instrutor e você não enviou respostas.</p></div>';
+                resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-hourglass-half" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Recuperação em breve</h4><p style="font-size:13px">A recuperação desta avaliação ainda não foi liberada pelo instrutor e você não enviou respostas.</p></div>';
             } else if (!respDoc.exists) {
                 resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-file-circle-question" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Ainda não respondida</h4><p style="font-size:13px">Você ainda não enviou respostas para esta avaliação.</p></div>';
             } else {
