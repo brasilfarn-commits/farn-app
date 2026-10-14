@@ -11419,6 +11419,7 @@ function cavLoadList() {
         avsFiltradas.forEach(({ id, d }) => {
             const qtd = (d.questoes || []).length;
             const respondidas = contagem[id] || 0;
+            const embaralhamentos = Number(d.embaralhamentos || 0);
             const isPratica = (d.tipo === 'pratica');
             const isFinal = cavEhFinal(d.tipo);
             const selRec = d.alunosSelecionados || [];
@@ -11451,6 +11452,7 @@ function cavLoadList() {
                 '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
                     '<button class="btn-outline btn-sm" title="Editar" onclick="cavEditarAvaliacao(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>' +
                     '<button class="btn-outline btn-sm" title="Imprimir" onclick="cavImprimirPorId(\'' + id + '\')"><i class="fa-solid fa-print"></i></button>' +
+                    (!isPratica ? '<button class="btn-outline btn-sm"' + (respondidas > 0 ? ' style="opacity:.55"' : '') + ' title="' + (respondidas > 0 ? 'Já existem respostas de alunos: o embaralhamento só pode ser feito antes de qualquer aluno responder' : 'Embaralhar aleatoriamente as opções de cada questão e reajustar o gabarito (a letra correta acompanha o texto)') + '" onclick="cavEmbaralharRespostas(\'' + id + '\')"><i class="fa-solid fa-shuffle"></i> Embaralhar Respostas (' + embaralhamentos + ')</button>' : '') +
                     (!isPratica && !d.ativa ? '<button class="btn-success btn-sm" title="Liberar esta ' + (isFinal ? 'AV Final' : 'AV Teórica') + ' para os alunos responderem no Portal do Aluno" onclick="cavAtivarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-play"></i> ATIVAR ' + (isFinal ? 'AV FINAL' : 'AV TEORICA') + '</button>' : '') +
                     (!isPratica && d.ativa ? '<button class="btn-danger btn-sm" title="Desativar esta ' + (isFinal ? 'AV Final' : 'AV Teórica') + ' — os alunos não poderão mais ler as questões nem responder." onclick="cavDesativarAVTeorica(\'' + id + '\')"><i class="fa-solid fa-circle-pause"></i> DESATIVAR PARA RESPOSTAS</button>' : '') +
                     '<button class="btn-warning btn-sm" title="Comunicar que a AV estará disponível em breve (os alunos ainda não poderão responder)" onclick="cavAbrirEnvioPorId(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> Enviar</button>' +
@@ -12489,6 +12491,52 @@ function cavImprimirHTML(d) {
         '<script>window.onload=function(){window.print();};</scr' + 'ipt>' +
         '</body></html>');
     w.document.close();
+}
+
+/* Embaralha ALEATORIAMENTE as opções de cada questão da AV Teórica e reajusta o
+   gabarito: a letra marcada como correta passa a apontar para o MESMO texto.
+   Guarda quantas vezes foi embaralhada em 'embaralhamentos' (mostrado no botão).
+   Bloqueia se algum aluno já respondeu, para não invalidar respostas gravadas.
+   O botão Imprimir lê a AV do Firestore, então já sai com o gabarito atualizado. */
+function cavEmbaralharRespostas(id) {
+    if (!id) return;
+    dbFirestore.collection(FB_AVALIACOES_RESPOSTAS).where('avaliacaoId', '==', id).limit(1).get().then(function (rSnap) {
+        if (rSnap && !rSnap.empty) {
+            alert('Esta avaliação já tem respostas de alunos. O embaralhamento só pode ser feito antes de qualquer aluno responder.');
+            return null;
+        }
+        return dbFirestore.collection(FB_AVALIACOES).doc(id).get();
+    }).then(function (doc) {
+        if (!doc || !doc.exists) return;
+        const d = doc.data() || {};
+        const questoes = d.questoes || [];
+        if (!questoes.length) { alert('Esta avaliação não possui questões para embaralhar.'); return; }
+        const letras = ['a', 'b', 'c', 'd'];
+        const novas = questoes.map(function (q) {
+            if (!q.opcoes) return q; /* sem alternativas: mantém como está */
+            const ordem = letras.map(function (l) { return { texto: q.opcoes[l] || '', correta: (l === (q.correta || '')) }; });
+            /* Fisher-Yates */
+            for (let i = ordem.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const t = ordem[i]; ordem[i] = ordem[j]; ordem[j] = t;
+            }
+            /* evita sair igual à ordem anterior (roda 1 posição) */
+            const igual = ordem.every(function (it, i) { return it.texto === (q.opcoes[letras[i]] || ''); });
+            if (igual && ordem.length > 1) { ordem.push(ordem.shift()); }
+            const opcoes = {};
+            let correta = '';
+            ordem.forEach(function (it, i) {
+                opcoes[letras[i]] = it.texto;
+                if (it.correta) correta = letras[i];
+            });
+            return { enunciado: q.enunciado || '', opcoes: opcoes, correta: correta };
+        });
+        const total = Number(d.embaralhamentos || 0) + 1;
+        return dbFirestore.collection(FB_AVALIACOES).doc(id).set({ questoes: novas, embaralhamentos: total }, { merge: true }).then(function () {
+            alert('Respostas embaralhadas e gabarito reajustado.\nEmbaralhamentos nesta AV: ' + total + '.');
+            if (document.getElementById('cav-list')) cavLoadList();
+        });
+    }).catch(function (e) { alert('Erro ao embaralhar as respostas: ' + e.message); });
 }
 
 function cavAbrirEnvio() {
