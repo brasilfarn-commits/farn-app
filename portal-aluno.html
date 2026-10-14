@@ -4806,32 +4806,48 @@
         return !!(d && d.recuperacaoParada === true);
     }
 
-    function paRavMontarCard(av, jaAvaliada, recuperacao, parada) {
+    function paRavMontarCard(av, jaAvaliada, recuperacao, parada, falta) {
         var d = av.data;
         var isPratica = (d.tipo === 'pratica');
+        var isFinal = (d.tipo === 'final_teorica' || d.tipo === 'final_pratica');
         var rec = (recuperacao === true);
         var recParada = (parada === true) && rec;
+        var semPresenca = (falta === true) && !jaAvaliada && !rec;
         var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true && !rec);
-        var cor = recParada ? '#64748b' : (rec ? '#7c3aed' : (emBreve ? '#dc2626' : (jaAvaliada ? '#556B2F' : '#6B8E23')));
+        /* Cores: verde = respondida/enviada; cinza = recuperacao ainda nao respondida;
+           vermelha = nao respondeu por falta (nao presenca); laranja = ainda sera ativada;
+           oliva (tema) = disponivel para responder. */
+        var cor = jaAvaliada ? '#16a34a'
+            : (rec ? '#64748b'
+            : (emBreve ? '#ea580c'
+            : (semPresenca ? '#dc2626' : '#6B8E23')));
+        function selo(txt, icone) {
+            return '<span style="display:inline-flex;align-items:center;gap:5px;background:' + cor + ';color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid ' + icone + '" style="margin-right:4px"></i>' + txt + '</span>';
+        }
         var btnVisualizar = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#6B8E23,#2F3D14);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
-        var btnRec = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-rotate-right" style="margin-right:4px"></i>' + (jaAvaliada ? 'Refazer Avaliação' : 'Fazer Recuperação') + '</button>';
+        var btnRec = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#64748b,#475569);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-rotate-right" style="margin-right:4px"></i>' + (jaAvaliada ? 'Refazer Avaliação' : 'Fazer Recuperação') + '</button>';
         var btn;
         if (isPratica) {
             btn = btnVisualizar;
         } else if (recParada) {
-            btn = jaAvaliada
-                ? btnVisualizar
-                : '<span style="display:inline-flex;align-items:center;gap:5px;background:#64748b;color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid fa-hand" style="margin-right:4px"></i>Recuperação encerrada</span>';
+            btn = jaAvaliada ? btnVisualizar : selo('Recuperação encerrada', 'fa-hand');
         } else if (rec) {
             btn = jaAvaliada ? btnVisualizar : btnRec;
         } else if (jaAvaliada) {
             btn = btnVisualizar;
         } else if (emBreve) {
-            btn = '<span style="display:inline-flex;align-items:center;gap:5px;background:#dc2626;color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid fa-hourglass-half" style="margin-right:4px"></i>Em breve</span>';
+            btn = selo('Em breve', 'fa-hourglass-half');
+        } else if (semPresenca) {
+            btn = selo('Você não esteve presente', 'fa-user-slash');
         } else {
             btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
         }
-        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (recParada ? 'Recuperação encerrada' : (rec ? 'Recuperação' : (emBreve ? 'Em breve' : (jaAvaliada ? 'Avaliada' : 'Disponível')))) + '</span>';
+        var statusTxt = jaAvaliada ? 'Avaliada'
+            : (rec ? (recParada ? 'Recuperação encerrada' : 'Recuperação')
+            : (emBreve ? 'Em breve'
+            : (semPresenca ? 'Falta' : 'Disponível')));
+        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + statusTxt + '</span>' +
+            (isFinal ? '<span style="font-size:10px;font-weight:700;color:#7c3aed;background:#f3e8ff;border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px;margin-left:4px">Final</span>' : '');
         var card = document.createElement('div');
         card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
         card.innerHTML =
@@ -4839,12 +4855,34 @@
             '<div style="flex:1;min-width:160px">' +
                 '<div style="font-size:14px;font-weight:700;color:#0f172a">' + paEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
                 '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
-                (rec ? '<div style="font-size:11px;color:' + (recParada ? '#64748b' : '#7c3aed') + ';margin-top:2px">' + (recParada ? ('Recuperação encerrada — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'a janela de respostas foi encerrada pelo instrutor.')) : (jaAvaliada ? 'Recuperação respondida — use Visualizar para ver o resultado.' : 'Liberada para recuperação — você pode fazer esta avaliação.')) + '</div>' : '') +
-                (emBreve ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Disponível em breve para responder.</div>' : '') +
+                (rec ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + (recParada ? ('Recuperação encerrada — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'a janela de respostas foi encerrada pelo instrutor.')) : (jaAvaliada ? 'Recuperação respondida — use Visualizar para ver o resultado.' : 'Liberada para recuperação — você pode fazer esta avaliação.')) + '</div>' : '') +
+                (emBreve ? '<div style="font-size:11px;color:#ea580c;margin-top:2px">Disponível em breve para responder.</div>' : '') +
+                (semPresenca ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Você não esteve presente no dia desta AV. Procure o instrutor para orientações.</div>' : '') +
                 (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
             '</div>' +
             btn;
         return card;
+    }
+
+    /* Coluna da listagem do Portal (duas colunas: AV Teorica | AV Pratica). */
+    function paRavMontarColuna(titulo, icone, cor, cards) {
+        var col = document.createElement('div');
+        col.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px';
+        var head = document.createElement('div');
+        head.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid ' + cor;
+        head.innerHTML = '<i class="fa-solid ' + icone + '" style="color:' + cor + '"></i>' +
+            '<span style="font-size:14px;font-weight:800;color:#0f172a">' + titulo + '</span>' +
+            '<span style="margin-left:auto;font-size:11px;font-weight:700;color:' + cor + ';background:' + cor + '1a;padding:2px 9px;border-radius:20px">' + cards.length + '</span>';
+        col.appendChild(head);
+        if (!cards.length) {
+            var vazio = document.createElement('p');
+            vazio.style.cssText = 'font-size:12.5px;color:#94a3b8;padding:4px 2px';
+            vazio.textContent = 'Nenhuma avaliação nesta coluna.';
+            col.appendChild(vazio);
+        } else {
+            cards.forEach(function (c) { col.appendChild(c); });
+        }
+        return col;
     }
 
     /* ===== FALTAS DO ALUNO E PRESENCA NO DIA DA AV ===== */
@@ -4921,35 +4959,56 @@
         }
     }
 
+    /* Pre-carrega a data da aula de cada AV (cache por aulaId) para marcar a cor
+       vermelha (nao respondeu por falta) sem uma leitura por card. */
+    async function paCarregarDiasAV(itens) {
+        var mapa = {};
+        var ids = {};
+        (itens || []).forEach(function (it) { if (it && it.data && it.data.aulaId) ids[it.data.aulaId] = true; });
+        var keys = Object.keys(ids);
+        for (var i = 0; i < keys.length; i++) {
+            try {
+                var aDoc = await dbFirestore.collection('aulas').doc(keys[i]).get();
+                if (aDoc.exists) mapa[keys[i]] = paDataISO((aDoc.data() || {}).data || '');
+            } catch (e) { console.error('Falha ao carregar aula da avaliacao:', e); }
+        }
+        return mapa;
+    }
+
+    /* Marca VERMELHO apenas as AVs ja enviadas em que o aluno NAO esteve presente
+       (ou com falta justificada) no dia da AV. Espelha a regra de paAvPodeResponder.
+       AV Final (nao vinculada a aula) e dia indeterminado nao marcam. */
+    function paAvSemPresenca(d, presencas, diaMap) {
+        try {
+            if (!presencas) return false;
+            if (!d) return false;
+            if (d.tipo === 'final_teorica' || d.tipo === 'final_pratica') return false;
+            var dia = (d.aulaId && diaMap && diaMap[d.aulaId]) ? diaMap[d.aulaId] : (paDataISO(d.ativadaEm) || paDataISO(d.enviadaEm) || paDataISO(d.criadoEm));
+            if (!dia) return false;
+            var daAula = d.aulaId ? presencas.filter(function (p) { return p.aulaId === d.aulaId; }) : [];
+            var base = daAula.length ? daAula : presencas.filter(function (p) { return String(p.dataAula || '') === dia; });
+            return !base.some(function (p) { return p.status === 'Presente' || p.status === 'Justificada'; });
+        } catch (e) { return false; }
+    }
+
     async function paLoadResponderAvaliacao() {
         var lista = document.getElementById('pf-rav-lista');
         if (!lista || !paUser) return;
         var myTurma = (paUser.turma || '').trim();
         lista.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliações...</p></div>';
         try {
-            // Tarefa 2: com falta sem justificar, esconde a previa das AVs (Teorica e Pratica)
-            var faltasSemJustificar = await paFaltasSemJustificar();
-            if (faltasSemJustificar > 0) {
-                lista.innerHTML = '<div class="pf-em-construcao" style="padding:30px 20px">' +
-                    '<i class="fa-solid fa-triangle-exclamation" style="font-size:42px;color:#f59e0b;margin-bottom:10px"></i>' +
-                    '<h3 style="font-size:17px;color:#0f172a;margin-bottom:6px">Justifique suas faltas</h3>' +
-                    '<p style="font-size:13px;color:#64748b">Voce tem ' + faltasSemJustificar + ' falta(s) sem justificativa. As avaliacoes (AV Teorica e AV Pratica) ficam escondidas ate que todas as faltas sejam justificadas. Acesse o menu Apontamento e use o botao JUSTIFICAR FALTA.</p>' +
-                    '</div>';
-                return;
-            }
             var snap = await dbFirestore.collection('avaliacoes').orderBy('criadoEm', 'desc').get();
             var teoria = [];
             var pratica = [];
-            var finais = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
                 if (d.enviada === true && d.turma === myTurma && paRavAlunoPermitido(d)) {
-                    if (d.tipo === 'pratica') pratica.push({ id: doc.id, data: d });
-                    else if (d.tipo === 'final_teorica' || d.tipo === 'final_pratica') finais.push({ id: doc.id, data: d });
+                    // AV Final entra na coluna da sua modalidade (final_teorica -> Teorica; final_pratica -> Pratica)
+                    if (d.tipo === 'pratica' || d.tipo === 'final_pratica') pratica.push({ id: doc.id, data: d });
                     else teoria.push({ id: doc.id, data: d });
                 }
             });
-            if (teoria.length === 0 && pratica.length === 0 && finais.length === 0) {
+            if (teoria.length === 0 && pratica.length === 0) {
                 lista.innerHTML = '<div class="pf-em-construcao" style="padding:30px 20px"><i class="fa-solid fa-file-circle-question" style="font-size:42px;color:#cbd5e1;margin-bottom:10px"></i><h3 style="font-size:17px;color:#0f172a;margin-bottom:6px">Nenhuma avaliação disponível</h3><p style="font-size:13px;color:#64748b">Não há avaliações enviadas para a sua turma no momento.</p></div>';
                 return;
             }
@@ -4961,55 +5020,47 @@
             var fichaPra = (fichaPraDoc && fichaPraDoc.exists) ? (fichaPraDoc.data() || {}) : null;
             var manPra = (fichaPra && fichaPra.avPraticaManual) ? fichaPra.avPraticaManual : {};
 
+            // Presencas do aluno (uma leitura) + dia da aula de cada AV (cache por aulaId)
+            var presencas = await paCarregarPresencas();
+            var diaMap = await paCarregarDiasAV(teoria.concat(pratica));
+
+            // Monta um card por AV e distribui em duas colunas: AV Teorica | AV Pratica
+            var cardsTe = [];
+            for (var k = 0; k < teoria.length; k++) {
+                var avTe = teoria[k];
+                var avalTe = false;
+                try {
+                    var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avTe.id).get();
+                    if (rDoc.exists) avalTe = true;
+                } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
+                var recTe = paRavAlunoSelecionado(avTe.data);
+                var faltaTe = paAvSemPresenca(avTe.data, presencas, diaMap);
+                cardsTe.push(paRavMontarCard(avTe, avalTe, recTe, paRavRecuperacaoParada(avTe.data), faltaTe));
+            }
+            var cardsPr = [];
+            for (var j = 0; j < pratica.length; j++) {
+                var avPr = pratica[j];
+                var avalPr = false;
+                if (avPr.data.tipo === 'pratica') {
+                    // AV Pratica: "respondida" = nota registrada pelo instrutor (avPraticaManual)
+                    avalPr = manPra[avPr.id] ? true : false;
+                } else {
+                    // AV Final Pratica e respondida pelo aluno (avaliacoesRespostas), como a teorica
+                    try {
+                        var rpDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avPr.id).get();
+                        if (rpDoc.exists) avalPr = true;
+                    } catch (e) { console.error('Falha ao verificar resposta de', avPr.id, e); }
+                }
+                var faltaPr = paAvSemPresenca(avPr.data, presencas, diaMap);
+                cardsPr.push(paRavMontarCard(avPr, avalPr, paRavAlunoSelecionado(avPr.data), paRavRecuperacaoParada(avPr.data), faltaPr));
+            }
+
+            var grid = document.createElement('div');
+            grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;align-items:start';
+            grid.appendChild(paRavMontarColuna('AV Teórica', 'fa-book-open', '#ca8a04', cardsTe));
+            grid.appendChild(paRavMontarColuna('AV Prática', 'fa-flask', '#2563eb', cardsPr));
             lista.innerHTML = '';
-
-            function montarSecao(titulo, icone, cor, itens) {
-                var secao = '<div style="margin-bottom:6px">' +
-                    '<div style="display:flex;align-items:center;gap:8px;margin:14px 0 12px;padding-bottom:8px;border-bottom:2px solid ' + cor + '">' +
-                        '<i class="fa-solid ' + icone + '" style="color:' + cor + ';font-size:15px"></i>' +
-                        '<span style="font-size:14px;font-weight:800;color:' + cor + '">' + titulo + '</span>' +
-                        '<span style="background:rgba(15,23,42,.05);color:#475569;border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700">' + itens + '</span>' +
-                    '</div>';
-                if (itens === 0) {
-                    secao += '<p style="font-size:12.5px;color:#94a3b8;padding:4px 2px">Nenhuma avaliação nesta seção.</p>';
-                }
-                secao += '</div>';
-                return secao;
-            }
-
-            if (pratica.length > 0) {
-                lista.insertAdjacentHTML('beforeend', montarSecao('AV Prática', 'fa-flask', '#ea580c', pratica.length));
-                for (var j = 0; j < pratica.length; j++) {
-                    var avPr = pratica[j];
-                    var avaliaPr = false;
-                    if (manPra[avPr.id]) avaliaPr = true;
-                    lista.appendChild(paRavMontarCard(avPr, avaliaPr));
-                }
-            }
-            if (teoria.length > 0) {
-                lista.insertAdjacentHTML('beforeend', montarSecao('AV Teórica', 'fa-book-open', '#ca8a04', teoria.length));
-                for (var k = 0; k < teoria.length; k++) {
-                    var avTe = teoria[k];
-                    var avalTe = false;
-                    try {
-                        var rDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avTe.id).get();
-                        if (rDoc.exists) avalTe = true;
-                    } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
-                    lista.appendChild(paRavMontarCard(avTe, avalTe, paRavAlunoSelecionado(avTe.data), paRavRecuperacaoParada(avTe.data)));
-                }
-            }
-            if (finais.length > 0) {
-                lista.insertAdjacentHTML('beforeend', montarSecao('AV Final (Certificação)', 'fa-graduation-cap', '#7c3aed', finais.length));
-                for (var m = 0; m < finais.length; m++) {
-                    var avFi = finais[m];
-                    var avalFi = false;
-                    try {
-                        var rfDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avFi.id).get();
-                        if (rfDoc.exists) avalFi = true;
-                    } catch (e) { console.error('Falha ao verificar resposta de', avFi.id, e); }
-                    lista.appendChild(paRavMontarCard(avFi, avalFi, paRavAlunoSelecionado(avFi.data), paRavRecuperacaoParada(avFi.data)));
-                }
-            }
+            lista.appendChild(grid);
         } catch (e) {
             lista.innerHTML = '<div class="pf-em-construcao"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
         }
