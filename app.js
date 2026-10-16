@@ -6011,6 +6011,7 @@ function apontamentoOnTurmaChange() {
             });
             if (selDisc.options.length <= 1) selDisc.innerHTML = '<option value="">Nenhuma disciplina encontrada</option>';
         }).catch(() => { selDisc.innerHTML = '<option value="">Erro ao carregar</option>'; });
+        return;
     }).catch(() => { selDisc.innerHTML = '<option value="">Erro ao carregar</option>'; });
 }
 
