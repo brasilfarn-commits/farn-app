@@ -5998,7 +5998,19 @@ function apontamentoOnTurmaChange() {
             const d = doc.data();
             selDisc.innerHTML += '<option value="' + doc.id + '">' + d.nome + '</option>';
         });
-        if (snap.empty) selDisc.innerHTML = '<option value="">Nenhuma disciplina encontrada</option>';
+        if (!snap.empty) return;
+        // Fallback: inclui disciplinas com turma vazia ou sem turma definida
+        dbFirestore.collection('disciplinas').orderBy('nome').get().then(snap2 => {
+            selDisc.innerHTML = '<option value="">Selecione a disciplina</option>';
+            snap2.forEach(doc => {
+                const d = doc.data();
+                const t = (d.turma || '').trim();
+                if (t === '' || t === turma) {
+                    selDisc.innerHTML += '<option value="' + doc.id + '">' + d.nome + '</option>';
+                }
+            });
+            if (selDisc.options.length <= 1) selDisc.innerHTML = '<option value="">Nenhuma disciplina encontrada</option>';
+        }).catch(() => { selDisc.innerHTML = '<option value="">Erro ao carregar</option>'; });
     }).catch(() => { selDisc.innerHTML = '<option value="">Erro ao carregar</option>'; });
 }
 
