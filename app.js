@@ -4034,6 +4034,171 @@ function relatorioFaltas() {
     };
 }
 
+/* Relatorio de Aulas Cadastradas por Turma: projeto + turma + TODAS as aulas
+   cadastradas da turma, com cabecalho dos dados da instituicao (mesmo doc das
+   Configuracoes). Abre pre-selecionada a turma do Curso de Bombeiro Civil
+   Classe 01 (BA-ALPHA, projeto BOMBEIRO PROFISSIONAL CIVIL - BUENOS AIRES);
+   o seletor aceita qualquer turma cadastrada. */
+function relatorioAulasTurma() {
+    var vistos = {};
+    var listaTurmas = [];
+    (turmas || []).forEach(function(t) {
+        if (!t || !t.nome) return;
+        var chave = t.nome + '|' + (t.projeto || '');
+        if (vistos[chave]) return;
+        vistos[chave] = true;
+        listaTurmas.push(t);
+    });
+    if (!listaTurmas.length) { alert('Nenhuma turma encontrada.'); return; }
+    listaTurmas.sort(function(a, b) { return String(a.projeto || '').localeCompare(String(b.projeto || '')) || String(a.nome || '').localeCompare(String(b.nome || '')); });
+
+    var selHtml = '<option value="">Selecione a turma...</option>';
+    var idxPadrao = '';
+    listaTurmas.forEach(function(t, i) {
+        var rotulo = t.nome + (t.projeto ? ' - ' + t.projeto : '') + (t.descricao ? ' (' + t.descricao + ')' : '');
+        selHtml += '<option value="' + i + '">' + escHTML(rotulo) + '</option>';
+        /* Bombeiro Civil Classe 01 = turma BA-ALPHA do projeto BOMBEIRO PROFISSIONAL CIVIL */
+        if (idxPadrao === '' && t.nome === 'BA-ALPHA' && String(t.projeto || '').indexOf('BOMBEIRO PROFISSIONAL CIVIL') >= 0) idxPadrao = String(i);
+    });
+
+    var w = window.open('', '_blank', 'width=540,height=330');
+    if (!w) { alert('Permita pop-ups para gerar o relatorio.'); return; }
+    w.document.write('<!DOCTYPE html><html><head><title>Aulas Cadastradas - FARN</title><style>' +
+        'body{font-family:Arial,sans-serif;padding:30px;background:#f1f5f9}' +
+        '.box{max-width:480px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.1);text-align:center}' +
+        'h2{color:#0f172a;margin-bottom:20px;font-size:17px}' +
+        'select{width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:16px}' +
+        'button{padding:12px 32px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+        'button:disabled{opacity:.6;cursor:wait}' +
+        '</style></head><body><div class="box">' +
+        '<h2>Aulas Cadastradas por Turma</h2>' +
+        '<select id="sel-turma-aulas">' + selHtml + '</select>' +
+        '<br><button id="btn-gerar-aulas" onclick="gerarRelatorioAulas()">Gerar Relatorio</button>' +
+        '</div></body></html>');
+    w.document.close();
+    var selPop = w.document.getElementById('sel-turma-aulas');
+    if (selPop && idxPadrao !== '') selPop.value = idxPadrao;
+
+    /* 'YYYY-MM-DD' -> 'DD/MM/AAAA' (aceita tambem Timestamp/Date) */
+    var fmtDataAulas = function(v) {
+        if (v && typeof v.toDate === 'function') { try { v = v.toDate(); } catch (e) { v = null; } }
+        if (v instanceof Date) {
+            var m1 = v.getMonth() + 1, d1 = v.getDate();
+            return (d1 < 10 ? '0' + d1 : d1) + '/' + (m1 < 10 ? '0' + m1 : m1) + '/' + v.getFullYear();
+        }
+        var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        return m ? m[3] + '/' + m[2] + '/' + m[1] : (v ? String(v) : '---');
+    };
+
+    w.gerarRelatorioAulas = async function() {
+        var elSel = w.document.getElementById('sel-turma-aulas');
+        var btn = w.document.getElementById('btn-gerar-aulas');
+        if (!elSel || elSel.value === '') { alert('Selecione uma turma.'); return; }
+        var t = listaTurmas[Number(elSel.value)];
+        var turma = t.nome;
+        var projeto = t.projeto || '';
+        btn.disabled = true; btn.textContent = 'Gerando...';
+        try {
+            var snap = await dbFirestore.collection('aulas').where('turma', '==', turma).get();
+            var aulas = [];
+            snap.forEach(function(doc) { var a = doc.data() || {}; a._id = doc.id; aulas.push(a); });
+            if (!aulas.length) {
+                alert('Nenhuma aula cadastrada para a turma: ' + turma);
+                btn.disabled = false; btn.textContent = 'Gerar Relatorio';
+                return;
+            }
+            aulas.sort(function(a, b) {
+                return String(a.data || '').localeCompare(String(b.data || '')) || String(a.disciplina || '').localeCompare(String(b.disciplina || ''));
+            });
+
+            /* Cabecalho: dados da instituicao (Configuracoes > Dados da Instituicao) */
+            try {
+                if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
+            } catch (e) { /* segue com o cache/default */ }
+            var inst = {};
+            if (typeof fichaGeralDadosInstituicao === 'function') inst = fichaGeralDadosInstituicao() || {};
+            var logo = inst.logo || FARN_LOGO || '';
+            var razao = inst.razaoSocial || 'FARN - FORCA AUXILIAR DE RESGATE NACIONAL';
+            var fantasia = inst.nomeFantasia || 'FARN - BRASIL - BS.BRASIL - COMMAND BRASIL';
+            var cnpjL = inst.cnpj || '43.327.929/0001-32';
+            var foneL = inst.fone || '';
+            var emailL = inst.email || '';
+            var header = '<div class="header">'
+                + (logo ? '<img src="' + String(logo).replace(/"/g, '&quot;') + '" alt="Logo da instituicao">' : '')
+                + '<div class="title-line">' + escHTML(razao.toUpperCase()) + '</div>'
+                + (fantasia ? '<div class="sub-line">' + escHTML(fantasia.toUpperCase()) + '</div>' : '')
+                + '<div class="info-line">'
+                + 'CNPJ: ' + escHTML(cnpjL)
+                + (foneL ? ' &nbsp;|&nbsp; Telefone: ' + escHTML(foneL) : '')
+                + (emailL ? ' &nbsp;|&nbsp; Email: ' + escHTML(emailL) : '')
+                + '</div></div>';
+
+            /* Resumo: projeto, turma, responsavel, inicio, periodo e docentes */
+            var docentes = {};
+            aulas.forEach(function(a) { if (a.docente) docentes[String(a.docente).trim().toUpperCase()] = true; });
+            var docentesTxt = Object.keys(docentes).sort().join(', ') || '---';
+            var projetoInfo = null;
+            (projetos || []).forEach(function(p) { if (!projetoInfo && projeto && p.nome === projeto) projetoInfo = p; });
+            var responsavel = (projetoInfo && projetoInfo.responsavel) ? projetoInfo.responsavel : '---';
+            var infoBox = '<div class="info-box">'
+                + '<div><span class="info-label">Projeto</span><b>' + escHTML(projeto || '---') + '</b></div>'
+                + '<div><span class="info-label">Turma</span><b>' + escHTML(turma) + (t.descricao ? ' - ' + escHTML(t.descricao) : '') + '</b></div>'
+                + '<div><span class="info-label">Responsavel</span><b>' + escHTML(responsavel) + '</b></div>'
+                + '<div><span class="info-label">Inicio da Turma</span><b>' + (t.inicio ? fmtDataAulas(t.inicio) : '---') + '</b></div>'
+                + '<div><span class="info-label">Periodo das Aulas</span><b>' + fmtDataAulas(aulas[0].data) + ' a ' + fmtDataAulas(aulas[aulas.length - 1].data) + '</b></div>'
+                + '<div><span class="info-label">Total de Aulas</span><b>' + aulas.length + '</b></div>'
+                + '<div style="grid-column:1/-1"><span class="info-label">Docentes</span><b>' + escHTML(docentesTxt) + '</b></div>'
+                + '</div>';
+
+            var linhas = aulas.map(function(a, i) {
+                var num = (i + 1) < 10 ? '0' + (i + 1) : String(i + 1);
+                return '<tr>'
+                    + '<td class="center">' + num + '</td>'
+                    + '<td class="data">' + fmtDataAulas(a.data) + '</td>'
+                    + '<td>' + escHTML(a.disciplina || '---') + '</td>'
+                    + '<td>' + escHTML(a.conteudo || '---') + '</td>'
+                    + '<td>' + escHTML(a.docente || '---') + '</td>'
+                    + '<td class="center">' + escHTML(a.horario || '---') + '</td>'
+                    + '<td class="center">' + (String(a.avTeorica || '').toLowerCase() === 'sim' ? 'Sim' : '-') + '</td>'
+                    + '<td class="center">' + (String(a.avPratica || '').toLowerCase() === 'sim' ? 'Sim' : '-') + '</td>'
+                    + '</tr>';
+            }).join('');
+
+            w.document.body.innerHTML = '<style>' +
+                '@page{size:A4 portrait;margin:12mm}body{font-family:Arial,sans-serif;color:#222;padding:20px;font-size:11px}' +
+                '.header{text-align:center;margin-bottom:6px;border-bottom:3px solid #16a34a;padding-bottom:8px}' +
+                '.header img{height:52px;margin-bottom:4px}' +
+                '.header .title-line{font-size:13px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:1px}' +
+                '.header .sub-line{font-size:11px;color:#334155;font-weight:700;margin-top:2px}' +
+                '.header .info-line{font-size:10px;color:#666;margin-top:3px}' +
+                '.report-title{text-align:center;font-size:14px;font-weight:800;color:#0f172a;margin:10px 0;text-transform:uppercase;letter-spacing:1.5px;border:2px solid #16a34a;padding:7px;border-radius:4px}' +
+                '.info-box{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;text-align:left}' +
+                '.info-label{display:block;color:#64748b;font-size:9px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}' +
+                'table{width:100%;border-collapse:collapse}' +
+                'th{background:#16a34a;color:#fff;padding:7px 8px;text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px}' +
+                'td{padding:6px 8px;border-bottom:1px solid #e0e0e0;font-size:10.5px;vertical-align:top}' +
+                'tr:nth-child(even){background:#f6f9f0}' +
+                'td.center{text-align:center}' +
+                'td.data{white-space:nowrap;font-weight:700}' +
+                '.print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+                '.footer{margin-top:14px;text-align:center;font-size:10px;color:#999;border-top:1px solid #ddd;padding-top:8px}' +
+                '@media print{.print-btn{display:none}th{background:#16a34a!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tr:nth-child(even){background:#f6f9f0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.info-box{background:#f8fafc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
+                '</style>' +
+                header +
+                '<div class="report-title">Relatorio de Aulas Cadastradas - ' + escHTML(turma) + '</div>' +
+                infoBox +
+                '<table><thead><tr><th>#</th><th>Data</th><th>Disciplina</th><th>Conteudo</th><th>Docente</th><th>Horario</th><th>AV Teorica</th><th>AV Pratica</th></tr></thead><tbody>' +
+                linhas +
+                '</tbody></table>' +
+                '<button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Relatorio</button>' +
+                '<div class="footer">FARN - Forca Auxiliar de Resgate Nacional | Relatorio gerado em ' + new Date().toLocaleString('pt-BR') + '</div>';
+        } catch (e) {
+            alert('Erro ao buscar aulas: ' + e.message);
+            btn.disabled = false; btn.textContent = 'Gerar Relatorio';
+        }
+    };
+}
+
 function relatorioEquipamentos() {
     var turmasComCurso = turmas.filter(function(t) { return t && t.nome; });
     if (!turmasComCurso.length) { alert('Nenhuma turma encontrada.'); return; }
