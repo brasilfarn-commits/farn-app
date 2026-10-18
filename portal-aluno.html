@@ -4892,33 +4892,42 @@
         var cor = jaAvaliada ? '#16a34a'
             : (rec ? '#64748b'
             : (emBreve ? '#ea580c'
-            : (semPresenca ? '#dc2626' : '#6B8E23')));
+            : (semPresenca ? '#dc2626' : '#556B2F')));
         function selo(txt, icone) {
             return '<span style="display:inline-flex;align-items:center;gap:5px;background:' + cor + ';color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid ' + icone + '" style="margin-right:4px"></i>' + txt + '</span>';
         }
-        var btnVisualizar = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#6B8E23,#2F3D14);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+        var btnVisualizar = '<button onclick="paRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#556B2F,#3E4F1C);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
         var btnRec = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#64748b,#475569);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-rotate-right" style="margin-right:4px"></i>' + (jaAvaliada ? 'Refazer Avaliação' : 'Fazer Recuperação') + '</button>';
         var btn;
+        var ativaAgora = (d.ativa === true);
         if (isPratica) {
             btn = btnVisualizar;
-        } else if (recParada) {
-            btn = jaAvaliada ? btnVisualizar : selo('Recuperação em breve', 'fa-hourglass-half');
-        } else if (rec) {
-            btn = jaAvaliada ? btnVisualizar : btnRec;
         } else if (jaAvaliada) {
             btn = btnVisualizar;
+        } else if (rec && recParada && !ativaAgora) {
+            btn = selo('Recuperação em breve', 'fa-hourglass-half');
+        } else if (rec && !ativaAgora) {
+            btn = btnRec;
         } else if (emBreve) {
             btn = selo('Em breve', 'fa-hourglass-half');
         } else if (semPresenca) {
             btn = selo('Você não esteve presente', 'fa-user-slash');
         } else {
-            btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
+            /* AV ATIVADA pelo instrutor: o botao Responder liga para a turma toda —
+               inclusive os alunos da recuperacao, mesmo com a recuperacao parada. */
+            btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#556B2F,#3E4F1C);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
         }
         var statusTxt = jaAvaliada ? 'Avaliada'
+            : (ativaAgora ? 'Disponível para responder'
             : (rec ? (recParada ? 'Recuperação em breve' : 'Recuperação')
             : (emBreve ? 'Em breve'
-            : (semPresenca ? 'Falta' : 'Disponível')));
-        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + statusTxt + '</span>' +
+            : (semPresenca ? 'Falta' : 'Disponível para responder'))));
+        var statusCor = jaAvaliada ? '#16a34a'
+            : (ativaAgora ? '#556B2F'
+            : (rec ? (recParada ? '#ea580c' : '#64748b')
+            : (emBreve ? '#ea580c'
+            : (semPresenca ? '#dc2626' : '#556B2F'))));
+        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + statusCor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + statusTxt + '</span>' +
             (isFinal ? '<span style="font-size:10px;font-weight:700;color:#7c3aed;background:#f3e8ff;border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px;margin-left:4px">Final</span>' : '');
         var card = document.createElement('div');
         card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
@@ -5023,6 +5032,9 @@
             if (regs === null) return { ok: true, dia: dia };
             var daAula = (d && d.aulaId) ? regs.filter(function(p) { return p.aulaId === d.aulaId; }) : [];
             var base = daAula.length ? daAula : regs.filter(function(p) { return String(p.dataAula || '') === dia; });
+            /* Sem registro do aluno no dia (apontamento ainda nao feito, por ex.)
+               nao da para afirmar falta: nao bloqueia. Falta so com registro. */
+            if (!base.length) return { ok: true, dia: dia };
             var presente = base.some(function(p) { return p.status === 'Presente' || p.status === 'Justificada'; });
             return { ok: presente, dia: dia };
         } catch (e) {
@@ -5059,6 +5071,9 @@
             if (!dia) return false;
             var daAula = d.aulaId ? presencas.filter(function (p) { return p.aulaId === d.aulaId; }) : [];
             var base = daAula.length ? daAula : presencas.filter(function (p) { return String(p.dataAula || '') === dia; });
+            /* Sem registro do aluno no dia nao e falta: vermelho apenas com
+               Falta/Justificada registrada (apontamento feito). */
+            if (!base.length) return false;
             return !base.some(function (p) { return p.status === 'Presente' || p.status === 'Justificada'; });
         } catch (e) { return false; }
     }
@@ -5173,7 +5188,9 @@
             if (!paRavAlunoPermitido(d) && !jaRespondeuAntes) { alert('Esta avaliação não está disponível para você.'); return; }
             if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
             var rec = paRavAlunoSelecionado(d);
-            if (rec && paRavRecuperacaoParada(d)) { paRavVisualizar(avId); return; }
+            // Recuperacao parada = somente visualizar. MAS se o instrutor ATIVOU a AV,
+            // a ativacao vale mais que a parada: o aluno da recuperacao pode responder.
+            if (rec && paRavRecuperacaoParada(d) && d.ativa !== true) { paRavVisualizar(avId); return; }
             if (d.ativa !== true && !rec) {
                 if (jaRespondeuAntes) { paRavVisualizar(avId); return; }
                 alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return;
