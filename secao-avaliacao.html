@@ -405,7 +405,10 @@
             if (avAulasCache) return avAulasCache;
             avAulasCache = { todas: [], teorica: [], pratica: [] };
             try {
-                var snap = await db.collection('aulas').get();
+                /* Filtro de projeto+turma no servidor (igual ao do cliente
+                   abaixo): baixa so as aulas desta turma em vez da colecao
+                   inteira, que so cresce. */
+                var snap = await db.collection('aulas').where('projeto', '==', avProjeto).where('turma', '==', avTurma).get();
                 snap.forEach(function(doc) {
                     var a = doc.data();
                     a._id = doc.id;
@@ -483,7 +486,12 @@
                 if (!cpf) return;
                 var turma = String(avTurma || '').trim();
                 var alterou = [false];
-                var snap = await db.collection('avaliacoes').where('enviada', '==', true).get();
+                /* Filtro de turma no servidor: baixa somente as AVs desta
+                   turma (sem isso a ficha esperava TODAS as AVs enviadas,
+                   com as questoes, antes de mostrar qualquer guia). */
+                var qAvals = db.collection('avaliacoes').where('enviada', '==', true);
+                if (turma) qAvals = qAvals.where('turma', '==', turma);
+                var snap = await qAvals.get();
                 var promessas = [];
                 var lerNotaResposta = function(avId, avDq) {
                     var peso = avDq.length === 10 ? 1.0 : (avDq.length === 20 ? 0.5 : (avDq.length > 0 ? 10 / avDq.length : 0));
@@ -616,8 +624,12 @@
             await avCarregarAulas();
             await avCarregarPresencas(cpf);
             await avCarregarAvaliacao(cpf);
-            await avSincronizarNotasAutomaticas();
+            /* Pinta a guia na hora; a sincronizacao das notas roda em
+               segundo plano e, quando terminar, repinta a guia ativa. */
             avTrocarAba('apontamento');
+            avSincronizarNotasAutomaticas().then(function() {
+                if (avAlunoAtual && avAvaliacao) avTrocarAba(avAbaAtual);
+            }).catch(function() {});
         }
 
         function avFecharFicha(ev) {

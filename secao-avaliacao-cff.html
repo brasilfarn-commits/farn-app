@@ -576,8 +576,12 @@
             await avCarregarAulas();
             await avCarregarPresencas(cpf);
             await avCarregarAvaliacao(cpf);
-            await avSincronizarNotasAutomaticas();
+            /* Pinta a guia na hora; a sincronizacao das notas roda em
+               segundo plano e, quando terminar, repinta a guia ativa. */
             avTrocarAba('apontamento');
+            avSincronizarNotasAutomaticas().then(function() {
+                if (avAlunoAtual && avAvaliacao) avTrocarAba(avAbaAtual);
+            }).catch(function() {});
         }
 
         function avFecharFicha(ev) {
