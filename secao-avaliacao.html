@@ -241,14 +241,18 @@
                 <button class="tab" id="tab-comportamento" onclick="avTrocarAba('comportamento')"><i class="fa-solid fa-scale-balanced"></i> AV Comportamento</button>
                 <button class="tab" id="tab-teorica" onclick="avTrocarAba('teorica')"><i class="fa-solid fa-file-lines"></i> AV Teórica</button>
                 <button class="tab" id="tab-pratica" onclick="avTrocarAba('pratica')"><i class="fa-solid fa-flask"></i> AV Prática</button>
-                <button class="tab" id="tab-final" onclick="avTrocarAba('final')"><i class="fa-solid fa-graduation-cap"></i> AV Final</button>
+                <button class="tab" id="tab-final-teorica" onclick="avTrocarAba('final_teorica')"><i class="fa-solid fa-graduation-cap"></i> AV Final Teórica</button>
+                <button class="tab" id="tab-final-pratica" onclick="avTrocarAba('final_pratica')"><i class="fa-solid fa-award"></i> AV Final Prática</button>
+                <button class="tab" id="tab-resultado" onclick="avTrocarAba('resultado')"><i class="fa-solid fa-square-poll-vertical"></i> Resultado Final</button>
             </div>
             <div class="modal-body">
                 <div class="aba active" id="aba-apontamento"></div>
                 <div class="aba" id="aba-comportamento"></div>
                 <div class="aba" id="aba-teorica"></div>
                 <div class="aba" id="aba-pratica"></div>
-                <div class="aba" id="aba-final"></div>
+                <div class="aba" id="aba-final-teorica"></div>
+                <div class="aba" id="aba-final-pratica"></div>
+                <div class="aba" id="aba-resultado"></div>
             </div>
         </div>
     </div>
@@ -626,7 +630,7 @@
 
         function avTrocarAba(nome) {
             avAbaAtual = nome;
-            var abas = ['apontamento', 'comportamento', 'teorica', 'pratica', 'final'];
+            var abas = ['apontamento', 'comportamento', 'teorica', 'pratica', 'final_teorica', 'final_pratica', 'resultado'];
             abas.forEach(function(n) {
                 document.getElementById('tab-' + n).classList.toggle('active', n === nome);
                 document.getElementById('aba-' + n).classList.toggle('active', n === nome);
@@ -635,7 +639,8 @@
             else if (nome === 'comportamento') avRenderComportamento();
             else if (nome === 'teorica') avRenderNotas('teorica');
             else if (nome === 'pratica') avRenderNotas('pratica');
-            else avRenderFinal();
+            else if (nome === 'final_teorica' || nome === 'final_pratica') avRenderFinal(nome);
+            else avRenderResultado();
         }
 
         function avRenderApontamento() {
@@ -777,10 +782,35 @@
             }
             await avSalvarAvaliacao();
             avRenderNotas(tipo);
-            if (avAbaAtual === 'final') avRenderFinal();
+            if (avAbaAtual === 'final_teorica' || avAbaAtual === 'final_pratica') avRenderFinal(avAbaAtual);
+            else if (avAbaAtual === 'resultado') avRenderResultado();
         }
 
-        function avRenderFinal() {
+        /* Cada prova final na GUIA DELA: AV Final Teorica e AV Final Pratica.
+           O consolidado (medias manuais, comportamento, FIN, certificadora)
+           fica na guia Resultado Final. */
+        function avRenderFinal(tipo) {
+            var r = avCalcularFinal();
+            var ehTeorica = (tipo !== 'final_pratica');
+            var valor = ehTeorica ? r.avFinalTeorica : r.avFinalPratica;
+            var rotulo = ehTeorica ? 'AV Final Teórica' : 'AV Final Prática';
+            var texto = ehTeorica
+                ? 'Nota preenchida automaticamente quando o aluno responder a prova final teórica criada em Criar Avaliação.'
+                : 'Nota da correção do instrutor no Portal do Docente (Avaliar → AV Prática), gravada no campo AV Final Prática da ficha.';
+            var html =
+                '<div class="av-card">' +
+                    '<h4><i class="fa-solid ' + (ehTeorica ? 'fa-graduation-cap' : 'fa-award') + '"></i> ' + rotulo + '</h4>' +
+                    '<p style="font-size:11px;color:#b9d4bd;margin-bottom:10px">' + texto + '</p>' +
+                    '<div class="media-destaque">' +
+                        '<span class="rotulo">' + rotulo.toUpperCase() + '</span>' +
+                        '<span class="valor">' + (valor === '' ? '—' : avNum(valor)) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<p style="font-size:11px;color:#b9d4bd;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>A FIN = (AV Final Teórica + AV Final Prática) ÷ 2, a Nota Certificadora e a Situação Final aparecem na guia Resultado Final.</p>';
+            document.getElementById('aba-' + tipo).innerHTML = html;
+        }
+
+        function avRenderResultado() {
             var r = avCalcularFinal();
             function miniCard(rotulo, valor, cor) {
                 return '<div class="av-stat"><div class="valor" style="color:' + (cor || '#fde047') + '">' + valor + '</div><div class="rotulo">' + rotulo + '</div></div>';
@@ -815,16 +845,10 @@
                 '</div>' +
                 '<div class="av-card">' +
                     '<h4><i class="fa-solid fa-graduation-cap"></i> AV Final Teórica e AV Final Prática</h4>' +
-                    '<p style="font-size:11px;color:#b9d4bd;margin-bottom:10px">Preenchidas automaticamente ao responder as provas finais criadas em Criar Avaliação.</p>' +
-                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
-                        '<div>' +
-                            '<label style="font-size:11px;font-weight:700;color:#fde047;display:block;margin-bottom:5px">AV Final Teórica</label>' +
-                            '<input type="text" class="av-nota-input" style="width:100%" value="' + (r.avFinalTeorica === '' ? '' : avNum(r.avFinalTeorica)) + '" placeholder="—" disabled>' +
-                        '</div>' +
-                        '<div>' +
-                            '<label style="font-size:11px;font-weight:700;color:#fde047;display:block;margin-bottom:5px">AV Final Prática</label>' +
-                            '<input type="text" class="av-nota-input" style="width:100%" value="' + (r.avFinalPratica === '' ? '' : avNum(r.avFinalPratica)) + '" placeholder="—" disabled>' +
-                        '</div>' +
+                    '<p style="font-size:11px;color:#b9d4bd;margin-bottom:10px">Cada prova final tem a guia própria (AV Final Teórica / AV Final Prática); aqui fica o consolidado das duas.</p>' +
+                    '<div class="av-grid">' +
+                        miniCard('AV Final Teórica', r.avFinalTeorica === '' ? '—' : avNum(r.avFinalTeorica)) +
+                        miniCard('AV Final Prática', r.avFinalPratica === '' ? '—' : avNum(r.avFinalPratica)) +
                     '</div>' +
                     '<div class="media-destaque" style="margin-top:12px">' +
                         '<span class="rotulo">FIN = (AV Final Teórica + AV Final Prática) ÷ 2' + (r.temFinal ? '' : ' — provisória (0)') + '</span>' +
@@ -844,7 +868,7 @@
                     '<span class="valor" style="color:' + (r.aprovado ? '#4ade80' : '#f87171') + '">' + (r.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</span>' +
                 '</div>' +
                 '<p style="font-size:11px;color:#b9d4bd;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Os campos de média teórica e prática usam as médias das abas AV Teórica e AV Prática; deixe em branco para valer a automática. A AV Final é a média das duas + os pontos do comportamento, de 0 a 10. A Nota Certificadora é a média entre a Média e a FIN (média das provas finais). A Situação Final (APROVADO/NÃO APROVADO) usa sempre a Nota Certificadora. Enquanto não houver notas de AV Final Teórica/Prática, elas contam como zero, e a Nota Certificadora aparece como provisória.</p>';
-            document.getElementById('aba-final').innerHTML = html;
+            document.getElementById('aba-resultado').innerHTML = html;
         }
 
         async function avSalvarCampoManual(campo, el) {
@@ -857,7 +881,7 @@
                 avAvaliacao[campo] = '';
             }
             await avSalvarAvaliacao();
-            avRenderFinal();
+            avRenderResultado();
         }
 
         document.addEventListener('DOMContentLoaded', avInit);

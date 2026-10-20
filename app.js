@@ -11576,6 +11576,7 @@ function cavLoadList() {
         }
         const teoricas = [];
         const praticas = [];
+        const finais = [];
         const contagem = {};
         const rotulos = {};
         const respondentesPorAv = {}; // avId -> { cpfDigitos: true }
@@ -11625,7 +11626,7 @@ function cavLoadList() {
             card.innerHTML =
                 '<div style="width:44px;height:44px;background:rgba(37,99,235,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + cor + '"><i class="fa-solid fa-' + (respondidas > 0 ? 'check-double' : (d.ativa ? 'pen-to-square' : (!isPratica ? 'clock' : (d.enviada ? 'paper-plane' : 'file-lines')))) + '" style="color:#fff;font-size:18px"></i></div>' +
                 '<div style="flex:1;min-width:170px">' +
-                    '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + (isFinal ? ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:800;background:#7c3aed;color:#fff">FINAL</span>' : '') + envBadge + '</div>' +
+                    '<div style="font-size:14px;font-weight:700;color:#0f172a">' + escHTML(d.nome || 'Sem nome') + (isFinal ? ' <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:800;background:#7c3aed;color:#fff">' + (d.tipo === 'final_pratica' ? 'FINAL PRÁTICA' : 'FINAL TEÓRICA') + '</span>' : '') + envBadge + '</div>' +
                     '<div style="font-size:11.5px;color:#64748b;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">' +
                         (d.projeto ? '<span><i class="fa-solid fa-folder-open" style="margin-right:3px"></i>' + escHTML(d.projeto) + '</span>' : '') +
                         (d.turma ? '<span><i class="fa-solid fa-users" style="margin-right:3px"></i>' + escHTML(d.turma) + '</span>' : '') +
@@ -11646,14 +11647,16 @@ function cavLoadList() {
                     (!isPratica && temRec && !recParada ? '<button class="btn-danger btn-sm" title="Parar a recuperação: os alunos selecionados deixam de responder/refazer; somente quem já concluiu poderá visualizar" onclick="cavPararRecuperacao(\'' + id + '\')"><i class="fa-solid fa-hand"></i> Parar Recuperação</button>' : '') +
                     '<button class="btn-danger btn-sm" title="Excluir" onclick="cavExcluirPorId(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</div>';
-            if (d.tipo === 'pratica' || d.tipo === 'final_pratica') praticas.push(card);
+            if (d.tipo === 'final_teorica' || d.tipo === 'final_pratica') finais.push(card);
+            else if (d.tipo === 'pratica') praticas.push(card);
             else teoricas.push(card);
         });
 
-        /* Duas colunas: AV Teoricas | AV Praticas */
+        /* Tres colunas: AV Teoricas | AV Praticas | AV Final Teorica / Pratica */
         const grid = document.createElement('div');
         grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;align-items:start';
-        const montarColuna = (titulo, icone, cor, arr, tipoCriar) => {
+        const rotuloNova = { teorica: 'Nova AV Teórica', pratica: 'Nova AV Prática', final_teorica: 'Nova AV Final Teórica', final_pratica: 'Nova AV Final Prática' };
+        const montarColuna = (titulo, icone, cor, arr, tiposCriar) => {
             const col = document.createElement('div');
             col.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px';
             const head = document.createElement('div');
@@ -11662,14 +11665,14 @@ function cavLoadList() {
                 '<span style="font-size:13px;font-weight:800;color:#0f172a">' + titulo + '</span>' +
                 '<span style="margin-left:auto;font-size:11px;font-weight:700;color:' + cor + ';background:' + cor + '1a;padding:2px 9px;border-radius:20px">' + arr.length + '</span>';
             col.appendChild(head);
-            if (tipoCriar) {
+            (tiposCriar || []).forEach(function (tipo) {
                 const btnNova = document.createElement('button');
                 btnNova.className = 'btn-outline btn-sm';
                 btnNova.style.cssText = 'width:100%;margin-bottom:10px;justify-content:center';
-                btnNova.innerHTML = '<i class="fa-solid fa-plus"></i> ' + (tipoCriar === 'pratica' ? 'Nova AV Prática' : 'Nova AV Teórica');
-                btnNova.onclick = function () { cavEscolherTipoConfirmar(tipoCriar); };
+                btnNova.innerHTML = '<i class="fa-solid fa-plus"></i> ' + (rotuloNova[tipo] || 'Nova AV');
+                btnNova.onclick = function () { cavEscolherTipoConfirmar(tipo); };
                 col.appendChild(btnNova);
-            }
+            });
             if (arr.length === 0) {
                 const vazio = document.createElement('div');
                 vazio.style.cssText = 'text-align:center;color:#94a3b8;font-size:12px;padding:18px 6px';
@@ -11680,8 +11683,9 @@ function cavLoadList() {
             }
             return col;
         };
-        grid.appendChild(montarColuna('AV Teóricas', 'fa-square-check', '#16a34a', teoricas, 'teorica'));
-        grid.appendChild(montarColuna('AV Práticas', 'fa-screwdriver-wrench', '#2563eb', praticas, 'pratica'));
+        grid.appendChild(montarColuna('AV Teóricas', 'fa-square-check', '#16a34a', teoricas, ['teorica']));
+        grid.appendChild(montarColuna('AV Práticas', 'fa-screwdriver-wrench', '#2563eb', praticas, ['pratica']));
+        grid.appendChild(montarColuna('AV Final Teórica / Prática', 'fa-graduation-cap', '#7c3aed', finais, ['final_teorica', 'final_pratica']));
         container.innerHTML = '';
         container.appendChild(grid);
     }).catch(() => {
