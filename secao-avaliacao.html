@@ -568,8 +568,8 @@
         function avCalcularFinal() {
             var teor = avCalcularMedia('teorica');
             var prat = avCalcularMedia('pratica');
-            var mTeorManual = parseFloat((avAvaliacao.mediaTeoricaManual || '').replace(',', '.'));
-            var mPratManual = parseFloat((avAvaliacao.mediaPraticaManual || '').replace(',', '.'));
+            var mTeorManual = parseFloat(String(avAvaliacao.mediaTeoricaManual == null ? '' : avAvaliacao.mediaTeoricaManual).replace(',', '.'));
+            var mPratManual = parseFloat(String(avAvaliacao.mediaPraticaManual == null ? '' : avAvaliacao.mediaPraticaManual).replace(',', '.'));
             var mT = isNaN(mTeorManual) ? teor : Math.max(0, Math.min(10, mTeorManual));
             var mP = isNaN(mPratManual) ? prat : Math.max(0, Math.min(10, mPratManual));
             var mediaFinal = Math.round(((mT + mP) / 2) * 10) / 10;
