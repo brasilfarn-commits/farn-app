@@ -4880,7 +4880,8 @@
 
     function paRavMontarCard(av, jaAvaliada, recuperacao, parada, falta) {
         var d = av.data;
-        var isPratica = (d.tipo === 'pratica');
+        // AV Pratica e AV Final Pratica: mesmo fluxo (so visualiza; o docente corrige).
+        var isPratica = (d.tipo === 'pratica' || d.tipo === 'final_pratica');
         var isFinal = (d.tipo === 'final_teorica' || d.tipo === 'final_pratica');
         var rec = (recuperacao === true);
         var recParada = (parada === true) && rec;
@@ -5155,15 +5156,15 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    /* O aluno JA respondeu esta AV? Teorica (e finais) = doc em avaliacoesRespostas;
-       Pratica = nota registrada pelo instrutor em avaliacoesAlunos.avPraticaManual.
+    /* O aluno JA respondeu esta AV? Teorica (e final teorica) = doc em avaliacoesRespostas;
+       Pratica e Final Pratica = nota registrada pelo instrutor em avaliacoesAlunos.avPraticaManual.
        Garante que uma AV ja feita continue listada/visualizavel, mesmo que hoje ela
        esteja restrita a outros alunos (recuperacao) ou desativada. */
     async function paRavJaRespondeu(d, avId) {
         if (!d || !avId || !paUser) return false;
         var cpfLimpo = (paUser.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '') || 'anonimo';
         try {
-            if (d.tipo === 'pratica') {
+            if (d.tipo === 'pratica' || d.tipo === 'final_pratica') {
                 var fDoc = await dbFirestore.collection('avaliacoesAlunos').doc(paUser.cpf || cpfLimpo).get();
                 if (!fDoc.exists) return false;
                 return (((fDoc.data() || {}).avPraticaManual) || {})[avId] ? true : false;
@@ -5186,7 +5187,7 @@
             // esteja restrita a outros alunos ou desativada: AV ja feita nunca desaparece.
             var jaRespondeuAntes = await paRavJaRespondeu(d, avId);
             if (!paRavAlunoPermitido(d) && !jaRespondeuAntes) { alert('Esta avaliação não está disponível para você.'); return; }
-            if (d.tipo === 'pratica') { paRavVisualizar(avId); return; }
+            if (d.tipo === 'pratica' || d.tipo === 'final_pratica') { paRavVisualizar(avId); return; }
             var rec = paRavAlunoSelecionado(d);
             // Recuperacao parada = somente visualizar. MAS se o instrutor ATIVOU a AV,
             // a ativacao vale mais que a parada: o aluno da recuperacao pode responder.
@@ -5446,7 +5447,7 @@
             // Quem ja respondeu (teorica: doc de respostas; pratica: nota do instrutor) sempre
             // visualiza o resultado, mesmo que a AV hoje esteja restrita a outros alunos.
             var jaRespondeuVis = respDoc.exists === true;
-            if (!jaRespondeuVis && d.tipo === 'pratica') {
+            if (!jaRespondeuVis && (d.tipo === 'pratica' || d.tipo === 'final_pratica')) {
                 try {
                     var fPraDoc = await dbFirestore.collection('avaliacoesAlunos').doc(cpfLimpo).get();
                     jaRespondeuVis = !!(fPraDoc.exists && (((fPraDoc.data() || {}).avPraticaManual) || {})[avId]);
@@ -5466,7 +5467,8 @@
             var resumoHtml = '';
             if (!mostrar) {
                 resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-lock" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Avaliação indisponível</h4><p style="font-size:13px">Esta avaliação não está mais disponível ou não pertence à sua turma.</p></div>';
-            } else if (d.tipo === 'pratica') {
+            } else if (d.tipo === 'pratica' || d.tipo === 'final_pratica') {
+                var ehFinalVis = (d.tipo === 'final_teorica' || d.tipo === 'final_pratica');
                 var manual = {};
                 var nota = null;
                 try {
@@ -5477,8 +5479,9 @@
                         if (men) { manual = men.respostas || {}; nota = (men.nota != null ? Number(men.nota) : null); }
                     }
                 } catch (e) { console.error('Falha ao ler ficha p/ visualizar prática:', e); }
-                // Tarefa 3: sem nota registrada, so permite se esteve PRESENTE (ou Justificada) no dia da AV
-                if (nota == null) {
+                // Tarefa 3: sem nota registrada, so permite se esteve PRESENTE (ou Justificada) no dia da AV.
+                // Prova final nao se vincula a aula: nao exige presenca.
+                if (nota == null && !ehFinalVis) {
                     var podePratica = await paAvPodeResponder(d);
                     if (!podePratica.ok) {
                         conteudo.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-triangle-exclamation" style="font-size:34px;color:#f59e0b;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Acesso bloqueado</h4><p style="font-size:13px">Para responder a AV Pratica voce precisa estar PRESENTE no dia da aula da avaliacao (ou com falta justificada).</p></div>';
@@ -5488,7 +5491,7 @@
                 var notaHtml = '';
                 if (nota != null) {
                     notaHtml = '<div style="background:linear-gradient(135deg,#556B2F,#3E4F1C);border-radius:12px;padding:16px;text-align:center;color:#fff;margin-bottom:16px">' +
-                        '<div style="font-size:11px;font-weight:700;letter-spacing:1px">NOTA DA AVALIAÇÃO PRÁTICA</div>' +
+                        '<div style="font-size:11px;font-weight:700;letter-spacing:1px">' + (d.tipo === 'final_pratica' ? 'NOTA DA AV FINAL PRÁTICA' : 'NOTA DA AVALIAÇÃO PRÁTICA') + '</div>' +
                         '<div style="font-size:34px;font-weight:800;margin-top:4px">' + String(nota).replace('.', ',') + '</div>' +
                         '<div style="font-size:11px;opacity:.85">de 0 a 10</div>' +
                         '</div>';

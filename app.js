@@ -11506,6 +11506,11 @@ let cavAlunosFiltro = '';
 function cavEhFinal(tipo) {
     return tipo === 'final_teorica' || tipo === 'final_pratica';
 }
+// AV Pratica e AV Final Pratica sao MONTADAS e CORRIGIDAS pelo docente: mesmo
+// formulario (enunciados sem alternativas, marcacao CERTA/PARCIAL/NAO REALIZOU).
+function cavEhPratica(tipo) {
+    return tipo === 'pratica' || tipo === 'final_pratica';
+}
 function cavCampoAV(tipo) {
     if (tipo === 'pratica') return 'avPratica';
     if (tipo === 'final_teorica') return 'avFinalTeorica';
@@ -11585,12 +11590,14 @@ function cavLoadList() {
             });
         }
         if (avaliacoesAlunos) {
+            const rotuloTipo = {};
+            avs.forEach(({ id, d }) => { rotuloTipo[id] = (d && d.tipo) === 'final_pratica' ? 'Final Prática (docente)' : 'Prática (docente)'; });
             avaliacoesAlunos.forEach(fDoc => {
                 const f = fDoc.data() || {};
                 const man = f.avPraticaManual || {};
                 Object.keys(man).forEach(avId => {
                     contagem[avId] = (contagem[avId] || 0) + 1;
-                    rotulos[avId] = 'Prática (docente)';
+                    rotulos[avId] = rotuloTipo[avId] || 'Prática (docente)';
                 });
             });
         }
@@ -11598,7 +11605,7 @@ function cavLoadList() {
             const qtd = (d.questoes || []).length;
             const respondidas = contagem[id] || 0;
             const embaralhamentos = Number(d.embaralhamentos || 0);
-            const isPratica = (d.tipo === 'pratica');
+            const isPratica = cavEhPratica(d.tipo);
             const isFinal = cavEhFinal(d.tipo);
             const selRec = d.alunosSelecionados || [];
             const temRec = selRec.length > 0;
@@ -12383,7 +12390,7 @@ function cavAdicionarQuestao(dados) {
     q.dataset.idx = idx;
     q.style.cssText = 'background:#fafcff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:14px';
     const e = (dados && dados.enunciado) ? escHTML(dados.enunciado) : '';
-    const isPratica = cavTipo === 'pratica';
+    const isPratica = cavEhPratica(cavTipo);
     let corpo;
     if (isPratica) {
         corpo =
@@ -12450,7 +12457,7 @@ function cavGetQuestoes() {
     const questoes = [];
     document.querySelectorAll('#cav-questoes .cav-q').forEach(q => {
         const enunciado = (q.querySelector('.cav-q-enunc') || {}).value || '';
-        if (cavTipo === 'pratica') {
+        if (cavEhPratica(cavTipo)) {
             questoes.push({ enunciado });
             return;
         }
@@ -12505,7 +12512,7 @@ function cavSalvar() {
     for (let i = 0; i < d.questoes.length; i++) {
         const q = d.questoes[i];
         if (!q.enunciado.trim()) { alert('A questão ' + (i + 1) + ' não tem enunciado.'); return; }
-        if (d.tipo !== 'pratica') {
+        if (!cavEhPratica(d.tipo)) {
             if (!q.correta) { alert('Marque a resposta correta (A, B, C ou D) da questão ' + (i + 1) + '.'); return; }
             if (!q.opcoes.a.trim() || !q.opcoes.b.trim() || !q.opcoes.c.trim() || !q.opcoes.d.trim()) { alert('Preencha as 4 opções da questão ' + (i + 1) + '.'); return; }
         }
@@ -12643,18 +12650,32 @@ function cavImprimirPorId(id) {
 }
 
 function cavImprimirHTML(d) {
+    const ehPratica = cavEhPratica(d.tipo);
     let questoesHtml = '';
     (d.questoes || []).forEach((q, i) => {
+        const op = q.opcoes || {};
+        const temAlternativas = !!(op.a || op.b || op.c || op.d);
         questoesHtml += '<div style="margin-bottom:18px;page-break-inside:avoid"><div style="font-weight:700;margin-bottom:6px">' + (i + 1) + '. ' + escHTML(q.enunciado) + '</div>' +
-            '<div style="margin-left:18px;line-height:1.8">' +
-                '<div>A) ' + escHTML(q.opcoes.a) + '</div>' +
-                '<div>B) ' + escHTML(q.opcoes.b) + '</div>' +
-                '<div>C) ' + escHTML(q.opcoes.c) + '</div>' +
-                '<div>D) ' + escHTML(q.opcoes.d) + '</div>' +
-            '</div><div style="margin-top:4px;margin-left:18px;display:flex;gap:12px">' +
-                '<span style="color:#94a3b8">( ) A</span><span style="color:#94a3b8">( ) B</span><span style="color:#94a3b8">( ) C</span><span style="color:#94a3b8">( ) D</span>' +
-            '</div></div>';
+            (temAlternativas
+                ? '<div style="margin-left:18px;line-height:1.8">' +
+                    '<div>A) ' + escHTML(op.a) + '</div>' +
+                    '<div>B) ' + escHTML(op.b) + '</div>' +
+                    '<div>C) ' + escHTML(op.c) + '</div>' +
+                    '<div>D) ' + escHTML(op.d) + '</div>' +
+                '</div><div style="margin-top:4px;margin-left:18px;display:flex;gap:12px">' +
+                    '<span style="color:#94a3b8">( ) A</span><span style="color:#94a3b8">( ) B</span><span style="color:#94a3b8">( ) C</span><span style="color:#94a3b8">( ) D</span>' +
+                '</div>'
+                /* AV Pratica / AV Final Pratica: marcacao do docente (sem alternativas) */
+                : '<div style="margin-top:4px;margin-left:18px;display:flex;gap:14px;color:#555">' +
+                    '<span>( ) CERTA</span><span>( ) PARCIAL</span><span>( ) NÃO REALIZOU</span>' +
+                '</div>') +
+            '</div>';
     });
+    const gabaritoHtml = ehPratica ? '' :
+        '<div style="page-break-before:always;border:2px solid #111;border-radius:8px;padding:18px;margin-top:8px">' +
+            '<div style="font-weight:700;font-size:16px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:6px">GABARITO - ' + escHTML((d.nome || 'Avaliação')) + '</div>' +
+            (d.questoes || []).map((q, i) => '<div style="padding:6px 8px;border-bottom:1px dashed #aaa;font-size:14px">Questão <strong>' + (i + 1) + '</strong>: Letra <strong>' + (q.correta || '').toUpperCase() + '</strong></div>').join('') +
+        '</div>';
     const w = window.open('', '_blank');
     w.document.write('<html><head><title>' + escHTML(d.nome || 'Avaliação') + '</title>' +
         '<style>body{font-family:Arial,sans-serif;color:#111;padding:30px} h1{font-size:20px;margin-bottom:4px} meta{}</style>' +
@@ -12662,10 +12683,7 @@ function cavImprimirHTML(d) {
         '<h1>' + escHTML((d.nome || 'Avaliação')) + '</h1>' +
         '<div style="color:#555;margin-bottom:20px;font-size:13px">Projeto: ' + escHTML(d.projeto || '-') + ' | Turma: ' + escHTML(d.turma || '-') + (d.disciplina ? ' | Disciplina: ' + escHTML(d.disciplina) : '') + (d.docente ? ' | Docente: ' + escHTML(d.docente) : '') + (d.aula ? ' | Aula: ' + escHTML(d.aula) : '') + '</div>' +
         questoesHtml +
-        '<div style="page-break-before:always;border:2px solid #111;border-radius:8px;padding:18px;margin-top:8px">' +
-            '<div style="font-weight:700;font-size:16px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:6px">GABARITO - ' + escHTML((d.nome || 'Avaliação')) + '</div>' +
-            (d.questoes || []).map((q, i) => '<div style="padding:6px 8px;border-bottom:1px dashed #aaa;font-size:14px">Questão <strong>' + (i + 1) + '</strong>: Letra <strong>' + (q.correta || '').toUpperCase() + '</strong></div>').join('') +
-        '</div>' +
+        gabaritoHtml +
         '<script>window.onload=function(){window.print();};</scr' + 'ipt>' +
         '</body></html>');
     w.document.close();
@@ -12813,6 +12831,7 @@ function cavListarAvaliados(avId) {
             return;
         }
         const avaliados = [];
+        const avTipo = (avDoc && avDoc.exists) ? (avDoc.data().tipo || '') : '';
         // Respostas enviadas pelo próprio aluno (AV teórica)
         snap.forEach(doc => {
             const r = doc.data() || {};
@@ -12842,7 +12861,7 @@ function cavListarAvaliados(avId) {
                     pontos: notaLinha,
                     certas: null,
                     total: man.totalQuestoes,
-                    tipo: 'Prática (docente)',
+                    tipo: (avTipo === 'final_pratica' ? 'Final Prática (docente)' : 'Prática (docente)'),
                     enviadoEm: man.respondidoEm
                 });
             });

@@ -4334,7 +4334,7 @@
                 var avs = [];
                 snap.forEach(function(doc) {
                     var d = doc.data() || {};
-                    if (d.tipo !== 'pratica') return;
+                    if (d.tipo !== 'pratica' && d.tipo !== 'final_pratica') return;
                     if (d.enviada !== true && d.enviada !== 'true') return;
                     if (String(d.projeto || '').trim() !== String(pdAvpProjeto).trim()) return;
                     if (String(d.turma || '').trim() !== String(pdAvpTurma).trim()) return;
@@ -4507,6 +4507,11 @@
             if (aulaId) {
                 ficha.notasPraticas = {};
                 ficha.notasPraticas[aulaId] = nota;
+            }
+            // AV Final Pratica: a nota manual do docente alimenta o campo
+            // avFinalPratica da Ficha de Avaliacao (mesmo campo da prova final).
+            if (pdAvpAvaliacao.tipo === 'final_pratica') {
+                ficha.avFinalPratica = nota;
             }
             try {
                 await dbFirestore.collection('avaliacoesAlunos').doc(pdAvpAlunoCpf).set(ficha, { merge: true });
