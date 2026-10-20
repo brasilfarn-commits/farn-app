@@ -294,6 +294,22 @@
         .pf-em-construcao h3{font-size:17px;color:var(--gray500);margin-bottom:6px;font-weight:600}
         .pf-em-construcao p{font-size:13px;color:var(--gray400)}
 
+        /* ===== DOCENTES (quadros da secao Informacoes do Docente) ===== */
+        .pa-docentes-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:16px;align-items:stretch}
+        .pa-docente-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px 14px;box-shadow:0 1px 3px rgba(15,23,42,.06);display:flex;flex-direction:column;align-items:center;text-align:center}
+        .pa-docente-foto{width:96px;height:128px;border-radius:10px;overflow:hidden;background:#f1f5f9;border:2px solid #556B2F;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .pa-docente-foto img{width:100%;height:100%;object-fit:cover;display:block}
+        .pa-docente-foto i{font-size:38px;color:#cbd5e1}
+        .pa-docente-nome{font-size:15px;font-weight:800;color:#0f172a;margin-top:10px;line-height:1.25;word-break:break-word}
+        .pa-docente-linha{font-size:12.5px;color:#475569;margin-top:5px}
+        .pa-docente-rotulo{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#556B2F;margin-top:13px;width:100%;text-align:left;border-bottom:1px solid #eef2f6;padding-bottom:4px}
+        .pa-docente-chips{display:flex;flex-wrap:wrap;gap:5px;width:100%;justify-content:flex-start;margin-top:7px}
+        .pa-docente-chip{font-size:11px;font-weight:600;color:#3E4F1C;background:#EEF3E2;border:1px solid #C9D6A9;border-radius:20px;padding:3px 9px}
+        .pa-docente-condec{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;background:#FAFAF7;border:1px solid #ECE7D9;border-radius:9px;padding:7px 9px;margin-top:6px}
+        .pa-docente-condec .nome{font-size:12px;font-weight:700;color:#0f172a}
+        .pa-docente-condec .meta{font-size:10.5px;color:#64748b;margin-top:1px}
+        .pa-docente-vazio{font-size:11.5px;color:#94a3b8;width:100%;text-align:left;margin-top:7px}
+
         /* ===== VIDEO AULA (CSS) =====
            O desenho dos tres quadros vem de video-aula-compartilhar.js, que
            injeta o proprio estilo (vac-grade, vac-quadro, vac-presenca). Aqui
@@ -860,6 +876,20 @@
                                 <i class="fa-solid fa-check"></i> Enviar respostas
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- INFORMACOES DO DOCENTE: quadros com dados basicos de todos
+                     os docentes cadastrados no administrador (foto 3x4, nome,
+                     idade, cursos e condecoracoes). -->
+                <div class="pf-section" id="pf-section-docente">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+                        <h3 style="font-size:16px;color:var(--green);margin:0"><i class="fa-solid fa-chalkboard-user"></i> Informações do Docente</h3>
+                        <button onclick="paLoadDocentes()" style="background:#fff;border:1px solid var(--green);color:var(--green);padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                    </div>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Quadros com informações básicas de todos os docentes: foto 3x4, nome, idade, cursos e condecorações.</p>
+                    <div id="pa-docentes-lista">
+                        <div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando docentes...</p></div>
                     </div>
                 </div>
 
@@ -2195,11 +2225,110 @@
 
         if (section === 'apontamento') { paLoadApontamento(); paLoadInicioAulas(); setTimeout(paGenerateQR, 200); }
         if (section === 'video-aula') paVaInit();
+        if (section === 'docente') paLoadDocentes();
         if (section === 'carteira') { paGenerateCarteira(); }
         if (section === 'decl') { }
         if (section === 'responder-avaliacao') { paLoadResponderAvaliacao(); }
         if (section === 'ficha-geral') { paFichaGeralCarregar(); }
         if (section === 'whatfarn') { wfIniciar('aluno'); }
+    }
+
+    /* ===== INFORMACOES DO DOCENTE (quadros) ===== */
+    /* Le a colecao docentes do administrador e as condecoracoes gravadas no
+       modulo de Condecoracoes (pessoaTipo 'D') e monta um quadro medio por
+       docente: foto 3x4, nome, idade (do nascimento), cursos e condecoracoes. */
+    function paDocentesIdade(nasc) {
+        if (!nasc) return '';
+        var p = String(nasc).split('-');
+        if (p.length < 3) return '';
+        var n = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+        if (isNaN(n.getTime())) return '';
+        var hoje = new Date();
+        var idade = hoje.getFullYear() - n.getFullYear();
+        var m = hoje.getMonth() - n.getMonth();
+        if (m < 0 || (m === 0 && hoje.getDate() < n.getDate())) idade--;
+        return (idade >= 0 && idade < 130) ? idade : '';
+    }
+    function paDocentesCpfDig(cpf) { return String(cpf || '').replace(/\D/g, ''); }
+    function paDocentesMedalhaCor(v) {
+        var mapa = { vermelha: '#dc2626', amarela: '#eab308', verde: '#16a34a', roxa: '#9333ea', azul: '#2563eb', branca: '#94a3b8', preta: '#1e293b', rosa: '#ec4899', marrom: '#92400e', laranja: '#f97316' };
+        return mapa[v] || '#b45309';
+    }
+    function paDocentesCursos(c) {
+        var arr = [];
+        if (Array.isArray(c)) {
+            arr = c.map(function (x) { return (x && typeof x === 'object') ? String(x.nome || x.titulo || '') : String(x || ''); });
+        } else if (typeof c === 'string' && c.trim()) {
+            arr = c.split(',');
+        }
+        return arr.map(function (x) { return x.trim(); }).filter(function (x) { return x; });
+    }
+    function paDocentesDataBr(data) {
+        var p = String(data || '').split('-');
+        return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : '';
+    }
+
+    function paLoadDocentes() {
+        var lista = document.getElementById('pa-docentes-lista');
+        if (!lista) return;
+        lista.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando docentes...</p></div>';
+        Promise.all([
+            dbFirestore.collection('docentes').orderBy('nome').get(),
+            dbFirestore.collection('condecoracoes').where('pessoaTipo', '==', 'D').get()
+        ]).then(function (resp) {
+            var condecPorCpf = {};
+            resp[1].forEach(function (docD) {
+                var cd = docD.data() || {};
+                var chave = paDocentesCpfDig(cd.pessoaCpf);
+                if (!chave) return;
+                if (!condecPorCpf[chave]) condecPorCpf[chave] = [];
+                condecPorCpf[chave] = condecPorCpf[chave].concat(cd.itens || []);
+            });
+            var html = '';
+            var total = 0;
+            resp[0].forEach(function (docD) {
+                var d = docD.data() || {};
+                if (!d.nome) return;
+                total++;
+                var idade = paDocentesIdade(d.nascimento || d.cadastroFormado_nascimento || '');
+                var cursos = paDocentesCursos(d.cursos);
+                var condecs = condecPorCpf[paDocentesCpfDig(d.cpf)] || [];
+                var foto = (d.hasPhoto && d.photoDataUrl)
+                    ? '<img src="' + d.photoDataUrl + '" alt="Foto 3x4 de ' + paEsc(d.nome) + '">'
+                    : '<i class="fa-solid fa-user"></i>';
+                html += '<div class="pa-docente-card">' +
+                    '<div class="pa-docente-foto">' + foto + '</div>' +
+                    '<div class="pa-docente-nome">' + paEsc(d.nome) + '</div>' +
+                    (idade !== '' ? '<div class="pa-docente-linha"><i class="fa-solid fa-cake-candles" style="color:#556B2F;margin-right:4px"></i>' + idade + ' anos</div>' : '') +
+                    '<div class="pa-docente-rotulo"><i class="fa-solid fa-graduation-cap" style="margin-right:4px"></i>Cursos</div>' +
+                    (cursos.length
+                        ? '<div class="pa-docente-chips">' + cursos.map(function (x) { return '<span class="pa-docente-chip">' + paEsc(x) + '</span>'; }).join('') + '</div>'
+                        : '<div class="pa-docente-vazio">Nenhum curso cadastrado.</div>') +
+                    '<div class="pa-docente-rotulo"><i class="fa-solid fa-medal" style="margin-right:4px"></i>Condecorações</div>' +
+                    (condecs.length
+                        ? condecs.map(function (it) {
+                            var ehCondec = it.tipo !== 'certificado';
+                            var cor = ehCondec ? paDocentesMedalhaCor(it.medalha) : '#2563eb';
+                            var meta = [];
+                            if (it.instituicao) meta.push(paEsc(it.instituicao));
+                            var dataBr = paDocentesDataBr(it.data);
+                            if (dataBr) meta.push(dataBr);
+                            return '<div class="pa-docente-condec">' +
+                                '<i class="fa-solid ' + (ehCondec ? 'fa-medal' : 'fa-certificate') + '" style="color:' + cor + ';font-size:15px;margin-top:1px"></i>' +
+                                '<div style="min-width:0"><div class="nome">' + paEsc(it.nome || '') + '</div>' +
+                                (meta.length ? '<div class="meta">' + meta.join(' · ') + '</div>' : '') +
+                                '</div></div>';
+                        }).join('')
+                        : '<div class="pa-docente-vazio">Nenhuma condecoração registrada.</div>') +
+                    '</div>';
+            });
+            lista.innerHTML = total
+                ? '<div class="pa-docentes-grade">' + html + '</div>'
+                : '<div class="pf-em-construcao"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhum docente cadastrado.</p></div>';
+        }).catch(function (e) {
+            console.error('Erro ao carregar docentes:', e);
+            lista.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-triangle-exclamation" style="color:#dc2626"></i><p>Não foi possível carregar os docentes. Toque em Atualizar para tentar de novo.</p></div>';
+        });
     }
 
     function paCheckHash() {
