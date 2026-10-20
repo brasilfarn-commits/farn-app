@@ -644,8 +644,12 @@
             avAbaAtual = nome;
             var abas = ['apontamento', 'comportamento', 'teorica', 'pratica', 'final_teorica', 'final_pratica', 'resultado'];
             abas.forEach(function(n) {
-                document.getElementById('tab-' + n).classList.toggle('active', n === nome);
-                document.getElementById('aba-' + n).classList.toggle('active', n === nome);
+                /* nome da aba usa underline (final_teorica); o id no HTML
+                   usa hifen (final-teorica). Sem esse ajuste o getElementById
+                   devolve null e a ficha inteira para de renderizar. */
+                var id = n.replace(/_/g, '-');
+                document.getElementById('tab-' + id).classList.toggle('active', n === nome);
+                document.getElementById('aba-' + id).classList.toggle('active', n === nome);
             });
             if (nome === 'apontamento') avRenderApontamento();
             else if (nome === 'comportamento') avRenderComportamento();
@@ -819,7 +823,7 @@
                     '</div>' +
                 '</div>' +
                 '<p style="font-size:11px;color:#b9d4bd;margin-top:10px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>A FIN = (AV Final Teórica + AV Final Prática) ÷ 2, a Nota Certificadora e a Situação Final aparecem na guia Resultado Final.</p>';
-            document.getElementById('aba-' + tipo).innerHTML = html;
+            document.getElementById('aba-' + tipo.replace(/_/g, '-')).innerHTML = html;
         }
 
         function avRenderResultado() {
