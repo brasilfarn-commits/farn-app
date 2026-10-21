@@ -3046,7 +3046,50 @@ function foto3x4BloqueioAplicarUI(bloqueado, turma) {
     }
 }
 
-    /* Alterna o bloqueio de anexo/mudanca da foto 3x4 na turma escolhida. */
+    /* Diagnostico do botao: mostra o estado atual desta turma e a lista de turmas
+   bloqueadas na base, sem gravar nada. Serve para saber, num clique, se a
+   pagina do administrador esta carregando o modulo novo. */
+function foto3x4TestarBloqueio() {
+    /* Turma do seletor; se ainda nao escolheu, mostra o que esta na base. */
+    var turma = foto3x4TurmaSelecionada();
+    var linhas = [];
+    linhas.push('Turma escolhida: ' + (turma || '(nenhuma escolhida)'));
+    if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) {
+        linhas.push('Modulo foto3x4-bloqueio.js: NAO carregado');
+        linhas.push('Atualize a pagina com Ctrl+F5.');
+        alert(linhas.join('\n'));
+        return;
+    }
+    linhas.push('Modulo foto3x4-bloqueio.js: carregado');
+    linhas.push('Funcao do botao: ' + (typeof foto3x4AlternarBloqueio));
+    linhas.push('Firestore: ' + (typeof dbFirestore !== 'undefined' && dbFirestore ? 'disponivel' : 'INDISPONIVEL'));
+    linhas.push('Conferindo a base...');
+    /* A leitura pode ser feita sem turma: ai so mostra o mapa. */
+    Foto3x4Bloqueio.ler(turma, true).then(function (bloqueado) {
+        linhas.pop();
+        linhas.push(turma
+            ? 'Bloqueio desta turma na base: ' + (bloqueado ? 'SIM' : 'NAO')
+            : 'Informe a turma no seletor para ver o estado dela');
+        linhas.push('Turmas bloqueadas na base: ' + (Object.keys(Foto3x4Bloqueio.mapa()).sort().join(', ') || '(nenhuma)'));
+        alert(linhas.join('\n'));
+    }).catch(function (e) {
+        linhas.pop();
+        linhas.push('FALHA ao ler a base: ' + (e && e.message ? e.message : e));
+        alert(linhas.join('\n'));
+    });
+}
+
+/* Avisa no clique e mostra o resultado na mensagem da secao (sem janela
+   extra: um alerta aqui e o resultado logo abaixo ja bastam). */
+function foto3x4BloqueioAvisarClique(turma) {
+    const msg = document.getElementById('foto3x4-bloqueio-msg');
+    if (msg) {
+        msg.textContent = 'Gravando o bloqueio da turma ' + turma + '...';
+        msg.style.color = '#64748b';
+    }
+}
+
+/* Alterna o bloqueio de anexo/mudanca da foto 3x4 na turma escolhida. */
 function foto3x4AlternarBloqueio() {
     const turma = foto3x4TurmaSelecionada();
     if (!turma) { alert('Selecione o projeto e a turma para bloquear o anexo.'); return; }
@@ -3054,7 +3097,12 @@ function foto3x4AlternarBloqueio() {
         alert('Modulo de bloqueio da foto 3x4 nao foi carregado nesta pagina. Atualize com Ctrl+F5 e tente de novo.');
         return;
     }
-    const btn = document.getElementById('foto3x4-bloqueio-btn');
+    if (typeof dbFirestore === 'undefined' || !dbFirestore) {
+        alert('O Firestore nao esta disponivel nesta pagina. Atualize com Ctrl+F5 e tente de novo.');
+        return;
+    }
+    /* Avisa na hora que o clique chegou (o alerta final confirma a gravacao). */
+    foto3x4BloqueioAvisarClique(turma);
     const atual = Foto3x4Bloqueio.estado(turma);
     if (atual === null) {
         /* Estado ainda desconhecido: le antes de decidir o novo valor. */
@@ -3065,12 +3113,13 @@ function foto3x4AlternarBloqueio() {
     }
     Foto3x4Bloqueio.gravar(turma, !atual).then(function (bloqueado) {
         foto3x4BloqueioAplicarUI(bloqueado, turma);
-        alert(bloqueado
-            ? 'Anexo de foto 3x4 bloqueado na turma ' + turma + '.'
-            : 'Anexo de foto 3x4 liberado na turma ' + turma + '.');
     }).catch(function (e) {
         console.error(e);
-        alert('Nao foi possivel gravar o bloqueio: ' + (e && e.message ? e.message : e));
+        const msg = document.getElementById('foto3x4-bloqueio-msg');
+        if (msg) {
+            msg.textContent = 'Nao foi possivel gravar o bloqueio: ' + (e && e.message ? e.message : e);
+            msg.style.color = '#dc2626';
+        }
     });
 }
 
