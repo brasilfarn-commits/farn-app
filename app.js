@@ -2996,6 +2996,69 @@ function foto3x4Inicializar() {
     if (selTurma) selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     const conteudo = document.getElementById('foto3x4-conteudo');
     if (conteudo) conteudo.style.display = 'none';
+    foto3x4BloqueioCarregar();
+}
+
+/* ===== BLOQUEIO DE ANEXO DA FOTO 3X4 (ADMIN x PORTAL DO ALUNO) =====
+   O botao "Bloquear Anexo" trava o envio/troca da foto 3x4 no portal do
+   aluno. O estado fica em configuracoes/foto3x4 e e lido pelo portal. */
+
+/* Carrega o estado do bloqueio e reflete no botao da secao. */
+function foto3x4BloqueioCarregar() {
+    if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return;
+    Foto3x4Bloqueio.ler(true).then(function (bloqueado) {
+        foto3x4BloqueioAplicarUI(bloqueado);
+    }).catch(function (e) { console.error(e); });
+}
+
+/* Reflexo do estado no botao e no aviso da secao. */
+function foto3x4BloqueioAplicarUI(bloqueado) {
+    const btn = document.getElementById('foto3x4-bloqueio-btn');
+    const label = document.getElementById('foto3x4-bloqueio-label');
+    const msg = document.getElementById('foto3x4-bloqueio-msg');
+    if (btn) {
+        btn.style.background = bloqueado
+            ? 'linear-gradient(135deg,#16a34a,#15803d)'
+            : 'linear-gradient(135deg,#b91c1c,#991b1b)';
+        const ic = btn.querySelector('i');
+        if (ic) ic.className = bloqueado ? 'fa-solid fa-lock-open' : 'fa-solid fa-lock';
+    }
+    if (label) label.textContent = bloqueado ? 'Desbloquear Anexo' : 'Bloquear Anexo';
+    if (msg) {
+        msg.textContent = bloqueado
+            ? 'Anexo de foto 3x4 bloqueado no portal do aluno.'
+            : 'Anexo de foto 3x4 liberado no portal do aluno.';
+        msg.style.color = bloqueado ? '#b91c1c' : '#16a34a';
+    }
+}
+
+/* Alterna o bloqueio de anexo/mudanca da foto 3x4 no portal do aluno. */
+function foto3x4AlternarBloqueio() {
+    if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) {
+        alert('Modulo de bloqueio da foto 3x4 indisponivel.');
+        return;
+    }
+    const btn = document.getElementById('foto3x4-bloqueio-btn');
+    const atual = Foto3x4Bloqueio.estado();
+    if (atual === null) {
+        /* Estado ainda desconhecido: le antes de decidir o novo valor. */
+        Foto3x4Bloqueio.ler(true).then(function () {
+            foto3x4AlternarBloqueio();
+        }).catch(function (e) { console.error(e); });
+        return;
+    }
+    if (btn) btn.disabled = true;
+    Foto3x4Bloqueio.gravar(!atual).then(function (bloqueado) {
+        foto3x4BloqueioAplicarUI(bloqueado);
+        alert(bloqueado
+            ? 'Anexo de foto 3x4 bloqueado no portal do aluno.'
+            : 'Anexo de foto 3x4 liberado no portal do aluno.');
+    }).catch(function (e) {
+        console.error(e);
+        alert('Nao foi possivel gravar o bloqueio: ' + (e && e.message ? e.message : e));
+    }).then(function () {
+        if (btn) btn.disabled = false;
+    });
 }
 
 function foto3x4OnProjetoChange() {

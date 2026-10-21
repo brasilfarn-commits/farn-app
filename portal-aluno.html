@@ -933,9 +933,13 @@
                         <div style="flex:1;min-width:220px">
                             <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px">Foto 3x4 da Carteira</div>
                             <div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:12px">Anexe uma foto do dispositivo ou tire uma foto pela camera. A foto nao pode ultrapassar <b>900 KB</b>. Depois de escolher, voce <b>arrasta e usa o zoom para enquadrar o rosto</b> e salva o recorte 3x4 (vale tambem no computador). Ela fica salva <b>somente neste dispositivo</b> e uma copia e enviada para o servidor local (LOCALSERV).</div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <div id="pf-foto3x4-bloqueio" style="display:none;align-items:flex-start;gap:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#991b1b;margin-bottom:12px">
+                                <i class="fa-solid fa-lock" style="margin-top:2px"></i>
+                                <span>O envio e a mudanca da foto 3x4 estao bloqueados pela administracao. Se precisar trocar a foto, fale com a secretaria.</span>
+                            </div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap" id="pf-foto3x4-botoes">
                                 <input type="file" id="pf-foto3x4-file" accept="image/*" style="display:none" onchange="paFotoOnFile(this.files)">
-                                <button onclick="document.getElementById('pf-foto3x4-file').click()" style="background:#556B2F;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-folder-open"></i> Anexar do dispositivo</button>
+                                <button onclick="paFotoEscolherArquivo()" style="background:#556B2F;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-folder-open"></i> Anexar do dispositivo</button>
                                 <button onclick="paFotoAbrirCamera()" style="background:#6B8E23;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-camera"></i> Tirar foto (camera)</button>
                             </div>
                             <div id="pf-foto3x4-status" style="font-size:12px;color:#64748b;margin-top:10px"></div>
@@ -1321,6 +1325,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="ficha-geral-compartilhar.js?v=16"></script>
 <script src="foto3x4-editor.js?v=3"></script>
+<script src="foto3x4-bloqueio.js?v=1"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
@@ -1497,6 +1502,8 @@
 
             /* Foto 3x4 da carteira tambem aparece no INICIO, ao lado do botao "Solicitar Baixa" */
             paFotoCarregar();
+            /* Confere o bloqueio de anexo da foto 3x4 definido no administrador */
+            paFotoBloqueioAtualizar();
 
             /* Verifica regimento - bloqueia ate aceitar */
             var aceiteSnap = await dbFirestore.collection('regimentoAceites').doc(paUser.cpf).get();
@@ -2226,7 +2233,7 @@
         if (section === 'apontamento') { paLoadApontamento(); paLoadInicioAulas(); setTimeout(paGenerateQR, 200); }
         if (section === 'video-aula') paVaInit();
         if (section === 'docente') paLoadDocentes();
-        if (section === 'carteira') { paGenerateCarteira(); }
+        if (section === 'carteira') { paGenerateCarteira(); paFotoBloqueioAtualizar(); }
         if (section === 'decl') { }
         if (section === 'responder-avaliacao') { paLoadResponderAvaliacao(); }
         if (section === 'ficha-geral') { paFichaGeralCarregar(); }
@@ -3564,6 +3571,47 @@
     var PA_LOCALSERV_ATIVO = true;
     var paFoto3x4Stream = null;
 
+    /* ===== BLOQUEIO DE ANEXO DA FOTO 3X4 (ADMINISTRADOR) =====
+       O administrador, na secao "Foto 3x4", pode travar o envio/troca da
+       foto 3x4. O estado vem de configuracoes/foto3x4 e e conferido a cada
+       acao do aluno, para valer o bloqueio sem precisar recarregar a pagina. */
+    function paFotoBloqueioAvisar() {
+        var status = document.getElementById('pf-foto3x4-status');
+        if (status) {
+            status.textContent = 'O envio e a mudanca da foto 3x4 estao bloqueados pela administracao.';
+            status.style.color = '#dc2626';
+        }
+        try {
+            alert('O envio e a mudanca da foto 3x4 estao bloqueados pela administracao. Fale com a secretaria.');
+        } catch (e) {}
+    }
+
+    /* Devolve true quando o aluno pode mexer na foto 3x4. */
+    function paFotoPodeAlterar() {
+        if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return Promise.resolve(true);
+        return Foto3x4Bloqueio.ler(true)
+            .then(function (bloqueado) {
+                Foto3x4Bloqueio.aplicarPortal(bloqueado);
+                if (bloqueado) { paFotoBloqueioAvisar(); return false; }
+                return true;
+            })
+            .catch(function () { return true; });
+    }
+
+    /* Recarrega o bloqueio e aplica na interface (usado ao abrir a Carteira). */
+    function paFotoBloqueioAtualizar() {
+        if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return;
+        Foto3x4Bloqueio.atualizarPortal(true).catch(function () {});
+    }
+
+    function paFotoEscolherArquivo() {
+        paFotoPodeAlterar().then(function (pode) {
+            if (!pode) return;
+            var input = document.getElementById('pf-foto3x4-file');
+            if (input) input.click();
+        });
+    }
+
     function paFotoLocal() {
         if (!paUser) return null;
         return localStorage.getItem('farn_photo_' + paUser.cpf) || localStorage.getItem('foto3x4_' + paUser.cpf) || null;
@@ -3678,6 +3726,12 @@
        servidor local), tanto vindo do recorte quanto sem ajuste. */
     function paFotoGravar(dataUrl, nomeArquivo) {
         if (!dataUrl) return;
+        /* Ultima porta: se o administrador bloqueou o anexo enquanto o aluno
+           estava recortando a foto, a gravacao nao acontece. */
+        if (typeof Foto3x4Bloqueio !== 'undefined' && Foto3x4Bloqueio && Foto3x4Bloqueio.estado() === true) {
+            paFotoBloqueioAvisar();
+            return;
+        }
         paFotoSalvarLocal(dataUrl);
         paFotoCarregar();
         paFotoEnviarFirestore(dataUrl);
@@ -3751,34 +3805,43 @@
     function paFotoOnFile(files) {
         if (!files || !files.length) return;
         var file = files[0];
-        var status = document.getElementById('pf-foto3x4-status');
-        if (file.size > 2 * 1024 * 1024) {
-            if (status) { status.textContent = 'A imagem e grande demais. Escolha outra (max 2 MB) para ser comprimida para 900 KB.'; status.style.color = '#dc2626'; }
-            return;
-        }
-        paFotoProcessar(file, file.name);
+        /* Limpa o campo para o mesmo arquivo poder ser escolhido de novo. */
+        var inputEl = document.getElementById('pf-foto3x4-file');
+        if (inputEl) { try { inputEl.value = ''; } catch (e) {} }
+        paFotoPodeAlterar().then(function (pode) {
+            if (!pode) return;
+            var status = document.getElementById('pf-foto3x4-status');
+            if (file.size > 2 * 1024 * 1024) {
+                if (status) { status.textContent = 'A imagem e grande demais. Escolha outra (max 2 MB) para ser comprimida para 900 KB.'; status.style.color = '#dc2626'; }
+                return;
+            }
+            paFotoProcessar(file, file.name);
+        });
     }
 
     function paFotoAbrirCamera() {
         var overlay = document.getElementById('pf-foto3x4-camera-overlay');
         if (!overlay) return;
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert('Camera nao suportada neste navegador. Use "Anexar do dispositivo".');
-            return;
-        }
-        overlay.style.display = 'flex';
-        var abrir = function(constraints) {
-            return navigator.mediaDevices.getUserMedia(constraints);
-        };
-        abrir({ video: { facingMode: 'environment' }, audio: false }).catch(function() {
-            return abrir({ video: true, audio: false });
-        }).then(function(stream) {
-            paFoto3x4Stream = stream;
-            var video = document.getElementById('pf-foto3x4-video');
-            if (video) { video.srcObject = stream; video.play().catch(function(){}); }
-        }).catch(function(err) {
-            overlay.style.display = 'none';
-            alert('Nao foi possivel acessar a camera: ' + err.message);
+        paFotoPodeAlterar().then(function (pode) {
+            if (!pode) return;
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Camera nao suportada neste navegador. Use "Anexar do dispositivo".');
+                return;
+            }
+            overlay.style.display = 'flex';
+            var abrir = function(constraints) {
+                return navigator.mediaDevices.getUserMedia(constraints);
+            };
+            abrir({ video: { facingMode: 'environment' }, audio: false }).catch(function() {
+                return abrir({ video: true, audio: false });
+            }).then(function(stream) {
+                paFoto3x4Stream = stream;
+                var video = document.getElementById('pf-foto3x4-video');
+                if (video) { video.srcObject = stream; video.play().catch(function(){}); }
+            }).catch(function(err) {
+                overlay.style.display = 'none';
+                alert('Nao foi possivel acessar a camera: ' + err.message);
+            });
         });
     }
 
