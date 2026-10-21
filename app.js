@@ -11670,6 +11670,20 @@ function cavAplicarRotuloTipo() {
     if (wrap) wrap.style.display = isFinal ? 'none' : '';
     const selNome = document.getElementById('cav-nome');
     if (isFinal && selNome) selNome.innerHTML = '<option value="">Prova final da turma (sem aula)</option>';
+    // Prova Final: campo de nome proprio. Uma mesma turma pode ter mais de uma AV Final
+    // e o nome padrao ("AV Final Teorica") nao distinguiria uma da outra.
+    const wrapFinal = document.getElementById('cav-nome-final-wrap');
+    if (wrapFinal) wrapFinal.style.display = isFinal ? '' : 'none';
+    const inpFinal = document.getElementById('cav-nome-final');
+    if (inpFinal) {
+        const lblFinal = document.getElementById('cav-nome-final-label');
+        if (lblFinal) lblFinal.textContent = 'Nome da Prova ' + rotuloCampo + ' (para distinguir das outras da mesma turma)';
+        if (isFinal) {
+            if (!inpFinal.value.trim()) inpFinal.value = 'AV ' + rotuloCampo;
+        } else {
+            inpFinal.value = '';
+        }
+    }
 }
 
 function cavLoadList() {
@@ -11876,6 +11890,8 @@ function cavNovaAvaliacao() {
     cavEditingId = null;
     cavNomeAula = {};
     cavNomeAtual = '';
+    const inpFinalNovo = document.getElementById('cav-nome-final');
+    if (inpFinalNovo) inpFinalNovo.value = '';
     cavAlunosSel = {};
     cavAlunosDisp = [];
     document.getElementById('cav-nome').innerHTML = '<option value="">Selecione primeiro a turma...</option>';
@@ -12625,10 +12641,13 @@ function cavColetarDados() {
     const docente = document.getElementById('cav-docente').value;
     const questoes = cavGetQuestoes();
     const alunosSelecionados = Object.keys(cavAlunosSel || {});
-    // Prova final: sem aula vinculada; nome fixo; nota vai para o campo de AV Final.
+    // Prova final: sem aula vinculada; nome proprio (padrao "AV Final Teorica");
+    // nota vai para o campo de AV Final.
     if (cavEhFinal(cavTipo)) {
+        const inpFinal = document.getElementById('cav-nome-final');
+        const nomeFinal = (inpFinal && inpFinal.value.trim()) ? inpFinal.value.trim() : ('AV ' + cavRotuloAV(cavTipo));
         return {
-            nome: 'AV ' + cavRotuloAV(cavTipo),
+            nome: nomeFinal,
             projeto: projeto, turma: turma, disciplina: '', aula: '', aulaId: '',
             docente: docente, questoes: questoes, tipo: cavTipo,
             alunosSelecionados: alunosSelecionados
@@ -12698,6 +12717,8 @@ function cavPreencherForm(id, d) {
     cavEditingId = id;
     cavTipo = (['pratica', 'final_teorica', 'final_pratica'].indexOf(d.tipo) !== -1) ? d.tipo : 'teorica';
     cavNomeAtual = d.nome || '';
+    const inpFinalEdt = document.getElementById('cav-nome-final');
+    if (inpFinalEdt) inpFinalEdt.value = cavEhFinal(cavTipo) ? (d.nome || '') : '';
     cavQMax = ([4, 6, 8, 10, 20, 40, 60].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
     const limiteSel = document.getElementById('cav-q-limite');
     if (limiteSel) limiteSel.value = String(cavQMax);

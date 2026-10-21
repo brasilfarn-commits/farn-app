@@ -3207,6 +3207,10 @@
                                                 <input type="text" id="cav-aula-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Selecione a turma para buscar as aulas com AV Teórica..." oninput="cavFiltrarAulas(this.value)" disabled>
                                                 <select id="cav-nome" class="config-input" style="width:100%" onchange="cavOnNomeChange()"><option value="">Selecione primeiro a turma...</option></select>
                                             </div>
+                                            <div id="cav-nome-final-wrap" style="display:none;grid-column:span 2">
+                                                <label id="cav-nome-final-label" style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Nome da Prova Final</label>
+                                                <input type="text" id="cav-nome-final" class="config-input" style="width:100%" maxlength="120" placeholder="Ex.: AV Final Teórica - Nós e Amarras">
+                                            </div>
                                             <div>
                                                 <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Projeto</label>
                                                 <select id="cav-projeto" class="config-input" style="width:100%" onchange="cavOnProjetoChange()"></select>
@@ -5118,7 +5122,7 @@
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
     <script src="foto3x4-bloqueio.js?v=7"></script>
-    <script src="app.js?v=90"></script>
+    <script src="app.js?v=91"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

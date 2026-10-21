@@ -214,6 +214,10 @@
                                     <input type="text" id="cav-aula-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Digite para buscar as aulas do CFF com AV Teórica..." oninput="cavFiltrarAulas(this.value)">
                                     <select id="cav-nome" class="config-input" style="width:100%" onchange="cavOnNomeChange()"><option value="">Carregando aulas...</option></select>
                                 </div>
+                                <div id="cav-nome-final-wrap" style="display:none;grid-column:span 2">
+                                    <label id="cav-nome-final-label" style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Nome da Prova Final</label>
+                                    <input type="text" id="cav-nome-final" class="config-input" style="width:100%" maxlength="120" placeholder="Ex.: AV Final Teórica - Nós e Amarras">
+                                </div>
                                 <div>
                                     <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Docente</label>
                                     <select id="cav-docente" class="config-input" style="width:100%"></select>
@@ -425,6 +429,19 @@
             if (wrap) wrap.style.display = isFinal ? 'none' : '';
             const selNome = document.getElementById('cav-nome');
             if (isFinal && selNome) selNome.innerHTML = '<option value="">Prova final do CFF (sem aula)</option>';
+            // Prova Final: campo de nome proprio (uma turma pode ter mais de uma AV Final).
+            const wrapFinal = document.getElementById('cav-nome-final-wrap');
+            if (wrapFinal) wrapFinal.style.display = isFinal ? '' : 'none';
+            const inpFinal = document.getElementById('cav-nome-final');
+            if (inpFinal) {
+                const lblFinal = document.getElementById('cav-nome-final-label');
+                if (lblFinal) lblFinal.textContent = 'Nome da Prova ' + rotuloCampo + ' (para distinguir das outras da mesma turma)';
+                if (isFinal) {
+                    if (!inpFinal.value.trim()) inpFinal.value = 'AV ' + rotuloCampo;
+                } else {
+                    inpFinal.value = '';
+                }
+            }
             const novoBtn = document.getElementById('cav-nova-btn');
             if (novoBtn) novoBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Nova AV ' + rotuloCampo;
         }
@@ -547,6 +564,8 @@
             cavEditingId = null;
             cavNomeAula = {};
             cavNomeAtual = '';
+            const inpFinalNovo = document.getElementById('cav-nome-final');
+            if (inpFinalNovo) inpFinalNovo.value = '';
             document.getElementById('cav-form').style.display = 'block';
             document.getElementById('cav-form-titulo').textContent = 'Nova AV ' + cavRotuloAV(cavTipo);
             const badge = document.getElementById('cav-editing-badge');
@@ -832,7 +851,9 @@
             const docente = document.getElementById('cav-docente').value;
             const questoes = cavGetQuestoes();
             if (cavEhFinal(cavTipo)) {
-                return { nome: 'AV ' + cavRotuloAV(cavTipo), disciplina: '', aula: '', aulaId: '', docente, questoes, tipo: cavTipo };
+                const inpFinal = document.getElementById('cav-nome-final');
+                const nomeFinal = (inpFinal && inpFinal.value.trim()) ? inpFinal.value.trim() : ('AV ' + cavRotuloAV(cavTipo));
+                return { nome: nomeFinal, disciplina: '', aula: '', aulaId: '', docente, questoes, tipo: cavTipo };
             }
             return { nome, disciplina, aula, aulaId: nomeId, docente, questoes, tipo: cavTipo };
         }
@@ -889,6 +910,8 @@
             cavEditingId = id;
             cavTipo = (['pratica', 'final_teorica', 'final_pratica'].indexOf(d.tipo) !== -1) ? d.tipo : 'teorica';
             cavNomeAtual = d.nome || '';
+            const inpFinalEdt = document.getElementById('cav-nome-final');
+            if (inpFinalEdt) inpFinalEdt.value = cavEhFinal(cavTipo) ? (d.nome || '') : '';
             cavQMax = ([4, 6, 8, 10, 20, 40, 60].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
             const limiteSel = document.getElementById('cav-q-limite');
             if (limiteSel) limiteSel.value = String(cavQMax);
