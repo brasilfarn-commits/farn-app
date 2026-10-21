@@ -106,6 +106,15 @@ var Foto3x4Bloqueio = (function () {
         return cacheTurmas[normalizarTurma(turma)] === true;
     }
 
+    /* Copia do mapa de turmas bloqueadas (para diagnostico/administracao). */
+    function mapa() {
+        var saida = {};
+        Object.keys(cacheTurmas || {}).forEach(function (k) {
+            if (cacheTurmas[k] === true) saida[k] = true;
+        });
+        return saida;
+    }
+
     /* Aplica o estado na interface do portal do aluno: esconde os botoes de
        anexo/camera e mostra o aviso de bloqueio. */
     function aplicarPortal(bloqueado) {
@@ -132,6 +141,7 @@ var Foto3x4Bloqueio = (function () {
         ler: ler,
         gravar: gravar,
         estado: estado,
+        mapa: mapa,
         aplicarPortal: aplicarPortal,
         atualizarPortal: atualizarPortal
     };

@@ -1328,7 +1328,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="ficha-geral-compartilhar.js?v=16"></script>
 <script src="foto3x4-editor.js?v=3"></script>
-<script src="foto3x4-bloqueio.js?v=2"></script>
+<script src="foto3x4-bloqueio.js?v=3"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
@@ -1468,6 +1468,11 @@
 
             paUser = dados;
             paUser._docId = doc.id;
+            /* Turma normalizada: o cadastro pode ter espacos sobrando e o
+               bloqueio de anexo da foto 3x4 e cadastrado pelo nome da turma,
+               exatamente como aparece no administrador. */
+            paUser.turma = String(paUser.turma || '').trim();
+            paUser.projeto = String(paUser.projeto || '').trim();
 
             /* Lembrar usuario e senha */
             if (document.getElementById('pf-lembrar').checked) {
@@ -3545,7 +3550,7 @@
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">CPF:</span> <span class="pf-cd-val">' + cpfDisp + '</span></div>' +
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">NASC.:</span> <span class="pf-cd-val">' + nascimento + '</span></div>' +
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">TIPO SANG.:</span> <span class="pf-cd-val">' + fatorRh + '</span></div>' +
-                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TURMA:</span> <span class="pf-cd-val">' + turma + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">TURMA:</span> <span class="pf-cd-val pf-cd-turma">' + turma + '</span></div>' +
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">PROJETO:</span> <span class="pf-cd-val" style="color:#c2410c;font-size:10px">' + projeto + '</span></div>' +
                 '</div>' +
                 '<div class="pf-carteira-qr-box">' +
@@ -3570,7 +3575,7 @@
     }
 
     /* ===== FOTO 3X4 (CARTEIRA) ===== */
-    var PA_PORTA_VERSAO = '41';
+    var PA_PORTA_VERSAO = '42';
     var PA_LOCALSERV_URL = 'http://localhost:8899/upload';
     var PA_LOCALSERV_ATIVO = true;
     var paFoto3x4Stream = null;
@@ -3580,6 +3585,11 @@
        envio/troca da foto 3x4. O portal confere o estado da turma do aluno a
        cada acao, para valer o bloqueio sem precisar recarregar a pagina. */
     function paFotoTurma() {
+        /* A Carteira imprime a turma que esta no documento do aluno; o
+           bloqueio de anexo usa exatamente esse texto. */
+        var el = document.querySelector('#pf-carteira-container .pf-cd-turma');
+        var naTela = el ? String(el.textContent || '').trim() : '';
+        if (naTela && naTela !== '---') return naTela;
         return String((paUser && paUser.turma) || '').trim();
     }
 
@@ -3639,7 +3649,8 @@
         if (status) { status.textContent = 'Conferindo o bloqueio...'; status.style.color = '#64748b'; }
         Foto3x4Bloqueio.ler(paFotoTurma(), true).then(function (bloqueado) {
             var txt = texto + ' | bloqueado: ' + (bloqueado ? 'SIM' : 'NAO')
-                + ' | versao do portal: ' + PA_PORTA_VERSAO;
+                + ' | versao do portal: ' + PA_PORTA_VERSAO
+                + ' | turmas bloqueadas: ' + Object.keys(Foto3x4Bloqueio.mapa()).sort().join(', ');
             if (status) { status.textContent = txt; status.style.color = bloqueado ? '#dc2626' : '#16a34a'; }
             alert(txt);
         }).catch(function (e) {
