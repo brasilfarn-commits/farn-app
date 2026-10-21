@@ -47,18 +47,33 @@ var Foto3x4Bloqueio = (function () {
         return String(t == null ? '' : t).trim().toUpperCase();
     }
 
+    /* Le o documento em QUALQUER um dos formatos ja usados na base:
+       1) mapa aninhado:  { turmas: { 'BA-ALPHA': true } }
+       2) campo com ponto literal (o que o SDK compat grava quando se passa
+          'turmas.BA-ALPHA' como chave): { 'turmas.BA-ALPHA': true }
+       3) formato antigo global: { bloqueado: true }
+       Assim o portal entende o bloqueio mesmo de um documento gravado pela
+       versao anterior do botao. */
     function mapaDoc(dados) {
         var m = {};
-        var bruto = dados && dados.turmas;
+        if (!dados) return m;
+        var bruto = dados.turmas;
         if (bruto && typeof bruto === 'object') {
             Object.keys(bruto).forEach(function (k) {
                 var nome = normalizarTurma(k);
                 if (nome) m[nome] = bruto[k] === true;
             });
         }
+        /* Campo literal 'turmas.<TURMA>' (ponto faz parte do nome). */
+        Object.keys(dados).forEach(function (k) {
+            var casa = /^turmas\.(.+)$/.exec(k);
+            if (!casa) return;
+            var nome = normalizarTurma(casa[1]);
+            if (nome) m[nome] = dados[k] === true;
+        });
         /* Formato antigo (versao global): ainda e respeitado para nao deixar
            nenhuma turma bloqueada fora do ar. */
-        if (dados && dados.bloqueado === true && !m['__global__']) m['__global__'] = true;
+        if (dados.bloqueado === true && !m['__global__']) m['__global__'] = true;
         return m;
     }
 
@@ -103,19 +118,40 @@ var Foto3x4Bloqueio = (function () {
         });
     }
 
-    /* Liga/desliga o bloqueio de uma turma. Devolve Promise<boolean>. */
+    /* Liga/desliga o bloqueio de uma turma. Devolve Promise<boolean>.
+       Grava o mapa 'turmas' inteiro (aninhado) com merge, para o portal ler
+       dados.turmas[<TURMA>]. Preserva as demais turmas: le o documento atual,
+       atualiza somente a turma pedida e remove o campo de ponto literal que
+       versoes antigas possam ter deixado. */
     function gravar(turma, bloqueado) {
         var d = db();
         var nome = normalizarTurma(turma);
         if (!d) return Promise.reject(new Error('Firestore indisponivel'));
         if (!nome) return Promise.reject(new Error('Turma nao informada'));
-        var patch = {};
-        patch['turmas.' + nome] = !!bloqueado;
-        patch.atualizadoEm = new Date().toISOString();
-        patch.atualizadoPor = 'Administrador';
-        /* O campo com ponto cria/atualiza somente turmas.<turma>; a gravacao e
-           feita por set(merge) no documento do bloqueio. */
-        return d.collection(COLEC).doc(DOC).set(patch, { merge: true }).then(function () {
+        var ref = d.collection(COLEC).doc(DOC);
+        var lerAtual = (typeof ref.get === 'function')
+            ? ref.get().then(function (doc) { return (doc && doc.exists) ? (doc.data() || {}) : {}; })
+                  .catch(function () { return {}; })
+            : Promise.resolve({});
+        return lerAtual.then(function (dados) {
+            var mapaTurmas = {};
+            var bruto = dados && dados.turmas;
+            if (bruto && typeof bruto === 'object') {
+                Object.keys(bruto).forEach(function (k) { mapaTurmas[k] = bruto[k] === true; });
+            }
+            /* Traz tambem o que estiver em campos de ponto literal. */
+            Object.keys(dados || {}).forEach(function (k) {
+                var casa = /^turmas\.(.+)$/.exec(k);
+                if (casa) mapaTurmas[casa[1]] = dados[k] === true;
+            });
+            mapaTurmas[nome] = !!bloqueado;
+            var patch = {
+                turmas: mapaTurmas,
+                atualizadoEm: new Date().toISOString(),
+                atualizadoPor: 'Administrador'
+            };
+            return ref.set(patch, { merge: true });
+        }).then(function () {
             cacheTurmas = cacheTurmas || {};
             cacheTurmas[nome] = !!bloqueado;
             ultimaLeitura = Date.now();
