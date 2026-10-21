@@ -1209,6 +1209,7 @@
 
                 var docente = dados;
                 docente._docId = doc.id;
+                docente.candidatoId = await pdAcharCandidatoDoDocente(docente);
                 sessionStorage.setItem('pd_sessao', JSON.stringify(docente));
 
                 if (document.getElementById('pd-lembrar').checked) {
@@ -1319,7 +1320,7 @@
             if (section === 'avaliacao') pdAvInit();
             if (section === 'responderavpratica') pdAvPraticaInit();
             if (section === 'apostilasextras') pdLoadApostExtras();
-            if (section === 'carteira') pdGenerateCarteira();
+            if (section === 'carteira') { pdGenerateCarteira(); pdFotoRecarregarVinculo(); }
             if (section === 'video-aula') pdVaInit();
         }
 
@@ -3592,6 +3593,34 @@
             try { return JSON.parse(sessionStorage.getItem('pd_sessao') || 'null'); } catch (e) { return null; }
         }
 
+        /* O administrador publica a foto 3x4 do docente tanto na lista de
+           docentes (docentes) quanto no cadastro de pessoa (candidatos). Para o
+           portal nao ficar com duas versoes da foto, o envio do portal tambem
+           atualiza o cadastro de candidato quando o CPF existe la. */
+        async function pdAcharCandidatoDoDocente(docente) {
+            var cpf = String((docente && docente.cpf) || '').replace(/\D/g, '');
+            if (!cpf) return '';
+            try {
+                var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+                if (!snap.empty) return snap.docs[0].id;
+            } catch (e) { console.error('Erro ao procurar o cadastro de candidato do docente:', e); }
+            return '';
+        }
+
+        /* Refaz o vinculo do docente com o cadastro de candidato na hora de
+           enviar a foto (a sessao pode ter sido aberta antes desta regra). */
+        async function pdFotoRecarregarVinculo() {
+            var docente = pdDocenteAtual();
+            if (!docente || docente.isAdmin) return docente;
+            if (!docente.candidatoId) {
+                docente.candidatoId = await pdAcharCandidatoDoDocente(docente);
+                if (docente.candidatoId) {
+                    try { sessionStorage.setItem('pd_sessao', JSON.stringify(docente)); } catch (e) {}
+                }
+            }
+            return docente;
+        }
+
         function pdCpfSoDigitos(v) {
             return String(v == null ? '' : v).replace(/\D/g, '');
         }
@@ -3713,13 +3742,27 @@
             }
             var versao = String(Date.now());
             pdFotoVersaoGravar(versao);
-            dbFirestore.collection('docentes').doc(docente._docId).set({
-                photoDataUrl: dataUrl,
-                hasPhoto: true,
-                fotoVersao: versao,
-                fotoAtualizadaEm: versao,
-                fotoAtualizadaPor: 'Portal do Docente'
-            }, { merge: true }).catch(function (e) {
+            /* A lista de docentes do administrador tambem mostra esta foto 3x4,
+               logo ela e atualizada junto com o cadastro de docente. */
+            var gravacoes = [
+                dbFirestore.collection('docentes').doc(docente._docId).set({
+                    photoDataUrl: dataUrl,
+                    hasPhoto: true,
+                    fotoVersao: versao,
+                    fotoAtualizadaEm: versao,
+                    fotoAtualizadaPor: 'Portal do Docente'
+                }, { merge: true })
+            ];
+            if (docente.candidatoId) {
+                gravacoes.push(dbFirestore.collection('candidatos').doc(docente.candidatoId).set({
+                    photoDataUrl: dataUrl,
+                    hasPhoto: true,
+                    fotoVersao: versao,
+                    fotoAtualizadaEm: versao,
+                    fotoAtualizadaPor: 'Portal do Docente'
+                }, { merge: true }).catch(function (e) { console.error('Erro ao gravar a foto no cadastro de candidato do docente:', e); }));
+            }
+            Promise.all(gravacoes).catch(function (e) {
                 console.error('Erro ao salvar foto do docente no Firestore:', e);
                 pdFotoStatus('Nao foi possivel enviar a foto. Verifique a conexao.', '#dc2626');
             });
@@ -3851,9 +3894,10 @@
             leitor.readAsDataURL(blob);
         }
 
-        function pdFotoOnFile(files) {
+        async function pdFotoOnFile(files) {
             if (!files || !files.length) return;
             var file = files[0];
+            await pdFotoRecarregarVinculo();
             if (file.size > 8 * 1024 * 1024) {
                 pdFotoStatus('A imagem e grande demais. Escolha outra (max 8 MB) para ser comprimida para 900 KB.', '#dc2626');
                 return;
@@ -3861,9 +3905,10 @@
             pdFotoProcessar(file, file.name);
         }
 
-        function pdFotoAbrirCamera() {
+        async function pdFotoAbrirCamera() {
             var overlay = document.getElementById('pd-foto3x4-camera-overlay');
             if (!overlay) return;
+            await pdFotoRecarregarVinculo();
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 alert('Camera nao suportada neste navegador. Use "Anexar do dispositivo".');
                 return;
