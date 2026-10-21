@@ -745,14 +745,14 @@
                     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">' +
                         '<strong style="color:#0f172a;font-size:13px">Questão ' + (atual + 1) + '</strong>' +
                         '<div style="display:flex;align-items:center;gap:8px">' +
-                            '<label style="font-size:11px;color:#16a34a;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cav-ok-' + idx + '" value="a" ' + (correta === 'a' ? 'checked' : '') + '>A correta</label>' +
+                            '<label style="font-size:11px;color:#16a34a;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" class="cav-q-correta-field" name="cav-ok-' + idx + '" value="a" title="Marcar a opção A como correta">A correta</label>' +
                         '</div>' +
                     '</div>' +
                     '<textarea class="cav-q-enunc" style="width:100%;min-height:64px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;resize:vertical;margin-bottom:10px" placeholder="Digite o enunciado da questão...">' + e + '</textarea>' +
-                    cavOpcaoInput('a', 'A', oa, idx) +
-                    cavOpcaoInput('b', 'B', ob, idx) +
-                    cavOpcaoInput('c', 'C', oc, idx) +
-                    cavOpcaoInput('d', 'D', od, idx);
+                    cavOpcaoInput('a', 'A', oa, idx, correta) +
+                    cavOpcaoInput('b', 'B', ob, idx, correta) +
+                    cavOpcaoInput('c', 'C', oc, idx, correta) +
+                    cavOpcaoInput('d', 'D', od, idx, correta);
             }
             q.innerHTML =
                 corpo +
@@ -763,12 +763,15 @@
             cavAtualizarQCount();
         }
 
-        function cavOpcaoInput(letra, rotulo, valor, qidx) {
+        function cavOpcaoInput(letra, rotulo, valor, qidx, correta) {
+            // `checked` na opcao correta: sem isso, abrir uma AV ja criada para edicao
+            // mostrava o gabarito desmarcado e o salvamento apagava a resposta correta.
+            const marcada = (correta && correta === letra) ? ' checked' : '';
             return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
                 '<span style="width:24px;height:24px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;flex-shrink:0">' + rotulo + '</span>' +
                 '<span style="font-size:11px;color:#64748b;font-weight:700;flex-shrink:0">' + letra + ')</span>' +
                 '<input type="text" class="cav-q-p ca-' + letra + '" data-letra="' + letra + '" value="' + valor + '" placeholder="Opção ' + rotulo + '" style="flex:1;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;font-family:inherit">' +
-                '<input type="radio" class="cav-q-correta-field" name="cav-ok-' + qidx + '" value="' + letra + '" title="Marcar ' + rotulo + ' como correta" style="width:17px;height:17px;flex-shrink:0;cursor:pointer">' +
+                '<input type="radio" class="cav-q-correta-field" name="cav-ok-' + qidx + '" value="' + letra + '"' + marcada + ' title="Marcar ' + rotulo + ' como correta" style="width:17px;height:17px;flex-shrink:0;cursor:pointer">' +
             '</div>';
         }
 

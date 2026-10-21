@@ -1005,7 +1005,7 @@
                 <!-- RESPONDER AVALIACAO -->
                 <div class="pf-section" id="pf-section-responder-avaliacao">
                     <h3 style="font-size:16px;color:var(--green);margin-bottom:14px"><i class="fa-solid fa-list-check"></i> Responder Avaliação</h3>
-                    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Aqui você responde as avaliações disponibilizadas pela administração para a sua turma. Cada questão vale 0,5 ponto e você terá 30 minutos para concluir.</p>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Aqui você responde as avaliações disponibilizadas pela administração para a sua turma. O peso de cada questão e o tempo limite são informados no painel da prova.</p>
 
                     <!-- Lista de avaliacoes -->
                     <div id="pf-rav-lista">
@@ -3576,7 +3576,7 @@
     }
 
     /* ===== FOTO 3X4 (CARTEIRA) ===== */
-    var PA_PORTA_VERSAO = '47';
+    var PA_PORTA_VERSAO = '48';
     var PA_LOCALSERV_URL = 'http://localhost:8899/upload';
     var PA_LOCALSERV_ATIVO = true;
     var paFoto3x4Stream = null;
@@ -5123,8 +5123,24 @@
     var paRavAtual = null;
     var paRavTimer = null;
     var paRavSegundos = 0;
+    var paRavMinutos = 30;
     var paRavRespostas = {};
     var paRavCorretas = {};
+
+    /* Configuracao da prova conforme o numero de questoes:
+       - peso por questao: 10 questoes = 1,0 | 20 = 0,5 | demais = 10/total (escala ate 10).
+         (regra do projeto: questao NAO respondida vale 0, sem desconto)
+       - tempo: 30 minutos ate 20 questoes; acima disso 1 minuto por questao
+         (40 questoes -> 40 min). AVs de 10/20 questoes mantem 30 min. */
+    function paRavConfigProva(total) {
+        var t = Number(total) || 0;
+        var peso = (t === 10) ? 1.0 : (t === 20 ? 0.5 : (t > 0 ? 10 / t : 0));
+        var minutos = (t > 20) ? Math.max(30, t) : 30;
+        return { total: t, peso: peso, minutos: minutos };
+    }
+    function paRavNumBR(v) {
+        return String(Math.round(Number(v) * 100) / 100).replace('.', ',');
+    }
 
     /* Recuperacao: a AV pode ser restrita a alunos escolhidos no admin
        (avaliacoes.alunosSelecionados = [cpf...]). Sem lista, vale a turma toda. */
@@ -5525,7 +5541,8 @@
                 document.getElementById('pf-rav-enviar-btn').disabled = false;
                 document.getElementById('pf-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Enviar Novamente';
             } else {
-                document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Tempo limite de 30 minutos';
+                var cfgInfo = paRavConfigProva(d.questoes ? d.questoes.length : 0);
+                document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Tempo limite de ' + cfgInfo.minutos + ' minutos';
                 document.getElementById('pf-rav-enviar-btn').disabled = false;
                 document.getElementById('pf-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Respostas';
             }
@@ -5578,7 +5595,9 @@
 
     function paRavIniciarTimer() {
         if (paRavTimer) clearInterval(paRavTimer);
-        paRavSegundos = 30 * 60;
+        var cfgT = paRavConfigProva((paRavAtual && paRavAtual.conteudo && paRavAtual.conteudo.questoes) ? paRavAtual.conteudo.questoes.length : 0);
+        paRavMinutos = cfgT.minutos;
+        paRavSegundos = paRavMinutos * 60;
         paRavTimerVal();
         paRavTimer = setInterval(function() {
             paRavSegundos--;
@@ -5617,16 +5636,17 @@
                 if (paRavRespostas[i] === (paRavCorretas[i] || '')) certas++;
             }
         }
-        var pesoQuestao = (total === 10) ? 1.0 : (total === 20 ? 0.5 : (total > 0 ? 10 / total : 0));
+        var cfgF = paRavConfigProva(total);
+        var pesoQuestao = cfgF.peso;
         var pontos = certas * pesoQuestao;
         pontos = Math.round(pontos * 100) / 100;
 
-        var textPeso = (total === 10) ? 'Cada questão vale 1,0 ponto. Questões não respondidas valem 0 ponto.' : (total === 20 ? 'Cada questão vale 0,5 ponto. Questões não respondidas valem 0 ponto.' : 'Cada questão vale 0,5 ponto (escala até 10). Questões não respondidas valem 0 ponto.');
+        var textPeso = (total === 10) ? 'Cada questão vale 1,0 ponto. Questões não respondidas valem 0 ponto.' : (total === 20 ? 'Cada questão vale 0,5 ponto. Questões não respondidas valem 0 ponto.' : 'Cada questão vale ' + paRavNumBR(pesoQuestao) + ' ponto (escala até 10). Questões não respondidas valem 0 ponto.');
         var resPesoEl = document.getElementById('pf-rav-res-peso');
         if (resPesoEl) resPesoEl.textContent = textPeso;
 
         document.getElementById('pf-rav-res-titulo').textContent = porTempo ? 'Avaliação Finalizada' : 'Respostas Enviadas';
-        document.getElementById('pf-rav-res-sub').textContent = porTempo ? 'O tempo de 30 minutos chegou ao fim.' : 'Suas respostas foram registradas.';
+        document.getElementById('pf-rav-res-sub').textContent = porTempo ? ('O tempo de ' + cfgF.minutos + ' minutos chegou ao fim.') : 'Suas respostas foram registradas.';
         document.getElementById('pf-rav-res-marcadas').textContent = marcadas;
         document.getElementById('pf-rav-res-certas').textContent = certas;
         document.getElementById('pf-rav-res-pontos').textContent = pontos.toFixed(1).replace('.', ',');
