@@ -3046,12 +3046,12 @@ function foto3x4BloqueioAplicarUI(bloqueado, turma) {
     }
 }
 
-/* Alterna o bloqueio de anexo/mudanca da foto 3x4 na turma escolhida. */
+    /* Alterna o bloqueio de anexo/mudanca da foto 3x4 na turma escolhida. */
 function foto3x4AlternarBloqueio() {
     const turma = foto3x4TurmaSelecionada();
     if (!turma) { alert('Selecione o projeto e a turma para bloquear o anexo.'); return; }
     if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) {
-        alert('Modulo de bloqueio da foto 3x4 indisponivel.');
+        alert('Modulo de bloqueio da foto 3x4 nao foi carregado nesta pagina. Atualize com Ctrl+F5 e tente de novo.');
         return;
     }
     const btn = document.getElementById('foto3x4-bloqueio-btn');
@@ -3063,7 +3063,6 @@ function foto3x4AlternarBloqueio() {
         }).catch(function (e) { console.error(e); });
         return;
     }
-    if (btn) btn.disabled = true;
     Foto3x4Bloqueio.gravar(turma, !atual).then(function (bloqueado) {
         foto3x4BloqueioAplicarUI(bloqueado, turma);
         alert(bloqueado
@@ -3072,8 +3071,6 @@ function foto3x4AlternarBloqueio() {
     }).catch(function (e) {
         console.error(e);
         alert('Nao foi possivel gravar o bloqueio: ' + (e && e.message ? e.message : e));
-    }).then(function () {
-        if (btn) btn.disabled = false;
     });
 }
 

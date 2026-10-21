@@ -45,6 +45,9 @@ var Foto3x4Bloqueio = (function () {
                 if (nome) m[nome] = bruto[k] === true;
             });
         }
+        /* Formato antigo (versao global): ainda e respeitado para nao deixar
+           nenhuma turma bloqueada fora do ar. */
+        if (dados && dados.bloqueado === true && !m['__global__']) m['__global__'] = true;
         return m;
     }
 
@@ -72,13 +75,12 @@ var Foto3x4Bloqueio = (function () {
             });
         return promessa;
     }
-
     /* Bloqueio de uma turma. Devolve Promise<boolean>. */
     function ler(turma, forcar) {
         var nome = normalizarTurma(turma);
         if (!nome) return Promise.resolve(false);
         return lerMapa(forcar).then(function (mapa) {
-            return mapa[nome] === true;
+            return mapa[nome] === true || mapa['__global__'] === true;
         });
     }
 
@@ -92,7 +94,13 @@ var Foto3x4Bloqueio = (function () {
         patch['turmas.' + nome] = !!bloqueado;
         patch.atualizadoEm = new Date().toISOString();
         patch.atualizadoPor = 'Administrador';
-        return d.collection(COLEC).doc(DOC).set(patch, { merge: true }).then(function () {
+        /* O administrador carrega o modulo por CDN/local: se por algum motivo
+           o carregamento falhar, grava o documento inteiro para o bloqueio
+           nao se perder. */
+        var grava = (typeof d.doc === 'function' && typeof d.doc().set === 'function')
+            ? d.doc(DOC).set(patch, { merge: true })
+            : d.collection(COLEC).doc(DOC).set(patch, { merge: true });
+        return grava.then(function () {
             cacheTurmas = cacheTurmas || {};
             cacheTurmas[nome] = !!bloqueado;
             ultimaLeitura = Date.now();
