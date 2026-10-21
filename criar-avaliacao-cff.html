@@ -233,6 +233,8 @@
                                     <option value="8">8 questões</option>
                                     <option value="10">10 questões</option>
                                     <option value="20" selected>20 questões</option>
+                                    <option value="40">40 questões</option>
+                                    <option value="60">60 questões</option>
                                 </select>
                             </label>
                         </div>
@@ -566,7 +568,7 @@
         }
 
         function cavMudarLimite(n) {
-            cavQMax = ([4, 6, 8, 10, 20].indexOf(n) !== -1) ? n : 20;
+            cavQMax = ([4, 6, 8, 10, 20, 40, 60].indexOf(n) !== -1) ? n : 20;
             const qMaxEl = document.getElementById('cav-q-max');
             if (qMaxEl) qMaxEl.textContent = cavQMax;
             const wrap = document.getElementById('cav-questoes');
@@ -884,7 +886,7 @@
             cavEditingId = id;
             cavTipo = (['pratica', 'final_teorica', 'final_pratica'].indexOf(d.tipo) !== -1) ? d.tipo : 'teorica';
             cavNomeAtual = d.nome || '';
-            cavQMax = ([4, 6, 8, 10, 20].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
+            cavQMax = ([4, 6, 8, 10, 20, 40, 60].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
             const limiteSel = document.getElementById('cav-q-limite');
             if (limiteSel) limiteSel.value = String(cavQMax);
             const qMaxEl = document.getElementById('cav-q-max');

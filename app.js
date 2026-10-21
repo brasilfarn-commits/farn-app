@@ -11905,7 +11905,7 @@ function cavNovaAvaliacao() {
 }
 
 function cavMudarLimite(n) {
-    cavQMax = ([4, 6, 8, 10, 20].indexOf(n) !== -1) ? n : 20;
+    cavQMax = ([4, 6, 8, 10, 20, 40, 60].indexOf(n) !== -1) ? n : 20;
     const qMaxEl = document.getElementById('cav-q-max');
     if (qMaxEl) qMaxEl.textContent = cavQMax;
     // remove questoes excedentes
@@ -12695,7 +12695,7 @@ function cavPreencherForm(id, d) {
     cavEditingId = id;
     cavTipo = (['pratica', 'final_teorica', 'final_pratica'].indexOf(d.tipo) !== -1) ? d.tipo : 'teorica';
     cavNomeAtual = d.nome || '';
-    cavQMax = ([4, 6, 8, 10, 20].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
+    cavQMax = ([4, 6, 8, 10, 20, 40, 60].indexOf(d.questoes && d.questoes.length) !== -1) ? d.questoes.length : ((d.questoes && d.questoes.length > 10) ? 20 : 10);
     const limiteSel = document.getElementById('cav-q-limite');
     if (limiteSel) limiteSel.value = String(cavQMax);
     const qMaxEl = document.getElementById('cav-q-max');
