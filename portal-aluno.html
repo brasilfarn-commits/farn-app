@@ -1511,7 +1511,7 @@
             /* Foto 3x4 da carteira tambem aparece no INICIO, ao lado do botao "Solicitar Baixa" */
             paFotoCarregar();
             /* Confere o bloqueio de anexo da foto 3x4 definido no administrador */
-            paFotoBloqueioAtualizar();
+            paFotoBloqueioAplicarNaCarteira();
 
             /* Verifica regimento - bloqueia ate aceitar */
             var aceiteSnap = await dbFirestore.collection('regimentoAceites').doc(paUser.cpf).get();
@@ -2241,7 +2241,7 @@
         if (section === 'apontamento') { paLoadApontamento(); paLoadInicioAulas(); setTimeout(paGenerateQR, 200); }
         if (section === 'video-aula') paVaInit();
         if (section === 'docente') paLoadDocentes();
-        if (section === 'carteira') { paGenerateCarteira(); paFotoBloqueioAtualizar(); }
+        if (section === 'carteira') { paGenerateCarteira(); paFotoBloqueioAplicarNaCarteira(); }
         if (section === 'decl') { }
         if (section === 'responder-avaliacao') { paLoadResponderAvaliacao(); }
         if (section === 'ficha-geral') { paFichaGeralCarregar(); }
@@ -3575,7 +3575,7 @@
     }
 
     /* ===== FOTO 3X4 (CARTEIRA) ===== */
-    var PA_PORTA_VERSAO = '43';
+    var PA_PORTA_VERSAO = '44';
     var PA_LOCALSERV_URL = 'http://localhost:8899/upload';
     var PA_LOCALSERV_ATIVO = true;
     var paFoto3x4Stream = null;
@@ -3619,6 +3619,15 @@
                 console.error('Erro ao conferir o bloqueio da foto 3x4:', e);
                 return true;
             });
+    }
+
+    /* Deixa a secao de anexo no estado certo sempre que a Carteira e montada.
+       Aplica o estado ja conhecido na hora (sem esperar a rede) e confere de
+       novo em seguida: assim a trava nao depende de recarregar a pagina. */
+    function paFotoBloqueioAplicarNaCarteira() {
+        if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return;
+        Foto3x4Bloqueio.aplicarPortal(Foto3x4Bloqueio.estado(paFotoTurma()) === true);
+        paFotoBloqueioAtualizar();
     }
 
     /* Recarrega o bloqueio da turma e aplica na interface (ao abrir a Carteira). */
