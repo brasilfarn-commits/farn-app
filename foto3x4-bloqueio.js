@@ -26,14 +26,25 @@ var Foto3x4Bloqueio = (function () {
     var TTL = 30000;             // o mapa serve por 30s; cada acao do aluno rele
     var ultimaLeitura = 0;
 
+    /* Devolve o Firestore somente se ele estiver realmente utilizavel. O
+       firebase-firestore-compat carrega de forma assincrona: dbFirestore pode
+       existir e ainda nao ter os metodos. Sem essa checagem a leitura estoura
+       dentro do modulo e derruba a verificacao do bloqueio na pagina. */
     function db() {
-        if (typeof dbFirestore !== 'undefined' && dbFirestore) return dbFirestore;
-        if (typeof db !== 'undefined' && db) return db;
-        return null;
+        var d = (typeof dbFirestore !== 'undefined' && dbFirestore) ? dbFirestore
+              : ((typeof db !== 'undefined' && db) ? db : null);
+        if (!d) return null;
+        if (typeof d.collection !== 'function') return null;
+        try {
+            if (!d.collection(COLEC) || typeof d.collection(COLEC).doc !== 'function') return null;
+        } catch (e) { return null; }
+        return d;
     }
 
+    /* Nome de turma comparavel: sem espacos nas pontas e sem diferenciar
+       maiuscula/minuscula (BA-ALPHA = ba-alpha). */
     function normalizarTurma(t) {
-        return String(t == null ? '' : t).trim();
+        return String(t == null ? '' : t).trim().toUpperCase();
     }
 
     function mapaDoc(dados) {
@@ -51,7 +62,9 @@ var Foto3x4Bloqueio = (function () {
         return m;
     }
 
-    /* Le o mapa de turmas bloqueadas. Devolve Promise<mapa>. */
+    /* Le o mapa de turmas bloqueadas. Devolve Promise<mapa>. Nunca estoura de
+       forma sincrona: qualquer falha vira Promise resolvida com o ultimo mapa
+       conhecido (sem leitura nao bloqueia ninguem). */
     function lerMapa(forcar) {
         var agora = Date.now();
         if (!forcar && cacheTurmas && (agora - ultimaLeitura) < TTL) {
@@ -59,20 +72,26 @@ var Foto3x4Bloqueio = (function () {
         }
         if (promessa && !forcar) return promessa;
         var d = db();
-        if (!d) return Promise.resolve({});
-        promessa = d.collection(COLEC).doc(DOC).get()
-            .then(function (doc) {
-                cacheTurmas = doc.exists ? mapaDoc(doc.data() || {}) : {};
-                ultimaLeitura = Date.now();
-                promessa = null;
-                return cacheTurmas;
-            })
-            .catch(function (e) {
-                console.error('Erro ao ler o bloqueio da foto 3x4:', e);
-                promessa = null;
-                /* Mantem o ultimo mapa conhecido; sem leitura nao bloqueia. */
-                return cacheTurmas || {};
-            });
+        if (!d) return Promise.resolve(cacheTurmas || {});
+        try {
+            promessa = d.collection(COLEC).doc(DOC).get()
+                .then(function (doc) {
+                    cacheTurmas = (doc && doc.exists) ? mapaDoc(doc.data() || {}) : {};
+                    ultimaLeitura = Date.now();
+                    promessa = null;
+                    return cacheTurmas;
+                })
+                .catch(function (e) {
+                    console.error('Erro ao ler o bloqueio da foto 3x4:', e);
+                    promessa = null;
+                    /* Mantem o ultimo mapa conhecido; sem leitura nao bloqueia. */
+                    return cacheTurmas || {};
+                });
+        } catch (e) {
+            console.error('Erro ao ler o bloqueio da foto 3x4:', e);
+            promessa = null;
+            return Promise.resolve(cacheTurmas || {});
+        }
         return promessa;
     }
     /* Bloqueio de uma turma. Devolve Promise<boolean>. */
@@ -94,13 +113,9 @@ var Foto3x4Bloqueio = (function () {
         patch['turmas.' + nome] = !!bloqueado;
         patch.atualizadoEm = new Date().toISOString();
         patch.atualizadoPor = 'Administrador';
-        /* O administrador carrega o modulo por CDN/local: se por algum motivo
-           o carregamento falhar, grava o documento inteiro para o bloqueio
-           nao se perder. */
-        var grava = (typeof d.doc === 'function' && typeof d.doc().set === 'function')
-            ? d.doc(DOC).set(patch, { merge: true })
-            : d.collection(COLEC).doc(DOC).set(patch, { merge: true });
-        return grava.then(function () {
+        /* O campo com ponto cria/atualiza somente turmas.<turma>; a gravacao e
+           feita por set(merge) no documento do bloqueio. */
+        return d.collection(COLEC).doc(DOC).set(patch, { merge: true }).then(function () {
             cacheTurmas = cacheTurmas || {};
             cacheTurmas[nome] = !!bloqueado;
             ultimaLeitura = Date.now();

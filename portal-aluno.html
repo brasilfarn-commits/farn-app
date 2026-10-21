@@ -943,6 +943,7 @@
                                 <button onclick="paFotoAbrirCamera()" style="background:#6B8E23;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-camera"></i> Tirar foto (camera)</button>
                             </div>
                             <div id="pf-foto3x4-status" style="font-size:12px;color:#64748b;margin-top:10px"></div>
+                            <div id="pf-foto3x4-diag-linha" style="font-size:11px;color:#94a3b8;margin-top:4px;font-family:'Courier New',monospace"></div>
                             <div style="margin-top:6px">
                                 <button onclick="paFotoDiagnostico()" style="background:transparent;border:1px dashed #cbd5e1;color:#94a3b8;border-radius:6px;font-size:10.5px;padding:3px 8px;cursor:pointer"><i class="fa-solid fa-stethoscope"></i> Conferir bloqueio</button>
                             </div>
@@ -1328,7 +1329,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="ficha-geral-compartilhar.js?v=16"></script>
 <script src="foto3x4-editor.js?v=3"></script>
-<script src="foto3x4-bloqueio.js?v=4"></script>
+<script src="foto3x4-bloqueio.js?v=5"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
@@ -3575,7 +3576,7 @@
     }
 
     /* ===== FOTO 3X4 (CARTEIRA) ===== */
-    var PA_PORTA_VERSAO = '44';
+    var PA_PORTA_VERSAO = '45';
     var PA_LOCALSERV_URL = 'http://localhost:8899/upload';
     var PA_LOCALSERV_ATIVO = true;
     var paFoto3x4Stream = null;
@@ -3621,11 +3622,22 @@
             });
     }
 
+    /* Linha de diagnostico sempre visivel na secao da foto: mostra a turma que
+       o portal esta usando e o que a base respondeu. Serve para conferir em 1
+       olhar, sem console, por que o bloqueio pegou ou nao pegou. */
+    function paFotoDiagLinha(texto, cor) {
+        var el = document.getElementById('pf-foto3x4-diag-linha');
+        if (el) { el.textContent = texto || ''; el.style.color = cor || '#94a3b8'; }
+    }
+
     /* Deixa a secao de anexo no estado certo sempre que a Carteira e montada.
        Aplica o estado ja conhecido na hora (sem esperar a rede) e confere de
        novo em seguida: assim a trava nao depende de recarregar a pagina. */
     function paFotoBloqueioAplicarNaCarteira() {
-        if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return;
+        if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) {
+            paFotoDiagLinha('foto3x4-bloqueio.js nao carregou', '#dc2626');
+            return;
+        }
         Foto3x4Bloqueio.aplicarPortal(Foto3x4Bloqueio.estado(paFotoTurma()) === true);
         paFotoBloqueioAtualizar();
     }
@@ -3633,8 +3645,21 @@
     /* Recarrega o bloqueio da turma e aplica na interface (ao abrir a Carteira). */
     function paFotoBloqueioAtualizar() {
         var turma = paFotoTurma();
-        if (!turma || typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return;
-        Foto3x4Bloqueio.atualizarPortal(turma, true).catch(function (e) { console.error(e); });
+        if (!turma) {
+            paFotoDiagLinha('turma nao identificada no cadastro', '#dc2626');
+            return;
+        }
+        if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) {
+            paFotoDiagLinha('foto3x4-bloqueio.js nao carregou', '#dc2626');
+            return;
+        }
+        Foto3x4Bloqueio.atualizarPortal(turma, true).then(function (bloqueado) {
+            paFotoDiagLinha('turma: ' + turma + ' | bloqueio na base: ' + (bloqueado ? 'SIM' : 'NAO')
+                + ' | versao: ' + PA_PORTA_VERSAO, bloqueado ? '#dc2626' : '#16a34a');
+        }).catch(function (e) {
+            paFotoDiagLinha('turma: ' + turma + ' | falha ao ler a base', '#dc2626');
+            console.error(e);
+        });
     }
 
     /* Diagnostico do bloqueio: mostra, sem gravar nada, se o portal conseguiu
