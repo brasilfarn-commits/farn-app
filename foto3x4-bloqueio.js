@@ -1,16 +1,18 @@
 /* ==========================================================================
    BLOQUEIO DE ANEXO/MUDANCA DA FOTO 3x4 (ADMINISTRADOR x PORTAL DO ALUNO)
    --------------------------------------------------------------------------
-   O administrador, na secao "Foto 3x4", alterna o bloqueio com o botao
-   "Bloquear Anexo". O portal do aluno le a mesma flag e desabilita o envio
-   ou a troca da foto na Carteira (e em qualquer outro ponto do portal).
+   O administrador, na secao "Foto 3x4", escolhe projeto + turma e alterna o
+   bloqueio com o botao "Bloquear Anexo". O bloqueio vale SOMENTE para aquela
+   turma (BA-ALPHA, BA-BETA...). O portal do aluno le a flag da turma dele e
+   desabilita o envio ou a troca da foto na Carteira (e demais lugares).
 
    Estado guardado em: configuracoes/foto3x4
-     { bloqueado: true|false, atualizadoEm: '...', atualizadoPor: '...' }
+     { turmas: { 'BA-ALPHA': true, 'BA-BETA': false },
+       atualizadoEm: '...', atualizadoPor: '...' }
 
-   Sem o documento (ou se a leitura falhar) nada e bloqueado: uma falha de
-   rede nao pode travar o aluno nem o administrador. O administrador continua
-   livre para reenviar a foto para o aparelho do aluno.
+   Sem o documento, sem a turma marcada ou se a leitura falhar nada e
+   bloqueado: uma falha de rede nao pode travar o aluno nem o administrador.
+   O administrador continua livre para reenviar a foto para os aparelhos.
 
    O Firestore deste projeto e lido/escrito direto do navegador, entao o
    bloqueio e de interface: ele impede o aluno de anexar/trocar a foto pelo
@@ -19,8 +21,10 @@
 var Foto3x4Bloqueio = (function () {
     var COLEC = 'configuracoes';
     var DOC = 'foto3x4';
-    var cache = null;        // null = estado ainda nao lido
+    var cacheTurmas = null;      // mapa { turma: true/false }
     var promessa = null;
+    var TTL = 30000;             // o mapa serve por 30s; cada acao do aluno rele
+    var ultimaLeitura = 0;
 
     function db() {
         if (typeof dbFirestore !== 'undefined' && dbFirestore) return dbFirestore;
@@ -28,43 +32,79 @@ var Foto3x4Bloqueio = (function () {
         return null;
     }
 
-    /* Le o estado atual. Devolve Promise<boolean>. */
-    function ler(forcar) {
-        var d = db();
-        if (!d) return Promise.resolve(false);
-        if (cache !== null && !forcar) return Promise.resolve(cache);
+    function normalizarTurma(t) {
+        return String(t == null ? '' : t).trim();
+    }
+
+    function mapaDoc(dados) {
+        var m = {};
+        var bruto = dados && dados.turmas;
+        if (bruto && typeof bruto === 'object') {
+            Object.keys(bruto).forEach(function (k) {
+                var nome = normalizarTurma(k);
+                if (nome) m[nome] = bruto[k] === true;
+            });
+        }
+        return m;
+    }
+
+    /* Le o mapa de turmas bloqueadas. Devolve Promise<mapa>. */
+    function lerMapa(forcar) {
+        var agora = Date.now();
+        if (!forcar && cacheTurmas && (agora - ultimaLeitura) < TTL) {
+            return Promise.resolve(cacheTurmas);
+        }
         if (promessa && !forcar) return promessa;
+        var d = db();
+        if (!d) return Promise.resolve({});
         promessa = d.collection(COLEC).doc(DOC).get()
             .then(function (doc) {
-                cache = !!(doc.exists && doc.data() && doc.data().bloqueado === true);
+                cacheTurmas = doc.exists ? mapaDoc(doc.data() || {}) : {};
+                ultimaLeitura = Date.now();
                 promessa = null;
-                return cache;
+                return cacheTurmas;
             })
             .catch(function (e) {
                 console.error('Erro ao ler o bloqueio da foto 3x4:', e);
                 promessa = null;
-                return false;
+                /* Mantem o ultimo mapa conhecido; sem leitura nao bloqueia. */
+                return cacheTurmas || {};
             });
         return promessa;
     }
 
-    /* Grava o estado e atualiza o cache local. Devolve Promise<boolean>. */
-    function gravar(bloqueado) {
-        var d = db();
-        if (!d) return Promise.reject(new Error('Firestore indisponivel'));
-        var dados = {
-            bloqueado: !!bloqueado,
-            atualizadoEm: new Date().toISOString(),
-            atualizadoPor: 'Administrador'
-        };
-        return d.collection(COLEC).doc(DOC).set(dados, { merge: true }).then(function () {
-            cache = !!bloqueado;
-            return cache;
+    /* Bloqueio de uma turma. Devolve Promise<boolean>. */
+    function ler(turma, forcar) {
+        var nome = normalizarTurma(turma);
+        if (!nome) return Promise.resolve(false);
+        return lerMapa(forcar).then(function (mapa) {
+            return mapa[nome] === true;
         });
     }
 
-    /* Estado em cache (null = ainda nao lido). */
-    function estado() { return cache; }
+    /* Liga/desliga o bloqueio de uma turma. Devolve Promise<boolean>. */
+    function gravar(turma, bloqueado) {
+        var d = db();
+        var nome = normalizarTurma(turma);
+        if (!d) return Promise.reject(new Error('Firestore indisponivel'));
+        if (!nome) return Promise.reject(new Error('Turma nao informada'));
+        var patch = {};
+        patch['turmas.' + nome] = !!bloqueado;
+        patch.atualizadoEm = new Date().toISOString();
+        patch.atualizadoPor = 'Administrador';
+        return d.collection(COLEC).doc(DOC).set(patch, { merge: true }).then(function () {
+            cacheTurmas = cacheTurmas || {};
+            cacheTurmas[nome] = !!bloqueado;
+            ultimaLeitura = Date.now();
+            return !!bloqueado;
+        });
+    }
+
+    /* Estado em cache da turma (null = ainda nao lido). */
+    function estado(turma) {
+        if (!cacheTurmas) return null;
+        return cacheTurmas[normalizarTurma(turma)] === true;
+    }
 
     /* Aplica o estado na interface do portal do aluno: esconde os botoes de
        anexo/camera e mostra o aviso de bloqueio. */
@@ -81,9 +121,9 @@ var Foto3x4Bloqueio = (function () {
         return bloqueado;
     }
 
-    /* Recarrega o estado e aplica na interface do portal do aluno. */
-    function atualizarPortal(forcar) {
-        return ler(forcar).then(function (bloqueado) {
+    /* Recarrega o estado da turma e aplica na interface do portal do aluno. */
+    function atualizarPortal(turma, forcar) {
+        return ler(turma, forcar).then(function (bloqueado) {
             return aplicarPortal(bloqueado);
         });
     }

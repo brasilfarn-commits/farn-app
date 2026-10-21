@@ -1325,7 +1325,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="ficha-geral-compartilhar.js?v=16"></script>
 <script src="foto3x4-editor.js?v=3"></script>
-<script src="foto3x4-bloqueio.js?v=1"></script>
+<script src="foto3x4-bloqueio.js?v=2"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
     <script>
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
@@ -3572,9 +3572,13 @@
     var paFoto3x4Stream = null;
 
     /* ===== BLOQUEIO DE ANEXO DA FOTO 3X4 (ADMINISTRADOR) =====
-       O administrador, na secao "Foto 3x4", pode travar o envio/troca da
-       foto 3x4. O estado vem de configuracoes/foto3x4 e e conferido a cada
-       acao do aluno, para valer o bloqueio sem precisar recarregar a pagina. */
+       O administrador, na secao "Foto 3x4", pode travar POR TURMA o
+       envio/troca da foto 3x4. O portal confere o estado da turma do aluno a
+       cada acao, para valer o bloqueio sem precisar recarregar a pagina. */
+    function paFotoTurma() {
+        return String((paUser && paUser.turma) || '').trim();
+    }
+
     function paFotoBloqueioAvisar() {
         var status = document.getElementById('pf-foto3x4-status');
         if (status) {
@@ -3589,7 +3593,7 @@
     /* Devolve true quando o aluno pode mexer na foto 3x4. */
     function paFotoPodeAlterar() {
         if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return Promise.resolve(true);
-        return Foto3x4Bloqueio.ler(true)
+        return Foto3x4Bloqueio.ler(paFotoTurma(), true)
             .then(function (bloqueado) {
                 Foto3x4Bloqueio.aplicarPortal(bloqueado);
                 if (bloqueado) { paFotoBloqueioAvisar(); return false; }
@@ -3598,10 +3602,10 @@
             .catch(function () { return true; });
     }
 
-    /* Recarrega o bloqueio e aplica na interface (usado ao abrir a Carteira). */
+    /* Recarrega o bloqueio da turma e aplica na interface (ao abrir a Carteira). */
     function paFotoBloqueioAtualizar() {
         if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return;
-        Foto3x4Bloqueio.atualizarPortal(true).catch(function () {});
+        Foto3x4Bloqueio.atualizarPortal(paFotoTurma(), true).catch(function () {});
     }
 
     function paFotoEscolherArquivo() {
@@ -3728,7 +3732,7 @@
         if (!dataUrl) return;
         /* Ultima porta: se o administrador bloqueou o anexo enquanto o aluno
            estava recortando a foto, a gravacao nao acontece. */
-        if (typeof Foto3x4Bloqueio !== 'undefined' && Foto3x4Bloqueio && Foto3x4Bloqueio.estado() === true) {
+        if (typeof Foto3x4Bloqueio !== 'undefined' && Foto3x4Bloqueio && Foto3x4Bloqueio.estado(paFotoTurma()) === true) {
             paFotoBloqueioAvisar();
             return;
         }

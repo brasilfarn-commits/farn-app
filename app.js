@@ -3001,18 +3001,28 @@ function foto3x4Inicializar() {
 
 /* ===== BLOQUEIO DE ANEXO DA FOTO 3X4 (ADMIN x PORTAL DO ALUNO) =====
    O botao "Bloquear Anexo" trava o envio/troca da foto 3x4 no portal do
-   aluno. O estado fica em configuracoes/foto3x4 e e lido pelo portal. */
+   aluno, POR TURMA. O estado fica em configuracoes/foto3x4 (mapa turmas) e e
+   lido pelo portal conforme a turma do aluno. O botao so aparece depois de
+   escolher projeto + turma, ao lado de "Atualizar Fotos no Dispositivo". */
 
-/* Carrega o estado do bloqueio e reflete no botao da secao. */
+/* Turma escolhida na secao Foto 3x4. */
+function foto3x4TurmaSelecionada() {
+    const sel = document.getElementById('foto3x4-selecao-turma');
+    return sel ? String(sel.value || '').trim() : '';
+}
+
+/* Carrega o estado do bloqueio da turma escolhida e reflete no botao. */
 function foto3x4BloqueioCarregar() {
     if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) return;
-    Foto3x4Bloqueio.ler(true).then(function (bloqueado) {
-        foto3x4BloqueioAplicarUI(bloqueado);
+    const turma = foto3x4TurmaSelecionada();
+    if (!turma) { foto3x4BloqueioAplicarUI(false, ''); return; }
+    Foto3x4Bloqueio.ler(turma, true).then(function (bloqueado) {
+        foto3x4BloqueioAplicarUI(bloqueado, turma);
     }).catch(function (e) { console.error(e); });
 }
 
 /* Reflexo do estado no botao e no aviso da secao. */
-function foto3x4BloqueioAplicarUI(bloqueado) {
+function foto3x4BloqueioAplicarUI(bloqueado, turma) {
     const btn = document.getElementById('foto3x4-bloqueio-btn');
     const label = document.getElementById('foto3x4-bloqueio-label');
     const msg = document.getElementById('foto3x4-bloqueio-msg');
@@ -3025,34 +3035,40 @@ function foto3x4BloqueioAplicarUI(bloqueado) {
     }
     if (label) label.textContent = bloqueado ? 'Desbloquear Anexo' : 'Bloquear Anexo';
     if (msg) {
-        msg.textContent = bloqueado
-            ? 'Anexo de foto 3x4 bloqueado no portal do aluno.'
-            : 'Anexo de foto 3x4 liberado no portal do aluno.';
-        msg.style.color = bloqueado ? '#b91c1c' : '#16a34a';
+        if (!turma) {
+            msg.textContent = '';
+        } else {
+            msg.textContent = bloqueado
+                ? 'Anexo de foto 3x4 bloqueado na turma ' + turma + '.'
+                : 'Anexo de foto 3x4 liberado na turma ' + turma + '.';
+            msg.style.color = bloqueado ? '#b91c1c' : '#16a34a';
+        }
     }
 }
 
-/* Alterna o bloqueio de anexo/mudanca da foto 3x4 no portal do aluno. */
+/* Alterna o bloqueio de anexo/mudanca da foto 3x4 na turma escolhida. */
 function foto3x4AlternarBloqueio() {
+    const turma = foto3x4TurmaSelecionada();
+    if (!turma) { alert('Selecione o projeto e a turma para bloquear o anexo.'); return; }
     if (typeof Foto3x4Bloqueio === 'undefined' || !Foto3x4Bloqueio) {
         alert('Modulo de bloqueio da foto 3x4 indisponivel.');
         return;
     }
     const btn = document.getElementById('foto3x4-bloqueio-btn');
-    const atual = Foto3x4Bloqueio.estado();
+    const atual = Foto3x4Bloqueio.estado(turma);
     if (atual === null) {
         /* Estado ainda desconhecido: le antes de decidir o novo valor. */
-        Foto3x4Bloqueio.ler(true).then(function () {
+        Foto3x4Bloqueio.ler(turma, true).then(function () {
             foto3x4AlternarBloqueio();
         }).catch(function (e) { console.error(e); });
         return;
     }
     if (btn) btn.disabled = true;
-    Foto3x4Bloqueio.gravar(!atual).then(function (bloqueado) {
-        foto3x4BloqueioAplicarUI(bloqueado);
+    Foto3x4Bloqueio.gravar(turma, !atual).then(function (bloqueado) {
+        foto3x4BloqueioAplicarUI(bloqueado, turma);
         alert(bloqueado
-            ? 'Anexo de foto 3x4 bloqueado no portal do aluno.'
-            : 'Anexo de foto 3x4 liberado no portal do aluno.');
+            ? 'Anexo de foto 3x4 bloqueado na turma ' + turma + '.'
+            : 'Anexo de foto 3x4 liberado na turma ' + turma + '.');
     }).catch(function (e) {
         console.error(e);
         alert('Nao foi possivel gravar o bloqueio: ' + (e && e.message ? e.message : e));
@@ -3079,9 +3095,11 @@ function foto3x4OnTurmaChange() {
     const conteudo = document.getElementById('foto3x4-conteudo');
     if (projeto && turma) {
         if (conteudo) conteudo.style.display = '';
+        foto3x4BloqueioCarregar();
         foto3x4RenderList();
     } else {
         if (conteudo) conteudo.style.display = 'none';
+        foto3x4BloqueioAplicarUI(false, '');
     }
 }
 

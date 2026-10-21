@@ -989,12 +989,6 @@
                     <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-id-card" style="color:#2563eb;margin-right:8px"></i> Foto 3x4 - Fotos Enviadas pelos Alunos</h3>
-                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
-                                <button class="btn-primary btn-sm" id="foto3x4-bloqueio-btn" onclick="foto3x4AlternarBloqueio()" style="background:linear-gradient(135deg,#b91c1c,#991b1b)" title="Bloqueia ou desbloqueia o envio e a mudanca das fotos 3x4 no portal do aluno (Carteira e demais lugares)">
-                                    <i class="fa-solid fa-lock"></i> <span id="foto3x4-bloqueio-label">Bloquear Anexo</span>
-                                </button>
-                                <span id="foto3x4-bloqueio-msg" style="font-size:11.5px;color:#64748b"></span>
-                            </div>
                         </div>
                         <div class="card-body">
                             <!-- Selecao Projeto + Turma -->
@@ -1026,6 +1020,10 @@
                                         <button class="btn-primary btn-sm" id="foto3x4-sync-btn" onclick="foto3x4AtualizarDispositivos()" style="background:#2563eb;border-color:#2563eb" title="Reenvia as fotos exibidas aqui no administrador para o Firestore, para que aparecam atualizadas no portal do aluno, na Carteira e na Ficha Geral">
                                             <i class="fa-solid fa-cloud-arrow-down"></i> Atualizar Fotos no Dispositivo do Aluno
                                         </button>
+                                        <button class="btn-primary btn-sm" id="foto3x4-bloqueio-btn" onclick="foto3x4AlternarBloqueio()" style="background:linear-gradient(135deg,#b91c1c,#991b1b)" title="Bloqueia ou desbloqueia, somente nesta turma, o envio e a mudanca das fotos 3x4 no portal do aluno (Carteira e demais lugares)">
+                                            <i class="fa-solid fa-lock"></i> <span id="foto3x4-bloqueio-label">Bloquear Anexo</span>
+                                        </button>
+                                        <span id="foto3x4-bloqueio-msg" style="font-size:11.5px;color:#64748b"></span>
                                         <span id="foto3x4-sync-msg" style="font-size:11.5px;color:#64748b"></span>
                                     </div>
                                 </div>
@@ -5114,8 +5112,8 @@
     <script src="ficha-geral-compartilhar.js?v=16"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
-    <script src="foto3x4-bloqueio.js?v=1"></script>
-    <script src="app.js?v=85"></script>
+    <script src="foto3x4-bloqueio.js?v=2"></script>
+    <script src="app.js?v=86"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
