@@ -41,6 +41,17 @@ var Foto3x4Bloqueio = (function () {
         return d;
     }
 
+    /* Sentinela de exclusao do Firestore, quando disponivel. */
+    function campoApagar() {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.firestore
+                && firebase.firestore.FieldValue && firebase.firestore.FieldValue.delete) {
+                return firebase.firestore.FieldValue.delete();
+            }
+        } catch (e) {}
+        return null;
+    }
+
     /* Nome de turma comparavel: sem espacos nas pontas e sem diferenciar
        maiuscula/minuscula (BA-ALPHA = ba-alpha). */
     function normalizarTurma(t) {
@@ -57,6 +68,8 @@ var Foto3x4Bloqueio = (function () {
     function mapaDoc(dados) {
         var m = {};
         if (!dados) return m;
+        /* O mapa aninhado (formato novo) tem prioridade: o campo literal e
+           apenas sobra de versao antiga do botao. */
         var bruto = dados.turmas;
         if (bruto && typeof bruto === 'object') {
             Object.keys(bruto).forEach(function (k) {
@@ -64,12 +77,13 @@ var Foto3x4Bloqueio = (function () {
                 if (nome) m[nome] = bruto[k] === true;
             });
         }
-        /* Campo literal 'turmas.<TURMA>' (ponto faz parte do nome). */
+        /* Campo literal 'turmas.<TURMA>' (ponto faz parte do nome). So vale
+           quando o mapa aninhado nao tem aquela turma. */
         Object.keys(dados).forEach(function (k) {
             var casa = /^turmas\.(.+)$/.exec(k);
             if (!casa) return;
             var nome = normalizarTurma(casa[1]);
-            if (nome) m[nome] = dados[k] === true;
+            if (nome && !Object.prototype.hasOwnProperty.call(m, nome)) m[nome] = dados[k] === true;
         });
         /* Formato antigo (versao global): ainda e respeitado para nao deixar
            nenhuma turma bloqueada fora do ar. */
@@ -139,10 +153,13 @@ var Foto3x4Bloqueio = (function () {
             if (bruto && typeof bruto === 'object') {
                 Object.keys(bruto).forEach(function (k) { mapaTurmas[k] = bruto[k] === true; });
             }
-            /* Traz tambem o que estiver em campos de ponto literal. */
+            /* Traz tambem o que estiver em campos de ponto literal, mas o mapa
+               aninhado manda (mesma regra da leitura). */
             Object.keys(dados || {}).forEach(function (k) {
                 var casa = /^turmas\.(.+)$/.exec(k);
-                if (casa) mapaTurmas[casa[1]] = dados[k] === true;
+                if (casa && !Object.prototype.hasOwnProperty.call(mapaTurmas, casa[1])) {
+                    mapaTurmas[casa[1]] = dados[k] === true;
+                }
             });
             mapaTurmas[nome] = !!bloqueado;
             var patch = {
@@ -150,7 +167,27 @@ var Foto3x4Bloqueio = (function () {
                 atualizadoEm: new Date().toISOString(),
                 atualizadoPor: 'Administrador'
             };
-            return ref.set(patch, { merge: true });
+            return ref.set(patch, { merge: true }).then(function () {
+                /* Remove os campos de ponto literal deixados pela versao antiga
+                   (eles sobrescreviam o mapa e travavam o desbloqueio). */
+                var literais = Object.keys(dados || {}).filter(function (k) {
+                    return /^turmas\./.test(k);
+                });
+                if (!literais.length) return null;
+                var del = {};
+                var apagar = campoApagar();
+                literais.forEach(function (k) {
+                    /* Se nao houver como apagar, marca false (equivalente
+                       funcional: a leitura prioriza o mapa aninhado). */
+                    del[k] = apagar || false;
+                });
+                return (typeof ref.update === 'function'
+                    ? ref.update(del)
+                    : ref.set(del, { merge: true })
+                ).catch(function (e) {
+                    console.error('Nao foi possivel limpar o formato antigo do bloqueio:', e);
+                });
+            });
         }).then(function () {
             cacheTurmas = cacheTurmas || {};
             cacheTurmas[nome] = !!bloqueado;
