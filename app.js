@@ -10756,13 +10756,21 @@ function noticiasVideoThumb(file) {
     return new Promise(function(resolve, reject) {
         var url = URL.createObjectURL(file);
         var video = document.createElement('video');
-        video.muted = true;
-        video.playsInline = true;
-        video.preload = 'metadata';
-        video.onloadeddata = function() {
-            try { video.currentTime = 0.1; } catch (e) {}
-        };
-        video.onseeked = function() {
+        var finalizado = false;
+        var timer = setTimeout(function() {
+            finalizar(new Error('Tempo esgotado ao gerar a miniatura do video.'));
+        }, 10000);
+        function finalizar(err, valor) {
+            if (finalizado) return;
+            finalizado = true;
+            clearTimeout(timer);
+            try { video.pause(); } catch (e) {}
+            try { video.removeAttribute('src'); video.load(); } catch (e) {}
+            try { URL.revokeObjectURL(url); } catch (e) {}
+            if (err) reject(err); else resolve(valor);
+        }
+        function capturar() {
+            if (finalizado) return;
             try {
                 var w = 320;
                 var scale = Math.min(1, w / (video.videoWidth || w));
@@ -10770,11 +10778,21 @@ function noticiasVideoThumb(file) {
                 canvas.width = Math.max(1, Math.round((video.videoWidth || w) * scale));
                 canvas.height = Math.max(1, Math.round((video.videoHeight || w) * scale));
                 canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                URL.revokeObjectURL(url);
-                resolve({ thumb: canvas.toDataURL('image/jpeg', 0.7) });
-            } catch (e) { URL.revokeObjectURL(url); reject(e); }
+                finalizar(null, { thumb: canvas.toDataURL('image/jpeg', 0.7) });
+            } catch (e) { finalizar(e); }
+        }
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.onloadeddata = function() {
+            try {
+                var alvo = Math.min(0.2, Math.max(0, (video.duration || 0) / 10));
+                video.currentTime = alvo;
+            } catch (e) {}
+            setTimeout(capturar, 1200);
         };
-        video.onerror = function() { URL.revokeObjectURL(url); reject(new Error('Video invalido')); };
+        video.onseeked = capturar;
+        video.onerror = function() { finalizar(new Error('Video invalido.')); };
         video.src = url;
     });
 }
@@ -10787,19 +10805,30 @@ function noticiasValidarVideo(file) {
         }
         var url = URL.createObjectURL(file);
         var video = document.createElement('video');
+        var finalizado = false;
+        var timer = setTimeout(function() {
+            finalizar(new Error('Tempo esgotado ao ler o video. Verifique se o formato e compativel.'));
+        }, 10000);
+        function finalizar(err, valor) {
+            if (finalizado) return;
+            finalizado = true;
+            clearTimeout(timer);
+            try { video.removeAttribute('src'); video.load(); } catch (e) {}
+            try { URL.revokeObjectURL(url); } catch (e) {}
+            if (err) reject(err); else resolve(valor);
+        }
         video.muted = true;
         video.playsInline = true;
         video.preload = 'metadata';
         video.onloadedmetadata = function() {
             var dur = video.duration || 0;
-            URL.revokeObjectURL(url);
             if (isFinite(dur) && dur > NOTICIAS_MAX_VIDEO_DURACAO) {
-                reject(new Error('Video com mais de ' + Math.round(NOTICIAS_MAX_VIDEO_DURACAO / 60) + ' minuto(s). Envie um video mais curto.'));
+                finalizar(new Error('Video com mais de ' + Math.round(NOTICIAS_MAX_VIDEO_DURACAO / 60) + ' minuto(s). Envie um video mais curto.'));
                 return;
             }
-            resolve({ dur: isFinite(dur) ? dur : 0, w: video.videoWidth || 0, h: video.videoHeight || 0 });
+            finalizar(null, { dur: isFinite(dur) ? dur : 0, w: video.videoWidth || 0, h: video.videoHeight || 0 });
         };
-        video.onerror = function() { URL.revokeObjectURL(url); reject(new Error('Video invalido')); };
+        video.onerror = function() { finalizar(new Error('Video invalido.')); };
         video.src = url;
     });
 }
@@ -10829,13 +10858,25 @@ function noticiasComprimirVideo(file, w, h) {
         var recorder = null;
         var stream = null;
         var limpo = false;
+        var finalizado = false;
+        var timer = setTimeout(function() {
+            concluir(new Error('Tempo esgotado ao otimizar o video. Use um video mais curto.'));
+        }, 240000);
         function limpar() {
             if (limpo) return;
             limpo = true;
+            clearTimeout(timer);
             try { video.pause(); } catch (e) {}
+            try { if (stream) stream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
             try { URL.revokeObjectURL(url); } catch (e) {}
         }
-        video.onerror = function() { limpar(); reject(new Error('Video invalido')); };
+        function concluir(err, blob) {
+            if (finalizado) return;
+            finalizado = true;
+            limpar();
+            if (err) reject(err); else resolve(blob);
+        }
+        video.onerror = function() { concluir(new Error('Video invalido.')); };
         video.onloadeddata = function() {
             try {
                 stream = canvas.captureStream(30);
@@ -10843,14 +10884,16 @@ function noticiasComprimirVideo(file, w, h) {
                 var mime = tipos.find(function(t) { return window.MediaRecorder.isTypeSupported(t); }) || '';
                 recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: NOTICIAS_VIDEO_BITRATE });
                 recorder.ondataavailable = function(ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+                recorder.onerror = function() { concluir(new Error('Falha ao otimizar o video.')); };
                 recorder.onstop = function() {
-                    limpar();
                     var blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
-                    resolve(blob);
+                    concluir(null, blob);
                 };
                 recorder.start(500);
-                video.play().catch(function() {});
-            } catch (e) { limpar(); reject(e); }
+                video.play().catch(function() {
+                    concluir(new Error('Nao foi possivel reproduzir o video para otimizar.'));
+                });
+            } catch (e) { concluir(e); }
         };
         var raf = null;
         function desenhar() {
@@ -11168,38 +11211,142 @@ function blogPararEngajamento() {
     blogEngajUnsubs = [];
 }
 
-async function blogDataUrlParaBlob(dataUrl) {
-    var resp = await fetch(dataUrl);
-    return await resp.blob();
+function blogDataUrlParaBlob(dataUrl) {
+    return fetch(dataUrl).then(function(resp) { return resp.blob(); });
+}
+
+function blogComTimeout(promise, ms, mensagem) {
+    return new Promise(function(resolve, reject) {
+        var pronto = false;
+        var timer = setTimeout(function() {
+            if (pronto) return;
+            pronto = true;
+            reject(new Error(mensagem || 'Tempo esgotado. Tente novamente.'));
+        }, ms);
+        promise.then(function(v) {
+            if (pronto) return;
+            pronto = true;
+            clearTimeout(timer);
+            resolve(v);
+        }, function(e) {
+            if (pronto) return;
+            pronto = true;
+            clearTimeout(timer);
+            reject(e);
+        });
+    });
+}
+
+var blogStorageCache = null;
+function blogStorageDisponivel() {
+    if (blogStorageCache !== null) return Promise.resolve(blogStorageCache);
+    return new Promise(function(resolve) {
+        var bucket = (firebase.app().options || {}).storageBucket || '';
+        if (!bucket || !firebase.storage) { blogStorageCache = false; resolve(false); return; }
+        var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var timer = setTimeout(function() { if (ctrl) ctrl.abort(); }, 4000);
+        fetch('https://firebasestorage.googleapis.com/v0/b/' + encodeURIComponent(bucket) + '/o?maxResults=1', {
+            method: 'GET',
+            signal: ctrl ? ctrl.signal : undefined
+        }).then(function(resp) {
+            clearTimeout(timer);
+            resp.text().catch(function() {});
+            blogStorageCache = resp.status !== 404;
+            resolve(blogStorageCache);
+        }).catch(function() {
+            clearTimeout(timer);
+            blogStorageCache = false;
+            resolve(false);
+        });
+    });
+}
+
+function blogComprimirImagem(file) {
+    return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                try {
+                    var maxLado = 1400;
+                    var largura = img.width || maxLado;
+                    var altura = img.height || maxLado;
+                    var escala = Math.min(1, maxLado / Math.max(largura, altura));
+                    var w = Math.max(1, Math.round(largura * escala));
+                    var h = Math.max(1, Math.round(altura * escala));
+                    var qualidade = 0.72;
+                    var dataUrl = '';
+                    for (var i = 0; i < 6; i++) {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        var ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        dataUrl = canvas.toDataURL('image/jpeg', qualidade);
+                        if (dataUrl.length <= 700000) break;
+                        qualidade = Math.max(0.35, qualidade - 0.08);
+                        w = Math.max(400, Math.round(w * 0.88));
+                        h = Math.max(300, Math.round(h * 0.88));
+                    }
+                    resolve(dataUrl);
+                } catch (err) { reject(err); }
+            };
+            img.onerror = function() { reject(new Error('Nao foi possivel ler a imagem. Use JPG, PNG ou WEBP.')); };
+            img.src = e.target.result;
+        };
+        reader.onerror = function() { reject(new Error('Falha ao ler o arquivo de imagem.')); };
+        reader.readAsDataURL(file);
+    });
 }
 
 async function blogUploadImagem(file) {
-    var dataUrl = await noticiasCompressImage(file);
+    var dataUrl = await blogComprimirImagem(file);
+    if (!(await blogStorageDisponivel())) return dataUrl;
+    var task = null;
     try {
         var blob = await blogDataUrlParaBlob(dataUrl);
         var nome = (file.name || 'imagem').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
         var ref = firebase.storage().ref('blog/' + Date.now() + '_' + nome + '.jpg');
-        await ref.put(blob, { contentType: 'image/jpeg' });
-        return await ref.getDownloadURL();
+        task = ref.put(blob, { contentType: 'image/jpeg' });
+        await blogComTimeout(task, 15000, 'Tempo esgotado ao enviar a imagem.');
+        return await blogComTimeout(ref.getDownloadURL(), 8000, 'Tempo esgotado ao obter a imagem.');
     } catch (e) {
-        console.warn('Upload de imagem indisponivel, usando imagem embutida.', e);
+        if (task) { try { task.cancel(); } catch (err) {} }
+        console.warn('Storage indisponivel; imagem sera salva no Firestore.', e);
         return dataUrl;
     }
 }
 
 async function blogUploadVideo(file) {
-    var meta = await noticiasValidarVideo(file);
+    if (!(await blogStorageDisponivel())) {
+        throw new Error('O envio de arquivo de video nao esta disponivel porque o Firebase Storage nao esta ativado neste projeto. Use um link do YouTube ou um link .mp4, ou remova o video para salvar a noticia.');
+    }
+    var meta = await blogComTimeout(noticiasValidarVideo(file), 15000, 'Nao foi possivel ler o video. Verifique se o formato e compativel.');
     var poster = '';
-    try { var th = await noticiasVideoThumb(file); poster = th.thumb; } catch (e) {}
+    try {
+        var th = await blogComTimeout(noticiasVideoThumb(file), 12000, 'Tempo esgotado ao gerar a capa do video.');
+        poster = th.thumb;
+    } catch (e) {
+        console.warn('Capa do video nao gerada:', e);
+    }
     var blob = file;
     if (file.size > NOTICIAS_COM_PRIMIR_VIDEO_ACIMA_MB * 1024 * 1024) {
-        blob = await noticiasComprimirVideo(file, meta.w, meta.h);
+        var limiteCompressao = Math.min(240000, Math.max(60000, (meta.dur || 60) * 1000 + 45000));
+        blob = await blogComTimeout(noticiasComprimirVideo(file, meta.w, meta.h), limiteCompressao, 'Tempo esgotado ao otimizar o video.');
     }
-    if (!firebase || !firebase.storage) throw new Error('Firebase Storage não está configurado.');
+    if (!firebase || !firebase.storage) throw new Error('Firebase Storage nao esta configurado.');
     var ext = ((blob.type || '').indexOf('webm') !== -1) ? 'webm' : ((file.name || 'video.mp4').split('.').pop() || 'mp4');
     var ref = firebase.storage().ref('blog/' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.' + ext);
-    await ref.put(blob, { contentType: blob.type || 'video/mp4' });
-    return { url: await ref.getDownloadURL(), poster: poster };
+    var task = ref.put(blob, { contentType: blob.type || 'video/mp4' });
+    try {
+        await blogComTimeout(task, 180000, 'Tempo esgotado ao enviar o video. Tente um arquivo menor ou use um link.');
+    } catch (e) {
+        try { task.cancel(); } catch (err) {}
+        throw new Error('Nao foi possivel enviar o video. Use um link do YouTube ou .mp4, ou remova o video.');
+    }
+    return { url: await blogComTimeout(ref.getDownloadURL(), 8000, 'Tempo esgotado ao obter o video.'), poster: poster };
 }
 
 async function blogSalvar() {
