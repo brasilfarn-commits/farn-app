@@ -686,6 +686,15 @@
     }
 
     /* ===== NOTICIAS ===== */
+    function pfTextoNoticia(texto) {
+        if (window.FarnNoticias && typeof FarnNoticias.linkify === 'function') {
+            return FarnNoticias.linkify(texto || '');
+        }
+        return String(texto == null ? '' : texto)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     function pfLoadNoticias() {
         var container = document.getElementById('pf-noticias-list');
         pfNoticiasUnsub = dbFirestore.collection('noticiasFormados').orderBy('data', 'desc').onSnapshot(function(snap) {
@@ -703,7 +712,7 @@
                 var imgHtml = n.imagem ? '<img src="' + n.imagem + '" class="pf-noticia-img" alt="Noticia">' : '';
                 card.innerHTML = '<div class="pf-noticia-header">' + badgeHtml + '<span class="pf-noticia-date">' + dateStr + '</span></div>' +
                     '<div class="pf-noticia-title">' + (n.titulo || '') + '</div>' +
-                    '<div class="pf-noticia-text">' + (n.texto || '') + '</div>' + imgHtml;
+                    '<div class="pf-noticia-text">' + pfTextoNoticia(n.texto || '') + '</div>' + imgHtml;
                 container.appendChild(card);
             });
         }, function() {
@@ -1040,7 +1049,7 @@
     }).catch(function(){});
     </script>
     <script src="noticias-slider.js"></script>
-    <script src="noticias-feed.js?v=4"></script>
+    <script src="noticias-feed.js?v=5"></script>
     <script>
     (function(){
         function iniciarFeedFormado(){

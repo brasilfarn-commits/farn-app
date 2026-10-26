@@ -3075,7 +3075,7 @@
                     '<div class="pf-blog-modal-title">' + (n.titulo || '') + '</div>' +
                     '<div class="pf-blog-modal-sub">' + (n.subtitulo || '') + '</div>' +
                     '<div style="font-size:11px;color:#64748b;margin-bottom:16px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
-                    '<div class="pf-blog-modal-content">' + (n.texto || '') + '</div>' +
+                    '<div class="pf-blog-modal-content">' + (window.FarnNoticias && typeof FarnNoticias.linkify === 'function' ? FarnNoticias.linkify(n.texto || '') : paEsc(n.texto || '')) + '</div>' +
                 '</div>';
             document.getElementById('pf-blog-modal').classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -7088,7 +7088,7 @@
         }
     }
     </script>
-    <script src="noticias-feed.js?v=4"></script>
+    <script src="noticias-feed.js?v=5"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
     <!-- Modal bem-vindo / instrucoes WhatFarn -->

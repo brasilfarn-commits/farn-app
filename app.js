@@ -11039,6 +11039,13 @@ function blogEsc(s) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+function blogTextoComLinks(texto) {
+    if (window.FarnNoticias && typeof window.FarnNoticias.linkify === 'function') {
+        return window.FarnNoticias.linkify(texto || '');
+    }
+    return blogEsc(texto || '');
+}
+
 function blogDataStr(v) {
     if (!v) return '';
     var d = new Date(v);
@@ -11608,7 +11615,7 @@ function blogVisualizar(id) {
         '<span class="blog-chip">' + blogEsc(blogDataStr(n.data)) + '</span>' +
         portais.map(function(p) { return '<span class="blog-chip"><i class="fa-solid fa-share-nodes"></i> ' + blogEsc(blogPortalNome(p)) + '</span>'; }).join('') +
         '</div>';
-    html += '<div class="blog-view-text">' + blogEsc(n.texto || '') + '</div>';
+    html += '<div class="blog-view-text">' + blogTextoComLinks(n.texto || '') + '</div>';
     html += '<div id="blog-view-engajamento" style="margin-top:18px"></div>';
     document.getElementById('blog-view-body').innerHTML = html;
     document.getElementById('blog-view-overlay').classList.add('open');

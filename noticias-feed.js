@@ -47,6 +47,9 @@
         '.farn-news-modal-sub{font-size:13px;color:#77778f;margin:0 0 12px;line-height:1.5}',
         '.farn-news-modal-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px}',
         '.farn-news-modal-text{font-size:13.5px;color:#3d3d57;line-height:1.75;white-space:pre-wrap;word-break:break-word}',
+        '.farn-text-link{color:#5a3fe0;font-weight:600;text-decoration:underline;text-underline-offset:2px;word-break:break-word;cursor:pointer}',
+        '.farn-text-link:hover{color:#3f2bb5}',
+        '.farn-text-link:focus-visible{outline:2px solid #a78bfa;outline-offset:2px;border-radius:3px}',
         '.farn-news-comments{margin-top:20px;border-top:1px solid #eceaf6;padding-top:16px}',
         '.farn-news-comments-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:700;color:#3d3d57;margin-bottom:11px}',
         '.farn-news-comments-head b{color:#7c5cff}',
@@ -197,6 +200,71 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    /* Transforma links digitados no texto em links clicaveis.
+     * Escapa todo o conteudo e so cria <a> para URLs reconhecidas. */
+    var URL_RE = /https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:com\.br|org\.br|net\.br|edu\.br|gov\.br|com|org|net|edu|gov|io|app|dev|me|info|biz|site|online|store|blog|tv|link)(?::\d{2,5})?(?:\/[^\s<>"']*)?/gi;
+
+    function contarChar(texto, ch) {
+        var total = 0;
+        for (var i = 0; i < texto.length; i++) {
+            if (texto.charAt(i) === ch) total++;
+        }
+        return total;
+    }
+
+    function limparUrl(url) {
+        var limpa = url;
+        var resto = '';
+        while (limpa.length) {
+            var ultimo = limpa.charAt(limpa.length - 1);
+            if (/[.,;:!?]/.test(ultimo)) {
+                resto = ultimo + resto;
+                limpa = limpa.slice(0, -1);
+                continue;
+            }
+            if (ultimo === ')' && contarChar(limpa, ')') > contarChar(limpa, '(')) {
+                resto = ultimo + resto;
+                limpa = limpa.slice(0, -1);
+                continue;
+            }
+            if (ultimo === ']' && contarChar(limpa, ']') > contarChar(limpa, '[')) {
+                resto = ultimo + resto;
+                limpa = limpa.slice(0, -1);
+                continue;
+            }
+            if (ultimo === '}' && contarChar(limpa, '}') > contarChar(limpa, '{')) {
+                resto = ultimo + resto;
+                limpa = limpa.slice(0, -1);
+                continue;
+            }
+            break;
+        }
+        return { url: limpa, resto: resto };
+    }
+
+    function linkify(texto) {
+        var bruto = String(texto == null ? '' : texto);
+        var html = '';
+        var ultimo = 0;
+        var m;
+        URL_RE.lastIndex = 0;
+        while ((m = URL_RE.exec(bruto)) !== null) {
+            var encontrado = m[0];
+            var inicio = m.index;
+            var anterior = inicio > 0 ? bruto.charAt(inicio - 1) : '';
+            if (anterior && /[A-Za-z0-9_@\/]/.test(anterior)) continue;
+            var partes = limparUrl(encontrado);
+            if (!partes.url) continue;
+            var href = partes.url;
+            if (!/^https?:\/\//i.test(href)) href = 'https://' + href;
+            html += esc(bruto.slice(ultimo, inicio));
+            html += '<a class="farn-text-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(partes.url) + '</a>' + esc(partes.resto);
+            ultimo = inicio + encontrado.length;
+        }
+        html += esc(bruto.slice(ultimo));
+        return html;
+    }
+
     function fmtData(v) {
         if (!v) return '';
         var d = new Date(v);
@@ -314,7 +382,7 @@
                     '<span class="blog-chip" style="font-size:10.5px;padding:3px 9px;border-radius:999px;background:#f5f4fb;color:#8b8ba7;font-weight:600"><i class="fa-regular fa-calendar"></i> ' + esc(fmtData(n.data)) + '</span>' +
                     (destinos.length ? '<span class="blog-chip" style="font-size:10.5px;padding:3px 9px;border-radius:999px;background:#f5f4fb;color:#8b8ba7;font-weight:600"><i class="fa-solid fa-share-nodes"></i> ' + esc(destinos.join(', ')) + '</span>' : '') +
                 '</div>' +
-                '<div class="farn-news-modal-text">' + esc(n.texto || '') + '</div>' +
+                '<div class="farn-news-modal-text">' + linkify(n.texto || '') + '</div>' +
                 '<div class="farn-news-comments" id="farn-news-comments">' +
                     '<div class="farn-news-comments-head"><span><i class="fa-regular fa-comment" style="color:#7c5cff;margin-right:4px"></i> Comentários (<b id="farn-news-comments-count">0</b>)</span></div>' +
                     '<div class="farn-news-comments-list" id="farn-news-comments-list"><div class="farn-news-comments-empty">Carregando comentários...</div></div>' +
@@ -653,6 +721,7 @@
         render: render,
         open: open,
         close: close,
+        linkify: linkify,
         mediaHtml: mediaHtml,
         portalLabel: function (p) { return PORTAL_LABELS[p] || p; }
     };
