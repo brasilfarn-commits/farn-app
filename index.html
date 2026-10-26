@@ -13,7 +13,7 @@
         } catch (e) {}
     </script>
     <link rel="stylesheet" href="style.css?v=3">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --gold: #eab308;
@@ -401,11 +401,6 @@
             border: 2px solid rgba(37,99,235,.5);
             box-shadow: 0 6px 16px rgba(15,23,42,.12);
         }
-        .landing-hero-art {
-            max-width: 400px;
-            margin: 26px auto 0;
-        }
-        .landing-hero-art svg { width: 100%; height: auto; display: block; }
         @media (max-width: 560px) {
             .landing-news-left .landing-sobre-text {
                 flex-direction: column;
@@ -490,17 +485,282 @@
             .landing-sobre-inner { padding: 40px 16px; }
             .landing-footer-inner { padding: 26px 16px 16px; flex-direction: column; align-items: flex-start; }
         }
+
+        /* ============================================================
+           THEME 2.0 — LANDING + ADMIN (lavanda + roxo)
+           ============================================================ */
+        :root{
+            --ui-bg:#f5f4fb;--ui-card:#ffffff;
+            --ui-purple:#7c5cff;--ui-purple-d:#5a3fe0;--ui-purple-l:#a78bfa;
+            --ui-teal:#37d0b0;--ui-orange:#f9a03f;--ui-pink:#f4568e;--ui-blue:#4cc9f0;
+            --ui-text:#14142b;--ui-muted:#8b8ba7;--ui-line:#eceaf6;
+            --gold:#f9a03f;--gold-l:#ffc078;
+            --verde-escuro:#5a3fe0;--verde:#7c5cff;
+            --azul:#7c5cff;--vermelho:#f4568e;
+            --green:#7c5cff;--green-l:#9d86ff;--green-d:#5a3fe0;
+            --blue:#7c5cff;--blue-l:#a78bfa;
+            --yellow:#f9a03f;--yellow-l:#ffc078;--yellow-xl:#fff0dd;
+        }
+        body{font-family:'Poppins','Inter',sans-serif!important;background:var(--ui-bg)!important;color:var(--ui-text)!important}
+        button,input,select,textarea{font-family:'Poppins','Inter',sans-serif}
+        ::selection{background:#e3dbff;color:#3b2a8c}
+
+        /* ---------- LANDING ---------- */
+        #screen-login.landing-screen,
+        #screen-login.landing-screen.active{
+            background:
+                radial-gradient(circle at 8% 10%,rgba(124,92,255,.16) 0%,transparent 42%),
+                radial-gradient(circle at 94% 22%,rgba(76,201,240,.16) 0%,transparent 38%),
+                radial-gradient(circle at 68% 92%,rgba(244,86,142,.10) 0%,transparent 42%),
+                linear-gradient(170deg,#fbfaff 0%,#f5f4fb 45%,#efedfa 100%)!important;
+            color:var(--ui-text)!important;
+        }
+        #screen-login.landing-screen::before{display:none!important}
+        .landing-header{background:rgba(255,255,255,.92)!important;border-bottom:1px solid var(--ui-line)!important;box-shadow:0 4px 18px rgba(80,63,205,.06)!important}
+        .landing-brand-logo{border:2px solid #e3ddff!important;box-shadow:0 6px 16px rgba(124,92,255,.16);flex-shrink:0}
+        .landing-brand-text strong{color:var(--ui-text)!important;font-weight:700!important;letter-spacing:.2px!important}
+        .landing-brand-text span{color:var(--ui-muted)!important}
+        .landing-nav a{color:var(--ui-muted)!important;font-weight:500!important;border-radius:999px!important}
+        .landing-nav a:hover{background:#f1edff!important;color:var(--ui-purple-d)!important}
+        .landing-btn-atelie{border:1px solid #ffe0c2!important;background:#fff4e8!important;color:#c97616!important}
+        .landing-btn-atelie:hover{background:#ffe9d1!important}
+        .landing-login{background:#fff!important;border:1px solid var(--ui-line)!important;border-radius:14px!important;box-shadow:0 8px 22px rgba(80,63,205,.07)!important}
+        .landing-login-field{background:#f8f7fd!important;border:1px solid var(--ui-line)!important;border-radius:9px!important}
+        .landing-login-field:focus-within{border-color:#c9bcff!important;background:#fff!important;box-shadow:0 0 0 4px rgba(124,92,255,.10)!important}
+        .landing-login-field input::placeholder{color:#a9a7c2!important}
+        .landing-login-field>i{color:var(--ui-purple)!important}
+        .landing-login-field input,.landing-login-portal-field select{color:var(--ui-text)!important;font-weight:500!important}
+        .landing-login-btn{background:linear-gradient(135deg,var(--ui-purple),#9a7bff)!important;border-radius:9px!important;box-shadow:0 8px 20px rgba(124,92,255,.28)!important}
+        .landing-login-btn:hover{filter:brightness(1.04)!important;transform:translateY(-1px)}
+        .landing-login-error{background:var(--ui-pink)!important;border-radius:10px!important}
+        .landing-eyebrow{color:var(--ui-purple)!important;letter-spacing:1.6px!important}
+        .landing-eyebrow::before{background:linear-gradient(90deg,var(--ui-purple),transparent)!important}
+        .landing-sobre{background:transparent!important;border:none!important}
+        .landing-sobre-text h2,.landing-news-right-head h2{color:var(--ui-text)!important;letter-spacing:-.6px!important}
+        .landing-sobre-text p{color:var(--ui-muted)!important}
+        .landing-sobre-text p strong{color:var(--ui-purple-d)!important}
+        .landing-sobre-logo{border:2px solid #e3ddff!important;box-shadow:0 10px 26px rgba(124,92,255,.16)!important}
+        @media (min-width:561px){
+            .landing-sobre-logo{margin-top:4px}
+            .landing-news-left .landing-sobre-text{align-items:flex-start!important}
+        }
+        .landing-value{background:#fff!important;border:1px solid var(--ui-line)!important;border-radius:22px!important;box-shadow:0 12px 30px rgba(80,63,205,.07)!important;padding:30px 22px!important}
+        .landing-value i{color:var(--ui-purple)!important;background:#f1edff!important;border:1px solid #e3ddff!important;box-shadow:0 8px 18px rgba(124,92,255,.14)}
+        .landing-value h4{color:var(--ui-text)!important}
+        .landing-value p{color:var(--ui-muted)!important}
+        .landing-noticias-link{color:var(--ui-purple)!important}
+        .landing-footer-info span{background:#fff!important;border:1px solid var(--ui-line)!important;border-radius:999px!important;color:#52526b!important}
+        .landing-footer-info i{color:var(--ui-purple)!important}
+        .landing-footer-brand strong,.landing-footer-copy span{color:var(--ui-text)!important}
+        .landing-footer-copy{border-top:1px solid var(--ui-line)!important;color:var(--ui-muted)!important}
+        .landing-drawer{background:#fff!important;border-right:1px solid var(--ui-line)!important}
+        .landing-drawer-head{border-bottom:1px solid var(--ui-line)!important;color:var(--ui-text)!important}
+        .landing-drawer-close{background:#f5f4fb!important;color:var(--ui-muted)!important}
+        .landing-drawer-nav a{color:var(--ui-muted)!important;border-radius:12px!important}
+        .landing-drawer-nav a:hover{background:#f2eeff!important;color:var(--ui-purple-d)!important}
+        .landing-drawer-nav a i{color:var(--ui-purple)!important}
+        .landing-menu-btn{background:#fff!important;border:1px solid var(--ui-line)!important;color:var(--ui-purple)!important;border-radius:12px!important;box-shadow:0 6px 16px rgba(80,63,205,.12)!important}
+        .landing-menu-btn:hover{background:#f6f3ff!important;color:var(--ui-purple-d)!important}
+
+        /* ---------- ADMIN ---------- */
+        #screen-admin .sidebar{background:#fff!important;border-right:1px solid var(--ui-line)!important;box-shadow:10px 0 40px rgba(80,63,205,.08)!important}
+        .sidebar-overlay{background:rgba(35,20,90,.38)!important;backdrop-filter:blur(2px)}
+        .sidebar-close{background:#f6f3ff!important;color:var(--ui-purple)!important;border-radius:10px!important;flex-shrink:0}
+        .sidebar-close:hover{background:#ece5ff!important;color:var(--ui-purple-d)!important}
+        .sidebar-header{border-bottom:1px solid var(--ui-line)!important;padding:20px 18px!important;flex-wrap:nowrap!important}
+        .sidebar-logo{background:#fff;border-radius:12px;padding:2px;flex-shrink:0}
+        .sidebar-header h3{color:var(--ui-text)!important;font-weight:700!important;font-size:16px!important;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sidebar-version{display:none!important}
+        .sidebar-nav{padding:14px 12px!important}
+        .nav-item{color:var(--ui-muted)!important;border-radius:12px!important;font-weight:500!important;font-size:13.5px!important;padding:11px 14px!important;gap:12px!important}
+        .nav-item i{color:var(--ui-muted)!important;font-size:15px!important}
+        .nav-item:hover{background:#f5f4fb!important;color:var(--ui-text)!important}
+        .nav-item:hover i{color:var(--ui-purple)!important}
+        .nav-item.active{background:linear-gradient(135deg,var(--ui-purple),#9a7bff)!important;color:#fff!important;box-shadow:0 8px 20px rgba(124,92,255,.3)!important;font-weight:600!important}
+        .nav-item.active i{color:#fff!important}
+        .sidebar-footer{border-top:1px solid var(--ui-line)!important}
+        .btn-logout{color:var(--ui-muted)!important;border-radius:12px!important;font-family:inherit!important}
+        .btn-logout:hover{background:#fff0f6!important;color:#d63a72!important}
+        .main-content{background:var(--ui-bg)!important;scrollbar-color:#ddd7f5 transparent!important}
+        .main-content::-webkit-scrollbar-track{background:transparent!important}
+        .main-content::-webkit-scrollbar-thumb{background:#ddd7f5!important;border:2px solid transparent!important;background-clip:padding-box!important}
+        .main-content::-webkit-scrollbar-corner{background:transparent!important}
+        .topbar{background:#fff!important;border-bottom:1px solid var(--ui-line)!important;box-shadow:0 2px 18px rgba(80,63,205,.05)!important;padding:14px 28px!important}
+        .topbar h1{color:var(--ui-text)!important;font-size:19px!important;font-weight:700!important;letter-spacing:-.3px}
+        .btn-menu,.btn-back{color:var(--ui-purple)!important;background:#f6f3ff!important;border-radius:11px!important}
+        .btn-menu:hover,.btn-back:hover{background:#ece5ff!important}
+        .topbar-right{display:flex;align-items:center;gap:10px}
+        .user-info{color:var(--ui-text)!important;font-size:13px!important;font-weight:600}
+        .user-avatar{background:linear-gradient(135deg,var(--ui-purple),var(--ui-purple-l))!important;border-radius:12px!important;box-shadow:0 6px 16px rgba(124,92,255,.3)}
+        .btn-portal{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:11px;border:1px solid var(--ui-line);background:#fff;color:var(--ui-muted);font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s}
+        .btn-portal:hover{background:#fff0f6;border-color:#ffc9de;color:#d63a72}
+        /* selo de conexao do Firebase: pilula discreta */
+        #firebase-status{
+            top:auto!important;bottom:18px!important;left:276px!important;right:auto!important;
+            background:#fff!important;color:var(--ui-muted)!important;
+            border:1px solid var(--ui-line)!important;border-radius:999px!important;
+            padding:6px 13px!important;font-size:10.5px!important;font-weight:600!important;
+            letter-spacing:.4px;text-transform:uppercase;
+            box-shadow:0 8px 20px rgba(80,63,205,.12)!important;
+            font-family:'Poppins','Inter',sans-serif!important;
+        }
+        @media(max-width:768px){
+            #firebase-status{left:16px!important;bottom:64px!important}
+        }
+        /* cabecalho da landing em telas medias: mantem logo + nome e joga o login para a 2a linha */
+        @media (max-width:1520px){
+            .landing-brand-text{max-width:260px}
+        }
+        @media (min-width:861px) and (max-width:1380px){
+            .landing-header-inner{flex-wrap:wrap;row-gap:8px}
+            .landing-login{margin-left:auto}
+        }
+
+        .admin-section{padding:26px 30px!important}
+        .card,.stat-card,.report-card{background:#fff!important;border:1px solid var(--ui-line)!important;border-radius:20px!important;box-shadow:0 10px 26px rgba(80,63,205,.06)!important}
+        .card-header{border-bottom:1px solid var(--ui-line)!important;padding:18px 22px!important}
+        .card-header h3{color:var(--ui-text)!important}
+        .card-body{padding:22px!important}
+        .btn-primary{background:linear-gradient(135deg,var(--ui-purple),#9a7bff);border-radius:11px!important;font-family:inherit!important;box-shadow:0 8px 18px rgba(124,92,255,.24)}
+        .btn-primary:hover{box-shadow:0 10px 24px rgba(124,92,255,.34)!important}
+        .btn-secondary{background:#f6f3ff!important;border:1px solid #e3ddff!important;color:var(--ui-purple-d)!important;border-radius:11px!important;font-family:inherit!important}
+        .btn-secondary:hover{background:#ece5ff!important;box-shadow:0 6px 16px rgba(124,92,255,.16)!important}
+        .btn-icon{border:1px solid var(--ui-line)!important;border-radius:10px!important;color:var(--ui-muted)!important}
+        .btn-icon:hover{background:#f6f3ff!important;color:var(--ui-purple-d)!important;border-color:#e3ddff!important}
+        .stat-icon.blue{background:#eef0ff!important;color:var(--ui-purple)!important}
+        .stat-icon.green{background:#e6fbf6!important;color:#14a98c!important}
+        .stat-icon.orange{background:#fff3e4!important;color:#e08a1f!important}
+        .stat-icon.red{background:#ffeaf2!important;color:#e03c74!important}
+        .progress{background:linear-gradient(135deg,var(--ui-purple),#9a7bff)}
+        .data-table th{color:var(--ui-muted)!important;border-bottom:1px solid var(--ui-line)!important}
+        .data-table td{border-bottom:1px solid var(--ui-line)!important}
+        .data-table tbody tr:hover{background:#f8f6ff!important}
+        .modal-content{border:1px solid var(--ui-line)!important;border-radius:22px!important;box-shadow:0 24px 70px rgba(40,20,120,.22)!important}
+        .modal-header{border-bottom:1px solid var(--ui-line)!important}
+        .modal-footer{border-top:1px solid var(--ui-line)!important}
+        .config-input{background:#f8f7fd!important;border:1px solid var(--ui-line)!important;border-radius:11px!important;color:var(--ui-text)!important}
+        .config-input:focus{border-color:#c9bcff!important;box-shadow:0 0 0 4px rgba(124,92,255,.12)!important}
+        .badge{border-radius:999px!important}
+        .badge.admin,.badge.segunda-chamada{background:#eef0ff!important;color:var(--ui-purple-d)!important}
+        .badge.aluno,.badge.green{background:#e6fbf6!important;color:#0f9c82!important}
+        .badge.orange,.badge.pendente{background:#fff3e4!important;color:#c97616!important}
+        .badge.docente,.badge.red,.badge.rejeitado{background:#ffeaf2!important;color:#d63a72!important}
+
+        /* home do admin = hero roxo */
+        .admin-home-container{
+            position:relative;overflow:hidden;min-height:auto!important;
+            margin:0 auto;max-width:1120px;padding:44px 32px!important;border-radius:28px;
+            background:linear-gradient(120deg,#6d4bf6 0%,#8b6bff 55%,#a98bff 100%)!important;
+            box-shadow:0 22px 50px rgba(109,75,246,.32);
+        }
+        .admin-home-container::before{content:'';position:absolute;right:-80px;top:-110px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28),transparent 65%);pointer-events:none}
+        .admin-home-container::after{content:'';position:absolute;left:-80px;bottom:-130px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+        .admin-home-logo{width:108px!important;height:108px!important;border-radius:26px;background:#fff;padding:10px;margin-bottom:18px!important;filter:none!important;box-shadow:0 14px 34px rgba(40,20,120,.28);position:relative;z-index:1;animation:none!important}
+        .admin-home-title{background:none!important;-webkit-text-fill-color:#fff!important;color:#fff!important;font-size:clamp(22px,3vw,30px)!important;letter-spacing:1.6px!important;position:relative;z-index:1}
+        .admin-home-subtitle,.admin-home-desc{color:rgba(255,255,255,.82)!important;position:relative;z-index:1}
+        .admin-home-desc{margin-bottom:24px!important}
+        .admin-home-divider{background:#fff!important;opacity:.7;position:relative;z-index:1}
+        .admin-home-grid{max-width:1000px!important;position:relative;z-index:1;margin-top:4px}
+        .admin-home-card{background:rgba(255,255,255,.16)!important;border:1px solid rgba(255,255,255,.22)!important;border-radius:16px!important;padding:14px 10px!important;box-shadow:0 8px 20px rgba(40,20,120,.14)!important;backdrop-filter:blur(6px)}
+        .admin-home-card:hover{background:rgba(255,255,255,.24)!important;box-shadow:0 12px 26px rgba(40,20,120,.22)!important}
+        .admin-home-card i,.admin-home-card span{color:#fff!important}
+        #btn-portais{background:#fff!important;color:var(--ui-purple-d)!important;border:none!important;box-shadow:0 8px 20px rgba(40,20,120,.18)!important}
+        #portais-status{color:rgba(255,255,255,.8)!important}
+
+        /* ===== BLOG / NOTICIAS (ADMIN) ===== */
+        .blog-hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:6px}
+        .blog-hub-card{display:flex;align-items:center;gap:14px;text-align:left;width:100%;background:#fff;border:1px solid var(--ui-line);border-radius:18px;padding:18px;cursor:pointer;transition:.2s;font-family:inherit}
+        .blog-hub-card:hover{border-color:#d9cfff;box-shadow:0 14px 30px rgba(80,63,205,.1);transform:translateY(-2px)}
+        .blog-hub-ico{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:#f1edff;color:var(--ui-purple);font-size:18px;flex-shrink:0}
+        .blog-hub-card strong{display:block;font-size:14px;color:var(--ui-text)}
+        .blog-hub-card span{display:block;font-size:12px;color:var(--ui-muted);margin-top:3px;line-height:1.45}
+        .blog-page-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--ui-line);padding:16px 22px}
+        .blog-page-head h3{font-size:16px;font-weight:700;margin:0;flex:1;min-width:140px;color:var(--ui-text)}
+        .blog-back{width:34px;height:34px;border-radius:10px;border:1px solid var(--ui-line);background:#fff;color:var(--ui-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.2s}
+        .blog-back:hover{background:#f6f3ff;color:var(--ui-purple-d)}
+        .blog-post{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--ui-line);border-radius:16px;padding:12px;margin-bottom:10px;transition:.2s}
+        .blog-post:hover{border-color:#e0d9ff;box-shadow:0 10px 24px rgba(80,63,205,.07)}
+        .blog-post-thumb{width:76px;height:58px;border-radius:11px;overflow:hidden;background:#f1edff;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--ui-purple);font-size:18px}
+        .blog-post-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+        .blog-post-main{flex:1;min-width:0}
+        .blog-post-title{font-size:13.5px;font-weight:600;color:var(--ui-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .blog-post-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+        .blog-chip{font-size:10px;padding:2px 8px;border-radius:999px;background:#f5f4fb;color:var(--ui-muted);font-weight:600;white-space:nowrap}
+        .blog-chip.on{background:#e6fbf6;color:#0f9c82}
+        .blog-chip.off{background:#ffeaf2;color:#d63a72}
+        .blog-chip.dest{background:#fff3e4;color:#c97616}
+        .blog-post-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:230px}
+        .blog-act{width:34px;height:34px;border-radius:10px;border:1px solid var(--ui-line);background:#fff;color:var(--ui-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;transition:.2s}
+        .blog-act:hover{background:#f6f3ff;color:var(--ui-purple-d);border-color:#e3ddff}
+        .blog-act.danger:hover{background:#ffeaf2;color:#d63a72;border-color:#ffc9de}
+        .blog-act.on{background:#e6fbf6;color:#0f9c82;border-color:#c8f5ea}
+        .blog-empty{text-align:center;padding:46px 18px;color:var(--ui-muted)}
+        .blog-empty i{font-size:38px;display:block;margin-bottom:12px;color:#c9bcff}
+        .blog-empty strong{display:block;color:var(--ui-text);font-size:14px;margin-bottom:4px}
+        .blog-modal{position:fixed;inset:0;z-index:2147483001;background:rgba(20,10,50,.5);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+        .blog-modal.open{display:flex}
+        .blog-modal-card{background:#fff;width:100%;max-width:760px;border-radius:22px;box-shadow:0 30px 80px rgba(30,15,90,.3);overflow:hidden;margin:auto;font-family:inherit}
+        .blog-modal-head{display:flex;align-items:center;gap:10px;padding:16px 22px;border-bottom:1px solid var(--ui-line)}
+        .blog-modal-head h3{font-size:15.5px;font-weight:700;margin:0;flex:1;color:var(--ui-text)}
+        .blog-modal-body{padding:20px 22px}
+        .blog-modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--ui-line);background:#fbfaff;flex-wrap:wrap}
+        .blog-field{margin-bottom:14px}
+        .blog-label{display:block;font-size:11.5px;font-weight:600;color:#52526b;margin-bottom:6px;letter-spacing:.2px}
+        .blog-input,.blog-textarea{width:100%;border:1px solid var(--ui-line);background:#f8f7fd;border-radius:11px;padding:10px 12px;font-size:13px;color:var(--ui-text);font-family:inherit;outline:none;transition:.2s}
+        .blog-input:focus,.blog-textarea:focus{border-color:#c9bcff;background:#fff;box-shadow:0 0 0 4px rgba(124,92,255,.1)}
+        .blog-textarea{min-height:130px;resize:vertical;line-height:1.6}
+        .blog-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .blog-upload{border:1.5px dashed #ddd7f5;border-radius:14px;padding:13px;background:#fbfaff;display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+        .blog-upload label.blog-label{margin:0}
+        .blog-upload input[type=file]{font-size:12px;color:var(--ui-muted);max-width:100%}
+        .blog-upload small,.blog-field small{font-size:11px;color:var(--ui-muted);line-height:1.4}
+        .blog-preview img,.blog-preview video{max-width:100%;max-height:150px;border-radius:10px;border:1px solid var(--ui-line);display:block}
+        .blog-portais{display:flex;flex-wrap:wrap;gap:8px}
+        .blog-portal{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:#52526b;background:#f8f7fd;border:1px solid var(--ui-line);border-radius:999px;padding:7px 12px;cursor:pointer;transition:.2s;margin:0}
+        .blog-portal input{accent-color:#7c5cff;margin:0}
+        .blog-portal:hover{border-color:#d9cfff}
+        .blog-portal:has(input:checked){background:#f1edff;border-color:#d9cfff;color:var(--ui-purple-d)}
+        .blog-engaj{background:#fbfaff;border:1px solid var(--ui-line);border-radius:14px;padding:14px}
+        .blog-engaj-sec{font-size:11px;font-weight:700;color:#52526b;text-transform:uppercase;letter-spacing:.6px;margin:0 0 8px}
+        .blog-engaj-sec + .blog-engaj-sec{margin-top:16px}
+        .blog-engaj-item{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed #eceaf6;font-size:12px}
+        .blog-engaj-item:last-child{border-bottom:none}
+        .blog-engaj-av{width:26px;height:26px;border-radius:50%;background:#f1edff;color:var(--ui-purple-d);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+        .blog-engaj-item b{display:block;color:var(--ui-text);font-weight:600;font-size:12px}
+        .blog-engaj-item span{display:block;color:#5b5b74;font-size:12px;line-height:1.45;margin-top:1px}
+        .blog-engaj-item em{display:block;color:var(--ui-muted);font-size:10.5px;font-style:normal;margin-top:2px}
+        .blog-engaj-empty{font-size:12px;color:var(--ui-muted);display:flex;align-items:center;gap:7px}
+        .blog-media{width:100%;border-radius:14px;overflow:hidden;background:#14142b;margin-bottom:16px}
+        .blog-media img,.blog-media video{width:100%;max-height:420px;object-fit:contain;display:block;background:#14142b}
+        .blog-media iframe{width:100%;aspect-ratio:16/9;border:0;display:block}
+        .blog-view-title{font-size:20px;font-weight:700;color:var(--ui-text);line-height:1.3;margin:0 0 6px}
+        .blog-view-sub{font-size:13px;color:var(--ui-muted);margin-bottom:12px}
+        .blog-view-text{font-size:13.5px;color:#3d3d57;line-height:1.7;white-space:pre-wrap}
+        .blog-status-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+        @media (max-width:640px){
+            .blog-grid-2{grid-template-columns:1fr}
+            .blog-post{flex-wrap:wrap}
+            .blog-post-actions{max-width:none;width:100%;justify-content:flex-start;padding-left:90px}
+        }
+        @media (max-width:768px){
+            .admin-section{padding:16px 14px!important}
+            .admin-home-container{padding:32px 18px!important;border-radius:24px}
+            .admin-home-logo{width:88px!important;height:88px!important}
+            .topbar{padding:12px 14px!important}
+            .topbar h1{font-size:16px!important}
+            .user-info span{display:none}
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#16a34a">
+    <meta name="theme-color" content="#7c5cff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FARN">
     <link rel="apple-touch-icon" href="logo-farn.png.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="FARN">
-    <meta name="msapplication-TileColor" content="#16a34a">
+    <meta name="msapplication-TileColor" content="#7c5cff">
     <meta name="msapplication-tap-highlight" content="no">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -596,42 +856,11 @@
             <div class="landing-sobre-inner landing-news-grid">
                 <div class="landing-news-left">
                     <div class="landing-sobre-text">
-                        <img data-farn-logo src="logofarn.png.png" alt="BS Brasil" class="landing-sobre-logo">
+                        <img data-farn-logo src="logo-farn.png.png" alt="BS Brasil" class="landing-sobre-logo">
                         <div>
                             <span class="landing-eyebrow">Nossa Instituição</span>
                             <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
                             <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
-                            <div class="landing-hero-art" aria-hidden="true">
-                                <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Capacete e machado de bombeiro militar">
-                                    <defs>
-                                        <linearGradient id="lgHelm" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0" stop-color="#ef4444"/>
-                                            <stop offset="1" stop-color="#b91c1c"/>
-                                        </linearGradient>
-                                        <linearGradient id="lgGold" x1="0" y1="0" x2="1" y2="1">
-                                            <stop offset="0" stop-color="#fbbf24"/>
-                                            <stop offset="1" stop-color="#b45309"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <ellipse cx="200" cy="175" rx="150" ry="26" fill="#0f172a" opacity=".10"/>
-                                    <g>
-                                        <path d="M200 40c-58 0-100 42-100 96v24c0 10 8 18 18 18h164c10 0 18-8 18-18v-24c0-54-42-96-100-96z" fill="url(#lgHelm)"/>
-                                        <rect x="185" y="20" rx="8" ry="8" width="30" height="26" fill="url(#lgGold)"/>
-                                        <path d="M200 46v230" stroke="#7f1d1d" stroke-width="10" stroke-linecap="round"/>
-                                        <path d="M112 130c-6 8-10 18-12 28l92 10 92-10c-2-10-6-20-12-28" fill="none" stroke="#fcd34d" stroke-width="7" stroke-linecap="round"/>
-                                        <circle cx="200" cy="126" r="12" fill="#fcd34d"/>
-                                        <path d="M92 158c-14 6-20 20-14 34 4 10 14 16 24 16" fill="none" stroke="url(#lgGold)" stroke-width="7" stroke-linecap="round"/>
-                                        <path d="M308 158c14 6 20 20 14 34-4 10-14 16-24 16" fill="none" stroke="url(#lgGold)" stroke-width="7" stroke-linecap="round"/>
-                                    </g>
-                                    <g transform="translate(330,40)">
-                                        <rect x="8" y="8" width="14" height="100" rx="5" fill="url(#lgGold)"/>
-                                        <path d="M0 6 34 0 40 6 34 14 8 14z" fill="#94a3b8"/>
-                                        <path d="M34 10v96h-20v-92z" fill="#e2e8f0"/>
-                                        <path d="M20 40c-8 12-8 28 2 38l12 12 12-12c10-10 10-26 2-38-4-6-10-8-14-8s-10 2-14 8z" fill="#ef4444"/>
-                                        <path d="M24 30h10a3 3 0 0 1 3 3v4h-16v-4a3 3 0 0 1 3-3z" fill="#7f1d1d"/>
-                                    </g>
-                                </svg>
-                            </div>
                         </div>
                     </div>
                     <div class="landing-values">
@@ -652,17 +881,14 @@
                         </div>
                     </div>
                 </div>
-                <div class="landing-news-right" data-noticias-slider-empty>
+                <div class="landing-news-right">
                     <div class="landing-news-right-inner">
                         <div class="landing-news-right-head">
                             <span class="landing-eyebrow">Notícias</span>
                             <h2>Fique por dentro das novidades</h2>
                         </div>
-                        <div style="text-align:center;padding:40px 20px">
-                            <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#2563eb"></i>
-                            <h3 style="font-size:18px;color:#0f172a;margin-bottom:8px">Em Construção</h3>
-                            <p style="font-size:13px;color:#64748b">Esta seção está sendo desenvolvida e estará disponível em breve.</p>
-                        </div>
+                        <div id="landing-noticias-feed"></div>
+                        <a class="landing-noticias-link" href="noticias.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-weight:600">Ver todas as notícias <i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
@@ -3017,18 +3243,170 @@
 
                 <!-- NOTICIAS -->
                 <div id="admin-noticias" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-newspaper" style="color:#dc2626;margin-right:8px"></i> Noticias</h3>
-                        </div>
-                        <div class="card-body">
-                            <div style="text-align:center;padding:60px 20px;color:#94a3b8">
-                                <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#f59e0b"></i>
-                                <h3 style="font-size:18px;color:#334155;margin-bottom:8px">Em Construcao</h3>
-                                <p style="font-size:13px;color:#94a3b8">Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
+
+                    <!-- HUB DO BLOG -->
+                    <div id="blog-hub">
+                        <div class="card full-width">
+                            <div class="card-header">
+                                <h3><i class="fa-solid fa-blog" style="color:var(--ui-purple);margin-right:8px"></i> Blog</h3>
+                            </div>
+                            <div class="card-body">
+                                <p style="font-size:13px;color:var(--ui-muted);margin:0 0 16px;line-height:1.6">Gerencie as publicações do blog. Cada notícia pode ser compartilhada em um ou mais portais e aparece apenas quando estiver ativa.</p>
+                                <div class="blog-hub-grid">
+                                    <button type="button" class="blog-hub-card" onclick="blogAbrirNoticias()">
+                                        <span class="blog-hub-ico"><i class="fa-solid fa-newspaper"></i></span>
+                                        <span>
+                                            <strong>Notícias</strong>
+                                            <span>Adicionar, editar, ativar, visualizar e compartilhar postagens</span>
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- PAGINA NOTICIAS -->
+                    <div id="blog-noticias-page" style="display:none">
+                        <div class="card full-width">
+                            <div class="blog-page-head">
+                                <button type="button" class="blog-back" onclick="blogVoltarHub()" title="Voltar ao Blog"><i class="fa-solid fa-arrow-left"></i></button>
+                                <h3><i class="fa-solid fa-newspaper" style="color:var(--ui-purple);margin-right:8px"></i> Notícias</h3>
+                                <button type="button" class="btn-primary" onclick="blogAbrirForm()"><i class="fa-solid fa-plus"></i> Adicionar notícia</button>
+                            </div>
+                            <div class="card-body">
+                                <div id="blog-lista">
+                                    <div class="blog-empty"><i class="fa-solid fa-spinner fa-spin"></i> Carregando notícias...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL NOVA/EDITAR NOTICIA -->
+                    <div id="blog-form-overlay" class="blog-modal" onclick="if(event.target===this)blogFecharForm()">
+                        <div class="blog-modal-card">
+                            <div class="blog-modal-head">
+                                <h3><i class="fa-solid fa-pen-to-square" style="color:var(--ui-purple);margin-right:6px"></i> <span id="blog-form-titulo">Nova notícia</span></h3>
+                                <button type="button" class="blog-act" onclick="blogFecharForm()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="blog-modal-body">
+                                <input type="hidden" id="blog-edit-id">
+                                <div class="blog-field">
+                                    <label class="blog-label" for="blog-titulo">Título *</label>
+                                    <input class="blog-input" type="text" id="blog-titulo" placeholder="Título da notícia" maxlength="140">
+                                </div>
+                                <div class="blog-field">
+                                    <label class="blog-label" for="blog-subtitulo">Subtítulo / chamada</label>
+                                    <input class="blog-input" type="text" id="blog-subtitulo" placeholder="Frase curta que aparece abaixo do título" maxlength="220">
+                                </div>
+                                <div class="blog-grid-2">
+                                    <div class="blog-field">
+                                        <label class="blog-label" for="blog-categoria">Categoria</label>
+                                        <input class="blog-input" type="text" id="blog-categoria" placeholder="Ex.: Avisos, Eventos, Cursos" maxlength="60">
+                                    </div>
+                                    <div class="blog-field">
+                                        <label class="blog-label" for="blog-layout">Layout no Portal do Aluno</label>
+                                        <select class="blog-input" id="blog-layout">
+                                            <option value="hero">Destaque grande</option>
+                                            <option value="lateral">Imagem à esquerda</option>
+                                            <option value="lateral-invertido">Imagem à direita</option>
+                                            <option value="2colunas">2 colunas</option>
+                                            <option value="3colunas">3 colunas</option>
+                                            <option value="compacto">Compacto</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="blog-field">
+                                    <label class="blog-label" for="blog-conteudo">Texto *</label>
+                                    <textarea class="blog-textarea" id="blog-conteudo" placeholder="Escreva o conteúdo da notícia..."></textarea>
+                                </div>
+
+                                <div class="blog-upload">
+                                    <label class="blog-label" for="blog-imagem"><i class="fa-solid fa-image" style="color:var(--ui-purple);margin-right:5px"></i> Imagem de capa</label>
+                                    <input type="file" id="blog-imagem" accept="image/*" onchange="blogPreviewImagem(this)">
+                                    <small>JPG, PNG ou WEBP. A imagem é otimizada antes do envio.</small>
+                                    <div id="blog-imagem-preview" class="blog-preview"></div>
+                                </div>
+
+                                <div class="blog-upload">
+                                    <label class="blog-label" for="blog-video"><i class="fa-solid fa-video" style="color:var(--ui-purple);margin-right:5px"></i> Vídeo curto (até 2 min / 50 MB)</label>
+                                    <input type="file" id="blog-video" accept="video/*" onchange="blogPreviewVideo(this)">
+                                    <small>Anexe um vídeo do computador ou use um link abaixo.</small>
+                                    <div id="blog-video-preview" class="blog-preview"></div>
+                                </div>
+
+                                <div class="blog-field">
+                                    <label class="blog-label" for="blog-link">Link de imagem ou vídeo (opcional)</label>
+                                    <input class="blog-input" type="url" id="blog-link" placeholder="https://... (YouTube, MP4, JPG)">
+                                    <small>Se anexar um arquivo, ele tem prioridade sobre o link.</small>
+                                </div>
+
+                                <div class="blog-field">
+                                    <label class="blog-label">Situação</label>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                        <label class="blog-portal"><input type="checkbox" id="blog-ativo"> Postagem ativa</label>
+                                        <label class="blog-portal"><input type="checkbox" id="blog-destaque"> Destaque</label>
+                                    </div>
+                                </div>
+
+                                <div class="blog-field">
+                                    <label class="blog-label">Compartilhar em</label>
+                                    <div class="blog-portais" id="blog-form-portais">
+                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="aluno"> Portal do Aluno</label>
+                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="index"> Index - Notícias</label>
+                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="formado"> Portal do Formado</label>
+                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="cff"> Portal do CFF</label>
+                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="docente"> Portal do Docente</label>
+                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="coordenacao"> Portal da Coordenação</label>
+                                    </div>
+                                    <small>Ao ativar, a postagem aparece nos locais marcados acima.</small>
+                                </div>
+
+                                <div id="blog-engajamento-wrap" style="display:none">
+                                    <label class="blog-label"><i class="fa-solid fa-heart" style="color:#f4568e;margin-right:5px"></i> Quem curtiu e comentou</label>
+                                    <div class="blog-engaj" id="blog-engajamento"></div>
+                                </div>
+                            </div>
+                            <div class="blog-modal-foot">
+                                <button type="button" class="btn-secondary" onclick="blogFecharForm()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                <button type="button" class="btn-primary" id="blog-btn-salvar" onclick="blogSalvar()"><i class="fa-solid fa-check"></i> Salvar notícia</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL VISUALIZAR -->
+                    <div id="blog-view-overlay" class="blog-modal" onclick="if(event.target===this)blogFecharVisualizar()">
+                        <div class="blog-modal-card">
+                            <div class="blog-modal-head">
+                                <h3><i class="fa-solid fa-eye" style="color:var(--ui-purple);margin-right:6px"></i> Visualizar notícia</h3>
+                                <button type="button" class="blog-act" onclick="blogFecharVisualizar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="blog-modal-body" id="blog-view-body"></div>
+                            <div class="blog-modal-foot">
+                                <button type="button" class="btn-secondary" onclick="blogFecharVisualizar()"><i class="fa-solid fa-xmark"></i> Fechar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL COMPARTILHAR -->
+                    <div id="blog-share-overlay" class="blog-modal" onclick="if(event.target===this)blogFecharCompartilhar()">
+                        <div class="blog-modal-card" style="max-width:480px">
+                            <div class="blog-modal-head">
+                                <h3><i class="fa-solid fa-share-nodes" style="color:var(--ui-purple);margin-right:6px"></i> Compartilhar notícia</h3>
+                                <button type="button" class="blog-act" onclick="blogFecharCompartilhar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="blog-modal-body">
+                                <p id="blog-share-titulo" style="font-size:13px;font-weight:600;color:var(--ui-text);margin:0 0 14px;line-height:1.4"></p>
+                                <label class="blog-label">Onde esta postagem deve aparecer?</label>
+                                <div class="blog-portais" id="blog-share-portais"></div>
+                                <small style="display:block;margin-top:12px;font-size:11px;color:var(--ui-muted);line-height:1.4">A postagem só fica visível nos portais marcados se também estiver ativa.</small>
+                            </div>
+                            <div class="blog-modal-foot">
+                                <button type="button" class="btn-secondary" onclick="blogFecharCompartilhar()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                <button type="button" class="btn-primary" onclick="blogSalvarCompartilhar()"><i class="fa-solid fa-check"></i> Salvar</button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- GALERIA -->
@@ -5122,7 +5500,8 @@
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
     <script src="foto3x4-bloqueio.js?v=7"></script>
-    <script src="app.js?v=91"></script>
+    <script src="noticias-feed.js?v=1"></script>
+    <script src="app.js?v=92"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
@@ -5136,12 +5515,28 @@
         }).catch(function(){});
     })();
     </script>
+    <script>
+    (function(){
+        function iniciarNoticiasLanding(){
+            if (window.FarnNoticias && typeof dbFirestore !== 'undefined') {
+                FarnNoticias.render('landing-noticias-feed', 'index', { compact: true, max: 3, emptyText: 'Nenhuma notícia publicada no momento.' });
+            } else {
+                setTimeout(iniciarNoticiasLanding, 400);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', iniciarNoticiasLanding);
+        } else {
+            iniciarNoticiasLanding();
+        }
+    })();
+    </script>
     <!-- Botao voltar pagina anterior -->
     <style>
-        #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0b3d1f;color:#fff;border:1px solid rgba(251,191,36,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}
-        #farn-btn-voltar:hover{transform:scale(1.08)}
+        #farn-btn-voltar{position:fixed;bottom:22px;right:22px;left:auto;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#fff;color:#7c5cff;border:1px solid #eceaf6;box-shadow:0 10px 24px rgba(80,63,205,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:transform .15s,background .2s}
+        #farn-btn-voltar:hover{transform:translateY(-2px);background:#f6f3ff}
         #farn-btn-voltar:active{transform:scale(.94)}
-        @media(max-width:768px){#farn-btn-voltar{bottom:74px}}
+        @media(max-width:768px){#farn-btn-voltar{bottom:84px;left:16px;right:auto}}
     </style>
     <div id="farn-btn-voltar" onclick="farnVoltarPagina()" title="Voltar a pagina anterior"><i class="fa-solid fa-arrow-left"></i></div>
     <script>

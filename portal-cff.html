@@ -150,7 +150,7 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
         <a href="#" id="cff-nav-aulas" onclick="cffShowSecao('aulas'); cffCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
         <a href="#" id="cff-nav-video-aula" onclick="cffShowSecao('video-aula'); cffCloseMenu(); return false;"><i class="fa-solid fa-circle-play"></i> Vídeo Aula <span class="em-breve">EM BREVE</span></a>
         <a href="#" id="cff-nav-avaliacoes" onclick="cffShowSecao('avaliacoes'); cffCloseMenu(); return false;"><i class="fa-solid fa-list-check"></i> Avaliações</a>
-        <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-newspaper"></i> Notícias <span class="em-breve">EM BREVE</span></a>
+        <a href="#" id="cff-nav-noticias" onclick="cffShowSecao('noticias'); cffCloseMenu(); return false;"><i class="fa-solid fa-newspaper"></i> Notícias</a>
         <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-graduation-cap"></i> Certificação <span class="em-breve">EM BREVE</span></a>
         <a href="#" id="cff-nav-dados" onclick="cffShowSecao('dados'); cffCloseMenu(); return false;"><i class="fa-solid fa-user"></i> Meus Dados</a>
     </nav>
@@ -175,7 +175,7 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
                     <div class="cards">
                         <div class="card" onclick="cffShowSecao('apostilas')" style="cursor:pointer"><i class="fa-solid fa-book-open"></i><div>Apostilas</div><span>Disponíveis</span></div>
                         <div class="card"><i class="fa-solid fa-video"></i><div>Aulas</div><span>Em breve</span></div>
-                        <div class="card"><i class="fa-solid fa-newspaper"></i><div>Notícias</div><span>Em breve</span></div>
+                        <div class="card" onclick="cffShowSecao('noticias')" style="cursor:pointer"><i class="fa-solid fa-newspaper"></i><div>Notícias</div><span>Ver publicações</span></div>
                         <div class="card"><i class="fa-solid fa-graduation-cap"></i><div>Certificação</div><span>Em breve</span></div>
                     </div>
                     <p class="nota">Esta área está sendo preparada. Em breve você poderá acessar as apostilas, aulas e conteúdos do Curso de Formação de Formadores. Fique atento aos comunicados.</p>
@@ -202,6 +202,19 @@ body { background:#0f172a; min-height:100vh; color:#0f172a; }
                     <div class="cff-foto-status" id="cff-foto-status"></div>
                     <div class="cff-foto-dica">A foto deve estar <b>da cintura para cima</b>, de perfil, com fundo claro. Arraste o recorte para enquadrar.</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTICIAS -->
+    <div class="sec" id="cff-sec-noticias">
+        <div class="box">
+            <div class="dados-head">
+                <h3><i class="fa-solid fa-newspaper" style="color:#7c3aed;margin-right:6px"></i> Notícias</h3>
+                <p>Comunicados e novidades publicados pela administração.</p>
+            </div>
+            <div class="dados-body">
+                <div id="cff-noticias-feed"></div>
             </div>
         </div>
     </div>
@@ -453,7 +466,7 @@ var cffUser = null;
         document.querySelectorAll('.sec').forEach(function(s) { s.classList.remove('ativo'); });
         var alvo = document.getElementById('cff-sec-' + nome);
         if (alvo) alvo.classList.add('ativo');
-        var navs = { inicio: 'cff-nav-inicio', dados: 'cff-nav-dados', apostilas: 'cff-nav-apostilas', aulas: 'cff-nav-aulas', avaliacoes: 'cff-nav-avaliacoes', 'video-aula': 'cff-nav-video-aula' };
+        var navs = { inicio: 'cff-nav-inicio', dados: 'cff-nav-dados', apostilas: 'cff-nav-apostilas', aulas: 'cff-nav-aulas', avaliacoes: 'cff-nav-avaliacoes', noticias: 'cff-nav-noticias', 'video-aula': 'cff-nav-video-aula' };
         for (var key in navs) {
             var n = document.getElementById(navs[key]);
             if (n) n.classList.toggle('ativo', nome === key);
@@ -1501,6 +1514,20 @@ var cffUser = null;
     window.cffRavVisualizar = cffRavVisualizar;
     window.cffRavFecharVisualizar = cffRavFecharVisualizar;
     window.cffRavImprimirVisualizar = cffRavImprimirVisualizar;
+})();
+</script>
+<script src="noticias-feed.js?v=1"></script>
+<script>
+(function(){
+    function iniciarFeedCff(){
+        if (window.FarnNoticias) {
+            FarnNoticias.render('cff-noticias-feed', 'cff', { emptyText: 'Nenhuma notícia publicada para o Portal do CFF.' });
+        } else {
+            setTimeout(iniciarFeedCff, 300);
+        }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarFeedCff);
+    else iniciarFeedCff();
 })();
 </script>
 </body>

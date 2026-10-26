@@ -428,11 +428,7 @@
                     <span class="landing-eyebrow">Notícias</span>
                     <h2>Fique por dentro das novidades</h2>
                 </div>
-                <div style="text-align:center;padding:60px 20px">
-                    <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#f59e0b"></i>
-                    <h3 style="font-size:18px;color:#e8f2e9;margin-bottom:8px">Em Construção</h3>
-                    <p style="font-size:13px;color:#94a3b8">A seção de notícias está sendo desenvolvida e estará disponível em breve.</p>
-                </div>
+                <div id="noticias-page-feed"></div>
             </div>
         </section>
 
@@ -2841,7 +2837,8 @@
         </div>
     </div>
 
-    <script src="app.js?v=45"></script>
+    <script src="noticias-feed.js?v=1"></script>
+    <script src="app.js?v=92"></script>
     <script src="recad-admin.js"></script>
 
     <script src="noticias-slider.js"></script>
@@ -2853,6 +2850,19 @@
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
             }
         }).catch(function(){});
+    })();
+    </script>
+    <script>
+    (function(){
+        function iniciarFeedPaginaNoticias(){
+            if (window.FarnNoticias && typeof dbFirestore !== 'undefined') {
+                FarnNoticias.render('noticias-page-feed', 'index', { emptyText: 'Nenhuma notícia publicada no momento.' });
+            } else {
+                setTimeout(iniciarFeedPaginaNoticias, 400);
+            }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarFeedPaginaNoticias);
+        else iniciarFeedPaginaNoticias();
     })();
     </script>
     <!-- Botao voltar pagina anterior -->

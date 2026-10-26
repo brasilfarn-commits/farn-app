@@ -423,6 +423,9 @@
                 <div class="pf-nav-item" onclick="pdShowSection('galeria', this)">
                     <i class="fa-solid fa-images"></i><span>Galeria</span>
                 </div>
+                <div class="pf-nav-item" onclick="pdShowSection('noticias', this)">
+                    <i class="fa-solid fa-newspaper"></i><span>Notícias</span>
+                </div>
             </nav>
             <div class="pf-sidebar-footer">
                 <div class="pf-user">
@@ -454,6 +457,15 @@
                     <div class="pf-stat-card"><i class="fa-solid fa-dumbbell"></i><div class="pf-stat-val" id="pd-stat-tfm">0</div><div class="pf-stat-label">TFMs</div></div>
                     <div class="pf-stat-card"><i class="fa-solid fa-calendar-check"></i><div class="pf-stat-val" id="pd-stat-proximos">0</div><div class="pf-stat-label">Proximos 7 dias</div></div>
                 </div>
+            </div>
+
+            <!-- NOTICIAS -->
+            <div id="pf-section-noticias" class="pf-section">
+                <div class="pf-center-header">
+                    <i class="fa-solid fa-newspaper"></i>
+                    <div><h2>Notícias</h2></div>
+                </div>
+                <div id="pd-noticias-feed"></div>
             </div>
 
             <!-- AULAS -->
@@ -5366,6 +5378,20 @@
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
             }
         }).catch(function(){});
+    </script>
+    <script src="noticias-feed.js?v=1"></script>
+    <script>
+    (function(){
+        function iniciarFeedDocente(){
+            if (window.FarnNoticias) {
+                FarnNoticias.render('pd-noticias-feed', 'docente', { emptyText: 'Nenhuma notícia publicada para o Portal do Docente.' });
+            } else {
+                setTimeout(iniciarFeedDocente, 300);
+            }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarFeedDocente);
+        else iniciarFeedDocente();
+    })();
     </script>
 </body>
 </html>

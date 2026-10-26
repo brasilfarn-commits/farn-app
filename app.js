@@ -1725,7 +1725,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Noticias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-patentes': 'Patentes' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-patentes': 'Patentes' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -10976,98 +10976,329 @@ function noticiasPreviewIniciar(coluna) {
 /* ===== BLOG NOTICIAS (ADMIN) ===== */
 var blogLista = [];
 var blogUnsub = null;
+var blogShareId = null;
+var blogEngajUnsubs = [];
+var blogRemoverImagemFlag = false;
+var blogRemoverVideoFlag = false;
+
+var BLOG_PORTAIS = [
+    { id: 'aluno', nome: 'Portal do Aluno' },
+    { id: 'index', nome: 'Index - Notícias' },
+    { id: 'formado', nome: 'Portal do Formado' },
+    { id: 'cff', nome: 'Portal do CFF' },
+    { id: 'docente', nome: 'Portal do Docente' },
+    { id: 'coordenacao', nome: 'Portal da Coordenação' }
+];
+
+function blogEsc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function blogDataStr(v) {
+    if (!v) return '';
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return '';
+    try { return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    catch (e) { return d.toLocaleDateString('pt-BR'); }
+}
+
+function blogPortalNome(id) {
+    for (var i = 0; i < BLOG_PORTAIS.length; i++) { if (BLOG_PORTAIS[i].id === id) return BLOG_PORTAIS[i].nome; }
+    return id;
+}
+
+function blogPortalValido(id) {
+    return BLOG_PORTAIS.some(function(p) { return p.id === id; });
+}
+
+function blogPortaisDoPost(n) {
+    if (n && Array.isArray(n.portais) && n.portais.length) {
+        return n.portais.filter(blogPortalValido);
+    }
+    if (n && n.portais && typeof n.portais === 'object') {
+        return Object.keys(n.portais).filter(function(k) { return n.portais[k] && blogPortalValido(k); });
+    }
+    return ['aluno'];
+}
+
+function blogMarcarPortais(containerId, ids) {
+    var box = document.getElementById(containerId);
+    if (!box) return;
+    box.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+        cb.checked = ids.indexOf(cb.value) !== -1;
+    });
+}
+
+function blogPortaisSelecionados(containerId) {
+    var box = document.getElementById(containerId);
+    if (!box) return [];
+    return Array.prototype.slice.call(box.querySelectorAll('input[type=checkbox]:checked')).map(function(cb) { return cb.value; });
+}
+
+function blogYoutubeId(url) {
+    if (!url) return '';
+    var m = String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+    return m ? m[1] : '';
+}
+
+function blogLinkEhImagem(url) {
+    return /\.(jpe?g|png|gif|webp|avif|bmp)(\?|#|$)/i.test(url || '');
+}
+
+function blogLinkEhVideo(url) {
+    return /\.(mp4|webm|ogg|ogv|mov|m4v)(\?|#|$)/i.test(url || '');
+}
+
+function blogThumbUrl(n) {
+    if (n.imagem) return n.imagem;
+    if (n.videoPoster) return n.videoPoster;
+    if (!n.video && blogLinkEhImagem(n.link)) return n.link;
+    return '';
+}
+
+function blogMediaHtml(n) {
+    var link = n.link || '';
+    var yt = blogYoutubeId(link);
+    if (yt) {
+        return '<div class="blog-media"><iframe src="https://www.youtube.com/embed/' + yt + '" title="Video" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>';
+    }
+    if (n.video) {
+        return '<div class="blog-media"><video controls playsinline preload="metadata" ' + (n.videoPoster ? 'poster="' + blogEsc(n.videoPoster) + '" ' : '') + 'src="' + blogEsc(n.video) + '"></video></div>';
+    }
+    if (link && blogLinkEhVideo(link)) {
+        return '<div class="blog-media"><video controls playsinline preload="metadata" src="' + blogEsc(link) + '"></video></div>';
+    }
+    if (n.imagem) {
+        return '<div class="blog-media"><img src="' + blogEsc(n.imagem) + '" alt=""></div>';
+    }
+    if (link && blogLinkEhImagem(link)) {
+        return '<div class="blog-media"><img src="' + blogEsc(link) + '" alt=""></div>';
+    }
+    return '';
+}
 
 function blogInicializar() {
-    blogLimparForm();
+    blogVoltarHub();
     blogCarregarLista();
 }
 
+function blogAbrirNoticias() {
+    var hub = document.getElementById('blog-hub');
+    var page = document.getElementById('blog-noticias-page');
+    if (hub) hub.style.display = 'none';
+    if (page) page.style.display = '';
+    blogCarregarLista();
+}
+
+function blogVoltarHub() {
+    var hub = document.getElementById('blog-hub');
+    var page = document.getElementById('blog-noticias-page');
+    if (hub) hub.style.display = '';
+    if (page) page.style.display = 'none';
+    blogFecharForm();
+    blogFecharVisualizar();
+    blogFecharCompartilhar();
+}
+
 function blogPreviewImagem(input) {
+    blogRemoverImagemFlag = false;
     var preview = document.getElementById('blog-imagem-preview');
+    if (!preview) return;
     if (!input.files || !input.files[0]) { preview.innerHTML = ''; return; }
     var reader = new FileReader();
     reader.onload = function(e) {
-        preview.innerHTML = '<img src="' + e.target.result + '" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #e2e8f0">';
+        preview.innerHTML = '<img src="' + e.target.result + '" alt="Previa da imagem">';
     };
     reader.readAsDataURL(input.files[0]);
 }
 
+function blogPreviewVideo(input) {
+    blogRemoverVideoFlag = false;
+    var preview = document.getElementById('blog-video-preview');
+    if (!preview) return;
+    if (!input.files || !input.files[0]) { preview.innerHTML = ''; return; }
+    var file = input.files[0];
+    if (file.size > NOTICIAS_MAX_VIDEO_BYTES) {
+        alert('Vídeo muito grande. O limite é ' + NOTICIAS_MAX_VIDEO_MB + ' MB.');
+        input.value = '';
+        preview.innerHTML = '';
+        return;
+    }
+    preview.innerHTML = '<video src="' + URL.createObjectURL(file) + '" controls playsinline muted></video>' +
+        '<small>Ao salvar, o vídeo será enviado e otimizado se necessário.</small>';
+}
+
+function blogRemoverImagem() {
+    blogRemoverImagemFlag = true;
+    var input = document.getElementById('blog-imagem');
+    if (input) input.value = '';
+    var preview = document.getElementById('blog-imagem-preview');
+    if (preview) preview.innerHTML = '<small>Imagem será removida ao salvar.</small>';
+}
+
+function blogRemoverVideo() {
+    blogRemoverVideoFlag = true;
+    var input = document.getElementById('blog-video');
+    if (input) input.value = '';
+    var preview = document.getElementById('blog-video-preview');
+    if (preview) preview.innerHTML = '<small>Vídeo será removido ao salvar.</small>';
+}
+
 function blogLimparForm() {
-    document.getElementById('blog-edit-id').value = '';
-    document.getElementById('blog-titulo').value = '';
-    document.getElementById('blog-subtitulo').value = '';
-    document.getElementById('blog-conteudo').value = '';
-    document.getElementById('blog-layout').value = 'hero';
-    document.getElementById('blog-categoria').value = '';
-    document.getElementById('blog-destaque').checked = false;
-    document.getElementById('blog-ativo').checked = true;
-    document.getElementById('blog-imagem').value = '';
-    document.getElementById('blog-imagem-preview').innerHTML = '';
-    document.getElementById('blog-form-titulo').textContent = 'Novo Post';
+    var ids = ['blog-edit-id', 'blog-titulo', 'blog-subtitulo', 'blog-conteudo', 'blog-categoria', 'blog-imagem', 'blog-video', 'blog-link'];
+    ids.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+    var layout = document.getElementById('blog-layout'); if (layout) layout.value = 'hero';
+    var dest = document.getElementById('blog-destaque'); if (dest) dest.checked = false;
+    var ativo = document.getElementById('blog-ativo'); if (ativo) ativo.checked = true;
+    var pi = document.getElementById('blog-imagem-preview'); if (pi) pi.innerHTML = '';
+    var pv = document.getElementById('blog-video-preview'); if (pv) pv.innerHTML = '';
+    var wrap = document.getElementById('blog-engajamento-wrap'); if (wrap) wrap.style.display = 'none';
+    var eng = document.getElementById('blog-engajamento'); if (eng) eng.innerHTML = '';
+    var ft = document.getElementById('blog-form-titulo'); if (ft) ft.textContent = 'Nova notícia';
+    blogRemoverImagemFlag = false;
+    blogRemoverVideoFlag = false;
+    blogMarcarPortais('blog-form-portais', ['aluno', 'index']);
+    blogPararEngajamento();
+}
+
+function blogPararEngajamento() {
+    blogEngajUnsubs.forEach(function(fn) { try { fn(); } catch (e) {} });
+    blogEngajUnsubs = [];
+}
+
+async function blogDataUrlParaBlob(dataUrl) {
+    var resp = await fetch(dataUrl);
+    return await resp.blob();
+}
+
+async function blogUploadImagem(file) {
+    var dataUrl = await noticiasCompressImage(file);
+    try {
+        var blob = await blogDataUrlParaBlob(dataUrl);
+        var nome = (file.name || 'imagem').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+        var ref = firebase.storage().ref('blog/' + Date.now() + '_' + nome + '.jpg');
+        await ref.put(blob, { contentType: 'image/jpeg' });
+        return await ref.getDownloadURL();
+    } catch (e) {
+        console.warn('Upload de imagem indisponivel, usando imagem embutida.', e);
+        return dataUrl;
+    }
+}
+
+async function blogUploadVideo(file) {
+    var meta = await noticiasValidarVideo(file);
+    var poster = '';
+    try { var th = await noticiasVideoThumb(file); poster = th.thumb; } catch (e) {}
+    var blob = file;
+    if (file.size > NOTICIAS_COM_PRIMIR_VIDEO_ACIMA_MB * 1024 * 1024) {
+        blob = await noticiasComprimirVideo(file, meta.w, meta.h);
+    }
+    if (!firebase || !firebase.storage) throw new Error('Firebase Storage não está configurado.');
+    var ext = ((blob.type || '').indexOf('webm') !== -1) ? 'webm' : ((file.name || 'video.mp4').split('.').pop() || 'mp4');
+    var ref = firebase.storage().ref('blog/' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.' + ext);
+    await ref.put(blob, { contentType: blob.type || 'video/mp4' });
+    return { url: await ref.getDownloadURL(), poster: poster };
 }
 
 async function blogSalvar() {
     var titulo = (document.getElementById('blog-titulo').value || '').trim();
     var subtitulo = (document.getElementById('blog-subtitulo').value || '').trim();
     var conteudo = (document.getElementById('blog-conteudo').value || '').trim();
-    var layout = document.getElementById('blog-layout').value;
-    var categoria = document.getElementById('blog-categoria').value;
+    var layout = document.getElementById('blog-layout').value || 'hero';
+    var categoria = (document.getElementById('blog-categoria').value || '').trim();
+    var link = (document.getElementById('blog-link').value || '').trim();
     var destaque = document.getElementById('blog-destaque').checked;
     var ativo = document.getElementById('blog-ativo').checked;
+    var portais = blogPortaisSelecionados('blog-form-portais');
     var editId = document.getElementById('blog-edit-id').value;
-    if (!titulo || !conteudo) { alert('Preencha titulo e conteudo.'); return; }
+    if (!titulo || !conteudo) { alert('Preencha o título e o texto da notícia.'); return; }
 
+    var anterior = null;
+    if (editId) {
+        anterior = blogLista.find(function(n) { return n.id === editId; }) || null;
+    }
+
+    var btn = document.getElementById('blog-btn-salvar');
+    var btnHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; }
+
+    var agora = new Date().toISOString();
     var dados = {
         titulo: titulo,
         subtitulo: subtitulo,
         texto: conteudo,
         layout: layout,
         categoria: categoria,
+        link: link,
         destaque: destaque,
         ativo: ativo,
-        data: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString()
+        portais: portais,
+        data: (anterior && anterior.data) ? anterior.data : agora,
+        atualizadoEm: agora
     };
 
     try {
         var fileInput = document.getElementById('blog-imagem');
         if (fileInput.files && fileInput.files[0]) {
-            var file = fileInput.files[0];
-            var compressed = await noticiasCompressImage(file, 1200, 800);
-            var nomeArq = 'blog/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-            var snap = await firebase.storage().ref().child(nomeArq).put(compressed);
-            dados.imagem = await snap.ref.getDownloadURL();
+            dados.imagem = await blogUploadImagem(fileInput.files[0]);
+        } else if (blogRemoverImagemFlag) {
+            dados.imagem = firebase.firestore.FieldValue.delete();
+        } else if (anterior && anterior.imagem) {
+            dados.imagem = anterior.imagem;
+        }
+
+        var videoInput = document.getElementById('blog-video');
+        if (videoInput.files && videoInput.files[0]) {
+            var up = await blogUploadVideo(videoInput.files[0]);
+            dados.video = up.url;
+            if (up.poster) dados.videoPoster = up.poster;
+        } else if (blogRemoverVideoFlag) {
+            dados.video = firebase.firestore.FieldValue.delete();
+            dados.videoPoster = firebase.firestore.FieldValue.delete();
+        } else if (anterior && anterior.video) {
+            dados.video = anterior.video;
+            if (anterior.videoPoster) dados.videoPoster = anterior.videoPoster;
         }
 
         if (editId) {
             await dbFirestore.collection('noticiasAlunos').doc(editId).update(dados);
-            alert('Post atualizado com sucesso!');
         } else {
-            dados.criadoEm = new Date().toISOString();
+            dados.criadoEm = agora;
             dados.ordem = Date.now();
             await dbFirestore.collection('noticiasAlunos').doc().set(dados);
-            alert('Post publicado com sucesso!');
         }
-        blogLimparForm();
+        blogFecharForm();
         blogCarregarLista();
+        alert(editId ? 'Notícia atualizada com sucesso!' : 'Notícia publicada com sucesso!');
     } catch (e) {
-        console.error('Erro ao salvar blog:', e);
-        alert('Erro ao salvar: ' + e.message);
+        console.error('Erro ao salvar notícia:', e);
+        alert('Erro ao salvar: ' + (e && e.message ? e.message : e));
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = btnHtml; }
     }
 }
 
 function blogCarregarLista() {
-    if (blogUnsub) blogUnsub();
-    blogUnsub = dbFirestore.collection('noticiasAlunos').orderBy('ordem', 'desc').onSnapshot(function(snap) {
+    var container = document.getElementById('blog-lista');
+    if (!container || typeof dbFirestore === 'undefined') return;
+    if (blogUnsub) { blogUnsub(); blogUnsub = null; }
+    blogUnsub = dbFirestore.collection('noticiasAlunos').onSnapshot(function(snap) {
         blogLista = [];
         snap.forEach(function(d) {
             var x = d.data();
             x.id = d.id;
             blogLista.push(x);
         });
+        blogLista.sort(function(a, b) {
+            return (b.ordem || new Date(b.data || 0).getTime() || 0) - (a.ordem || new Date(a.data || 0).getTime() || 0);
+        });
         blogRenderLista();
-    }, function() {
-        document.getElementById('blog-lista').innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Erro ao carregar posts.</div>';
+    }, function(err) {
+        console.error('Erro ao carregar notícias:', err);
+        var c = document.getElementById('blog-lista');
+        if (c) c.innerHTML = '<div class="blog-empty"><i class="fa-solid fa-triangle-exclamation"></i><strong>Erro ao carregar</strong>Verifique a conexão e tente novamente.</div>';
     });
 }
 
@@ -11075,57 +11306,226 @@ function blogRenderLista() {
     var container = document.getElementById('blog-lista');
     if (!container) return;
     if (!blogLista.length) {
-        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:12px"><i class="fa-solid fa-newspaper" style="font-size:24px;display:block;margin-bottom:8px;color:#cbd5e1"></i>Nenhum post criado ainda.</div>';
+        container.innerHTML = '<div class="blog-empty"><i class="fa-solid fa-newspaper"></i><strong>Nenhuma notícia criada</strong>Clique em "Adicionar notícia" para publicar a primeira.</div>';
         return;
     }
-    var layoutIcons = { hero: 'fa-panorama', lateral: 'fa-table-columns', 'lateral-invertido': 'fa-table-columns', '2colunas': 'fa-columns', '3colunas': 'fa-grip', texto: 'fa-align-left', compacto: 'fa-square' };
-    var layoutNomes = { hero: 'Hero', lateral: 'Lateral', 'lateral-invertido': 'Lat.Invert.', '2colunas': '2 Colunas', '3colunas': '3 Colunas', texto: 'Texto', compacto: 'Compacto' };
     container.innerHTML = blogLista.map(function(n) {
-        var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR') : '';
-        var thumb = n.imagem ? '<img src="' + n.imagem + '" style="width:56px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0">' : '<div style="width:56px;height:40px;background:#f1f5f9;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#94a3b8"><i class="fa-solid fa-image"></i></div>';
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#fff">' +
+        var ativo = n.ativo !== false;
+        var portais = blogPortaisDoPost(n);
+        var resumoPortais = portais.length === BLOG_PORTAIS.length
+            ? 'Todos os portais'
+            : (portais.length ? portais.slice(0, 2).map(blogPortalNome).join(', ') + (portais.length > 2 ? ' +' + (portais.length - 2) : '') : 'Nenhum portal');
+        if (portais.length === 0) {
+            resumoPortais = 'Nenhum portal';
+        }
+        var resumoPortalHtml = portais.length
+            ? '<span class="blog-chip"><i class="fa-solid fa-share-nodes"></i> ' + blogEsc(resumoPortais) + '</span>'
+            : '<span class="blog-chip off"><i class="fa-solid fa-share-nodes"></i> ' + blogEsc(resumoPortais) + '</span>';
+        var thumbSrc = blogThumbUrl(n);
+        var thumb = thumbSrc
+            ? '<div class="blog-post-thumb"><img src="' + blogEsc(thumbSrc) + '" alt=""></div>'
+            : '<div class="blog-post-thumb"><i class="fa-solid ' + (n.video || blogLinkEhVideo(n.link) ? 'fa-video' : 'fa-newspaper') + '"></i></div>';
+        return '<div class="blog-post">' +
             thumb +
-            '<div style="flex:1;min-width:0">' +
-                '<div style="font-size:12px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (n.titulo || 'Sem titulo') + '</div>' +
-                '<div style="display:flex;gap:6px;align-items:center;margin-top:2px">' +
-                    '<span style="font-size:10px;color:#94a3b8">' + dateStr + '</span>' +
-                    '<span style="font-size:9px;padding:1px 5px;background:#f1f5f9;border-radius:4px;color:#64748b"><i class="fa-solid ' + (layoutIcons[n.layout] || 'fa-square') + '" style="margin-right:2px"></i>' + (layoutNomes[n.layout] || n.layout) + '</span>' +
-                    (n.destaque ? '<span style="font-size:9px;padding:1px 5px;background:#fef3c7;border-radius:4px;color:#92400e">Destaque</span>' : '') +
-                    (n.ativo === false ? '<span style="font-size:9px;padding:1px 5px;background:#fee2e2;border-radius:4px;color:#991b1b">Rascunho</span>' : '') +
+            '<div class="blog-post-main">' +
+                '<div class="blog-post-title">' + blogEsc(n.titulo || 'Sem título') + '</div>' +
+                '<div class="blog-post-meta">' +
+                    '<span class="blog-chip ' + (ativo ? 'on' : 'off') + '"><i class="fa-solid ' + (ativo ? 'fa-circle-check' : 'fa-circle-pause') + '"></i> ' + (ativo ? 'Ativo' : 'Inativo') + '</span>' +
+                    (n.destaque ? '<span class="blog-chip dest"><i class="fa-solid fa-star"></i> Destaque</span>' : '') +
+                    resumoPortalHtml +
+                    '<span class="blog-chip">' + blogEsc(blogDataStr(n.data)) + '</span>' +
                 '</div>' +
             '</div>' +
-            '<div style="display:flex;gap:4px">' +
-                '<button class="btn-icon" title="Editar" onclick="blogEditar(\'' + n.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
-                '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="blogExcluir(\'' + n.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
-            '</div></div>';
+            '<div class="blog-post-actions">' +
+                '<button type="button" class="blog-act" title="Visualizar" onclick="blogVisualizar(\'' + n.id + '\')"><i class="fa-solid fa-eye"></i></button>' +
+                '<button type="button" class="blog-act" title="Editar" onclick="blogAbrirForm(\'' + n.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button type="button" class="blog-act" title="Compartilhar" onclick="blogCompartilhar(\'' + n.id + '\')"><i class="fa-solid fa-share-nodes"></i></button>' +
+                '<button type="button" class="blog-act ' + (ativo ? 'on' : '') + '" title="' + (ativo ? 'Desativar' : 'Ativar') + '" onclick="blogAlternarAtivo(\'' + n.id + '\')"><i class="fa-solid ' + (ativo ? 'fa-toggle-on' : 'fa-toggle-off') + '"></i></button>' +
+                '<button type="button" class="blog-act danger" title="Excluir" onclick="blogExcluir(\'' + n.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+            '</div>' +
+        '</div>';
     }).join('');
 }
 
-function blogEditar(id) {
-    var post = blogLista.find(function(n) { return n.id === id; });
-    if (!post) return;
-    document.getElementById('blog-edit-id').value = id;
-    document.getElementById('blog-titulo').value = post.titulo || '';
-    document.getElementById('blog-subtitulo').value = post.subtitulo || '';
-    document.getElementById('blog-conteudo').value = post.texto || '';
-    document.getElementById('blog-layout').value = post.layout || 'hero';
-    document.getElementById('blog-categoria').value = post.categoria || '';
-    document.getElementById('blog-destaque').checked = !!post.destaque;
-    document.getElementById('blog-ativo').checked = post.ativo !== false;
-    document.getElementById('blog-form-titulo').textContent = 'Editando Post';
-    if (post.imagem) {
-        document.getElementById('blog-imagem-preview').innerHTML = '<img src="' + post.imagem + '" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid #e2e8f0">';
+function blogAbrirForm(id) {
+    blogLimparForm();
+    var post = null;
+    if (id) {
+        post = blogLista.find(function(n) { return n.id === id; }) || null;
+        if (!post) return;
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (post) {
+        document.getElementById('blog-edit-id').value = post.id;
+        document.getElementById('blog-titulo').value = post.titulo || '';
+        document.getElementById('blog-subtitulo').value = post.subtitulo || '';
+        document.getElementById('blog-conteudo').value = post.texto || '';
+        document.getElementById('blog-layout').value = post.layout || 'hero';
+        document.getElementById('blog-categoria').value = post.categoria || '';
+        document.getElementById('blog-link').value = post.link || '';
+        document.getElementById('blog-destaque').checked = !!post.destaque;
+        document.getElementById('blog-ativo').checked = post.ativo !== false;
+        document.getElementById('blog-form-titulo').textContent = 'Editar notícia';
+        blogMarcarPortais('blog-form-portais', blogPortaisDoPost(post));
+        var pi = document.getElementById('blog-imagem-preview');
+        if (post.imagem) {
+            pi.innerHTML = '<img src="' + blogEsc(post.imagem) + '" alt="Imagem atual"><button type="button" class="btn-secondary" style="margin-top:6px" onclick="blogRemoverImagem()"><i class="fa-solid fa-trash"></i> Remover imagem</button>';
+        }
+        var pv = document.getElementById('blog-video-preview');
+        if (post.video) {
+            pv.innerHTML = '<video src="' + blogEsc(post.video) + '" controls playsinline muted></video><button type="button" class="btn-secondary" style="margin-top:6px" onclick="blogRemoverVideo()"><i class="fa-solid fa-trash"></i> Remover vídeo</button>';
+        } else if (blogYoutubeId(post.link) || blogLinkEhVideo(post.link)) {
+            pv.innerHTML = '<small>Vídeo via link: ' + blogEsc(post.link) + '</small>';
+        }
+        var wrap = document.getElementById('blog-engajamento-wrap');
+        if (wrap) wrap.style.display = '';
+        blogCarregarEngajamento(post.id);
+    } else {
+        document.getElementById('blog-form-titulo').textContent = 'Nova notícia';
+        blogMarcarPortais('blog-form-portais', ['aluno', 'index']);
+    }
+    document.getElementById('blog-form-overlay').classList.add('open');
+}
+
+function blogFecharForm() {
+    var ov = document.getElementById('blog-form-overlay');
+    if (ov) ov.classList.remove('open');
+}
+
+function blogCarregarEngajamento(id) {
+    blogPararEngajamento();
+    if (!id) return;
+    var curtidas = [];
+    var comentarios = [];
+    var render = function() { blogRenderEngajamento(curtidas, comentarios); };
+    render();
+    var docRef = dbFirestore.collection('noticiasAlunos').doc(id);
+    blogEngajUnsubs.push(docRef.collection('curtidas').onSnapshot(function(snap) {
+        curtidas = [];
+        snap.forEach(function(d) { var x = d.data(); x.id = d.id; curtidas.push(x); });
+        render();
+    }, function() {}));
+    blogEngajUnsubs.push(docRef.collection('comentarios').orderBy('data', 'asc').onSnapshot(function(snap) {
+        comentarios = [];
+        snap.forEach(function(d) { var x = d.data(); x.id = d.id; comentarios.push(x); });
+        render();
+    }, function() {
+        var unsub = docRef.collection('comentarios').onSnapshot(function(snap) {
+            comentarios = [];
+            snap.forEach(function(d) { var x = d.data(); x.id = d.id; comentarios.push(x); });
+            render();
+        }, function() {});
+        blogEngajUnsubs.push(unsub);
+    }));
+}
+
+function blogIniciais(nome) {
+    var parts = String(nome || '?').trim().split(/\s+/);
+    return ((parts[0] || '?').charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : '')).toUpperCase();
+}
+
+function blogRenderEngajamento(curtidas, comentarios) {
+    var curtidasHtml = '<div class="blog-engaj-sec"><i class="fa-solid fa-heart" style="color:#f4568e;margin-right:4px"></i> Curtidas (' + curtidas.length + ')</div>';
+    if (curtidas.length) {
+        curtidasHtml += curtidas.map(function(c) {
+            return '<div class="blog-engaj-item"><div class="blog-engaj-av">' + blogEsc(blogIniciais(c.nome)) + '</div><div><b>' + blogEsc(c.nome || 'Aluno') + '</b><em>' + blogEsc(blogDataStr(c.data)) + '</em></div></div>';
+        }).join('');
+    } else {
+        curtidasHtml += '<div class="blog-engaj-empty"><i class="fa-regular fa-heart"></i> Ninguém curtiu ainda.</div>';
+    }
+    var comentariosHtml = '<div class="blog-engaj-sec"><i class="fa-solid fa-comment" style="color:#7c5cff;margin-right:4px"></i> Comentários (' + comentarios.length + ')</div>';
+    if (comentarios.length) {
+        comentariosHtml += comentarios.map(function(c) {
+            return '<div class="blog-engaj-item"><div class="blog-engaj-av">' + blogEsc(blogIniciais(c.nome)) + '</div><div><b>' + blogEsc(c.nome || 'Aluno') + '</b><span>' + blogEsc(c.texto || '') + '</span><em>' + blogEsc(blogDataStr(c.data)) + '</em></div></div>';
+        }).join('');
+    } else {
+        comentariosHtml += '<div class="blog-engaj-empty"><i class="fa-regular fa-comment"></i> Nenhum comentário ainda.</div>';
+    }
+    var html = curtidasHtml + comentariosHtml;
+    var a = document.getElementById('blog-engajamento');
+    if (a) a.innerHTML = html;
+    var b = document.getElementById('blog-view-engajamento');
+    if (b) b.innerHTML = '<div class="blog-engaj">' + html + '</div>';
+}
+
+function blogVisualizar(id) {
+    var n = blogLista.find(function(x) { return x.id === id; });
+    if (!n) return;
+    var ativo = n.ativo !== false;
+    var portais = blogPortaisDoPost(n);
+    var html = blogMediaHtml(n);
+    html += '<h2 class="blog-view-title">' + blogEsc(n.titulo || 'Sem título') + '</h2>';
+    if (n.subtitulo) html += '<div class="blog-view-sub">' + blogEsc(n.subtitulo) + '</div>';
+    html += '<div class="blog-status-line">' +
+        '<span class="blog-chip ' + (ativo ? 'on' : 'off') + '">' + (ativo ? 'Ativo' : 'Inativo') + '</span>' +
+        (n.categoria ? '<span class="blog-chip">' + blogEsc(n.categoria) + '</span>' : '') +
+        '<span class="blog-chip">' + blogEsc(blogDataStr(n.data)) + '</span>' +
+        portais.map(function(p) { return '<span class="blog-chip"><i class="fa-solid fa-share-nodes"></i> ' + blogEsc(blogPortalNome(p)) + '</span>'; }).join('') +
+        '</div>';
+    html += '<div class="blog-view-text">' + blogEsc(n.texto || '') + '</div>';
+    html += '<div id="blog-view-engajamento" style="margin-top:18px"></div>';
+    document.getElementById('blog-view-body').innerHTML = html;
+    document.getElementById('blog-view-overlay').classList.add('open');
+    blogCarregarEngajamento(id);
+}
+
+function blogFecharVisualizar() {
+    var ov = document.getElementById('blog-view-overlay');
+    if (ov) ov.classList.remove('open');
+}
+
+function blogCompartilhar(id) {
+    var n = blogLista.find(function(x) { return x.id === id; });
+    if (!n) return;
+    blogShareId = id;
+    document.getElementById('blog-share-titulo').textContent = n.titulo || 'Sem título';
+    var atuais = blogPortaisDoPost(n);
+    document.getElementById('blog-share-portais').innerHTML = BLOG_PORTAIS.map(function(p) {
+        return '<label class="blog-portal"><input type="checkbox" class="blog-share-check" value="' + p.id + '"' + (atuais.indexOf(p.id) !== -1 ? ' checked' : '') + '> ' + p.nome + '</label>';
+    }).join('');
+    document.getElementById('blog-share-overlay').classList.add('open');
+}
+
+function blogFecharCompartilhar() {
+    var ov = document.getElementById('blog-share-overlay');
+    if (ov) ov.classList.remove('open');
+    blogShareId = null;
+}
+
+async function blogSalvarCompartilhar() {
+    if (!blogShareId) return;
+    var portais = Array.prototype.slice.call(document.querySelectorAll('.blog-share-check:checked')).map(function(cb) { return cb.value; });
+    try {
+        await dbFirestore.collection('noticiasAlunos').doc(blogShareId).update({
+            portais: portais,
+            atualizadoEm: new Date().toISOString()
+        });
+        blogFecharCompartilhar();
+    } catch (e) {
+        alert('Erro ao compartilhar: ' + (e && e.message ? e.message : e));
+    }
+}
+
+async function blogAlternarAtivo(id) {
+    var n = blogLista.find(function(x) { return x.id === id; });
+    if (!n) return;
+    try {
+        await dbFirestore.collection('noticiasAlunos').doc(id).update({
+            ativo: n.ativo === false,
+            atualizadoEm: new Date().toISOString()
+        });
+    } catch (e) {
+        alert('Erro ao alterar status: ' + (e && e.message ? e.message : e));
+    }
 }
 
 async function blogExcluir(id) {
-    if (!confirm('Excluir este post permanentemente?')) return;
+    if (!confirm('Excluir esta notícia permanentemente? Curtidas e comentários também deixarão de aparecer.')) return;
     try {
         await dbFirestore.collection('noticiasAlunos').doc(id).delete();
-        alert('Post excluido!');
         blogCarregarLista();
-    } catch (e) { alert('Erro ao excluir: ' + e.message); }
+    } catch (e) {
+        alert('Erro ao excluir: ' + (e && e.message ? e.message : e));
+    }
 }
 
 /* ===== GALERIA - ALBUNS (ADMIN) ===== */

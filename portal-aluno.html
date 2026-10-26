@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Portal do Aluno - FARN</title>
+    <title>Portal do Aluno - INDEP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root{
@@ -214,6 +217,8 @@
         .pf-blog-modal-sub{font-size:14px;color:#64748b;margin-bottom:16px;line-height:1.5}
         .pf-blog-modal-content{font-size:14px;color:#334155;line-height:1.8;white-space:pre-wrap}
         .pf-blog-modal-img{width:100%;max-height:400px;object-fit:cover}
+        .pf-blog-modal-inner > img,.pf-blog-modal-inner > video{width:100%;max-height:400px;object-fit:cover;display:block;background:#14142b}
+        .pf-blog-modal-inner > iframe{width:100%;aspect-ratio:16/9;border:0;display:block}
 
         /* Right Panel (Galeria) */
         .pf-noticias-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;min-height:calc(100vh - 170px)}
@@ -506,6 +511,446 @@
             .pf-topbar-title{display:none}
             .pf-user-info{display:none}
         }
+
+        /* ============================================================
+           IDENTIDADE VISUAL F.A.R.N. — BOMBEIRO PROFISSIONAL CIVIL
+           Azul-marinho + vermelho + amarelo-ouro
+           ============================================================ */
+        :root{
+            --green:#0b1e3d;--green-l:#16386b;--green-d:#050f24;
+            --red:#cf1f2b;--red-l:#ef3b46;
+            --blue:#12305c;--blue-l:#1d4a8f;
+            --yellow:#f7c600;--yellow-l:#ffd633;--yellow-xl:#ffe680;
+            --farn-navy:#050f24;
+            --farn-navy-2:#0a1e3d;
+            --farn-navy-3:#12305c;
+            --farn-gold:#f7c600;
+            --farn-gold-soft:#ffe066;
+            --farn-red:#cf1f2b;
+            --farn-red-dark:#8f0f18;
+            --farn-display:'Anton','Barlow Condensed','Arial Narrow',Impact,sans-serif;
+            --farn-cond:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+        }
+        body{background:var(--farn-navy);font-family:'Barlow','Segoe UI',system-ui,sans-serif}
+
+        /* ---------- TOPBAR ---------- */
+        .pf-topbar{
+            height:76px;padding:0 22px;overflow:hidden;
+            background:linear-gradient(100deg,#050f24 0%,#0a1e3d 48%,#102a52 100%);
+            border-bottom:3px solid var(--farn-gold);
+            box-shadow:0 10px 30px rgba(0,0,0,.5);
+        }
+        .pf-topbar::before{
+            content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+            background:
+                linear-gradient(115deg,transparent 0 63%,rgba(207,31,43,.85) 63% 71%,transparent 71%),
+                linear-gradient(115deg,transparent 0 71%,rgba(247,198,0,.9) 71% 73.4%,transparent 73.4%),
+                repeating-linear-gradient(115deg,rgba(255,255,255,.028) 0 2px,transparent 2px 18px);
+        }
+        .pf-topbar>*{position:relative;z-index:1}
+        .pf-topbar-left{gap:13px}
+        .pf-topbar-logo{height:48px;border-radius:8px;background:#fff;padding:3px 7px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+        .pf-topbar-id{display:flex;flex-direction:column;line-height:1.06}
+        .pf-topbar-kicker{font-family:var(--farn-cond);font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:#9fb3d1}
+        .pf-topbar-title{font-family:var(--farn-display);font-size:19px;font-weight:400;letter-spacing:1.5px;text-transform:uppercase;color:#fff}
+        .pf-topbar-sub{font-family:var(--farn-cond);font-size:9.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--farn-gold)}
+        .pf-topbar-motto{margin-left:auto;margin-right:28px;text-align:right;font-family:var(--farn-cond);font-size:10px;line-height:1.15;letter-spacing:1.2px;text-transform:uppercase;color:#c9d6e8}
+        .pf-topbar-motto b{display:block;color:var(--farn-gold);font-size:11.5px;letter-spacing:1.3px}
+        .pf-topbar-right{gap:12px}
+        .pf-user-avatar{background:linear-gradient(135deg,var(--farn-red),var(--farn-red-dark));color:#fff;box-shadow:0 0 0 2px rgba(247,198,0,.55)}
+        .pf-user-name{color:#fff;font-family:var(--farn-cond);font-size:15px;letter-spacing:.4px}
+        .pf-user-matricula,.pf-user-cpf{color:#8fa5c4}
+        .pf-notif-btn{background:rgba(255,255,255,.07);border:1px solid rgba(247,198,0,.35);color:var(--farn-gold)}
+        .pf-notif-btn:hover{background:rgba(247,198,0,.18)}
+        .pf-logout-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);font-family:var(--farn-cond);text-transform:uppercase;letter-spacing:.9px}
+        .pf-logout-btn:hover{background:var(--farn-red);border-color:var(--farn-red)}
+
+        /* ---------- SIDEBAR ---------- */
+        .pf-sidebar{
+            width:248px;padding:0 0 16px;overflow-y:auto;overflow-x:hidden;
+            background:linear-gradient(180deg,#081733 0%,#0a1e3d 55%,#050f24 100%);
+            border-right:1px solid rgba(247,198,0,.16);
+        }
+        .pf-sidebar::-webkit-scrollbar{width:6px}
+        .pf-sidebar::-webkit-scrollbar-track{background:transparent}
+        .pf-sidebar::-webkit-scrollbar-thumb{background:rgba(247,198,0,.35);border-radius:4px}
+        .pf-sidebar::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:5px;
+            background:linear-gradient(90deg,var(--farn-red) 0 38%,var(--farn-gold) 38% 62%,#1d4a8f 62% 100%);
+        }
+        .pf-sidebar-brand{display:flex;align-items:center;gap:12px;padding:20px 18px 15px;border-bottom:1px solid rgba(247,198,0,.14);margin-bottom:10px}
+        .pf-sidebar-brand img{width:44px;height:44px;object-fit:contain;background:#fff;border-radius:9px;padding:3px;flex-shrink:0}
+        .pf-sidebar-brand strong{display:block;font-family:var(--farn-display);font-size:20px;letter-spacing:1.8px;color:#fff;line-height:1}
+        .pf-sidebar-brand span{display:block;font-family:var(--farn-cond);font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--farn-gold);margin-top:4px}
+        .pf-nav-item{color:#a9bcd8;font-family:var(--farn-cond);font-size:14px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;padding:10px 18px;border-left:3px solid transparent}
+        .pf-nav-item i{color:var(--farn-gold);width:22px;font-size:14px;opacity:.85}
+        .pf-nav-item:hover{color:#fff;background:rgba(247,198,0,.07)}
+        .pf-nav-item.active{color:#fff;background:linear-gradient(90deg,rgba(207,31,43,.95),rgba(207,31,43,.22));border-left-color:var(--farn-gold);font-weight:700}
+        .pf-nav-item.active::after{background:var(--farn-gold);box-shadow:0 0 12px rgba(247,198,0,.9)}
+        .pf-nav-item.active i{color:#fff;opacity:1}
+        .pf-nav-divider{background:linear-gradient(90deg,transparent,rgba(247,198,0,.4),transparent);margin:10px 18px}
+        .pf-sidebar-motto{margin-top:auto;padding:14px 18px 2px;border-top:1px solid rgba(247,198,0,.14);font-family:var(--farn-cond);font-size:10px;line-height:1.3;letter-spacing:1.1px;text-transform:uppercase;color:#8fa5c4;display:flex;gap:8px;align-items:flex-start}
+        .pf-sidebar-motto i{color:var(--red-l);margin-top:2px}
+        .pf-sidebar-motto b{color:var(--farn-gold)}
+
+        /* ---------- CONTEUDO ---------- */
+        .pf-content{
+            padding:26px 30px 48px;color:#dae5f4;
+            background:
+                linear-gradient(180deg,rgba(207,31,43,.10) 0 6px,transparent 6px),
+                repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 2px,transparent 2px 20px),
+                radial-gradient(circle at 12% 0%,#12305c 0%,transparent 48%),
+                radial-gradient(circle at 100% 100%,#0d2547 0%,transparent 45%),
+                var(--farn-navy);
+        }
+        .pf-content::-webkit-scrollbar{width:10px}
+        .pf-content::-webkit-scrollbar-track{background:#050f24}
+        .pf-content::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--farn-red),#7c0c14);border-radius:6px}
+
+        /* titulos das secoes */
+        .pf-content>.pf-section>h3,
+        .pf-content>.pf-section>div:first-child>h3{
+            display:flex;align-items:center;gap:10px;
+            font-family:var(--farn-display);font-size:21px!important;font-weight:400!important;
+            letter-spacing:1.7px;text-transform:uppercase;color:var(--farn-gold)!important;
+            margin-bottom:16px!important;padding-left:17px;position:relative;
+            text-shadow:0 3px 0 rgba(0,0,0,.35);
+        }
+        .pf-content>.pf-section>h3::before,
+        .pf-content>.pf-section>div:first-child>h3::before{
+            content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+            width:6px;height:26px;border-radius:2px;
+            background:linear-gradient(180deg,var(--farn-red),var(--farn-red-dark));
+            box-shadow:0 0 14px rgba(207,31,43,.6);
+        }
+        .pf-content>.pf-section>h3 i,
+        .pf-content>.pf-section>div:first-child>h3 i{color:var(--red-l)!important}
+        #pf-section-noticias>div>h3{padding-left:0;justify-content:center;color:#fff!important}
+        #pf-section-noticias>div>h3::before{display:none}
+        #pf-section-noticias p{color:#93a7c4!important}
+
+        /* boas-vindas */
+        .pf-welcome{
+            border:1px solid rgba(247,198,0,.32);border-left:6px solid var(--farn-red);
+            border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.5);
+            background:
+                radial-gradient(circle at 88% 12%,rgba(247,198,0,.2),transparent 46%),
+                linear-gradient(115deg,#071630 0%,#0a1e3d 55%,#12305c 100%);
+        }
+        .pf-welcome::before{background:radial-gradient(circle,rgba(247,198,0,.18),transparent 70%)}
+        .pf-welcome::after{
+            content:'';position:absolute;right:-70px;bottom:-50px;width:360px;height:170px;border-radius:0;
+            background:linear-gradient(115deg,transparent 0 42%,rgba(207,31,43,.6) 42% 62%,rgba(247,198,0,.55) 62% 72%,transparent 72%);
+            transform:skewX(-14deg);
+        }
+        .pf-welcome h2{font-family:var(--farn-display);font-size:25px;line-height:1.18;letter-spacing:1.1px;text-transform:uppercase;font-weight:400}
+        .pf-welcome h2 span{color:var(--farn-gold)}
+        .pf-welcome p strong{color:var(--farn-gold)}
+        .pf-welcome .pf-matricula-badge{background:rgba(247,198,0,.14)!important;border-color:rgba(247,198,0,.45)!important;color:var(--farn-gold-soft)!important}
+
+        /* cards de estatistica */
+        .pf-stats-row{gap:16px}
+        .pf-stat-card{background:#fff;border:1px solid rgba(255,255,255,.08);box-shadow:0 14px 34px rgba(0,0,0,.45)}
+        .pf-stat-card::before{height:6px}
+        .pf-stat-card:nth-child(1)::before{background:var(--farn-red)}
+        .pf-stat-card:nth-child(2)::before{background:var(--farn-gold)}
+        .pf-stat-card:nth-child(3)::before{background:#1d4a8f}
+        .pf-stat-card:nth-child(1) i{color:var(--farn-red)}
+        .pf-stat-card:nth-child(2) i{color:#c99e00}
+        .pf-stat-card:nth-child(3) i{color:#1d4a8f}
+        .pf-stat-card .pf-stat-val{font-family:var(--farn-display);font-size:26px;color:#0a1e3d;letter-spacing:1px}
+        .pf-stat-card .pf-stat-label{font-family:var(--farn-cond);letter-spacing:1.4px;color:#5b6d88}
+
+        /* botoes */
+        .pf-login-btn{background:linear-gradient(135deg,var(--farn-red),var(--farn-red-dark));box-shadow:0 12px 26px rgba(207,31,43,.35);font-family:var(--farn-cond);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+        .pf-login-btn:hover{filter:brightness(1.08)}
+        .pf-content button[style*="background:#fff"]{
+            background:linear-gradient(135deg,#0f2a52,#0a1e3d)!important;color:var(--farn-gold)!important;
+            border-color:rgba(247,198,0,.5)!important;font-family:var(--farn-cond);
+            text-transform:uppercase;letter-spacing:.9px;font-weight:700;
+        }
+        .pf-pedi-baixa-btn{background:linear-gradient(135deg,var(--farn-red),var(--farn-red-dark));border-color:rgba(255,255,255,.35);box-shadow:0 8px 22px rgba(207,31,43,.4);font-family:var(--farn-cond);letter-spacing:1.1px}
+        .pf-pedi-baixa-btn:hover{box-shadow:0 12px 30px rgba(207,31,43,.55)}
+        .pf-baixa-confirm{background:linear-gradient(135deg,var(--farn-red),var(--farn-red-dark))!important}
+        .pf-baixa-banner{background:rgba(207,31,43,.12)!important;border-color:rgba(207,31,43,.45)!important;color:#ffc9cd!important}
+
+        /* compatibilidade com cores antigas (verde-oliva) */
+        button[style*="#556B2F"],button[style*="#6B8E23"],button[style*="#3E4F1C"],
+        button[style*="linear-gradient(135deg,#6B8E23"]{
+            background:linear-gradient(135deg,var(--farn-red),var(--farn-red-dark))!important;
+            color:#fff!important;font-family:var(--farn-cond);text-transform:uppercase;
+            letter-spacing:.8px;font-weight:700;
+        }
+        div[style*="linear-gradient(135deg,#556B2F,#3E4F1C)"]{
+            background:linear-gradient(135deg,#0a1e3d,#050f24)!important;
+            border-bottom:3px solid var(--farn-gold);
+        }
+        .pf-blog-hero-cat,.pf-blog-lat-cat,.pf-blog-cat-badge{background:rgba(207,31,43,.92)!important}
+        .pf-notif-dot{background:var(--farn-red)!important;box-shadow:0 0 0 2px #0a1e3d,0 0 10px rgba(207,31,43,.95)!important}
+        .pf-cd-mat{color:var(--farn-red)!important}        .pa-docente-foto{border-color:var(--farn-red)!important}
+        .pa-docente-rotulo{color:var(--farn-navy-3)!important}
+        .pa-va-btn.ver{background:var(--farn-navy-3)!important}
+        button[onclick="window.print()"]{
+            background:linear-gradient(135deg,var(--farn-red),var(--farn-red-dark))!important;
+            color:#fff!important;box-shadow:0 10px 24px rgba(207,31,43,.35);
+            font-family:var(--farn-cond);text-transform:uppercase;letter-spacing:1px;
+        }
+        .pf-content>.pf-section>p{color:#9db0cb!important}
+        #pf-inicio-aula{background:rgba(247,198,0,.06)!important;border-color:rgba(247,198,0,.35)!important}
+        #pf-inicio-aula p{color:#c3d2e6!important}
+        #pf-inicio-aula p i{color:var(--farn-gold)!important}
+
+        /* cartoes claros (apostila / dados) */
+        .pf-apostila-card,.pf-dados-card{background:#fff;border:1px solid #e3e9f2;border-left:5px solid var(--farn-red);border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.35)}
+        .pf-apostila-titulo{color:#0a1e3d;font-family:var(--farn-cond);text-transform:uppercase;font-weight:800;letter-spacing:.4px}
+        .pf-apostila-badge{background:rgba(207,31,43,.1);color:var(--farn-red)}
+        .pf-dados-label{color:#5b6d88}
+        .pf-dados-val{color:#0a1e3d}
+
+        /* notificacoes */
+        .pf-notif-header{background:linear-gradient(90deg,#0a1e3d,#12305c);color:#fff;border-bottom:2px solid var(--farn-gold)}
+        .pf-notif-header button{color:var(--farn-gold)}
+        .pf-notif-item .dot-um{background:var(--farn-red)}
+
+        /* drawer mobile */
+        .pa-drawer{background:linear-gradient(180deg,#081733,#050f24)}
+        .pa-drawer-head{border-bottom:2px solid var(--farn-gold)}
+        .pa-drawer-head strong{font-family:var(--farn-display);text-transform:uppercase;letter-spacing:1.2px;color:#fff}
+        .pa-drawer-nav a{color:#a9bcd8;font-family:var(--farn-cond);text-transform:uppercase;letter-spacing:.8px;border-left:3px solid transparent}
+        .pa-drawer-nav a:hover,.pa-drawer-nav a.active{background:linear-gradient(90deg,rgba(207,31,43,.9),rgba(207,31,43,.18));color:#fff;border-left-color:var(--farn-gold)}
+        .pa-drawer-nav i{color:var(--farn-gold)}
+
+        /* nav inferior mobile */
+        .pf-mobile-nav{background:#081733;border-top:2px solid var(--farn-gold)}
+        .pf-mobile-nav-item{color:#8fa5c4;font-family:var(--farn-cond);letter-spacing:.6px;text-transform:uppercase}
+        .pf-mobile-nav-item.active{color:var(--farn-gold)}
+        .pf-mobile-nav-item:active{background:rgba(247,198,0,.08)}
+
+        /* tela de login */
+        #screen-login{
+            background:
+                repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 2px,transparent 2px 22px),
+                radial-gradient(circle at 20% 10%,#12305c,transparent 55%),
+                #050f24;
+        }
+        .pf-login-card{border-top:5px solid var(--farn-red);box-shadow:0 30px 80px rgba(0,0,0,.55)}
+        .pf-login-logo h1{font-family:var(--farn-display);text-transform:uppercase;letter-spacing:1.2px}
+
+        /* ajustes responsivos */
+        @media (max-width:1280px){
+            .pf-topbar-motto{display:none}
+        }
+        @media (max-width:1000px) and (min-width:769px){
+            .pf-user-info{display:none}
+        }
+        @media (max-width:768px){
+            .pf-topbar{height:68px;padding:0 12px}
+            .pf-topbar-left{padding-left:44px;gap:8px}
+            .pf-topbar-motto{display:none}
+            .pf-topbar-id{max-width:130px}
+            .pf-topbar-title{display:block;font-size:14px;letter-spacing:1px}
+            .pf-topbar-kicker,.pf-topbar-sub{display:none}
+            .pf-topbar-logo{height:36px}
+            .pf-notif-btn{width:36px;height:36px;font-size:15px}
+            .pf-user-avatar{width:34px;height:34px;border-radius:10px;font-size:12px}
+            .pf-logout-btn{padding:7px 10px;font-size:0;gap:0}
+            .pf-logout-btn i{font-size:14px}
+            .pf-content{padding:18px 14px 92px}
+            .pf-content>.pf-section>h3,
+            .pf-content>.pf-section>div:first-child>h3{font-size:17px!important;letter-spacing:1.2px}
+            .pf-welcome{padding:22px;border-left-width:5px}
+            .pf-welcome h2{font-size:18px}
+        }
+
+        /* ============================================================
+           THEME 2.0 — APP MOBILE (lavanda + roxo)
+           ============================================================ */
+        :root{
+            --ui-bg:#f5f4fb;--ui-card:#ffffff;
+            --ui-purple:#7c5cff;--ui-purple-d:#5a3fe0;--ui-purple-l:#a78bfa;
+            --ui-teal:#37d0b0;--ui-orange:#f9a03f;--ui-pink:#f4568e;--ui-blue:#4cc9f0;
+            --ui-text:#14142b;--ui-muted:#8b8ba7;--ui-line:#eceaf6;
+            --green:#7c5cff;--green-l:#9d86ff;--green-d:#5a3fe0;
+            --blue:#5a3fe0;--blue-l:#a78bfa;
+            --yellow:#f9a03f;--yellow-l:#ffc078;--yellow-xl:#fff0dd;
+            --farn-gold:#7c5cff;--farn-gold-soft:#a78bfa;
+            --farn-red:#f4568e;--farn-red-dark:#d63a72;
+            --farn-navy:#f5f4fb;--farn-navy-2:#ffffff;--farn-navy-3:#5a3fe0;
+        }
+        body{background:var(--ui-bg)!important;font-family:'Poppins','Barlow','Segoe UI',system-ui,sans-serif!important;color:var(--ui-text)!important}
+
+        /* ---------- TOPBAR ---------- */
+        .pf-topbar{height:76px!important;padding:0 26px!important;background:#fff!important;border-bottom:1px solid var(--ui-line)!important;box-shadow:0 2px 18px rgba(80,63,205,.06)!important}
+        .pf-topbar::before{display:none!important}
+        .pf-topbar-logo{height:44px!important;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:12px!important}
+        .pf-topbar-kicker{color:var(--ui-muted)!important;font-family:'Poppins',sans-serif!important;letter-spacing:1.4px!important}
+        .pf-topbar-title{color:var(--ui-text)!important;font-family:'Poppins',sans-serif!important;font-size:17px!important;font-weight:700!important;letter-spacing:-.3px!important;text-transform:none!important}
+        .pf-topbar-sub{color:var(--ui-purple)!important;font-family:'Poppins',sans-serif!important;letter-spacing:.7px!important}
+        .pf-topbar-motto{color:var(--ui-muted)!important;font-family:'Poppins',sans-serif!important;letter-spacing:.4px!important}
+        .pf-topbar-motto b{color:var(--ui-purple)!important}
+        .pf-user-name{color:var(--ui-text)!important;font-family:'Poppins',sans-serif!important;font-size:13px!important;letter-spacing:0!important}
+        .pf-user-matricula,.pf-user-cpf{color:var(--ui-muted)!important}
+        .pf-user-avatar{background:linear-gradient(135deg,var(--ui-purple),var(--ui-purple-l))!important;color:#fff!important;border-radius:14px!important;box-shadow:0 6px 16px rgba(124,92,255,.32)!important}
+        .pf-notif-btn{background:#f5f4fb!important;border:1px solid var(--ui-line)!important;color:var(--ui-purple)!important;border-radius:12px!important}
+        .pf-notif-btn:hover{background:#ece9fb!important}
+        .pf-logout-btn{background:#fff!important;border:1px solid var(--ui-line)!important;color:var(--ui-muted)!important;border-radius:12px!important;font-family:'Poppins',sans-serif!important;text-transform:none!important;letter-spacing:0!important}
+        .pf-logout-btn:hover{background:#fff0f6!important;border-color:#ffc9de!important;color:#d63a72!important}
+
+        /* ---------- SIDEBAR ---------- */
+        .pf-sidebar{width:238px!important;background:#fff!important;border-right:1px solid var(--ui-line)!important;padding:18px 12px 16px!important}
+        .pf-sidebar::before{display:none!important}
+        .pf-sidebar-brand{padding:6px 10px 16px!important;margin-bottom:12px!important;border-bottom:1px solid var(--ui-line)!important}
+        .pf-sidebar-brand strong{color:var(--ui-text)!important;font-family:'Poppins',sans-serif!important;letter-spacing:.2px!important;font-size:19px!important}
+        .pf-sidebar-brand span{color:var(--ui-muted)!important;font-family:'Poppins',sans-serif!important;letter-spacing:.6px!important}
+        .pf-nav-item{color:var(--ui-muted)!important;font-family:'Poppins',sans-serif!important;font-size:13px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;border-left:none!important;border-radius:12px!important;margin:2px 0!important;padding:11px 14px!important;gap:12px!important}
+        .pf-nav-item i{color:var(--ui-muted)!important;width:20px!important;font-size:15px!important;opacity:1!important}
+        .pf-nav-item:hover{background:#f5f4fb!important;color:var(--ui-text)!important}
+        .pf-nav-item:hover i{color:var(--ui-purple)!important}
+        .pf-nav-item.active{background:linear-gradient(135deg,var(--ui-purple),#9a7bff)!important;color:#fff!important;font-weight:600!important;box-shadow:0 8px 20px rgba(124,92,255,.3)!important}
+        .pf-nav-item.active i{color:#fff!important}
+        .pf-nav-item.active::after{display:none!important}
+        .pf-nav-divider{background:var(--ui-line)!important;margin:10px 14px!important}
+        .pf-sidebar-motto{color:var(--ui-muted)!important;border-top:1px solid var(--ui-line)!important;font-family:'Poppins',sans-serif!important;letter-spacing:.3px!important}
+        .pf-sidebar-motto b{color:var(--ui-purple)!important}
+        .pf-sidebar-motto i{color:var(--ui-pink)!important}
+
+        /* ---------- DRAWER MOBILE ---------- */
+        .pf-menu-btn{background:linear-gradient(135deg,var(--ui-purple),#9a7bff)!important;border:none!important;border-radius:13px!important;box-shadow:0 8px 18px rgba(124,92,255,.35)!important}
+        .pa-drawer{background:#fff!important;border-right:1px solid var(--ui-line)!important}
+        .pa-drawer-head{border-bottom:1px solid var(--ui-line)!important;color:var(--ui-text)!important;font-family:'Poppins',sans-serif!important}
+        .pa-drawer-head strong{color:var(--ui-text)!important;font-family:'Poppins',sans-serif!important;text-transform:none!important;letter-spacing:0!important}
+        .pa-drawer-nav a{color:var(--ui-muted)!important;font-family:'Poppins',sans-serif!important;font-size:13.5px!important;text-transform:none!important;letter-spacing:0!important;border-left:none!important;border-radius:12px!important}
+        .pa-drawer-nav a:hover,.pa-drawer-nav a.active{background:#f2eeff!important;color:var(--ui-purple-d)!important}
+        .pa-drawer-nav i{color:var(--ui-purple)!important}
+        .pa-drawer-close{background:#f5f4fb!important;color:var(--ui-muted)!important}
+
+        /* ---------- CONTEUDO ---------- */
+        .pf-content{background:var(--ui-bg)!important;color:var(--ui-text)!important;padding:26px 30px 48px!important}
+        .pf-content::-webkit-scrollbar-track{background:transparent!important}
+        .pf-content::-webkit-scrollbar-thumb{background:#ddd7f5!important}
+
+        /* titulos das secoes */
+        .pf-content>.pf-section>h3,
+        .pf-content>.pf-section>div:first-child>h3{
+            display:flex!important;align-items:center!important;gap:9px!important;
+            font-family:'Poppins',sans-serif!important;font-size:18px!important;font-weight:600!important;
+            letter-spacing:-.3px!important;text-transform:none!important;color:var(--ui-text)!important;
+            margin-bottom:16px!important;padding-left:0!important;text-shadow:none!important;
+        }
+        .pf-content>.pf-section>h3::before,
+        .pf-content>.pf-section>div:first-child>h3::before{display:none!important}
+        .pf-content>.pf-section>h3 i,
+        .pf-content>.pf-section>div:first-child>h3 i{color:var(--ui-purple)!important;font-size:16px!important}
+        .pf-content>.pf-section>p{color:var(--ui-muted)!important}
+        #pf-section-noticias>div>h3{color:var(--ui-text)!important;padding-left:0!important;justify-content:center!important}
+        #pf-section-noticias p{color:var(--ui-muted)!important}
+        #pf-section-galeria h3{color:var(--ui-text)!important}
+
+        /* ---------- INICIO 2.0 ---------- */
+        .ui-greet{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+        .ui-date{font-size:11.5px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--ui-muted);margin-bottom:5px}
+        .ui-hi{font-family:'Poppins',sans-serif;font-size:clamp(25px,3vw,32px);font-weight:700;color:var(--ui-text);line-height:1.15;letter-spacing:-.9px}
+        .ui-hi span{color:var(--ui-purple)}
+        .ui-pending{display:inline-flex;align-items:center;gap:7px;margin-top:10px;background:#ede9ff;color:var(--ui-purple-d);border-radius:999px;padding:6px 13px;font-size:11.5px;font-weight:600}
+        .ui-pending i{font-size:11px}
+        .ui-greet-avatar{width:56px;height:56px;flex:0 0 auto;border-radius:50%;background:linear-gradient(135deg,var(--ui-purple),var(--ui-purple-l));color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;border:3px solid #fff;box-shadow:0 10px 24px rgba(124,92,255,.32)}
+
+        .ui-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:15px;padding:22px;border-radius:24px;background:linear-gradient(120deg,#6d4bf6 0%,#8b6bff 55%,#a98bff 100%);box-shadow:0 18px 40px rgba(109,75,246,.32);cursor:pointer;margin-bottom:26px;color:#fff;transition:transform .2s}
+        .ui-hero:hover{transform:translateY(-2px)}
+        .ui-hero-glow{position:absolute;right:-50px;top:-70px;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.3),transparent 65%);pointer-events:none}
+        .ui-hero::after{content:'';position:absolute;left:-40px;bottom:-80px;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+        .ui-hero-icon{width:48px;height:48px;flex:0 0 auto;border-radius:15px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px;position:relative;z-index:1}
+        .ui-hero-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;position:relative;z-index:1}
+        .ui-hero-kicker{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.75)}
+        .ui-hero-txt b{font-size:16.5px;font-weight:700;line-height:1.25}
+        .ui-hero-sub{font-size:11.5px;color:rgba(255,255,255,.82)}
+        .ui-hero-mat{display:none;align-items:center;gap:6px;margin-top:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:4px 11px;font-size:11px;font-weight:600;width:fit-content}
+        .ui-hero-arrow{width:38px;height:38px;flex:0 0 auto;border-radius:50%;background:#fff;color:var(--ui-purple);display:flex;align-items:center;justify-content:center;font-size:13px;position:relative;z-index:1;box-shadow:0 8px 18px rgba(60,30,160,.24)}
+
+        .ui-sec-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px}
+        .ui-sec-head h2{font-size:17px;font-weight:700;color:var(--ui-text);letter-spacing:-.3px}
+        .ui-sec-link{font-size:11.5px;font-weight:600;color:var(--ui-purple);cursor:pointer;padding:4px 2px}
+
+        .ui-tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px}
+        .ui-tile{--tile:var(--ui-purple);position:relative;overflow:hidden;border-radius:22px;padding:18px 18px 16px;background:var(--tile);color:#fff;cursor:pointer;transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;min-height:128px}
+        .ui-tile:nth-child(1){box-shadow:0 14px 30px rgba(55,208,176,.32)}
+        .ui-tile:nth-child(2){box-shadow:0 14px 30px rgba(249,160,63,.32)}
+        .ui-tile:nth-child(3){box-shadow:0 14px 30px rgba(244,86,142,.32)}
+        .ui-tile:nth-child(4){box-shadow:0 14px 30px rgba(76,201,240,.32)}
+        .ui-tile:hover{transform:translateY(-3px)}
+        .ui-tile::after{content:'';position:absolute;right:-26px;bottom:-40px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.15)}
+        .ui-tile-ic{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.24);display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:auto;position:relative;z-index:1}
+        .ui-tile-val{font-size:28px;font-weight:700;line-height:1;letter-spacing:-1px;margin-top:12px;position:relative;z-index:1}
+        .ui-tile-lbl{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.9);margin-top:3px;position:relative;z-index:1}
+
+        .ui-profile{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--ui-line);border-radius:22px;padding:16px 18px;box-shadow:0 10px 26px rgba(80,63,205,.06);margin-bottom:26px}
+        .ui-profile .pf-inicio-foto-box{width:64px!important;background:#f5f4fb!important;border:1px solid var(--ui-line)!important;border-radius:14px!important;box-shadow:none!important}
+        .ui-profile .pf-inicio-foto-box .fa-user{color:#c3bdf0!important;font-size:26px!important}
+        .ui-profile-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+        .ui-profile-txt b{font-size:14px;color:var(--ui-text);line-height:1.3}
+        .ui-profile-txt span{font-size:11.5px;color:var(--ui-muted);line-height:1.45}
+        .ui-btn-ghost{align-self:flex-start;margin-top:9px;display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid #e3ddff;background:#f6f3ff;color:var(--ui-purple-d);font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+        .ui-btn-ghost:hover{background:#ece5ff}
+
+        .ui-list{background:#fff;border:1px solid var(--ui-line);border-radius:22px;padding:6px;box-shadow:0 10px 26px rgba(80,63,205,.06);margin-bottom:20px}
+        .ui-list-item{display:flex;align-items:center;gap:13px;padding:13px 12px;border-radius:16px;cursor:pointer;transition:.2s}
+        .ui-list-item:hover{background:#f7f5ff}
+        .ui-dot{--d:var(--ui-purple);width:36px;height:36px;flex:0 0 auto;border-radius:12px;background:var(--d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 6px 14px rgba(0,0,0,.12)}
+        .ui-li-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+        .ui-li-txt b{font-size:12.5px;color:var(--ui-text);font-weight:600;line-height:1.3}
+        .ui-li-txt span{font-size:11px;color:var(--ui-muted);line-height:1.35}
+        .ui-li-arrow{font-size:11px;color:#c9c4e0}
+        .ui-baixa{display:flex;justify-content:center;margin-top:6px}
+
+        /* ---------- AJUSTES DE COMPONENTES ---------- */
+        .pf-pedi-baixa-btn{background:#fff!important;border:1px solid #ffd0e0!important;color:#d63a72!important;box-shadow:none!important;font-family:'Poppins',sans-serif!important;text-transform:none!important;letter-spacing:0!important;font-size:12px!important;font-weight:600!important;border-radius:999px!important;padding:10px 20px!important;gap:8px!important}
+        .pf-pedi-baixa-btn:hover{background:#fff4f8!important;transform:none!important;box-shadow:none!important}
+        .pf-baixa-banner{background:#fff4f8!important;border:1px solid #ffd0e0!important;color:#b02a5b!important;border-radius:16px!important;font-family:'Poppins',sans-serif!important;font-size:12px!important;font-weight:600!important;text-align:left!important}
+        .pf-baixa-confirm{background:linear-gradient(135deg,#f4568e,#d63a72)!important}
+        .pf-welcome .pf-matricula-badge,.pf-matricula-badge{background:rgba(255,255,255,.18)!important;border-color:rgba(255,255,255,.32)!important;color:#fff!important}
+        .pf-notif-header{background:linear-gradient(120deg,var(--ui-purple),#9a7bff)!important;color:#fff!important;border-bottom:none!important}
+        .pf-notif-header button{background:rgba(255,255,255,.2)!important;color:#fff!important}
+        .pf-notif-item.unseen{background:#f7f4ff!important}
+        .pf-notif-dot{background:var(--ui-pink)!important;box-shadow:0 0 0 2px #fff,0 0 8px rgba(244,86,142,.85)!important}
+        .pf-blog-hero-cat,.pf-blog-lat-cat,.pf-blog-cat-badge{background:rgba(124,92,255,.95)!important}
+        .pf-blog-filter{border:1px solid var(--ui-line);background:#fff;color:var(--ui-muted);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;transition:.2s}
+        .pf-blog-filter:hover{border-color:#d9cfff;color:var(--ui-purple-d)}
+        .pf-blog-filter.active{background:#f1edff;border-color:#d9cfff;color:var(--ui-purple-d)}
+        .pf-cd-mat{color:var(--ui-purple)!important}
+        .pa-docente-foto{border-color:var(--ui-purple)!important}
+        .pa-va-btn.ver{background:var(--ui-purple-d)!important}
+        button[onclick="window.print()"]{background:linear-gradient(135deg,var(--ui-purple),var(--ui-purple-d))!important;color:#fff!important;font-family:'Poppins',sans-serif!important;text-transform:none!important;letter-spacing:0!important;box-shadow:0 8px 20px rgba(124,92,255,.3)!important}
+        button[style*="#556B2F"],button[style*="#6B8E23"],button[style*="#3E4F1C"],button[style*="linear-gradient(135deg,#6B8E23"]{background:linear-gradient(135deg,var(--ui-purple),var(--ui-purple-d))!important;color:#fff!important;font-family:'Poppins',sans-serif!important;text-transform:none!important;letter-spacing:0!important}
+        div[style*="linear-gradient(135deg,#556B2F,#3E4F1C)"]{background:linear-gradient(120deg,var(--ui-purple),#9a7bff)!important;border-bottom:none!important}
+        .pf-content button[style*="background:#fff"]{background:#f6f3ff!important;color:var(--ui-purple-d)!important;border-color:#e3ddff!important;font-family:'Poppins',sans-serif!important;text-transform:none!important;letter-spacing:0!important}
+        #pf-inicio-aula{background:#fff!important;border-color:var(--ui-line)!important}
+        #pf-inicio-aula p{color:var(--ui-muted)!important}
+        #pf-inicio-aula p i{color:var(--ui-purple)!important}
+        .pf-apostila-card,.pf-dados-card,.pa-docente-card,.pa-va-card,.pf-app-card{background:#fff!important;border-color:var(--ui-line)!important;box-shadow:0 10px 26px rgba(80,63,205,.06)!important}
+        .pf-apostila-card{border-left-color:var(--ui-purple)!important;border-radius:18px!important}
+        .pf-apostila-titulo,.pf-dados-val{color:var(--ui-text)!important;font-family:'Poppins',sans-serif!important;text-transform:none!important;letter-spacing:0!important}
+        .pf-dados-label{color:var(--ui-muted)!important}
+        .pf-apostila-badge{background:#f0ecff!important;color:var(--ui-purple)!important}
+        .pf-app-card{border-radius:20px!important}
+        .pf-app-card i{color:var(--ui-purple)!important}
+        .pf-app-card h4{color:var(--ui-text)!important}
+        .pf-app-card p{color:var(--ui-muted)!important}
+
+        @media (max-width:768px){
+            .pf-topbar{height:64px!important;padding:0 14px!important}
+            .pf-topbar-left{padding-left:54px!important}
+            .pf-topbar-title{display:block!important;font-size:15px!important}
+            .pf-content{padding:16px 14px 92px!important}
+            .ui-hi{font-size:27px}
+            .ui-greet-avatar{width:48px;height:48px;font-size:16px}
+            .ui-hero{padding:18px;border-radius:22px}
+            .ui-hero-txt b{font-size:15px}
+            .ui-tiles{gap:12px}
+            .ui-tile{padding:15px;min-height:118px;border-radius:20px}
+            .ui-tile-val{font-size:25px}
+            .ui-profile{padding:14px}
+            .ui-profile .pf-inicio-foto-box{width:56px!important}
+        }
     </style>
 </head>
 <body>
@@ -556,9 +1001,14 @@
         <div class="pf-topbar">
             <button class="pf-menu-btn" onclick="paToggleMenu()" aria-label="Abrir menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
             <div class="pf-topbar-left">
-                <img class="pf-topbar-logo" data-farn-logo src="logo-farn.png.png" alt="FARN">
-                <span class="pf-topbar-title">Portal do Aluno</span>
+                <img class="pf-topbar-logo" data-farn-logo src="logo-farn.png.png" alt="F.A.R.N.">
+                <div class="pf-topbar-id">
+                    <span class="pf-topbar-kicker">Força Auxiliar de Resgate Nacional</span>
+                    <span class="pf-topbar-title">Portal do Aluno</span>
+                    <span class="pf-topbar-sub">Bombeiro Profissional Civil</span>
+                </div>
             </div>
+            <div class="pf-topbar-motto">Prevenção é a melhor<b>forma de combate!</b></div>
             <div class="pf-topbar-right">
                 <div class="pf-notif-wrap" id="pf-notif-wrap">
                     <button class="pf-notif-btn" onclick="paToggleNotificacoes(event)" aria-label="Notificações">
@@ -617,6 +1067,13 @@
 
             <!-- SIDEBAR -->
             <div class="pf-sidebar">
+                <div class="pf-sidebar-brand">
+                    <img data-farn-logo src="logo-farn.png.png" alt="F.A.R.N.">
+                    <div>
+                        <strong>F.A.R.N.</strong>
+                        <span>Bombeiro Profissional Civil</span>
+                    </div>
+                </div>
                 <!-- data-secao em todos: e por ele que os cards do Inicio acham o item do menu,
                      para nao depender da posicao. O item novo entrava antes de
                      Aulas e deslocava o indice, que e o bug do item errado. -->
@@ -636,6 +1093,10 @@
                 <div class="pf-nav-item" data-secao="whatfarn" onclick="paShowSection('whatfarn',this)"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>
                 <div class="pf-nav-item" data-secao="dados" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" data-secao="app" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
+                <div class="pf-sidebar-motto">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                    <span>Prevenção é a melhor<br><b>forma de combate</b></span>
+                </div>
             </div>
 
             <!-- CONTENT -->
@@ -643,54 +1104,120 @@
 
                 <!-- INICIO -->
                 <div class="pf-section active" id="pf-section-inicio">
-                    <div class="pf-welcome">
-                        <img src="logobc.jpeg" alt="Bombeiro Civil" style="width:100px;position:absolute;top:20px;right:24px;opacity:.12;border-radius:12px;pointer-events:none;filter:brightness(0) invert(1)">
-                        <div style="display:flex;gap:22px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;position:relative;z-index:1">
-                            <div style="flex:1;min-width:250px">
-                                <h2>Parabens! Voce esta cadastrado no <span>Curso de Formacao de Bombeiro Profissional Civil</span>.</h2>
-                                <p>Uma parceria da <strong>FARN - Forca Auxiliar de Resgate Nacional</strong> e <strong>BS.BRASIL - COMMAND BRASIL</strong>.</p>
-                                <div class="pf-matricula-badge" id="pf-welcome-matricula" style="display:none">
-                                    <i class="fa-solid fa-id-card"></i> <span></span>
-                                </div>
-                                <p style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.7)">Bem-vindo(a), <span id="pf-welcome-name" style="color:var(--yellow-xl);font-weight:700">Aluno</span>! Acompanhe suas noticias, galeria de fotos e converse com a administracao.</p>
-                                <div class="pf-baixa-banner" id="pf-baixa-banner"><i class="fa-solid fa-triangle-exclamation"></i> Voce solicitou a baixa do curso. Seu acesso ao portal esta bloqueado ate a administracao autorizar o retorno.</div>
+
+                    <div class="ui-greet">
+                        <div class="ui-greet-txt">
+                            <div class="ui-date" id="ui-hoje">Hoje</div>
+                            <h1 class="ui-hi">Olá, <span id="pf-welcome-name">Aluno</span>.</h1>
+                            <div class="ui-pending" id="ui-pending">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Carregando suas informações...</span>
                             </div>
-                            <div class="pf-inicio-foto-wrap">
-                                <div class="pf-inicio-foto-box" id="pf-inicio-foto-box" title="Foto 3x4 da carteira do aluno">
-                                    <img id="pf-inicio-foto" src="" alt="Foto 3x4">
-                                    <i id="pf-inicio-foto-icon" class="fa-solid fa-user"></i>
-                                </div>
-                                <button class="pf-pedi-baixa-btn" id="pf-pedi-baixa-btn" onclick="paPediBaixa()"><i class="fa-solid fa-power-off"></i>Solicitar Baixa<br>do Curso</button>
-                            </div>
+                        </div>
+                        <div class="ui-greet-avatar" id="ui-greet-avatar">--</div>
+                    </div>
+
+                    <div class="ui-hero" onclick="paShowSection('carteira', paNavEl('carteira'))">
+                        <div class="ui-hero-glow"></div>
+                        <div class="ui-hero-icon"><i class="fa-solid fa-id-card"></i></div>
+                        <div class="ui-hero-txt">
+                            <span class="ui-hero-kicker">Curso de Formação</span>
+                            <b>Bombeiro Profissional Civil</b>
+                            <span class="ui-hero-sub">F.A.R.N. • BS.BRASIL COMMAND BRASIL</span>
+                            <span class="ui-hero-mat" id="pf-welcome-matricula" style="display:none"><i class="fa-solid fa-hashtag"></i><span></span></span>
+                        </div>
+                        <div class="ui-hero-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    </div>
+
+                    <div class="ui-sec-head">
+                        <h2>Meu progresso</h2>
+                        <span class="ui-sec-link" onclick="paShowSection('aulas', paNavEl('aulas'))">Ver tudo</span>
+                    </div>
+
+                    <div class="ui-tiles">
+                        <div class="ui-tile" style="--tile:var(--ui-teal)" onclick="paShowSection('noticias', paNavEl('noticias'))">
+                            <span class="ui-tile-ic"><i class="fa-solid fa-newspaper"></i></span>
+                            <span class="ui-tile-val pf-stat-val">--</span>
+                            <span class="ui-tile-lbl">Blog</span>
+                        </div>
+                        <div class="ui-tile" style="--tile:var(--ui-orange)" onclick="paShowSection('aulas', paNavEl('aulas'))">
+                            <span class="ui-tile-ic"><i class="fa-solid fa-chalkboard"></i></span>
+                            <span class="ui-tile-val pf-stat-val">--</span>
+                            <span class="ui-tile-lbl">Aulas</span>
+                        </div>
+                        <div class="ui-tile" style="--tile:var(--ui-pink)" onclick="paShowSection('apostila', paNavEl('apostila'))">
+                            <span class="ui-tile-ic"><i class="fa-solid fa-book-open"></i></span>
+                            <span class="ui-tile-val pf-stat-val">--</span>
+                            <span class="ui-tile-lbl">Apostilas</span>
+                        </div>
+                        <div class="ui-tile" style="--tile:var(--ui-blue)" onclick="paShowSection('responder-avaliacao', paNavEl('responder-avaliacao'))">
+                            <span class="ui-tile-ic"><i class="fa-solid fa-list-check"></i></span>
+                            <span class="ui-tile-val pf-stat-val">--</span>
+                            <span class="ui-tile-lbl">Avaliações</span>
                         </div>
                     </div>
 
-                    <div class="pf-stats-row">
-                        <div class="pf-stat-card" onclick="paShowSection('noticias', paNavEl('noticias'))">
-                            <i class="fa-solid fa-newspaper"></i>
-                            <div class="pf-stat-val">--</div>
-                            <div class="pf-stat-label">Blog</div>
+                    <div class="ui-sec-head"><h2>Meu perfil</h2></div>
+
+                    <div class="ui-profile">
+                        <div class="pf-inicio-foto-box" id="pf-inicio-foto-box" title="Foto 3x4 da carteira do aluno">
+                            <img id="pf-inicio-foto" src="" alt="Foto 3x4">
+                            <i id="pf-inicio-foto-icon" class="fa-solid fa-user"></i>
                         </div>
-                        <div class="pf-stat-card" onclick="paShowSection('aulas', paNavEl('aulas'))">
-                            <i class="fa-solid fa-chalkboard"></i>
-                            <div class="pf-stat-val">--</div>
-                            <div class="pf-stat-label">Aulas</div>
+                        <div class="ui-profile-txt">
+                            <b id="ui-profile-name">Aluno</b>
+                            <span id="ui-profile-info">Envie sua foto 3x4 e mantenha seus dados em dia.</span>
+                            <button class="ui-btn-ghost" onclick="paShowSection('dados', paNavEl('dados'))"><i class="fa-solid fa-user-pen"></i> Meus dados</button>
                         </div>
-                        <div class="pf-stat-card" onclick="paShowSection('apostila', paNavEl('apostila'))">
-                            <i class="fa-solid fa-book-open"></i>
-                            <div class="pf-stat-val">--</div>
-                            <div class="pf-stat-label">Apostilas</div>
+                    </div>
+
+                    <div class="pf-baixa-banner" id="pf-baixa-banner"><i class="fa-solid fa-triangle-exclamation"></i> Voce solicitou a baixa do curso. Seu acesso ao portal esta bloqueado ate a administracao autorizar o retorno.</div>
+
+                    <div class="ui-sec-head"><h2>Atalhos</h2></div>
+
+                    <div class="ui-list">
+                        <div class="ui-list-item" onclick="paShowSection('carteira', paNavEl('carteira'))">
+                            <span class="ui-dot" style="--d:var(--ui-purple)"><i class="fa-solid fa-id-card"></i></span>
+                            <div class="ui-li-txt"><b>Carteira do aluno</b><span>Versão digital para impressão</span></div>
+                            <i class="fa-solid fa-chevron-right ui-li-arrow"></i>
                         </div>
+                        <div class="ui-list-item" onclick="paShowSection('apostila', paNavEl('apostila'))">
+                            <span class="ui-dot" style="--d:var(--ui-teal)"><i class="fa-solid fa-book-open"></i></span>
+                            <div class="ui-li-txt"><b>Apostilas</b><span>Material de estudo do curso</span></div>
+                            <i class="fa-solid fa-chevron-right ui-li-arrow"></i>
+                        </div>
+                        <div class="ui-list-item" onclick="paShowSection('video-aula', paNavEl('video-aula'))">
+                            <span class="ui-dot" style="--d:var(--ui-orange)"><i class="fa-solid fa-circle-play"></i></span>
+                            <div class="ui-li-txt"><b>Vídeo Aula</b><span>Assista às aulas gravadas</span></div>
+                            <i class="fa-solid fa-chevron-right ui-li-arrow"></i>
+                        </div>
+                        <div class="ui-list-item" onclick="paShowSection('decl', paNavEl('decl'))">
+                            <span class="ui-dot" style="--d:var(--ui-blue)"><i class="fa-solid fa-file-lines"></i></span>
+                            <div class="ui-li-txt"><b>Declarações</b><span>Documentos do seu curso</span></div>
+                            <i class="fa-solid fa-chevron-right ui-li-arrow"></i>
+                        </div>
+                    </div>
+
+                    <div class="ui-sec-head"><h2>Meu cadastro</h2></div>
+                    <p style="font-size:12px;color:var(--ui-muted);margin-bottom:14px;line-height:1.6">Uma parceria da <b style="color:var(--ui-text)">F.A.R.N. - Força Auxiliar de Resgate Nacional</b> e <b style="color:var(--ui-text)">BS.BRASIL - COMMAND BRASIL</b>.</p>
+
+                    <div class="ui-baixa">
+                        <button class="pf-pedi-baixa-btn" id="pf-pedi-baixa-btn" onclick="paPediBaixa()"><i class="fa-solid fa-power-off"></i> Solicitar baixa do curso</button>
                     </div>
 
                 </div>
 
                 <!-- NOTICIAS -->
                 <div class="pf-section" id="pf-section-noticias">
-                    <div style="text-align:center;padding:80px 20px;color:#94a3b8">
-                        <i class="fa-solid fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;color:#f59e0b"></i>
-                        <h3 style="font-size:18px;color:#fff;margin-bottom:8px">Em Construcao</h3>
-                        <p style="font-size:13px;color:#94a3b8">A secao de noticias esta sendo desenvolvida e estara disponivel em breve.</p>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+                        <h2 style="font-size:18px;font-weight:700;color:var(--ui-text);margin:0;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-newspaper" style="color:var(--ui-purple)"></i> Notícias</h2>
+                        <div style="display:flex;gap:6px">
+                            <button type="button" class="pf-blog-filter active" onclick="paBlogFilter('', this)">Todas</button>
+                            <button type="button" class="pf-blog-filter" onclick="paBlogFilter('destaque', this)">Destaques</button>
+                        </div>
+                    </div>
+                    <div id="pf-noticias-list">
+                        <div class="pf-noticia-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando notícias...</p></div>
                     </div>
                 </div>
 
@@ -716,7 +1243,7 @@
                 <!-- BAIXAR APP -->
                 <div class="pf-section" id="pf-section-app">
                     <h3 style="font-size:16px;color:var(--yellow);margin-bottom:14px"><i class="fa-solid fa-mobile-screen"></i> Baixar Aplicativo</h3>
-                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Em breve o aplicativo Portal do Aluno FARN estara disponivel!</p>
+                    <p style="font-size:13px;color:#8b949e;margin-bottom:16px">Em breve o aplicativo Portal do Aluno INDEP estara disponivel!</p>
                     <div class="pf-app-cards">
                         <div class="pf-app-card" onclick="paDownloadApp('android')">
                             <i class="fa-brands fa-google-play"></i>
@@ -1505,6 +2032,12 @@
             document.getElementById('pf-welcome-name').textContent = (paUser.nome || 'Aluno').split(' ')[0];
             var wm = document.getElementById('pf-welcome-matricula');
             if (wm && paUser.matricula) { wm.style.display = 'flex'; wm.querySelector('span').textContent = 'Matricula: ' + paUser.matricula; }
+            var ga = document.getElementById('ui-greet-avatar');
+            if (ga) ga.textContent = initials;
+            var pn = document.getElementById('ui-profile-name');
+            if (pn) pn.textContent = paUser.nome || 'Aluno';
+            var pi = document.getElementById('ui-profile-info');
+            if (pi) pi.textContent = (paUser.matricula ? 'Matricula ' + paUser.matricula + ' • ' : '') + (paUser.turma || 'Turma nao informada');
 
             /* Aluno com baixa: banner + bloqueio com caixa de REINGRESSO */
             paVerificarBaixa();
@@ -1728,6 +2261,12 @@
             document.getElementById('pf-welcome-name').textContent = 'Administrador';
             var wm = document.getElementById('pf-welcome-matricula');
             if (wm) { wm.style.display = 'flex'; wm.querySelector('span').textContent = 'Administrador | Acesso total'; }
+            var ga = document.getElementById('ui-greet-avatar');
+            if (ga) ga.textContent = initials;
+            var pn = document.getElementById('ui-profile-name');
+            if (pn) pn.textContent = adminData.nome || 'Administrador';
+            var pi = document.getElementById('ui-profile-info');
+            if (pi) pi.textContent = 'Acesso administrativo ao portal';
             paPortalLiberado = true;
             paLoadNoticias();
             paLoadDados();
@@ -1939,25 +2478,63 @@
     function paLoadStats() {
         var myProjeto = (paUser.projeto || '').trim();
         var myTurma = (paUser.turma || '').trim();
-        var statCards = document.querySelectorAll('.pf-stat-card .pf-stat-val');
+        var statCards = document.querySelectorAll('.pf-stat-val');
+        var pendEl = document.querySelector('#ui-pending span');
+        var contagem = { blog: 0, aulas: 0, apostilas: 0 };
+
+        function pintarPendencias() {
+            if (!pendEl) return;
+            var total = contagem.aulas + contagem.apostilas;
+            pendEl.textContent = total > 0
+                ? total + ' conteudos disponiveis para voce'
+                : 'Tudo em dia por aqui';
+        }
+        function pintarData() {
+            var el = document.getElementById('ui-hoje');
+            if (!el) return;
+            try {
+                var txt = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+                el.textContent = txt.charAt(0).toUpperCase() + txt.slice(1);
+            } catch (e) { el.textContent = 'Hoje'; }
+        }
+        pintarData();
 
         dbFirestore.collection('noticiasFormados').onSnapshot(function(snap) {
             var count = 0;
             snap.forEach(function(doc) { var n = doc.data(); if (!n.projeto || !myProjeto || n.projeto === myProjeto) count++; });
+            contagem.blog = count;
             if (statCards[0]) statCards[0].textContent = count;
+            pintarPendencias();
         });
 
         dbFirestore.collection('aulas').onSnapshot(function(snap) {
             var count = 0;
             snap.forEach(function(doc) { var a = doc.data(); if (a.projeto && myProjeto && a.projeto !== myProjeto) return; if (a.turma && myTurma && a.turma !== myTurma) return; count++; });
+            contagem.aulas = count;
             if (statCards[1]) statCards[1].textContent = count;
+            pintarPendencias();
         });
 
         dbFirestore.collection('apostilasAlunos').onSnapshot(function(snap) {
             var count = 0;
             snap.forEach(function(doc) { var a = doc.data(); if (a.visivel === false) return; if (a.cff) return; if (a.turma && myTurma && a.turma !== myTurma) return; count++; });
+            contagem.apostilas = count;
             if (statCards[2]) statCards[2].textContent = count;
+            pintarPendencias();
         });
+
+        try {
+            dbFirestore.collection('avaliacoes').onSnapshot(function(snap) {
+                var count = 0;
+                snap.forEach(function(doc) {
+                    var a = doc.data();
+                    if (a.enviada !== true) return;
+                    if (myTurma && a.turma && a.turma !== myTurma) return;
+                    count++;
+                });
+                if (statCards[3]) statCards[3].textContent = count;
+            }, function() { /* sem permissao: mantem o traco */ });
+        } catch (e) { /* ignora */ }
     }
 /* ===== NAVEGACAO ===== */
 
@@ -2395,6 +2972,8 @@
         snap.forEach(function(doc) {
             var n = doc.data();
             if (n.ativo === false) return;
+            if (Array.isArray(n.portais) && n.portais.indexOf('aluno') === -1) return;
+            var cover = n.imagem || n.videoPoster || '';
             var layout = n.layout || 'hero';
             var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
             var catHtml = n.categoria ? '<span class="pf-blog-' + (layout === 'hero' ? 'hero-cat' : layout === 'lateral' || layout === 'lateral-invertido' ? 'lat-cat' : 'cat-badge') + '">' + n.categoria + '</span>' : '';
@@ -2405,60 +2984,60 @@
             var card = document.createElement('div');
             card.className = 'pf-blog-post';
 
-            if (layout === 'hero' && n.imagem) {
+            if (layout === 'hero' && cover) {
                 card.innerHTML = destaqueBadge +
                     '<div class="pf-blog-hero" onclick="paOpenBlog(\'' + doc.id + '\')">' +
-                        '<img src="' + n.imagem + '" alt="' + (n.titulo || '') + '">' +
+                        '<img src="' + cover + '" alt="' + (n.titulo || '') + '">' +
                         '<div class="pf-blog-hero-overlay">' + catHtml +
                             '<div class="pf-blog-hero-title">' + (n.titulo || '') + '</div>' +
                             '<div class="pf-blog-hero-sub">' + (n.subtitulo || excerpt) + '</div>' +
                             '<div class="pf-blog-date" style="margin-top:6px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
                         '</div>' +
                     '</div>' + interactBar;
-            } else if (layout === 'lateral' && n.imagem) {
+            } else if (layout === 'lateral' && cover) {
                 card.innerHTML = destaqueBadge +
                     '<div class="pf-blog-lateral" onclick="paOpenBlog(\'' + doc.id + '\')">' +
-                        '<div class="pf-blog-lat-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-lat-img"><img src="' + cover + '" alt="' + (n.titulo || '') + '"></div>' +
                         '<div class="pf-blog-lat-text">' + catHtml +
                             '<div class="pf-blog-lat-title">' + (n.titulo || '') + '</div>' +
                             '<div class="pf-blog-lat-sub">' + (n.subtitulo || excerpt) + '</div>' +
                             '<div class="pf-blog-date" style="margin-top:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
                         '</div>' +
                     '</div>' + interactBar;
-            } else if (layout === 'lateral-invertido' && n.imagem) {
+            } else if (layout === 'lateral-invertido' && cover) {
                 card.innerHTML = destaqueBadge +
                     '<div class="pf-blog-lateral-inv" onclick="paOpenBlog(\'' + doc.id + '\')">' +
-                        '<div class="pf-blog-lat-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-lat-img"><img src="' + cover + '" alt="' + (n.titulo || '') + '"></div>' +
                         '<div class="pf-blog-lat-text">' + catHtml +
                             '<div class="pf-blog-lat-title">' + (n.titulo || '') + '</div>' +
                             '<div class="pf-blog-lat-sub">' + (n.subtitulo || excerpt) + '</div>' +
                             '<div class="pf-blog-date" style="margin-top:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
                         '</div>' +
                     '</div>' + interactBar;
-            } else if (layout === '2colunas' && n.imagem) {
+            } else if (layout === '2colunas' && cover) {
                 card.innerHTML = destaqueBadge +
                     '<div class="pf-blog-2col" onclick="paOpenBlog(\'' + doc.id + '\')">' +
-                        '<div class="pf-blog-2col-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-2col-img"><img src="' + cover + '" alt="' + (n.titulo || '') + '"></div>' +
                         '<div class="pf-blog-2col-text">' + catHtml +
                             '<div class="pf-blog-title">' + (n.titulo || '') + '</div>' +
                             '<div class="pf-blog-sub">' + (n.subtitulo || excerpt) + '</div>' +
                             '<div class="pf-blog-date"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
                         '</div>' +
                     '</div>' + interactBar;
-            } else if (layout === '3colunas' && n.imagem) {
+            } else if (layout === '3colunas' && cover) {
                 card.innerHTML = destaqueBadge +
                     '<div class="pf-blog-3col" onclick="paOpenBlog(\'' + doc.id + '\')">' +
-                        '<div class="pf-blog-3col-grid"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-3col-grid"><img src="' + cover + '" alt="' + (n.titulo || '') + '"></div>' +
                         '<div class="pf-blog-3col-text">' + catHtml +
                             '<div class="pf-blog-title">' + (n.titulo || '') + '</div>' +
                             '<div class="pf-blog-sub">' + (n.subtitulo || excerpt) + '</div>' +
                             '<div class="pf-blog-date"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
                         '</div>' +
                     '</div>' + interactBar;
-            } else if (layout === 'compacto' && n.imagem) {
+            } else if (layout === 'compacto' && cover) {
                 card.innerHTML = destaqueBadge +
                     '<div class="pf-blog-compacto" onclick="paOpenBlog(\'' + doc.id + '\')">' +
-                        '<div class="pf-blog-compacto-img"><img src="' + n.imagem + '" alt="' + (n.titulo || '') + '"></div>' +
+                        '<div class="pf-blog-compacto-img"><img src="' + cover + '" alt="' + (n.titulo || '') + '"></div>' +
                         '<div class="pf-blog-compacto-text">' + catHtml +
                             '<div class="pf-blog-title" style="font-size:14px">' + (n.titulo || '') + '</div>' +
                             '<div class="pf-blog-date"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
@@ -2485,7 +3064,12 @@
             var inner = document.getElementById('pf-blog-modal-inner');
             var dateStr = n.data ? new Date(n.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
             var catHtml = n.categoria ? '<span class="pf-blog-cat-badge" style="margin-bottom:12px;display:inline-block">' + n.categoria + '</span>' : '';
-            var imgHtml = n.imagem ? '<img class="pf-blog-modal-img" src="' + n.imagem + '" alt="' + (n.titulo || '') + '">' : '';
+            var imgHtml = '';
+            if (window.FarnNoticias && FarnNoticias.mediaHtml) {
+                imgHtml = FarnNoticias.mediaHtml(n);
+            } else if (n.imagem) {
+                imgHtml = '<img class="pf-blog-modal-img" src="' + n.imagem + '" alt="' + (n.titulo || '') + '">';
+            }
             inner.innerHTML = imgHtml +
                 '<div class="pf-blog-modal-body">' + catHtml +
                     '<div class="pf-blog-modal-title">' + (n.titulo || '') + '</div>' +
@@ -2503,8 +3087,9 @@
     }
 
     var paBlogFilterVal = '';
-    function paBlogFilter(f) {
-        paBlogFilterVal = f;
+    function paBlogFilter(f, el) {
+        paBlogFilterVal = f || '';
+        document.querySelectorAll('.pf-blog-filter').forEach(function(b) { b.classList.toggle('active', b === el); });
         paLoadNoticias();
     }
 
@@ -3052,11 +3637,13 @@
         paInteractCache[key] = paInteractCache[key] || { curtidas: 0, comentarios: 0, euCurti: false };
 
         var cpf = (paUser && paUser.cpf || '').replace(/\D/g, '');
-        dbFirestore.collection(collection).doc(docId).collection('curtidas').doc(cpf).get().then(function(snap) {
-            paInteractCache[key].euCurti = snap.exists;
-            paInteractCache[key]._curtidaLoaded = true;
-            paUpdateInteractUI(key);
-        }).catch(function(){});
+        if (cpf) {
+            dbFirestore.collection(collection).doc(docId).collection('curtidas').doc(cpf).get().then(function(snap) {
+                paInteractCache[key].euCurti = snap.exists;
+                paInteractCache[key]._curtidaLoaded = true;
+                paUpdateInteractUI(key);
+            }).catch(function(){});
+        }
 
         var countCurtidas = 0;
         var unsubCurtidas = dbFirestore.collection(collection).doc(docId).collection('curtidas').onSnapshot(function(snap) {
@@ -3134,6 +3721,7 @@
     async function paToggleCurtida(collection, docId) {
         if (!paUser) return;
         var cpf = (paUser.cpf || '').replace(/\D/g, '');
+        if (!cpf) return;
         var ref = dbFirestore.collection(collection).doc(docId).collection('curtidas').doc(cpf);
         try {
             var snap = await ref.get();
@@ -6482,6 +7070,7 @@
         }
     }
     </script>
+    <script src="noticias-feed.js?v=1"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
     <!-- Modal bem-vindo / instrucoes WhatFarn -->
@@ -6522,10 +7111,10 @@
     </div>
     <!-- Botao voltar pagina anterior -->
     <style>
-        #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0a1c40;color:#fff;border:1px solid rgba(212,175,55,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}
-        #farn-btn-voltar:hover{transform:scale(1.08)}
+        #farn-btn-voltar{position:fixed;bottom:22px;right:22px;left:auto;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#fff;color:#7c5cff;border:1px solid #eceaf6;box-shadow:0 10px 24px rgba(80,63,205,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:transform .15s,background .2s}
+        #farn-btn-voltar:hover{transform:translateY(-2px);background:#f6f3ff}
         #farn-btn-voltar:active{transform:scale(.94)}
-        @media(max-width:768px){#farn-btn-voltar{bottom:74px}}
+        @media(max-width:768px){#farn-btn-voltar{bottom:84px;left:16px;right:auto}}
     </style>
     <div id="farn-btn-voltar" onclick="farnVoltarPagina()" title="Voltar a pagina anterior"><i class="fa-solid fa-arrow-left"></i></div>
     <script>

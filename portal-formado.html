@@ -357,6 +357,11 @@
                         <i class="fa-solid fa-heart" style="margin-right:4px"></i> Esse e seu espaco.<br>O espaco que lhe representa!
                     </p>
                 </div>
+                <div style="display:flex;align-items:center;gap:8px;margin:0 0 12px">
+                    <i class="fa-solid fa-share-nodes" style="color:#16a34a"></i>
+                    <h3 style="font-size:14px;font-weight:700;color:#1e293b;margin:0">Publicações recentes</h3>
+                </div>
+                <div id="pf-noticias-unificadas" style="margin-bottom:22px"></div>
                 <div id="pf-noticias-slider" data-noticias-slider style="--farn-slider-h:220px;margin-bottom:16px"></div>
                 <div id="pf-noticias-list">
                     <div class="pf-noticia-empty">
@@ -1035,6 +1040,20 @@
     }).catch(function(){});
     </script>
     <script src="noticias-slider.js"></script>
+    <script src="noticias-feed.js?v=1"></script>
+    <script>
+    (function(){
+        function iniciarFeedFormado(){
+            if (window.FarnNoticias) {
+                FarnNoticias.render('pf-noticias-unificadas', 'formado', { emptyText: 'Nenhuma publicação recente para o Portal do Formado.' });
+            } else {
+                setTimeout(iniciarFeedFormado, 300);
+            }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarFeedFormado);
+        else iniciarFeedFormado();
+    })();
+    </script>
     <!-- Botao voltar pagina anterior -->
     <style>
         #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0a1c40;color:#fff;border:1px solid rgba(212,175,55,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}

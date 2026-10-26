@@ -147,7 +147,19 @@
         </div>
 
         <div class="pf-body">
-            <div class="construcao-wrap">
+            <div style="max-width:980px;margin:0 auto;padding:26px 24px 0">
+                <div style="display:flex;align-items:center;gap:12px;margin:0 0 16px">
+                    <div style="width:44px;height:44px;border-radius:14px;background:#f1edff;color:#7c5cff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">
+                        <i class="fa-solid fa-newspaper"></i>
+                    </div>
+                    <div>
+                        <h2 style="font-size:17px;font-weight:700;color:#14142b;margin:0">Notícias</h2>
+                        <p style="font-size:12px;color:#8b8ba7;margin:2px 0 0">Comunicados e novidades da coordenação</p>
+                    </div>
+                </div>
+                <div id="pc-noticias-feed"></div>
+            </div>
+            <div class="construcao-wrap" style="min-height:auto;padding:26px 24px">
                 <div class="construcao-card">
                     <div class="construcao-icon"><i class="fa-solid fa-person-digging"></i></div>
                     <h2>Em construção</h2>
@@ -330,6 +342,20 @@
         if(window.history.length>1){window.history.back();}
         else{window.location.href='index.html';}
     }
+    </script>
+    <script src="noticias-feed.js?v=1"></script>
+    <script>
+    (function(){
+        function iniciarFeedCoordenacao(){
+            if (window.FarnNoticias) {
+                FarnNoticias.render('pc-noticias-feed', 'coordenacao', { emptyText: 'Nenhuma notícia publicada para o Portal da Coordenação.' });
+            } else {
+                setTimeout(iniciarFeedCoordenacao, 300);
+            }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarFeedCoordenacao);
+        else iniciarFeedCoordenacao();
+    })();
     </script>
 </body>
 </html>
