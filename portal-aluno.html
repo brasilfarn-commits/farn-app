@@ -6118,13 +6118,11 @@
     /* Configuracao da prova conforme o numero de questoes:
        - peso por questao: 10 questoes = 1,0 | 20 = 0,5 | demais = 10/total (escala ate 10).
          (regra do projeto: questao NAO respondida vale 0, sem desconto)
-       - tempo: 30 minutos ate 20 questoes; acima disso 1 minuto por questao
-         (40 questoes -> 40 min). AVs de 10/20 questoes mantem 30 min. */
+       - tempo: 60 minutos para qualquer AV teorica. */
     function paRavConfigProva(total) {
         var t = Number(total) || 0;
         var peso = (t === 10) ? 1.0 : (t === 20 ? 0.5 : (t > 0 ? 10 / t : 0));
-        var minutos = (t > 20) ? Math.max(30, t) : 30;
-        return { total: t, peso: peso, minutos: minutos };
+        return { total: t, peso: peso, minutos: 60 };
     }
     function paRavNumBR(v) {
         return String(Math.round(Number(v) * 100) / 100).replace('.', ',');
