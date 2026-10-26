@@ -611,11 +611,30 @@
 
     async function rcLoadProjetos() {
         try {
-            var snap = await dbFirestore.collection('parceiros').get();
+            var resultados = await Promise.all([
+                dbFirestore.collection('parceiros').get(),
+                dbFirestore.collection('turmas').get()
+            ]);
+            var turmasConcluidasPorProjeto = {};
+            resultados[1].forEach(function(doc) {
+                var t = doc.data();
+                if (!t.projeto || (t.status || 'Em Andamento') !== 'Concluido') return;
+                if (!turmasConcluidasPorProjeto[t.projeto]) turmasConcluidasPorProjeto[t.projeto] = [];
+                if (t.nome) turmasConcluidasPorProjeto[t.projeto].push(t.nome);
+            });
             rcProjetos = [];
-            snap.forEach(function(doc) {
+            resultados[0].forEach(function(doc) {
                 var d = doc.data();
-                if (d.nome && d.nome !== 'Buenos Aires Pernambuco' && d.status === 'Concluido') rcProjetos.push(d);
+                if (!d.nome || d.nome === 'Buenos Aires Pernambuco') return;
+                var concluidas = turmasConcluidasPorProjeto[d.nome] || [];
+                /* Compatibilidade com projetos antigos que ainda tenham o status. */
+                if (!concluidas.length && d.status === 'Concluido') {
+                    concluidas = Array.isArray(d.turmas) ? d.turmas.slice() : [];
+                }
+                if (!concluidas.length) return;
+                var copia = Object.assign({}, d);
+                copia.turmas = concluidas;
+                rcProjetos.push(copia);
             });
             var sel = document.getElementById('rc-projeto');
             sel.innerHTML = '<option value="">Selecione o projeto...</option>';

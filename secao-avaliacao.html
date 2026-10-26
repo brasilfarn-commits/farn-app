@@ -303,10 +303,20 @@
             var sel = document.getElementById('av-projeto');
             sel.innerHTML = '<option value="">Selecione o projeto...</option>';
             try {
-                var snap = await db.collection('parceiros').orderBy('nome').get();
-                snap.forEach(function(doc) {
+                var resultados = await Promise.all([
+                    db.collection('parceiros').orderBy('nome').get(),
+                    db.collection('turmas').get()
+                ]);
+                var projetosComTurmaAtiva = {};
+                resultados[1].forEach(function(doc) {
+                    var t = doc.data();
+                    if (t.projeto && (t.status || 'Em Andamento') !== 'Concluido') {
+                        projetosComTurmaAtiva[t.projeto] = true;
+                    }
+                });
+                resultados[0].forEach(function(doc) {
                     var p = doc.data();
-                    if (p.status === 'Em Andamento') {
+                    if (projetosComTurmaAtiva[p.nome]) {
                         var op = document.createElement('option');
                         op.value = p.nome;
                         op.textContent = p.nome;
@@ -326,7 +336,7 @@
             try {
                 var snap = await db.collection('turmas').get();
                 var turmas = [];
-                snap.forEach(function(doc) { var t = doc.data(); if (t.projeto === avProjeto) turmas.push(t); });
+                snap.forEach(function(doc) { var t = doc.data(); if (t.projeto === avProjeto && (t.status || 'Em Andamento') !== 'Concluido') turmas.push(t); });
                 turmas.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
                 turmas.forEach(function(t) {
                     var op = document.createElement('option');

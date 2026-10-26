@@ -931,13 +931,6 @@
                                         <label>Responsavel *</label>
                                         <input type="text" id="pf-responsavel" class="config-input" required placeholder="Nome do responsavel">
                                     </div>
-                                    <div class="form-group">
-                                        <label>Status do Projeto *</label>
-                                        <select id="pf-status" class="config-input" required>
-                                            <option value="Em Andamento">Em Andamento</option>
-                                            <option value="Concluido">Concluido</option>
-                                        </select>
-                                    </div>
                                 </div>
                                 <!-- TURMAS DO PROJETO -->
                                 <div style="margin-top:24px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
@@ -962,6 +955,13 @@
                                             <div style="flex:1;min-width:160px">
                                                 <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Previsao Final</label>
                                                 <input type="date" id="pf-turma-previsao" class="config-input" style="width:100%">
+                                            </div>
+                                            <div style="flex:1;min-width:160px">
+                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Status da Turma *</label>
+                                                <select id="pf-turma-status" class="config-input" style="width:100%">
+                                                    <option value="Em Andamento">Em Andamento</option>
+                                                    <option value="Concluido">Concluido</option>
+                                                </select>
                                             </div>
                                         </div>
                                         <div style="margin-top:10px">
@@ -2838,7 +2838,7 @@
     </div>
 
     <script src="noticias-feed.js?v=5"></script>
-    <script src="app.js?v=95"></script>
+    <script src="app.js?v=96"></script>
     <script src="recad-admin.js"></script>
 
     <script src="noticias-slider.js"></script>

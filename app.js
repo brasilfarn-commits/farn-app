@@ -39,6 +39,117 @@ const FB_PROJETOS = 'parceiros';
 let firebaseReady = false;
 let firebaseError = false;
 
+/* ===== STATUS DAS TURMAS =====
+   O status Em Andamento/Concluido agora pertence a cada turma. Projetos
+   antigos podem conservar o campo status apenas como fallback de transicao. */
+function statusDaTurma(t) {
+    if (!t) return 'Em Andamento';
+    if (t.status) return t.status;
+    var projeto = (projetos || []).find(function(p) { return p && p.nome === t.projeto; });
+    return (projeto && projeto.status) || 'Em Andamento';
+}
+
+function turmaEmAndamento(t) {
+    return statusDaTurma(t) !== 'Concluido';
+}
+
+function turmaConcluida(t) {
+    return statusDaTurma(t) === 'Concluido';
+}
+
+function turmasDoProjeto(nome) {
+    var alvo = String(nome || '').trim();
+    return (turmas || []).filter(function(t) { return String(t.projeto || '').trim() === alvo; });
+}
+
+function projetoEmAndamento(nome) {
+    var p = (projetos || []).find(function(x) { return x && x.nome === nome; });
+    if (!p) return false;
+    var lista = turmasDoProjeto(nome);
+    if (lista.length) return lista.some(turmaEmAndamento);
+    return (p.status || 'Em Andamento') !== 'Concluido';
+}
+
+function projetoConcluido(nome) {
+    var p = (projetos || []).find(function(x) { return x && x.nome === nome; });
+    if (!p) return false;
+    var lista = turmasDoProjeto(nome);
+    if (lista.length) return lista.some(turmaConcluida);
+    return p.status === 'Concluido';
+}
+
+function encontrarTurma(nome, projeto) {
+    var n = String(nome || '').trim().toLowerCase();
+    if (!n) return null;
+    var p = String(projeto || '').trim().toLowerCase();
+    var candidatas = (turmas || []).filter(function(t) {
+        return String(t.nome || '').trim().toLowerCase() === n;
+    });
+    if (!candidatas.length) return null;
+    if (p) {
+        var comProjeto = candidatas.find(function(t) {
+            return String(t.projeto || '').trim().toLowerCase() === p;
+        });
+        if (comProjeto) return comProjeto;
+    }
+    return candidatas[0];
+}
+
+function turmaDoAlunoEmAndamento(c) {
+    var t = encontrarTurma(c && c.turma, c && c.projeto);
+    if (t) return turmaEmAndamento(t);
+    var p = (projetos || []).find(function(x) { return x && x.nome === (c && c.projeto); });
+    return !p || (p.status || 'Em Andamento') !== 'Concluido';
+}
+
+/* Migra o status antigo do projeto para as turmas e remove o campo do projeto.
+   E idempotente: sem status antigo e sem turma pendente, nao grava nada. */
+let migracaoStatusTurmasEmCurso = false;
+async function migrarStatusProjetosParaTurmas() {
+    if (migracaoStatusTurmasEmCurso || !firebaseReady || typeof dbFirestore === 'undefined') return;
+    var projetosComStatus = (projetos || []).filter(function(p) { return p && p.status; });
+    var turmasSemStatus = (turmas || []).filter(function(t) { return t && !t.status; });
+    if (!projetosComStatus.length && !turmasSemStatus.length) return;
+
+    var statusPorProjeto = {};
+    projetosComStatus.forEach(function(p) { statusPorProjeto[p.nome] = p.status; });
+
+    migracaoStatusTurmasEmCurso = true;
+    try {
+        var batch = dbFirestore.batch();
+        var alterou = false;
+        var turmasAtualizadas = [];
+
+        turmasSemStatus.forEach(function(t) {
+            var novoStatus = statusPorProjeto[t.projeto] || 'Em Andamento';
+            if (t.id === undefined || t.id === null) return;
+            batch.update(dbFirestore.collection(FB_TURMAS).doc(String(t.id)), { status: novoStatus });
+            turmasAtualizadas.push({ turma: t, status: novoStatus });
+            alterou = true;
+        });
+
+        projetosComStatus.forEach(function(p) {
+            if (p.docId) {
+                batch.update(dbFirestore.collection(FB_PROJETOS).doc(String(p.docId)), {
+                    status: firebase.firestore.FieldValue.delete()
+                });
+                alterou = true;
+            }
+        });
+
+        if (alterou) await batch.commit();
+
+        /* So altera a copia local depois que o Firestore confirmou a gravacao. */
+        turmasAtualizadas.forEach(function(item) { item.turma.status = item.status; });
+        projetosComStatus.forEach(function(p) { delete p.status; });
+        console.log('Status migrado de projetos para turmas.');
+    } catch (e) {
+        console.error('Erro ao migrar status de projetos para turmas:', e);
+    } finally {
+        migracaoStatusTurmasEmCurso = false;
+    }
+}
+
 function showFirebaseStatus(ok) {
     let el = document.getElementById('firebase-status');
     if (!el) {
@@ -160,8 +271,13 @@ async function backupTurmas() {
         const ref = dbFirestore.collection(FB_TURMAS);
         const snap = await ref.get();
         const existingIds = new Set();
+        const statusExistente = {};
         snap.forEach(doc => {
-            if (doc.id !== '_index') existingIds.add(doc.id);
+            if (doc.id !== '_index') {
+                existingIds.add(doc.id);
+                const dados = doc.data() || {};
+                if (dados.status) statusExistente[doc.id] = dados.status;
+            }
         });
         const currentIds = new Set();
         const batch = dbFirestore.batch();
@@ -172,6 +288,8 @@ async function backupTurmas() {
                 id = String(Date.now()) + '_' + String(Math.random()).slice(2, 8);
                 t.id = parseInt(id) || id;
             }
+            /* Nao deixa uma copia antiga sem status apagar o status ja migrado. */
+            if (!t.status && statusExistente[id]) t.status = statusExistente[id];
             currentIds.add(id);
             batch.set(ref.doc(id), t);
         });
@@ -662,6 +780,7 @@ async function initFirebaseListeners() {
             if (firebaseReady) {
                 populateTurmaSelect();
                 populateProjetoSelect();
+                if (typeof renderProjetosList === 'function') renderProjetosList();
                 if (typeof cavRefrescarFiltro === 'function') cavRefrescarFiltro();
                 if (galeriaAdminVisivel()) galeriaAdminCarregarTurmas();
                 const fcProjeto = document.getElementById('fc-projeto');
@@ -765,6 +884,7 @@ async function initApp() {
     migrateLocalStorage();
     await migrateIndexedDB();
     await initFirebaseListeners();
+    await migrarStatusProjetosParaTurmas();
     startOnlineListener();
     backupUsuarios();
     backupProjetos();
@@ -2073,7 +2193,7 @@ function preInicializar() {
     const selProj = document.getElementById('pre-selecao-projeto');
     if (!selProj) return;
     selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.filter(p => projetoEmAndamento(p.nome)).forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
     const conteudo = document.getElementById('pre-conteudo');
@@ -2085,7 +2205,7 @@ function preOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('pre-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
+        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t));
         turmasDoProjeto.forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
@@ -2114,9 +2234,9 @@ function gerarLinkPreAbrir(modo) {
     const coletivo = preLinkModo === 'coletivo';
     const body = document.getElementById('modal-pre-link-body');
     if (!body) return;
-    const projetosEmAndamento = new Set(projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').map(p => p.nome));
+    const projetosEmAndamento = new Set(projetos.filter(p => projetoEmAndamento(p.nome)).map(p => p.nome));
     let options = '<option value="">Selecione a turma...</option>';
-    turmas.filter(t => (t.projeto || t.nome) && projetosEmAndamento.has(t.projeto)).forEach(t => {
+    turmas.filter(t => (t.projeto || t.nome) && turmaEmAndamento(t) && projetosEmAndamento.has(t.projeto)).forEach(t => {
         options += '<option value="' + (t.nome || '') + '" data-projeto="' + (t.projeto || '') + '">' + (t.nome || '') + (t.projeto ? ' - ' + t.projeto : '') + '</option>';
     });
     const texto = coletivo
@@ -2153,8 +2273,11 @@ async function gerarLinkPreGerar() {
     if (!turma) { alert('Selecione uma turma para gerar o link.'); return; }
     const opt = sel.options[sel.selectedIndex];
     const projeto = (opt && opt.dataset.projeto) || '';
-    const projEmAndamento = projetos.find(p => p.nome === projeto && (p.status || 'Em Andamento') === 'Em Andamento');
-    if (!projEmAndamento) { alert('Só é possível gerar link para turmas de projetos em andamento.'); return; }
+    const turmaObj = turmas.find(t => t.nome === turma && t.projeto === projeto);
+    if (!projetoEmAndamento(projeto) || !turmaObj || !turmaEmAndamento(turmaObj)) {
+        alert('Só é possível gerar link para turmas com status Em Andamento.');
+        return;
+    }
     const btn = document.querySelector('#modal-pre-link-body button');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; }
     try {
@@ -2795,7 +2918,7 @@ function alunosInicializar() {
     const selProj = document.getElementById('alunos-selecao-projeto');
     if (!selProj) return;
     selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.filter(p => projetoEmAndamento(p.nome)).forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
     const conteudo = document.getElementById('alunos-conteudo');
@@ -2807,7 +2930,7 @@ function alunosOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('alunos-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
+        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t));
         turmasDoProjeto.forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
@@ -2989,7 +3112,7 @@ function foto3x4Inicializar() {
     const selProj = document.getElementById('foto3x4-selecao-projeto');
     if (!selProj) return;
     selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.filter(p => projetoEmAndamento(p.nome)).forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
     const selTurma = document.getElementById('foto3x4-selecao-turma');
@@ -3128,7 +3251,7 @@ function foto3x4OnProjetoChange() {
     const selTurma = document.getElementById('foto3x4-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
+        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -5170,6 +5293,10 @@ function projetoRenderTurmas() {
         const div = document.createElement('div');
         div.className = 'pf-turma-item';
         div.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid #222;transition:background 0.2s';
+        var statusTurmaAtual = t.status || 'Em Andamento';
+        var statusConcluido = statusTurmaAtual === 'Concluido';
+        var statusCor = statusConcluido ? '#2196f3' : '#4caf50';
+        var statusFundo = statusConcluido ? 'rgba(33,150,243,.15)' : 'rgba(76,175,80,.15)';
         var infoExtra = '';
         if (t.curso) infoExtra += '<span style="color:#94a3b8;font-size:11px"><i class="fa-solid fa-book" style="margin-right:4px"></i>' + t.curso + '</span>';
         if (t.inicio) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-flag" style="margin-right:4px"></i>Inicio: ' + t.inicio + '</span>';
@@ -5180,7 +5307,9 @@ function projetoRenderTurmas() {
             if (hList) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-clock" style="margin-right:4px"></i>' + hList + '</span>';
         }
         div.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;gap:2px">' +
-            '<span style="color:#fff;font-size:13px;font-weight:600"><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:8px"></i>' + t.nome + '</span>' +
+            '<span style="color:#fff;font-size:13px;font-weight:600"><i class="fa-solid fa-people-group" style="color:#4caf50;margin-right:8px"></i>' + t.nome +
+                ' <span onclick="projetoToggleTurmaStatus(' + i + ')" title="Clique para alterar o status desta turma" style="background:' + statusFundo + ';color:' + statusCor + ';padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid ' + statusCor + ';cursor:pointer;margin-left:6px;white-space:nowrap">' + statusTurmaAtual + '</span>' +
+            '</span>' +
             (t.descricao ? '<span style="color:#888;font-size:12px;margin-left:24px">' + t.descricao + '</span>' : '') +
             (infoExtra ? '<span style="margin-left:24px;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">' + infoExtra + '</span>' : '') +
             '</div>' +
@@ -5190,6 +5319,13 @@ function projetoRenderTurmas() {
         div.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
         lista.appendChild(div);
     });
+}
+
+function projetoToggleTurmaStatus(i) {
+    var t = projetoTurmasTemp[i];
+    if (!t) return;
+    t.status = (t.status === 'Concluido') ? 'Em Andamento' : 'Concluido';
+    projetoRenderTurmas();
 }
 
 function pfTurmaToggleDia(el) {
@@ -5251,12 +5387,15 @@ function pfTurmaColetarDados() {
         previsao: document.getElementById('pf-turma-previsao').value || '',
         dias: dias,
         horarios: horarios,
-        curso: (document.getElementById('pf-turma-curso') ? document.getElementById('pf-turma-curso').value : '') || ''
+        curso: (document.getElementById('pf-turma-curso') ? document.getElementById('pf-turma-curso').value : '') || '',
+        status: (document.getElementById('pf-turma-status') ? document.getElementById('pf-turma-status').value : '') || 'Em Andamento'
     };
 }
 
 function pfTurmaPreencherForm(t) {
     pfTurmaCarregarCursos(t.curso || '');
+    var statusEl = document.getElementById('pf-turma-status');
+    if (statusEl) statusEl.value = t.status || 'Em Andamento';
     document.getElementById('pf-turma-previsao').value = t.previsao || '';
     if (document.getElementById('pf-turma-inicio')) document.getElementById('pf-turma-inicio').value = t.inicio || '';
     document.querySelectorAll('#pf-turma-dias input[type=checkbox]').forEach(function(cb) {
@@ -5282,6 +5421,8 @@ function pfTurmaLimparForm() {
     document.getElementById('pf-turma-nome').value = '';
     document.getElementById('pf-turma-desc').value = '';
     document.getElementById('pf-turma-previsao').value = '';
+    var statusEl = document.getElementById('pf-turma-status');
+    if (statusEl) statusEl.value = 'Em Andamento';
     if (document.getElementById('pf-turma-inicio')) document.getElementById('pf-turma-inicio').value = '';
     document.querySelectorAll('#pf-turma-dias input[type=checkbox]').forEach(function(cb) {
         cb.checked = false;
@@ -5300,7 +5441,7 @@ function projetoAdicionarTurma() {
     var duplicada = projetoTurmasTemp.find(function(t) { return t.nome.toLowerCase() === nome.toLowerCase(); });
     if (duplicada) { alert('Ja existe uma turma com esse nome neste projeto.'); return; }
     var extras = pfTurmaColetarDados();
-    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim(), inicio: extras.inicio, previsao: extras.previsao, dias: extras.dias, horarios: extras.horarios, curso: extras.curso });
+    projetoTurmasTemp.push({ nome: nome, descricao: descEl.value.trim(), inicio: extras.inicio, previsao: extras.previsao, dias: extras.dias, horarios: extras.horarios, curso: extras.curso, status: extras.status });
     pfTurmaLimparForm();
     nomeEl.focus();
     projetoRenderTurmas();
@@ -5334,6 +5475,7 @@ function projetoSalvarTurma() {
     projetoTurmasTemp[editingProjetoTurmaIdx].dias = extras.dias;
     projetoTurmasTemp[editingProjetoTurmaIdx].horarios = extras.horarios;
     projetoTurmasTemp[editingProjetoTurmaIdx].curso = extras.curso;
+    projetoTurmasTemp[editingProjetoTurmaIdx].status = extras.status;
     projetoCancelarEdicaoTurma();
     projetoRenderTurmas();
 }
@@ -5440,9 +5582,8 @@ async function handleProjetoSubmit(event) {
     const nome = document.getElementById('pf-nome').value.trim();
     const cnpj = document.getElementById('pf-cnpj').value.trim();
     const responsavel = document.getElementById('pf-responsavel').value.trim();
-    const statusProjeto = document.getElementById('pf-status').value;
     if (!nome) { alert('Nome do projeto e obrigatorio.'); return false; }
-    const data = { nome, cnpj, responsavel, status: statusProjeto, turmas: projetoTurmasTemp.map(t => t.nome) };
+    const data = { nome, cnpj, responsavel, turmas: projetoTurmasTemp.map(t => t.nome) };
     try {
         if (editingProjetoIndex !== null) {
             const old = projetos[editingProjetoIndex];
@@ -5450,7 +5591,10 @@ async function handleProjetoSubmit(event) {
             data.dataCadastro = old.dataCadastro;
             projetos[editingProjetoIndex] = data;
             if (data.docId) {
-                await dbFirestore.collection(FB_PROJETOS).doc(String(data.docId)).set(data, { merge: true });
+                const dadosFirestore = Object.assign({}, data, {
+                    status: firebase.firestore.FieldValue.delete()
+                });
+                await dbFirestore.collection(FB_PROJETOS).doc(String(data.docId)).set(dadosFirestore, { merge: true });
             }
             if (old.nome && old.nome !== nome) {
                 await sincronizarNomeProjeto(old.nome, nome);
@@ -5465,7 +5609,7 @@ async function handleProjetoSubmit(event) {
         }
         for (const t of projetoTurmasTemp) {
             const existe = turmas.find(tx => tx.nome === t.nome && tx.projeto === nome);
-            const turmaData = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome, inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '' };
+            const turmaData = { id: t.nome + '_' + nome, nome: t.nome, descricao: t.descricao, projeto: nome, inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '', status: t.status || 'Em Andamento' };
             if (existe) {
                 Object.assign(existe, turmaData);
             } else {
@@ -5494,18 +5638,22 @@ function renderProjetosList() {
         return;
     }
     if (empty) empty.style.display = 'none';
-    let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Status</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
+    let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Turmas</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
     projetos.forEach((p, i) => {
-        const isConcluido = p.status === 'Concluido';
-        const statusColor = isConcluido ? '#2196f3' : '#4caf50';
-        const statusBg = isConcluido ? 'rgba(33,150,243,.15)' : 'rgba(76,175,80,.15)';
-        const statusLabel = isConcluido ? 'Concluido' : 'Em Andamento';
-        const nextStatus = isConcluido ? 'Em Andamento' : 'Concluido';
+        const turmasProjeto = turmas.filter(t => t.projeto === p.nome);
+        const ativas = turmasProjeto.filter(turmaEmAndamento).length;
+        const concluidas = turmasProjeto.length - ativas;
+        let turmasInfo = '---';
+        if (turmasProjeto.length) {
+            turmasInfo = '<span style="font-weight:600;color:#1e293b">' + turmasProjeto.length + ' turma(s)</span>';
+            if (ativas) turmasInfo += '<br><span style="font-size:11px;color:#16a34a;font-weight:600">' + ativas + ' em andamento</span>';
+            if (concluidas) turmasInfo += '<br><span style="font-size:11px;color:#2196f3;font-weight:600">' + concluidas + ' concluida(s)</span>';
+        }
         html += `<tr>
             <td>${p.nome || '---'}</td>
             <td>${p.cnpj || '---'}</td>
             <td>${p.responsavel || '---'}</td>
-            <td><span onclick="projetoToggleStatus(${i})" style="background:${statusBg};color:${statusColor};padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid ${statusColor};transition:all .2s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Clique para alterar para: ${nextStatus}">${statusLabel}</span></td>
+            <td>${turmasInfo}</td>
             <td>${p.dataCadastro || '---'}</td>
             <td><div class="actions-cell">
                 <button class="btn-icon" title="Editar" onclick="editProjeto(${i})"><i class="fa-solid fa-pen"></i></button>
@@ -5517,19 +5665,6 @@ function renderProjetosList() {
     tbody.innerHTML = html;
 }
 
-async function projetoToggleStatus(i) {
-    const p = projetos[i]; if (!p) return;
-    const novoStatus = p.status === 'Concluido' ? 'Em Andamento' : 'Concluido';
-    const label = novoStatus === 'Concluido' ? 'Concluido (azul)' : 'Em Andamento (verde)';
-    if (!confirm('Alterar status do projeto "' + p.nome + '" para ' + label + '?')) return;
-    p.status = novoStatus;
-    projetos[i] = p;
-    if (p.docId) {
-        try { await dbFirestore.collection(FB_PROJETOS).doc(String(p.docId)).update({ status: novoStatus }); } catch(e) { console.error(e); }
-    }
-    renderProjetosList();
-}
-
 function editProjeto(i) {
     const p = projetos[i]; if (!p) return;
     editingProjetoIndex = i;
@@ -5538,8 +5673,7 @@ function editProjeto(i) {
     document.getElementById('pf-nome').value = p.nome || '';
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
-    document.getElementById('pf-status').value = p.status || 'Em Andamento';
-    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '' }));
+    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '', status: t.status || p.status || 'Em Andamento' }));
     projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
     showAdminSection('admin-form-projeto');
@@ -6172,7 +6306,7 @@ function apontamentoPopularSelecaoProjeto() {
     const sel = document.getElementById('apt-selecao-projeto');
     if (!sel) return;
     sel.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.filter(p => projetoEmAndamento(p.nome)).forEach(p => {
         sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
 }
@@ -6182,7 +6316,7 @@ function apontamentoOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('apt-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
+        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t));
         turmasDoProjeto.forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
@@ -7276,7 +7410,7 @@ function tfmInicializar() {
     const selProj = document.getElementById('tfm-selecao-projeto');
     if (!selProj) return;
     selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.filter(p => projetoEmAndamento(p.nome)).forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
     const conteudo = document.getElementById('tfm-conteudo');
@@ -7294,7 +7428,7 @@ function tfmOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('tfm-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
+        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -8080,7 +8214,7 @@ function tfmAbrirNovoAgendamento(turmaDoc) {
     const selProj = document.getElementById('tfm-novo-projeto');
     if (selProj) {
         selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-        projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+        projetos.filter(p => projetoEmAndamento(p.nome)).forEach(p => {
             selProj.innerHTML += '<option value="' + tfmEsc(p.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(p.nome + (p.responsavel ? ' - ' + p.responsavel : '')).replace(/</g, '&lt;') + '</option>';
         });
     }
@@ -8140,7 +8274,7 @@ function tfmNovoOnProjetoChange() {
     const selTurma = document.getElementById('tfm-novo-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
+        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
             selTurma.innerHTML += '<option value="' + tfmEsc(t.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(t.nome + (t.descricao ? ' - ' + t.descricao : '')).replace(/</g, '&lt;') + '</option>';
         });
     }
@@ -8656,7 +8790,7 @@ async function discLoadProjetos() {
         sel.innerHTML = '<option value="">Selecione o projeto...</option>';
         snap.forEach(function(doc) {
             var p = doc.data();
-            if ((p.status || 'Em Andamento') === 'Em Andamento') {
+            if (projetoEmAndamento(p.nome)) {
                 sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
             }
         });
@@ -10082,7 +10216,7 @@ function formadosInicializar() {
     if (!selProj) return;
     var currentProj = selProj.value;
     selProj.innerHTML = '<option value="">Todos os projetos</option>';
-    projetos.filter(function(p) { return p.status === 'Concluido'; }).forEach(function(p) {
+    projetos.filter(function(p) { return projetoConcluido(p.nome); }).forEach(function(p) {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
     });
     if (currentProj) selProj.value = currentProj;
@@ -10096,10 +10230,9 @@ function formadosOnFiltroChange() {
     var projeto = selProj.value;
     var current = selTurma.value;
     selTurma.innerHTML = '<option value="">Todas as turmas</option>';
-    var projetosConcluidos = projetos.filter(function(p) { return p.status === 'Concluido'; });
-    var turmasFiltradas = projeto
-        ? turmas.filter(function(t) { return t.projeto === projeto; })
-        : turmas.filter(function(t) { return projetosConcluidos.some(function(p) { return p.nome === t.projeto; }); });
+    var turmasFiltradas = turmas.filter(function(t) {
+        return turmaConcluida(t) && (!projeto || t.projeto === projeto);
+    });
     turmasFiltradas.forEach(function(t) {
         selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
     });
@@ -10114,11 +10247,11 @@ function renderFormadosList() {
     var selTurma = document.getElementById('formados-filtro-turma');
     var projeto = selProj ? selProj.value : '';
     var turma = selTurma ? selTurma.value : '';
-    var projetosConcluidos = projetos.filter(function(p) { return p.status === 'Concluido'; });
     var lista = candidatos.filter(function(c) {
         if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return false;
-        var proj = projetos.find(function(p) { return p.nome === c.projeto; });
-        if (!proj || proj.status !== 'Concluido') return false;
+        var t = encontrarTurma(c.turma, c.projeto);
+        var formadoPorTurma = t ? turmaConcluida(t) : projetoConcluido(c.projeto);
+        if (!formadoPorTurma) return false;
         return (!projeto || c.projeto === projeto) &&
             (!turma || c.turma === turma);
     });
@@ -10162,7 +10295,7 @@ function docentePopulateSelects(projetosSelecionados, turmasSelecionadas) {
     var projArr = Array.isArray(projetosSelecionados) ? projetosSelecionados : (projetosSelecionados ? [projetosSelecionados] : []);
     var turmaArr = Array.isArray(turmasSelecionadas) ? turmasSelecionadas : (turmasSelecionadas ? [turmasSelecionadas] : []);
     containerProj.innerHTML = '';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.filter(p => projetoEmAndamento(p.nome) || projArr.indexOf(p.nome) !== -1).forEach(p => {
         var checked = projArr.indexOf(p.nome) !== -1 ? 'checked' : '';
         containerProj.innerHTML += '<label class="intr-check-item"><input type="checkbox" class="intr-proj-check" value="' + p.nome + '" ' + checked + ' onchange="docenteOnProjetoChange()"> ' + p.nome + '</label>';
     });
@@ -10177,8 +10310,9 @@ function docenteOnProjetoChange(turmasSelecionadas) {
     containerTurma.innerHTML = '';
     var turmasFiltradas = projsSelecionados.length ? turmas.filter(t => projsSelecionados.indexOf(t.projeto) !== -1) : turmas;
     turmasFiltradas.forEach(t => {
-        var checked = turmaArr.indexOf(t.nome) !== -1 ? 'checked' : '';
-        containerTurma.innerHTML += '<label class="intr-check-item"><input type="checkbox" class="intr-turma-check" value="' + t.nome + '" ' + checked + '> ' + t.nome + '</label>';
+        var checked = turmaArr.indexOf(t.nome) !== -1;
+        if (!checked && !turmaEmAndamento(t)) return;
+        containerTurma.innerHTML += '<label class="intr-check-item"><input type="checkbox" class="intr-turma-check" value="' + t.nome + '" ' + (checked ? 'checked' : '') + '> ' + t.nome + '</label>';
     });
 }
 
@@ -12503,7 +12637,7 @@ function cavPopulateProjetos(value) {
     sel.innerHTML = '<option value="">Selecione o projeto...</option>';
     // Exibe apenas projetos em andamento que possuam turmas cadastradas
     (projetos || []).forEach(p => {
-        if ((p.status || 'Em Andamento') !== 'Em Andamento') return;
+        if (!projetoEmAndamento(p.nome) && p.nome !== value) return;
         const temTurma = (turmas || []).some(t => t.projeto === p.nome);
         if (!temTurma) return;
         const opt = document.createElement('option');
@@ -12518,7 +12652,7 @@ function cavPopulateTurmas(projetoNome, value) {
     const sel = document.getElementById('cav-turma');
     if (!sel) return;
     sel.innerHTML = '<option value="">Selecione a turma...</option>';
-    (turmas || []).filter(t => !projetoNome || t.projeto === projetoNome).forEach(t => {
+    (turmas || []).filter(t => (!projetoNome || t.projeto === projetoNome) && (turmaEmAndamento(t) || t.nome === value)).forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.nome || '';
         opt.textContent = (t.nome || '');
@@ -12549,14 +12683,12 @@ function cavOnTurmaChange() {
 }
 
 /* ===== FILTRO DA LISTA DE AV (projeto/turma) =====
-   Mostra apenas projetos/turmas EM ANDAMENTO (status do projeto). Sem escolha = todas. */
+   Mostra apenas projetos/turmas EM ANDAMENTO (status da turma). Sem escolha = todas. */
 let cavFiltroProjeto = '';
 let cavFiltroTurma = '';
 
 function cavProjetoEmAndamento(nome) {
-    const p = (projetos || []).find(function (x) { return String(x.nome || '') === String(nome || ''); });
-    if (!p) return false;
-    return (p.status || 'Em Andamento') === 'Em Andamento';
+    return projetoEmAndamento(nome);
 }
 
 function cavPopulateFiltroProjetos() {
@@ -12566,7 +12698,7 @@ function cavPopulateFiltroProjetos() {
     sel.innerHTML = '<option value="">Todos os projetos</option>';
     const nomes = [];
     (projetos || []).forEach(function (p) {
-        if ((p.status || 'Em Andamento') !== 'Em Andamento') return;
+        if (!projetoEmAndamento(p.nome)) return;
         const nome = p.nome || '';
         if (!nome || nomes.indexOf(nome) !== -1) return;
         nomes.push(nome);
@@ -12587,7 +12719,7 @@ function cavPopulateFiltroTurmas() {
     const nomes = [];
     (turmas || []).forEach(function (t) {
         if (cavFiltroProjeto && String(t.projeto || '').trim() !== String(cavFiltroProjeto).trim()) return;
-        if (!cavProjetoEmAndamento(t.projeto)) return;
+        if (!cavProjetoEmAndamento(t.projeto) || !turmaEmAndamento(t)) return;
         const nome = t.nome || '';
         if (!nome || nomes.indexOf(nome) !== -1) return;
         nomes.push(nome);
@@ -14275,7 +14407,7 @@ function fichaGeralInicializar() {
     const selProj = document.getElementById('ficha-geral-selecao-projeto');
     if (!selProj) return;
     selProj.innerHTML = '<option value="">Selecione o projeto...</option>';
-    projetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+    projetos.filter(p => projetoEmAndamento(p.nome)).forEach(p => {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
     });
     const selTurma = document.getElementById('ficha-geral-selecao-turma');
@@ -14291,7 +14423,7 @@ function fichaGeralOnProjetoChange() {
     const selTurma = document.getElementById('ficha-geral-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome).forEach(t => {
+        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -14937,9 +15069,9 @@ function condecFecharBusca() {
 function condecBuscaPopularProjetos(tipo) {
     var sel = document.getElementById('condec-busca-projeto');
     if (!sel) return;
-    var status = (tipo === 'F') ? 'Concluido' : 'Em Andamento';
+    var querConcluido = (tipo === 'F');
     sel.innerHTML = '<option value="">Todos os projetos</option>';
-    projetos.filter(function (p) { return (p.status || 'Em Andamento') === status; })
+    projetos.filter(function (p) { return querConcluido ? projetoConcluido(p.nome) : projetoEmAndamento(p.nome); })
         .forEach(function (p) {
             var nome = p.nome || '';
             if (!nome) return;
@@ -14954,7 +15086,12 @@ function condecBuscaTurma() {
     var selT = document.getElementById('condec-busca-turma');
     if (!selT) return;
     var projeto = selP ? selP.value : '';
-    var nomes = turmas.filter(function (t) { return !projeto || t.projeto === projeto; })
+    var tipo = (document.getElementById('condec-tipo') || {}).value || '';
+    var querConcluido = (tipo === 'F');
+    var nomes = turmas.filter(function (t) {
+        if (projeto && t.projeto !== projeto) return false;
+        return querConcluido ? turmaConcluida(t) : turmaEmAndamento(t);
+    })
         .map(function (t) { return t.nome; })
         .filter(function (v, i, a) { return v && a.indexOf(v) === i; })
         .sort();

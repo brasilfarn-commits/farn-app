@@ -2023,6 +2023,31 @@
         var pdAptCarregando = false;
         var pdAptBasePronta = false;
 
+        /* Status Em Andamento/Concluido pertence a turma. */
+        function pdStatusTurma(t) {
+            if (!t) return 'Em Andamento';
+            if (t.status) return t.status;
+            var p = (pdAptProjetos || []).find(function(x) { return x.nome === t.projeto; });
+            return (p && p.status) || 'Em Andamento';
+        }
+
+        function pdTurmaConcluida(t) {
+            return pdStatusTurma(t) === 'Concluido';
+        }
+
+        function pdProjetoEmAndamento(p) {
+            var lista = (pdAptTurmas || []).filter(function(t) { return t.projeto === p.nome; });
+            if (lista.length) return lista.some(function(t) { return !pdTurmaConcluida(t); });
+            return (p.status || 'Em Andamento') !== 'Concluido';
+        }
+
+        function pdTurmaAtiva(nome, projeto) {
+            var t = (pdAptTurmas || []).find(function(x) {
+                return x.nome === nome && (!projeto || x.projeto === projeto);
+            });
+            return t ? !pdTurmaConcluida(t) : true;
+        }
+
         /* Compara nome do docente de forma tolerante (ignora caixa e espacos) */
         function pdPertenceDocente(d, nome) {
             if (!d) return false;
@@ -2144,7 +2169,7 @@
             const sel = document.getElementById('apt-selecao-projeto');
             if (!sel) return;
             sel.innerHTML = '<option value="">Selecione o projeto...</option>';
-            pdAptProjetos.filter(p => (p.status || 'Em Andamento') === 'Em Andamento').forEach(p => {
+            pdAptProjetos.filter(p => pdProjetoEmAndamento(p)).forEach(p => {
                 sel.innerHTML += '<option value="' + p.nome + '">' + p.nome + (p.responsavel ? ' - ' + p.responsavel : '') + '</option>';
             });
         }
@@ -2154,7 +2179,7 @@
             const selTurma = document.getElementById('apt-selecao-turma');
             selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
             if (projetoNome) {
-                const turmasDoProjeto = pdAptTurmas.filter(t => t.projeto === projetoNome);
+                const turmasDoProjeto = pdAptTurmas.filter(t => t.projeto === projetoNome && !pdTurmaConcluida(t));
                 const adicionadas = {};
                 turmasDoProjeto.forEach(t => {
                     if (pdAptTurmaDoDocente(t.nome)) {
@@ -2164,6 +2189,7 @@
                 });
                 pdAptTurmasAula.forEach(function(ta) {
                     if (ta.projeto !== projetoNome) return;
+                    if (!pdTurmaAtiva(ta.turma, ta.projeto)) return;
                     if (pdAptAdmin || adicionadas[ta.turma.trim().toLowerCase()]) return;
                     selTurma.innerHTML += '<option value="' + ta.turma + '">' + ta.turma + '</option>';
                     adicionadas[ta.turma.trim().toLowerCase()] = true;
@@ -2209,7 +2235,7 @@
             selTurma.innerHTML = '<option value="">Selecione a turma</option>';
             const adicionadasModal = {};
             pdAptTurmas.forEach(t => {
-                if (t.projeto === projetoSelecionado) {
+                if (t.projeto === projetoSelecionado && !pdTurmaConcluida(t)) {
                     if (pdAptTurmaDoDocente(t.nome)) {
                         selTurma.innerHTML += '<option value="' + t.nome + '"' + (t.nome === turmaSelecionada ? ' selected' : '') + '>' + t.nome + '</option>';
                         adicionadasModal[t.nome.trim().toLowerCase()] = true;
@@ -2218,6 +2244,7 @@
             });
             pdAptTurmasAula.forEach(function(ta) {
                 if (ta.projeto !== projetoSelecionado) return;
+                if (!pdTurmaAtiva(ta.turma, ta.projeto)) return;
                 if (pdAptAdmin || adicionadasModal[ta.turma.trim().toLowerCase()]) return;
                 selTurma.innerHTML += '<option value="' + ta.turma + '"' + (ta.turma === turmaSelecionada ? ' selected' : '') + '>' + ta.turma + '</option>';
                 adicionadasModal[ta.turma.trim().toLowerCase()] = true;

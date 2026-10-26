@@ -2008,7 +2008,7 @@
                 return;
             }
 
-            /* Verifica se o projeto esta Em Andamento ou Ativo */
+            /* Verifica o vinculo do aluno e o status da turma. */
             var projetoDoAluno = dados.projeto;
             if (!projetoDoAluno) {
                 errEl.textContent = 'Nenhum projeto vinculado ao seu cadastro.';
@@ -2018,26 +2018,67 @@
                 return;
             }
 
-            var parceiroSnap = await dbFirestore.collection('parceiros').where('nome','==',projetoDoAluno).limit(1).get();
-            var statusProjeto = parceiroSnap.empty ? '' : parceiroSnap.docs[0].data().status;
-            var projetoEncontrado = !parceiroSnap.empty;
-            if (parceiroSnap.empty) {
-                var snapAlt = await dbFirestore.collection('parceiros').get();
-                snapAlt.forEach(function(d) {
-                    if (projetoEncontrado) return;
-                    var nd = d.data();
-                    if (nd.nome && projetoDoAluno && (nd.nome.toLowerCase().indexOf(projetoDoAluno.toLowerCase()) !== -1 || projetoDoAluno.toLowerCase().indexOf(nd.nome.toLowerCase()) !== -1)) {
-                        statusProjeto = nd.status || '';
-                        projetoEncontrado = true;
+            /* O status Em Andamento/Concluido agora pertence a turma do aluno. */
+            var turmaDoAluno = String(dados.turma || '').trim();
+            var turmaEncontrada = false;
+            var statusTurma = '';
+            if (turmaDoAluno) {
+                try {
+                    var turmaSnap = await dbFirestore.collection('turmas').where('nome', '==', turmaDoAluno).get();
+                    var turmasAluno = [];
+                    turmaSnap.forEach(function(d) {
+                        var t = d.data();
+                        if (!projetoDoAluno || String(t.projeto || '').trim() === String(projetoDoAluno).trim()) turmasAluno.push(t);
+                    });
+                    if (!turmasAluno.length) {
+                        var turmasTodas = await dbFirestore.collection('turmas').get();
+                        turmasTodas.forEach(function(d) {
+                            var t = d.data();
+                            if (String(t.nome || '').trim().toLowerCase() === turmaDoAluno.toLowerCase() &&
+                                (!projetoDoAluno || String(t.projeto || '').trim().toLowerCase() === String(projetoDoAluno).trim().toLowerCase())) {
+                                turmasAluno.push(t);
+                            }
+                        });
                     }
-                });
+                    if (turmasAluno.length) {
+                        turmaEncontrada = true;
+                        statusTurma = turmasAluno[0].status || '';
+                    }
+                } catch (e) {
+                    console.error('Erro ao verificar status da turma:', e);
+                }
             }
-            if (projetoEncontrado && statusProjeto !== 'Em Andamento' && statusProjeto !== 'Ativo') {
-                errEl.textContent = 'Seu projeto nao esta disponivel no momento.';
+            if (turmaEncontrada && statusTurma && statusTurma !== 'Em Andamento' && statusTurma !== 'Ativo') {
+                errEl.textContent = 'Sua turma nao esta disponivel no momento.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
                 return;
+            }
+
+            /* Compatibilidade: cadastros antigos sem turma localizada ainda usam o projeto. */
+            if (!turmaEncontrada) {
+                var parceiroSnap = await dbFirestore.collection('parceiros').where('nome','==',projetoDoAluno).limit(1).get();
+                var statusProjeto = parceiroSnap.empty ? '' : parceiroSnap.docs[0].data().status;
+                var projetoEncontrado = !parceiroSnap.empty;
+                if (parceiroSnap.empty) {
+                    var snapAlt = await dbFirestore.collection('parceiros').get();
+                    snapAlt.forEach(function(d) {
+                        if (projetoEncontrado) return;
+                        var nd = d.data();
+                        if (nd.nome && projetoDoAluno && (nd.nome.toLowerCase().indexOf(projetoDoAluno.toLowerCase()) !== -1 || projetoDoAluno.toLowerCase().indexOf(nd.nome.toLowerCase()) !== -1)) {
+                            statusProjeto = nd.status || '';
+                            projetoEncontrado = true;
+                        }
+                    });
+                }
+                if (projetoEncontrado && statusProjeto && statusProjeto !== 'Em Andamento' && statusProjeto !== 'Ativo') {
+                    errEl.textContent = 'Seu projeto nao esta disponivel no momento.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+                    return;
+                }
             }
 
             paUser = dados;
