@@ -138,6 +138,16 @@
         .pf-noticia-empty i { font-size:40px; margin-bottom:10px; display:block; }
         .pf-noticia-empty p { font-size:13px; }
 
+        /* Feed de noticias: usa grade no centro para os cards nao ficarem gigantes */
+        #pd-noticias-feed .farn-news-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; align-items:stretch; }
+        #pd-noticias-feed .farn-news-card { display:flex; flex-direction:column; height:100%; min-width:0; }
+        #pd-noticias-feed .farn-news-media { width:100%; aspect-ratio:16/9; }
+        #pd-noticias-feed .farn-news-body { display:flex; flex-direction:column; flex:1; }
+        #pd-noticias-feed .farn-news-date { margin-top:auto; padding-top:9px; }
+        @media(max-width:560px) {
+            #pd-noticias-feed .farn-news-list { grid-template-columns:1fr; }
+        }
+
         .pf-em-construcao { text-align:center; padding:60px 20px; }
         .pf-em-construcao i { font-size:50px; color:#eab308; margin-bottom:12px; }
         .pf-em-construcao h3 { color:#ca8a04; font-size:18px; margin-bottom:6px; }
