@@ -2616,7 +2616,12 @@
         }
         pintarData();
 
-        dbFirestore.collection('noticiasFormados').onSnapshot(function(snap) {
+        /* Contadores do inicio: consultas ja filtradas por turma/projeto para nao
+           baixar colecoes inteiras em cada aluno (cota de leitura do Firestore). */
+        var contNoticiasQuery = myProjeto
+            ? dbFirestore.collection('noticiasFormados').where('projeto', '==', myProjeto)
+            : dbFirestore.collection('noticiasFormados');
+        contNoticiasQuery.onSnapshot(function(snap) {
             var count = 0;
             snap.forEach(function(doc) { var n = doc.data(); if (!n.projeto || !myProjeto || n.projeto === myProjeto) count++; });
             contagem.blog = count;
@@ -2624,7 +2629,10 @@
             pintarPendencias();
         });
 
-        dbFirestore.collection('aulas').onSnapshot(function(snap) {
+        var contAulasQuery = myTurma
+            ? dbFirestore.collection('aulas').where('turma', '==', myTurma)
+            : dbFirestore.collection('aulas');
+        contAulasQuery.onSnapshot(function(snap) {
             var count = 0;
             snap.forEach(function(doc) { var a = doc.data(); if (a.projeto && myProjeto && a.projeto !== myProjeto) return; if (a.turma && myTurma && a.turma !== myTurma) return; count++; });
             contagem.aulas = count;
@@ -2632,7 +2640,10 @@
             pintarPendencias();
         });
 
-        dbFirestore.collection('apostilasAlunos').onSnapshot(function(snap) {
+        var contApostilasQuery = myTurma
+            ? dbFirestore.collection('apostilasAlunos').where('turma', '==', myTurma)
+            : dbFirestore.collection('apostilasAlunos');
+        contApostilasQuery.onSnapshot(function(snap) {
             var count = 0;
             snap.forEach(function(doc) { var a = doc.data(); if (a.visivel === false) return; if (a.cff) return; if (a.turma && myTurma && a.turma !== myTurma) return; count++; });
             contagem.apostilas = count;
@@ -2641,7 +2652,10 @@
         });
 
         try {
-            dbFirestore.collection('avaliacoes').onSnapshot(function(snap) {
+            var contAvQuery = myTurma
+                ? dbFirestore.collection('avaliacoes').where('turma', '==', myTurma)
+                : dbFirestore.collection('avaliacoes');
+            contAvQuery.onSnapshot(function(snap) {
                 var count = 0;
                 snap.forEach(function(doc) {
                     var a = doc.data();
@@ -6261,18 +6275,37 @@
 
     /* ===== FALTAS DO ALUNO E PRESENCA NO DIA DA AV ===== */
 
-    /* Carrega as presencas (apontamentos) do CPF do aluno. Retorna null em caso de erro. */
+    /* Carrega as presencas (apontamentos) do CPF do aluno. Retorna null em caso de erro.
+       Cache curto (60s) para a lista e a abertura da AV nao lerem os mesmos
+       registros duas vezes seguidas. */
+    var paRavPresencasCache = { cpf: '', at: 0, dados: null };
     async function paCarregarPresencas() {
         if (!paUser || !paUser.cpf) return [];
+        var agora = Date.now();
+        if (paRavPresencasCache.cpf === paUser.cpf && paRavPresencasCache.dados && (agora - paRavPresencasCache.at) < 60000) {
+            return paRavPresencasCache.dados;
+        }
         try {
             var snap = await dbFirestore.collection('presencasAlunos').where('cpf', '==', paUser.cpf).limit(200).get();
             var registros = [];
             snap.forEach(function(doc) { registros.push(doc.data() || {}); });
+            paRavPresencasCache = { cpf: paUser.cpf, at: agora, dados: registros };
             return registros;
         } catch (e) {
             console.error('Falha ao carregar presencas do aluno:', e);
             return null;
         }
+    }
+
+    /* Converte Timestamp/Date/string em milissegundos (ordenacao no cliente). */
+    function paTsMillis(v) {
+        if (!v) return 0;
+        try {
+            if (typeof v.toMillis === 'function') return v.toMillis();
+            if (typeof v.toDate === 'function') return v.toDate().getTime();
+            var dt = new Date(v);
+            return isNaN(dt.getTime()) ? 0 : dt.getTime();
+        } catch (e) { return 0; }
     }
 
     /* Converte Timestamp/Date/string para 'YYYY-MM-DD' sem deslocar o dia por UTC. */
@@ -6343,12 +6376,17 @@
         var ids = {};
         (itens || []).forEach(function (it) { if (it && it.data && it.data.aulaId) ids[it.data.aulaId] = true; });
         var keys = Object.keys(ids);
-        for (var i = 0; i < keys.length; i++) {
-            try {
-                var aDoc = await dbFirestore.collection('aulas').doc(keys[i]).get();
-                if (aDoc.exists) mapa[keys[i]] = paDataISO((aDoc.data() || {}).data || '');
-            } catch (e) { console.error('Falha ao carregar aula da avaliacao:', e); }
-        }
+        /* Leituras em paralelo: com varias AV, a fila sequencial segurava a lista. */
+        var docs = await Promise.all(keys.map(function (id) {
+            return dbFirestore.collection('aulas').doc(id).get().catch(function (e) {
+                console.error('Falha ao carregar aula da avaliacao:', e);
+                return null;
+            });
+        }));
+        keys.forEach(function (id, i) {
+            var aDoc = docs[i];
+            if (aDoc && aDoc.exists) mapa[id] = paDataISO((aDoc.data() || {}).data || '');
+        });
         return mapa;
     }
 
@@ -6377,7 +6415,9 @@
         var myTurma = (paUser.turma || '').trim();
         lista.innerHTML = '<div class="pf-em-construcao"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliações...</p></div>';
         try {
-            var snap = await dbFirestore.collection('avaliacoes').orderBy('criadoEm', 'desc').get();
+            /* Somente as AV da turma: evita baixar a colecao inteira de avaliacoes.
+               A ordenacao por criadoEm (mais recente primeiro) e feita no cliente. */
+            var snap = await dbFirestore.collection('avaliacoes').where('turma', '==', myTurma).get();
             var cpfLimpo = (paUser.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '') || 'anonimo';
             var fichaPraDoc = null;
             try {
@@ -6394,6 +6434,7 @@
                 var d = doc.data();
                 if (d.enviada === true && d.turma === myTurma) candidatas.push({ id: doc.id, data: d });
             });
+            candidatas.sort(function(a, b) { return paTsMillis(b.data.criadoEm) - paTsMillis(a.data.criadoEm); });
 
             // "Ja respondida" por aluno: pratica = nota do instrutor (avPraticaManual);
             // teorica/final = doc em avaliacoesRespostas. A tentativa bloqueada fica
@@ -6402,16 +6443,24 @@
                 if (av.data.tipo === 'pratica') {
                     return Promise.resolve({ enviada: !!manPra[av.id], bloqueada: false });
                 }
-                var pResp = dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + av.id).get()
-                    .then(function(r) { return r.exists === true; })
-                    .catch(function(e) { console.error('Falha ao verificar resposta de', av.id, e); return false; });
-                var pTent = dbFirestore.collection('avaliacoesTentativas').doc(cpfLimpo + '_' + av.id).get()
-                    .then(function(t) { return t.exists ? String(((t.data() || {}).status) || '') : ''; })
-                    .catch(function(e) { console.error('Falha ao verificar tentativa de', av.id, e); return ''; });
-                return Promise.all([pResp, pTent]).then(function(res) {
-                    var bloqueada = (res[0] !== true && (res[1] === 'bloqueada' || res[1] === 'em_andamento'));
-                    return { enviada: res[0] === true, bloqueada: bloqueada };
-                });
+                /* AV ja respondida nao precisa consultar a tentativa (economiza leitura). */
+                return dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + av.id).get()
+                    .then(function(r) {
+                        if (r.exists === true) return { enviada: true, bloqueada: false };
+                        return dbFirestore.collection('avaliacoesTentativas').doc(cpfLimpo + '_' + av.id).get()
+                            .then(function(t) {
+                                var st = t.exists ? String(((t.data() || {}).status) || '') : '';
+                                return { enviada: false, bloqueada: (st === 'bloqueada' || st === 'em_andamento') };
+                            })
+                            .catch(function(e) {
+                                console.error('Falha ao verificar tentativa de', av.id, e);
+                                return { enviada: false, bloqueada: false };
+                            });
+                    })
+                    .catch(function(e) {
+                        console.error('Falha ao verificar resposta de', av.id, e);
+                        return { enviada: false, bloqueada: false };
+                    });
             }));
             candidatas.forEach(function(av, k) {
                 var est = jaResp[k] || { enviada: false, bloqueada: false };
