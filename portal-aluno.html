@@ -216,6 +216,37 @@
         .pf-blog-modal-title{font-size:22px;font-weight:800;color:#0f172a;margin-bottom:8px;line-height:1.3}
         .pf-blog-modal-sub{font-size:14px;color:#64748b;margin-bottom:16px;line-height:1.5}
         .pf-blog-modal-content{font-size:14px;color:#334155;line-height:1.8;white-space:pre-wrap}
+        .pf-blog-modal-comments{margin-top:24px;border-top:1px solid var(--gray200);padding-top:18px}
+        .pf-blog-modal-comments-head{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px}
+        .pf-blog-modal-comments-head b{color:var(--green);font-size:11px;background:#eef3e2;border-radius:999px;padding:2px 8px}
+        .pf-blog-modal-comments-list{display:flex;flex-direction:column;gap:10px;max-height:260px;overflow-y:auto;padding-right:4px}
+        .pf-blog-modal-comment{display:flex;gap:8px;align-items:flex-start}
+        .pf-blog-modal-comment-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 30px}
+        .pf-blog-modal-comment-main{flex:1;min-width:0}
+        .pf-blog-modal-comment-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .pf-blog-modal-comment-top b{font-size:12px;color:#1e293b}
+        .pf-blog-modal-comment-date{font-size:10px;color:#94a3b8}
+        .pf-blog-modal-comment-text{font-size:13px;color:#475569;line-height:1.55;white-space:pre-wrap;word-break:break-word;margin-top:2px}
+        .pf-blog-modal-comment-actions{margin-left:auto;display:inline-flex;gap:2px}
+        .pf-blog-modal-comment-actions button{background:none;border:none;color:#94a3b8;font-size:10px;cursor:pointer;padding:3px 4px;border-radius:4px;line-height:1}
+        .pf-blog-modal-comment-actions button:hover{color:#334155;background:rgba(15,23,42,.06)}
+        .pf-blog-modal-comment-actions .pf-blog-modal-comment-del:hover{color:#ef4444}
+        .pf-blog-modal-comments-empty{font-size:12px;color:#94a3b8;padding:8px 0;text-align:center}
+        .pf-blog-modal-comment-form{margin-top:14px;border-top:1px dashed var(--gray200);padding-top:12px}
+        .pf-blog-modal-commenting-as{font-size:11px;color:#64748b;margin-bottom:7px}
+        .pf-blog-modal-commenting-as b{color:var(--green)}
+        .pf-blog-modal-comment-form textarea{width:100%;box-sizing:border-box;border:1px solid var(--gray200);border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;color:#1e293b;background:#f8fafc;resize:vertical;min-height:54px;outline:none}
+        .pf-blog-modal-comment-form textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(85,107,47,.12);background:#fff}
+        .pf-blog-modal-comment-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;flex-wrap:wrap}
+        .pf-blog-modal-comment-foot span{font-size:10.5px;color:#94a3b8}
+        .pf-blog-modal-comment-send{border:0;border-radius:8px;background:var(--green);color:#fff;font:inherit;font-size:12px;font-weight:700;padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.2s}
+        .pf-blog-modal-comment-send:hover{background:#3E4F1C}
+        .pf-blog-modal-comment-send:disabled{opacity:.65;cursor:wait}
+        @media(max-width:600px){
+            .pf-blog-modal-comment-foot{align-items:stretch;flex-direction:column}
+            .pf-blog-modal-comment-send{justify-content:center}
+            .pf-blog-modal-comments-list{max-height:none}
+        }
         .pf-blog-modal-img{width:100%;max-height:400px;object-fit:cover}
         .pf-blog-modal-inner > img,.pf-blog-modal-inner > video{width:100%;max-height:400px;object-fit:cover;display:block;background:#14142b}
         .pf-blog-modal-inner > iframe{width:100%;aspect-ratio:16/9;border:0;display:block}
@@ -278,6 +309,21 @@
         .pf-comment-input::placeholder{color:#94a3b8}
         .pf-comment-send{padding:4px 6px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:8px;cursor:pointer;font-weight:600;transition:.2s;font-family:inherit}
         .pf-comment-send:hover{background:#3E4F1C}
+        .pf-interact-label{font-size:11px;font-weight:600;line-height:1;margin-left:1px}
+        .pf-blog-post .pf-interact-bar{display:flex;align-items:center;gap:14px;padding:9px 12px;background:#fff;border-top:1px solid var(--gray200)}
+        .pf-blog-post .pf-interact-btn{display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:.2s;font-family:inherit}
+        .pf-blog-post .pf-interact-btn:hover{background:rgba(15,23,42,.06)}
+        .pf-blog-post .pf-interact-btn i{font-size:13px}
+        .pf-blog-post .pf-interact-btn .pf-interact-label{font-size:12px}
+        .pf-blog-post .pf-comments-section{position:static;top:auto;left:auto;right:auto;max-height:none;overflow:visible;margin:0;padding:10px 12px 12px;background:#fff;border:1px solid var(--gray200);border-top:1px solid var(--gray200);border-radius:0 0 var(--radius) var(--radius)}
+        .pf-blog-post .pf-comments-list{max-height:180px;overflow-y:auto;margin-bottom:8px;padding:0}
+        .pf-blog-post .pf-comment-avatar{width:24px;height:24px;font-size:9px}
+        .pf-blog-post .pf-comment-name{font-size:11px}
+        .pf-blog-post .pf-comment-text{font-size:12px}
+        .pf-blog-post .pf-comment-date{font-size:9px}
+        .pf-blog-post .pf-comment-input{font-size:12px;padding:8px 10px;border-radius:7px}
+        .pf-blog-post .pf-comment-send{font-size:11px;padding:8px 12px;border-radius:7px}
+        .pf-blog-post .pf-comments-empty{padding:8px;font-size:11px;color:#94a3b8;text-align:center}
 
         /* Dados */
         .pf-dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
@@ -2249,6 +2295,12 @@
     function paAdminAutoAccess() {
         var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
         if (adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-aluno'))) {
+            paUser = adminData;
+            paUser.nome = adminData.nome || 'Administrador';
+            paUser.cpf = String(adminData.cpf || adminData.CPF || '').replace(/\D/g, '');
+            paUser.projeto = String(adminData.projeto || '').trim();
+            paUser.turma = String(adminData.turma || '').trim();
+            paUser.admin = true;
             document.getElementById('screen-portal').classList.add('active');
             var initials = (adminData.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
             document.getElementById('pf-user-avatar').textContent = initials;
@@ -2476,6 +2528,7 @@
 
     /* ===== STATS ===== */
     function paLoadStats() {
+        if (!paUser) return;
         var myProjeto = (paUser.projeto || '').trim();
         var myTurma = (paUser.turma || '').trim();
         var statCards = document.querySelectorAll('.pf-stat-val');
@@ -3076,14 +3129,135 @@
                     '<div class="pf-blog-modal-sub">' + (n.subtitulo || '') + '</div>' +
                     '<div style="font-size:11px;color:#64748b;margin-bottom:16px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + dateStr + '</div>' +
                     '<div class="pf-blog-modal-content">' + (window.FarnNoticias && typeof FarnNoticias.linkify === 'function' ? FarnNoticias.linkify(n.texto || '') : paEsc(n.texto || '')) + '</div>' +
+                    '<div class="pf-blog-modal-comments">' +
+                        '<div class="pf-blog-modal-comments-head"><i class="fa-regular fa-comment"></i> Comentarios <b id="paBlogCommentsCount">0</b></div>' +
+                        '<div class="pf-blog-modal-comments-list" id="paBlogCommentsList"><div class="pf-blog-modal-comments-empty">Carregando comentarios...</div></div>' +
+                        '<div class="pf-blog-modal-comment-form" id="paBlogCommentForm">' +
+                            '<div class="pf-blog-modal-commenting-as" id="paBlogCommentWho"></div>' +
+                            '<textarea id="paBlogCommentText" maxlength="1200" rows="2" placeholder="Escreva seu comentario..." onkeydown="if(event.key===\'Enter\'&&(event.ctrlKey||event.metaKey)){event.preventDefault();paBlogSendComment();}"></textarea>' +
+                            '<div class="pf-blog-modal-comment-foot"><span>Seu comentario sera publico.</span><button type="button" class="pf-blog-modal-comment-send" id="paBlogCommentSend" onclick="paBlogSendComment()"><i class="fa-solid fa-paper-plane"></i> Publicar</button></div>' +
+                        '</div>' +
+                    '</div>' +
                 '</div>';
             document.getElementById('pf-blog-modal').classList.add('active');
             document.body.style.overflow = 'hidden';
+            paBlogOpenComments(doc.id);
         });
     }
     function paCloseBlog() {
+        paBlogCloseComments();
         document.getElementById('pf-blog-modal').classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    var paBlogCommentsCurrentId = null;
+    var paBlogCommentsUnsub = null;
+    var paBlogCommentSending = false;
+
+    function paBlogCloseComments() {
+        if (paBlogCommentsUnsub) {
+            try { paBlogCommentsUnsub(); } catch (e) {}
+            paBlogCommentsUnsub = null;
+        }
+        paBlogCommentsCurrentId = null;
+        paBlogCommentSending = false;
+    }
+
+    function paBlogOpenComments(id) {
+        paBlogCloseComments();
+        paBlogCommentsCurrentId = id;
+        var list = document.getElementById('paBlogCommentsList');
+        var countEl = document.getElementById('paBlogCommentsCount');
+        var who = document.getElementById('paBlogCommentWho');
+        var form = document.getElementById('paBlogCommentForm');
+        if (countEl) countEl.textContent = '0';
+        if (who) {
+            if (paUser) {
+                who.innerHTML = '<i class="fa-solid fa-circle-check"></i> Comentando como <b>' + paEsc(paUser.nome || 'Aluno') + '</b>';
+            } else {
+                who.textContent = 'Entre no portal para comentar.';
+            }
+        }
+        if (form) form.style.display = paUser ? '' : 'none';
+        if (typeof dbFirestore === 'undefined') {
+            if (list) list.innerHTML = '<div class="pf-blog-modal-comments-empty">Comentarios indisponiveis agora.</div>';
+            return;
+        }
+        var ref = dbFirestore.collection('noticiasAlunos').doc(id).collection('comentarios');
+        paBlogCommentsUnsub = ref.orderBy('data', 'asc').onSnapshot(function(snap) {
+            if (paBlogCommentsCurrentId !== id) return;
+            if (countEl) countEl.textContent = snap.size;
+            paBlogRenderComments(snap);
+        }, function(err) {
+            console.error('Erro ao carregar comentarios:', err);
+            if (list) list.innerHTML = '<div class="pf-blog-modal-comments-empty">Nao foi possivel carregar os comentarios.</div>';
+        });
+    }
+
+    function paBlogRenderComments(snap) {
+        var list = document.getElementById('paBlogCommentsList');
+        if (!list) return;
+        if (!snap || snap.empty) {
+            list.innerHTML = '<div class="pf-blog-modal-comments-empty">Nenhum comentario ainda. Seja o primeiro!</div>';
+            return;
+        }
+        var myCpf = (paUser && paUser.cpf || '').replace(/\D/g, '');
+        var isAdmin = !!(paUser && paUser.admin);
+        var html = '';
+        snap.forEach(function(d) {
+            var c = d.data();
+            var nome = String(c.nome || c.cpf || 'Aluno').trim() || 'Aluno';
+            var initials = nome.split(/\s+/).filter(Boolean).map(function(w){ return w.charAt(0); }).slice(0, 2).join('').toUpperCase() || 'A';
+            var dateStr = c.data ? new Date(c.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            var isMeu = myCpf && String(c.cpf || '').replace(/\D/g, '') === myCpf;
+            var podeGerenciar = isMeu || isAdmin;
+            var actions = podeGerenciar ? '<span class="pf-blog-modal-comment-actions">' +
+                '<button type="button" title="Editar" onclick="paEditComment(\'noticiasAlunos\',\'' + paBlogCommentsCurrentId + '\',\'' + d.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button type="button" class="pf-blog-modal-comment-del" title="Excluir" onclick="paDeleteComment(\'noticiasAlunos\',\'' + paBlogCommentsCurrentId + '\',\'' + d.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
+                '</span>' : '';
+            html += '<div class="pf-blog-modal-comment">' +
+                '<div class="pf-blog-modal-comment-avatar">' + paEsc(initials) + '</div>' +
+                '<div class="pf-blog-modal-comment-main">' +
+                    '<div class="pf-blog-modal-comment-top"><b>' + paEsc(nome) + '</b><span class="pf-blog-modal-comment-date">' + paEsc(dateStr) + '</span>' + actions + '</div>' +
+                    '<div class="pf-blog-modal-comment-text">' + paEsc(c.texto || '') + '</div>' +
+                '</div>' +
+            '</div>';
+        });
+        list.innerHTML = html;
+        list.scrollTop = list.scrollHeight;
+    }
+
+    async function paBlogSendComment() {
+        if (paBlogCommentSending) return;
+        if (!paUser) { alert('Entre no portal para comentar.'); return; }
+        var postId = paBlogCommentsCurrentId;
+        if (!postId) return;
+        var input = document.getElementById('paBlogCommentText');
+        var texto = (input && input.value || '').trim();
+        if (!texto) { if (input) input.focus(); return; }
+        var btn = document.getElementById('paBlogCommentSend');
+        var original = btn ? btn.innerHTML : '';
+        paBlogCommentSending = true;
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando...'; }
+        var cpf = String(paUser.cpf || '').replace(/\D/g, '');
+        var dados = {
+            nome: paUser.nome || 'Aluno',
+            texto: texto,
+            data: new Date().toISOString(),
+            autorId: cpf ? ('cpf:' + cpf) : ('admin:' + (paUser.nome || 'admin')),
+            autorTipo: 'cadastrado'
+        };
+        if (cpf) dados.cpf = cpf;
+        try {
+            await dbFirestore.collection('noticiasAlunos').doc(postId).collection('comentarios').add(dados);
+            if (input) input.value = '';
+        } catch (e) {
+            console.error('Erro ao comentar:', e);
+            alert('Nao foi possivel publicar o comentario. Tente novamente.');
+        } finally {
+            paBlogCommentSending = false;
+            if (btn) { btn.disabled = false; btn.innerHTML = original; }
+        }
     }
 
     var paBlogFilterVal = '';
@@ -3618,9 +3792,12 @@
         var key = paInteractKey(collection, docId);
         var data = paInteractCache[key] || { curtidas: 0, comentarios: 0, euCurti: false };
         var heartClass = data.euCurti ? 'pf-interact-btn liked' : 'pf-interact-btn';
+        var noticia = collection === 'noticiasAlunos';
+        var rotuloCurtir = noticia ? '<span class="pf-interact-label">Curtir</span> ' : '';
+        var rotuloComentar = noticia ? '<span class="pf-interact-label">Comentar</span> ' : '';
         return '<div class="pf-interact-bar">' +
-            '<button class="' + heartClass + '" onclick="event.stopPropagation();paToggleCurtida(\'' + collection + '\',\'' + docId + '\')"><i class="fa-solid fa-heart"></i> <span data-likes="' + key + '">' + data.curtidas + '</span></button>' +
-            '<button class="pf-interact-btn pf-comment-toggle" data-combtn="' + key + '" onclick="event.stopPropagation();paToggleComments(\'' + collection + '\',\'' + docId + '\',this)"><i class="fa-solid fa-comment"></i> <span data-coms="' + key + '">' + data.comentarios + '</span> <i class="fa-solid fa-chevron-down pf-com-arrow" data-comarrow="' + key + '" style="font-size:8px;margin-left:2px;transition:transform .2s"></i></button>' +
+            '<button class="' + heartClass + '" onclick="event.stopPropagation();paToggleCurtida(\'' + collection + '\',\'' + docId + '\')"><i class="fa-solid fa-heart"></i> ' + rotuloCurtir + '<span data-likes="' + key + '">' + data.curtidas + '</span></button>' +
+            '<button class="pf-interact-btn pf-comment-toggle" data-combtn="' + key + '" onclick="event.stopPropagation();paToggleComments(\'' + collection + '\',\'' + docId + '\',this)"><i class="fa-solid fa-comment"></i> ' + rotuloComentar + '<span data-coms="' + key + '">' + data.comentarios + '</span> <i class="fa-solid fa-chevron-down pf-com-arrow" data-comarrow="' + key + '" style="font-size:8px;margin-left:2px;transition:transform .2s"></i></button>' +
             '</div>' +
             '<div class="pf-comments-section" data-comsec="' + key + '">' +
                 '<div class="pf-comments-list" data-comlist="' + key + '"></div>' +
@@ -3686,8 +3863,9 @@
             var nome = c.nome || c.cpf || 'Aluno';
             var initials = nome.split(' ').map(function(w){ return w[0]; }).slice(0, 2).join('').toUpperCase();
             var dateStr = c.data ? new Date(c.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-            var isMeu = c.cpf === myCpf;
-            var actionsHtml = isMeu ? '<span class="pf-comment-actions">' +
+            var isMeu = myCpf && String(c.cpf || '').replace(/\D/g, '') === myCpf;
+            var podeGerenciar = isMeu || !!(paUser && paUser.admin);
+            var actionsHtml = podeGerenciar ? '<span class="pf-comment-actions">' +
                 '<button class="pf-comment-action-btn" onclick="paEditComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
                 '<button class="pf-comment-action-btn pf-comment-action-del" onclick="paDeleteComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</span>' : '';
@@ -3806,6 +3984,10 @@
             var arrow2 = sec.parentElement ? sec.parentElement.querySelector('.pf-com-arrow') : null;
             if (!arrow2 && card) arrow2 = card.querySelector('.pf-com-arrow');
             if (arrow2) arrow2.style.transform = 'rotate(180deg)';
+            setTimeout(function() {
+                try { sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+                catch (e) { try { sec.scrollIntoView(); } catch (e2) {} }
+            }, 80);
         }
     }
 
