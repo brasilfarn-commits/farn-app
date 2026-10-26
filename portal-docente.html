@@ -4009,6 +4009,7 @@
         var pdAvPresencas = [];
         var pdAvAbaAtual = 'teorica';
         var pdAvFoLista = { positivos: [], negativos: [] };
+        var pdAvProvasCache = { cpf: '', html: '' };
 
         /* ===== RESPONDER AV PRATICA ===== */
         var pdAvpProjeto = '';
@@ -4214,6 +4215,7 @@
             }
             if (!a) return;
             pdAvAlunoAtual = a;
+            pdAvProvasCache = { cpf: '', html: '' };
             document.getElementById('pd-av-ficha-overlay').style.display = 'block';
             document.getElementById('pd-av-ficha-nome').textContent = a.nome;
             document.getElementById('pd-av-ficha-meta').textContent = 'Matrícula: ' + (a.matricula || '—') + '  •  Turma: ' + a.turma + '  •  Projeto: ' + a.projeto;
@@ -4231,6 +4233,7 @@
             pdAvPresencas = [];
             pdAvAulasCache = null;
             pdAvAbaAtual = 'teorica';
+            pdAvProvasCache = { cpf: '', html: '' };
         }
 
         function pdAvTrocarAba(nome) {
@@ -4252,7 +4255,9 @@
             var aulas = tipo === 'teorica' ? (pdAvAulasCache.teorica || []) : (pdAvAulasCache.pratica || []);
             var notas = tipo === 'teorica' ? (pdAvAvaliacao.notasTeoricas || {}) : (pdAvAvaliacao.notasPraticas || {});
             if (!aulas.length) {
-                container.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8"><i class="fa-solid fa-' + (tipo === 'teorica' ? 'file-lines' : 'flask') + '" style="font-size:30px;margin-bottom:8px;display:block"></i>Nenhuma aula marcada como AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '.</div>';
+                container.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8"><i class="fa-solid fa-' + (tipo === 'teorica' ? 'file-lines' : 'flask') + '" style="font-size:30px;margin-bottom:8px;display:block"></i>Nenhuma aula marcada como AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '.</div>' +
+                    (tipo === 'teorica' ? '<div id="pd-av-provas-portal" style="margin-top:16px"></div>' : '');
+                if (tipo === 'teorica') pdAvProvasPortalCarregar(pdAvAlunoAtual);
                 return;
             }
             var soma = 0, qtd = 0;
@@ -4279,7 +4284,121 @@
                 '<div class="media-valor">' + (aulas.length ? media.toFixed(1) : '—') + '</div>' +
                 '<div style="font-size:11px;color:#64748b;margin-top:4px">' + qtd + ' de ' + aulas.length + ' nota(s) lancada(s)</div>' +
                 '</div>';
+            if (tipo === 'teorica') {
+                html += '<div id="pd-av-provas-portal" style="margin-top:18px"></div>';
+            }
             container.innerHTML = html;
+            if (tipo === 'teorica') pdAvProvasPortalCarregar(pdAvAlunoAtual);
+        }
+
+        /* Provas teoricas do portal deste aluno: mostra o status de cada tentativa
+           (enviada, bloqueada, em andamento ou nao iniciada) e permite ao instrutor
+           liberar a prova bloqueada para o aluno voltar a responder. */
+        async function pdAvProvasPortalCarregar(aluno) {
+            var wrap = document.getElementById('pd-av-provas-portal');
+            if (!wrap || !aluno) return;
+            var cpfLimpo = String(aluno.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '');
+            if (!cpfLimpo) {
+                wrap.innerHTML = '';
+                return;
+            }
+            if (pdAvProvasCache.cpf === cpfLimpo && pdAvProvasCache.html) {
+                wrap.innerHTML = pdAvProvasCache.html;
+                return;
+            }
+            wrap.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando provas do portal...</div>';
+            try {
+                var snap = await dbFirestore.collection('avaliacoes').where('turma', '==', aluno.turma).get();
+                var avs = [];
+                snap.forEach(function(doc) {
+                    var d = doc.data() || {};
+                    if (d.enviada !== true) return;
+                    if (d.tipo === 'pratica' || d.tipo === 'final_pratica') return;
+                    avs.push({ id: doc.id, nome: d.nome || 'Avaliação' });
+                });
+                if (!avs.length) {
+                    wrap.innerHTML = '<div style="font-size:12px;color:#94a3b8;text-align:center;padding:10px">Nenhuma prova teórica enviada para a turma deste aluno.</div>';
+                    pdAvProvasCache = { cpf: cpfLimpo, html: wrap.innerHTML };
+                    return;
+                }
+                avs.sort(function(a, b) { return a.nome.localeCompare(b.nome); });
+                var leituras = await Promise.all(avs.map(function(av) {
+                    var base = cpfLimpo + '_' + av.id;
+                    var pResp = dbFirestore.collection('avaliacoesRespostas').doc(base).get()
+                        .then(function(r) { return r.exists ? (r.data() || {}) : null; })
+                        .catch(function() { return null; });
+                    var pTent = dbFirestore.collection('avaliacoesTentativas').doc(base).get()
+                        .then(function(t) { return t.exists ? (t.data() || {}) : null; })
+                        .catch(function() { return null; });
+                    return Promise.all([pResp, pTent]).then(function(res) {
+                        return { av: av, resp: res[0], tent: res[1] };
+                    });
+                }));
+                var html = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #dc2626;flex-wrap:wrap">' +
+                    '<i class="fa-solid fa-lock" style="color:#dc2626"></i>' +
+                    '<span style="font-size:13px;font-weight:800;color:#0f172a">Provas do Portal (Teóricas)</span>' +
+                    '<span style="font-size:11px;color:#64748b;margin-left:auto">Libere a prova se o aluno saiu da página durante a avaliação</span>' +
+                    '</div>';
+                leituras.forEach(function(item) {
+                    var av = item.av;
+                    var resp = item.resp || {};
+                    var tent = item.tent || {};
+                    var enviada = !!(resp.enviadoEm || resp.pontos != null);
+                    var tentStatus = String(tent.status || '');
+                    var emAndamento = (!enviada && tentStatus === 'em_andamento');
+                    var bloqueada = (!enviada && (tentStatus === 'bloqueada' || emAndamento));
+                    var status, cor, bg, acao = '';
+                    if (enviada) {
+                        status = 'Enviada' + (resp.pontos != null ? ' — nota ' + String(resp.pontos).replace('.', ',') : '');
+                        cor = '#16a34a'; bg = '#f0fdf4';
+                    } else if (bloqueada) {
+                        status = emAndamento ? 'Em andamento' : 'Bloqueada';
+                        cor = '#dc2626'; bg = '#fef2f2';
+                        acao = '<button onclick="pdAvLiberarProva(\'' + av.id + '\')" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-unlock" style="margin-right:4px"></i>Liberar prova</button>';
+                    } else {
+                        status = 'Não iniciada'; cor = '#64748b'; bg = '#f8fafc';
+                    }
+                    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:' + bg + ';flex-wrap:wrap">' +
+                        '<div style="flex:1;min-width:170px">' +
+                        '<div style="font-size:13px;font-weight:700;color:#0f172a">' + pdEsc(av.nome) + '</div>' +
+                        '<div style="font-size:11px;color:' + cor + ';font-weight:700;margin-top:2px"><i class="fa-solid fa-circle" style="font-size:7px;vertical-align:middle;margin-right:4px"></i>' + status +
+                        (bloqueada && tent.bloqueadaMotivo ? ' — ' + pdEsc(tent.bloqueadaMotivo) : '') + '</div>' +
+                        '</div>' + acao + '</div>';
+                });
+                wrap.innerHTML = html;
+                pdAvProvasCache = { cpf: cpfLimpo, html: html };
+            } catch (e) {
+                console.error('Falha ao carregar provas do portal:', e);
+                wrap.innerHTML = '<div style="font-size:12px;color:#dc2626;text-align:center;padding:10px">Não foi possível carregar as provas do portal.</div>';
+            }
+        }
+
+        async function pdAvLiberarProva(avId) {
+            if (!pdAvAlunoAtual || !avId) return;
+            var cpfLimpo = String(pdAvAlunoAtual.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '');
+            if (!cpfLimpo) return;
+            if (!confirm('Liberar esta prova para o aluno responder novamente? A tentativa bloqueada será descartada.')) return;
+            try {
+                await dbFirestore.collection('avaliacoesTentativas').doc(cpfLimpo + '_' + avId).set({
+                    avaliacaoId: avId,
+                    cpf: pdAvAlunoAtual.cpf || '',
+                    nome: pdAvAlunoAtual.nome || '',
+                    matricula: pdAvAlunoAtual.matricula || '',
+                    turma: pdAvAlunoAtual.turma || '',
+                    projeto: pdAvAlunoAtual.projeto || '',
+                    status: 'liberada',
+                    liberada: true,
+                    liberadaPor: pdUser ? (pdUser.nome || '') : '',
+                    liberadaEm: new Date(),
+                    bloqueadaEm: null,
+                    bloqueadaMotivo: ''
+                }, { merge: true });
+                pdAvProvasCache = { cpf: '', html: '' };
+                await pdAvProvasPortalCarregar(pdAvAlunoAtual);
+            } catch (e) {
+                console.error('Erro ao liberar prova:', e);
+                alert('Não foi possível liberar a prova. Tente novamente.');
+            }
         }
 
         async function pdAvSalvarNota(tipo, aulaId, el) {

@@ -1603,6 +1603,26 @@
                     </div>
                 </div>
 
+                <!-- AVISO DE INICIO DA PROVA -->
+                <div id="pf-rav-aviso-overlay" style="display:none;position:fixed;inset:0;z-index:2100;background:rgba(15,23,42,.72);align-items:center;justify-content:center;padding:20px">
+                    <div style="background:#fff;border-radius:18px;max-width:480px;width:100%;padding:26px;box-shadow:0 24px 70px rgba(15,23,42,.35)">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                            <div style="width:46px;height:46px;border-radius:50%;background:#fef2f2;border:2px solid #fecaca;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-triangle-exclamation" style="font-size:20px;color:#dc2626"></i></div>
+                            <div>
+                                <div style="font-size:16px;font-weight:800;color:#0f172a">Atenção antes de iniciar</div>
+                                <div style="font-size:12px;color:#64748b" id="pf-rav-aviso-nome"></div>
+                            </div>
+                        </div>
+                        <p style="font-size:13px;color:#334155;line-height:1.6;margin-bottom:10px">Ao iniciar esta prova, <b>não feche a janela</b>, <b>não recarregue a página</b>, <b>não troque de aba ou de janela</b>, <b>não minimize</b> e <b>não saia desta seção</b>.</p>
+                        <p style="font-size:13px;color:#334155;line-height:1.6;margin-bottom:10px">Se você sair da página da avaliação, a prova será <b style="color:#dc2626">BLOQUEADA</b> e você ficará <b style="color:#dc2626">SEM NOTA</b> nesta tentativa.</p>
+                        <p style="font-size:12px;color:#64748b;background:#f8fafc;border-left:3px solid #C9D6A9;padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:18px">A liberação para responder novamente só pode ser feita pelo instrutor.</p>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                            <button onclick="paRavAvisoCancelar()" style="background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:600;cursor:pointer">Cancelar</button>
+                            <button onclick="paRavAvisoConfirmar()" style="background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:700;cursor:pointer"><i class="fa-solid fa-play" style="margin-right:4px"></i>Entendi, iniciar prova</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- MODAL RESULTADO AVALIACAO -->
                 <div id="pf-rav-resultado-overlay" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.6);align-items:center;justify-content:center;padding:20px">
                     <div style="background:#fff;border-radius:20px;max-width:460px;width:100%;padding:28px 26px;box-shadow:0 24px 70px rgba(15,23,42,.35);text-align:center">
@@ -2370,6 +2390,10 @@
     }
 
     function paLogout() {
+        if (typeof paRavTentativaAtiva !== 'undefined' && paRavTentativaAtiva) {
+            if (!paRavConfirmarSeguro('Você está com uma prova em andamento. Se sair agora, a prova será BLOQUEADA e você ficará SEM NOTA. Deseja realmente sair?')) return;
+            paRavBloquear('Saiu do portal durante a prova', true);
+        }
         if (typeof wfSair === 'function') wfSair();
         if (paGalleryUnsub) { paGalleryUnsub(); paGalleryUnsub = null; }
         if (paGalleryUnsub2) { paGalleryUnsub2(); paGalleryUnsub2 = null; }
@@ -2893,6 +2917,10 @@
     }
 
     function paShowSection(section, el) {
+        if (typeof paRavTentativaAtiva !== 'undefined' && paRavTentativaAtiva && section !== 'responder-avaliacao') {
+            if (!paRavConfirmarSeguro('Você está com uma prova em andamento. Se sair desta página, a prova será BLOQUEADA e você ficará SEM NOTA. Deseja realmente sair?')) return;
+            paRavBloquear('Saiu da seção da prova', false);
+        }
         document.querySelectorAll('.pf-section').forEach(function(s){ s.classList.remove('active'); });
         document.querySelectorAll('.pf-nav-item').forEach(function(n){ n.classList.remove('active'); });
         if (el) el.classList.add('active');
@@ -5949,6 +5977,144 @@
     var paRavRespostas = {};
     var paRavCorretas = {};
 
+    /* Controle da tentativa: se o aluno sair da pagina da prova, a tentativa
+       fica BLOQUEADA em avaliacoesTentativas e so o instrutor pode liberar
+       (botao na ficha de avaliacao do portal do docente). */
+    var paRavTentativaAtiva = false;
+    var paRavAvisoResolver = null;
+    var paRavAlertaPendente = false;
+    var paRavIgnorarSaidaAte = 0;
+
+    function paRavCpfLimpo() {
+        return String((paUser && paUser.cpf) || '').replace(/[^0-9a-zA-Z_-]/g, '') || 'anonimo';
+    }
+
+    function paRavRefTentativa(avId) {
+        return dbFirestore.collection('avaliacoesTentativas').doc(paRavCpfLimpo() + '_' + avId);
+    }
+
+    function paRavDadosAluno(avId, nomeAv) {
+        return {
+            avaliacaoId: avId,
+            avaliacaoNome: nomeAv || 'Avaliação',
+            cpf: (paUser && paUser.cpf) || '',
+            nome: (paUser && paUser.nome) || '',
+            matricula: (paUser && paUser.matricula) || '',
+            turma: ((paUser && paUser.turma) || '').trim(),
+            projeto: ((paUser && paUser.projeto) || '').trim()
+        };
+    }
+
+    /* O dialogo nativo pode tirar o foco da janela; pausa o bloqueio
+       enquanto ele esta aberto e por um instante depois, para nao
+       bloquear a prova indevidamente quando o aluno cancela. */
+    function paRavConfirmarSeguro(msg) {
+        var ativa = paRavTentativaAtiva;
+        paRavTentativaAtiva = false;
+        var resposta = false;
+        try { resposta = confirm(msg); }
+        finally {
+            paRavTentativaAtiva = ativa;
+            paRavIgnorarSaidaAte = Date.now() + 1200;
+        }
+        return resposta;
+    }
+
+    function paRavSaidaIgnorada() {
+        return Date.now() < paRavIgnorarSaidaAte;
+    }
+
+    function paRavConfirmarInicio(nome) {
+        return new Promise(function (resolve) {
+            paRavAvisoResolver = resolve;
+            var ov = document.getElementById('pf-rav-aviso-overlay');
+            var nomeEl = document.getElementById('pf-rav-aviso-nome');
+            if (nomeEl) nomeEl.textContent = nome || 'Avaliação';
+            if (ov) ov.style.display = 'flex';
+        });
+    }
+
+    function paRavAvisoFechar(resposta) {
+        var ov = document.getElementById('pf-rav-aviso-overlay');
+        if (ov) ov.style.display = 'none';
+        var resolver = paRavAvisoResolver;
+        paRavAvisoResolver = null;
+        if (resolver) resolver(resposta);
+    }
+
+    function paRavAvisoConfirmar() { paRavAvisoFechar(true); }
+    function paRavAvisoCancelar() { paRavAvisoFechar(false); }
+
+    function paRavMarcarInicio(avId, d) {
+        paRavTentativaAtiva = true;
+        paRavAlertaPendente = false;
+        var dados = paRavDadosAluno(avId, d && d.nome);
+        dados.status = 'em_andamento';
+        dados.iniciadaEm = new Date();
+        dados.bloqueadaEm = null;
+        dados.bloqueadaMotivo = '';
+        paRavRefTentativa(avId).set(dados, { merge: true }).catch(function (e) {
+            console.error('Falha ao registrar o inicio da tentativa:', e);
+        });
+    }
+
+    function paRavBloquear(motivo, silencioso) {
+        if (!paRavTentativaAtiva || !paRavAtual) return;
+        var avId = paRavAtual.id;
+        var conteudo = paRavAtual.conteudo || {};
+        paRavTentativaAtiva = false;
+        if (paRavTimer) { clearInterval(paRavTimer); paRavTimer = null; }
+        var dados = paRavDadosAluno(avId, conteudo.nome);
+        dados.status = 'bloqueada';
+        dados.bloqueadaEm = new Date();
+        dados.bloqueadaMotivo = motivo || 'Saiu da página da avaliação';
+        try {
+            paRavRefTentativa(avId).set(dados, { merge: true }).catch(function (e) {
+                console.error('Falha ao registrar o bloqueio da prova:', e);
+            });
+        } catch (e) { console.error('Falha ao registrar o bloqueio da prova:', e); }
+        paRavAtual = null;
+        paRavRespostas = {};
+        paRavCorretas = {};
+        var prova = document.getElementById('pf-rav-prova');
+        var lista = document.getElementById('pf-rav-lista');
+        if (prova) prova.style.display = 'none';
+        if (lista) lista.style.display = 'block';
+        if (silencioso) paRavAlertaPendente = true;
+        else alert('A prova foi BLOQUEADA porque você saiu da página da avaliação. Você ficará sem nota nesta tentativa. Solicite ao instrutor a liberação para responder novamente.');
+        paLoadResponderAvaliacao();
+    }
+
+    function paRavMostrarAlertaBloqueio() {
+        if (!paRavAlertaPendente) return;
+        paRavAlertaPendente = false;
+        alert('A prova foi BLOQUEADA porque você saiu da página da avaliação. Você ficará sem nota nesta tentativa. Solicite ao instrutor a liberação para responder novamente.');
+    }
+
+    /* Saidas da pagina: qualquer uma bloqueia a prova em andamento. O marcador
+       'em_andamento' gravado no inicio garante o bloqueio mesmo se a gravacao
+       durante o fechamento da aba nao chegar ao servidor. */
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+            if (paRavTentativaAtiva && !paRavSaidaIgnorada()) paRavBloquear('Trocou de aba, minimizou ou fechou a janela', true);
+        } else {
+            paRavMostrarAlertaBloqueio();
+        }
+    });
+    window.addEventListener('blur', function () {
+        if (paRavTentativaAtiva && !paRavSaidaIgnorada()) paRavBloquear('Mudou de janela durante a prova', true);
+    });
+    window.addEventListener('focus', paRavMostrarAlertaBloqueio);
+    window.addEventListener('pagehide', function () {
+        if (paRavTentativaAtiva && !paRavSaidaIgnorada()) paRavBloquear('Fechou ou recarregou a página da prova', true);
+    });
+    window.addEventListener('beforeunload', function (e) {
+        if (!paRavTentativaAtiva) return;
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    });
+
     /* Configuracao da prova conforme o numero de questoes:
        - peso por questao: 10 questoes = 1,0 | 20 = 0,5 | demais = 10/total (escala ate 10).
          (regra do projeto: questao NAO respondida vale 0, sem desconto)
@@ -5999,22 +6165,24 @@
         return !!(d && d.recuperacaoParada === true);
     }
 
-    function paRavMontarCard(av, jaAvaliada, recuperacao, parada, falta) {
+    function paRavMontarCard(av, jaAvaliada, recuperacao, parada, falta, bloqueada) {
         var d = av.data;
         // AV Pratica e AV Final Pratica: mesmo fluxo (so visualiza; o docente corrige).
         var isPratica = (d.tipo === 'pratica' || d.tipo === 'final_pratica');
         var isFinal = (d.tipo === 'final_teorica' || d.tipo === 'final_pratica');
         var rec = (recuperacao === true);
         var recParada = (parada === true) && rec;
-        var semPresenca = (falta === true) && !jaAvaliada && !rec;
-        var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true && !rec);
+        var bloq = (bloqueada === true) && !jaAvaliada;
+        var semPresenca = (falta === true) && !jaAvaliada && !rec && !bloq;
+        var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true && !rec && !bloq);
         /* Cores: verde = respondida/enviada; cinza = recuperacao ainda nao respondida;
-           vermelha = nao respondeu por falta (nao presenca); laranja = ainda sera ativada;
-           oliva (tema) = disponivel para responder. */
+           vermelha = nao respondeu por falta (nao presenca) ou prova bloqueada;
+           laranja = ainda sera ativada; oliva (tema) = disponivel para responder. */
         var cor = jaAvaliada ? '#16a34a'
+            : (bloq ? '#dc2626'
             : (rec ? '#64748b'
             : (emBreve ? '#ea580c'
-            : (semPresenca ? '#dc2626' : '#556B2F')));
+            : (semPresenca ? '#dc2626' : '#556B2F'))));
         function selo(txt, icone) {
             return '<span style="display:inline-flex;align-items:center;gap:5px;background:' + cor + ';color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid ' + icone + '" style="margin-right:4px"></i>' + txt + '</span>';
         }
@@ -6026,6 +6194,8 @@
             btn = btnVisualizar;
         } else if (jaAvaliada) {
             btn = btnVisualizar;
+        } else if (bloq) {
+            btn = selo('Prova bloqueada', 'fa-lock');
         } else if (rec && recParada && !ativaAgora) {
             btn = selo('Recuperação em breve', 'fa-hourglass-half');
         } else if (rec && !ativaAgora) {
@@ -6040,15 +6210,17 @@
             btn = '<button onclick="paRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#556B2F,#3E4F1C);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
         }
         var statusTxt = jaAvaliada ? 'Avaliada'
+            : (bloq ? 'Bloqueada'
             : (ativaAgora ? 'Disponível para responder'
             : (rec ? (recParada ? 'Recuperação em breve' : 'Recuperação')
             : (emBreve ? 'Em breve'
-            : (semPresenca ? 'Falta' : 'Disponível para responder'))));
+            : (semPresenca ? 'Falta' : 'Disponível para responder')))));
         var statusCor = jaAvaliada ? '#16a34a'
+            : (bloq ? '#dc2626'
             : (ativaAgora ? '#556B2F'
             : (rec ? (recParada ? '#ea580c' : '#64748b')
             : (emBreve ? '#ea580c'
-            : (semPresenca ? '#dc2626' : '#556B2F'))));
+            : (semPresenca ? '#dc2626' : '#556B2F')))));
         var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + statusCor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + statusTxt + '</span>' +
             (isFinal ? '<span style="font-size:10px;font-weight:700;color:#7c3aed;background:#f3e8ff;border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px;margin-left:4px">Final</span>' : '');
         var card = document.createElement('div');
@@ -6060,6 +6232,7 @@
                 '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
                 (rec ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + (recParada ? ('Recuperação em breve — ' + (jaAvaliada ? 'você já concluiu; use Visualizar para ver o resultado.' : 'aguarde a liberação do instrutor para responder.')) : (jaAvaliada ? 'Recuperação respondida — use Visualizar para ver o resultado.' : 'Liberada para recuperação — você pode fazer esta avaliação.')) + '</div>' : '') +
                 (emBreve ? '<div style="font-size:11px;color:#ea580c;margin-top:2px">Disponível em breve para responder.</div>' : '') +
+                (bloq ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Você saiu da página durante a prova. Solicite ao instrutor a liberação para responder novamente.</div>' : '') +
                 (semPresenca ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Você não esteve presente no dia desta AV. Procure o instrutor para orientações.</div>' : '') +
                 (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + paEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + paEsc(d.docente) : '') + '</div>' : '') +
             '</div>' +
@@ -6225,14 +6398,28 @@
             });
 
             // "Ja respondida" por aluno: pratica = nota do instrutor (avPraticaManual);
-            // teorica/final = doc em avaliacoesRespostas. Leituras em paralelo.
+            // teorica/final = doc em avaliacoesRespostas. A tentativa bloqueada fica
+            // em avaliacoesTentativas e impede o aluno de responder ate o instrutor liberar.
             var jaResp = await Promise.all(candidatas.map(function(av) {
-                if (av.data.tipo === 'pratica') return Promise.resolve(manPra[av.id] ? true : false);
-                return dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + av.id).get()
+                if (av.data.tipo === 'pratica') {
+                    return Promise.resolve({ enviada: !!manPra[av.id], bloqueada: false });
+                }
+                var pResp = dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + av.id).get()
                     .then(function(r) { return r.exists === true; })
                     .catch(function(e) { console.error('Falha ao verificar resposta de', av.id, e); return false; });
+                var pTent = dbFirestore.collection('avaliacoesTentativas').doc(cpfLimpo + '_' + av.id).get()
+                    .then(function(t) { return t.exists ? String(((t.data() || {}).status) || '') : ''; })
+                    .catch(function(e) { console.error('Falha ao verificar tentativa de', av.id, e); return ''; });
+                return Promise.all([pResp, pTent]).then(function(res) {
+                    var bloqueada = (res[0] !== true && (res[1] === 'bloqueada' || res[1] === 'em_andamento'));
+                    return { enviada: res[0] === true, bloqueada: bloqueada };
+                });
             }));
-            candidatas.forEach(function(av, k) { av.jaAvaliada = (jaResp[k] === true); });
+            candidatas.forEach(function(av, k) {
+                var est = jaResp[k] || { enviada: false, bloqueada: false };
+                av.jaAvaliada = (est.enviada === true);
+                av.bloqueada = (est.bloqueada === true);
+            });
 
             // Duas colunas: AV Final entra na coluna da sua modalidade
             // (final_teorica -> Teorica; final_pratica -> Pratica)
@@ -6254,10 +6441,10 @@
 
             // Monta um card por AV e distribui em duas colunas: AV Teorica | AV Pratica
             var cardsTe = teoria.map(function(avTe) {
-                return paRavMontarCard(avTe, avTe.jaAvaliada, paRavAlunoSelecionado(avTe.data), paRavRecuperacaoParada(avTe.data), paAvSemPresenca(avTe.data, presencas, diaMap));
+                return paRavMontarCard(avTe, avTe.jaAvaliada, paRavAlunoSelecionado(avTe.data), paRavRecuperacaoParada(avTe.data), paAvSemPresenca(avTe.data, presencas, diaMap), avTe.bloqueada);
             });
             var cardsPr = pratica.map(function(avPr) {
-                return paRavMontarCard(avPr, avPr.jaAvaliada, paRavAlunoSelecionado(avPr.data), paRavRecuperacaoParada(avPr.data), paAvSemPresenca(avPr.data, presencas, diaMap));
+                return paRavMontarCard(avPr, avPr.jaAvaliada, paRavAlunoSelecionado(avPr.data), paRavRecuperacaoParada(avPr.data), paAvSemPresenca(avPr.data, presencas, diaMap), avPr.bloqueada);
             });
 
             var grid = document.createElement('div');
@@ -6308,6 +6495,32 @@
             // esteja restrita a outros alunos ou desativada: AV ja feita nunca desaparece.
             var jaRespondeuAntes = await paRavJaRespondeu(d, avId);
             if (!paRavAlunoPermitido(d) && !jaRespondeuAntes) { alert('Esta avaliação não está disponível para você.'); return; }
+
+            // Tentativa bloqueada (saida da pagina) ou interrompida sem registro:
+            // o aluno so volta a responder depois que o instrutor liberar.
+            if (!jaRespondeuAntes) {
+                var tentStatus = '';
+                try {
+                    var tDoc = await paRavRefTentativa(avId).get();
+                    if (tDoc.exists) tentStatus = String((tDoc.data() || {}).status || '');
+                } catch (e) { console.error('Falha ao verificar a tentativa da prova:', e); }
+                if (tentStatus === 'bloqueada' || tentStatus === 'em_andamento') {
+                    if (tentStatus === 'em_andamento') {
+                        var dadosBloqueio = paRavDadosAluno(avId, d.nome);
+                        dadosBloqueio.status = 'bloqueada';
+                        dadosBloqueio.bloqueadaEm = new Date();
+                        dadosBloqueio.bloqueadaMotivo = 'Tentativa interrompida (página fechada, recarregada ou trocada)';
+                        paRavRefTentativa(avId).set(dadosBloqueio, { merge: true }).catch(function (e) {
+                            console.error('Falha ao registrar o bloqueio da prova:', e);
+                        });
+                    }
+                    paRavAtual = null;
+                    alert('Sua avaliação está BLOQUEADA porque a página da prova foi fechada, recarregada ou você mudou de janela. Solicite ao instrutor a liberação da prova para responder novamente.');
+                    paLoadResponderAvaliacao();
+                    return;
+                }
+            }
+
             if (d.tipo === 'pratica' || d.tipo === 'final_pratica') { paRavVisualizar(avId); return; }
             var rec = paRavAlunoSelecionado(d);
             // Recuperacao parada = somente visualizar. MAS se o instrutor ATIVOU a AV,
@@ -6317,26 +6530,20 @@
                 if (jaRespondeuAntes) { paRavVisualizar(avId); return; }
                 alert('Esta avaliação ainda não foi ativada pelo instrutor. Aguarde a ativação para responder.'); return;
             }
-            paRavAtual = { id: avId, conteudo: d };
-            paRavRespostas = {};
-            paRavCorretas = {};
-            if (d.questoes) d.questoes.forEach(function(q, i) { paRavCorretas[i] = q.correta || ''; });
-            document.getElementById('pf-rav-prova-nome').textContent = d.nome || 'Avaliação';
 
             // verifica se o aluno ja respondeu para restaurar respostas e evitar reenvio
-            var cpfLimpo = (paUser.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '') || 'anonimo';
+            var cpfLimpo = paRavCpfLimpo();
             var jaRespondeu = false;
-            try {
-                var respDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avId).get();
-                if (respDoc.exists) {
-                    jaRespondeu = true;
-                    var r = respDoc.data();
-                    var respostasSalvas = r.respostas || {};
-                    Object.keys(respostasSalvas).forEach(function(idx) {
-                        paRavRespostas[idx] = respostasSalvas[idx];
-                    });
-                }
-            } catch (e) { console.error('Falha ao verificar respostas salvas:', e); }
+            var respostasSalvas = {};
+            if (jaRespondeuAntes) {
+                try {
+                    var respDoc = await dbFirestore.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + avId).get();
+                    if (respDoc.exists) {
+                        jaRespondeu = true;
+                        respostasSalvas = (respDoc.data() || {}).respostas || {};
+                    }
+                } catch (e) { console.error('Falha ao verificar respostas salvas:', e); }
+            }
 
             // Recuperacao: quem JA respondeu nao pode REFAZER — apenas visualizar.
             if (rec && jaRespondeu) { paRavVisualizar(avId); return; }
@@ -6353,18 +6560,30 @@
                 }
             }
 
-            var refazer = (jaRespondeu && rec);
-            if (jaRespondeu && !refazer) {
+            // Aviso obrigatorio: sair da pagina bloqueia a prova e anula esta tentativa.
+            if (!jaRespondeu) {
+                var iniciar = await paRavConfirmarInicio(d.nome || 'Avaliação');
+                if (!iniciar) return;
+            }
+
+            paRavAtual = { id: avId, conteudo: d };
+            paRavRespostas = {};
+            paRavCorretas = {};
+            if (d.questoes) d.questoes.forEach(function(q, i) { paRavCorretas[i] = q.correta || ''; });
+            if (jaRespondeu) {
+                Object.keys(respostasSalvas).forEach(function(idx) {
+                    paRavRespostas[idx] = respostasSalvas[idx];
+                });
+            }
+            document.getElementById('pf-rav-prova-nome').textContent = d.nome || 'Avaliação';
+
+            if (jaRespondeu) {
                 document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Você já respondeu esta avaliação';
                 document.getElementById('pf-rav-enviar-btn').disabled = true;
                 document.getElementById('pf-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-circle-check"></i> Já respondida';
-            } else if (refazer) {
-                document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Recuperação: responda novamente (a nova nota substitui a anterior)';
-                document.getElementById('pf-rav-enviar-btn').disabled = false;
-                document.getElementById('pf-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Enviar Novamente';
             } else {
                 var cfgInfo = paRavConfigProva(d.questoes ? d.questoes.length : 0);
-                document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Tempo limite de ' + cfgInfo.minutos + ' minutos';
+                document.getElementById('pf-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Tempo limite de ' + cfgInfo.minutos + ' minutos · Sair da página bloqueia a prova';
                 document.getElementById('pf-rav-enviar-btn').disabled = false;
                 document.getElementById('pf-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Respostas';
             }
@@ -6372,8 +6591,14 @@
             lista.style.display = 'none';
             prova.style.display = 'block';
             document.getElementById('pf-section-responder-avaliacao').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (!jaRespondeu || refazer) paRavIniciarTimer();
+            if (!jaRespondeu) {
+                paRavMarcarInicio(avId, d);
+                paRavIniciarTimer();
+            } else {
+                paRavTentativaAtiva = false;
+            }
         } catch (e) {
+            console.error('Erro ao abrir avaliação:', e);
             alert('Erro ao abrir avaliação.');
         }
     }
@@ -6408,9 +6633,18 @@
     }
 
     function paRavCancelar() {
-        if (paRavTimer) clearInterval(paRavTimer);
+        if (!paRavAtual) return;
+        // Cancelar a prova em andamento equivale a sair da pagina: bloqueia.
+        if (paRavTentativaAtiva) {
+            if (!paRavConfirmarSeguro('Ao cancelar, a prova será BLOQUEADA e você ficará SEM NOTA nesta tentativa. A liberação só pode ser feita pelo instrutor. Deseja realmente cancelar?')) return;
+            paRavBloquear('Cancelou a prova', false);
+            return;
+        }
+        if (paRavTimer) { clearInterval(paRavTimer); paRavTimer = null; }
         paRavAtual = null;
         paRavRespostas = {};
+        paRavCorretas = {};
+        paRavTentativaAtiva = false;
         document.getElementById('pf-rav-prova').style.display = 'none';
         document.getElementById('pf-rav-lista').style.display = 'block';
     }
@@ -6441,13 +6675,16 @@
 
     function paRavEnviar() {
         if (!paRavAtual) return;
-        if (!confirm('Tem certeza que deseja FINALIZAR a avaliação agora? Suas respostas serão enviadas e a avaliação não poderá ser reaberta.')) return;
+        if (!paRavConfirmarSeguro('Tem certeza que deseja FINALIZAR a avaliação agora? Suas respostas serão enviadas e a avaliação não poderá ser reaberta.')) return;
+        paRavTentativaAtiva = false;
         if (paRavTimer) clearInterval(paRavTimer);
         paRavTimer = null;
         paRavFinalizar(false);
     }
 
     function paRavFinalizar(porTempo) {
+        paRavTentativaAtiva = false;
+        paRavAlertaPendente = false;
         var questoes = paRavAtual.conteudo.questoes || [];
         var total = questoes.length;
         var marcadas = 0;
@@ -6501,6 +6738,17 @@
             backups[avId] = dados;
             localStorage.setItem('farn_respostas_backup', JSON.stringify(backups));
         } catch (e) { console.error('Falha ao salvar backup local:', e); }
+        // tentativa concluida: encerra o marcador usado pelo bloqueio
+        try {
+            paRavRefTentativa(avId).set({
+                status: 'concluida',
+                concluidaEm: new Date(),
+                bloqueadaEm: null,
+                bloqueadaMotivo: ''
+            }, { merge: true }).catch(function (e) {
+                console.error('Falha ao concluir a tentativa da prova:', e);
+            });
+        } catch (e) { console.error('Falha ao concluir a tentativa da prova:', e); }
         // grava no Firestore
         dbFirestore.collection('avaliacoesRespostas').doc(cpf + '_' + avId).set(dados).then(function() {
             console.log('Respostas salvas em avaliacoesRespostas/', cpf + '_' + avId);
@@ -6550,6 +6798,8 @@
 
     function paRavFecharResultado() {
         document.getElementById('pf-rav-resultado-overlay').style.display = 'none';
+        paRavTentativaAtiva = false;
+        paRavAlertaPendente = false;
         if (paRavAtual) paRavAtual = null;
         document.getElementById('pf-rav-prova').style.display = 'none';
         document.getElementById('pf-rav-lista').style.display = 'block';
