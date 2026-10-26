@@ -3688,26 +3688,42 @@
             var dateStr = c.data ? new Date(c.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
             var isMeu = c.cpf === myCpf;
             var actionsHtml = isMeu ? '<span class="pf-comment-actions">' +
-                '<button class="pf-comment-action-btn" onclick="paEditComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\',\'' + (c.texto || '').replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="pf-comment-action-btn" onclick="paEditComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
                 '<button class="pf-comment-action-btn pf-comment-action-del" onclick="paDeleteComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                 '</span>' : '';
             var item = document.createElement('div');
             item.className = 'pf-comment-item';
             item.setAttribute('data-comment-id', d.id);
-            item.innerHTML = '<div class="pf-comment-avatar">' + initials + '</div>' +
-                '<div class="pf-comment-body"><div class="pf-comment-name">' + nome + actionsHtml + '</div>' +
-                '<div class="pf-comment-text">' + (c.texto || '') + '</div>' +
-                '<div class="pf-comment-date">' + dateStr + '</div></div>';
+            item.innerHTML = '<div class="pf-comment-avatar">' + paEsc(initials) + '</div>' +
+                '<div class="pf-comment-body"><div class="pf-comment-name">' + paEsc(nome) + actionsHtml + '</div>' +
+                '<div class="pf-comment-text">' + paEsc(c.texto || '') + '</div>' +
+                '<div class="pf-comment-date">' + paEsc(dateStr) + '</div></div>';
             listEl.appendChild(item);
         });
         listEl.scrollTop = listEl.scrollHeight;
     }
 
     async function paEditComment(collection, docId, commentId, oldText) {
-        var newText = prompt('Editar comentario:', oldText);
+        if (oldText == null) {
+            var key = paInteractKey(collection, docId);
+            var docs = (paInteractCache[key] && paInteractCache[key]._comentariosDocs) || [];
+            for (var i = 0; i < docs.length; i++) {
+                if (docs[i]._id === commentId) { oldText = docs[i].texto || ''; break; }
+            }
+        }
+        if (oldText == null) {
+            try {
+                var snap = await dbFirestore.collection(collection).doc(docId).collection('comentarios').doc(commentId).get();
+                if (snap.exists) oldText = snap.data().texto || '';
+            } catch (e) {}
+        }
+        var newText = prompt('Editar comentario:', oldText || '');
         if (newText === null || !newText.trim()) return;
         try {
-            await dbFirestore.collection(collection).doc(docId).collection('comentarios').doc(commentId).update({ texto: newText.trim() });
+            await dbFirestore.collection(collection).doc(docId).collection('comentarios').doc(commentId).update({
+                texto: newText.trim(),
+                atualizadoEm: new Date().toISOString()
+            });
         } catch (e) { console.error('Erro ao editar comentario:', e); }
     }
 
@@ -3743,7 +3759,9 @@
                 cpf: (paUser.cpf || '').replace(/\D/g, ''),
                 nome: paUser.nome || 'Aluno',
                 texto: texto,
-                data: new Date().toISOString()
+                data: new Date().toISOString(),
+                autorId: 'cpf:' + (paUser.cpf || '').replace(/\D/g, ''),
+                autorTipo: 'cadastrado'
             });
             var wrap = inputEl.closest('.pf-comments-section');
             if (wrap) wrap.classList.remove('open');
@@ -3826,16 +3844,16 @@
                 var dateStr = c.data ? new Date(c.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
                 var isMeu = c.cpf === myCpf;
                 var actionsHtml = isMeu ? '<span class="pf-comment-actions">' +
-                    '<button class="pf-comment-action-btn" onclick="event.stopPropagation();paEditComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\',\'' + (c.texto || '').replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button class="pf-comment-action-btn" onclick="event.stopPropagation();paEditComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-pen"></i></button>' +
                     '<button class="pf-comment-action-btn pf-comment-action-del" onclick="event.stopPropagation();paDeleteComment(\'' + collection + '\',\'' + docId + '\',\'' + d.id + '\')"><i class="fa-solid fa-trash"></i></button>' +
                     '</span>' : '';
                 var item = document.createElement('div');
                 item.className = 'pf-comment-item';
                 item.setAttribute('data-comment-id', d.id);
-                item.innerHTML = '<div class="pf-comment-avatar">' + initials + '</div>' +
-                    '<div class="pf-comment-body"><div class="pf-comment-name">' + nome + actionsHtml + '</div>' +
-                    '<div class="pf-comment-text">' + (c.texto || '') + '</div>' +
-                    '<div class="pf-comment-date">' + dateStr + '</div></div>';
+                item.innerHTML = '<div class="pf-comment-avatar">' + paEsc(initials) + '</div>' +
+                    '<div class="pf-comment-body"><div class="pf-comment-name">' + paEsc(nome) + actionsHtml + '</div>' +
+                    '<div class="pf-comment-text">' + paEsc(c.texto || '') + '</div>' +
+                    '<div class="pf-comment-date">' + paEsc(dateStr) + '</div></div>';
                 list.appendChild(item);
             });
             list.scrollTop = list.scrollHeight;
@@ -7070,7 +7088,7 @@
         }
     }
     </script>
-    <script src="noticias-feed.js?v=1"></script>
+    <script src="noticias-feed.js?v=4"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
     <!-- Modal bem-vindo / instrucoes WhatFarn -->
