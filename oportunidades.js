@@ -323,23 +323,23 @@
   }
 
   window.oportunidadeSalvar = async function(){
-    var id = document.getElementById('oportunidade-id').value;
-    var nome = document.getElementById('oportunidade-nome').value.trim();
-    var descricao = document.getElementById('oportunidade-descricao').value.trim();
-    var link = document.getElementById('oportunidade-link').value.trim();
-    var exibirAluno = document.getElementById('oportunidade-port-aluno').checked;
-    var exibirFormado = document.getElementById('oportunidade-port-formado').checked;
-    var exibirDocente = document.getElementById('oportunidade-port-docente').checked;
-    var ativo = document.getElementById('oportunidade-ativo').checked;
-    var fileInput = document.getElementById('oportunidade-img-file');
-    var file = _pendingFile || (fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null);
-    var img = document.getElementById('oportunidade-img-preview');
-    if (!nome){ alert('Informe o nome'); return; }
-    if (!descricao){ alert('Informe a descrição'); return; }
-    if (!exibirAluno && !exibirFormado && !exibirDocente){ alert('Selecione pelo menos um portal'); return; }
-    var btns = document.querySelectorAll('#oportunidade-modal .btn-primary');
-    btns.forEach(function(b){ b.disabled = true; });
     try {
+      var id = document.getElementById('oportunidade-id').value;
+      var nome = document.getElementById('oportunidade-nome').value.trim();
+      var descricao = document.getElementById('oportunidade-descricao').value.trim();
+      var link = document.getElementById('oportunidade-link').value.trim();
+      var exibirAluno = document.getElementById('oportunidade-port-aluno').checked;
+      var exibirFormado = document.getElementById('oportunidade-port-formado').checked;
+      var exibirDocente = document.getElementById('oportunidade-port-docente').checked;
+      var ativo = document.getElementById('oportunidade-ativo').checked;
+      var fileInput = document.getElementById('oportunidade-img-file');
+      var file = _pendingFile || (fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null);
+      var img = document.getElementById('oportunidade-img-preview');
+      if (!nome){ alert('Informe o nome'); return; }
+      if (!descricao){ alert('Informe a descrição'); return; }
+      if (!exibirAluno && !exibirFormado && !exibirDocente){ alert('Selecione pelo menos um portal'); return; }
+      var btns = document.querySelectorAll('#oportunidade-modal .btn-primary');
+      btns.forEach(function(b){ b.disabled = true; });
       var imagem = (img && img.dataset.url) ? img.dataset.url : '';
       if (file){
         imagem = await uploadImagem(file);
@@ -361,15 +361,18 @@
         dados.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         await db.collection('oportunidades').add(dados);
       }
-      document.getElementById('oportunidade-modal').classList.add('hidden');
+      var modal = document.getElementById('oportunidade-modal');
+      if (modal) modal.classList.add('hidden');
       _pendingFile = null;
+      if (fileInput) fileInput.value = '';
       carregarLista();
       alert('Oportunidade salva com sucesso!');
+      btns.forEach(function(b){ b.disabled = false; });
     } catch(e){
       console.error('Erro ao salvar oportunidade:', e);
-      alert('Erro ao salvar: ' + (e.message || ''));
-    } finally {
-      btns.forEach(function(b){ b.disabled = false; });
+      alert('Erro ao salvar: ' + (e && e.message ? e.message : ''));
+      var btns2 = document.querySelectorAll('#oportunidade-modal .btn-primary');
+      btns2.forEach(function(b){ b.disabled = false; });
     }
   };
 })();
