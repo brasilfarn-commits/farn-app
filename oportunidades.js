@@ -49,6 +49,33 @@
 
   function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+  function bindImagemPreview(){
+    var fileInput = document.getElementById('oportunidade-img-file');
+    if (!fileInput) return;
+    if (fileInput.dataset.bound) return;
+    fileInput.dataset.bound = '1';
+    fileInput.onchange = function(){
+      var img = document.getElementById('oportunidade-img-preview');
+      var ph = document.getElementById('oportunidade-img-placeholder');
+      var file = fileInput.files[0];
+      if (!file){ return; }
+      if (file.size > 5*1024*1024){
+        alert('Imagem muito grande. Tamanho máximo: 5MB');
+        fileInput.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        if (!img || !ph) return;
+        img.src = e.target.result;
+        img.style.display = 'block';
+        ph.style.display = 'none';
+        img.dataset.url = '';
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
   window.oportunidadeAbrirForm = function(id){
     document.getElementById('oportunidade-id').value = id||'';
     document.getElementById('oportunidade-form-titulo').textContent = id ? 'Editar anúncio de oportunidade' : 'Criar anúncio de oportunidade';
@@ -59,12 +86,13 @@
     document.getElementById('oportunidade-port-formado').checked = false;
     document.getElementById('oportunidade-port-docente').checked = false;
     document.getElementById('oportunidade-ativo').checked = true;
-    document.getElementById('oportunidade-img-file').value = '';
+    var fileInput = document.getElementById('oportunidade-img-file');
+    if (fileInput) fileInput.value = '';
     var img = document.getElementById('oportunidade-img-preview');
     var ph = document.getElementById('oportunidade-img-placeholder');
-    img.src = ''; img.style.display = 'none';
-    ph.style.display = 'inline';
-    img.dataset.url = '';
+    if (img){ img.src = ''; img.style.display = 'none'; img.dataset.url = ''; }
+    if (ph){ ph.style.display = 'inline'; }
+    bindImagemPreview();
     document.getElementById('oportunidade-modal').classList.remove('hidden');
     if (id){
       db.collection('oportunidades').doc(id).get().then(function(doc){
@@ -94,9 +122,8 @@
     var img = document.getElementById('oportunidade-img-preview');
     var ph = document.getElementById('oportunidade-img-placeholder');
     var file = document.getElementById('oportunidade-img-file');
-    img.src = ''; img.style.display = 'none';
-    ph.style.display = 'inline';
-    img.dataset.url = '';
+    if (img){ img.src = ''; img.style.display = 'none'; img.dataset.url = ''; }
+    if (ph){ ph.style.display = 'inline'; }
     if (file) file.value = '';
   };
 
@@ -113,10 +140,19 @@
 
   async function uploadImagem(file){
     if (!file) return '';
-    if (!storage) return '';
-    var ref = storage.ref().child('oportunidades/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_'));
-    var snap = await ref.put(file);
-    return await snap.ref.getDownloadURL();
+    if (!storage){
+      throw new Error('Firebase Storage não está disponível.');
+    }
+    try {
+      var nomeArquivo = 'oportunidades/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_');
+      var ref = storage.ref().child(nomeArquivo);
+      var snap = await ref.put(file);
+      var url = await snap.ref.getDownloadURL();
+      return url;
+    } catch(e){
+      console.error('Erro no upload:', e);
+      throw e;
+    }
   }
 
   window.oportunidadeSalvar = async function(){
@@ -128,7 +164,8 @@
     var exibirFormado = document.getElementById('oportunidade-port-formado').checked;
     var exibirDocente = document.getElementById('oportunidade-port-docente').checked;
     var ativo = document.getElementById('oportunidade-ativo').checked;
-    var file = document.getElementById('oportunidade-img-file').files[0];
+    var fileInput = document.getElementById('oportunidade-img-file');
+    var file = fileInput && fileInput.files ? fileInput.files[0] : null;
     var img = document.getElementById('oportunidade-img-preview');
     if (!nome){ alert('Informe o nome'); return; }
     if (!descricao){ alert('Informe a descrição'); return; }
@@ -136,7 +173,8 @@
     var btns = document.querySelectorAll('#oportunidade-modal .btn-primary');
     btns.forEach(function(b){ b.disabled = true; });
     try {
-      var imagem = img.dataset.url || '';
+      var imagem = '';
+      if (img && img.dataset.url) imagem = img.dataset.url;
       if (file){
         imagem = await uploadImagem(file);
       }
@@ -162,7 +200,7 @@
       alert('Oportunidade salva com sucesso!');
     } catch(e){
       console.error(e);
-      alert('Erro ao salvar oportunidade');
+      alert('Erro ao salvar oportunidade: ' + (e.message || ''));
     } finally {
       btns.forEach(function(b){ b.disabled = false; });
     }
