@@ -259,7 +259,7 @@
     var exibirDocente = document.getElementById('oportunidade-port-docente').checked;
     var ativo = document.getElementById('oportunidade-ativo').checked;
     var fileInput = document.getElementById('oportunidade-img-file');
-    var file = fileInput && fileInput.files ? fileInput.files[0] : null;
+    var file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
     var img = document.getElementById('oportunidade-img-preview');
     if (!nome){ alert('Informe o nome'); return; }
     if (!descricao){ alert('Informe a descrição'); return; }
@@ -269,7 +269,14 @@
     try {
       var imagem = (img && img.dataset.url) ? img.dataset.url : '';
       if (file){
-        imagem = await uploadImagem(file);
+        try {
+          imagem = await uploadImagem(file);
+        } catch(upErr){
+          console.error(upErr);
+          alert('Erro no upload da imagem: ' + (upErr.message || ''));
+          btns.forEach(function(b){ b.disabled = false; });
+          return;
+        }
       }
       var dados = {
         nome: nome,
@@ -288,12 +295,12 @@
         dados.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         await db.collection('oportunidades').add(dados);
       }
-      oportunidadeFecharForm();
+      document.getElementById('oportunidade-modal').classList.add('hidden');
       carregarLista();
       alert('Oportunidade salva com sucesso!');
     } catch(e){
       console.error('Erro ao salvar oportunidade:', e);
-      alert('Erro ao salvar oportunidade: ' + (e.message || 'Verifique conexão/permissões.'));
+      alert('Erro ao salvar: ' + (e.message || ''));
     } finally {
       btns.forEach(function(b){ b.disabled = false; });
     }
