@@ -4,6 +4,7 @@
   var db = firebase.firestore();
   var storage = null;
   try { if (firebase.storage) storage = firebase.storage(); } catch(e) {}
+  var _pendingFile = null;
 
   window.oportunidadesAdminInicializar = function(){
     carregarLista();
@@ -95,13 +96,16 @@
       var ph = document.getElementById('oportunidade-img-placeholder');
       var file = fileInput.files && fileInput.files[0];
       if (!file){
+        _pendingFile = null;
         return;
       }
       if (file.size > 5*1024*1024){
         alert('Imagem muito grande. Tamanho máximo: 5MB');
         fileInput.value = '';
+        _pendingFile = null;
         return;
       }
+      _pendingFile = file;
       var reader = new FileReader();
       reader.onload = function(e){
         if (!img || !ph) return;
@@ -125,6 +129,7 @@
     document.getElementById('oportunidade-ativo').checked = true;
     var fileInput = document.getElementById('oportunidade-img-file');
     if (fileInput) fileInput.value = '';
+    _pendingFile = null;
     var img = document.getElementById('oportunidade-img-preview');
     var ph = document.getElementById('oportunidade-img-placeholder');
     if (img){ img.src = ''; img.style.display = 'none'; img.dataset.url = ''; }
@@ -162,6 +167,7 @@
     if (img){ img.src = ''; img.style.display = 'none'; img.dataset.url = ''; }
     if (ph){ ph.style.display = 'inline'; }
     if (file) file.value = '';
+    _pendingFile = null;
   };
 
   window.oportunidadeEditar = function(id){
@@ -259,7 +265,7 @@
     var exibirDocente = document.getElementById('oportunidade-port-docente').checked;
     var ativo = document.getElementById('oportunidade-ativo').checked;
     var fileInput = document.getElementById('oportunidade-img-file');
-    var file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
+    var file = _pendingFile || (fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null);
     var img = document.getElementById('oportunidade-img-preview');
     if (!nome){ alert('Informe o nome'); return; }
     if (!descricao){ alert('Informe a descrição'); return; }
@@ -272,8 +278,8 @@
         try {
           imagem = await uploadImagem(file);
         } catch(upErr){
-          console.error(upErr);
-          alert('Erro no upload da imagem: ' + (upErr.message || ''));
+          console.error('UPLOAD ERR:', upErr);
+          alert('Falha no upload da imagem. Verifique permissões do Storage.');
           btns.forEach(function(b){ b.disabled = false; });
           return;
         }
@@ -296,6 +302,7 @@
         await db.collection('oportunidades').add(dados);
       }
       document.getElementById('oportunidade-modal').classList.add('hidden');
+      _pendingFile = null;
       carregarLista();
       alert('Oportunidade salva com sucesso!');
     } catch(e){
