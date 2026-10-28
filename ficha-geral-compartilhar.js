@@ -380,6 +380,18 @@ function fichaGeralMediaFinal(manual, automatica) {
     return Math.round(Math.max(0, Math.min(10, v)) * 10) / 10;
 }
 
+/* Pontos que o aluno ainda precisa na AV Final Pratica para a Nota
+   Certificadora chegar ao corte de aprovacao:
+   (media + (FT + FP)/2) / 2 >= corte  =>  FP = 2*(2*corte - media) - FT.
+   FT ou FP em branco contam como zero. Retorna o valor bruto (pode passar de 10). */
+function fichaGeralPraticaNecessaria(mediaFinal, avFinalTeorica) {
+    const ft = parseFloat(String(avFinalTeorica == null ? '' : avFinalTeorica).replace(',', '.'));
+    const ftNum = isNaN(ft) ? 0 : ft;
+    const bruto = 2 * (2 * FG_AV_CORTE_APROVACAO - mediaFinal) - ftNum;
+    // Arredonda para cima no decimo: a nota precisa ATINGIR o valor calculado.
+    return Math.ceil(Math.max(0, bruto) * 10) / 10;
+}
+
 function fichaGeralCalcular(c, dados, aulas) {
     const av = dados.av || {};
     // Presenca registrada (apontamento). NAO gera nota na AV Final.
@@ -850,6 +862,34 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + fgNotaPill('FIN (media das duas)', calc.temFinal ? fichaGeralNum(calc.fin) : '0,0', corMF)
         + fgNotaPill('Nota Certificadora', fichaGeralNum(calc.notaCertificadora) + ' / 10,0' + (calc.temFinal ? '' : ' (provisoria)'), corAV)
         + '</div>'
+        /* Destaque: pontos necessarios na AV Final Pratica para bater o corte. */
+        + (function () {
+            const ft = calc.avFinalTeorica === '' ? '' : fichaGeralNum(calc.avFinalTeorica);
+            const necessario = fichaGeralPraticaNecessaria(calc.mediaFinal, calc.avFinalTeorica);
+            const alvo = fichaGeralNum(FG_AV_CORTE_APROVACAO);
+            if (calc.notaCertificadora >= FG_AV_CORTE_APROVACAO) {
+                return '<div style="margin-top:10px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px;text-align:center">'
+                    + '<div style="font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#166534">Alvo de aprovacao (media ' + alvo + ')</div>'
+                    + '<div style="font-size:30px;font-weight:900;color:#16a34a;line-height:1.15;margin-top:2px">APROVADO</div>'
+                    + '<div style="font-size:10px;color:#166534;margin-top:2px">Nota certificadora ' + fichaGeralNum(calc.notaCertificadora) + ' ja atingiu o corte de ' + alvo + '.</div>'
+                    + '</div>';
+            }
+            if (necessario > 10) {
+                return '<div style="margin-top:10px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:12px;text-align:center">'
+                    + '<div style="font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#991b1b">Alvo de aprovacao (media ' + alvo + ')</div>'
+                    + '<div style="font-size:30px;font-weight:900;color:#dc2626;line-height:1.15;margin-top:2px">NAO ALCANCA</div>'
+                    + '<div style="font-size:10px;color:#991b1b;margin-top:2px">Precisaria de ' + fichaGeralNum(necessario) + ' na AV Final Pratica, mas o maximo e 10,0.</div>'
+                    + '</div>';
+            }
+            return '<div style="margin-top:10px;background:#fefce8;border:1.5px solid #facc15;border-radius:10px;padding:12px;text-align:center">'
+                + '<div style="font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#a16207">Pontos necessarios na AV Final Pratica para aprovacao (media ' + alvo + ')</div>'
+                + '<div style="font-size:30px;font-weight:900;color:#ca8a04;line-height:1.15;margin-top:2px">' + fichaGeralNum(necessario) + '</div>'
+                + '<div style="font-size:10px;color:#713f12;margin-top:2px">AV Final Teorica considerada: ' + (ft === '' ? '0,0 (em branco)' : ft) + '.'
+                + ' FIN = (teorica + pratica) / 2 e Certificadora = (media + FIN) / 2.'
+                + (calc.avFinalPratica === '' ? '' : ' AV Final Pratica ja lancada: ' + fichaGeralNum(calc.avFinalPratica) + '.')
+                + '</div>'
+                + '</div>';
+        })()
         + '<div style="font-size:10px;color:#475569;margin-top:6px">FIN = (AV Final Teorica + AV Final Pratica) / 2. Nota Certificadora = (Media (T+P)/2 + FIN) / 2.</div>'
         + '</div>'
         + '</div>';
