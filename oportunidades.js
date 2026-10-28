@@ -85,6 +85,34 @@
     };
   }
 
+  function initFileInput(){
+    var fileInput = document.getElementById('oportunidade-img-file');
+    if (!fileInput) return;
+    if (fileInput.dataset.oppBound) return;
+    fileInput.dataset.oppBound = '1';
+    fileInput.onchange = function(){
+      var img = document.getElementById('oportunidade-img-preview');
+      var ph = document.getElementById('oportunidade-img-placeholder');
+      var file = fileInput.files && fileInput.files[0];
+      if (!file){
+        return;
+      }
+      if (file.size > 5*1024*1024){
+        alert('Imagem muito grande. Tamanho máximo: 5MB');
+        fileInput.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        if (!img || !ph) return;
+        img.src = e.target.result;
+        img.style.display = 'block';
+        ph.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
   window.oportunidadeAbrirForm = function(id){
     document.getElementById('oportunidade-id').value = id||'';
     document.getElementById('oportunidade-form-titulo').textContent = id ? 'Editar anúncio de oportunidade' : 'Criar anúncio de oportunidade';
@@ -101,7 +129,7 @@
     var ph = document.getElementById('oportunidade-img-placeholder');
     if (img){ img.src = ''; img.style.display = 'none'; img.dataset.url = ''; }
     if (ph){ ph.style.display = 'inline'; }
-    bindImagemPreview();
+    initFileInput();
     document.getElementById('oportunidade-modal').classList.remove('hidden');
     if (id){
       db.collection('oportunidades').doc(id).get().then(function(doc){
@@ -131,7 +159,7 @@
     var img = document.getElementById('oportunidade-img-preview');
     var ph = document.getElementById('oportunidade-img-placeholder');
     var file = document.getElementById('oportunidade-img-file');
-    if (img){ img.src = ''; img.style.display = 'none'; img.dataset.url = ''; img.dataset.file = ''; }
+    if (img){ img.src = ''; img.style.display = 'none'; img.dataset.url = ''; }
     if (ph){ ph.style.display = 'inline'; }
     if (file) file.value = '';
   };
@@ -208,18 +236,15 @@
   async function uploadImagem(file){
     if (!file) return '';
     if (!storage){
-      throw new Error('Firebase Storage não está disponível.');
+      throw new Error('Firebase Storage não inicializado');
     }
-    try {
-      var nomeArquivo = 'oportunidades/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_');
-      var ref = storage.ref().child(nomeArquivo);
-      var snap = await ref.put(file);
-      var url = await snap.ref.getDownloadURL();
-      return url;
-    } catch(e){
-      console.error('Erro no upload:', e);
-      throw e;
-    }
+    var nomeSanitizado = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    var ref = storage.ref().child('oportunidades/' + Date.now() + '_' + nomeSanitizado);
+    var metadata = { contentType: file.type || 'image/jpeg' };
+    var uploadTask = ref.put(file, metadata);
+    await uploadTask;
+    var url = await ref.getDownloadURL();
+    return url;
   }
 
   window.oportunidadeSalvar = async function(){
@@ -238,7 +263,7 @@
     if (!descricao){ alert('Informe a descrição'); return; }
     if (!exibirAluno && !exibirFormado && !exibirDocente){ alert('Selecione pelo menos um portal'); return; }
     var btns = document.querySelectorAll('#oportunidade-modal .btn-primary');
-    btns.forEach(function(b){ b.disabled = true; b.style.opacity='0.7'; });
+    btns.forEach(function(b){ b.disabled = true; });
     try {
       var imagem = (img && img.dataset.url) ? img.dataset.url : '';
       if (file){
@@ -248,7 +273,7 @@
         nome: nome,
         descricao: descricao,
         link: link,
-        imagem: imagem,
+        imagem: imagem || '',
         exibirAluno: exibirAluno,
         exibirFormado: exibirFormado,
         exibirDocente: exibirDocente,
@@ -265,10 +290,10 @@
       carregarLista();
       alert('Oportunidade salva com sucesso!');
     } catch(e){
-      console.error(e);
-      alert('Erro ao salvar oportunidade');
+      console.error('Erro ao salvar oportunidade:', e);
+      alert('Erro ao salvar oportunidade: ' + (e.message || 'Verifique conexão/permissões.'));
     } finally {
-      btns.forEach(function(b){ b.disabled = false; b.style.opacity='1'; });
+      btns.forEach(function(b){ b.disabled = false; });
     }
   };
 })();
