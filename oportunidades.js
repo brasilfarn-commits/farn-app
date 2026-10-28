@@ -241,18 +241,29 @@
 
   async function uploadImagem(file){
     if (!file) return '';
-    if (!storage && firebase.storage){
-      storage = firebase.storage();
+    try {
+      var dataUrl = await comprimirImagem(file);
+      try {
+        if (!storage && typeof firebase !== 'undefined' && firebase.storage){
+          storage = firebase.storage();
+        }
+        if (storage){
+          var blob = await dataUrlParaBlob(dataUrl);
+          var nomeSanitizado = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2,9) + '.jpg';
+          var ref = storage.ref().child('oportunidades/' + nomeSanitizado);
+          var metadata = { contentType: 'image/jpeg' };
+          var snapshot = await ref.put(blob, metadata);
+          var url = await snapshot.ref.getDownloadURL();
+          return url;
+        }
+      } catch(e){
+        console.warn('Upload para Storage falhou, usando base64:', e);
+      }
+      return dataUrl;
+    } catch(e){
+      console.error('Erro ao processar imagem:', e);
+      throw e;
     }
-    if (!storage){
-      throw new Error('Firebase Storage não disponível');
-    }
-    var nomeSanitizado = (file.name || 'imagem.jpg').replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    var ref = storage.ref().child('oportunidades/' + Date.now() + '_' + nomeSanitizado);
-    var metadata = { contentType: file.type || 'image/jpeg' };
-    var snapshot = await ref.put(file, metadata);
-    var url = await snapshot.ref.getDownloadURL();
-    return url;
   }
 
   window.oportunidadeSalvar = async function(){
@@ -275,14 +286,7 @@
     try {
       var imagem = (img && img.dataset.url) ? img.dataset.url : '';
       if (file){
-        try {
-          imagem = await uploadImagem(file);
-        } catch(upErr){
-          console.error('UPLOAD ERR:', upErr);
-          alert('Falha no upload da imagem. Verifique permissões do Storage.');
-          btns.forEach(function(b){ b.disabled = false; });
-          return;
-        }
+        imagem = await uploadImagem(file);
       }
       var dados = {
         nome: nome,
