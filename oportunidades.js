@@ -155,21 +155,25 @@
         _pendingFile = null;
         return;
       }
-      if (file.size > 5*1024*1024){
-        alert('Imagem muito grande. Tamanho máximo: 5MB');
+      if (file.size > 10*1024*1024){
+        alert('Imagem muito grande. Tamanho máximo: 10MB');
         fileInput.value = '';
         _pendingFile = null;
         return;
       }
       _pendingFile = file;
-      var reader = new FileReader();
-      reader.onload = function(e){
-        if (!img || !ph) return;
-        img.src = e.target.result;
-        img.style.display = 'block';
-        ph.style.display = 'none';
-      };
-      reader.readAsDataURL(file);
+      try {
+        var reader = new FileReader();
+        reader.onload = function(e){
+          if (!img || !ph) return;
+          img.src = e.target.result;
+          img.style.display = 'block';
+          ph.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      } catch(err){
+        console.error(err);
+      }
     };
   }
 
