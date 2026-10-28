@@ -14,15 +14,15 @@
           var img = new Image();
           img.onload = function(){
             try {
-              var maxLado = 1400;
+              var maxLado = 1600;
               var largura = img.width || maxLado;
               var altura = img.height || maxLado;
               var escala = Math.min(1, maxLado / Math.max(largura, altura));
               var w = Math.max(1, Math.round(largura * escala));
               var h = Math.max(1, Math.round(altura * escala));
-              var qualidade = 0.72;
+              var qualidade = 0.8;
               var dataUrl = '';
-              for (var i = 0; i < 6; i++){
+              for (var i = 0; i < 8; i++){
                 var canvas = document.createElement('canvas');
                 canvas.width = w;
                 canvas.height = h;
@@ -31,10 +31,10 @@
                 ctx.fillRect(0, 0, w, h);
                 ctx.drawImage(img, 0, 0, w, h);
                 dataUrl = canvas.toDataURL('image/jpeg', qualidade);
-                if (dataUrl.length <= 700000) break;
-                qualidade = Math.max(0.35, qualidade - 0.08);
-                w = Math.max(400, Math.round(w * 0.88));
-                h = Math.max(300, Math.round(h * 0.88));
+                if (dataUrl.length <= 900000) break;
+                qualidade = Math.max(0.4, qualidade - 0.07);
+                w = Math.max(500, Math.round(w * 0.9));
+                h = Math.max(400, Math.round(h * 0.9));
               }
               resolve(dataUrl);
             } catch(err){ reject(err); }
@@ -303,21 +303,19 @@
     if (!file) return '';
     try {
       var dataUrl = await oppComprimirImagem(file);
-      try {
-        if (!storage && typeof firebase !== 'undefined' && firebase.storage){
-          storage = firebase.storage();
-        }
-        if (storage){
+      if (!storage && typeof firebase !== 'undefined' && firebase.storage){
+        try { storage = firebase.storage(); } catch(e) {}
+      }
+      if (storage){
+        try {
           var blob = oppDataUrlParaBlob(dataUrl);
-          var nomeSanitizado = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2,9) + '.jpg';
-          var ref = storage.ref().child('oportunidades/' + nomeSanitizado);
-          var metadata = { contentType: 'image/jpeg' };
-          var snapshot = await ref.put(blob, metadata);
+          var ref = storage.ref().child('oportunidades/' + Date.now() + '_' + Math.random().toString(36).substr(2,8) + '.jpg');
+          var snapshot = await ref.put(blob, { contentType: 'image/jpeg' });
           var url = await snapshot.ref.getDownloadURL();
           return url;
+        } catch(e){
+          console.warn('Upload Storage falhou, usando base64:', e);
         }
-      } catch(e){
-        console.warn('Upload para Storage falhou, usando base64:', e);
       }
       return dataUrl;
     } catch(e){
