@@ -15,6 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="foto3x4-editor.js?v=3"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
+<script src="oportunidades-portais.js?v=1"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -406,6 +407,9 @@
             <nav class="pf-sidebar-nav">
                 <div class="pf-nav-item active" onclick="pdShowSection('inicio', this)">
                     <i class="fa-solid fa-house"></i><span>Inicio</span>
+                </div>
+                <div class="pf-nav-item" onclick="pdShowSection('oportunidade', this)">
+                    <i class="fa-solid fa-briefcase"></i><span>Oportunidade</span>
                 </div>
                 <div class="pf-nav-item" onclick="pdShowSection('aulas', this)">
                     <i class="fa-solid fa-chalkboard"></i><span>Aulas</span>
@@ -921,6 +925,21 @@
                     <button onclick="pdFotoFecharCamera()" style="background:#64748b;color:#fff;border:none;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                 </div>
                 <div style="color:#cbd5e1;font-size:12px;margin-top:10px">A foto sera usada na sua carteira de docente.</div>
+            </div>
+
+            <!-- OPORTUNIDADE -->
+            <div id="pf-section-oportunidade" class="pf-section">
+                <div class="pf-center-header">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <div><h2>Oportunidade</h2></div>
+                    <p>Oportunidades divulgadas pela FARN</p>
+                </div>
+                <div id="pd-oportunidade-lista" style="display:flex;flex-direction:column;gap:16px"></div>
+                <div id="pd-oportunidade-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;background:#fff;border:1px solid #e2e8f0;border-radius:16px">
+                    <i class="fa-solid fa-briefcase" style="font-size:40px;margin-bottom:12px;opacity:.5"></i>
+                    <h3 style="color:#475569;margin:0 0 6px">Nenhuma oportunidade no momento</h3>
+                    <p style="margin:0;font-size:13px">Quando houver oportunidades disponíveis, elas aparecerão aqui.</p>
+                </div>
             </div>
 
             <!-- CONSTRUCAO (para secoes futuras) -->

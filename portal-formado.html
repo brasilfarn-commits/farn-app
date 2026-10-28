@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="oportunidades-portais.js?v=1"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -19,7 +21,7 @@
             messagingSenderId: "16254677061",
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const dbFirestore = firebase.firestore();
 
         /* ===== MANUTENCAO DOS PORTAIS ===== */
@@ -322,6 +324,9 @@
                 <div class="pf-nav-item" onclick="pfShowSection('baixar-app', this)">
                     <i class="fa-solid fa-mobile-screen-button"></i><span>Baixar App</span>
                 </div>
+                <div class="pf-nav-item" onclick="pfShowSection('oportunidade', this)">
+                    <i class="fa-solid fa-briefcase"></i><span>Oportunidade</span>
+                </div>
             </nav>
             <div class="pf-sidebar-footer">
                 <div class="pf-user">
@@ -424,6 +429,21 @@
                 </div>
                 <div style="margin-top:28px;text-align:center;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
                     <p style="color:#64748b;font-size:12px;margin:0"><i class="fa-solid fa-circle-info" style="color:#2563eb;margin-right:4px"></i> O aplicativo esta em fase de desenvolvimento. Em breve disponivel nas lojas!</p>
+                </div>
+            </div>
+
+            <!-- OPORTUNIDADE -->
+            <div id="pf-section-oportunidade" class="pf-section">
+                <div class="pf-center-header">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <div><h2>Oportunidade</h2></div>
+                    <p>Oportunidades divulgadas pela FARN</p>
+                </div>
+                <div id="pf-oportunidade-lista" style="display:flex;flex-direction:column;gap:16px"></div>
+                <div id="pf-oportunidade-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;background:#fff;border:1px solid #e2e8f0;border-radius:16px">
+                    <i class="fa-solid fa-briefcase" style="font-size:40px;margin-bottom:12px;opacity:.5"></i>
+                    <h3 style="color:#475569;margin:0 0 6px">Nenhuma oportunidade no momento</h3>
+                    <p style="margin:0;font-size:13px">Quando houver oportunidades disponíveis, elas aparecerão aqui.</p>
                 </div>
             </div>
 
