@@ -340,7 +340,8 @@ function fichaGeralCarregarAulas(projeto, turma) {
     });
 }
 
-async function fichaGeralDadosAluno(c) {
+async function fichaGeralDadosAluno(c, opcoes) {
+    const semPresencas = !!(opcoes && opcoes.semPresencas);
     const db = fgDb();
     if (!db) return { av: { foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '', avFinalTeorica: '', avFinalPratica: '' }, presencas: [] };
     let av = { foPositivos: [], foNegativos: [], notasTeoricas: {}, notasPraticas: {}, mediaTeoricaManual: '', mediaPraticaManual: '', avFinalTeorica: '', avFinalPratica: '' };
@@ -350,10 +351,77 @@ async function fichaGeralDadosAluno(c) {
         if (doc.exists) av = Object.assign(av, doc.data() || {});
     } catch (e) { console.error('Erro ao carregar avaliacao:', e); }
     try {
-        const snap = await db.collection('presencasAlunos').where('cpf', '==', c.cpf).get();
-        snap.forEach(d => presencas.push(d.data()));
-    } catch (e) { console.error('Erro ao carregar presencas:', e); }
+        await fichaGeralCompletarNotasAV(db, c, av);
+    } catch (e) { console.warn('Ficha geral: nao foi possivel completar as notas das AVs:', e); }
+    if (!semPresencas) {
+        try {
+            const snap = await db.collection('presencasAlunos').where('cpf', '==', c.cpf).get();
+            snap.forEach(d => presencas.push(d.data()));
+        } catch (e) { console.error('Erro ao carregar presencas:', e); }
+    }
     return { av: av, presencas: presencas };
+}
+
+/* Lista das AVs da turma com cache curto: a ficha geral monta todos os alunos
+   de uma vez e nao precisa baixar a mesma lista N vezes (cota de leitura). */
+var fichaGeralAVCache = { turma: '', at: 0, promise: null };
+
+function fichaGeralAvaliacoesTurma(db, turma) {
+    const agora = Date.now();
+    if (fichaGeralAVCache.turma === turma && fichaGeralAVCache.promise && (agora - fichaGeralAVCache.at) < 60000) {
+        return fichaGeralAVCache.promise;
+    }
+    const promise = db.collection('avaliacoes').where('turma', '==', turma).get().then(snap => {
+        const lista = [];
+        snap.forEach(doc => lista.push(Object.assign({ _id: doc.id }, doc.data() || {})));
+        return lista;
+    }).catch(e => {
+        fichaGeralAVCache = { turma: '', at: 0, promise: null };
+        throw e;
+    });
+    fichaGeralAVCache = { turma: turma, at: agora, promise: promise };
+    return promise;
+}
+
+/* A ultima AV respondida pelo portal pode ter a nota apenas em
+   avaliacoesRespostas (o documento de avaliacoesAlunos pode estar sem ela).
+   Completa o objeto em MEMORIA com a mesma regra da Secao de Avaliacao:
+   AV teorica -> notasTeoricas[aulaId]; AV final -> avFinalTeorica.
+   Nao grava nada: a ficha so mostra o valor real da resposta enviada. */
+async function fichaGeralCompletarNotasAV(db, c, av) {
+    const cpfLimpo = String(c.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '');
+    const turma = String(c.turma || '').trim();
+    if (!cpfLimpo || !turma) return;
+    if (!av.notasTeoricas) av.notasTeoricas = {};
+    const avs = await fichaGeralAvaliacoesTurma(db, turma);
+    const jobs = [];
+    avs.forEach(d => {
+        if (d.enviada !== true) return;
+        const tipo = d.tipo || '';
+        if (tipo === 'pratica' || tipo === 'final_pratica') return;
+        const aulaId = d.aulaId ? String(d.aulaId) : '';
+        const campoFinal = (tipo === 'final_teorica') ? 'avFinalTeorica' : '';
+        if (campoFinal) {
+            if (av[campoFinal] != null && av[campoFinal] !== '') return; // mantem o valor ja gravado
+        } else if (!aulaId || av.notasTeoricas[aulaId] != null) {
+            return;
+        }
+        const questoes = d.questoes || [];
+        const peso = questoes.length === 10 ? 1.0 : (questoes.length === 20 ? 0.5 : (questoes.length > 0 ? 10 / questoes.length : 0));
+        jobs.push(db.collection('avaliacoesRespostas').doc(cpfLimpo + '_' + d._id).get().then(r => {
+            if (!r.exists) return;
+            const resp = r.data() || {};
+            const certas = resp.respostasCertas != null ? Number(resp.respostasCertas) : 0;
+            const pontos = resp.pontos != null ? Number(resp.pontos) : (certas * peso);
+            const nota = Math.round(Math.max(0, Math.min(10, pontos)) * 10) / 10;
+            if (campoFinal) {
+                if (av[campoFinal] == null || av[campoFinal] === '') av[campoFinal] = nota;
+            } else if (aulaId && av.notasTeoricas[aulaId] == null) {
+                av.notasTeoricas[aulaId] = nota;
+            }
+        }).catch(() => {}));
+    });
+    await Promise.all(jobs);
 }
 
 /* Regra de pontuacao reformada (tambem na Secao de Avaliacao):
@@ -371,6 +439,12 @@ async function fichaGeralDadosAluno(c) {
       compartilhado pelo admin E pelo portal do aluno, entao a regra e
       exatamente a mesma nos dois lados. */
 var FG_AV_CORTE_APROVACAO = 7;
+
+/* Mensagem oficial do aluno que nao tem mais como alcancar a media pela AV
+   Final Pratica (aparece na ficha geral e no aviso de entrada do portal). */
+var FG_AV_DISPENSA_TEXTO = 'TENTE NOVAMENTE NO PRÓXIMO PROJETO. Você receberá um certificado de participação. '
+    + 'NÃO É NECESSÁRIO COMPARECER À PROVA FINAL PRÁTICA. '
+    + 'PROCURE A SECRETARIA PARA REALIZAR SUA DISPENSA.';
 
 /* Media final de um bloco: valor manual se preenchido; senao a media
    automatica das aulas. */
@@ -877,8 +951,10 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
             if (necessario > 10) {
                 return '<div style="margin-top:10px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:12px;text-align:center">'
                     + '<div style="font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#991b1b">Alvo de aprovacao (media ' + alvo + ')</div>'
-                    + '<div style="font-size:30px;font-weight:900;color:#dc2626;line-height:1.15;margin-top:2px">NAO ALCANCA</div>'
+                    + '<div style="font-size:30px;font-weight:900;color:#dc2626;line-height:1.15;margin-top:2px">NÃO ALCANÇA</div>'
                     + '<div style="font-size:10px;color:#991b1b;margin-top:2px">Precisaria de ' + fichaGeralNum(necessario) + ' na AV Final Pratica, mas o maximo e 10,0.</div>'
+                    + '<div style="font-size:11.5px;font-weight:600;color:#7f1d1d;line-height:1.55;margin-top:8px;background:#fff;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;text-align:left">'
+                    + fgEsc(FG_AV_DISPENSA_TEXTO) + '</div>'
                     + '</div>';
             }
             return '<div style="margin-top:10px;background:#fefce8;border:1.5px solid #facc15;border-radius:10px;padding:12px;text-align:center">'

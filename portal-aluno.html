@@ -1866,6 +1866,17 @@
         </div>
     </div>
 
+    <!-- AVISO: ALUNO QUE NAO ALCANCA A MEDIA PELA AV FINAL PRATICA -->
+    <div class="pf-baixa-overlay" id="pa-dispensa-overlay" style="z-index:2147483300" onclick="if(event.target===this)paDispensaFechar()">
+        <div class="pf-baixa-card">
+            <h3><i class="fa-solid fa-circle-exclamation"></i> NÃO ALCANÇA</h3>
+            <p style="text-align:left;font-weight:600;color:#7f1d1d" id="pa-dispensa-texto"></p>
+            <div class="pf-baixa-actions">
+                <button class="pf-baixa-confirm" onclick="paDispensaFechar()"><i class="fa-solid fa-check"></i> Entendi</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL PEDI BAIXA -->
     <div class="pf-baixa-overlay" id="pf-baixa-overlay" onclick="if(event.target===this)paPediBaixaCancelar()">
         <div class="pf-baixa-card">
@@ -1918,7 +1929,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="ficha-geral-compartilhar.js?v=17"></script>
+    <script src="ficha-geral-compartilhar.js?v=19"></script>
 <script src="foto3x4-editor.js?v=3"></script>
 <script src="foto3x4-bloqueio.js?v=7"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
@@ -2167,6 +2178,7 @@
                 paLoadStats();
                 paInitNotificacoes();
                 paTermoChecar();
+                paVerificarDispensaProvaFinal();
             }
 
         } catch(e) {
@@ -2463,6 +2475,35 @@
         }
     }
 
+    /* ===== AVISO DE DISPENSA DA AV FINAL PRATICA =====
+       Mostrado na entrada do portal para o aluno que, pelos pontos ja
+       registrados, nao tem mais como alcancar a media de aprovacao nem com
+       10,0 na AV Final Pratica. Usa exatamente a regra da Ficha Geral. */
+    async function paVerificarDispensaProvaFinal() {
+        if (!paUser || typeof fichaGeralCalcular !== 'function') return;
+        try {
+            fichaGeralAulasCache = null;
+            var aulas = await fichaGeralCarregarAulas(paUser.projeto, paUser.turma);
+            var dados = await fichaGeralDadosAluno(paUser, { semPresencas: true });
+            var calc = fichaGeralCalcular(paUser, dados, aulas);
+            /* Sem prova final lancada o projeto ainda esta em curso: nao avisa. */
+            if (!calc.temFinal) return;
+            if (calc.notaCertificadora >= FG_AV_CORTE_APROVACAO) return;
+            if (fichaGeralPraticaNecessaria(calc.mediaFinal, calc.avFinalTeorica) <= 10) return;
+            var texto = document.getElementById('pa-dispensa-texto');
+            if (texto) texto.textContent = FG_AV_DISPENSA_TEXTO;
+            var ov = document.getElementById('pa-dispensa-overlay');
+            if (ov) ov.classList.add('show');
+        } catch (e) {
+            console.warn('Nao foi possivel verificar a dispensa da AV Final Pratica:', e);
+        }
+    }
+
+    function paDispensaFechar() {
+        var ov = document.getElementById('pa-dispensa-overlay');
+        if (ov) ov.classList.remove('show');
+    }
+
     /* ===== BLOQUEIO POR BAIXA + REINGRESSO ===== */
     function paVerificarBaixa() {
         if (!paUser || !paUser.pediuBaixa) return;
@@ -2588,6 +2629,7 @@
         paLoadApostilas();
         paLoadAulas();
         paLoadStats();
+        paVerificarDispensaProvaFinal();
     }
 
     /* ===== STATS ===== */
@@ -6841,6 +6883,10 @@
                 });
             }
         }
+
+        /* A nota desta prova entra na ficha do aluno: descarta a copia em
+           memoria para a proxima abertura da Ficha Geral ja vir atualizada. */
+        paFichaGeralPronta = false;
     }
 
     function paRavFecharResultado() {
