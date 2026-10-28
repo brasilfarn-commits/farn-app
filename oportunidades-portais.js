@@ -81,8 +81,9 @@
         lista.appendChild(criarCard(doc.data()));
       });
     }).catch(function(e){
-      console.error(e);
+      console.error('Erro ao carregar oportunidades aluno:', e);
       lista.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626">Erro ao carregar oportunidades</div>';
+      if (vazio) vazio.style.display = 'none';
     });
   }
 
