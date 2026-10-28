@@ -6,6 +6,62 @@
   try { if (firebase.storage) storage = firebase.storage(); } catch(e) {}
   var _pendingFile = null;
 
+  function oppComprimirImagem(file){
+    return new Promise(function(resolve, reject){
+      try {
+        var reader = new FileReader();
+        reader.onload = function(e){
+          var img = new Image();
+          img.onload = function(){
+            try {
+              var maxLado = 1400;
+              var largura = img.width || maxLado;
+              var altura = img.height || maxLado;
+              var escala = Math.min(1, maxLado / Math.max(largura, altura));
+              var w = Math.max(1, Math.round(largura * escala));
+              var h = Math.max(1, Math.round(altura * escala));
+              var qualidade = 0.72;
+              var dataUrl = '';
+              for (var i = 0; i < 6; i++){
+                var canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                dataUrl = canvas.toDataURL('image/jpeg', qualidade);
+                if (dataUrl.length <= 700000) break;
+                qualidade = Math.max(0.35, qualidade - 0.08);
+                w = Math.max(400, Math.round(w * 0.88));
+                h = Math.max(300, Math.round(h * 0.88));
+              }
+              resolve(dataUrl);
+            } catch(err){ reject(err); }
+          };
+          img.onerror = function(){ reject(new Error('Não foi possível ler a imagem.')); };
+          img.src = e.target.result;
+        };
+        reader.onerror = function(){ reject(new Error('Falha ao ler arquivo.')); };
+        reader.readAsDataURL(file);
+      } catch(err){ reject(err); }
+    });
+  }
+
+  function oppDataUrlParaBlob(dataUrl){
+    try {
+      var arr = dataUrl.split(',');
+      var mime = arr[0].match(/:(.*?);/)[1];
+      var bstr = atob(arr[1]);
+      var n = bstr.length;
+      var u8arr = new Uint8Array(n);
+      for (var i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+      return new Blob([u8arr], { type: mime });
+    } catch(e){
+      return fetch(dataUrl).then(function(r){ return r.blob(); });
+    }
+  }
+
   window.oportunidadesAdminInicializar = function(){
     carregarLista();
   };
@@ -242,13 +298,13 @@
   async function uploadImagem(file){
     if (!file) return '';
     try {
-      var dataUrl = await comprimirImagem(file);
+      var dataUrl = await oppComprimirImagem(file);
       try {
         if (!storage && typeof firebase !== 'undefined' && firebase.storage){
           storage = firebase.storage();
         }
         if (storage){
-          var blob = await dataUrlParaBlob(dataUrl);
+          var blob = oppDataUrlParaBlob(dataUrl);
           var nomeSanitizado = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2,9) + '.jpg';
           var ref = storage.ref().child('oportunidades/' + nomeSanitizado);
           var metadata = { contentType: 'image/jpeg' };
