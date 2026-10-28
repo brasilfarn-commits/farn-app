@@ -339,7 +339,7 @@
       if (!descricao){ alert('Informe a descrição'); return; }
       if (!exibirAluno && !exibirFormado && !exibirDocente){ alert('Selecione pelo menos um portal'); return; }
       var btns = document.querySelectorAll('#oportunidade-modal .btn-primary');
-      btns.forEach(function(b){ b.disabled = true; });
+      btns.forEach(function(b){ b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; });
       var imagem = (img && img.dataset.url) ? img.dataset.url : '';
       if (file){
         imagem = await uploadImagem(file);
@@ -367,12 +367,12 @@
       if (fileInput) fileInput.value = '';
       carregarLista();
       alert('Oportunidade salva com sucesso!');
-      btns.forEach(function(b){ b.disabled = false; });
+      btns.forEach(function(b){ b.disabled = false; b.innerHTML = '<i class="fa-solid fa-check"></i> Salvar'; });
     } catch(e){
       console.error('Erro ao salvar oportunidade:', e);
       alert('Erro ao salvar: ' + (e && e.message ? e.message : ''));
       var btns2 = document.querySelectorAll('#oportunidade-modal .btn-primary');
-      btns2.forEach(function(b){ b.disabled = false; });
+      btns2.forEach(function(b){ b.disabled = false; b.innerHTML = '<i class="fa-solid fa-check"></i> Salvar'; });
     }
   };
 })();
