@@ -235,15 +235,17 @@
 
   async function uploadImagem(file){
     if (!file) return '';
-    if (!storage){
-      throw new Error('Firebase Storage não inicializado');
+    if (!storage && firebase.storage){
+      storage = firebase.storage();
     }
-    var nomeSanitizado = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    if (!storage){
+      throw new Error('Firebase Storage não disponível');
+    }
+    var nomeSanitizado = (file.name || 'imagem.jpg').replace(/[^a-zA-Z0-9.\-_]/g, '_');
     var ref = storage.ref().child('oportunidades/' + Date.now() + '_' + nomeSanitizado);
     var metadata = { contentType: file.type || 'image/jpeg' };
-    var uploadTask = ref.put(file, metadata);
-    await uploadTask;
-    var url = await ref.getDownloadURL();
+    var snapshot = await ref.put(file, metadata);
+    var url = await snapshot.ref.getDownloadURL();
     return url;
   }
 
