@@ -1,6 +1,6 @@
 (function(){
   if (typeof firebase === 'undefined') return;
-  var db = firebase.firestore();
+  var db = null;
 
   function criarCard(o){
     var card = document.createElement('div');
@@ -115,19 +115,37 @@
     });
   }
 
+  function paginaAtual(){
+    if (typeof paShowSection === 'function') return 'aluno';
+    if (typeof pfShowSection === 'function') return 'formado';
+    if (typeof pdShowSection === 'function') return 'docente';
+    return '';
+  }
+
   function iniciar(){
-    if (document.getElementById('pf-oportunidade-lista')){
-      carregarFormado();
+    var portal = paginaAtual();
+    if (portal === 'aluno' && document.getElementById('pf-oportunidade-lista')){
       carregarAluno();
+    } else if (portal === 'formado' && document.getElementById('pf-oportunidade-lista')){
+      carregarFormado();
     }
-    if (document.getElementById('pd-oportunidade-lista')){
+    if (portal === 'docente' && document.getElementById('pd-oportunidade-lista')){
       carregarDocente();
     }
   }
 
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', iniciar);
-  } else {
+  function aguardarFirebase(){
+    if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length){
+      setTimeout(aguardarFirebase, 100);
+      return;
+    }
+    db = firebase.firestore();
     iniciar();
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', aguardarFirebase);
+  } else {
+    aguardarFirebase();
   }
 })();
