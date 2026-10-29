@@ -3653,8 +3653,7 @@
             if (!win) return;
             var doc = win.document;
             doc.open();
-            doc.write('<html><head><title>' + (a.titulo || 'Apostila') + '</title></head><body style="margin:0"><iframe src="data:application/pdf;base64,' + a.pdfBase64 + '" style="width:100vw;height:100vh;border:0"></iframe>    <script src=" oportunidades-portais.js?v=4></script>
-</body></html>');
+            doc.write('<html><head><title>' + (a.titulo || 'Apostila') + '</title></head><body style="margin:0"><iframe src="data:application/pdf;base64,' + a.pdfBase64 + '" style="width:100vw;height:100vh;border:0"></iframe></body></html>');
             doc.close();
             return;
         }
