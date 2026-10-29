@@ -28,19 +28,27 @@
     var vazio = document.getElementById('pf-oportunidade-empty');
     if (!lista) return;
     lista.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8"><i class="fa-solid fa-spinner fa-spin" style="font-size:20px"></i></div>';
-    db.collection('oportunidades').where('exibirFormado','==',true).where('ativo','==',true).get().then(function(snap){
+    db.collection('oportunidades').get().then(function(snap){
       lista.innerHTML = '';
-      if (snap.empty){
-        if (vazio) vazio.style.display = 'block';
-        return;
-      }
-      if (vazio) vazio.style.display = 'none';
+      var encontrados = 0;
       snap.forEach(function(doc){
-        lista.appendChild(criarCard(doc.data()));
+        var o = doc.data() || {};
+        var ativo = o.ativo !== false;
+        if (!ativo) return;
+        if (o.exibirFormado === true) {
+          encontrados++;
+          lista.appendChild(criarCard(o));
+        }
       });
+      if (encontrados === 0) {
+        if (vazio) vazio.style.display = 'block';
+      } else {
+        if (vazio) vazio.style.display = 'none';
+      }
     }).catch(function(e){
       console.error(e);
       lista.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626">Erro ao carregar oportunidades</div>';
+      if (vazio) vazio.style.display = 'none';
     });
   }
 
@@ -49,37 +57,57 @@
     var vazio = document.getElementById('pd-oportunidade-empty');
     if (!lista) return;
     lista.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8"><i class="fa-solid fa-spinner fa-spin" style="font-size:20px"></i></div>';
-    db.collection('oportunidades').where('exibirDocente','==',true).where('ativo','==',true).get().then(function(snap){
+    db.collection('oportunidades').get().then(function(snap){
       lista.innerHTML = '';
-      if (snap.empty){
-        if (vazio) vazio.style.display = 'block';
-        return;
-      }
-      if (vazio) vazio.style.display = 'none';
+      var encontrados = 0;
       snap.forEach(function(doc){
-        lista.appendChild(criarCard(doc.data()));
+        var o = doc.data() || {};
+        var ativo = o.ativo !== false;
+        if (!ativo) return;
+        if (o.exibirDocente === true) {
+          encontrados++;
+          lista.appendChild(criarCard(o));
+        }
       });
+      if (encontrados === 0) {
+        if (vazio) vazio.style.display = 'block';
+      } else {
+        if (vazio) vazio.style.display = 'none';
+      }
     }).catch(function(e){
       console.error(e);
       lista.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626">Erro ao carregar oportunidades</div>';
+      if (vazio) vazio.style.display = 'none';
     });
   }
 
   function carregarAluno(){
     var lista = document.getElementById('pf-oportunidade-lista');
     var vazio = document.getElementById('pf-oportunidade-empty');
-    if (!lista) return;
+    if (!lista) {
+      console.warn('Elemento pf-oportunidade-lista não encontrado no DOM');
+      return;
+    }
     lista.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8"><i class="fa-solid fa-spinner fa-spin" style="font-size:20px"></i></div>';
-    db.collection('oportunidades').where('exibirAluno','==',true).where('ativo','==',true).get().then(function(snap){
+    console.log('Buscando oportunidades para aluno (modo cliente)...');
+    db.collection('oportunidades').get().then(function(snap){
       lista.innerHTML = '';
-      if (snap.empty){
-        if (vazio) vazio.style.display = 'block';
-        return;
-      }
-      if (vazio) vazio.style.display = 'none';
+      var encontrados = 0;
       snap.forEach(function(doc){
-        lista.appendChild(criarCard(doc.data()));
+        var o = doc.data() || {};
+        var ativo = o.ativo !== false;
+        if (!ativo) return;
+        if (o.exibirAluno === true) {
+          encontrados++;
+          lista.appendChild(criarCard(o));
+        }
       });
+      console.log('Oportunidades aluno encontradas:', encontrados);
+      if (encontrados === 0) {
+        if (vazio) vazio.style.display = 'block';
+      } else {
+        if (vazio) vazio.style.display = 'none';
+      }
     }).catch(function(e){
       console.error('Erro ao carregar oportunidades aluno:', e);
       lista.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626">Erro ao carregar oportunidades</div>';

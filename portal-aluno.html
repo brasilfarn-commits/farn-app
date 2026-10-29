@@ -1109,7 +1109,7 @@
                 <a href="#" onclick="paShowSection('whatfarn',this); paCloseMenu(); return false;"><i class="fa-brands fa-whatsapp"></i> WhatFarn</a>
                 <a href="#" onclick="paShowSection('dados',this); paCloseMenu(); return false;"><i class="fa-solid fa-user"></i> Meus Dados</a>
                 <a href="#" onclick="paShowSection('app',this); paCloseMenu(); return false;"><i class="fa-solid fa-mobile-screen"></i> Baixar App</a>
-                <a href="#" onclick="paShowSection('construcao',this); paCloseMenu(); return false;"><i class="fa-solid fa-briefcase"></i> Oportunidade</a>
+                <a href="#" onclick="paShowSection('oportunidade',this); paCloseMenu(); return false;"><i class="fa-solid fa-briefcase"></i> Oportunidade</a>
             </nav>
         </aside>
 
@@ -1143,7 +1143,7 @@
                 <div class="pf-nav-item" data-secao="whatfarn" onclick="paShowSection('whatfarn',this)"><i class="fa-brands fa-whatsapp"></i> WhatFarn</div>
                 <div class="pf-nav-item" data-secao="dados" onclick="paShowSection('dados',this)"><i class="fa-solid fa-user"></i> Meus Dados</div>
                 <div class="pf-nav-item" data-secao="app" onclick="paShowSection('app',this)"><i class="fa-solid fa-mobile-screen"></i> Baixar App</div>
-                <div class="pf-nav-item" data-secao="construcao" onclick="paShowSection('construcao',this)"><i class="fa-solid fa-briefcase"></i> Oportunidade</div>
+                <div class="pf-nav-item" data-secao="oportunidade" onclick="paShowSection('oportunidade',this)"><i class="fa-solid fa-briefcase"></i> Oportunidade</div>
                 <div class="pf-sidebar-motto">
                     <i class="fa-solid fa-fire-flame-curved"></i>
                     <span>Prevenção é a melhor<br><b>forma de combate</b></span>
@@ -1714,6 +1714,21 @@
                             <h3>Em construcao</h3>
                             <p>Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
                         </div>
+                    </div>
+                </div>
+
+                <div class="pf-section" id="pf-section-oportunidade">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+                        <div>
+                            <h2 style="font-size:22px;font-weight:800;color:#0f172a;margin-bottom:4px">Oportunidades</h2>
+                            <p style="font-size:13px;color:#64748b">Vagas e oportunidades divulgadas pela FARN</p>
+                        </div>
+                    </div>
+                    <div id="pf-oportunidade-lista" style="display:flex;flex-direction:column;gap:16px"></div>
+                    <div id="pf-oportunidade-empty" style="display:none;text-align:center;padding:60px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:16px">
+                        <i class="fa-solid fa-briefcase" style="font-size:42px;color:#cbd5e1;margin-bottom:12px"></i>
+                        <h3 style="font-size:16px;font-weight:700;color:#475569;margin-bottom:6px">Nenhuma oportunidade disponível</h3>
+                        <p style="font-size:13px;color:#94a3b8">No momento não há oportunidades cadastradas para este portal.</p>
                     </div>
                 </div>
 
@@ -3638,7 +3653,8 @@
             if (!win) return;
             var doc = win.document;
             doc.open();
-            doc.write('<html><head><title>' + (a.titulo || 'Apostila') + '</title></head><body style="margin:0"><iframe src="data:application/pdf;base64,' + a.pdfBase64 + '" style="width:100vw;height:100vh;border:0"></iframe></body></html>');
+            doc.write('<html><head><title>' + (a.titulo || 'Apostila') + '</title></head><body style="margin:0"><iframe src="data:application/pdf;base64,' + a.pdfBase64 + '" style="width:100vw;height:100vh;border:0"></iframe>    <script src=" oportunidades-portais.js?v=4></script>
+</body></html>');
             doc.close();
             return;
         }
