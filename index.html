@@ -1820,9 +1820,11 @@
                         </div>
                         <div class="modal-body">
                             <div id="termo-pratica-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
-                            <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+                            <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
                                 <select id="termo-pratica-filtro-projeto" class="config-input" style="min-width:220px" onchange="termoPraticaOnFiltroProjeto()"><option value="">Todos os projetos</option></select>
                                 <select id="termo-pratica-filtro-turma" class="config-input" style="min-width:220px" onchange="termoPraticaRenderTab()"><option value="">Todas as turmas</option></select>
+                                <button type="button" class="btn-outline" onclick="termoPraticaCalcularNotas(true)" title="Reler as fichas no Firestore e atualizar a coluna de nota"><i class="fa-solid fa-rotate"></i> Recalcular notas</button>
+                                <span id="termo-pratica-notas-aviso" style="font-size:11px;color:#64748b"></span>
                             </div>
                             <div style="display:flex;gap:0;margin-bottom:12px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
                                 <div id="termo-pratica-tab-aceitaram" class="termo-pratica-tab active" onclick="termoPraticaSetTab('aceitaram')" style="flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s"><i class="fa-solid fa-check-circle"></i> Assinaram</div>
@@ -1836,6 +1838,7 @@
                                             <th style="font-size:12px">CPF</th>
                                             <th style="font-size:12px">Turma</th>
                                             <th style="font-size:12px">Projeto</th>
+                                            <th style="font-size:12px">Nota de Referência</th>
                                             <th style="font-size:12px">Data da Assinatura</th>
                                             <th style="font-size:12px">Código de Autenticidade</th>
                                         </tr>
@@ -5615,13 +5618,13 @@
         </div>
     </div>
 
-    <script src="ficha-geral-compartilhar.js?v=20"></script>
+    <script src="ficha-geral-compartilhar.js?v=21"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
     <script src="foto3x4-bloqueio.js?v=7"></script>
     <script src="noticias-feed.js?v=5"></script>
     <script src="oportunidades.js?v=4"></script>
-    <script src="app.js?v=96"></script>
+    <script src="app.js?v=97"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

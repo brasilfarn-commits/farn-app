@@ -547,6 +547,31 @@ function fichaGeralPraticaNecessaria(mediaFinal, avFinalTeorica) {
     return Math.ceil(Math.max(0, bruto) * 10) / 10;
 }
 
+/* ===== FAIXA DE NOTA PARA O TERMO DA PROVA PRATICA FINAL =====
+   So recebe o convite de assinatura quem ja esta na faixa de nota. A Nota
+   Certificadora e (media(T+P)/2 + FIN)/2 e o FIN vale 0 enquanto as provas
+   finais nao sao lancadas, entao ela sai pela metade nessa fase; enquanto
+   provisoria, a referencia e a propria media (T+P)/2. Vive aqui porque o
+   portal do aluno e o relatorio do admin precisam decidir igual. */
+var FG_PPF_CORTE_EXIBICAO = 5;
+
+function fichaGeralPpfNotaDeReferencia(calc) {
+    if (!calc) return null;
+    const n = Number(calc.temFinal ? calc.notaCertificadora : calc.mediaFinal);
+    return isNaN(n) ? null : n;
+}
+
+function fichaGeralPpfDentroDaFaixa(calc) {
+    const nota = fichaGeralPpfNotaDeReferencia(calc);
+    return nota != null && nota >= FG_PPF_CORTE_EXIBICAO;
+}
+
+/* De onde veio o numero: mostra ao admin se a nota ainda e provisoria. */
+function fichaGeralPpfOrigemDaNota(calc) {
+    if (!calc) return '';
+    return calc.temFinal ? 'certificadora' : 'media';
+}
+
 function fichaGeralCalcular(c, dados, aulas) {
     const av = dados.av || {};
     // Presenca registrada (apontamento). NAO gera nota na AV Final.

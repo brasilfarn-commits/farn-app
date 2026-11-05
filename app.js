@@ -4087,13 +4087,160 @@ function termoPraticaCpfLimpo(cpf) {
     return String(cpf || '').replace(/\D/g, '');
 }
 
+/* A nota de referencia sai da ficha geral do aluno, e isso custa leituras no
+   Firestore. Então calculamos uma vez por sessão, guardamos por CPF e o botao
+   "Recalcular" forca uma leitura nova quando a secretaria lanca nota. */
+var termoPraticaNotas = {};
+var termoPraticaNotasFeitas = false;
+var termoPraticaNotasPromessa = null;
+var termoPraticaNotasErro = '';
+
+/* Le a colecao de aulas uma vez e agrupa em memoria por projeto+turma.
+   Nao usa fichaGeralCarregarAulas: o cache global dela nao e chaveado por
+   turma, entao a segunda turma receberia as aulas da primeira. */
+async function termoPraticaCarregarAulasMapa() {
+    const snap = await dbFirestore.collection('aulas').get();
+    const mapa = {};
+    snap.forEach(doc => {
+        const a = doc.data() || {};
+        a._id = doc.id;
+        const chave = String(a.projeto || '').trim() + '||' + String(a.turma || '').trim();
+        if (!mapa[chave]) mapa[chave] = { todas: [], teorica: [], pratica: [] };
+        mapa[chave].todas.push(a);
+        if (a.avTeorica === 'Sim') mapa[chave].teorica.push(a);
+        if (a.avPratica === 'Sim') mapa[chave].pratica.push(a);
+    });
+    Object.keys(mapa).forEach(function (k) {
+        const sorter = (x, y) => (x.data || '').localeCompare(y.data || '');
+        mapa[k].todas.sort(sorter);
+        mapa[k].teorica.sort(sorter);
+        mapa[k].pratica.sort(sorter);
+    });
+    return mapa;
+}
+
+function termoPraticaNotaDe(pessoa) {
+    return termoPraticaNotas[termoPraticaCpfLimpo(pessoa && pessoa.cpf)] || null;
+}
+
+function termoPraticaCalcularNotas(forcar) {
+    if (termoPraticaNotasPromessa) return termoPraticaNotasPromessa;
+    if (termoPraticaNotasFeitas && !forcar) return Promise.resolve();
+    if (typeof fichaGeralCalcular !== 'function') return Promise.resolve();
+    if (forcar) { termoPraticaNotas = {}; termoPraticaNotasFeitas = false; }
+    termoPraticaNotasErro = '';
+
+    /* Alunos do proprio relatorio, entao o filtro de nota nunca esconde alguem
+       que apareca na tabela. */
+    const alunos = termoPraticaAceites.concat(termoPraticaPendentes);
+    if (!alunos.length) return Promise.resolve();
+
+    termoPraticaNotasPromessa = (async () => {
+        const aulasMapa = await termoPraticaCarregarAulasMapa();
+        /* Agrupa por turma: a lista de AVs da turma tem cache de 60s no nucleo
+           compartilhado, e intercalar turmas faria esse cache errar sempre. */
+        const grupos = {};
+        alunos.forEach(function (p) {
+            const k = String(p.projeto || '').trim() + '||' + String(p.turma || '').trim();
+            if (!grupos[k]) grupos[k] = [];
+            grupos[k].push(p);
+        });
+        for (const chave of Object.keys(grupos)) {
+            const aulas = aulasMapa[chave] || { todas: [], teorica: [], pratica: [] };
+            const grupo = grupos[chave];
+            for (let i = 0; i < grupo.length; i += 6) {
+                const lote = grupo.slice(i, i + 6);
+                await Promise.all(lote.map(async function (p) {
+                    const k = termoPraticaCpfLimpo(p.cpf);
+                    if (!k) return;
+                    try {
+                        const dados = await fichaGeralDadosAluno(p, { semPresencas: true });
+                        const calc = fichaGeralCalcular(p, dados, aulas);
+                        termoPraticaNotas[k] = {
+                            nota: fichaGeralPpfNotaDeReferencia(calc),
+                            origem: fichaGeralPpfOrigemDaNota(calc),
+                            naFaixa: fichaGeralPpfDentroDaFaixa(calc)
+                        };
+                    } catch (e) {
+                        termoPraticaNotas[k] = { nota: null, origem: '', naFaixa: false, erro: true };
+                    }
+                }));
+                /* Preenche conforme avanca em vez de deixar a tabela parada. */
+                termoPraticaRenderTab();
+            }
+        }
+        termoPraticaNotasFeitas = true;
+        termoPraticaNotasPromessa = null;
+        termoPraticaRenderTab();
+    })().catch(function (e) {
+        termoPraticaNotasPromessa = null;
+        termoPraticaNotasErro = 'falha ao calcular notas: ' + e.message;
+        termoPraticaRenderTab();
+    });
+    /* Depois de atribuir a promessa: o aviso precisa ver que o calculo comecou. */
+    termoPraticaPintarAviso();
+    return termoPraticaNotasPromessa;
+}
+
+/* Segue o filtro selecionado, igual ao cartao de Assinaram/Pendentes: senao o
+   admin filtra uma turma e le contagem do relatorio inteiro. */
+function termoPraticaPintarAviso() {
+    const aviso = document.getElementById('termo-pratica-notas-aviso');
+    if (!aviso) return;
+    /* Enquanto roda, a contagem parcial enganaria: ela dividiria por uma base
+       que ainda esta crescendo. As celulas ja mostram o spinner individual. */
+    if (termoPraticaNotasPromessa) {
+        aviso.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> calculando notas...';
+        return;
+    }
+    if (termoPraticaNotasErro) {
+        aviso.innerHTML = '<span style="color:#dc2626">' + escHTML(termoPraticaNotasErro) + '</span>';
+        return;
+    }
+    const alunos = termoPraticaAplicarFiltro(termoPraticaAceites.concat(termoPraticaPendentes));
+    const valores = alunos.map(termoPraticaNotaDe).filter(Boolean);
+    const naFaixa = valores.filter(n => n.naFaixa).length;
+    const comErro = valores.filter(n => n.erro).length;
+    aviso.innerHTML = naFaixa + ' de ' + valores.length + ' dentro da faixa de ' + FG_PPF_CORTE_EXIBICAO
+        + (comErro ? ' · ' + comErro + ' sem ficha' : '');
+}
+
+/* Texto curto da celula: o numero e de onde ele veio, para o admin saber se
+   ainda e provisoria ou se as provas finais ja entraram na conta. */
+function termoPraticaRotuloNota(n) {
+    if (!n) return '';
+    if (n.erro) return 'sem ficha';
+    if (n.nota == null) return 'sem nota';
+    const de = n.origem === 'certificadora' ? 'certificadora' : 'media (T+P)';
+    return n.nota.toFixed(1).replace('.', ',') + ' · ' + de;
+}
+
+function termoPraticaCelulaNota(pessoa) {
+    if (!termoPraticaNotaDe(pessoa) && termoPraticaNotasPromessa) {
+        return '<td style="font-size:12px;color:#94a3b8"><i class="fa-solid fa-spinner fa-spin"></i></td>';
+    }
+    if (!termoPraticaNotasFeitas && !termoPraticaNotasPromessa) {
+        return '<td style="font-size:11px;color:#94a3b8">-</td>';
+    }
+    const n = termoPraticaNotaDe(pessoa);
+    const rotulo = termoPraticaRotuloNota(n);
+    if (!n || n.nota == null) {
+        return '<td style="font-size:12px;color:#94a3b8">' + escHTML(rotulo || 'sem nota') + '</td>';
+    }
+    const cor = n.naFaixa
+        ? 'background:#f0fdf4;color:#166534;border:1px solid #bbf7d0'
+        : 'background:#fef3c7;color:#92400e;border:1px solid #fde68a';
+    return '<td style="font-size:12px"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-weight:700;' + cor + '">'
+        + escHTML(rotulo) + '</span></td>';
+}
+
 async function relatorioTermoPratica() {
     const modal = document.getElementById('modal-relatorio-termo-pratica');
     const tbody = document.getElementById('termo-pratica-aceites-body');
     const statsDiv = document.getElementById('termo-pratica-stats');
     if (!modal || !tbody || !statsDiv) return;
     modal.classList.remove('hidden');
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
     statsDiv.innerHTML = '';
     termoPraticaTabAtual = 'aceitaram';
     termoPraticaAceites = [];
@@ -4135,8 +4282,11 @@ async function relatorioTermoPratica() {
 
         termoPraticaPopularFiltroProjetos();
         termoPraticaRenderTab();
+        /* Dispara sem esperar: a tabela pinta na hora e as notas vao entrando
+           conforme as fichas chegam. Uma unica passada por sessao. */
+        termoPraticaCalcularNotas();
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar: ' + escHTML(e.message) + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar: ' + escHTML(e.message) + '</td></tr>';
     }
 }
 
@@ -4243,10 +4393,11 @@ function termoPraticaRenderTab() {
     const assinados = termoPraticaAplicarFiltro(termoPraticaAceites);
     const pendentes = termoPraticaAplicarFiltro(termoPraticaPendentes);
     termoPraticaRenderStats(assinados.length, pendentes.length);
+    termoPraticaPintarAviso();
 
     if (termoPraticaTabAtual === 'pendentes') {
         if (!pendentes.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno pendente no filtro selecionado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno pendente no filtro selecionado.</td></tr>';
             return;
         }
         tbody.innerHTML = pendentes.map(function (c) {
@@ -4256,13 +4407,14 @@ function termoPraticaRenderTab() {
                 '<td style="font-size:12px">' + escHTML(cpfFmt) + '</td>' +
                 '<td style="font-size:12px">' + escHTML(c.turma || '-') + '</td>' +
                 '<td style="font-size:12px">' + escHTML(c.projeto || '-') + '</td>' +
+                termoPraticaCelulaNota(c) +
                 '<td style="font-size:12px;color:#ca8a04"><i class="fa-solid fa-clock"></i> Não assinou</td>' +
                 '<td style="font-size:12px;color:#94a3b8">-</td>' +
                 '</tr>';
         }).join('');
     } else {
         if (!assinados.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno assinou o termo no filtro selecionado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno assinou o termo no filtro selecionado.</td></tr>';
             return;
         }
         tbody.innerHTML = assinados.map(function (a) {
@@ -4275,6 +4427,7 @@ function termoPraticaRenderTab() {
                 '<td style="font-size:12px">' + escHTML(cpfFmt) + '</td>' +
                 '<td style="font-size:12px">' + escHTML(a.turma || '-') + '</td>' +
                 '<td style="font-size:12px">' + escHTML(a.projeto || '-') + '</td>' +
+                termoPraticaCelulaNota(a) +
                 '<td style="font-size:12px">' + escHTML(dataAssinatura) + '</td>' +
                 '<td style="font-size:11px;font-family:monospace;color:#556B2F">' + escHTML(a.codigo || '-') + '</td>' +
                 '</tr>';
@@ -4289,15 +4442,19 @@ function fecharModalRelatorioTermoPratica() {
 function exportarTermoPraticaCSV() {
     const dados = termoPraticaAplicarFiltro(termoPraticaTabAtual === 'aceitaram' ? termoPraticaAceites : termoPraticaPendentes);
     if (!dados || !dados.length) { alert('Nenhum dado para exportar.'); return; }
-    let csv = 'Nome;CPF;Turma;Projeto;Status;Data da Assinatura;IP de Origem;Codigo de Autenticidade\n';
+    let csv = 'Nome;CPF;Turma;Projeto;Nota de Referencia;Origem da Nota;Dentro da Faixa;Status;Data da Assinatura;IP de Origem;Codigo de Autenticidade\n';
     dados.forEach(function (item) {
         const assinou = termoPraticaTabAtual === 'aceitaram';
+        const n = termoPraticaNotaDe(item);
         const cpf = (item.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         const linha = [
             item.nome || '',
             cpf,
             item.turma || '',
             item.projeto || '',
+            n && n.nota != null ? n.nota.toFixed(1).replace('.', ',') : '',
+            n && n.origem ? (n.origem === 'certificadora' ? 'Certificadora' : 'Media (T+P)') : '',
+            n && n.nota != null ? (n.naFaixa ? 'Sim' : 'Nao') : '',
             assinou ? 'Assinado' : 'Pendente',
             assinou && item.dataAceite ? new Date(item.dataAceite).toLocaleDateString('pt-BR') : (assinou ? '-' : 'Pendente'),
             assinou ? (item.ip || '') : '',

@@ -1576,7 +1576,7 @@
                             </button>
                             <div id="pf-termo-status" style="margin-top:10px;font-size:11px;color:#64748b"></div>
                         </div>
-                        <div style="flex:1;min-width:240px;text-align:center;padding:24px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+                        <div id="pf-termo-pratica-card" style="flex:1;min-width:240px;text-align:center;padding:24px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;display:none">
                             <i class="fa-solid fa-file-signature" style="font-size:36px;color:#B8860B;margin-bottom:10px"></i>
                             <p style="font-size:14px;color:#1e293b;font-weight:600;margin-bottom:4px">Termo - Prova Prática Final</p>
                             <p style="font-size:11px;color:#64748b;margin-bottom:14px">Termo de responsabilidade e compromisso da avaliação final prática.</p>
@@ -1980,7 +1980,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="ficha-geral-compartilhar.js?v=20"></script>
+    <script src="ficha-geral-compartilhar.js?v=21"></script>
 <script src="foto3x4-editor.js?v=3"></script>
 <script src="foto3x4-bloqueio.js?v=7"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
@@ -2538,6 +2538,7 @@
             var aulas = await fichaGeralCarregarAulas(paUser.projeto, paUser.turma);
             var dados = await fichaGeralDadosAluno(paUser, { semPresencas: true });
             var calc = fichaGeralCalcular(paUser, dados, aulas);
+            paTermoPraticaNaFaixa = fichaGeralPpfDentroDaFaixa(calc);
             /* Dispensado = prova final ja lancada, abaixo do corte e sem como
                alcancar a media na Pratica. Esse aluno nao assina o termo. */
             var dispensado = !!calc.temFinal
@@ -6083,6 +6084,9 @@
     var paTermoPraticaRegistro = null;
     var paTermoPraticaIP = '';
     var paTermoPraticaFila = false;
+    /* Comeca em false: o cartao so aparece depois de a ficha ser calculada e o
+       aluno ser encontrado dentro da faixa de nota da Prova Pratica Final. */
+    var paTermoPraticaNaFaixa = false;
 
     var FG_PPF_TERMO = {
         titulo: 'TERMO DE RESPONSABILIDADE E COMPROMISSO',
@@ -6236,6 +6240,7 @@
     }
 
     function paTermoPraticaAbrir() {
+        if (!paTermoPraticaNaFaixa && !paTermoPraticaAceito) return;
         var modal = document.getElementById('pf-termo-pratica-modal');
         if (!modal) return;
         if (paTermoPraticaAceito) { paTermoPraticaVisualizar(); return; }
@@ -6274,6 +6279,11 @@
     }
 
     function paTermoPraticaAtualizarCartao() {
+        var card = document.getElementById('pf-termo-pratica-card');
+        /* Fora da faixa de nota e sem assinatura previa, o convite some inteiro.
+           Quem ja assinou mantem o cartao para continuar achando o comprovante,
+           mesmo se a nota cair depois. */
+        if (card) card.style.display = (paTermoPraticaNaFaixa || paTermoPraticaAceito) ? '' : 'none';
         var statusEl = document.getElementById('pf-termo-pratica-status');
         var btn = document.getElementById('pf-termo-pratica-btn');
         if (paTermoPraticaAceito) {
