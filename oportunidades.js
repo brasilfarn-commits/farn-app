@@ -299,29 +299,43 @@
     document.getElementById('oportunidade-view-modal').classList.add('hidden');
   };
 
+  function subirComTimeout(dataUrl, ms){
+    return new Promise(function(resolve){
+      var feito = false;
+      var tarefa = null;
+      var timer = setTimeout(function(){
+        if (feito) return;
+        feito = true;
+        try { if (tarefa && tarefa.cancel) tarefa.cancel(); } catch(e){}
+        console.warn('Upload Storage estourou o tempo; usando base64.');
+        resolve('');
+      }, ms);
+      function ok(valor){ if (feito) return; feito = true; clearTimeout(timer); resolve(valor); }
+      function falha(){ ok(''); }
+      try {
+        var blob = oppDataUrlParaBlob(dataUrl);
+        Promise.resolve(blob).then(function(b){
+          var ref = storage.ref().child('oportunidades/' + Date.now() + '_' + Math.random().toString(36).substr(2,8) + '.jpg');
+          tarefa = ref.put(b, { contentType: 'image/jpeg' });
+          tarefa.then(function(snapshot){
+            snapshot.ref.getDownloadURL().then(function(url){ ok(url); }, falha);
+          }, falha);
+        }).catch(falha);
+      } catch(e){ falha(); }
+    });
+  }
+
   async function uploadImagem(file){
     if (!file) return '';
-    try {
-      var dataUrl = await oppComprimirImagem(file);
-      if (!storage && typeof firebase !== 'undefined' && firebase.storage){
-        try { storage = firebase.storage(); } catch(e) {}
-      }
-      if (storage){
-        try {
-          var blob = oppDataUrlParaBlob(dataUrl);
-          var ref = storage.ref().child('oportunidades/' + Date.now() + '_' + Math.random().toString(36).substr(2,8) + '.jpg');
-          var snapshot = await ref.put(blob, { contentType: 'image/jpeg' });
-          var url = await snapshot.ref.getDownloadURL();
-          return url;
-        } catch(e){
-          console.warn('Upload Storage falhou, usando base64:', e);
-        }
-      }
-      return dataUrl;
-    } catch(e){
-      console.error('Erro ao processar imagem:', e);
-      throw e;
+    var dataUrl = await oppComprimirImagem(file);
+    if (!storage && typeof firebase !== 'undefined' && firebase.storage){
+      try { storage = firebase.storage(); } catch(e) {}
     }
+    if (storage){
+      var url = await subirComTimeout(dataUrl, 12000);
+      if (url) return url;
+    }
+    return dataUrl;
   }
 
   window.oportunidadeSalvar = async function(){
