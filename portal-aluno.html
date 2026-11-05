@@ -1576,6 +1576,15 @@
                             </button>
                             <div id="pf-termo-status" style="margin-top:10px;font-size:11px;color:#64748b"></div>
                         </div>
+                        <div style="flex:1;min-width:240px;text-align:center;padding:24px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+                            <i class="fa-solid fa-file-signature" style="font-size:36px;color:#B8860B;margin-bottom:10px"></i>
+                            <p style="font-size:14px;color:#1e293b;font-weight:600;margin-bottom:4px">Termo - Prova Prática Final</p>
+                            <p style="font-size:11px;color:#64748b;margin-bottom:14px">Termo de responsabilidade e compromisso da avaliação final prática.</p>
+                            <button onclick="paTermoPraticaAbrirSeNecessario()" id="pf-termo-pratica-btn" style="background:#B8860B;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                                <i class="fa-solid fa-file-signature"></i> Ver / Assinar Termo
+                            </button>
+                            <div id="pf-termo-pratica-status" style="margin-top:10px;font-size:11px;color:#64748b"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -1809,6 +1818,35 @@
                     <i class="fa-solid fa-check"></i> Aceitar e Assinar
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL TERMO DA PROVA PRATICA FINAL -->
+    <div id="pf-termo-pratica-modal" style="display:none;position:fixed;inset:0;z-index:9997;background:rgba(0,0,0,.6);overflow-y:auto;padding:20px" onclick="if(event.target===this)paTermoPraticaFechar()">
+        <div style="background:#fff;border-radius:16px;max-width:860px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#556B2F,#3E4F1C);padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+                <div>
+                    <div style="font-size:20px;font-weight:800;color:#F7C600;letter-spacing:1.5px;line-height:1.2">PARABÉNS!</div>
+                    <div style="font-size:12.5px;color:#EDF2E4;margin-top:8px;line-height:1.6;max-width:660px">O(a) senhor(a) está prestes a fazer a <strong>Prova Prática Final</strong>, após receber aprovação na Avaliação Teórica. Confirme abaixo sua aptidão para participar da última avaliação. Leia os termos e confirme.</div>
+                </div>
+                <button onclick="paTermoPraticaFechar()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="pf-termo-pratica-body" style="padding:22px 26px;max-height:56vh;overflow-y:auto;font-size:13px;color:#1e293b;line-height:1.7"></div>
+            <div id="pf-termo-pratica-footer" style="padding:16px 26px;border-top:1px solid #e2e8f0;background:#f8fafc">
+                <label id="pf-termo-pratica-check-label" style="display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#1e293b;cursor:pointer">
+                    <input type="checkbox" id="pf-termo-pratica-check" style="width:18px;height:18px;margin-top:2px;accent-color:#556B2F;flex-shrink:0" onchange="document.getElementById('pf-termo-pratica-aceitar').disabled=!this.checked">
+                    <span><strong>Declaração de Aceite Eletrônico:</strong> Li, compreendi e aceito integralmente todos os termos descritos acima. Confirmo que minhas informações cadastrais na plataforma são verdadeiras e válidas para a emissão desta assinatura digital.</span>
+                </label>
+                <div id="pf-termo-pratica-note" style="font-size:11px;color:#64748b;margin-top:10px"><i class="fa-solid fa-shield-halved" style="margin-right:4px"></i>Ao clicar, o sistema registrará seu IP, data, hora e dados de login para validação jurídica do termo.</div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
+                    <button onclick="paTermoPraticaImprimir()" style="background:#6B8E23;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-print"></i> Imprimir</button>
+                    <button id="pf-termo-pratica-pdf" onclick="paTermoPraticaGerarPDF()" style="display:none;background:#556B2F;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fa-solid fa-file-pdf"></i> Baixar Comprovante em PDF</button>
+                    <button id="pf-termo-pratica-aceitar" onclick="paTermoPraticaAceitar()" disabled style="background:#556B2F;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;opacity:.5">
+                        <i class="fa-solid fa-check"></i> Aceitar e Assinar
+                    </button>
+                </div>
+            </div>
+            <div id="pf-termo-pratica-sucesso" style="display:none;padding:26px 28px"></div>
         </div>
     </div>
 
@@ -2500,14 +2538,19 @@
             var aulas = await fichaGeralCarregarAulas(paUser.projeto, paUser.turma);
             var dados = await fichaGeralDadosAluno(paUser, { semPresencas: true });
             var calc = fichaGeralCalcular(paUser, dados, aulas);
-            /* Sem prova final lancada o projeto ainda esta em curso: nao avisa. */
-            if (!calc.temFinal) return;
-            if (calc.notaCertificadora >= FG_AV_CORTE_APROVACAO) return;
-            if (fichaGeralPraticaNecessaria(calc.mediaFinal, calc.avFinalTeorica) <= 10) return;
-            var texto = document.getElementById('pa-dispensa-texto');
-            if (texto) texto.textContent = FG_AV_DISPENSA_TEXTO;
-            var ov = document.getElementById('pa-dispensa-overlay');
-            if (ov) ov.classList.add('show');
+            /* Dispensado = prova final ja lancada, abaixo do corte e sem como
+               alcancar a media na Pratica. Esse aluno nao assina o termo. */
+            var dispensado = !!calc.temFinal
+                && calc.notaCertificadora < FG_AV_CORTE_APROVACAO
+                && fichaGeralPraticaNecessaria(calc.mediaFinal, calc.avFinalTeorica) > 10;
+            if (dispensado) {
+                var texto = document.getElementById('pa-dispensa-texto');
+                if (texto) texto.textContent = FG_AV_DISPENSA_TEXTO;
+                var ov = document.getElementById('pa-dispensa-overlay');
+                if (ov) ov.classList.add('show');
+                return;
+            }
+            paTermoPraticaChecar();
         } catch (e) {
             console.warn('Nao foi possivel verificar a dispensa da AV Final Pratica:', e);
         }
@@ -5917,6 +5960,11 @@
     function paTermoFechar() {
         document.getElementById('pf-termo-modal').style.display = 'none';
         document.body.style.overflow = '';
+        /* O termo da Prova Pratica nao empilha com o do celular: espera este fechar. */
+        if (paTermoPraticaFila) {
+            paTermoPraticaFila = false;
+            paTermoPraticaChecar();
+        }
     }
 
     function paTermoVisualizar() {
@@ -6027,6 +6075,441 @@
         w.document.close();
         w.focus();
         setTimeout(function(){ w.print(); }, 500);
+    }
+
+    /* ===== TERMO DA PROVA PRATICA FINAL ===== */
+    var paTermoPraticaAceito = false;
+    var paTermoPraticaConteudoSalvo = null;
+    var paTermoPraticaRegistro = null;
+    var paTermoPraticaIP = '';
+    var paTermoPraticaFila = false;
+
+    var FG_PPF_TERMO = {
+        titulo: 'TERMO DE RESPONSABILIDADE E COMPROMISSO',
+        subtitulo: 'PROVA PRÁTICA FINAL – CURSO DE FORMAÇÃO DE BOMBEIRO CIVIL',
+        intro: 'Ao selecionar a caixa de seleção ("checkbox") e clicar no botão de confirmação, você declara estar ciente e de pleno acordo com as cláusulas abaixo, validando eletronicamente este documento e gerando uma assinatura digital vinculada aos seus dados cadastrais, o que dispensa a necessidade de assinatura física ou preenchimento de formulários adicionais.',
+        clausulas: [
+            {
+                titulo: '1. Do Objeto e Conhecimento das Avaliações',
+                paragrafos: ['Declaro estar ciente de que serei submetido(a) a avaliações rigorosas que abrangerão a totalidade do conteúdo programático teórico e prático ministrado em sala de aula e em campo ao longo do curso. Reconheço que tais atividades exigem pleno esforço físico, mental e técnico e ocorrerão de forma contínua (de sábado para domingo), em data específica a ser combinada.']
+            },
+            {
+                titulo: '2. Da Assunção de Riscos e Danos',
+                paragrafos: ['Assumo, de livre e espontânea vontade, integral responsabilidade por quaisquer danos físicos, materiais ou psicológicos que eu venha a sofrer ou causar a terceiros durante a execução das provas, simulados e demais atividades que compõem a avaliação final, em virtude da natureza inerente às atividades de bombeiro civil.']
+            },
+            {
+                titulo: '3. Da Isenção de Responsabilidade',
+                paragrafos: ['Diante da assunção voluntária dos riscos descritos, isento e livro integralmente de qualquer responsabilidade civil ou criminal todos os instrutores, avaliadores, coordenadores, prepostos, bem como a instituição de ensino organizadora, renunciando a qualquer pleito de indenização ou reparação decorrente de acidentes ou intercorrências durante o período da prova.']
+            },
+            {
+                titulo: '4. Das Normas de Segurança e Obediência',
+                paragrafos: ['Comprometo-me formalmente a:'],
+                itens: [
+                    'Cumprir rigorosamente todas as regras e protocolos de segurança que forem estabelecidos para a realização das atividades.',
+                    'Obedecer prontamente a todas as ordens, comandos e orientações emanados pelos instrutores e avaliadores responsáveis, reconhecendo a autoridade técnica e disciplinar destes.',
+                    'Seguir fielmente todas as normas e regulamentos que regem o processo de avaliação final.'
+                ]
+            },
+            {
+                titulo: '5. Das Condições de Saúde',
+                paragrafos: ['Declaro gozar de perfeitas condições de saúde física e mental, não possuindo qualquer impedimento médico que me impossibilite de participar de atividades de alta intensidade e estresse simulado.']
+            }
+        ],
+        aceite: 'Declaração de Aceite Eletrônico: Li, compreendi e aceito integralmente todos os termos descritos acima. Confirmo que minhas informações cadastrais na plataforma são verdadeiras e válidas para a emissão desta assinatura digital.'
+    };
+
+    /* jsPDF usa fonte standard: sem acento para nao sair caractere estranho. */
+    function fgSemAcento(s) {
+        return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function paTermoPraticaDados() {
+        if (!paUser) return { nome:'', instituicao:'', cpf:'', matricula:'', turma:'', projeto:'' };
+        var inst = (paInstituicaoInfo && paInstituicaoInfo.nome) ? paInstituicaoInfo.nome : 'FARN - Forca Auxiliar de Resgate Nacional';
+        return {
+            nome: paUser.nome || '',
+            instituicao: inst,
+            cpf: paFormatCPFStr(paUser.cpf || ''),
+            matricula: paUser.matricula || '',
+            turma: paUser.turma || '',
+            projeto: paUser.projeto || ''
+        };
+    }
+
+    /* Codigo unico do comprovante: data + aleatorio, para o aluno citar em recurso. */
+    function paTermoPraticaGerarCodigo() {
+        var d = new Date();
+        var ymd = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+        var rand = '';
+        var alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        if (window.crypto && crypto.getRandomValues) {
+            var bytes = new Uint8Array(8);
+            crypto.getRandomValues(bytes);
+            for (var i = 0; i < bytes.length; i++) rand += alfabeto[bytes[i] % alfabeto.length];
+        } else {
+            for (var j = 0; j < 8; j++) rand += alfabeto[Math.floor(Math.random() * alfabeto.length)];
+        }
+        return 'FARN-PPF-' + ymd + '-' + rand;
+    }
+
+    /* IP publico visto pelo navegador, para o carimbo de validacao juridica. */
+    async function paTermoPraticaCapturarIP() {
+        if (paTermoPraticaIP) return paTermoPraticaIP;
+        try {
+            var ctrl = new AbortController();
+            var timer = setTimeout(function() { ctrl.abort(); }, 4000);
+            var resp = await fetch('https://api.ipify.org?format=json', { signal: ctrl.signal });
+            clearTimeout(timer);
+            var corpo = await resp.json();
+            paTermoPraticaIP = (corpo && corpo.ip) ? String(corpo.ip) : '';
+        } catch (e) {
+            console.warn('Nao foi possivel obter o IP do aluno:', e);
+            paTermoPraticaIP = '';
+        }
+        return paTermoPraticaIP;
+    }
+
+    function paTermoPraticaMontarHTML(dados, registro) {
+        var h = '';
+        h += '<div style="text-align:center;margin-bottom:18px">';
+        h += '<div style="font-size:11px;font-weight:600;color:#556B2F;letter-spacing:2px;text-transform:uppercase">' + paEsc(dados.instituicao) + '</div>';
+        h += '<div style="font-size:15px;font-weight:700;color:#1e293b;margin:6px 0 2px">' + paEsc(FG_PPF_TERMO.titulo) + '</div>';
+        h += '<div style="font-size:12.5px;font-weight:700;color:#3E4F1C">' + paEsc(FG_PPF_TERMO.subtitulo) + '</div>';
+        h += '<div style="width:60px;height:3px;background:linear-gradient(90deg,#6B8E23,#8FAE52);margin:12px auto;border-radius:2px"></div>';
+        h += '</div>';
+
+        h += '<div style="margin-bottom:16px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12.5px">'
+            + '<div style="font-weight:700;color:#0f172a;margin-bottom:6px">Identificação do(a) aluno(a)</div>'
+            + '<div>Nome: <u style="font-weight:700">' + paEsc(dados.nome) + '</u></div>'
+            + '<div>CPF: <u style="font-weight:700">' + paEsc(dados.cpf) + '</u> &bull; Matrícula: <u style="font-weight:700">' + paEsc(dados.matricula) + '</u></div>'
+            + '<div>Turma: <u style="font-weight:700">' + paEsc(dados.turma) + '</u> &bull; Projeto: <u style="font-weight:700">' + paEsc(dados.projeto) + '</u></div>'
+            + '</div>';
+
+        h += '<p style="margin:0 0 14px;font-size:12.5px;color:#334155">' + paEsc(FG_PPF_TERMO.intro) + '</p>';
+
+        FG_PPF_TERMO.clausulas.forEach(function(c) {
+            h += '<h4 style="font-size:13px;color:#0f172a;margin:16px 0 6px">' + paEsc(c.titulo) + '</h4>';
+            (c.paragrafos || []).forEach(function(p) { h += '<p style="margin:0 0 8px">' + paEsc(p) + '</p>'; });
+            if (c.itens && c.itens.length) {
+                h += '<ul style="margin:0 0 8px;padding-left:20px">';
+                c.itens.forEach(function(it) { h += '<li style="margin-bottom:6px">' + paEsc(it) + '</li>'; });
+                h += '</ul>';
+            }
+        });
+
+        h += '<p style="margin:16px 0 8px;font-weight:700;font-size:12.5px;color:#0f172a">' + paEsc(FG_PPF_TERMO.aceite) + '</p>';
+
+        if (registro) {
+            var quando = registro.dataAceite ? new Date(registro.dataAceite).toLocaleString('pt-BR') : '---';
+            h += '<div style="margin-top:22px;border-top:2px solid #0f172a;padding-top:12px">' +
+                '<div style="display:flex;gap:24px;justify-content:center;text-align:center;font-size:12px;color:#334155;flex-wrap:wrap">' +
+                '<div style="flex:1;min-width:200px"><div style="font-weight:700">' + paEsc(dados.nome) + '</div><div style="color:#64748b">CPF: ' + paEsc(dados.cpf) + '</div></div>' +
+                '<div style="flex:1;min-width:200px"><div style="font-weight:700">Assinatura digital registrada</div><div style="color:#64748b">Data/Hora: ' + paEsc(quando) + '</div></div>' +
+                '</div>' +
+                '<div style="margin-top:12px;padding:10px 12px;background:#F3F5E9;border:1px solid #C9D6A9;border-radius:8px;font-size:11.5px;color:#3E4F1C;text-align:center">' +
+                'IP de origem: ' + paEsc(registro.ip || 'não informado') + ' &bull; Código de autenticidade: <strong>' + paEsc(registro.codigo || '---') + '</strong>' +
+                '</div></div>';
+        } else {
+            h += '<div style="margin-top:18px;padding:12px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e"><i class="fa-solid fa-triangle-exclamation"></i> Termo pendente de assinatura. Assine no rodapé desta janela para participar da Prova Prática Final.</div>';
+        }
+        return h;
+    }
+
+    function paTermoPraticaRenderOpen() {
+        var dados = paTermoPraticaDados();
+        document.getElementById('pf-termo-pratica-body').innerHTML = paTermoPraticaMontarHTML(dados, null);
+        document.getElementById('pf-termo-pratica-sucesso').style.display = 'none';
+        document.getElementById('pf-termo-pratica-body').style.display = '';
+        document.getElementById('pf-termo-pratica-footer').style.display = '';
+        document.getElementById('pf-termo-pratica-check-label').style.display = 'flex';
+        document.getElementById('pf-termo-pratica-note').style.display = '';
+        document.getElementById('pf-termo-pratica-pdf').style.display = 'none';
+        document.getElementById('pf-termo-pratica-aceitar').style.display = '';
+        document.getElementById('pf-termo-pratica-check').checked = false;
+        var btn = document.getElementById('pf-termo-pratica-aceitar');
+        btn.disabled = true;
+        btn.style.opacity = '.5';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Aceitar e Assinar';
+        document.getElementById('pf-termo-pratica-modal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        paTermoPraticaCapturarIP();
+    }
+
+    function paTermoPraticaAbrir() {
+        var modal = document.getElementById('pf-termo-pratica-modal');
+        if (!modal) return;
+        if (paTermoPraticaAceito) { paTermoPraticaVisualizar(); return; }
+        try {
+            dbFirestore.collection('configuracoes').doc('instituicao').get().then(function(sn) {
+                if (sn.exists && sn.data() && sn.data().nome) paInstituicaoInfo.nome = sn.data().nome;
+                paTermoPraticaRenderOpen();
+            }).catch(function() { paTermoPraticaRenderOpen(); });
+        } catch (e) {
+            paTermoPraticaRenderOpen();
+        }
+    }
+
+    /* Ja assinado: so leitura, sem caixa de marcar e sem botao de aceitar. */
+    function paTermoPraticaVisualizar() {
+        var modal = document.getElementById('pf-termo-pratica-modal');
+        if (!modal) return;
+        var dados = paTermoPraticaDados();
+        var corpo = paTermoPraticaConteudoSalvo
+            || paTermoPraticaMontarHTML(dados, paTermoPraticaRegistro);
+        document.getElementById('pf-termo-pratica-body').innerHTML = corpo;
+        document.getElementById('pf-termo-pratica-body').style.display = '';
+        document.getElementById('pf-termo-pratica-sucesso').style.display = 'none';
+        document.getElementById('pf-termo-pratica-footer').style.display = '';
+        document.getElementById('pf-termo-pratica-check-label').style.display = 'none';
+        document.getElementById('pf-termo-pratica-note').style.display = 'none';
+        document.getElementById('pf-termo-pratica-aceitar').style.display = 'none';
+        document.getElementById('pf-termo-pratica-pdf').style.display = '';
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function paTermoPraticaFechar() {
+        document.getElementById('pf-termo-pratica-modal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function paTermoPraticaAtualizarCartao() {
+        var statusEl = document.getElementById('pf-termo-pratica-status');
+        var btn = document.getElementById('pf-termo-pratica-btn');
+        if (paTermoPraticaAceito) {
+            var quando = (paTermoPraticaRegistro && paTermoPraticaRegistro.dataAceite)
+                ? new Date(paTermoPraticaRegistro.dataAceite).toLocaleDateString('pt-BR') : '';
+            if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#556B2F"></i> Termo assinado em ' + quando;
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-file-lines"></i> Visualizar / Baixar Comprovante';
+        } else {
+            if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-clock" style="color:#ca8a04"></i> Termo pendente de assinatura';
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-file-signature"></i> Ver / Assinar Termo';
+        }
+    }
+
+    function paTermoPraticaAbrirSeNecessario() {
+        if (!paUser) return;
+        if (paTermoPraticaAceito) { paTermoPraticaVisualizar(); return; }
+        paTermoPraticaAbrir();
+    }
+
+    async function paTermoPraticaChecar() {
+        if (!paUser) return;
+        var modalCelular = document.getElementById('pf-termo-modal');
+        if (modalCelular && modalCelular.style.display === 'block') {
+            paTermoPraticaFila = true;
+            return;
+        }
+        try {
+            var snap = await dbFirestore.collection('termoProvaPraticaAceites').doc(paUser.cpf).get();
+            if (snap.exists) {
+                var d = snap.data() || {};
+                paTermoPraticaAceito = true;
+                paTermoPraticaConteudoSalvo = d.conteudo || '';
+                paTermoPraticaRegistro = {
+                    dataAceite: d.dataAceite || '',
+                    ip: d.ip || '',
+                    codigo: d.codigo || '',
+                    userAgent: d.userAgent || ''
+                };
+            } else {
+                paTermoPraticaAceito = false;
+                paTermoPraticaRegistro = null;
+                paTermoPraticaAtualizarCartao();
+                paTermoPraticaAbrir();
+                return;
+            }
+        } catch (e) {
+            console.error('Erro ao checar termo da prova pratica:', e);
+        }
+        paTermoPraticaAtualizarCartao();
+    }
+
+    function paTermoPraticaSucesso() {
+        var dados = paTermoPraticaDados();
+        var reg = paTermoPraticaRegistro || {};
+        var quando = reg.dataAceite ? new Date(reg.dataAceite).toLocaleString('pt-BR') : '---';
+        var caixa = document.getElementById('pf-termo-pratica-sucesso');
+        if (!caixa) return;
+        document.getElementById('pf-termo-pratica-body').style.display = 'none';
+        document.getElementById('pf-termo-pratica-footer').style.display = 'none';
+        var h = '<div style="text-align:center">';
+        h += '<div style="width:64px;height:64px;border-radius:50%;background:#F3F5E9;border:2px solid #556B2F;display:flex;align-items:center;justify-content:center;margin:0 auto 14px"><i class="fa-solid fa-check" style="font-size:28px;color:#556B2F"></i></div>';
+        h += '<div style="font-size:19px;font-weight:800;color:#556B2F;margin-bottom:8px">Termo Assinado com Sucesso!</div>';
+        h += '<p style="font-size:13px;color:#475569;margin:0 0 16px">Sua assinatura digital foi registrada e vinculada aos seus dados cadastrais em nossa plataforma.</p>';
+        h += '<div style="text-align:left;max-width:520px;margin:0 auto 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;font-size:13px;color:#1e293b">';
+        h += '<div style="margin-bottom:6px"><strong>Data/Hora:</strong> ' + paEsc(quando) + '</div>';
+        h += '<div style="margin-bottom:6px"><strong>IP de Origem:</strong> ' + paEsc(reg.ip || 'não informado') + '</div>';
+        h += '<div style="margin-bottom:6px"><strong>Código de Autenticidade:</strong> <span style="font-family:monospace;font-weight:700;color:#556B2F">' + paEsc(reg.codigo || '---') + '</span></div>';
+        h += '<div><strong>Aluno(a):</strong> ' + paEsc(dados.nome) + ' &bull; Matrícula ' + paEsc(dados.matricula || '---') + '</div>';
+        h += '</div>';
+        h += '<p style="font-size:13px;color:#334155;margin:0 0 16px">Você está formalmente confirmado(a) na <strong>Prova Prática Final</strong> (sábado a domingo). O comprovante com validade jurídica também fica disponível na seção <strong>Declarações</strong> do seu portal.</p>';
+        h += '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">';
+        h += '<button onclick="paTermoPraticaGerarPDF()" style="background:#556B2F;color:#fff;border:none;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer"><i class="fa-solid fa-file-pdf"></i> BAIXAR COMPROVANTE EM PDF</button>';
+        h += '<button onclick="paTermoPraticaFechar()" style="background:#e2e8f0;color:#334155;border:none;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Fechar</button>';
+        h += '</div></div>';
+        caixa.innerHTML = h;
+        caixa.style.display = 'block';
+    }
+
+    async function paTermoPraticaAceitar() {
+        if (!paUser) return;
+        var check = document.getElementById('pf-termo-pratica-check');
+        if (!check || !check.checked) { alert('Marque a caixa de confirmação para assinar o termo.'); return; }
+        var btn = document.getElementById('pf-termo-pratica-aceitar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+        var dados = paTermoPraticaDados();
+        var dataAceite = new Date().toISOString();
+        var ip = await paTermoPraticaCapturarIP();
+        var codigo = paTermoPraticaGerarCodigo();
+        var registro = { dataAceite: dataAceite, ip: ip, codigo: codigo, userAgent: navigator.userAgent || '' };
+        var conteudo = paTermoPraticaMontarHTML(dados, registro);
+        try {
+            await dbFirestore.collection('termoProvaPraticaAceites').doc(paUser.cpf).set({
+                cpf: paUser.cpf,
+                nome: paUser.nome || '',
+                matricula: paUser.matricula || '',
+                turma: paUser.turma || '',
+                projeto: paUser.projeto || '',
+                instituicao: dados.instituicao,
+                conteudo: conteudo,
+                dataAceite: dataAceite,
+                ip: ip,
+                codigo: codigo,
+                userAgent: navigator.userAgent || '',
+                email: paUser.email || ''
+            });
+            await dbFirestore.collection('declaracoesAlunos').add({
+                cpf: paUser.cpf,
+                nome: paUser.nome || '',
+                matricula: paUser.matricula || '',
+                turma: paUser.turma || '',
+                projeto: paUser.projeto || '',
+                tipo: 'termo_prova_pratica_final',
+                titulo: 'Termo de Responsabilidade e Compromisso - Prova Pratica Final',
+                conteudo: conteudo,
+                codigo: codigo,
+                ip: ip,
+                assinado: true,
+                data: dataAceite
+            });
+            paTermoPraticaAceito = true;
+            paTermoPraticaConteudoSalvo = conteudo;
+            paTermoPraticaRegistro = registro;
+            paTermoPraticaAtualizarCartao();
+            paTermoPraticaSucesso();
+        } catch (e) {
+            console.error('Erro ao assinar termo da prova pratica:', e);
+            alert('Erro ao salvar: ' + e.message);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Aceitar e Assinar';
+        }
+    }
+
+    function paTermoPraticaImprimir() {
+        var corpo = document.getElementById('pf-termo-pratica-body').innerHTML;
+        if (!corpo) return;
+        var w = window.open('', '_blank');
+        if (!w) return;
+        w.document.write('<html><head><title>Termo de Responsabilidade - Prova Prática Final</title>');
+        w.document.write('<style>body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;margin:30px;font-size:12px;line-height:1.6}h4{margin:14px 0 6px}p{margin:0 0 8px}u{font-weight:700}li{margin-bottom:6px}@media print{body{margin:15px}}');
+        w.document.write('</style></head><body>');
+        w.document.write(corpo);
+        w.document.write('</body></html>');
+        w.document.close();
+        w.focus();
+        setTimeout(function(){ w.print(); }, 500);
+    }
+
+    /* Comprovante em PDF com o mesmo cabecalho da declaracao de matricula. */
+    async function paTermoPraticaGerarPDF() {
+        if (!paUser) return;
+        if (!window.jspdf || !window.jspdf.jsPDF) { paTermoPraticaImprimir(); return; }
+        var dados = paTermoPraticaDados();
+        var reg = paTermoPraticaRegistro || {};
+        var instData = {};
+        try {
+            var sn = await dbFirestore.collection('configuracoes').doc('instituicao').get();
+            if (sn.exists) instData = sn.data() || {};
+        } catch (e) {}
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF('p', 'mm', 'a4');
+        var pw = 210, ph = 297, margin = 20;
+        var y = margin;
+
+        function escrever(txt, tamanho, estilo, cor, recuo) {
+            doc.setFont('helvetica', estilo || 'normal');
+            doc.setFontSize(tamanho || 11);
+            doc.setTextColor(cor ? cor[0] : 30, cor ? cor[1] : 41, cor ? cor[2] : 59);
+            var largura = pw - margin * 2 - (recuo || 0);
+            var linhas = doc.splitTextToSize(fgSemAcento(txt), largura);
+            for (var i = 0; i < linhas.length; i++) {
+                if (y > ph - margin) { doc.addPage(); y = margin; }
+                doc.text(linhas[i], margin + (recuo || 0), y);
+                y += (tamanho || 11) * 0.5;
+            }
+        }
+
+        var cabecalho = instData.nomeFantasia || instData.razaoSocial || dados.instituicao || 'FARN';
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text(fgSemAcento(cabecalho), pw / 2, y, { align: 'center' });
+        y += 7;
+        if (instData.cnpj) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);
+            doc.text('CNPJ: ' + fgSemAcento(instData.cnpj), pw / 2, y, { align: 'center' });
+            y += 7;
+        }
+        doc.setDrawColor(85, 107, 47);
+        doc.setLineWidth(0.6);
+        doc.line(margin, y, pw - margin, y);
+        y += 9;
+
+        escrever(FG_PPF_TERMO.titulo, 15, 'bold', [85, 107, 47]);
+        escrever(FG_PPF_TERMO.subtitulo, 11, 'bold');
+        y += 5;
+
+        escrever('IDENTIFICAÇÃO DO ALUNO', 11, 'bold');
+        escrever('Nome: ' + dados.nome, 10);
+        escrever('CPF: ' + dados.cpf + '   Matrícula: ' + (dados.matricula || '---'), 10);
+        escrever('Turma: ' + dados.turma + '   Projeto: ' + dados.projeto, 10);
+        y += 4;
+
+        escrever(FG_PPF_TERMO.intro, 10);
+        y += 3;
+        FG_PPF_TERMO.clausulas.forEach(function(c) {
+            escrever(c.titulo, 11, 'bold');
+            (c.paragrafos || []).forEach(function(p) { escrever(p, 10); });
+            (c.itens || []).forEach(function(it) { escrever('- ' + it, 10, 'normal', null, 6); });
+            y += 2;
+        });
+        escrever(FG_PPF_TERMO.aceite, 10, 'bold');
+        y += 8;
+
+        doc.setDrawColor(15, 23, 42);
+        doc.setLineWidth(0.4);
+        doc.line(margin, y, pw - margin, y);
+        y += 6;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        var centroTxt = fgSemAcento('Assinatura digital registrada - ' + cabecalho);
+        doc.text(centroTxt, pw / 2, y, { align: 'center' });
+        y += 9;
+
+        var quando = reg.dataAceite ? new Date(reg.dataAceite).toLocaleString('pt-BR') : '---';
+        escrever('Data/Hora do aceite: ' + quando, 10, 'bold');
+        escrever('IP de origem: ' + (reg.ip || 'não informado'), 10, 'bold');
+        escrever('Código de autenticidade: ' + (reg.codigo || '---'), 10, 'bold');
+        y += 4;
+        escrever('O aluno está formalmente confirmado na Prova Prática Final (sábado a domingo). Documento gerado eletronicamente pelo Portal do Aluno; a validade dispensa assinatura física.', 9, 'normal', [100, 116, 139]);
+
+        var nomeArquivo = 'comprovante-prova-pratica-' + String(dados.matricula || paUser.cpf || 'aluno').replace(/[^\w-]/g, '') + '.pdf';
+        doc.save(nomeArquivo);
     }
 
     /* Auto-login se lembrar estava marcado */
