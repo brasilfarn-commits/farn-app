@@ -203,6 +203,14 @@ function fgAptBadge(status) {
     return ['SEM APONTAMENTO', '#64748b', '#f1f5f9', '#cbd5e1'];
 }
 
+/* Texto de comparacao: a disciplina vem de telas diferentes (aula x apontamento)
+   e costuma trocar espaco duplo, NBSP, acento ou maiuscula. */
+function fgNormTxt(s) {
+    return String(s == null ? '' : s)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 /* Chave que liga o apontamento a aula. Prioriza o id do doc em aulas
    (mesmo criterio de verificarInativosPorFalta no admin); registros antigos
    sem id caem para data + disciplina e, sem referencia, ficam soltos. */
@@ -210,7 +218,7 @@ function fgAptChave(p) {
     const id = String(p.aulaId || '').trim();
     if (id && id !== 'n/a') return 'id:' + id;
     const data = String(p.dataAula || '').trim();
-    const disc = String(p.disciplina || '').trim();
+    const disc = fgNormTxt(p.disciplina);
     if (data || disc) return 'ad:' + data + '|' + disc;
     return '';
 }
@@ -268,7 +276,7 @@ function fgTabelaApontamento(listaAulas, presencas) {
     let rows = '';
     listaAulas.forEach(a => {
         const key = 'id:' + a._id;
-        const alt = 'ad:' + String(a.data || '').trim() + '|' + String(a.disciplina || '').trim();
+        const alt = 'ad:' + String(a.data || '').trim() + '|' + fgNormTxt(a.disciplina);
         const g = grupos[key] || grupos[alt] || null;
         const usadasKey = grupos[key] ? key : (grupos[alt] ? alt : null);
         if (usadasKey) usadas[usadasKey] = true;
@@ -340,6 +348,76 @@ function fichaGeralCarregarAulas(projeto, turma) {
     });
 }
 
+/* Apontamento de uma aula, com cache por id: a ficha de uma turma monta todos
+   os alunos de uma vez e nao deve baixar o mesmo apontamento N vezes. */
+var fichaGeralAptCache = {};
+
+function fichaGeralApontamentosDaAula(db, aulaId) {
+    if (fichaGeralAptCache[aulaId]) return fichaGeralAptCache[aulaId];
+    const promise = db.collection('apontamentos').where('aulaId', '==', aulaId).get().then(snap => {
+        const lista = [];
+        snap.forEach(doc => lista.push(Object.assign({ _id: doc.id }, doc.data() || {})));
+        lista.sort((x, y) => String(x.criadoEm || '').localeCompare(String(y.criadoEm || '')));
+        return lista;
+    }).catch(e => {
+        delete fichaGeralAptCache[aulaId];
+        throw e;
+    });
+    fichaGeralAptCache[aulaId] = promise;
+    return promise;
+}
+
+/* Sincroniza a ficha com as aulas ja apontadas. O Portal do Docente gravou
+   por muito tempo a presencia sem aulaId e, quando o lote de presencas falhou,
+   a aula aparecia como "SEM APONTAMENTO" mesmo com o apontamento salvo. Aqui a
+   ficha completa, em memoria, as aulas do aluno que nao tem presencia, lendo o
+   registro de `apontamentos`. Nao grava nada no Firestore. */
+async function fichaGeralSincronizarApontamentos(db, c, presencas) {
+    const aulas = await fichaGeralCarregarAulas(c.projeto, c.turma);
+    const listaAulas = (aulas && aulas.todas) || [];
+    if (!listaAulas.length) return;
+    const cobertas = {};
+    presencas.forEach(p => {
+        if (p.turma !== c.turma || p.projeto !== c.projeto) return;
+        const k = fgAptChave(p);
+        if (k) cobertas[k] = true;
+    });
+    const cpfAluno = String(c.cpf || '').replace(/\D/g, '');
+    if (!cpfAluno) return;
+    for (const a of listaAulas) {
+        const chaveId = 'id:' + a._id;
+        const chaveData = 'ad:' + String(a.data || '').trim() + '|' + fgNormTxt(a.disciplina);
+        if (cobertas[chaveId] || cobertas[chaveData]) continue;
+        let apt = [];
+        try {
+            apt = await fichaGeralApontamentosDaAula(db, a._id);
+        } catch (e) {
+            console.warn('Ficha geral: nao foi possivel ler o apontamento da aula ' + a._id, e);
+            continue;
+        }
+        if (!apt.length) continue;
+        const registro = apt[apt.length - 1].alunos
+            ? (apt[apt.length - 1].alunos || []).find(x => String(x.cpf || '').replace(/\D/g, '') === cpfAluno)
+            : null;
+        if (!registro) continue;
+        presencas.push({
+            aulaId: a._id,
+            dataAula: a.data || '',
+            disciplina: a.disciplina || '',
+            aula: apt[apt.length - 1].aula || '',
+            turma: a.turma || c.turma,
+            projeto: a.projeto || c.projeto,
+            status: registro.status || '',
+            obs: registro.obs || '',
+            criadoEm: apt[apt.length - 1].criadoEm || '',
+            criadoPor: apt[apt.length - 1].criadoPor || '',
+            apontamentoId: apt[apt.length - 1]._id || '',
+            fgSincronizado: true
+        });
+        cobertas[chaveId] = true;
+    }
+}
+
 async function fichaGeralDadosAluno(c, opcoes) {
     const semPresencas = !!(opcoes && opcoes.semPresencas);
     const db = fgDb();
@@ -358,6 +436,9 @@ async function fichaGeralDadosAluno(c, opcoes) {
             const snap = await db.collection('presencasAlunos').where('cpf', '==', c.cpf).get();
             snap.forEach(d => presencas.push(d.data()));
         } catch (e) { console.error('Erro ao carregar presencas:', e); }
+        try {
+            await fichaGeralSincronizarApontamentos(db, c, presencas);
+        } catch (e) { console.warn('Ficha geral: sincronizacao de apontamentos indisponivel:', e); }
     }
     return { av: av, presencas: presencas };
 }
