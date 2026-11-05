@@ -1611,6 +1611,11 @@
                                     <span style="font-size:13px">Termo Avaliação Teórica (Celular)</span>
                                     <small>Quem aceitou o termo de uso de celular</small>
                                 </div>
+                                <div class="config-card" onclick="relatorioTermoPratica()" style="padding:16px;max-width:220px;border-left:3px solid #556B2F">
+                                    <i class="fa-solid fa-file-signature" style="font-size:20px;color:#556B2F"></i>
+                                    <span style="font-size:13px">Termo Prova Prática Final</span>
+                                    <small>Quem assinou o termo de responsabilidade</small>
+                                </div>
                                 <div class="config-card" onclick="relatorioEquipamentos()" style="padding:16px;max-width:220px;border-left:3px solid #f59e0b">
                                     <i class="fa-solid fa-hard-hat" style="font-size:20px;color:#f59e0b"></i>
                                     <span style="font-size:13px">Equipamentos (EPI) por Turma</span>
@@ -1803,6 +1808,45 @@
                         <div class="modal-footer">
                             <button type="button" class="btn-outline" onclick="fecharModalRelatorioTermo()"><i class="fa-solid fa-xmark"></i> Fechar</button>
                             <button type="button" class="btn-primary" onclick="exportarTermoCSV()"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- MODAL RELATORIO TERMO PROVA PRATICA FINAL -->
+                <div id="modal-relatorio-termo-pratica" class="modal-overlay hidden" onclick="if(event.target===this)fecharModalRelatorioTermoPratica()">
+                    <div class="modal-content" style="max-width:900px;max-height:88vh;overflow-y:auto">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-file-signature" style="color:#556B2F;margin-right:8px"></i> Termo de Responsabilidade - Prova Prática Final (Assinaturas)</h3>
+                            <button class="modal-close" onclick="fecharModalRelatorioTermoPratica()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="termo-pratica-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+                            <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+                                <select id="termo-pratica-filtro-projeto" class="config-input" style="min-width:220px" onchange="termoPraticaOnFiltroProjeto()"><option value="">Todos os projetos</option></select>
+                                <select id="termo-pratica-filtro-turma" class="config-input" style="min-width:220px" onchange="termoPraticaRenderTab()"><option value="">Todas as turmas</option></select>
+                            </div>
+                            <div style="display:flex;gap:0;margin-bottom:12px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+                                <div id="termo-pratica-tab-aceitaram" class="termo-pratica-tab active" onclick="termoPraticaSetTab('aceitaram')" style="flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s"><i class="fa-solid fa-check-circle"></i> Assinaram</div>
+                                <div id="termo-pratica-tab-pendentes" class="termo-pratica-tab" onclick="termoPraticaSetTab('pendentes')" style="flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f8fafc;color:#64748b;border-bottom:2px solid transparent;transition:all .2s"><i class="fa-solid fa-clock"></i> Pendentes</div>
+                            </div>
+                            <div style="overflow-x:auto">
+                                <table class="config-table" id="tabela-termo-pratica-aceites" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="font-size:12px">Nome</th>
+                                            <th style="font-size:12px">CPF</th>
+                                            <th style="font-size:12px">Turma</th>
+                                            <th style="font-size:12px">Projeto</th>
+                                            <th style="font-size:12px">Data da Assinatura</th>
+                                            <th style="font-size:12px">Código de Autenticidade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="termo-pratica-aceites-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-outline" onclick="fecharModalRelatorioTermoPratica()"><i class="fa-solid fa-xmark"></i> Fechar</button>
+                            <button type="button" class="btn-primary" onclick="exportarTermoPraticaCSV()"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
                         </div>
                     </div>
                 </div>

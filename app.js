@@ -4076,6 +4076,242 @@ function exportarTermoCSV() {
     link.click();
 }
 
+// ===== RELATORIO TERMO PROVA PRATICA FINAL =====
+var termoPraticaTabAtual = 'aceitaram';
+var termoPraticaAceites = [];
+var termoPraticaPendentes = [];
+
+/* Os alunos assinam pelo CPF dele, mas o cadastro pode ter o CPF formatado.
+   Compara sempre so pelos digitos para a cruza nao depender do mascara. */
+function termoPraticaCpfLimpo(cpf) {
+    return String(cpf || '').replace(/\D/g, '');
+}
+
+async function relatorioTermoPratica() {
+    const modal = document.getElementById('modal-relatorio-termo-pratica');
+    const tbody = document.getElementById('termo-pratica-aceites-body');
+    const statsDiv = document.getElementById('termo-pratica-stats');
+    if (!modal || !tbody || !statsDiv) return;
+    modal.classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
+    statsDiv.innerHTML = '';
+    termoPraticaTabAtual = 'aceitaram';
+    termoPraticaAceites = [];
+    termoPraticaPendentes = [];
+    termoPraticaPintarAba('aceitaram');
+
+    /* Base: apenas alunos ATIVOS do formulario (status Ativo e nao formados),
+       a mesma regra do relatorio do Regimento Interno. */
+    const ativos = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo');
+    const ativosPorCpf = {};
+    ativos.forEach(c => { const k = termoPraticaCpfLimpo(c.cpf); if (k) ativosPorCpf[k] = c; });
+
+    try {
+        const snap = await dbFirestore.collection('termoProvaPraticaAceites').get();
+        const assinados = [];
+        snap.forEach(doc => {
+            const a = doc.data() || {};
+            const c = ativosPorCpf[termoPraticaCpfLimpo(a.cpf)];
+            /* Turma e projeto do cadastro, nao do aceite: o aceite e uma
+               fotografia do dia e fica desatualizado se o aluno for trocado de
+               turma depois de assinar. */
+            assinados.push(Object.assign({}, a, {
+                nome: (c && c.nome) || a.nome || '',
+                turma: (c && c.turma) || a.turma || '',
+                projeto: (c && c.projeto) || a.projeto || ''
+            }));
+        });
+        const assinadosCpf = {};
+        assinados.forEach(a => { const k = termoPraticaCpfLimpo(a.cpf); if (k) assinadosCpf[k] = true; });
+
+        /* So entram na lista quem ainda e aluno ativo: o aceite de quem saiu ou
+           se formou fica no banco, mas nao conta como pendencia nem como assinatura
+           da turma atual. */
+        termoPraticaAceites = assinados.filter(a => ativosPorCpf[termoPraticaCpfLimpo(a.cpf)]);
+        termoPraticaAceites.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+        termoPraticaPendentes = ativos.filter(c => !assinadosCpf[termoPraticaCpfLimpo(c.cpf)]);
+        termoPraticaPendentes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+        termoPraticaPopularFiltroProjetos();
+        termoPraticaRenderTab();
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626">Erro ao carregar: ' + escHTML(e.message) + '</td></tr>';
+    }
+}
+
+/* Os filtros saem dos proprios alunos do relatório, e nao da lista global de
+   projetos/turmas: assim o filtro nunca esconde alguem por divergencia de
+   grafia entre o cadastro e a colecao de turmas. */
+function termoPraticaPopularFiltroProjetos() {
+    const sel = document.getElementById('termo-pratica-filtro-projeto');
+    if (!sel) return;
+    const anterior = sel.value;
+    const nomes = [];
+    termoPraticaAceites.concat(termoPraticaPendentes).forEach(function (p) {
+        const v = String(p.projeto || '').trim();
+        if (v && nomes.indexOf(v) === -1) nomes.push(v);
+    });
+    nomes.sort();
+    sel.innerHTML = '<option value="">Todos os projetos</option>';
+    nomes.forEach(function (n) {
+        sel.innerHTML += '<option value="' + escHTML(n) + '">' + escHTML(n) + '</option>';
+    });
+    if (nomes.indexOf(anterior) !== -1) sel.value = anterior;
+    termoPraticaOnFiltroProjeto();
+}
+
+function termoPraticaOnFiltroProjeto() {
+    const selP = document.getElementById('termo-pratica-filtro-projeto');
+    const selT = document.getElementById('termo-pratica-filtro-turma');
+    if (!selP || !selT) return;
+    const projeto = selP.value;
+    const anterior = selT.value;
+    const nomes = [];
+    termoPraticaAceites.concat(termoPraticaPendentes).forEach(function (p) {
+        if (projeto && String(p.projeto || '').trim() !== projeto) return;
+        const v = String(p.turma || '').trim();
+        if (v && nomes.indexOf(v) === -1) nomes.push(v);
+    });
+    nomes.sort();
+    selT.innerHTML = '<option value="">Todas as turmas</option>';
+    nomes.forEach(function (n) {
+        selT.innerHTML += '<option value="' + escHTML(n) + '">' + escHTML(n) + '</option>';
+    });
+    if (nomes.indexOf(anterior) !== -1) selT.value = anterior;
+    termoPraticaRenderTab();
+}
+
+function termoPraticaFiltros() {
+    return {
+        projeto: (document.getElementById('termo-pratica-filtro-projeto') || {}).value || '',
+        turma: (document.getElementById('termo-pratica-filtro-turma') || {}).value || ''
+    };
+}
+
+function termoPraticaAplicarFiltro(lista) {
+    const f = termoPraticaFiltros();
+    return lista.filter(function (p) {
+        if (f.projeto && String(p.projeto || '').trim() !== f.projeto) return false;
+        if (f.turma && String(p.turma || '').trim() !== f.turma) return false;
+        return true;
+    });
+}
+
+function termoPraticaPintarAba(tab) {
+    ['aceitaram', 'pendentes'].forEach(function (t) {
+        const el = document.getElementById('termo-pratica-tab-' + t);
+        if (!el) return;
+        el.className = 'termo-pratica-tab' + (t === tab ? ' active' : '');
+        el.style.cssText = t === tab
+            ? 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f0fdf4;color:#16a34a;border-bottom:2px solid #16a34a;transition:all .2s'
+            : 'flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:#f8fafc;color:#64748b;border-bottom:2px solid transparent;transition:all .2s';
+    });
+}
+
+function termoPraticaSetTab(tab) {
+    termoPraticaTabAtual = tab;
+    termoPraticaPintarAba(tab);
+    termoPraticaRenderTab();
+}
+
+/* Os numeros refletem o filtro atual, para bater com a lista que esta na tela. */
+function termoPraticaRenderStats(assinaram, pendentes) {
+    const statsDiv = document.getElementById('termo-pratica-stats');
+    if (!statsDiv) return;
+    const total = assinaram + pendentes;
+    const f = termoPraticaFiltros();
+    const escopo = (f.projeto || f.turma) ? 'no filtro' : 'no total';
+    statsDiv.innerHTML = `
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+            <div style="font-size:24px;font-weight:700;color:#16a34a">${assinaram}</div>
+            <div style="font-size:11px;color:#166534;font-weight:600">Assinaram</div>
+        </div>
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+            <div style="font-size:24px;font-weight:700;color:#ca8a04">${pendentes}</div>
+            <div style="font-size:11px;color:#92400e;font-weight:600">Pendentes</div>
+        </div>
+        <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:12px 20px;text-align:center;flex:1;min-width:120px">
+            <div style="font-size:24px;font-weight:700;color:#1e293b">${total}</div>
+            <div style="font-size:11px;color:#475569;font-weight:600">Ativos ${escopo}</div>
+        </div>`;
+}
+
+function termoPraticaRenderTab() {
+    const tbody = document.getElementById('termo-pratica-aceites-body');
+    if (!tbody) return;
+    const assinados = termoPraticaAplicarFiltro(termoPraticaAceites);
+    const pendentes = termoPraticaAplicarFiltro(termoPraticaPendentes);
+    termoPraticaRenderStats(assinados.length, pendentes.length);
+
+    if (termoPraticaTabAtual === 'pendentes') {
+        if (!pendentes.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno pendente no filtro selecionado.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = pendentes.map(function (c) {
+            const cpfFmt = (c.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            return '<tr>' +
+                '<td style="font-size:12px;font-weight:600">' + escHTML(c.nome || '-') + '</td>' +
+                '<td style="font-size:12px">' + escHTML(cpfFmt) + '</td>' +
+                '<td style="font-size:12px">' + escHTML(c.turma || '-') + '</td>' +
+                '<td style="font-size:12px">' + escHTML(c.projeto || '-') + '</td>' +
+                '<td style="font-size:12px;color:#ca8a04"><i class="fa-solid fa-clock"></i> Não assinou</td>' +
+                '<td style="font-size:12px;color:#94a3b8">-</td>' +
+                '</tr>';
+        }).join('');
+    } else {
+        if (!assinados.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">Nenhum aluno assinou o termo no filtro selecionado.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = assinados.map(function (a) {
+            const cpfFmt = (a.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            const dataAssinatura = a.dataAceite
+                ? new Date(a.dataAceite).toLocaleDateString('pt-BR') + ' ' + new Date(a.dataAceite).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})
+                : '-';
+            return '<tr>' +
+                '<td style="font-size:12px;font-weight:600">' + escHTML(a.nome || '-') + '</td>' +
+                '<td style="font-size:12px">' + escHTML(cpfFmt) + '</td>' +
+                '<td style="font-size:12px">' + escHTML(a.turma || '-') + '</td>' +
+                '<td style="font-size:12px">' + escHTML(a.projeto || '-') + '</td>' +
+                '<td style="font-size:12px">' + escHTML(dataAssinatura) + '</td>' +
+                '<td style="font-size:11px;font-family:monospace;color:#556B2F">' + escHTML(a.codigo || '-') + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+}
+
+function fecharModalRelatorioTermoPratica() {
+    document.getElementById('modal-relatorio-termo-pratica').classList.add('hidden');
+}
+
+function exportarTermoPraticaCSV() {
+    const dados = termoPraticaAplicarFiltro(termoPraticaTabAtual === 'aceitaram' ? termoPraticaAceites : termoPraticaPendentes);
+    if (!dados || !dados.length) { alert('Nenhum dado para exportar.'); return; }
+    let csv = 'Nome;CPF;Turma;Projeto;Status;Data da Assinatura;IP de Origem;Codigo de Autenticidade\n';
+    dados.forEach(function (item) {
+        const assinou = termoPraticaTabAtual === 'aceitaram';
+        const cpf = (item.cpf || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        const linha = [
+            item.nome || '',
+            cpf,
+            item.turma || '',
+            item.projeto || '',
+            assinou ? 'Assinado' : 'Pendente',
+            assinou && item.dataAceite ? new Date(item.dataAceite).toLocaleDateString('pt-BR') : (assinou ? '-' : 'Pendente'),
+            assinou ? (item.ip || '') : '',
+            assinou ? (item.codigo || '') : ''
+        ];
+        csv += linha.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(';') + '\n';
+    });
+    const blob = new Blob(['' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'termo_prova_pratica_' + termoPraticaTabAtual + '_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+}
+
 // ===== MODAL SELECAO CARTEIRA/CERTIFICADO =====
 var relDocTipo = '';
 var relDocModoSel = '';
