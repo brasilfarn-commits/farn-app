@@ -151,25 +151,64 @@ function fgNotaPill(rotulo, nota, cor) {
         + '<div style="font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin-top:2px">' + fgEsc(rotulo) + '</div></div>';
 }
 
-function fgTabelaNotas(listaAulas, notas) {
+/* A aula do dia da prova final e cadastrada para o apontamento, mas o Criar
+   Avaliacao grava a nota da final em avFinalTeorica/avFinalPratica e deixa
+   aulaId vazio de proposito: notasTeoricas/notasPraticas nunca recebem a
+   chave dessa aula. O vinculo so existe no texto da aula ("***AVALIACAO
+   FINAL***"), e sem ele a linha da prova final sai com traco na ficha mesmo
+   com a nota lancada. Casa so no comeco do texto para nao pegar aula de
+   revisao/preparacao para a final. */
+function fgAulaEhProvaFinal(a) {
+    if (!a) return false;
+    const limpo = function (v) {
+        return fgNormTxt(v).replace(/[^a-z0-9]+/g, ' ').trim();
+    };
+    const marcas = ['avaliacao final', 'av final', 'prova final'];
+    return [a.disciplina, a.conteudo].some(function (v) {
+        const t = limpo(v);
+        return marcas.some(function (m) { return t.indexOf(m) === 0; });
+    });
+}
+
+function fgTabelaNotas(listaAulas, notas, av, tipo) {
     if (!listaAulas || !listaAulas.length) return '<div style="font-size:11px;color:#94a3b8;padding:6px 2px">Nenhuma aula cadastrada com AV para esta turma.</div>';
     let rows = '';
+    let teveFinal = false;
     listaAulas.forEach(a => {
-        const n = notas ? notas[a._id] : undefined;
+        let n = notas ? notas[a._id] : undefined;
+        let ehFinal = false;
+        if ((n === undefined || n === null || n === '') && av && fgAulaEhProvaFinal(a)) {
+            const campo = tipo === 'pratica' ? 'avFinalPratica' : 'avFinalTeorica';
+            const v = parseFloat(String(av[campo] == null ? '' : av[campo]).replace(',', '.'));
+            if (!isNaN(v)) {
+                n = Math.round(Math.max(0, Math.min(10, v)) * 10) / 10;
+                ehFinal = true;
+                teveFinal = true;
+            }
+        }
         const notaVal = (n === undefined || n === null || n === '') ? '—' : fgEsc(String(n).replace('.', ','));
+        /* Roxo e o mesmo tom que o admin usa no selo FINAL TEORICA/PRATICA:
+           deixa claro que o numero vem da prova final, nao do lancamento por aula. */
+        const celula = ehFinal
+            ? '<span style="color:#7c3aed">' + notaVal + '</span>'
+                + '<div style="font-size:8px;font-weight:800;color:#7c3aed;letter-spacing:.3px;margin-top:1px">PROVA FINAL</div>'
+            : notaVal;
         rows += '<tr style="border-bottom:1px solid #eef2f7">'
             + '<td style="padding:5px 6px;font-size:11px;color:#475569;white-space:nowrap">' + fichaGeralData(a.data) + '</td>'
             + '<td style="padding:5px 6px;font-size:11px;font-weight:600;color:#0f172a">' + fgEsc(a.disciplina || '—') + '</td>'
             + '<td style="padding:5px 6px;font-size:10.5px;color:#64748b">' + fgEsc((a.conteudo || '').substring(0, 42)) + '</td>'
-            + '<td style="padding:5px 6px;font-size:11px;font-weight:700;color:#0f172a;text-align:center;min-width:40px">' + notaVal + '</td></tr>';
+            + '<td style="padding:5px 6px;font-size:11px;font-weight:700;color:#0f172a;text-align:center;min-width:40px">' + celula + '</td></tr>';
     });
+    const rodape = teveFinal
+        ? '<div style="font-size:9.5px;color:#7c3aed;margin-top:5px;line-height:1.4">A nota da prova final compoe o FIN (secao AV Final); ela nao e somada na media desta coluna.</div>'
+        : '';
     return '<table style="width:100%;border-collapse:collapse">'
         + '<thead><tr style="background:#f1f5f9">'
         + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Data</th>'
         + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Disciplina</th>'
         + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:left;letter-spacing:.3px">Conteudo</th>'
         + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:center;letter-spacing:.3px">Nota</th>'
-        + '</tr></thead><tbody>' + rows + '</tbody></table>';
+        + '</tr></thead><tbody>' + rows + '</tbody></table>' + rodape;
 }
 
 function fgFOLista(lista, positivo) {
@@ -1008,12 +1047,12 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;background:#fff">'
         + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fa-solid fa-book-open" style="color:#0ea5e9;font-size:12px"></i>'
         + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">AV Teorica - Media ' + fichaGeralNum(calc.notaTeor) + '</span></div>'
-        + fgTabelaNotas(aulasRef.teorica, calc.av.notasTeoricas)
+        + fgTabelaNotas(aulasRef.teorica, calc.av.notasTeoricas, calc.av, 'teorica')
         + '</div>'
         + '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;background:#fff">'
         + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fa-solid fa-hammer" style="color:#0ea5e9;font-size:12px"></i>'
         + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">AV Pratica - Media ' + fichaGeralNum(calc.notaPrat) + '</span></div>'
-        + fgTabelaNotas(aulasRef.pratica, calc.av.notasPraticas)
+        + fgTabelaNotas(aulasRef.pratica, calc.av.notasPraticas, calc.av, 'pratica')
         + '</div>'
         + '</div>';
 
