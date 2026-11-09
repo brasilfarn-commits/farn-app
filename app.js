@@ -21,6 +21,7 @@ let candidatos = [];
 let turmas = [];
 let uploadedFiles = [];
 let pendingDeleteIndex = null;
+let pendingDeleteId = null;
 let currentAluno = null;
 let usuarios = [];
 let currentUserData = null;
@@ -176,8 +177,19 @@ function candidatoToDoc(c) {
        cadastro da pessoa. Se fosse junto, cada backup gravaria uma copia
        velha da insignia em quem ja tem patente. */
     delete copy.patenteInsigniaUrl;
+    /* So existe para enderecar o documento; no banco a chave ja e o proprio
+       id do documento, gravar o campo dentro dele seria ruido. */
+    delete copy.docKey;
     Object.keys(copy).forEach(k => { if (copy[k] === undefined) delete copy[k]; });
     return copy;
+}
+
+/* A chave real do documento no Firestore. Nao usar `id`: o carregamento faz
+   parseInt(doc.id), e uma chave automatica tipo "6aNhTi..." vira 6, batendo
+   com o documento legado de chave "6" (acontece com os dois registros da
+   mesma pessoa). Toda escrita ou exclusao precisa da chave, nao do numero. */
+function candidatoDocId(c) {
+    return String((c && (c.docKey || c.id)) || '');
 }
 
 /* Versao da foto que o aparelho (admin ou portal do aluno) ja conhece.
@@ -259,7 +271,9 @@ function backupCandidatos() {
     const ref = dbFirestore.collection(FB_CANDIDATOS);
     batch.set(ref.doc('_index'), { count: candidatos.length, timestamp: Date.now() });
     candidatos.forEach((c, i) => {
-        const id = c.id ? String(c.id) : String(i);
+        /* docKey primeiro: sem isso, um registro de chave automatica e gravado
+           dentro do documento legado de mesmo numero, sobrepondo outro aluno. */
+        const id = candidatoDocId(c) || String(i);
         batch.set(ref.doc(id), candidatoToDoc(c), { merge: true });
     });
     batch.commit().catch(e => console.error('Erro ao salvar candidatos:', e));
@@ -749,6 +763,11 @@ async function initFirebaseListeners() {
                 if (doc.id !== '_index') {
                     const data = doc.data();
                     if (data.cpf) data.cpf = data.cpf.replace(/\D/g, '');
+                    /* Guardar a chave real do documento: `parseInt` numa chave
+                       automatica tipo "6aNhTi..." devolve 6 e colide com o
+                       documento legado de chave "6", deixando dois registros
+                       distintos responderem pelo mesmo id. */
+                    data.docKey = doc.id;
                     data.id = parseInt(doc.id) || doc.id;
                     result.push(data);
                 }
@@ -2522,6 +2541,7 @@ async function recusarReingresso(i) {
 
 function deleteCandidato(i) {
     pendingDeleteIndex = i;
+    pendingDeleteId = candidatoDocId(candidatos[i]);
     document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o candidato <strong>${candidatos[i].nome}</strong>?`;
     document.getElementById('modal-confirm-overlay').classList.remove('hidden');
 }
@@ -2529,10 +2549,21 @@ function deleteCandidato(i) {
 async function confirmDelete() {
     if (pendingDeleteIndex !== null) {
         var idx = pendingDeleteIndex;
+        /* O indice e do momento do clique. Se a lista se mexeu desde entao, o
+           que nao bate e reancorado pela chave do documento, para nunca apagar
+           outra pessoa. */
+        if (pendingDeleteId && candidatoDocId(candidatos[idx]) !== pendingDeleteId) {
+            idx = candidatos.findIndex(function (c) { return candidatoDocId(c) === pendingDeleteId; });
+            if (idx === -1) {
+                alert('Esse cadastro nao esta mais na lista. Recarregue a pagina.');
+                closeConfirmModal();
+                return;
+            }
+        }
         var removed = candidatos[idx];
         candidatos.splice(idx, 1);
-        if (removed && removed.id) {
-            var docId = String(removed.id);
+        var docId = candidatoDocId(removed);
+        if (removed && docId) {
             try {
                 await dbFirestore.collection(FB_CANDIDATOS).doc(docId).delete();
             } catch(e) {
@@ -2542,6 +2573,7 @@ async function confirmDelete() {
         backupCandidatos();
         renderList();
         if (typeof renderAlunosList === 'function') renderAlunosList();
+        if (typeof renderFormadosList === 'function') renderFormadosList();
     }
     closeConfirmModal();
 }
@@ -3093,8 +3125,23 @@ async function changeStatus(i, newStatus) {
 }
 
 function deleteCandidatoAlunos(i) {
+    var c = candidatos[i];
+    if (!c) return;
     pendingDeleteIndex = i;
-    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o aluno <strong>${candidatos[i].nome}</strong>?`;
+    pendingDeleteId = candidatoDocId(c);
+    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o aluno <strong>${c.nome}</strong>?`;
+    document.getElementById('modal-confirm-overlay').classList.remove('hidden');
+}
+
+/* Mesma entrada do delete compartilhado: o indice e do array global de
+   candidatos, que as duas listas (Alunos e Formados) usam igual. */
+function deleteCandidatoFormados(i) {
+    var c = candidatos[i];
+    if (!c) return;
+    pendingDeleteIndex = i;
+    pendingDeleteId = candidatoDocId(c);
+    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o formado <strong>${c.nome}</strong> (${c.matricula || 'sem matricula'})?` +
+        '<div style="margin-top:10px;font-size:12px;color:#b45309"><i class="fa-solid fa-triangle-exclamation"></i> A ficha, as presencas e os termos ja assinados ficam no banco: a exclusao apaga só o cadastro.</div>';
     document.getElementById('modal-confirm-overlay').classList.remove('hidden');
 }
 
@@ -6175,7 +6222,7 @@ async function populatePcfTurmaSelect() {
 function openModal() { document.getElementById('modal-overlay').classList.remove('hidden'); }
 function closeModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('modal-overlay').classList.add('hidden'); }
 function printModal() { window.print(); }
-function closeConfirmModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('modal-confirm-overlay').classList.add('hidden'); pendingDeleteIndex = null; }
+function closeConfirmModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('modal-confirm-overlay').classList.add('hidden'); pendingDeleteIndex = null; pendingDeleteId = null; }
 
 /* ===== FOTO E ANEXOS ===== */
 
@@ -10678,6 +10725,7 @@ function renderFormadosList() {
                 '<button class="btn-icon" title="Editar" onclick="editCandidato(' + i + ', \'formados\')"><i class="fa-solid fa-pen"></i></button>' +
                 patenteBotao("'candidatos'," + c.id) +
                 (!c.remanejadoDocente ? '<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
+                '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoFormados(' + i + ')"><i class="fa-solid fa-trash"></i></button>' +
             '</div></td></tr>';
     }).join('');
 }
