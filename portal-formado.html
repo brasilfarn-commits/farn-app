@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="oportunidades-portais.js?v=2"></script>
+    <script src="ficha-geral-compartilhar.js?v=22"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -168,6 +169,92 @@
         .pf-photo-modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.1); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; }
         .pf-photo-modal-info { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#cbd5e1; padding:8px 16px; border-radius:8px; font-size:12px; text-align:center; }
 
+        /* ===== CERTIFICACOES ===== */
+        .pf-cert-espera { position:relative; overflow:hidden; text-align:center; padding:54px 24px 46px; border-radius:20px; background:linear-gradient(160deg,#f0fdf4 0%,#ecfdf5 42%,#f0f9ff 100%); border:1px solid rgba(22,163,74,.22); box-shadow:0 10px 34px rgba(15,23,42,.06); }
+        .pf-cert-espera::before { content:''; position:absolute; inset:-45%; pointer-events:none; background:radial-gradient(circle at 28% 30%,rgba(22,163,74,.16),transparent 46%),radial-gradient(circle at 72% 68%,rgba(13,148,136,.14),transparent 46%),radial-gradient(circle at 55% 20%,rgba(202,138,4,.10),transparent 40%); animation:pfCertAura 16s ease-in-out infinite alternate; }
+        .pf-cert-espera::after { content:''; position:absolute; top:0; bottom:0; width:38%; left:-45%; pointer-events:none; background:linear-gradient(100deg,transparent,rgba(255,255,255,.72),transparent); transform:skewX(-14deg); animation:pfCertBrilho 5.5s ease-in-out infinite; }
+        @keyframes pfCertAura { from { transform:translate3d(-3%,-2%,0) scale(1); } to { transform:translate3d(4%,3%,0) scale(1.14); } }
+        @keyframes pfCertBrilho { 0%,62% { left:-45%; } 100% { left:115%; } }
+        .pf-cert-espera-inner { position:relative; z-index:2; max-width:520px; margin:0 auto; }
+        .pf-cert-selo { position:relative; width:104px; height:104px; margin:0 auto 24px; display:flex; align-items:center; justify-content:center; }
+        .pf-cert-selo i { position:relative; z-index:2; width:78px; height:78px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:34px; color:#fff; background:linear-gradient(135deg,#16a34a,#0d9488); box-shadow:0 12px 30px rgba(22,163,74,.38); }
+        .pf-cert-onda { position:absolute; inset:0; border-radius:50%; border:2px solid rgba(22,163,74,.5); animation:pfCertOnda 3s ease-out infinite; }
+        .pf-cert-onda:nth-child(2) { animation-delay:1s; }
+        .pf-cert-onda:nth-child(3) { animation-delay:2s; }
+        @keyframes pfCertOnda { 0% { transform:scale(.74); opacity:.8; } 100% { transform:scale(1.55); opacity:0; } }
+        .pf-cert-espera h3 { font-size:20px; font-weight:800; color:#14532d; margin:0 0 10px; letter-spacing:-.2px; }
+        .pf-cert-espera p { font-size:14px; color:#475569; line-height:1.8; margin:0 0 6px; }
+        .pf-cert-espera strong { color:#15803d; }
+        .pf-cert-status { display:inline-flex; align-items:center; gap:8px; margin-top:22px; padding:8px 16px; border-radius:999px; background:#fff; border:1px solid rgba(22,163,74,.3); font-size:11px; font-weight:700; color:#15803d; letter-spacing:.3px; box-shadow:0 2px 10px rgba(15,23,42,.05); }
+        .pf-cert-ponto { width:8px; height:8px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 0 rgba(22,163,74,.6); animation:pfCertPulso 2s ease-out infinite; }
+        @keyframes pfCertPulso { 0% { box-shadow:0 0 0 0 rgba(22,163,74,.55); } 70% { box-shadow:0 0 0 9px rgba(22,163,74,0); } 100% { box-shadow:0 0 0 0 rgba(22,163,74,0); } }
+        .pf-cert-status.erro { color:#b91c1c; border-color:#fecaca; }
+        .pf-cert-status.erro .pf-cert-ponto { background:#dc2626; animation:none; }
+        .pf-cert-passos { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:26px; }
+        .pf-cert-passo { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.82); border:1px solid rgba(22,163,74,.2); border-radius:12px; padding:9px 14px; font-size:11px; font-weight:600; color:#334155; }
+        .pf-cert-passo i { color:#16a34a; font-size:13px; }
+        .pf-cert-passo.feito { border-color:rgba(22,163,74,.5); background:#f0fdf4; color:#14532d; }
+        .pf-cert-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); gap:16px; }
+        .pf-cert-card { display:flex; flex-direction:column; background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; cursor:pointer; transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; animation:pfCertEntra .35s ease both; }
+        .pf-cert-card:hover { transform:translateY(-3px); box-shadow:0 14px 30px rgba(15,23,42,.13); border-color:rgba(22,163,74,.5); }
+        .pf-cert-card:focus-visible { outline:2px solid #16a34a; outline-offset:2px; }
+        @keyframes pfCertEntra { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .pf-cert-card-papel { position:relative; padding:18px; display:flex; justify-content:center; background:linear-gradient(135deg,#f0fdf4,#ecfeff 60%,#eff6ff); border-bottom:1px solid #e2e8f0; }
+        .pf-cert-folha { position:relative; background:#fff; border:1px solid #cbd5e1; border-radius:3px; overflow:hidden; box-shadow:0 8px 22px rgba(15,23,42,.2); }
+        .pf-cert-folha img { width:100%; height:100%; object-fit:contain; display:block; }
+        .pf-cert-folha-vazia { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#bbf7d0; font-size:26px; background:linear-gradient(135deg,#f8fafc,#f0fdf4); }
+        .pf-cert-novo { position:absolute; top:10px; right:10px; background:linear-gradient(135deg,#16a34a,#0d9488); color:#fff; font-size:9px; font-weight:800; letter-spacing:.6px; padding:4px 9px; border-radius:999px; text-transform:uppercase; box-shadow:0 3px 10px rgba(22,163,74,.35); }
+        .pf-cert-card-body { padding:14px 16px 16px; display:flex; flex-direction:column; gap:7px; flex:1; }
+        .pf-cert-card-curso { font-size:14px; font-weight:800; color:#14532d; line-height:1.4; }
+        .pf-cert-card-inst { font-size:11px; color:#64748b; display:flex; align-items:center; gap:5px; }
+        .pf-cert-card-inst i { color:#16a34a; }
+        .pf-cert-card-texto { font-size:12px; color:#475569; line-height:1.7; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+        .pf-cert-card-rodape { margin-top:auto; padding-top:10px; border-top:1px solid #f0fdf4; display:flex; align-items:center; gap:8px; font-size:10px; color:#94a3b8; }
+        .pf-cert-card-acao { margin-left:auto; display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:#15803d; }
+        .pf-cert-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(3,15,9,.9); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:18px; }
+        .pf-cert-modal.active { display:flex; }
+        .pf-cert-modal-box { background:#fff; border-radius:18px; width:100%; max-width:940px; max-height:92vh; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(22,163,74,.45) #f1f5f9; box-shadow:0 24px 70px rgba(0,0,0,.5); }
+        .pf-cert-modal-box::-webkit-scrollbar { width:8px; }
+        .pf-cert-modal-box::-webkit-scrollbar-track { background:#f1f5f9; }
+        .pf-cert-modal-box::-webkit-scrollbar-thumb { background:rgba(22,163,74,.45); border-radius:10px; }
+        .pf-cert-modal-box::-webkit-scrollbar-thumb:hover { background:rgba(22,163,74,.7); }
+        .pf-cert-modal-topo { position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:10px; padding:16px 20px; background:linear-gradient(135deg,#14532d,#166534 55%,#0f766e); color:#fff; }
+        .pf-cert-modal-topo h3 { margin:0; font-size:16px; font-weight:800; flex:1; line-height:1.4; }
+        .pf-cert-modal-fechar { background:rgba(255,255,255,.14); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; flex:0 0 34px; transition:background .2s; }
+        .pf-cert-modal-fechar:hover { background:rgba(255,255,255,.28); }
+        .pf-cert-modal-corpo { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; padding:22px 20px; }
+        .pf-cert-modal-papel { flex:1 1 300px; max-width:400px; min-width:250px; display:flex; justify-content:center; padding:18px; border-radius:14px; border:1px solid #e2e8f0; background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e9eef5 8px,#e9eef5 16px); }
+        .pf-cert-modal-dados { flex:1 1 280px; min-width:250px; }
+        .pf-cert-rotulo { font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; margin-bottom:5px; }
+        .pf-cert-valor { font-size:13px; color:#334155; line-height:1.8; margin-bottom:16px; }
+        .pf-cert-declaracao { white-space:pre-wrap; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #16a34a; border-radius:10px; padding:14px; font-size:13px; color:#334155; line-height:1.85; }
+        .pf-cert-folha { position:relative; }
+        .pf-cert-declaracao-overlay { position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; text-align:center; padding:22% 12% 10% 12%; pointer-events:none; color:#0f172a; font-size:12px; line-height:1.65; font-weight:600; white-space:pre-wrap; word-break:break-word; text-shadow:0 1px 0 rgba(255,255,255,.35); }
+        .pf-cert-declaracao-overlay .pf-cert-declaracao-texto { max-width:100%; }
+        .pf-cert-modal-acoes { display:flex; gap:10px; flex-wrap:wrap; padding:0 20px 22px; }
+        .pf-cert-btn { display:inline-flex; align-items:center; gap:7px; padding:11px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid transparent; text-decoration:none; transition:transform .15s,box-shadow .15s; }
+        .pf-cert-btn:active { transform:translateY(1px); }
+        .pf-cert-btn-verde { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 4px 14px rgba(22,163,74,.3); }
+        .pf-cert-btn-verde:hover { box-shadow:0 7px 20px rgba(22,163,74,.42); }
+        .pf-cert-btn-neutro { background:#f8fafc; border-color:#e2e8f0; color:#475569; }
+        .pf-cert-btn-neutro:hover { background:#f1f5f9; }
+        @media(max-width:600px) {
+            .pf-cert-espera { padding:40px 16px 34px; border-radius:16px; }
+            .pf-cert-espera h3 { font-size:17px; }
+            .pf-cert-selo { width:88px; height:88px; margin-bottom:18px; }
+            .pf-cert-selo i { width:66px; height:66px; font-size:28px; }
+            .pf-cert-grid { grid-template-columns:1fr; }
+            .pf-cert-modal { padding:10px; }
+            .pf-cert-modal-corpo { padding:16px 14px; gap:16px; }
+            .pf-cert-modal-papel { max-width:100%; }
+            .pf-cert-modal-acoes { padding:0 14px 16px; }
+            .pf-cert-btn { flex:1; justify-content:center; }
+        }
+        @media(prefers-reduced-motion:reduce) {
+            .pf-cert-espera::before, .pf-cert-espera::after, .pf-cert-onda, .pf-cert-ponto, .pf-cert-card { animation:none; }
+            .pf-cert-espera::after { display:none; }
+        }
+
         /* ===== TOPBAR MOBILE ===== */
         .pf-topbar{display:none;position:fixed;top:0;left:0;right:0;background:#ffffff;border-bottom:1px solid #e2e8f0;padding:10px 16px;align-items:center;gap:12px;z-index:150;box-shadow:0 2px 12px rgba(0,0,0,.06)}
         .pf-topbar-logo{width:34px;height:34px;border-radius:50%;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;background:#fff}
@@ -259,6 +346,9 @@
                 <div class="pf-nav-item" onclick="pfShowSection('galeria', this)">
                     <i class="fa-solid fa-images"></i><span>Galeria de Fotos</span>
                 </div>
+                <div class="pf-nav-item" onclick="pfShowSection('certificacoes', this)">
+                    <i class="fa-solid fa-certificate"></i><span>Certificações</span>
+                </div>
                 <div class="pf-nav-item" onclick="pfShowSection('meus-dados', this)">
                     <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
                 </div>
@@ -315,6 +405,40 @@
                         <p>Carregando noticias...</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- CERTIFICACOES -->
+            <div id="pf-section-certificacoes" class="pf-section">
+                <div class="pf-center-header">
+                    <i class="fa-solid fa-certificate"></i>
+                    <div><h2>Certificações</h2></div>
+                    <p id="pf-cert-contagem">Enviadas pelo administrador</p>
+                </div>
+
+                <div id="pf-cert-espera" class="pf-cert-espera">
+                    <div class="pf-cert-espera-inner">
+                        <div class="pf-cert-selo">
+                            <span class="pf-cert-onda"></span>
+                            <span class="pf-cert-onda"></span>
+                            <span class="pf-cert-onda"></span>
+                            <i class="fa-solid fa-certificate"></i>
+                        </div>
+                        <h3>Aguardando novo registro</h3>
+                        <p>Sua <strong>certificação</strong> está sendo preparada e será <strong>enviada em breve pelo administrador</strong>.</p>
+                        <p style="font-size:13px;color:#64748b;margin-top:8px">Quando o registro chegar, ele aparece aqui sozinho. Não precisa atualizar a página.</p>
+                        <div class="pf-cert-status" id="pf-cert-status">
+                            <span class="pf-cert-ponto"></span>
+                            <span id="pf-cert-status-texto">Conectado &middot; aguardando envio</span>
+                        </div>
+                        <div class="pf-cert-passos">
+                            <div class="pf-cert-passo feito"><i class="fa-solid fa-circle-check"></i> Acesso ao portal</div>
+                            <div class="pf-cert-passo"><i class="fa-regular fa-clock"></i> Envio do administrador</div>
+                            <div class="pf-cert-passo"><i class="fa-regular fa-circle"></i> Certificado disponível</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pf-cert-lista" class="pf-cert-grid" style="display:none"></div>
             </div>
 
             <!-- MEUS DADOS -->
@@ -433,6 +557,32 @@
         <div class="pf-photo-modal-info" id="pf-photo-modal-info"></div>
     </div>
 
+    <!-- MODAL CERTIFICADO -->
+    <div id="pf-cert-modal" class="pf-cert-modal" onclick="if(event.target===this)pfFecharCertificado()">
+        <div class="pf-cert-modal-box">
+            <div class="pf-cert-modal-topo">
+                <i class="fa-solid fa-certificate"></i>
+                <h3 id="pf-cert-modal-titulo">Certificado</h3>
+                <button type="button" class="pf-cert-modal-fechar" onclick="pfFecharCertificado()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="pf-cert-modal-corpo">
+                <div class="pf-cert-modal-papel">
+                    <div id="pf-cert-modal-folha" class="pf-cert-folha" style="width:100%;aspect-ratio:1414 / 2000;position:relative;overflow:hidden">
+                        <img id="pf-cert-modal-img" src="" alt="Papel A4 do certificado" style="width:100%;height:100%;object-fit:contain;display:block">
+                        <div id="pf-cert-modal-declaracao" class="pf-cert-declaracao-overlay" style="display:none"><div style="display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%"><div class="pf-cert-declaracao-texto"></div><div id="pf-cert-modal-instituicao" style="font-size:12px;line-height:1.65;font-weight:600;white-space:pre-wrap;word-break:break-word;text-align:center;color:#0f172a;margin-top:1cm"></div><img id="pf-cert-modal-qr" alt="QR Code" style="display:none;width:72px;height:72px;background:#fff;padding:3px;border-radius:4px;border:1px solid rgba(15,23,42,.12);margin-top:-0.8cm;margin-left:17.5cm"></div></div>
+                        <div id="pf-cert-modal-vazia" class="pf-cert-folha-vazia" style="display:none"><i class="fa-solid fa-file-image"></i></div>
+                    </div>
+                </div>
+                <div class="pf-cert-modal-dados" id="pf-cert-modal-dados"></div>
+            </div>
+            <div class="pf-cert-modal-acoes">
+                <button type="button" id="pf-cert-modal-baixar" class="pf-cert-btn pf-cert-btn-verde" onclick="pfVisualizarCertificadoPapel()"><i class="fa-solid fa-eye"></i> VISUALIZAR O PAPEL JUNTO COM A DECLARAÇÃO</button>
+                <button type="button" id="pf-cert-modal-ficha" class="pf-cert-btn pf-cert-btn-verde" style="background:linear-gradient(135deg,#0f766e,#115e59);box-shadow:0 4px 14px rgba(15,118,110,.3)" onclick="pfAbrirFichaGeralCert()"><i class="fa-solid fa-file-lines"></i> VISUALIZAR FICHA GERAL</button>
+                <button type="button" class="pf-cert-btn pf-cert-btn-neutro" onclick="pfFecharCertificado()"><i class="fa-solid fa-xmark"></i> Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL EDITAR DADOS -->
     <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)pfCloseEditModal()">
         <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
@@ -536,6 +686,7 @@
             pfLoadNoticias();
             pfLoadDados();
             pfLoadGallery();
+            pfLoadCertificacoes();
 
 
         } catch(e) {
@@ -573,6 +724,7 @@
             pfLoadNoticias();
             pfLoadDados();
             pfLoadGallery();
+            pfLoadCertificacoes();
 
         }
     }
@@ -581,6 +733,9 @@
         if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
         if (pfGalleryUnsub2) { pfGalleryUnsub2(); pfGalleryUnsub2 = null; }
         if (pfNoticiasUnsub) { pfNoticiasUnsub(); pfNoticiasUnsub = null; }
+        if (pfCertUnsub) { pfCertUnsub(); pfCertUnsub = null; }
+        pfCertRegistros = [];
+        pfFecharCertificado();
         document.getElementById('screen-portal').classList.remove('active');
         localStorage.removeItem('pf_lembrar_cpf');
         localStorage.removeItem('pf_lembrar_senha');
@@ -670,6 +825,362 @@
         });
     }
 
+    /* ===== CERTIFICACOES =====
+       O administrador cria o registro na secao Certificado do admin; ele chega
+       aqui ao vivo. Enquanto nao chega, a secao fica em espera. */
+    var pfCertUnsub = null;
+    var pfCertRegistros = [];
+    var pfCertAtual = null;
+
+    function pfCertEsc(v) {
+        return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+            return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+        });
+    }
+
+    function pfCertData(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    }
+
+    function pfCertStatus(texto, erro) {
+        var box = document.getElementById('pf-cert-status');
+        var txt = document.getElementById('pf-cert-status-texto');
+        if (txt) txt.textContent = texto;
+        if (box) box.classList.toggle('erro', !!erro);
+    }
+
+    function pfCertFormatCPF(cpf) {
+        var d = String(cpf || '').replace(/\D/g, '').slice(0, 11);
+        if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        return String(cpf || '').trim() || '—';
+    }
+
+    function pfCertFormatDataVal(v) {
+        if (v == null || v === '') return '—';
+        // Firestore Timestamp
+        if (typeof v === 'object' && typeof v.toDate === 'function') {
+            try { v = v.toDate(); } catch (e) {}
+        }
+        if (v instanceof Date) {
+            return isNaN(v.getTime()) ? '—' : v.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        }
+        var s = String(v).trim();
+        if (!s) return '—';
+        // já formatado pt-BR (DD/MM/YYYY ou DD/MM/YY)
+        var mBR = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+        if (mBR) {
+            var dia = ('0' + mBR[1]).slice(-2), mes = ('0' + mBR[2]).slice(-2), ano = mBR[3];
+            if (ano.length === 2) ano = (parseInt(ano, 10) > 50 ? '19' : '20') + ano;
+            return dia + '/' + mes + '/' + ano;
+        }
+        // ISO ou YYYY-MM-DD
+        var d = new Date(s);
+        if (!isNaN(d.getTime())) {
+            // YYYY-MM-DD sem hora: evitar deslocamento de fuso
+            var mY = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (mY) return mY[3] + '/' + mY[2] + '/' + mY[1];
+            return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        }
+        return s;
+    }
+
+    function pfCertSubstituirDeclaracao(texto) {
+        var t = String(texto || '');
+        var nome = (pfUser && (pfUser.nome || pfUser.nomeCompleto)) ? String(pfUser.nome || pfUser.nomeCompleto).trim() : '—';
+        var cpf = pfCertFormatCPF(pfUser ? (pfUser.cpf || '') : '');
+        var cred = (pfUser && (pfUser.credencial || pfUser.matricula)) ? String(pfUser.credencial || pfUser.matricula).trim() : '—';
+        // [inicio] = data de inscrição do formado logado; [fim] = data final (formulário do formado), com fallback para AV final prática
+        var dataInicio = pfUser ? (pfUser.dataInscricao || pfUser.dataMatricula || pfUser.dataCadastro || '') : '';
+        var dataFim = pfUser ? (pfUser.dataFinal || pfUser.data_final || pfUser.dataAVFinalPraticaFmt || pfUser.dataAVFinalPratica || pfUser.dataAvFinalPratica || '') : '';
+        var inicio = pfCertFormatDataVal(dataInicio);
+        var fim = pfCertFormatDataVal(dataFim);
+        // substitui chaves solicitadas (exatas e variações comuns)
+        t = t.split('[NOME]').join(nome);
+        t = t.split('[nome]').join(nome);
+        t = t.split('[000.000.000-00]').join(cpf);
+        t = t.split('[CPF]').join(cpf);
+        t = t.split('[cpf]').join(cpf);
+        t = t.split('[0000000000000]').join(cred);
+        t = t.split('[CREDENCIAL]').join(cred);
+        t = t.split('[credencial]').join(cred);
+        t = t.split('[inicio]').join(inicio);
+        t = t.split('[INICIO]').join(inicio);
+        t = t.split('[Inicio]').join(inicio);
+        t = t.split('[fim]').join(fim);
+        t = t.split('[FIM]').join(fim);
+        t = t.split('[Fim]').join(fim);
+        return t;
+    }
+
+    function pfCertPodeExibirFormado(r) {
+        var portais = Array.isArray(r.portais) ? r.portais : [];
+        if (typeof r.exibirFormado === 'boolean') return r.exibirFormado;
+        if (portais.length) return portais.indexOf('formado') !== -1;
+        return true; // compat: registro antigo sem flags
+    }
+
+    function pfLoadCertificacoes() {
+        if (pfCertUnsub) { pfCertUnsub(); pfCertUnsub = null; }
+        pfCertStatus('Conectado · aguardando envio', false);
+        /* Sem orderBy de proposito: o indice composto nao existe e documento
+           antigo sem o campo nao pode derrubar a escuta. A ordem vem no cliente. */
+        pfCertUnsub = dbFirestore.collection('certificados').onSnapshot(function(snap) {
+            var regs = [];
+            snap.forEach(function(doc) {
+                var r = doc.data() || {};
+                r.id = doc.id;
+                if (!pfCertPodeExibirFormado(r)) return;
+                regs.push(r);
+            });
+            regs.sort(function(a, b) {
+                return String(b.criadoEm || '').localeCompare(String(a.criadoEm || ''));
+            });
+            pfCertRegistros = regs;
+            pfCertStatus(regs.length ? 'Registro recebido do administrador' : 'Conectado · aguardando envio', false);
+            pfRenderCertificacoes();
+        }, function(err) {
+            console.error('Erro ao carregar certificacoes:', err);
+            pfCertStatus('Sem conexão · tentando de novo', true);
+        });
+    }
+
+    function pfRenderCertificacoes() {
+        var lista = document.getElementById('pf-cert-lista');
+        if (!lista) return;
+        var espera = document.getElementById('pf-cert-espera');
+        var contagem = document.getElementById('pf-cert-contagem');
+        var regs = pfCertRegistros;
+
+        if (!regs.length) {
+            lista.innerHTML = '';
+            lista.style.display = 'none';
+            if (espera) espera.style.display = 'block';
+            if (contagem) contagem.textContent = 'Enviadas pelo administrador';
+            return;
+        }
+        if (espera) espera.style.display = 'none';
+        lista.style.display = 'grid';
+        if (contagem) contagem.textContent = regs.length + (regs.length === 1 ? ' certificação' : ' certificações');
+        lista.innerHTML = regs.map(pfCertCardHtml).join('');
+        Array.prototype.forEach.call(lista.querySelectorAll('.pf-cert-card'), function(el) {
+            var id = el.getAttribute('data-id');
+            el.addEventListener('click', function() { pfAbrirCertificado(id); });
+            el.addEventListener('keydown', function(ev) {
+                if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pfAbrirCertificado(id); }
+            });
+        });
+    }
+
+    function pfCertCardHtml(r, i) {
+        var inst = r.instituicao || {};
+        var nomeInst = inst.nomeFantasia || inst.razaoSocial || 'FARN';
+        var paisagem = r.papelOrientacao === 'paisagem';
+        var resumo = String(r.declaracao || '').replace(/\s+/g, ' ').trim();
+        var criado = r.criadoEm ? new Date(r.criadoEm).getTime() : 0;
+        var novo = criado && (Date.now() - criado) < 7 * 24 * 60 * 60 * 1000;
+        return '<div class="pf-cert-card" role="button" tabindex="0" data-id="' + pfCertEsc(r.id) + '" style="animation-delay:' + Math.min(i, 8) * 55 + 'ms">' +
+            '<div class="pf-cert-card-papel">' +
+                (novo ? '<span class="pf-cert-novo"><i class="fa-solid fa-bolt" style="margin-right:3px"></i>Novo</span>' : '') +
+                '<div class="pf-cert-folha" style="width:' + (paisagem ? '100%' : '148px') + ';max-width:' + (paisagem ? '300px' : '148px') + ';aspect-ratio:' + (paisagem ? '2000 / 1414' : '1414 / 2000') + '">' +
+                    (r.papel
+                        ? '<img src="' + pfCertEsc(r.papel) + '" alt="Papel do certificado">'
+                        : '<div class="pf-cert-folha-vazia"><i class="fa-solid fa-file-image"></i></div>') +
+                '</div>' +
+            '</div>' +
+            '<div class="pf-cert-card-body">' +
+                '<div class="pf-cert-card-curso">' + pfCertEsc(r.curso || 'Certificado') + '</div>' +
+                '<div class="pf-cert-card-inst"><i class="fa-solid fa-building-columns"></i>' + pfCertEsc(nomeInst) + '</div>' +
+                '<div class="pf-cert-card-texto">' + pfCertEsc(resumo || 'Declaração não informada.') + '</div>' +
+                '<div class="pf-cert-card-rodape">' +
+                    '<i class="fa-regular fa-calendar"></i>' + pfCertEsc(pfCertData(r.criadoEm) || 'Aguardando data') +
+                    '<span class="pf-cert-card-acao">Ver <i class="fa-solid fa-arrow-right"></i></span>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function pfAbrirCertificado(id) {
+        var r = pfCertRegistros.filter(function(x) { return x.id === id; })[0];
+        if (!r) return;
+        var inst = r.instituicao || {};
+        var paisagem = r.papelOrientacao === 'paisagem';
+        var folha = document.getElementById('pf-cert-modal-folha');
+        if (folha) folha.style.aspectRatio = paisagem ? '2000 / 1414' : '1414 / 2000';
+        var img = document.getElementById('pf-cert-modal-img');
+        var vazia = document.getElementById('pf-cert-modal-vazia');
+        if (img) {
+            if (r.papel) { img.src = r.papel; img.style.display = 'block'; }
+            else { img.removeAttribute('src'); img.style.display = 'none'; }
+        }
+        if (vazia) vazia.style.display = r.papel ? 'none' : 'flex';
+
+        // Declaração substituída e centralizada à frente do papel (Portal do Formado)
+        var declaracaoSub = pfCertSubstituirDeclaracao(r.declaracao || '');
+        var credQR = (pfUser && (pfUser.credencial || pfUser.matricula)) ? String(pfUser.credencial || pfUser.matricula).trim() : '';
+        var qrUrl = credQR ? ('https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(credQR) + '&size=120x120&margin=1') : '';
+        var instTxt = [];
+        if (inst.nomeFantasia || inst.razaoSocial) instTxt.push(inst.nomeFantasia || inst.razaoSocial);
+        if (inst.razaoSocial && inst.nomeFantasia) instTxt.push(inst.razaoSocial);
+        if (inst.cnpj) instTxt.push('CNPJ: ' + inst.cnpj);
+        if (inst.fone) instTxt.push('Tel: ' + inst.fone);
+        if (inst.email) instTxt.push(inst.email);
+        var instStr = instTxt.join('\n');
+        var overlay = document.getElementById('pf-cert-modal-declaracao');
+        if (overlay) {
+            var textoEl = overlay.querySelector('.pf-cert-declaracao-texto');
+            if (textoEl) textoEl.textContent = declaracaoSub;
+            var instEl = document.getElementById('pf-cert-modal-instituicao');
+            if (instEl) instEl.textContent = instStr;
+            overlay.style.display = (declaracaoSub || instStr) ? 'flex' : 'none';
+        }
+        var qrEl = document.getElementById('pf-cert-modal-qr');
+        if (qrEl) {
+            if (qrUrl) { qrEl.src = qrUrl; qrEl.style.display = 'block'; }
+            else { qrEl.removeAttribute('src'); qrEl.style.display = 'none'; }
+        }
+
+        var titulo = document.getElementById('pf-cert-modal-titulo');
+        if (titulo) titulo.textContent = r.curso || 'Certificado';
+
+        pfCertAtual = { papel: r.papel || '', declaracao: declaracaoSub || '', instituicao: instStr || '', paisagem: !!paisagem, curso: r.curso || 'Certificado', cursoNome: r.curso || '', cursoId: r.cursoId || '', qrUrl: qrUrl || '' };
+        var btnVer = document.getElementById('pf-cert-modal-baixar');
+        if (btnVer) {
+            btnVer.style.display = (r.papel || declaracaoSub) ? 'inline-flex' : 'none';
+        }
+        var btnFicha = document.getElementById('pf-cert-modal-ficha');
+        if (btnFicha) btnFicha.style.display = 'inline-flex';
+
+        var dados = document.getElementById('pf-cert-modal-dados');
+        if (dados) {
+            dados.innerHTML =
+                '<div class="pf-cert-rotulo">Curso</div>' +
+                '<div class="pf-cert-valor" style="font-size:16px;font-weight:800;color:#14532d">' + pfCertEsc(r.curso || '—') + '</div>' +
+                '<div class="pf-cert-rotulo">Declaração (personalizada)</div>' +
+                '<div class="pf-cert-declaracao">' + pfCertEsc(declaracaoSub || '—') + '</div>' +
+                '<div class="pf-cert-rotulo" style="margin-top:16px">Instituição</div>' +
+                '<div class="pf-cert-valor">' +
+                    '<strong style="color:#1e293b">' + pfCertEsc(inst.nomeFantasia || inst.razaoSocial || '—') + '</strong>' +
+                    (inst.razaoSocial && inst.nomeFantasia ? '<br>' + pfCertEsc(inst.razaoSocial) : '') +
+                    (inst.cnpj ? '<br>CNPJ: ' + pfCertEsc(inst.cnpj) : '') +
+                    (inst.fone ? '<br>Telefone: ' + pfCertEsc(inst.fone) : '') +
+                    (inst.email ? '<br>' + pfCertEsc(inst.email) : '') +
+                '</div>' +
+                '<div style="padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.9">' +
+                    '<i class="fa-regular fa-calendar" style="margin-right:5px"></i>Enviado em ' + pfCertEsc(pfCertData(r.criadoEm) || '—') +
+                    '<br><i class="fa-solid fa-user-shield" style="margin-right:5px"></i>Por ' + pfCertEsc(r.criadoPor || 'Administração FARN') +
+                    '<br><i class="fa-solid fa-ruler-combined" style="margin-right:5px"></i>Papel A4 ' + pfCertEsc(paisagem ? 'paisagem' : 'retrato') +
+                    (r.papelLargura ? ' · ' + pfCertEsc(r.papelLargura) + '×' + pfCertEsc(r.papelAltura) + ' px' : '') +
+                '</div>';
+        }
+        var modal = document.getElementById('pf-cert-modal');
+        if (modal) modal.classList.add('active');
+        var box = modal ? modal.querySelector('.pf-cert-modal-box') : null;
+        if (box) box.scrollTop = 0;
+    }
+
+    async function pfFichaGeralFoto() {
+        if (pfUser && (pfUser.foto || pfUser.fotoUrl)) return pfUser.foto || pfUser.fotoUrl;
+        try {
+            var cpf = pfUser && pfUser.cpf ? String(pfUser.cpf).replace(/\D/g, '') : '';
+            if (!cpf) return null;
+            var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+            if (!snap.empty) {
+                var d = snap.docs[0].data() || {};
+                if (d.foto || d.fotoUrl) return d.foto || d.fotoUrl;
+            }
+            var snap2 = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
+            if (!snap2.empty) {
+                var d2 = snap2.docs[0].data() || {};
+                if (d2.foto || d2.fotoUrl) return d2.foto || d2.fotoUrl;
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    async function pfFichaGeralCatalogo() {
+        var codigo = pfUser && pfUser.patente ? String(pfUser.patente).trim() : '';
+        if (!codigo || typeof fichaGeralCatalogoRecebido !== 'function') { if (typeof fichaGeralCatalogoRecebido === 'function') fichaGeralCatalogoRecebido([]); return; }
+        try {
+            var snap = await dbFirestore.collection('patentes').doc(codigo).get();
+            fichaGeralCatalogoRecebido(snap.exists ? [Object.assign({ codigo: codigo }, snap.data())] : []);
+        } catch (e) { try { fichaGeralCatalogoRecebido([]); } catch(e2) {} }
+    }
+
+    async function pfAbrirFichaGeralCert() {
+        var btn = document.getElementById('pf-cert-modal-ficha');
+        if (!pfUser) { alert('Formado não identificado.'); return; }
+        if (typeof fichaGeralCarregarAulas !== 'function' || typeof fichaGeralDadosAluno !== 'function' || typeof fichaGeralCalcular !== 'function' || typeof fichaGeralFolha !== 'function' || typeof fichaGeralAbrirImpressao !== 'function') {
+            alert('Módulo de Ficha Geral não carregado. Recarregue a página.');
+            return;
+        }
+        var cert = pfCertAtual || {};
+        var projeto = String(cert.cursoNome || pfUser.projeto || pfUser.formadoProjeto || '').trim();
+        var turma = String(pfUser.turma || pfUser.formadoTurma || '').trim();
+        if (!projeto || !turma) {
+            alert('Não foi possível identificar o projeto/turma deste curso para abrir a Ficha Geral.');
+            return;
+        }
+        var txtAnt = btn ? btn.innerHTML : '';
+        try {
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Carregando...'; }
+            if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
+            if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
+            if (typeof fichaGeralAulasCache !== 'undefined') fichaGeralAulasCache = null;
+            await pfFichaGeralCatalogo();
+            if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
+            var aulas = await fichaGeralCarregarAulas(projeto, turma);
+            var dados = await fichaGeralDadosAluno(pfUser);
+            var calc = fichaGeralCalcular(pfUser, dados, aulas);
+            var foto = await pfFichaGeralFoto();
+            var body = fichaGeralFolha(pfUser, calc, foto, 0, aulas);
+            fichaGeralAbrirImpressao('FARN - Ficha Geral - ' + (pfUser.nome || pfUser.nomeCompleto || '') + ' - ' + projeto, body, false);
+        } catch (e) {
+            console.error('Erro ao abrir Ficha Geral (certificado):', e);
+            alert('Erro ao abrir Ficha Geral: ' + (e && e.message ? e.message : e));
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = txtAnt; }
+        }
+    }
+
+    function pfVisualizarCertificadoPapel() {
+        var c = pfCertAtual;
+        if (!c || (!c.papel && !c.declaracao)) { alert('Nenhum certificado para visualizar.'); return; }
+        var w = 1414, h = 2000;
+        if (c.paisagem) { w = 2000; h = 1414; }
+        var aspect = w + ' / ' + h;
+        var safeText = pfCertEsc(c.declaracao || '');
+        var safeInst = pfCertEsc(c.instituicao || '');
+        var safeTitle = pfCertEsc(c.curso || 'Certificado');
+        var imgHtml = c.papel
+            ? '<img src="' + pfCertEsc(c.papel) + '" alt="Papel A4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block">'
+            : '<div style="position:absolute;inset:0;background:#fff"></div>';
+        var instHtml = safeInst ? '<div style="margin-top:calc(8px + 1cm);font-size:12px;line-height:1.65;font-weight:600;white-space:pre-wrap;word-break:break-word;text-align:center">' + safeInst + '</div>' : '';
+        var qrHtml = c.qrUrl ? '<img src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code" style="width:72px;height:72px;background:#fff;padding:3px;border-radius:4px;border:1px solid rgba(15,23,42,.12);margin-top:-0.8cm;margin-left:17.5cm;flex:0 0 auto">' : '';
+        var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+            '<title>' + safeTitle + ' - FARN</title>' +
+            '<style>html,body{margin:0;background:#0f172a;min-height:100%;font-family:Inter,Arial,sans-serif} .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box} .folha{position:relative;width:min(92vw,calc(92vh * ('+w+'/'+h+')));aspect-ratio:'+aspect+';background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden} .decl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:22% 12% 10% 12%;color:#0f172a;font-size:12px;line-height:1.65;font-weight:600;white-space:pre-wrap;word-break:break-word;pointer-events:none} .bar{position:fixed;top:10px;right:10px;z-index:5} .bar button{background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)} @media print{body{background:#fff}.wrap{padding:0;min-height:auto}.folha{width:100%;max-width:none;box-shadow:none}.bar{display:none}}</style></head><body>' +
+            '<div class="bar"><button onclick="window.print()">Imprimir</button></div>' +
+            '<div class="wrap"><div class="folha">' + imgHtml + '<div class="decl">' + safeText + instHtml + qrHtml + '</div></div></div></body></html>';
+        var win = window.open('', '_blank');
+        if (!win) { alert('Permita pop-ups para visualizar o certificado.'); return; }
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+    }
+
+    function pfFecharCertificado() {
+        pfCertAtual = null;
+        var modal = document.getElementById('pf-cert-modal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape') pfFecharCertificado();
+    });
+
     /* ===== MEUS DADOS ===== */
     function pfLoadDados() {
         if (!pfUser) return;
@@ -681,7 +1192,7 @@
         el.innerHTML =
             '<div class="pf-dados-card"><div class="pf-dados-label">Nome Completo</div><div class="pf-dados-val">' + (pfUser.nome || '---') + '</div></div>' +
             '<div class="pf-dados-card"><div class="pf-dados-label">CPF</div><div class="pf-dados-val">' + (pfUser.cpf ? pfUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '---') + '</div></div>' +
-            '<div class="pf-dados-card"><div class="pf-dados-label">Matricula</div><div class="pf-dados-val">' + (pfUser.matricula || '---') + '</div></div>' +
+            '<div class="pf-dados-card"><div class="pf-dados-label">' + (pfUser.credencial ? 'Credencial' : 'Matrícula') + '</div><div class="pf-dados-val">' + (pfUser.credencial || pfUser.matricula || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'email\')"><div class="pf-dados-label">Email <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-email">' + (pfUser.email || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'whatsapp\')"><div class="pf-dados-label">WhatsApp <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-whatsapp">' + (pfUser.whatsapp || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'endereco\')" style="grid-column:1/-1"><div class="pf-dados-label">Endereco Completo <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-endereco">' + (endComp || '---') + '</div></div>' +

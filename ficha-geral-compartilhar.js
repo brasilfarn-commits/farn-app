@@ -853,7 +853,8 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     const aulasRef = aulas || fichaGeralAulasCache || { todas: [], teorica: [], pratica: [] };
     const nome = c.nome || '—';
     const cpf = fgCPF(c.cpf) || '—';
-    const mat = c.matricula || fgMatricula(c.cpf) || '—';
+    const mat = c.credencial || c.matricula || fgMatricula(c.cpf) || '—';
+    const matLabel = (c.credencial || (c.tipoPessoa || 'A') === 'F') ? 'Credencial' : 'Matrícula';
     const cursos = Array.isArray(c.cursos) ? c.cursos.filter(Boolean) : (c.cursos ? [c.cursos] : []);
     const st = c.status || '—';
     const stCor = fichaGeralStatusCor(st);
@@ -874,7 +875,7 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         fgCampo('Naturalidade', c.naturalidade) +
         fgCampo('Titulo de Eleitor', c.tituloEleitor) +
         fgCampo('Profissao', c.profissao) +
-        fgCampo('Matricula', mat)
+        fgCampo(matLabel, mat)
     )));
 
     // Secao 2 - Filiação e Contato
@@ -1131,7 +1132,7 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + fichaGeralCabecalho(fichaGeralDadosInstituicao(), c, fotoHtml)
         + '<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
         + '<div><div style="font-size:17px;font-weight:800;color:#0f172a">' + fgEsc(nome) + '</div>'
-        + '<div style="font-size:11px;color:#475569;margin-top:2px">Matricula: ' + fgEsc(mat) + '  •  CPF: ' + fgEsc(cpf) + '  •  Turma: ' + fgEsc(fichaGeralTurma || c.turma) + '</div></div>'
+        + '<div style="font-size:11px;color:#475569;margin-top:2px">' + fgEsc(matLabel) + ': ' + fgEsc(mat) + '  •  CPF: ' + fgEsc(cpf) + '  •  Turma: ' + fgEsc(fichaGeralTurma || c.turma) + '</div></div>'
         + '<span style="background:' + stCor[1] + ';color:' + stCor[0] + ';border:1px solid ' + stCor[2] + ';border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800">' + fgEsc(st) + '</span>'
         + '</div>'
         + secoes.join('')

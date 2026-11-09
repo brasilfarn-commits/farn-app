@@ -952,6 +952,10 @@
                         <i class="fa-solid fa-award"></i>
                         <span>Condecoracoes</span>
                     </a>
+                    <a href="#" class="nav-item" data-secao="admin-certificado" onclick="showAdminSection('admin-certificado', this); certInicializar()">
+                        <i class="fa-solid fa-certificate"></i>
+                        <span>Certificado</span>
+                    </a>
                     <a href="#" class="nav-item" data-secao="admin-relatorios" onclick="showAdminSection('admin-relatorios', this)">
                         <i class="fa-solid fa-chart-bar"></i>
                         <span>Relatorios</span>
@@ -1195,6 +1199,10 @@
                             <div class="header-actions">
                                 <button class="btn-outline btn-sm" onclick="exportExcelAlunos()">
                                     <i class="fa-solid fa-file-excel"></i> Exportar
+                                </button>
+                                <button type="button" class="btn-formar-turma btn-sm" id="btn-formar-turma" style="display:none" onclick="formarTurmaAbrir()" title="Transfere todos os alunos ativos desta turma para Individuo Formado">
+                                    <i class="fa-solid fa-graduation-cap"></i> FORMAR TURMA
+                                    <span class="btn-formar-turma-count" id="formar-turma-count">0</span>
                                 </button>
                                 <button class="btn-outline btn-sm" onclick="printTableAlunos()">
                                     <i class="fa-solid fa-print"></i> Imprimir
@@ -1512,7 +1520,7 @@
                                             <th>CPF</th>
                                             <th>Turma</th>
                                             <th>Projeto</th>
-                                            <th>Matricula</th>
+                                            <th>Credencial</th>
                                             <th>Status</th>
                                             <th>Remanejado</th>
                                             <th>Acoes</th>
@@ -1580,6 +1588,58 @@
                                 <p style="color:#475569">Nenhuma condecoracao cadastrada</p>
                             </div>
                             <div id="condec-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="admin-certificado" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-certificate" style="color:#1d4ed8;margin-right:8px"></i> Certificado</h3>
+                            <button class="btn-primary" onclick="certAbrirForm()" style="height:38px;background:#1d4ed8;border-color:#1d4ed8;white-space:nowrap">
+                                <i class="fa-solid fa-plus"></i> CRIAR CERTIFICADO
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div style="padding:16px;background:linear-gradient(135deg,#eff6ff 0%,#e0e7ff 55%,#dbeafe 100%);border:2px solid #1d4ed8;border-radius:12px;margin-bottom:18px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                                    <i class="fa-solid fa-scroll" style="color:#1d4ed8;font-size:16px"></i>
+                                    <span style="color:#1e3a8a;font-weight:700;font-size:14px">Modelos de certificado dos formados</span>
+                                    <span id="cert-count-badge" style="margin-left:auto;background:#1d4ed8;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px"></span>
+                                </div>
+                                <p style="font-size:12px;color:#1e40af;margin:0 0 12px;line-height:1.7">
+                                    <i class="fa-solid fa-circle-info" style="margin-right:4px"></i>
+                                    Cada certificado junta o <strong>curso</strong> cadastrado em Cursos, a <strong>declaracao</strong> que sai impressa,
+                                    os dados da <strong>instituicao</strong> de Configuracoes e o <strong>papel A4</strong> onde a frente e montada.
+                                    Ao salvar, o registro fica disponivel na secao <strong>Certificacoes</strong> do Portal do Formado.
+                                </p>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-graduation-cap" style="color:#1d4ed8"></i> CURSO</span>
+                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-file-lines" style="color:#1d4ed8"></i> DECLARACAO</span>
+                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-building-columns" style="color:#1d4ed8"></i> INSTITUICAO</span>
+                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-file-image" style="color:#1d4ed8"></i> PAPEL A4</span>
+                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#1d4ed8;border:1px solid #1d4ed8;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff"><i class="fa-solid fa-user-graduate"></i> PORTAL DO FORMADO</span>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+                                <div class="form-group" style="margin:0;flex:1;min-width:240px">
+                                    <label style="font-size:11px;font-weight:600;color:#1e3a8a;margin-bottom:4px;display:block">Buscar</label>
+                                    <input type="text" id="cert-busca" class="config-input" style="width:100%;border-color:#1d4ed8" placeholder="Curso, declaracao ou instituicao..." oninput="certRender()">
+                                </div>
+                                <button type="button" class="btn-outline" onclick="certInicializar()" style="height:38px;border-color:#1d4ed8;color:#1d4ed8;white-space:nowrap">
+                                    <i class="fa-solid fa-rotate"></i> Atualizar lista
+                                </button>
+                            </div>
+
+                            <div id="cert-empty" class="empty-state" style="display:none;padding:40px">
+                                <i class="fa-solid fa-certificate" style="font-size:48px;color:#3b82f6;margin-bottom:12px"></i>
+                                <p style="color:#475569">Nenhum certificado criado ainda</p>
+                                <button class="btn-primary" onclick="certAbrirForm()" style="margin-top:14px;background:#1d4ed8;border-color:#1d4ed8">
+                                    <i class="fa-solid fa-plus"></i> CRIAR CERTIFICADO
+                                </button>
+                            </div>
+                            <div id="cert-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px"></div>
                         </div>
                     </div>
                 </div>
@@ -2838,6 +2898,7 @@
                                             <div class="form-group"><label>Data de Nascimento *</label><input type="date" id="fc-nascimento" class="config-input" required onchange="calcularIdadeCampo('fc-nascimento','fc-idade')"></div>
                                             <div class="form-group"><label>Idade (auto)</label><input type="text" id="fc-idade" class="config-input" placeholder="0 anos" readonly tabindex="-1"></div>
                                             <div class="form-group"><label>Data de Inscricao</label><input type="date" id="fc-data-inscricao" class="config-input"></div>
+                                            <div class="form-group"><label>Data Final</label><input type="date" id="fc-data-final" class="config-input"></div>
                                             <div class="form-group"><label>Estado Civil *</label>
                                                 <select id="fc-estado-civil" class="config-input" required>
                                                     <option value="">Selecione...</option>
@@ -4520,6 +4581,144 @@
     </style>
 
     <!-- MODAL CONDECORACAO E CERTIFICADO - FORMULARIO -->
+    <!-- ===== CERTIFICADO: CRIAR / EDITAR ===== -->
+    <div id="cert-form-overlay" class="modal-overlay hidden" onclick="if(event.target===this)certFecharForm()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:900px;max-height:94vh;overflow-y:auto">
+            <div class="modal-header" style="background:linear-gradient(135deg,#eff6ff,#e0e7ff);border-bottom:1px solid #bfdbfe">
+                <h3><i class="fa-solid fa-certificate" style="color:#1d4ed8;margin-right:8px"></i> <span id="cert-form-titulo">Criar Certificado</span></h3>
+                <button class="modal-close" onclick="certFecharForm()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="cert-form" onsubmit="return certSalvar(event)">
+
+                    <!-- CURSO -->
+                    <div class="form-section-card" style="border-color:#dbeafe">
+                        <div class="form-section-title"><i class="fa-solid fa-graduation-cap" style="color:#1d4ed8"></i><h3>Curso</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group">
+                                <label>Curso do certificado *</label>
+                                <select id="cert-curso" class="config-input" style="border-color:#93c5fd">
+                                    <option value="">Carregando cursos...</option>
+                                </select>
+                                <div id="cert-curso-hint" class="field-hint" style="margin-top:6px"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DECLARACAO -->
+                    <div class="form-section-card" style="border-color:#dbeafe">
+                        <div class="form-section-title"><i class="fa-solid fa-file-lines" style="color:#1d4ed8"></i><h3>Declaracao</h3></div>
+                        <div class="form-section-body">
+                            <div class="form-group">
+                                <label>Texto que sai no certificado *</label>
+                                <textarea id="cert-declaracao" class="config-input" rows="7" style="resize:vertical;border-color:#93c5fd;line-height:1.75" placeholder="Certificamos que [NOME], CPF [000.000.000-00], credencial [0000000000000], concluiu com aproveitamento o curso..."></textarea>
+                                <div class="field-hint" style="margin-top:6px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>As quebras de linha sao preservadas. No Portal do Formado, o texto e centralizado sobre o papel. Chaves: <code style="background:#e0e7ff;padding:1px 5px;border-radius:4px;color:#3730a3">[NOME]</code> = nome, <code style="background:#e0e7ff;padding:1px 5px;border-radius:4px;color:#3730a3">[000.000.000-00]</code> = CPF, <code style="background:#e0e7ff;padding:1px 5px;border-radius:4px;color:#3730a3">[0000000000000]</code> = credencial.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXIBICAO / PERMISSOES -->
+                    <div class="form-section-card" style="border-color:#dbeafe">
+                        <div class="form-section-title"><i class="fa-solid fa-display" style="color:#1d4ed8"></i><h3>Exibicao do certificado (permissao)</h3></div>
+                        <div class="form-section-body">
+                            <div class="field-hint" style="margin-bottom:12px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>Marque em quais portais este certificado ficara visivel.</div>
+                            <div style="display:flex;gap:14px;flex-wrap:wrap">
+                                <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;cursor:pointer;font-size:13px;font-weight:600;color:#1e293b">
+                                    <input type="checkbox" id="cert-exibir-formado" checked style="width:16px;height:16px;accent-color:#16a34a">
+                                    <i class="fa-solid fa-user-graduate" style="color:#16a34a"></i> Portal do Formado
+                                </label>
+                                <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;cursor:pointer;font-size:13px;font-weight:600;color:#1e293b">
+                                    <input type="checkbox" id="cert-exibir-docente" style="width:16px;height:16px;accent-color:#2563eb">
+                                    <i class="fa-solid fa-chalkboard-user" style="color:#2563eb"></i> Portal do Docente
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- INSTITUICAO -->
+                    <div class="form-section-card" style="border-color:#dbeafe">
+                        <div class="form-section-title"><i class="fa-solid fa-building-columns" style="color:#1d4ed8"></i><h3>Instituicao</h3></div>
+                        <div class="form-section-body">
+                            <div class="field-hint" style="margin-bottom:10px"><i class="fa-solid fa-lock" style="margin-right:4px"></i>Vem de Configuracoes &rsaquo; Instituicao. Somente os dados que podem sair impressos entram no certificado.</div>
+                            <div id="cert-inst-box" style="background:#f8fafc;border:1px solid #dbeafe;border-radius:12px;padding:14px"></div>
+                        </div>
+                    </div>
+
+                    <!-- PAPEL A4 -->
+                    <div class="form-section-card" style="border-color:#dbeafe">
+                        <div class="form-section-title"><i class="fa-solid fa-file-image" style="color:#1d4ed8"></i><h3>Papel</h3></div>
+                        <div class="form-section-body">
+                            <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+                                <div style="flex:1 1 300px;max-width:340px;min-width:240px;display:flex;justify-content:center;padding:16px;background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e8eef6 8px,#e8eef6 16px);border:1px solid #dbeafe;border-radius:12px">
+                                    <div id="cert-papel-moldura" style="position:relative;width:210px;aspect-ratio:1414 / 2000;background:#fff;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;box-shadow:0 10px 28px rgba(15,23,42,.22),0 2px 6px rgba(15,23,42,.12)">
+                                        <img id="cert-papel-img" src="" alt="Papel A4 do certificado" style="display:none;width:100%;height:100%;object-fit:contain">
+                                        <div id="cert-papel-vazio" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#94a3b8;text-align:center;padding:16px">
+                                            <i class="fa-solid fa-file-image" style="font-size:30px;color:#cbd5e1"></i>
+                                            <span style="font-size:11px;font-weight:700;letter-spacing:.5px">FOLHA A4</span>
+                                            <span style="font-size:10px;line-height:1.5">210 &times; 297 mm<br>A frente do certificado sera montada aqui</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="flex:1 1 260px;min-width:240px">
+                                    <div class="form-group">
+                                        <label>Anexar imagem do papel *</label>
+                                        <input type="file" id="cert-papel-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="certPapelSelecionar(this)">
+                                        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                                            <label for="cert-papel-file" class="btn-primary" style="background:#1d4ed8;border-color:#1d4ed8;cursor:pointer;margin:0">
+                                                <i class="fa-solid fa-paperclip"></i> ANEXAR PAPEL A4
+                                            </label>
+                                            <button type="button" id="cert-papel-remover" class="btn-outline btn-sm" style="display:none;color:#dc2626;border-color:#fecaca" onclick="certPapelRemover()">
+                                                <i class="fa-solid fa-trash"></i> Remover
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="cert-papel-status" class="field-hint" style="margin-top:10px;line-height:1.7"></div>
+                                    <div style="margin-top:14px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px">
+                                        <div style="font-size:11px;font-weight:800;color:#1e3a8a;letter-spacing:.4px;margin-bottom:6px"><i class="fa-solid fa-ruler-combined" style="margin-right:5px"></i>COMO O PAPEL E TRATADO</div>
+                                        <ul style="margin:0;padding-left:18px;font-size:11px;color:#1e40af;line-height:1.85">
+                                            <li>A imagem e ajustada para a proporcao A4, em retrato ou paisagem conforme a arte enviada.</li>
+                                            <li>A arte nunca e cortada: o que sobra vira margem branca.</li>
+                                            <li>PNG, JPG ou WebP de ate 10 MB. O papel e comprimido para caber no registro.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="cert-form-msg" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:8px;font-size:13px"></div>
+                    <div class="modal-footer" style="padding:0;margin-top:16px;border:none">
+                        <button type="button" class="btn-outline" onclick="certFecharForm()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                        <button type="submit" class="btn-primary" id="cert-salvar-btn" style="background:#1d4ed8;border-color:#1d4ed8"><i class="fa-solid fa-check"></i> SALVAR CERTIFICADO</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CERTIFICADO: VISUALIZAR ===== -->
+    <div id="cert-ver-overlay" class="modal-overlay hidden" onclick="if(event.target===this)certFecharVer()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:940px;max-height:94vh;overflow-y:auto">
+            <div class="modal-header" style="background:linear-gradient(135deg,#eff6ff,#e0e7ff);border-bottom:1px solid #bfdbfe">
+                <h3><i class="fa-solid fa-certificate" style="color:#1d4ed8;margin-right:8px"></i> <span id="cert-ver-titulo">Certificado</span></h3>
+                <button class="modal-close" onclick="certFecharVer()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
+                    <div style="flex:1 1 320px;max-width:420px;min-width:260px;display:flex;justify-content:center;padding:18px;background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e8eef6 8px,#e8eef6 16px);border:1px solid #dbeafe;border-radius:12px">
+                        <div id="cert-ver-moldura" style="width:100%;aspect-ratio:1414 / 2000;background:#fff;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;box-shadow:0 12px 32px rgba(15,23,42,.24)">
+                            <img id="cert-ver-papel" src="" alt="Papel A4 do certificado" style="display:none;width:100%;height:100%;object-fit:contain">
+                        </div>
+                    </div>
+                    <div id="cert-ver-dados" style="flex:1 1 300px;min-width:260px"></div>
+                </div>
+                <div class="modal-footer" style="padding:0;margin-top:18px;border:none">
+                    <button type="button" class="btn-outline" onclick="certFecharVer()"><i class="fa-solid fa-xmark"></i> Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="condec-form-overlay" class="modal-overlay hidden" onclick="if(event.target===this)condecFecharForm()">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width:880px;max-height:94vh;overflow-y:auto">
             <div class="modal-header">
@@ -5624,6 +5823,7 @@
     <script src="foto3x4-bloqueio.js?v=7"></script>
     <script src="noticias-feed.js?v=5"></script>
     <script src="oportunidades.js?v=4"></script>
+    <script src="certificados.js?v=1"></script>
     <script src="app.js?v=98"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>

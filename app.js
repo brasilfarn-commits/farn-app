@@ -428,6 +428,12 @@ function configInstituicaoSalvar() {
             if (typeof fichaGeralCarregarInstituicao === 'function') {
                 fichaGeralCarregarInstituicao(true);
             }
+            /* O formulario de Certificado pode estar aberto por baixo deste
+               modal: a caixa da instituicao precisa mostrar o que acabou de ser salvo. */
+            var certFormAberto = document.getElementById('cert-form-overlay');
+            if (certFormAberto && !certFormAberto.classList.contains('hidden') && typeof certInstituicaoAtualizar === 'function') {
+                certInstituicaoAtualizar();
+            }
             configInstituicaoFechar();
         })
         .catch(function(e) {
@@ -1864,7 +1870,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-patentes': 'Patentes' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -1903,7 +1909,7 @@ function calcularIdadeCampo(nascId, idadeId) {
     el.value = v !== '' ? v + ' anos' : '';
 }
 
-const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-idade','fc-data-inscricao','fc-estado-civil','fc-genero','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-idade','fc-data-inscricao','fc-data-final','fc-estado-civil','fc-genero','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
 
 function fcFormularioModo(origem, nome, isNovo) {
     const cfg = FC_ORIGENS[origem] || FC_ORIGENS['pre-inscricao'];
@@ -2002,6 +2008,8 @@ async function editCandidato(index, origem) {
     document.getElementById('fc-nascimento').value = c.nascimento || '';
     calcularIdadeCampo('fc-nascimento', 'fc-idade');
     document.getElementById('fc-data-inscricao').value = c.dataInscricao || '';
+    var _fcDataFinal = document.getElementById('fc-data-final');
+    if (_fcDataFinal) _fcDataFinal.value = c.dataFinal || c.data_final || '';
     document.getElementById('fc-estado-civil').value = c.estadoCivil || '';
     document.getElementById('fc-genero').value = c.genero || '';
     document.getElementById('fc-nacionalidade').value = c.nacionalidade || '';
@@ -2031,10 +2039,26 @@ async function editCandidato(index, origem) {
     document.getElementById('fc-calca').value = c.calca || '';
     document.getElementById('fc-camisa').value = c.camisa || '';
     document.getElementById('fc-calcado').value = c.calcado || '';
-    // Setar projeto e turma
-    document.getElementById('fc-projeto').value = c.projeto || '';
+    // Setar projeto e turma (formados podem ter formadoProjeto/formadoTurma)
+    var _fcProj = c.projeto || c.formadoProjeto || '';
+    var _fcTurma = c.turma || c.formadoTurma || '';
+    var _selProj = document.getElementById('fc-projeto');
+    if (_selProj && _fcProj) {
+        var _hasProj = Array.prototype.some.call(_selProj.options, function(o){ return o.value === _fcProj; });
+        if (!_hasProj) {
+            var _op = document.createElement('option'); _op.value = _fcProj; _op.textContent = _fcProj; _selProj.appendChild(_op);
+        }
+        _selProj.value = _fcProj;
+    }
     fcProjetoOnTurmaChange();
-    document.getElementById('fc-turma').value = c.turma || '';
+    var _selTurma = document.getElementById('fc-turma');
+    if (_selTurma && _fcTurma) {
+        var _hasTurma = Array.prototype.some.call(_selTurma.options, function(o){ return o.value === _fcTurma; });
+        if (!_hasTurma) {
+            var _opt = document.createElement('option'); _opt.value = _fcTurma; _opt.textContent = _fcTurma; _selTurma.appendChild(_opt);
+        }
+        _selTurma.value = _fcTurma;
+    }
     // Marcar cursos salvos do candidato
     fcCursosCarregar(Array.isArray(c.cursos) ? c.cursos : []);
     const tipoPessoa = c.tipoPessoa || 'A';
@@ -2157,6 +2181,7 @@ async function handleCandidatoSubmit(event) {
     data.dataCadastro = (editingIndex !== null && candidatos[editingIndex].dataCadastro) ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
     data.dataHoraCadastro = (editingIndex !== null && candidatos[editingIndex].dataHoraCadastro) ? candidatos[editingIndex].dataHoraCadastro : new Date().toLocaleString('pt-BR');
     data.dataInscricao = document.getElementById('fc-data-inscricao').value || '';
+    data.dataFinal = (document.getElementById('fc-data-final') || {}).value || '';
     if (editingIndex !== null && candidatos[editingIndex].atualizarCadastro) {
         data.atualizarCadastro = true;
     }
@@ -2407,7 +2432,9 @@ function renderList() {
 
 function viewCandidato(i) {
     const c = candidatos[i]; if (!c) return;
-    const mat = c.matricula || generateMatricula(c.cpf);
+    const isFormado = (c.tipoPessoa || 'A') === 'F';
+    const mat = c.credencial || c.matricula || generateMatricula(c.cpf);
+    const matLabel = (isFormado || c.credencial) ? 'Credencial' : 'Matricula';
     document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#1e88e5"></i> Detalhes do Candidato';
     getFoto(c.cpf).then(function(photoSrc) {
     document.getElementById('modal-body').innerHTML = `
@@ -2452,7 +2479,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Camisa</span><span class="detail-value">${c.camisa||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Calcado</span><span class="detail-value">${c.calcado||'---'}</span></div>
             <div class="detail-section-title">Turma e Acesso</div>
-            ${mat ? `<div class="detail-item full"><span class="detail-label">Matricula</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#16a34a;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mat)}&size=100x100&margin=2" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff"></div></div>` : ''}
+            ${mat ? `<div class="detail-item full"><span class="detail-label">${matLabel}</span><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="detail-value" style="color:#16a34a;font-size:20px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</span><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mat)}&size=100x100&margin=2" alt="QR Code ${matLabel}" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff"></div></div>` : ''}
             <div class="detail-item"><span class="detail-label">Turma</span><span class="detail-value">${c.turma||'---'}${c.turma ? '<br><small style="color:#888;font-size:7px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</span></div>
             <div class="detail-item"><span class="detail-label">Projeto</span><span class="detail-value" style="color:#ff9800;font-weight:600">${c.projeto||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value" style="color:${(c.tipoPessoa||'A')==='F'?'#ff9800':'#2196f3'};font-weight:700">${(c.tipoPessoa||'A')==='F'?'Formado (A)':'Academico (A)'}</span></div>
@@ -3023,6 +3050,23 @@ function renderAlunosList() {
         }
     }
 
+    // Botao "Formar Turma": visivel apenas na guia Ativos (aprovados), com projeto+turma selecionados
+    var _formarAtivosCount = 0;
+    try {
+        var btnFormar = document.getElementById('btn-formar-turma');
+        var countFormar = document.getElementById('formar-turma-count');
+        if (btnFormar) {
+            var mostrarFormar = (currentAlunosTab === 'aprovados') && !!turmaFiltro;
+            var _formarAtivosList = mostrarFormar ? allByTurma.filter(function(c){ return c.status === 'Ativo' && !c.pediuBaixa; }) : [];
+            _formarAtivosCount = _formarAtivosList.length;
+            btnFormar.style.display = mostrarFormar ? '' : 'none';
+            if (countFormar) countFormar.textContent = _formarAtivosCount;
+            btnFormar.disabled = _formarAtivosCount === 0;
+            btnFormar.style.opacity = _formarAtivosCount === 0 ? '0.55' : '1';
+            btnFormar.style.cursor = _formarAtivosCount === 0 ? 'not-allowed' : 'pointer';
+        }
+    } catch(e) {}
+
     if (!filtered.length) {
         const cols = isAprovados ? 4 : 7;
         tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#888;padding:24px">Nenhum aluno na aba "${statusFilter}"</td></tr>`;
@@ -3143,6 +3187,132 @@ function deleteCandidatoFormados(i) {
     document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o formado <strong>${c.nome}</strong> (${c.matricula || 'sem matricula'})?` +
         '<div style="margin-top:10px;font-size:12px;color:#b45309"><i class="fa-solid fa-triangle-exclamation"></i> A ficha, as presencas e os termos ja assinados ficam no banco: a exclusao apaga só o cadastro.</div>';
     document.getElementById('modal-confirm-overlay').classList.remove('hidden');
+}
+
+/* ===== FORMAR TURMA =====
+   Transfere todos os alunos ativos da turma selecionada (guia Ativos)
+   para Individuo Formado, preservando os dados e aplicando as regras
+   de credencial/academico conforme solicitado. */
+async function _formarTurmaBuscarDataAVFinalPratica(projeto, turma) {
+    try {
+        if (typeof dbFirestore === 'undefined' || !dbFirestore) return '';
+        var snap = await dbFirestore.collection('avaliacoes').where('tipo', '==', 'final_pratica').get();
+        var melhor = null;
+        snap.forEach(function(doc){
+            var d = doc.data() || {};
+            var p = d.projeto || '';
+            var t = d.turma || '';
+            var matchTurma = (t === turma) || (Array.isArray(d.turmas) && d.turmas.indexOf(turma) !== -1);
+            var matchProjeto = !projeto || !p || p === projeto;
+            if (matchTurma && matchProjeto) {
+                var dt = d.data || d.dataAplicacao || d.dataAvaliacao || d.dataCriacao || '';
+                if (d.createdAt && d.createdAt.toDate) { try { dt = dt || d.createdAt.toDate().toISOString().slice(0,10); } catch(e){} }
+                if (!melhor) melhor = { d: d, dt: dt };
+                else if (dt && (!melhor.dt || dt > melhor.dt)) melhor = { d: d, dt: dt };
+            }
+        });
+        if (melhor && melhor.dt) return String(melhor.dt).slice(0,10);
+    } catch(e) { console.warn('FormarTurma: falha ao buscar data AV final pratica', e); }
+    return '';
+}
+
+function _formarTurmaFormatDataCompleta(isoOrDate) {
+    var s = String(isoOrDate || '').trim();
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[3] + m[2] + m[1]; // DDMMYYYY
+    m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) return m[1] + m[2] + m[3];
+    var d = s ? new Date(s) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    var dd = ('0' + d.getDate()).slice(-2);
+    var mm = ('0' + (d.getMonth()+1)).slice(-2);
+    var yy = String(d.getFullYear());
+    return dd + mm + yy;
+}
+
+function _formarTurmaGerarCredencial(cpf, dataAV) {
+    var dig = String(cpf || '').replace(/\D/g, '').slice(0, 6);
+    while (dig.length < 6) dig += '0';
+    var dt = _formarTurmaFormatDataCompleta(dataAV);
+    return 'BCBA' + dig + dt;
+}
+
+async function formarTurmaAbrir() {
+    var selProj = document.getElementById('alunos-selecao-projeto');
+    var selTurma = document.getElementById('alunos-selecao-turma');
+    var projeto = selProj ? selProj.value : '';
+    var turma = selTurma ? selTurma.value : '';
+    if (!projeto || !turma) { alert('Selecione o projeto e a turma antes de formar a turma.'); return; }
+    if (currentAlunosTab !== 'aprovados') { alert('Abra a guia Ativos para formar a turma.'); return; }
+
+    var ativos = candidatos.filter(function(c) {
+        return (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && !c.pediuBaixa && c.turma === turma && (!projeto || c.projeto === projeto);
+    });
+    if (!ativos.length) { alert('Nenhum aluno ativo encontrado nesta turma para formar.'); return; }
+
+    var msg = 'Formar turma "' + turma + '" (' + projeto + ')?\n\n' +
+        'Serão transferidos ' + ativos.length + ' aluno(s) ativo(s) para Indivíduo Formado.\n' +
+        'Para cada aluno: todos os dados serão mantidos; tipo acadêmico passa a Formado; a matrícula (ACD) será substituída pela Credencial (BCBA + 6 primeiros dígitos do CPF + data completa da AV Final Prática).\n\n' +
+        'Deseja continuar?';
+    if (!confirm(msg)) return;
+
+    var btn = document.getElementById('btn-formar-turma');
+    var oldHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Formando...'; }
+
+    try {
+        var dataAV = await _formarTurmaBuscarDataAVFinalPratica(projeto, turma);
+        if (!dataAV) dataAV = new Date().toISOString().slice(0,10);
+        var dataAVFmt = _formarTurmaFormatDataCompleta(dataAV);
+
+        var batch = null;
+        var batchCount = 0;
+        var commitBatch = async function() {
+            if (batch && batchCount > 0) { await batch.commit(); batch = null; batchCount = 0; }
+        };
+        var nowIso = new Date().toISOString();
+
+        for (var k = 0; k < ativos.length; k++) {
+            var c = ativos[k];
+            var cred = _formarTurmaGerarCredencial(c.cpf, dataAV);
+            var updates = {
+                tipoPessoa: 'F',
+                status: 'Ativo',
+                credencial: cred,
+                matricula: cred, // compatibilidade: onde exibia matricula, passa a mostrar credencial
+                formadoEm: nowIso,
+                formadoProjeto: projeto,
+                formadoTurma: turma,
+                dataAVFinalPratica: dataAV,
+                dataAVFinalPraticaFmt: dataAVFmt
+            };
+            // aplica no objeto local
+            Object.keys(updates).forEach(function(key){ c[key] = updates[key]; });
+
+            if (typeof dbFirestore !== 'undefined' && dbFirestore) {
+                if (!batch) { batch = dbFirestore.batch(); batchCount = 0; }
+                var docId = (typeof candidatoDocId === 'function') ? candidatoDocId(c) : (c.id ? String(c.id) : null);
+                var ref = docId ? dbFirestore.collection('candidatos').doc(String(docId)) : dbFirestore.collection('candidatos').doc(String(c.id));
+                batch.set(ref, updates, { merge: true });
+                batchCount++;
+                if (batchCount >= 450) await commitBatch();
+            }
+        }
+        await commitBatch();
+
+        backupCandidatos();
+        renderAlunosList();
+        if (typeof renderList === 'function') renderList();
+        if (typeof renderFormadosList === 'function') renderFormadosList();
+
+        alert('Turma formada com sucesso!\n\n' + ativos.length + ' aluno(s) transferido(s) para Indivíduo Formado.\nCredencial gerada: BCBA + 6 dígitos do CPF + data da AV Final Prática (' + dataAVFmt + ').');
+    } catch(e) {
+        console.error('Erro ao formar turma:', e);
+        alert('Erro ao formar turma: ' + (e && e.message ? e.message : e));
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = oldHtml || '<i class="fa-solid fa-graduation-cap"></i> FORMAR TURMA <span class="btn-formar-turma-count" id="formar-turma-count">0</span>'; }
+        renderAlunosList();
+    }
 }
 
 function filterAlunos() {
@@ -10656,9 +10826,21 @@ function formadosInicializar() {
     if (!selProj) return;
     var currentProj = selProj.value;
     selProj.innerHTML = '<option value="">Todos os projetos</option>';
-    projetos.filter(function(p) { return projetoConcluido(p.nome); }).forEach(function(p) {
+    var projsComFormado = {};
+    (candidatos || []).forEach(function(c) {
+        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return;
+        var t = encontrarTurma(c.turma, c.projeto);
+        var formadoPorTurma = t ? turmaConcluida(t) : projetoConcluido(c.projeto);
+        var formadoExplicito = !!(c.formadoEm || c.credencial);
+        if ((formadoPorTurma || formadoExplicito) && c.projeto) projsComFormado[c.projeto] = true;
+    });
+    projetos.filter(function(p) { return projetoConcluido(p.nome) || projsComFormado[p.nome]; }).forEach(function(p) {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
     });
+    // garante que o projeto atual do filtro permaneça selecionável mesmo fora das regras
+    if (currentProj && !selProj.querySelector('option[value="' + currentProj.replace(/"/g, '\\"') + '"]')) {
+        selProj.innerHTML += '<option value="' + currentProj + '">' + currentProj + '</option>';
+    }
     if (currentProj) selProj.value = currentProj;
     formadosOnFiltroChange();
 }
@@ -10670,14 +10852,55 @@ function formadosOnFiltroChange() {
     var projeto = selProj.value;
     var current = selTurma.value;
     selTurma.innerHTML = '<option value="">Todas as turmas</option>';
+    var turmasComFormado = {};
+    (candidatos || []).forEach(function(c) {
+        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return;
+        if (projeto && c.projeto !== projeto) return;
+        var t = encontrarTurma(c.turma, c.projeto);
+        var formadoPorTurma = t ? turmaConcluida(t) : projetoConcluido(c.projeto);
+        var formadoExplicito = !!(c.formadoEm || c.credencial);
+        if ((formadoPorTurma || formadoExplicito) && c.turma) turmasComFormado[c.turma] = true;
+    });
     var turmasFiltradas = turmas.filter(function(t) {
-        return turmaConcluida(t) && (!projeto || t.projeto === projeto);
+        return (turmaConcluida(t) || turmasComFormado[t.nome]) && (!projeto || t.projeto === projeto);
     });
     turmasFiltradas.forEach(function(t) {
         selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
     });
+    if (current && !selTurma.querySelector('option[value="' + current.replace(/"/g, '\\"') + '"]') && turmasComFormado[current]) {
+        selTurma.innerHTML += '<option value="' + current + '">' + current + '</option>';
+    }
     if (current) selTurma.value = current;
     renderFormadosList();
+}
+
+async function formadoAbrirFichaGeral(i) {
+    var c = candidatos[i];
+    if (!c) { alert('Formado não encontrado.'); return; }
+    var projeto = c.projeto || c.formadoProjeto || '';
+    var turma = c.turma || c.formadoTurma || '';
+    if (!projeto || !turma) { alert('Este formado não possui projeto/turma para abrir a Ficha Geral.'); return; }
+    try {
+        if (typeof fichaGeralCarregarAulas !== 'function' || typeof fichaGeralDadosAluno !== 'function' || typeof fichaGeralCalcular !== 'function' || typeof fichaGeralFolha !== 'function' || typeof fichaGeralAbrirImpressao !== 'function') {
+            alert('Módulo de Ficha Geral não carregado nesta tela.');
+            return;
+        }
+        // contexto para a ficha compartilhada
+        if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
+        if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
+        if (typeof fichaGeralAulasCache !== 'undefined') fichaGeralAulasCache = null;
+        if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
+        var aulas = await fichaGeralCarregarAulas(projeto, turma);
+        var dados = await fichaGeralDadosAluno(c);
+        var calc = fichaGeralCalcular(c, dados, aulas);
+        var foto = null;
+        try { if (typeof getFoto === 'function') foto = await getFoto(c.cpf); } catch(e) {}
+        var body = fichaGeralFolha(c, calc, foto, 0, aulas);
+        fichaGeralAbrirImpressao('FARN - Ficha Geral - ' + (c.nome || ''), body, false);
+    } catch(e) {
+        console.error('Erro ao abrir ficha geral do formado:', e);
+        alert('Erro ao abrir Ficha Geral: ' + (e && e.message ? e.message : e));
+    }
 }
 
 function renderFormadosList() {
@@ -10691,7 +10914,8 @@ function renderFormadosList() {
         if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return false;
         var t = encontrarTurma(c.turma, c.projeto);
         var formadoPorTurma = t ? turmaConcluida(t) : projetoConcluido(c.projeto);
-        if (!formadoPorTurma) return false;
+        var formadoExplicito = !!(c.formadoEm || c.credencial);
+        if (!formadoPorTurma && !formadoExplicito) return false;
         return (!projeto || c.projeto === projeto) &&
             (!turma || c.turma === turma);
     });
@@ -10712,17 +10936,19 @@ function renderFormadosList() {
         var remanejado = c.remanejadoDocente
             ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>'
             : '<span style="color:#94a3b8;font-size:11px">---</span>';
+        var credencial = c.credencial || c.matricula || '-';
         return '<tr>' +
             '<td style="font-weight:600">' + (c.nome || '-') + patenteTag(c) + '</td>' +
             '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
             '<td>' + (c.turma || '-') + '</td>' +
             '<td style="color:#ff9800;font-weight:600">' + (c.projeto || '-') + '</td>' +
-            '<td>' + (c.matricula || '-') + '</td>' +
+            '<td style="color:#2563eb;font-weight:800;letter-spacing:.5px;font-family:\'Courier New\',monospace;font-size:12px">' + credencial + '</td>' +
             '<td>' + statusBadge + '</td>' +
             '<td>' + remanejado + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon btn-info" title="Visualizar" onclick="viewCandidato(' + i + ')"><i class="fa-solid fa-eye"></i></button>' +
                 '<button class="btn-icon" title="Editar" onclick="editCandidato(' + i + ', \'formados\')"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="btn-icon" title="Ficha Geral do curso" onclick="formadoAbrirFichaGeral(' + i + ')" style="color:#0f766e"><i class="fa-solid fa-file-lines"></i></button>' +
                 patenteBotao("'candidatos'," + c.id) +
                 (!c.remanejadoDocente ? '<button class="btn-icon" title="Remanejar como Docente" onclick="remanejarFormado(' + i + ')" style="color:#2563eb"><i class="fa-solid fa-arrows-rotate"></i></button>' : '') +
                 '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="deleteCandidatoFormados(' + i + ')"><i class="fa-solid fa-trash"></i></button>' +
