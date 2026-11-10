@@ -230,8 +230,8 @@
         .pf-cert-declaracao { white-space:pre-wrap; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #16a34a; border-radius:10px; padding:14px; font-size:13px; color:#334155; line-height:1.85; }
         .pf-cert-folha { position:relative; }
         .pf-cert-declaracao-overlay { position:absolute; inset:0; display:block; pointer-events:none; color:#0f172a; text-shadow:0 1px 0 rgba(255,255,255,.35); }
-        /* 1.26cqw equivale a 10 px na largura A4 (794 px) mantendo a proporcao em qualquer zoom/tamanho */
-        .pf-cert-decl-conteudo { position:absolute; left:10%; right:10%; top:35%; bottom:20%; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:8px; gap:1.8cqw; text-align:center; font-size:10px; font-size:1.26cqw; }
+        /* 1.51cqw equivale a 12 px na largura A4 (794 px) mantendo a proporcao em qualquer zoom/tamanho */
+        .pf-cert-decl-conteudo { position:absolute; left:10%; right:10%; top:35%; bottom:20%; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:8px; gap:1.8cqw; text-align:center; font-size:12px; font-size:1.51cqw; }
         .pf-cert-declaracao-texto { font-size:1em; line-height:1.6; font-weight:600; white-space:pre-wrap; word-break:break-word; max-width:100%; }
         .pf-cert-declaracao-inst { font-size:.92em; line-height:1.7; font-weight:600; white-space:pre-wrap; word-break:break-word; text-align:center; max-width:100%; }
         .pf-cert-declaracao-qr { position:absolute; right:5%; bottom:12%; width:9.5%; height:auto; background:#fff; padding:.45cqw; border-radius:.6cqw; border:1px solid rgba(15,23,42,.12); }
@@ -1126,7 +1126,7 @@
         if (!overlay || overlay.style.display === 'none') return;
         var conteudo = overlay.querySelector('.pf-cert-decl-conteudo');
         if (!conteudo) return;
-        var fs = 1.26, guard = 0;
+        var fs = 1.51, guard = 0;
         conteudo.style.fontSize = fs + 'cqw';
         while (conteudo.scrollHeight > conteudo.clientHeight + 1 && fs > 0.6 && guard++ < 40) {
             fs = Math.round((fs - 0.05) * 100) / 100;
@@ -1244,7 +1244,7 @@
                 '.rotulo{color:#86efac;font-size:11px;font-weight:800;letter-spacing:1.2px}' +
                 '.folha{position:relative;container-type:inline-size;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}' +
                 '.decl{position:absolute;inset:0;pointer-events:none;color:#0f172a;text-shadow:0 1px 0 rgba(255,255,255,.35)}' +
-                '.decl-conteudo{position:absolute;left:10%;right:10%;top:35%;bottom:20%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1.8cqw;text-align:center;font-size:10px;font-size:1.26cqw}' +
+                '.decl-conteudo{position:absolute;left:10%;right:10%;top:35%;bottom:20%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1.8cqw;text-align:center;font-size:12px;font-size:1.51cqw}' +
                 '.decl-texto{font-size:1em;line-height:1.6;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
                 '.decl-inst{font-size:.92em;line-height:1.7;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
                 '.decl-qr{position:absolute;right:5%;bottom:12%;width:9.5%;height:auto;background:#fff;padding:.45cqw;border-radius:.6cqw;border:1px solid rgba(15,23,42,.12)}' +
@@ -1260,7 +1260,7 @@
             '</style></head><body>' +
             '<div class="bar"><button onclick="window.print()">Imprimir</button></div>' +
             '<div class="wrap">' + frenteHtml + versoHtml + '</div>' +
-            '<script>(function(){var c=document.querySelector(".decl-conteudo");if(!c)return;var f=1.26,g=0;c.style.fontSize=f+"cqw";while(c.scrollHeight>c.clientHeight+1&&f>0.6&&g++<40){f=Math.round((f-0.05)*100)/100;c.style.fontSize=f+"cqw";}})();<\/script>' +
+            '<script>(function(){var c=document.querySelector(".decl-conteudo");if(!c)return;var f=1.51,g=0;c.style.fontSize=f+"cqw";while(c.scrollHeight>c.clientHeight+1&&f>0.6&&g++<40){f=Math.round((f-0.05)*100)/100;c.style.fontSize=f+"cqw";}})();<\/script>' +
             '</body></html>';
         var win = window.open('', '_blank');
         if (!win) { alert('Permita pop-ups para visualizar o certificado.'); return; }
