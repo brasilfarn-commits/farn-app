@@ -9,7 +9,10 @@
     /* A4 a ~170 dpi: serve para impressao e ainda cabe no documento. */
     var A4_RETRATO = { largura: 1414, altura: 2000 };
     var A4_PAISAGEM = { largura: 2000, altura: 1414 };
-    var PAPEL_MAX_CHARS = 900000;
+    /* O Firestore aceita no maximo 1 MiB por documento. Como o mesmo registro
+       guarda frente E verso, cada papel precisa caber em ~450 KB de base64
+       (≈330 KB de imagem), assim os dois juntos ficam com folga no limite. */
+    var PAPEL_MAX_CHARS = 450000;
     var DOC_MAX_CHARS = 1000000;
     var ARQUIVO_MAX_BYTES = 10 * 1024 * 1024;
 
@@ -283,7 +286,7 @@
                         var base = img.width > img.height ? A4_PAISAGEM : A4_RETRATO;
                         /* Escada de qualidade e, no fim, de tamanho: a proporcao A4
                            se mantem em todas as tentativas para o papel sair correto. */
-                        var tentativas = [[1, 0.92], [1, 0.85], [1, 0.78], [1, 0.7], [1, 0.6], [1, 0.5], [0.8, 0.6], [0.8, 0.5], [0.65, 0.55], [0.5, 0.6]];
+                        var tentativas = [[1, 0.92], [1, 0.85], [1, 0.78], [1, 0.7], [1, 0.6], [1, 0.5], [0.8, 0.6], [0.8, 0.5], [0.65, 0.55], [0.5, 0.6], [0.4, 0.65], [0.3, 0.7]];
                         var saida = '';
                         var w = 0, h = 0;
                         for (var i = 0; i < tentativas.length; i++) {
@@ -346,7 +349,7 @@
                 status.innerHTML = '<i class="fa-solid fa-circle-check" style="margin-right:4px"></i>A4 ' + papelInfo.orientacao +
                     ' &middot; ' + papelInfo.largura + '&times;' + papelInfo.altura + ' px &middot; ' + kb(peso) +
                     (papelInfo.original && papelInfo.original.nome ? ' &middot; origem ' + esc(papelInfo.original.nome) + ' (' + papelInfo.original.largura + '&times;' + papelInfo.original.altura + ')' : '') +
-                    (apertado ? ' &middot; <strong>acima do limite, troque a imagem</strong>' : '');
+                    (apertado ? ' &middot; <strong>imagem pesada, reanexe para reduzir</strong>' : '');
                 status.style.color = apertado ? '#b91c1c' : '#166534';
             }
         }
@@ -408,7 +411,7 @@
                 status.innerHTML = '<i class="fa-solid fa-circle-check" style="margin-right:4px"></i>A4 ' + papelVersoInfo.orientacao +
                     ' &middot; ' + papelVersoInfo.largura + '&times;' + papelVersoInfo.altura + ' px &middot; ' + kb(peso) +
                     (papelVersoInfo.original && papelVersoInfo.original.nome ? ' &middot; origem ' + esc(papelVersoInfo.original.nome) + ' (' + papelVersoInfo.original.largura + '&times;' + papelVersoInfo.original.altura + ')' : '') +
-                    (apertado ? ' &middot; <strong>acima do limite, troque a imagem</strong>' : '');
+                    (apertado ? ' &middot; <strong>imagem pesada, reanexe para reduzir</strong>' : '');
                 status.style.color = apertado ? '#b91c1c' : '#166534';
             }
         }
@@ -584,16 +587,15 @@
             return false;
         }
         if (!dados.papel) { aviso('Anexe o papel A4 do certificado.', true); return false; }
-        if (dados.papelVerso && dados.papelVerso.length > PAPEL_MAX_CHARS) {
-            aviso('A imagem do papel verso ficou pesada demais. Use uma arte mais simples ou com menos detalhes.', true);
-            return false;
-        }
         if (!dados.exibirFormado && !dados.exibirDocente) {
             if (!confirm('Nenhum portal marcado para exibir este certificado. Deseja salvar mesmo assim (ele não aparecerá nos portais)?')) return false;
         }
         var chars = JSON.stringify(dados).length;
         if (chars > DOC_MAX_CHARS) {
-            aviso('O registro ficaria com ' + kb(chars) + ', acima do limite de 1 MiB do Firestore. Use uma arte mais leve para o papel.', true);
+            var partes = 'frente ' + kb(String(dados.papel || '').length);
+            if (dados.papelVerso) partes += ' + verso ' + kb(String(dados.papelVerso).length);
+            aviso('O registro ficaria com ' + kb(chars) + ' (' + partes + '), acima do limite de 1 MiB do Firestore. ' +
+                'Isso acontece quando frente e verso sao grandes. Reanexe as imagens (elas sao reajustadas automaticamente) ou use uma arte mais leve.', true);
             return false;
         }
 
