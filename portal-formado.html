@@ -222,12 +222,8 @@
         .pf-cert-modal-topo h3 { margin:0; font-size:16px; font-weight:800; flex:1; line-height:1.4; }
         .pf-cert-modal-fechar { background:rgba(255,255,255,.14); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; flex:0 0 34px; transition:background .2s; }
         .pf-cert-modal-fechar:hover { background:rgba(255,255,255,.28); }
-        .pf-cert-modal-corpo { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; padding:22px 20px; }
-        .pf-cert-modal-papel { flex:1 1 300px; max-width:440px; min-width:250px; display:flex; justify-content:center; padding:18px; border-radius:14px; border:1px solid #e2e8f0; background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e9eef5 8px,#e9eef5 16px); }
-        .pf-cert-modal-dados { flex:1 1 280px; min-width:250px; }
-        .pf-cert-rotulo { font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; margin-bottom:5px; }
-        .pf-cert-valor { font-size:13px; color:#334155; line-height:1.8; margin-bottom:16px; }
-        .pf-cert-declaracao { white-space:pre-wrap; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #16a34a; border-radius:10px; padding:14px; font-size:13px; color:#334155; line-height:1.85; }
+        .pf-cert-modal-corpo { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; justify-content:center; padding:22px 20px; }
+        .pf-cert-modal-papel { flex:1 1 640px; max-width:880px; min-width:250px; display:flex; justify-content:center; padding:18px; border-radius:14px; border:1px solid #e2e8f0; background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e9eef5 8px,#e9eef5 16px); }
         .pf-cert-folha { position:relative; }
         .pf-cert-declaracao-overlay { position:absolute; inset:0; display:block; pointer-events:none; color:#0f172a; text-shadow:0 1px 0 rgba(255,255,255,.35); }
         /* 1.51cqw equivale a 12 px na largura A4 (794 px) mantendo a proporcao em qualquer zoom/tamanho */
@@ -571,8 +567,8 @@
             </div>
             <div class="pf-cert-modal-corpo">
                 <div class="pf-cert-modal-papel">
-                    <div style="width:100%;display:flex;flex-direction:column;gap:16px">
-                        <div>
+                    <div style="width:100%;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:16px">
+                        <div style="flex:0 1 auto;width:clamp(220px,42vh,400px)">
                             <div style="font-size:10px;font-weight:800;color:#15803d;letter-spacing:.6px;text-align:center;margin-bottom:6px">FRENTE</div>
                             <div id="pf-cert-modal-folha" class="pf-cert-folha" style="width:100%;aspect-ratio:1414 / 2000;position:relative;overflow:hidden">
                                 <img id="pf-cert-modal-img" src="" alt="Papel A4 do certificado" style="width:100%;height:100%;object-fit:contain;display:block">
@@ -586,7 +582,7 @@
                                 <div id="pf-cert-modal-vazia" class="pf-cert-folha-vazia" style="display:none"><i class="fa-solid fa-file-image"></i></div>
                             </div>
                         </div>
-                        <div id="pf-cert-modal-verso-wrap" style="display:none">
+                        <div id="pf-cert-modal-verso-wrap" style="display:none;flex:0 1 auto;width:clamp(220px,42vh,400px)">
                             <div style="font-size:10px;font-weight:800;color:#15803d;letter-spacing:.6px;text-align:center;margin-bottom:6px">VERSO</div>
                             <div id="pf-cert-modal-verso-folha" class="pf-cert-folha" style="width:100%;aspect-ratio:1414 / 2000;position:relative;overflow:hidden">
                                 <img id="pf-cert-modal-verso-img" src="" alt="Verso do certificado" style="width:100%;height:100%;object-fit:contain;display:block">
@@ -594,7 +590,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="pf-cert-modal-dados" id="pf-cert-modal-dados"></div>
             </div>
             <div class="pf-cert-modal-acoes">
                 <button type="button" id="pf-cert-modal-baixar" class="pf-cert-btn pf-cert-btn-verde" onclick="pfVisualizarCertificadoPapel()"><i class="fa-solid fa-eye"></i> VISUALIZAR O PAPEL JUNTO COM A DECLARAÇÃO</button>
@@ -1088,30 +1083,6 @@
         var btnFicha = document.getElementById('pf-cert-modal-ficha');
         if (btnFicha) btnFicha.style.display = 'inline-flex';
 
-        var dados = document.getElementById('pf-cert-modal-dados');
-        if (dados) {
-            dados.innerHTML =
-                '<div class="pf-cert-rotulo">Curso</div>' +
-                '<div class="pf-cert-valor" style="font-size:16px;font-weight:800;color:#14532d">' + pfCertEsc(r.curso || '—') + '</div>' +
-                '<div class="pf-cert-rotulo">Declaração (personalizada)</div>' +
-                '<div class="pf-cert-declaracao">' + pfCertEsc(declaracaoSub || '—') + '</div>' +
-                '<div class="pf-cert-rotulo" style="margin-top:16px">Instituição</div>' +
-                '<div class="pf-cert-valor">' +
-                    '<strong style="color:#1e293b">' + pfCertEsc(inst.nomeFantasia || inst.razaoSocial || '—') + '</strong>' +
-                    (inst.razaoSocial && inst.nomeFantasia ? '<br>' + pfCertEsc(inst.razaoSocial) : '') +
-                    (inst.cnpj ? '<br>CNPJ: ' + pfCertEsc(inst.cnpj) : '') +
-                    (inst.fone ? '<br>Telefone: ' + pfCertEsc(inst.fone) : '') +
-                    (inst.email ? '<br>' + pfCertEsc(inst.email) : '') +
-                '</div>' +
-                '<div style="padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.9">' +
-                    '<i class="fa-regular fa-calendar" style="margin-right:5px"></i>Enviado em ' + pfCertEsc(pfCertData(r.criadoEm) || '—') +
-                    '<br><i class="fa-solid fa-user-shield" style="margin-right:5px"></i>Por ' + pfCertEsc(r.criadoPor || 'Administração FARN') +
-                    '<br><i class="fa-solid fa-ruler-combined" style="margin-right:5px"></i>Papel A4 ' + pfCertEsc(paisagem ? 'paisagem' : 'retrato') +
-                    (r.papelLargura ? ' · ' + pfCertEsc(r.papelLargura) + '×' + pfCertEsc(r.papelAltura) + ' px' : '') +
-                    (verso ? '<br><i class="fa-solid fa-ruler-combined" style="margin-right:5px"></i>Verso A4 ' + pfCertEsc(versoPaisagem ? 'paisagem' : 'retrato') +
-                        (r.papelVersoLargura ? ' · ' + pfCertEsc(r.papelVersoLargura) + '×' + pfCertEsc(r.papelVersoAltura) + ' px' : '') : '') +
-                '</div>';
-        }
         var modal = document.getElementById('pf-cert-modal');
         if (modal) modal.classList.add('active');
         var box = modal ? modal.querySelector('.pf-cert-modal-box') : null;
