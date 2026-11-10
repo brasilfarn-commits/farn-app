@@ -18,6 +18,8 @@
     var editarId = null;
     var papelDataUrl = '';
     var papelInfo = null;
+    var papelVersoDataUrl = '';
+    var papelVersoInfo = null;
     var instituicaoAtual = null;
     var cursosToken = 0;
     var carregandoLista = false;
@@ -378,12 +380,76 @@
         pintarPapel();
     };
 
+    function pintarPapelVerso() {
+        var img = document.getElementById('cert-papel-verso-img');
+        var vazio = document.getElementById('cert-papel-verso-vazio');
+        var status = document.getElementById('cert-papel-verso-status');
+        var remover = document.getElementById('cert-papel-verso-remover');
+        var moldura = document.getElementById('cert-papel-verso-moldura');
+        if (moldura) {
+            var paisagem = papelVersoInfo && papelVersoInfo.orientacao === 'paisagem';
+            moldura.style.aspectRatio = paisagem ? '2000 / 1414' : '1414 / 2000';
+            moldura.style.width = paisagem ? '100%' : '210px';
+            moldura.style.maxWidth = paisagem ? '320px' : '210px';
+        }
+        if (img) {
+            if (papelVersoDataUrl) { img.src = papelVersoDataUrl; img.style.display = 'block'; }
+            else { img.removeAttribute('src'); img.style.display = 'none'; }
+        }
+        if (vazio) vazio.style.display = papelVersoDataUrl ? 'none' : 'flex';
+        if (remover) remover.style.display = papelVersoDataUrl ? 'inline-flex' : 'none';
+        if (status) {
+            if (!papelVersoInfo) {
+                status.innerHTML = 'Opcional: anexe a imagem do verso do certificado (A4, sem cortar a arte).';
+                status.style.color = '#64748b';
+            } else {
+                var peso = bytesDoDataUrl(papelVersoDataUrl);
+                var apertado = papelVersoDataUrl.length > PAPEL_MAX_CHARS;
+                status.innerHTML = '<i class="fa-solid fa-circle-check" style="margin-right:4px"></i>A4 ' + papelVersoInfo.orientacao +
+                    ' &middot; ' + papelVersoInfo.largura + '&times;' + papelVersoInfo.altura + ' px &middot; ' + kb(peso) +
+                    (papelVersoInfo.original && papelVersoInfo.original.nome ? ' &middot; origem ' + esc(papelVersoInfo.original.nome) + ' (' + papelVersoInfo.original.largura + '&times;' + papelVersoInfo.original.altura + ')' : '') +
+                    (apertado ? ' &middot; <strong>acima do limite, troque a imagem</strong>' : '');
+                status.style.color = apertado ? '#b91c1c' : '#166534';
+            }
+        }
+    }
+
+    window.certPapelVersoSelecionar = function (input) {
+        var file = input && input.files && input.files[0];
+        if (!file) return;
+        ocultarMsg();
+        var status = document.getElementById('cert-papel-verso-status');
+        if (status) { status.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px"></i>Ajustando a imagem para A4...'; status.style.color = '#1d4ed8'; }
+        comprimirPapel(file).then(function (r) {
+            papelVersoDataUrl = r.dataUrl;
+            papelVersoInfo = r;
+            pintarPapelVerso();
+            if (r.dataUrl.length > PAPEL_MAX_CHARS) aviso('A imagem do verso ficou pesada demais para o papel. Use uma arte mais simples ou com menos detalhes.', true);
+        }).catch(function (e) {
+            console.error('Erro no papel verso do certificado:', e);
+            papelVersoDataUrl = '';
+            papelVersoInfo = null;
+            pintarPapelVerso();
+            aviso(e.message || 'Nao foi possivel ler a imagem do verso.', true);
+        }).then(function () { if (input) input.value = ''; });
+    };
+
+    window.certPapelVersoRemover = function () {
+        papelVersoDataUrl = '';
+        papelVersoInfo = null;
+        var input = document.getElementById('cert-papel-verso-file');
+        if (input) input.value = '';
+        pintarPapelVerso();
+    };
+
     /* ---------- formulario ---------- */
     window.certAbrirForm = function (id) {
         editarId = id || null;
         ocultarMsg();
         papelDataUrl = '';
         papelInfo = null;
+        papelVersoDataUrl = '';
+        papelVersoInfo = null;
 
         var titulo = document.getElementById('cert-form-titulo');
         if (titulo) titulo.textContent = id ? 'Editar Certificado' : 'Criar Certificado';
@@ -391,6 +457,8 @@
         if (dec) dec.value = '';
         var input = document.getElementById('cert-papel-file');
         if (input) input.value = '';
+        var inputVerso = document.getElementById('cert-papel-verso-file');
+        if (inputVerso) inputVerso.value = '';
         var busca = document.getElementById('cert-busca');
         var chkFormado = document.getElementById('cert-exibir-formado');
         var chkDocente = document.getElementById('cert-exibir-docente');
@@ -412,6 +480,15 @@
                     orientacao: reg.papelOrientacao || (reg.papelLargura > reg.papelAltura ? 'paisagem' : 'retrato')
                 };
             }
+            if (reg.papelVerso) {
+                papelVersoDataUrl = reg.papelVerso;
+                papelVersoInfo = {
+                    dataUrl: reg.papelVerso,
+                    largura: reg.papelVersoLargura || 0,
+                    altura: reg.papelVersoAltura || 0,
+                    orientacao: reg.papelVersoOrientacao || (reg.papelVersoLargura > reg.papelVersoAltura ? 'paisagem' : 'retrato')
+                };
+            }
             instituicaoAtual = reg.instituicao ? {
                 razaoSocial: reg.instituicao.razaoSocial || '',
                 nomeFantasia: reg.instituicao.nomeFantasia || '',
@@ -430,6 +507,7 @@
 
         cursosCarregar(reg ? reg.curso : '');
         pintarPapel();
+        pintarPapelVerso();
         if (instituicaoAtual) pintarInstituicao();
         else instituicaoCarregar(false);
         if (busca) busca.blur();
@@ -481,6 +559,10 @@
             papelLargura: papelInfo ? papelInfo.largura : 0,
             papelAltura: papelInfo ? papelInfo.altura : 0,
             papelOrientacao: papelInfo ? papelInfo.orientacao : '',
+            papelVerso: papelVersoDataUrl,
+            papelVersoLargura: papelVersoInfo ? papelVersoInfo.largura : 0,
+            papelVersoAltura: papelVersoInfo ? papelVersoInfo.altura : 0,
+            papelVersoOrientacao: papelVersoInfo ? papelVersoInfo.orientacao : '',
             exibirFormado: exibirFormado,
             exibirDocente: exibirDocente,
             portais: portais,
@@ -502,6 +584,10 @@
             return false;
         }
         if (!dados.papel) { aviso('Anexe o papel A4 do certificado.', true); return false; }
+        if (dados.papelVerso && dados.papelVerso.length > PAPEL_MAX_CHARS) {
+            aviso('A imagem do papel verso ficou pesada demais. Use uma arte mais simples ou com menos detalhes.', true);
+            return false;
+        }
         if (!dados.exibirFormado && !dados.exibirDocente) {
             if (!confirm('Nenhum portal marcado para exibir este certificado. Deseja salvar mesmo assim (ele não aparecerá nos portais)?')) return false;
         }
@@ -544,6 +630,16 @@
             if (r.papel) { img.src = r.papel; img.style.display = 'block'; }
             else { img.removeAttribute('src'); img.style.display = 'none'; }
         }
+        var imgVerso = document.getElementById('cert-ver-papel-verso');
+        var molduraVerso = document.getElementById('cert-ver-moldura-verso');
+        var wrapVerso = document.getElementById('cert-ver-verso-wrap');
+        var versoPaisagem = r.papelVersoOrientacao === 'paisagem';
+        if (molduraVerso) molduraVerso.style.aspectRatio = versoPaisagem ? '2000 / 1414' : '1414 / 2000';
+        if (imgVerso) {
+            if (r.papelVerso) { imgVerso.src = r.papelVerso; imgVerso.style.display = 'block'; }
+            else { imgVerso.removeAttribute('src'); imgVerso.style.display = 'none'; }
+        }
+        if (wrapVerso) wrapVerso.style.display = r.papelVerso ? 'flex' : 'none';
         var titulo = document.getElementById('cert-ver-titulo');
         if (titulo) titulo.textContent = r.curso || 'Certificado';
         var dados = document.getElementById('cert-ver-dados');
@@ -574,6 +670,7 @@
                     'Criado em ' + esc(dataBr(r.criadoEm)) + ' por ' + esc(r.criadoPor || '-') +
                     '<br>Atualizado em ' + esc(dataBr(r.atualizadoEm)) + ' por ' + esc(r.atualizadoPor || '-') +
                     '<br>Papel A4 ' + esc(r.papelOrientacao || '-') + (r.papelLargura ? ' &middot; ' + esc(r.papelLargura) + '&times;' + esc(r.papelAltura) + ' px' : '') +
+                    (r.papelVerso ? '<br>Papel verso ' + esc(r.papelVersoOrientacao || '-') + (r.papelVersoLargura ? ' &middot; ' + esc(r.papelVersoLargura) + '&times;' + esc(r.papelVersoAltura) + ' px' : '') : '<br>Sem papel verso') +
                 '</div>';
         }
         var ov = document.getElementById('cert-ver-overlay');

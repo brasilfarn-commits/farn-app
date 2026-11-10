@@ -4654,14 +4654,14 @@
                                         <img id="cert-papel-img" src="" alt="Papel A4 do certificado" style="display:none;width:100%;height:100%;object-fit:contain">
                                         <div id="cert-papel-vazio" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#94a3b8;text-align:center;padding:16px">
                                             <i class="fa-solid fa-file-image" style="font-size:30px;color:#cbd5e1"></i>
-                                            <span style="font-size:11px;font-weight:700;letter-spacing:.5px">FOLHA A4</span>
+                                            <span style="font-size:11px;font-weight:700;letter-spacing:.5px">FOLHA A4 (FRENTE)</span>
                                             <span style="font-size:10px;line-height:1.5">210 &times; 297 mm<br>A frente do certificado sera montada aqui</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div style="flex:1 1 260px;min-width:240px">
                                     <div class="form-group">
-                                        <label>Anexar imagem do papel *</label>
+                                        <label>Anexar imagem do papel (frente) *</label>
                                         <input type="file" id="cert-papel-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="certPapelSelecionar(this)">
                                         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                                             <label for="cert-papel-file" class="btn-primary" style="background:#1d4ed8;border-color:#1d4ed8;cursor:pointer;margin:0">
@@ -4673,15 +4673,44 @@
                                         </div>
                                     </div>
                                     <div id="cert-papel-status" class="field-hint" style="margin-top:10px;line-height:1.7"></div>
-                                    <div style="margin-top:14px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px">
-                                        <div style="font-size:11px;font-weight:800;color:#1e3a8a;letter-spacing:.4px;margin-bottom:6px"><i class="fa-solid fa-ruler-combined" style="margin-right:5px"></i>COMO O PAPEL E TRATADO</div>
-                                        <ul style="margin:0;padding-left:18px;font-size:11px;color:#1e40af;line-height:1.85">
-                                            <li>A imagem e ajustada para a proporcao A4, em retrato ou paisagem conforme a arte enviada.</li>
-                                            <li>A arte nunca e cortada: o que sobra vira margem branca.</li>
-                                            <li>PNG, JPG ou WebP de ate 10 MB. O papel e comprimido para caber no registro.</li>
-                                        </ul>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-top:18px;padding-top:18px;border-top:1px dashed #bfdbfe">
+                                <div style="flex:1 1 300px;max-width:340px;min-width:240px;display:flex;justify-content:center;padding:16px;background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e8eef6 8px,#e8eef6 16px);border:1px solid #dbeafe;border-radius:12px">
+                                    <div id="cert-papel-verso-moldura" style="position:relative;width:210px;aspect-ratio:1414 / 2000;background:#fff;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;box-shadow:0 10px 28px rgba(15,23,42,.22),0 2px 6px rgba(15,23,42,.12)">
+                                        <img id="cert-papel-verso-img" src="" alt="Papel verso do certificado" style="display:none;width:100%;height:100%;object-fit:contain">
+                                        <div id="cert-papel-verso-vazio" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#94a3b8;text-align:center;padding:16px">
+                                            <i class="fa-solid fa-file-image" style="font-size:30px;color:#cbd5e1"></i>
+                                            <span style="font-size:11px;font-weight:700;letter-spacing:.5px">FOLHA A4 (VERSO)</span>
+                                            <span style="font-size:10px;line-height:1.5">210 &times; 297 mm<br>Verso do certificado</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div style="flex:1 1 260px;min-width:240px">
+                                    <div class="form-group">
+                                        <label>Papel Verso</label>
+                                        <input type="file" id="cert-papel-verso-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="certPapelVersoSelecionar(this)">
+                                        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                                            <label for="cert-papel-verso-file" class="btn-primary" style="background:#1d4ed8;border-color:#1d4ed8;cursor:pointer;margin:0">
+                                                <i class="fa-solid fa-paperclip"></i> ANEXAR PAPEL VERSO
+                                            </label>
+                                            <button type="button" id="cert-papel-verso-remover" class="btn-outline btn-sm" style="display:none;color:#dc2626;border-color:#fecaca" onclick="certPapelVersoRemover()">
+                                                <i class="fa-solid fa-trash"></i> Remover
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="cert-papel-verso-status" class="field-hint" style="margin-top:10px;line-height:1.7"></div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:14px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px">
+                                <div style="font-size:11px;font-weight:800;color:#1e3a8a;letter-spacing:.4px;margin-bottom:6px"><i class="fa-solid fa-ruler-combined" style="margin-right:5px"></i>COMO O PAPEL E TRATADO</div>
+                                <ul style="margin:0;padding-left:18px;font-size:11px;color:#1e40af;line-height:1.85">
+                                    <li>A imagem e ajustada para a proporcao A4, em retrato ou paisagem conforme a arte enviada.</li>
+                                    <li>A arte nunca e cortada: o que sobra vira margem branca.</li>
+                                    <li>PNG, JPG ou WebP de ate 10 MB. O papel e comprimido para caber no registro.</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -4705,9 +4734,22 @@
             </div>
             <div class="modal-body">
                 <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
-                    <div style="flex:1 1 320px;max-width:420px;min-width:260px;display:flex;justify-content:center;padding:18px;background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e8eef6 8px,#e8eef6 16px);border:1px solid #dbeafe;border-radius:12px">
-                        <div id="cert-ver-moldura" style="width:100%;aspect-ratio:1414 / 2000;background:#fff;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;box-shadow:0 12px 32px rgba(15,23,42,.24)">
-                            <img id="cert-ver-papel" src="" alt="Papel A4 do certificado" style="display:none;width:100%;height:100%;object-fit:contain">
+                    <div style="flex:1 1 320px;max-width:420px;min-width:260px;display:flex;flex-direction:column;gap:12px">
+                        <div style="display:flex;justify-content:center;padding:18px;background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e8eef6 8px,#e8eef6 16px);border:1px solid #dbeafe;border-radius:12px">
+                            <div style="width:100%">
+                                <div style="font-size:10px;font-weight:800;color:#1e3a8a;letter-spacing:.5px;margin-bottom:8px;text-align:center">FRENTE</div>
+                                <div id="cert-ver-moldura" style="width:100%;aspect-ratio:1414 / 2000;background:#fff;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;box-shadow:0 12px 32px rgba(15,23,42,.24)">
+                                    <img id="cert-ver-papel" src="" alt="Papel A4 do certificado (frente)" style="display:none;width:100%;height:100%;object-fit:contain">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="cert-ver-verso-wrap" style="display:none;justify-content:center;padding:18px;background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e8eef6 8px,#e8eef6 16px);border:1px solid #dbeafe;border-radius:12px">
+                            <div style="width:100%">
+                                <div style="font-size:10px;font-weight:800;color:#1e3a8a;letter-spacing:.5px;margin-bottom:8px;text-align:center">VERSO</div>
+                                <div id="cert-ver-moldura-verso" style="width:100%;aspect-ratio:1414 / 2000;background:#fff;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;box-shadow:0 12px 32px rgba(15,23,42,.24)">
+                                    <img id="cert-ver-papel-verso" src="" alt="Papel verso do certificado" style="display:none;width:100%;height:100%;object-fit:contain">
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div id="cert-ver-dados" style="flex:1 1 300px;min-width:260px"></div>
@@ -5823,7 +5865,7 @@
     <script src="foto3x4-bloqueio.js?v=7"></script>
     <script src="noticias-feed.js?v=5"></script>
     <script src="oportunidades.js?v=4"></script>
-    <script src="certificados.js?v=1"></script>
+    <script src="certificados.js?v=2"></script>
     <script src="app.js?v=98"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
