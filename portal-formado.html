@@ -200,7 +200,7 @@
         .pf-cert-card:focus-visible { outline:2px solid #16a34a; outline-offset:2px; }
         @keyframes pfCertEntra { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         .pf-cert-card-papel { position:relative; padding:18px; display:flex; justify-content:center; background:linear-gradient(135deg,#f0fdf4,#ecfeff 60%,#eff6ff); border-bottom:1px solid #e2e8f0; }
-        .pf-cert-folha { position:relative; background:#fff; border:1px solid #cbd5e1; border-radius:3px; overflow:hidden; box-shadow:0 8px 22px rgba(15,23,42,.2); }
+        .pf-cert-folha { position:relative; background:#fff; border:1px solid #cbd5e1; border-radius:3px; overflow:hidden; box-shadow:0 8px 22px rgba(15,23,42,.2); container-type:inline-size; }
         .pf-cert-folha img { width:100%; height:100%; object-fit:contain; display:block; }
         .pf-cert-folha-vazia { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#bbf7d0; font-size:26px; background:linear-gradient(135deg,#f8fafc,#f0fdf4); }
         .pf-cert-novo { position:absolute; top:10px; right:10px; background:linear-gradient(135deg,#16a34a,#0d9488); color:#fff; font-size:9px; font-weight:800; letter-spacing:.6px; padding:4px 9px; border-radius:999px; text-transform:uppercase; box-shadow:0 3px 10px rgba(22,163,74,.35); }
@@ -223,14 +223,17 @@
         .pf-cert-modal-fechar { background:rgba(255,255,255,.14); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; flex:0 0 34px; transition:background .2s; }
         .pf-cert-modal-fechar:hover { background:rgba(255,255,255,.28); }
         .pf-cert-modal-corpo { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; padding:22px 20px; }
-        .pf-cert-modal-papel { flex:1 1 300px; max-width:400px; min-width:250px; display:flex; justify-content:center; padding:18px; border-radius:14px; border:1px solid #e2e8f0; background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e9eef5 8px,#e9eef5 16px); }
+        .pf-cert-modal-papel { flex:1 1 300px; max-width:440px; min-width:250px; display:flex; justify-content:center; padding:18px; border-radius:14px; border:1px solid #e2e8f0; background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e9eef5 8px,#e9eef5 16px); }
         .pf-cert-modal-dados { flex:1 1 280px; min-width:250px; }
         .pf-cert-rotulo { font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; margin-bottom:5px; }
         .pf-cert-valor { font-size:13px; color:#334155; line-height:1.8; margin-bottom:16px; }
         .pf-cert-declaracao { white-space:pre-wrap; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #16a34a; border-radius:10px; padding:14px; font-size:13px; color:#334155; line-height:1.85; }
         .pf-cert-folha { position:relative; }
-        .pf-cert-declaracao-overlay { position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; text-align:center; padding:22% 12% 10% 12%; pointer-events:none; color:#0f172a; font-size:12px; line-height:1.65; font-weight:600; white-space:pre-wrap; word-break:break-word; text-shadow:0 1px 0 rgba(255,255,255,.35); }
-        .pf-cert-declaracao-overlay .pf-cert-declaracao-texto { max-width:100%; }
+        .pf-cert-declaracao-overlay { position:absolute; inset:0; display:block; pointer-events:none; color:#0f172a; text-shadow:0 1px 0 rgba(255,255,255,.35); }
+        .pf-cert-decl-conteudo { position:absolute; left:10%; right:10%; top:18%; bottom:18%; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:8px; gap:1.8cqw; text-align:center; font-size:12px; font-size:1.8cqw; }
+        .pf-cert-declaracao-texto { font-size:1em; line-height:1.6; font-weight:600; white-space:pre-wrap; word-break:break-word; max-width:100%; }
+        .pf-cert-declaracao-inst { font-size:.92em; line-height:1.7; font-weight:600; white-space:pre-wrap; word-break:break-word; text-align:center; max-width:100%; }
+        .pf-cert-declaracao-qr { position:absolute; right:5%; bottom:4.5%; width:9.5%; height:auto; background:#fff; padding:.45cqw; border-radius:.6cqw; border:1px solid rgba(15,23,42,.12); }
         .pf-cert-modal-acoes { display:flex; gap:10px; flex-wrap:wrap; padding:0 20px 22px; }
         .pf-cert-btn { display:inline-flex; align-items:center; gap:7px; padding:11px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid transparent; text-decoration:none; transition:transform .15s,box-shadow .15s; }
         .pf-cert-btn:active { transform:translateY(1px); }
@@ -572,7 +575,13 @@
                             <div style="font-size:10px;font-weight:800;color:#15803d;letter-spacing:.6px;text-align:center;margin-bottom:6px">FRENTE</div>
                             <div id="pf-cert-modal-folha" class="pf-cert-folha" style="width:100%;aspect-ratio:1414 / 2000;position:relative;overflow:hidden">
                                 <img id="pf-cert-modal-img" src="" alt="Papel A4 do certificado" style="width:100%;height:100%;object-fit:contain;display:block">
-                                <div id="pf-cert-modal-declaracao" class="pf-cert-declaracao-overlay" style="display:none"><div style="display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%"><div class="pf-cert-declaracao-texto"></div><div id="pf-cert-modal-instituicao" style="font-size:12px;line-height:1.65;font-weight:600;white-space:pre-wrap;word-break:break-word;text-align:center;color:#0f172a;margin-top:1cm"></div><img id="pf-cert-modal-qr" alt="QR Code" style="display:none;width:72px;height:72px;background:#fff;padding:3px;border-radius:4px;border:1px solid rgba(15,23,42,.12);margin-top:-0.8cm;margin-left:17.5cm"></div></div>
+                                <div id="pf-cert-modal-declaracao" class="pf-cert-declaracao-overlay" style="display:none">
+                                    <div class="pf-cert-decl-conteudo">
+                                        <div class="pf-cert-declaracao-texto"></div>
+                                        <div id="pf-cert-modal-instituicao" class="pf-cert-declaracao-inst"></div>
+                                    </div>
+                                    <img id="pf-cert-modal-qr" class="pf-cert-declaracao-qr" alt="QR Code" style="display:none">
+                                </div>
                                 <div id="pf-cert-modal-vazia" class="pf-cert-folha-vazia" style="display:none"><i class="fa-solid fa-file-image"></i></div>
                             </div>
                         </div>
@@ -1059,7 +1068,7 @@
             if (textoEl) textoEl.textContent = declaracaoSub;
             var instEl = document.getElementById('pf-cert-modal-instituicao');
             if (instEl) instEl.textContent = instStr;
-            overlay.style.display = (declaracaoSub || instStr) ? 'flex' : 'none';
+            overlay.style.display = (declaracaoSub || instStr || qrUrl) ? 'block' : 'none';
         }
         var qrEl = document.getElementById('pf-cert-modal-qr');
         if (qrEl) {
@@ -1106,7 +1115,28 @@
         if (modal) modal.classList.add('active');
         var box = modal ? modal.querySelector('.pf-cert-modal-box') : null;
         if (box) box.scrollTop = 0;
+        requestAnimationFrame(pfCertAjustarDeclaracao);
     }
+
+    /* Reduz a fonte da declaracao o necessario para ela caber entre o topo e o
+       QR Code, mantendo tudo proporcional ao tamanho da folha (cqw). */
+    function pfCertAjustarDeclaracao() {
+        var overlay = document.getElementById('pf-cert-modal-declaracao');
+        if (!overlay || overlay.style.display === 'none') return;
+        var conteudo = overlay.querySelector('.pf-cert-decl-conteudo');
+        if (!conteudo) return;
+        var fs = 1.8, guard = 0;
+        conteudo.style.fontSize = fs + 'cqw';
+        while (conteudo.scrollHeight > conteudo.clientHeight + 1 && fs > 0.6 && guard++ < 40) {
+            fs = Math.round((fs - 0.05) * 100) / 100;
+            conteudo.style.fontSize = fs + 'cqw';
+        }
+    }
+
+    window.addEventListener('resize', function () {
+        var modal = document.getElementById('pf-cert-modal');
+        if (modal && modal.classList.contains('active')) pfCertAjustarDeclaracao();
+    });
 
     async function pfFichaGeralFoto() {
         if (pfUser && (pfUser.foto || pfUser.fotoUrl)) return pfUser.foto || pfUser.fotoUrl;
@@ -1183,15 +1213,20 @@
         var imgHtml = c.papel
             ? '<img src="' + pfCertEsc(c.papel) + '" alt="Papel A4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block">'
             : '<div style="position:absolute;inset:0;background:#fff"></div>';
-        var instHtml = safeInst ? '<div style="margin-top:calc(8px + 1cm);font-size:12px;line-height:1.65;font-weight:600;white-space:pre-wrap;word-break:break-word;text-align:center">' + safeInst + '</div>' : '';
-        var qrHtml = c.qrUrl ? '<img src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code" style="width:72px;height:72px;background:#fff;padding:3px;border-radius:4px;border:1px solid rgba(15,23,42,.12);margin-top:-0.8cm;margin-left:17.5cm;flex:0 0 auto">' : '';
+        var instHtml = safeInst ? '<div class="decl-inst">' + safeInst + '</div>' : '';
+        var qrHtml = c.qrUrl ? '<img class="decl-qr" src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code">' : '';
+        var declHtml = (safeText || safeInst || c.qrUrl)
+            ? '<div class="decl"><div class="decl-conteudo">' +
+                (safeText ? '<div class="decl-texto">' + safeText + '</div>' : '') + instHtml +
+              '</div>' + qrHtml + '</div>'
+            : '';
         // Com verso, cada folha ocupa menos altura na tela para caber frente e verso juntos.
         var vhFit = c.papelVerso ? 42 : 82;
         var frenteLargura = 'min(92vw, calc(' + vhFit + 'vh * ' + (frenteW / frenteH).toFixed(4) + '))';
         var versoLargura = 'min(92vw, calc(' + vhFit + 'vh * ' + (versoW / versoH).toFixed(4) + '))';
         var frenteHtml = '<div class="pagina"><div class="rotulo">FRENTE</div>' +
             '<div class="folha ' + (c.paisagem ? 'paisagem' : 'retrato') + '" style="width:' + frenteLargura + ';aspect-ratio:' + frenteW + ' / ' + frenteH + '">' +
-                imgHtml + '<div class="decl">' + safeText + instHtml + qrHtml + '</div>' +
+                imgHtml + declHtml +
             '</div></div>';
         var versoHtml = c.papelVerso
             ? '<div class="pagina"><div class="rotulo">VERSO</div>' +
@@ -1206,8 +1241,12 @@
                 '.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;gap:20px}' +
                 '.pagina{display:flex;flex-direction:column;align-items:center;gap:8px}' +
                 '.rotulo{color:#86efac;font-size:11px;font-weight:800;letter-spacing:1.2px}' +
-                '.folha{position:relative;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}' +
-                '.decl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:22% 12% 10% 12%;color:#0f172a;font-size:12px;line-height:1.65;font-weight:600;white-space:pre-wrap;word-break:break-word;pointer-events:none}' +
+                '.folha{position:relative;container-type:inline-size;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}' +
+                '.decl{position:absolute;inset:0;pointer-events:none;color:#0f172a;text-shadow:0 1px 0 rgba(255,255,255,.35)}' +
+                '.decl-conteudo{position:absolute;left:10%;right:10%;top:18%;bottom:18%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1.8cqw;text-align:center;font-size:15px;font-size:1.8cqw}' +
+                '.decl-texto{font-size:1em;line-height:1.6;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
+                '.decl-inst{font-size:.92em;line-height:1.7;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
+                '.decl-qr{position:absolute;right:5%;bottom:4.5%;width:9.5%;height:auto;background:#fff;padding:.45cqw;border-radius:.6cqw;border:1px solid rgba(15,23,42,.12)}' +
                 '.bar{position:fixed;top:10px;right:10px;z-index:5}' +
                 '.bar button{background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}' +
                 '@page{size:A4;margin:0}' +
@@ -1219,7 +1258,9 @@
                 '.pagina:last-child .folha{page-break-after:auto;break-after:auto}}' +
             '</style></head><body>' +
             '<div class="bar"><button onclick="window.print()">Imprimir</button></div>' +
-            '<div class="wrap">' + frenteHtml + versoHtml + '</div></body></html>';
+            '<div class="wrap">' + frenteHtml + versoHtml + '</div>' +
+            '<script>(function(){var c=document.querySelector(".decl-conteudo");if(!c)return;var f=1.8,g=0;c.style.fontSize=f+"cqw";while(c.scrollHeight>c.clientHeight+1&&f>0.6&&g++<40){f=Math.round((f-0.05)*100)/100;c.style.fontSize=f+"cqw";}})();<\/script>' +
+            '</body></html>';
         var win = window.open('', '_blank');
         if (!win) { alert('Permita pop-ups para visualizar o certificado.'); return; }
         win.document.open();
