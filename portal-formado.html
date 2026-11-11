@@ -231,6 +231,8 @@
         .pf-cert-declaracao-texto { font-size:1em; line-height:1.6; font-weight:600; white-space:pre-wrap; word-break:break-word; max-width:100%; }
         .pf-cert-declaracao-inst { font-size:.92em; line-height:1.7; font-weight:600; white-space:pre-wrap; word-break:break-word; text-align:center; max-width:100%; }
         img.pf-cert-declaracao-qr { position:absolute; right:5%; bottom:10%; width:9.5%; height:auto; object-fit:contain; background:#fff; padding:.45cqw; border-radius:.6cqw; border:1px solid rgba(15,23,42,.12); }
+        /* No verso o QR Code fica cerca de 1 cm acima e 1,3 cm a esquerda do QR da frente */
+        img.pf-cert-declaracao-qr.verso { bottom:13.3%; right:11.5%; }
         /* Credencial escrita na vertical (girada 90 graus) logo acima do QR Code */
         .pf-cert-declaracao-cred { position:absolute; right:2.5%; bottom:43%; writing-mode:vertical-rl; transform:rotate(180deg); font-size:1.5cqw; font-weight:800; letter-spacing:.14em; line-height:1; color:#0f172a; white-space:nowrap; }
         .pf-cert-modal-acoes { display:flex; gap:10px; flex-wrap:wrap; padding:0 20px 22px; }
@@ -671,6 +673,10 @@
                             <div style="font-size:10px;font-weight:800;color:#15803d;letter-spacing:.6px;text-align:center;margin-bottom:6px">VERSO</div>
                             <div id="pf-cert-modal-verso-folha" class="pf-cert-folha" style="width:100%;aspect-ratio:1414 / 2000;position:relative;overflow:hidden">
                                 <img id="pf-cert-modal-verso-img" src="" alt="Verso do certificado" style="width:100%;height:100%;object-fit:contain;display:block">
+                                <div id="pf-cert-modal-verso-decl" class="pf-cert-declaracao-overlay" style="display:none">
+                                    <img id="pf-cert-modal-verso-qr" class="pf-cert-declaracao-qr verso" alt="QR Code" style="display:none">
+                                    <div id="pf-cert-modal-verso-cred" class="pf-cert-declaracao-cred" style="display:none"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1199,6 +1205,19 @@
             if (credQR) { credEl.textContent = credQR; credEl.style.display = 'block'; }
             else { credEl.textContent = ''; credEl.style.display = 'none'; }
         }
+        /* No verso entram apenas o QR Code e a credencial, na mesma posicao da frente. */
+        var versoDecl = document.getElementById('pf-cert-modal-verso-decl');
+        var versoQr = document.getElementById('pf-cert-modal-verso-qr');
+        var versoCred = document.getElementById('pf-cert-modal-verso-cred');
+        if (versoQr) {
+            if (verso && qrUrl) { versoQr.src = qrUrl; versoQr.style.display = 'block'; }
+            else { versoQr.removeAttribute('src'); versoQr.style.display = 'none'; }
+        }
+        if (versoCred) {
+            if (verso && credQR) { versoCred.textContent = credQR; versoCred.style.display = 'block'; }
+            else { versoCred.textContent = ''; versoCred.style.display = 'none'; }
+        }
+        if (versoDecl) versoDecl.style.display = (verso && (qrUrl || credQR)) ? 'block' : 'none';
 
         var titulo = document.getElementById('pf-cert-modal-titulo');
         if (titulo) titulo.textContent = r.curso || 'Certificado';
@@ -1394,15 +1413,20 @@
            a arte enviada pelo administrador, sem composicao por cima. */
         var decl = document.getElementById('pfv-decl');
         if (decl) {
-            var tem = f.frente && (c.declaracao || c.instituicao || c.qrUrl);
-            decl.style.display = tem ? 'block' : 'none';
-            if (tem) {
+            var temTexto = f.frente && (c.declaracao || c.instituicao);
+            var temSelo = !!(c.qrUrl || c.credencial);
+            var mostrar = temTexto || temSelo;
+            decl.style.display = mostrar ? 'block' : 'none';
+            var corpo = decl.querySelector('.pf-cert-decl-conteudo');
+            if (corpo) corpo.style.display = f.frente ? 'flex' : 'none';
+            if (mostrar) {
                 var tx = document.getElementById('pfv-decl-texto');
-                if (tx) tx.textContent = c.declaracao || '';
+                if (tx) tx.textContent = f.frente ? (c.declaracao || '') : '';
                 var ins = document.getElementById('pfv-decl-inst');
-                if (ins) ins.textContent = c.instituicao || '';
+                if (ins) ins.textContent = f.frente ? (c.instituicao || '') : '';
                 var qr = document.getElementById('pfv-decl-qr');
                 if (qr) {
+                    qr.classList.toggle('verso', !f.frente);
                     if (c.qrUrl) { qr.src = c.qrUrl; qr.style.display = 'block'; }
                     else { qr.removeAttribute('src'); qr.style.display = 'none'; }
                 }
@@ -1468,6 +1492,7 @@
             : '<div style="position:absolute;inset:0;background:#fff"></div>';
         var instHtml = safeInst ? '<div class="decl-inst">' + safeInst + '</div>' : '';
         var qrHtml = c.qrUrl ? '<img class="decl-qr" src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code">' : '';
+        var qrHtmlVerso = c.qrUrl ? '<img class="decl-qr verso" src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code">' : '';
         var credHtml = c.credencial ? '<div class="decl-cred">' + pfCertEsc(c.credencial) + '</div>' : '';
         var declHtml = (safeText || safeInst || c.qrUrl || c.credencial)
             ? '<div class="decl"><div class="decl-conteudo">' +
@@ -1478,10 +1503,14 @@
             '<div class="folha ' + (c.paisagem ? 'paisagem' : 'retrato') + '" style="aspect-ratio:' + frenteW + ' / ' + frenteH + '">' +
                 imgHtml + declHtml +
             '</div></div>';
+        var versoDeclHtml = (c.qrUrl || c.credencial)
+            ? '<div class="decl">' + qrHtmlVerso + credHtml + '</div>'
+            : '';
         var versoHtml = c.papelVerso
             ? '<div class="pagina"><div class="rotulo">VERSO</div>' +
                 '<div class="folha ' + (c.versoPaisagem ? 'paisagem' : 'retrato') + '" style="aspect-ratio:' + versoW + ' / ' + versoH + '">' +
                     '<img src="' + pfCertEsc(c.papelVerso) + '" alt="Verso do certificado" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block">' +
+                    versoDeclHtml +
                 '</div></div>'
             : '';
         var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
@@ -1497,6 +1526,7 @@
                 '.decl-texto{font-size:1em;line-height:1.6;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
                 '.decl-inst{font-size:.92em;line-height:1.7;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
                 '.decl-qr{position:absolute;right:5%;bottom:10%;width:9.5%;height:auto;background:#fff;padding:.45cqw;border-radius:.6cqw;border:1px solid rgba(15,23,42,.12)}' +
+                '.decl-qr.verso{bottom:13.3%;right:11.5%}' +
                 '.decl-cred{position:absolute;right:2.5%;bottom:43%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:1.5cqw;font-weight:800;letter-spacing:.14em;line-height:1;color:#0f172a;white-space:nowrap}' +
                 '.bar{position:fixed;top:10px;right:10px;z-index:5;display:flex;gap:8px}' +
                 '.bar button{background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:inherit}' +

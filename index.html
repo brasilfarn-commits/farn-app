@@ -1706,6 +1706,11 @@
                                     <span style="font-size:13px">Aulas Cadastradas por Turma</span>
                                     <small>Projeto, turma e todas as aulas cadastradas (ex: Bombeiro Civil Classe 01)</small>
                                 </div>
+                                <div class="config-card" onclick="relDeclCertAbrir()" style="padding:16px;max-width:220px;border-left:3px solid #0f766e">
+                                    <i class="fa-solid fa-file-signature" style="font-size:20px;color:#0f766e"></i>
+                                    <span style="font-size:13px">Relatório de Certificação</span>
+                                    <small>Projeto, turma e formados escolhidos, com as 3 assinaturas Gov.br</small>
+                                </div>
                                 <div class="config-card" onclick="viagemAbrir()" style="padding:16px;max-width:220px;border-left:3px solid #0ea5e9">
                                     <i class="fa-solid fa-bus" style="font-size:20px;color:#0ea5e9"></i>
                                     <span style="font-size:13px">Criar Lista de Viagem</span>
@@ -1949,6 +1954,42 @@
                         <div class="modal-footer">
                             <button type="button" class="btn-outline" onclick="relDocFechar()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                             <button type="button" class="btn-primary" id="rel-doc-gerar-btn" onclick="relDocGerar()"><i class="fa-solid fa-print"></i> Gerar</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- MODAL RELATORIO DECLARACAO DE CERTIFICACAO DE TURMA -->
+                <div id="modal-rel-decl-cert" class="modal-overlay hidden" onclick="if(event.target===this)relDeclCertFechar()">
+                    <div class="modal-content" style="max-width:700px">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-file-signature" style="color:#0f766e;margin-right:8px"></i> Relatório de Certificação</h3>
+                            <button class="modal-close" onclick="relDeclCertFechar()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="color:#475569;margin-bottom:14px;font-size:13px">Escolha o projeto e a turma e marque os formados que devem constar na declaração.</p>
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+                                <div style="flex:1 1 240px">
+                                    <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:6px">Projeto</label>
+                                    <select id="rel-decl-projeto" onchange="relDeclCertProjeto()" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff"></select>
+                                </div>
+                                <div style="flex:1 1 240px">
+                                    <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:6px">Turma</label>
+                                    <select id="rel-decl-turma" onchange="relDeclCertTurma()" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff"></select>
+                                </div>
+                            </div>
+                            <div id="rel-decl-resumo" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:12px;color:#334155;line-height:1.7;margin-bottom:14px"></div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap">
+                                <label style="font-size:12px;font-weight:700;color:#475569;letter-spacing:.4px">FORMADOS DA TURMA</label>
+                                <div style="display:flex;gap:6px">
+                                    <button type="button" class="btn-outline btn-sm" onclick="relDeclCertMarcar(true)">Todos</button>
+                                    <button type="button" class="btn-outline btn-sm" onclick="relDeclCertMarcar(false)">Nenhum</button>
+                                </div>
+                            </div>
+                            <div id="rel-decl-formados" style="max-height:260px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;padding:4px"></div>
+                            <div id="rel-decl-err" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:12px;margin-top:12px;display:none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-outline" onclick="relDeclCertFechar()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                            <button type="button" class="btn-primary" onclick="relDeclCertGerar()"><i class="fa-solid fa-print"></i> Gerar relatório</button>
                         </div>
                     </div>
                 </div>
@@ -5866,7 +5907,7 @@
     <script src="noticias-feed.js?v=5"></script>
     <script src="oportunidades.js?v=4"></script>
     <script src="certificados.js?v=3"></script>
-    <script src="app.js?v=98"></script>
+    <script src="app.js?v=99"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

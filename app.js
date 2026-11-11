@@ -5330,6 +5330,353 @@ function relGerarCarteiraFormado(lista) {
     w.document.close();
 }
 
+/* ===== RELATORIO DE CERTIFICACAO (DECLARACAO DE CERTIFICACAO DE TURMA) =====
+   Lista os formados da turma com nome, CPF, credencial, carga horaria e as
+   datas fixadas no certificado. O documento sai com o cabecalho da instituicao
+   e area para as tres assinaturas digitais Gov.br. */
+var relDeclCertInst = null;
+var relDeclCertCursos = null;
+var relDeclCertListaAtual = [];
+
+function relDeclCertFechar() {
+    var modal = document.getElementById('modal-rel-decl-cert');
+    if (modal) modal.classList.add('hidden');
+    var err = document.getElementById('rel-decl-err');
+    if (err) err.style.display = 'none';
+}
+
+function _relDeclCertFormados() {
+    return (candidatos || []).filter(function (c) { return (c.tipoPessoa || 'A') === 'F'; });
+}
+
+function _relDeclCertProjetoDe(c) {
+    return String(c.formadoProjeto || c.projeto || '').trim();
+}
+
+function _relDeclCertTurmaDe(c) {
+    return String(c.formadoTurma || c.turma || '').trim();
+}
+
+function _relDeclCertData(v) {
+    if (!v) return '';
+    var s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) s = s.slice(0, 10).split('-').reverse().join('/');
+    return s;
+}
+
+function _relDeclCertCpf(cpf) {
+    var d = String(cpf || '').replace(/\D/g, '');
+    if (d.length !== 11) return d || '---';
+    return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+function _relDeclCertCred(c) {
+    return String(c.credencial || c.matricula || '').trim() || '---';
+}
+
+function _relDeclCertInicio(c) {
+    return _relDeclCertData(c.dataInscricao || c.dataMatricula || c.dataCadastro || '');
+}
+
+function _relDeclCertFim(c) {
+    return _relDeclCertData(c.dataFinal || c.data_final || c.dataAVFinalPraticaFmt || c.dataAVFinalPratica || c.dataAvFinalPratica || '');
+}
+
+function _relDeclCertCarregarAuxiliares() {
+    if (typeof dbFirestore === 'undefined' || !dbFirestore) return;
+    if (relDeclCertCursos === null) {
+        relDeclCertCursos = {};
+        dbFirestore.collection('cursos').get().then(function (snap) {
+            snap.forEach(function (doc) {
+                var c = doc.data() || {};
+                if (c.nome) relDeclCertCursos[c.nome] = (c.cargaHoraria != null ? c.cargaHoraria : '');
+            });
+        }).catch(function (e) { console.error('Erro ao carregar cursos:', e); });
+    }
+    if (relDeclCertInst === null) {
+        relDeclCertInst = {};
+        dbFirestore.collection('configuracoes').doc('instituicao').get().then(function (doc) {
+            if (doc.exists) relDeclCertInst = doc.data() || {};
+        }).catch(function (e) { console.error('Erro ao carregar instituicao:', e); });
+    }
+}
+
+function relDeclCertAbrir() {
+    var modal = document.getElementById('modal-rel-decl-cert');
+    if (!modal) return;
+    relDeclCertListaAtual = [];
+    _relDeclCertCarregarAuxiliares();
+
+    var err = document.getElementById('rel-decl-err');
+    if (err) err.style.display = 'none';
+    var resumo = document.getElementById('rel-decl-resumo');
+    if (resumo) { resumo.style.display = 'none'; resumo.innerHTML = ''; }
+
+    var nomes = {};
+    _relDeclCertFormados().forEach(function (c) { var p = _relDeclCertProjetoDe(c); if (p) nomes[p] = 1; });
+    (turmas || []).forEach(function (t) { if (t && t.projeto) nomes[String(t.projeto)] = 1; });
+
+    var selP = document.getElementById('rel-decl-projeto');
+    if (selP) {
+        selP.innerHTML = '<option value="">Selecione o projeto...</option>' + Object.keys(nomes).sort().map(function (p) {
+            return '<option value="' + escHTML(p) + '">' + escHTML(p) + '</option>';
+        }).join('');
+    }
+    var selT = document.getElementById('rel-decl-turma');
+    if (selT) selT.innerHTML = '<option value="">Selecione a turma...</option>';
+
+    var lista = document.getElementById('rel-decl-formados');
+    if (lista) lista.innerHTML = '<div style="padding:14px;color:#94a3b8;font-size:12px">Escolha o projeto e a turma para carregar os formados.</div>';
+
+    modal.classList.remove('hidden');
+}
+
+function relDeclCertProjeto() {
+    var projeto = document.getElementById('rel-decl-projeto').value;
+    var nomes = {};
+    _relDeclCertFormados().forEach(function (c) {
+        if (_relDeclCertProjetoDe(c) === projeto) { var t = _relDeclCertTurmaDe(c); if (t) nomes[t] = 1; }
+    });
+    (turmas || []).forEach(function (t) {
+        if (t && String(t.projeto) === projeto && t.nome) nomes[String(t.nome)] = 1;
+    });
+    var selT = document.getElementById('rel-decl-turma');
+    if (selT) {
+        selT.innerHTML = '<option value="">Selecione a turma...</option>' + Object.keys(nomes).sort().map(function (t) {
+            return '<option value="' + escHTML(t) + '">' + escHTML(t) + '</option>';
+        }).join('');
+    }
+    var resumo = document.getElementById('rel-decl-resumo');
+    if (resumo) { resumo.style.display = 'none'; resumo.innerHTML = ''; }
+    var lista = document.getElementById('rel-decl-formados');
+    if (lista) lista.innerHTML = '<div style="padding:14px;color:#94a3b8;font-size:12px">Escolha a turma para carregar os formados.</div>';
+    relDeclCertListaAtual = [];
+}
+
+function relDeclCertTurma() {
+    var projeto = document.getElementById('rel-decl-projeto').value;
+    var turma = document.getElementById('rel-decl-turma').value;
+    var listaEl = document.getElementById('rel-decl-formados');
+    var resumo = document.getElementById('rel-decl-resumo');
+    var err = document.getElementById('rel-decl-err');
+    if (err) err.style.display = 'none';
+
+    if (!turma) {
+        relDeclCertListaAtual = [];
+        if (listaEl) listaEl.innerHTML = '<div style="padding:14px;color:#94a3b8;font-size:12px">Escolha a turma para carregar os formados.</div>';
+        if (resumo) { resumo.style.display = 'none'; resumo.innerHTML = ''; }
+        return;
+    }
+
+    var lista = _relDeclCertFormados().filter(function (c) {
+        return _relDeclCertTurmaDe(c) === turma && (!projeto || _relDeclCertProjetoDe(c) === projeto);
+    }).sort(function (a, b) { return String(a.nome || '').localeCompare(String(b.nome || '')); });
+    relDeclCertListaAtual = lista;
+
+    var turmaObj = (turmas || []).find(function (t) { return t && String(t.nome) === turma && (!projeto || String(t.projeto) === projeto); });
+    var curso = (turmaObj && turmaObj.curso) || (lista[0] && lista[0].curso) || '';
+    var carga = (relDeclCertCursos && curso && relDeclCertCursos[curso] != null) ? relDeclCertCursos[curso] : ((turmaObj && turmaObj.cargaHoraria != null) ? turmaObj.cargaHoraria : ((lista[0] && lista[0].cargaHoraria != null) ? lista[0].cargaHoraria : ''));
+
+    if (resumo) {
+        resumo.innerHTML =
+            '<strong>Projeto:</strong> ' + escHTML(projeto || '---') +
+            ' &middot; <strong>Turma:</strong> ' + escHTML(turma) +
+            ' &middot; <strong>Formados:</strong> ' + lista.length +
+            '<br><strong>Curso:</strong> ' + escHTML(curso || '---') +
+            (carga !== '' && carga != null ? ' &middot; <strong>Carga horaria:</strong> ' + escHTML(carga) + ' h' : '') +
+            ((turmaObj && turmaObj.inicio) ? '<br><strong>Inicio da turma:</strong> ' + escHTML(_relDeclCertData(turmaObj.inicio)) +
+                (turmaObj.previsao ? ' &middot; <strong>Previsao final:</strong> ' + escHTML(_relDeclCertData(turmaObj.previsao)) : '') : '');
+        resumo.style.display = 'block';
+    }
+
+    if (!lista.length) {
+        if (listaEl) listaEl.innerHTML = '<div style="padding:14px;color:#94a3b8;font-size:12px">Nenhum formado encontrado nesta turma.</div>';
+        return;
+    }
+
+    if (listaEl) {
+        listaEl.innerHTML = lista.map(function (c, i) {
+            return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:12px">' +
+                '<input type="checkbox" value="' + i + '" checked style="width:16px;height:16px;accent-color:#0f766e">' +
+                '<span style="flex:1"><strong style="color:#0f172a">' + escHTML(c.nome || '---') + '</strong>' +
+                    '<span style="color:#64748b"> &middot; CPF ' + escHTML(_relDeclCertCpf(c.cpf)) + '</span></span>' +
+                '<span style="font-family:\'Courier New\',monospace;font-weight:700;color:#0f766e">' + escHTML(_relDeclCertCred(c)) + '</span>' +
+            '</label>';
+        }).join('');
+    }
+}
+
+function relDeclCertMarcar(marcar) {
+    document.querySelectorAll('#rel-decl-formados input[type=checkbox]').forEach(function (cb) { cb.checked = !!marcar; });
+}
+
+function _relDeclCertInstHeader(inst) {
+    var nome = inst.nomeFantasia || inst.razaoSocial || 'FARN - FORCA AUXILIAR DE RESGATE NACIONAL';
+    var linhas = [];
+    if (inst.razaoSocial && inst.nomeFantasia) linhas.push(inst.razaoSocial);
+    if (inst.cnpj) linhas.push('CNPJ: ' + inst.cnpj);
+    var end = [inst.endereco, inst.numero, inst.bairro].filter(Boolean).join(', ');
+    var cid = [inst.cidade, inst.estado].filter(Boolean).join('/');
+    var endLinha = [end, cid].filter(Boolean).join(' - ');
+    if (inst.cep) endLinha += (endLinha ? ' - CEP: ' : 'CEP: ') + inst.cep;
+    if (endLinha) linhas.push(endLinha);
+    var contato = [inst.fone ? 'Tel: ' + inst.fone : '', inst.email || ''].filter(Boolean).join(' | ');
+    if (contato) linhas.push(contato);
+
+    return '<div class="inst-head">' +
+        (inst.logo ? '<img src="' + inst.logo + '" alt="Logo da instituicao">' : '') +
+        '<div class="inst-nome">' + escHTML(nome) + '</div>' +
+        linhas.map(function (l, i) {
+            return '<div class="inst-linha' + (i === 0 && inst.razaoSocial && inst.nomeFantasia ? ' inst-razao' : '') + '">' + escHTML(l) + '</div>';
+        }).join('') +
+    '</div>';
+}
+
+function relDeclCertGerar() {
+    var err = document.getElementById('rel-decl-err');
+    function fail(msg) { if (err) { err.textContent = msg; err.style.display = 'block'; } }
+    if (err) err.style.display = 'none';
+
+    var projeto = document.getElementById('rel-decl-projeto').value;
+    var turma = document.getElementById('rel-decl-turma').value;
+    if (!projeto) { fail('Selecione o projeto.'); return; }
+    if (!turma) { fail('Selecione a turma.'); return; }
+
+    var indices = [];
+    document.querySelectorAll('#rel-decl-formados input[type=checkbox]:checked').forEach(function (cb) { indices.push(Number(cb.value)); });
+    if (!indices.length) { fail('Marque pelo menos um formado.'); return; }
+
+    var lista = indices.map(function (i) { return relDeclCertListaAtual[i]; }).filter(Boolean).sort(function (a, b) {
+        return String(a.nome || '').localeCompare(String(b.nome || ''));
+    });
+    if (!lista.length) { fail('Nenhum formado selecionado.'); return; }
+
+    var turmaObj = (turmas || []).find(function (t) { return t && String(t.nome) === turma && String(t.projeto) === projeto; });
+    var curso = (turmaObj && turmaObj.curso) || (lista[0] && lista[0].curso) || '';
+    var carga = (relDeclCertCursos && curso && relDeclCertCursos[curso] != null) ? relDeclCertCursos[curso] : ((turmaObj && turmaObj.cargaHoraria != null) ? turmaObj.cargaHoraria : '');
+
+    _relDeclCertCarregarAuxiliares();
+
+    var abrir = function (cargaFinal) {
+        relDeclCertImprimir(projeto, turma, curso, cargaFinal, relDeclCertInst || {}, lista);
+    };
+
+    // Se o mapa de cursos ainda nao chegou (modal aberto e gerado em seguida),
+    // busca a carga horaria do curso da turma antes de montar o documento.
+    var seguir = function (cargaFinal) {
+        if ((!relDeclCertInst || !relDeclCertInst.nomeFantasia) && typeof dbFirestore !== 'undefined' && dbFirestore) {
+            dbFirestore.collection('configuracoes').doc('instituicao').get().then(function (doc) {
+                if (doc.exists) relDeclCertInst = doc.data() || {};
+                abrir(cargaFinal);
+            }).catch(function () { abrir(cargaFinal); });
+        } else {
+            abrir(cargaFinal);
+        }
+    };
+
+    if ((carga === '' || carga == null) && curso && typeof dbFirestore !== 'undefined' && dbFirestore) {
+        dbFirestore.collection('cursos').where('nome', '==', curso).limit(1).get().then(function (snap) {
+            var achada = carga;
+            snap.forEach(function (doc) {
+                var d = doc.data() || {};
+                if (d.cargaHoraria != null) achada = d.cargaHoraria;
+            });
+            if (relDeclCertCursos && curso) relDeclCertCursos[curso] = achada;
+            seguir(achada);
+        }).catch(function () { seguir(carga); });
+    } else {
+        seguir(carga);
+    }
+}
+
+function relDeclCertImprimir(projeto, turma, curso, carga, inst, lista) {
+    var TITULO = 'RELATÓRIO DE DECLARAÇÃO DE CERTIFICAÇÃO DE TURMA SOBRE RESPONSABILIDADE LEGAL DA DIRETORIA DE ENSINO, RESPONSÁVEL PEDAGÓGICA E TÉCNICO (A) AVALIATIVO';
+    var DESCRICAO = 'DECLARADO E CERTIFICADO PARA OS DEVIDOS FINS QUE OS INDIVÍDUOS A BAIXO RELACIONADOS SÃO CONCLUINTES DO REFERIDO CURSO COM CARGA HORÁRIA, INÍCIO E FIM FIXADOS NO CERTIFICADO JUNTAMENTE COM SEU NOME, CPF E CREDENCIAL. ESTA DECLARAÇÃO SERÁ ASSINADA DIGITALMENTE PELO GOV.BR COM TRÊS ASSINATURAS DIGITAIS QUE SERÁ LANÇADA NOS CERTIFICADOS DIGITAIS.';
+
+    var linhas = lista.map(function (c, i) {
+        return '<tr>' +
+            '<td class="c">' + (i + 1) + '</td>' +
+            '<td class="nome">' + escHTML(String(c.nome || '---').toUpperCase()) + '</td>' +
+            '<td class="c">' + escHTML(_relDeclCertCpf(c.cpf)) + '</td>' +
+            '<td class="c cred">' + escHTML(_relDeclCertCred(c)) + '</td>' +
+            '<td class="c">' + escHTML(_relDeclCertInicio(c) || '---') + '</td>' +
+            '<td class="c">' + escHTML(_relDeclCertFim(c) || '---') + '</td>' +
+        '</tr>';
+    }).join('');
+
+    var agora = new Date();
+    var gerado = ('0' + agora.getDate()).slice(-2) + '/' + ('0' + (agora.getMonth() + 1)).slice(-2) + '/' + agora.getFullYear() +
+        ' as ' + ('0' + agora.getHours()).slice(-2) + ':' + ('0' + agora.getMinutes()).slice(-2);
+
+    var css =
+        '@page{size:A4 portrait;margin:14mm 12mm}' +
+        '*{box-sizing:border-box}' +
+        'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;padding:18px;font-size:11px;background:#f1f5f9}' +
+        '.folha{background:#fff;padding:18px 20px;max-width:210mm;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.18)}' +
+        '.inst-head{text-align:center;border-bottom:2.5px solid #0f766e;padding-bottom:8px;margin-bottom:14px}' +
+        '.inst-head img{max-height:62px;margin:0 auto 4px;display:block}' +
+        '.inst-nome{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#0f172a}' +
+        '.inst-razao{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.3px}' +
+        '.inst-linha{font-size:9.5px;color:#475569;line-height:1.5}' +
+        '.doc-title{text-align:center;font-size:12px;font-weight:800;text-transform:uppercase;line-height:1.55;border:1.5px solid #0f766e;border-radius:4px;padding:8px 10px;margin:0 0 12px;color:#0f172a}' +
+        '.doc-desc{font-size:10.5px;line-height:1.65;text-align:justify;margin:0 0 12px}' +
+        '.curso-box{display:flex;flex-wrap:wrap;gap:4px 18px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:6px;padding:8px 10px;font-size:10.5px;margin-bottom:12px}' +
+        '.curso-box b{color:#0f766e}' +
+        'table{width:100%;border-collapse:collapse;margin-bottom:16px}' +
+        'th{background:#0f766e;color:#fff;font-size:8.5px;text-transform:uppercase;letter-spacing:.4px;padding:6px;text-align:left}' +
+        'td{border-bottom:1px solid #e5e7eb;padding:6px;font-size:9.5px}' +
+        'td.c{text-align:center}' +
+        'td.nome{font-weight:700;color:#0f172a}' +
+        'td.cred{font-family:"Courier New",monospace;font-weight:700;color:#0f766e}' +
+        'tr:nth-child(even) td{background:#f8fafc}' +
+        '.signs{display:flex;gap:18px;margin-top:28px;page-break-inside:avoid}' +
+        '.sign{flex:1;text-align:center}' +
+        '.sign .linha{border-top:1px solid #111;margin-bottom:5px;height:36px}' +
+        '.sign .cargo{font-size:8.5px;font-weight:800;text-transform:uppercase;color:#0f172a;line-height:1.4}' +
+        '.sign .gov{font-size:7.5px;color:#64748b;margin-top:2px}' +
+        '.foot{margin-top:20px;text-align:center;font-size:8px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:6px}' +
+        '.print-btn{display:block;margin:16px auto 0;padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}' +
+        '@media print{body{background:#fff;padding:0}.folha{box-shadow:none;max-width:none;padding:0}.print-btn{display:none}}';
+
+    var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+        '<title>Relatorio de Certificacao - ' + escHTML(turma) + '</title>' +
+        '<style>' + css + '</style></head><body>' +
+        '<div class="folha">' +
+            _relDeclCertInstHeader(inst) +
+            '<div class="doc-title">' + TITULO + '</div>' +
+            '<p class="doc-desc">' + DESCRICAO + '</p>' +
+            '<div class="curso-box">' +
+                '<span><b>Projeto:</b> ' + escHTML(projeto || '---') + '</span>' +
+                '<span><b>Turma:</b> ' + escHTML(turma || '---') + '</span>' +
+                '<span><b>Curso:</b> ' + escHTML(curso || '---') + '</span>' +
+                '<span><b>Carga horaria:</b> ' + escHTML(carga !== '' && carga != null ? carga + ' h' : '---') + '</span>' +
+                '<span><b>Concluintes:</b> ' + lista.length + '</span>' +
+            '</div>' +
+            '<table><thead><tr>' +
+                '<th style="width:5%">#</th>' +
+                '<th style="width:31%">Nome</th>' +
+                '<th style="width:16%">CPF</th>' +
+                '<th style="width:20%">Credencial</th>' +
+                '<th style="width:14%">Inicio</th>' +
+                '<th style="width:14%">Fim</th>' +
+            '</tr></thead><tbody>' + linhas + '</tbody></table>' +
+            '<div class="signs">' +
+                '<div class="sign"><div class="linha"></div><div class="cargo">Diretoria de Ensino</div><div class="gov">Assinatura digital Gov.br</div></div>' +
+                '<div class="sign"><div class="linha"></div><div class="cargo">Responsável Pedagógica</div><div class="gov">Assinatura digital Gov.br</div></div>' +
+                '<div class="sign"><div class="linha"></div><div class="cargo">Técnico (a) Avaliativo</div><div class="gov">Assinatura digital Gov.br</div></div>' +
+            '</div>' +
+            '<div class="foot">Documento gerado em ' + gerado + ' &middot; ' + escHTML((inst && (inst.nomeFantasia || inst.razaoSocial)) || 'FARN') + '</div>' +
+        '</div>' +
+        '<button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>' +
+        '</body></html>';
+
+    var w = window.open('', '_blank');
+    if (!w) { alert('Permita pop-ups para gerar o relatorio.'); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+}
+
 function relatorioUniforme() {
     const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo');
     if (!aprovados.length) { alert('Nenhum aluno ativo para gerar relatorio.'); return; }
