@@ -230,7 +230,9 @@
         .pf-cert-decl-conteudo { position:absolute; left:10%; right:10%; top:35%; bottom:23%; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:8px; gap:1.8cqw; text-align:center; font-size:12px; font-size:1.51cqw; }
         .pf-cert-declaracao-texto { font-size:1em; line-height:1.6; font-weight:600; white-space:pre-wrap; word-break:break-word; max-width:100%; }
         .pf-cert-declaracao-inst { font-size:.92em; line-height:1.7; font-weight:600; white-space:pre-wrap; word-break:break-word; text-align:center; max-width:100%; }
-        .pf-cert-folha img.pf-cert-declaracao-qr { position:absolute; right:2.5%; bottom:15%; width:9.5%; height:auto; object-fit:contain; background:#fff; padding:.45cqw; border-radius:.6cqw; border:1px solid rgba(15,23,42,.12); }
+        img.pf-cert-declaracao-qr { position:absolute; right:5%; bottom:10%; width:9.5%; height:auto; object-fit:contain; background:#fff; padding:.45cqw; border-radius:.6cqw; border:1px solid rgba(15,23,42,.12); }
+        /* Credencial escrita na vertical (girada 90 graus) logo acima do QR Code */
+        .pf-cert-declaracao-cred { position:absolute; right:2.5%; bottom:43%; writing-mode:vertical-rl; transform:rotate(180deg); font-size:1.5cqw; font-weight:800; letter-spacing:.14em; line-height:1; color:#0f172a; white-space:nowrap; }
         .pf-cert-modal-acoes { display:flex; gap:10px; flex-wrap:wrap; padding:0 20px 22px; }
         .pf-cert-btn { display:inline-flex; align-items:center; gap:7px; padding:11px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid transparent; text-decoration:none; transition:transform .15s,box-shadow .15s; }
         .pf-cert-btn:active { transform:translateY(1px); }
@@ -238,6 +240,88 @@
         .pf-cert-btn-verde:hover { box-shadow:0 7px 20px rgba(22,163,74,.42); }
         .pf-cert-btn-neutro { background:#f8fafc; border-color:#e2e8f0; color:#475569; }
         .pf-cert-btn-neutro:hover { background:#f1f5f9; }
+
+        /* ===== VISUALIZADOR DO CERTIFICADO EM TELA CHEIA =====
+           Uma folha por vez, do tamanho que a tela permitir. A frente abre
+           primeiro; as setas levam ao verso e trazem de volta. */
+        body.pfv-aberto { overflow:hidden; }
+        .pfv { display:none; position:fixed; inset:0; z-index:10050; flex-direction:column; overflow:hidden; background:#04140c; color:#ecfdf5; font-family:Inter,Arial,sans-serif; }
+        .pfv.active { display:flex; }
+        .pfv::-webkit-scrollbar { width:8px; }
+        .pfv::-webkit-scrollbar-track { background:#062018; }
+        .pfv::-webkit-scrollbar-thumb { background:rgba(22,163,74,.5); border-radius:10px; }
+        .pfv-bg { position:absolute; inset:0; pointer-events:none; background:
+            radial-gradient(900px 620px at 14% 8%, rgba(22,163,74,.26), transparent 62%),
+            radial-gradient(760px 560px at 88% 92%, rgba(13,148,136,.24), transparent 64%),
+            radial-gradient(620px 420px at 72% 12%, rgba(212,175,55,.11), transparent 66%),
+            linear-gradient(158deg,#062018 0%,#04140c 46%,#03151c 100%);
+            animation:pfvAurora 22s ease-in-out infinite alternate; }
+        .pfv-bg::after { content:''; position:absolute; inset:0; opacity:.5; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E"); }
+        @keyframes pfvAurora { from { transform:translate3d(0,0,0) scale(1); } to { transform:translate3d(0,-14px,0) scale(1.05); } }
+        .pfv-topo { position:relative; z-index:3; flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid rgba(134,239,172,.16); background:linear-gradient(180deg,rgba(4,20,12,.86),rgba(4,20,12,.42)); backdrop-filter:blur(10px); }
+        .pfv-marca { flex:0 0 42px; width:42px; height:42px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fde68a; background:linear-gradient(140deg,rgba(212,175,55,.26),rgba(22,163,74,.2)); border:1px solid rgba(253,230,138,.34); box-shadow:0 6px 20px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.16); }
+        .pfv-titulos { flex:1; min-width:0; }
+        .pfv-titulos h3 { margin:0; font-size:15px; font-weight:800; letter-spacing:.2px; line-height:1.35; color:#f0fdf4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pfv-sub { margin-top:3px; font-size:11px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:#6ee7b7; display:flex; align-items:center; gap:7px; }
+        .pfv-sub b { color:#fde68a; font-weight:800; }
+        .pfv-acoes { flex:0 0 auto; display:flex; align-items:center; gap:9px; }
+        .pfv-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 17px; border-radius:11px; font-size:12px; font-weight:800; letter-spacing:.6px; cursor:pointer; border:1px solid transparent; font-family:inherit; transition:transform .16s, box-shadow .16s, background .16s, border-color .16s; }
+        .pfv-btn:active { transform:translateY(1px) scale(.985); }
+        .pfv-btn-print { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 6px 20px rgba(22,163,74,.36); }
+        .pfv-btn-print:hover { box-shadow:0 10px 28px rgba(22,163,74,.5); transform:translateY(-1px); }
+        .pfv-btn-fechar { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.2); color:#d1fae5; }
+        .pfv-btn-fechar:hover { background:rgba(248,113,113,.18); border-color:rgba(252,165,165,.5); color:#fee2e2; }
+        .pfv-palco { position:relative; z-index:2; flex:1 1 auto; min-height:0; display:flex; align-items:center; gap:16px; padding:16px 22px 6px; }
+        .pfv-seta { flex:0 0 54px; width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; color:#d1fae5; background:rgba(255,255,255,.07); border:1px solid rgba(134,239,172,.3); backdrop-filter:blur(8px); box-shadow:0 8px 26px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14); transition:transform .18s, background .18s, box-shadow .18s, color .18s, opacity .18s; }
+        .pfv-seta:hover:not(:disabled) { background:linear-gradient(135deg,rgba(22,163,74,.5),rgba(13,148,136,.42)); color:#fff; border-color:rgba(134,239,172,.72); box-shadow:0 12px 34px rgba(22,163,74,.42); transform:scale(1.09); }
+        .pfv-seta:active:not(:disabled) { transform:scale(.94); }
+        .pfv-seta:disabled { opacity:.2; cursor:not-allowed; }
+        .pfv-seta:focus-visible, .pfv-btn:focus-visible, .pfv-face:focus-visible { outline:2px solid #fde68a; outline-offset:3px; }
+        .pfv-moldura { flex:1 1 auto; min-width:0; height:100%; display:flex; align-items:center; justify-content:center; }
+        .pfv-folha { position:relative; flex:0 0 auto; container-type:inline-size; background:#fff; overflow:hidden; border-radius:2px; box-shadow:0 34px 90px rgba(0,0,0,.66), 0 4px 16px rgba(0,0,0,.4), 0 0 0 1px rgba(253,230,138,.26); }
+        .pfv-folha img.pfv-papel { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; }
+        .pfv-vazio { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#94a3b8; background:linear-gradient(135deg,#f8fafc,#f0fdf4); font-size:13px; font-weight:700; }
+        .pfv-vazio i { font-size:38px; color:#cbd5e1; }
+        .pfv-folha.pfv-entra-dir { animation:pfvEntraDir .3s cubic-bezier(.22,.75,.28,1) both; }
+        .pfv-folha.pfv-entra-esq { animation:pfvEntraEsq .3s cubic-bezier(.22,.75,.28,1) both; }
+        @keyframes pfvEntraDir { from { opacity:0; transform:translateX(30px) scale(.985); } to { opacity:1; transform:none; } }
+        @keyframes pfvEntraEsq { from { opacity:0; transform:translateX(-30px) scale(.985); } to { opacity:1; transform:none; } }
+        .pfv-rodape { position:relative; z-index:3; flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; padding:10px 20px 16px; }
+        .pfv-faces { display:flex; align-items:center; gap:7px; padding:5px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(134,239,172,.2); }
+        .pfv-face { display:inline-flex; align-items:center; gap:7px; padding:8px 18px; border-radius:999px; border:none; background:transparent; color:#86efac; font-family:inherit; font-size:11px; font-weight:800; letter-spacing:.9px; cursor:pointer; transition:background .18s, color .18s, box-shadow .18s; }
+        .pfv-face:hover { color:#f0fdf4; background:rgba(255,255,255,.07); }
+        .pfv-face.ativa { background:linear-gradient(135deg,#16a34a,#0f766e); color:#fff; box-shadow:0 5px 16px rgba(22,163,74,.42); }
+        .pfv-face:disabled { opacity:.35; cursor:not-allowed; }
+        .pfv-dica { font-size:11px; color:rgba(167,243,208,.62); display:flex; align-items:center; gap:7px; }
+        .pfv-dica kbd { font-family:inherit; font-size:10px; font-weight:800; padding:2px 7px; border-radius:5px; background:rgba(255,255,255,.09); border:1px solid rgba(134,239,172,.24); color:#a7f3d0; }
+        @media(max-width:700px) {
+            .pfv-topo { padding:11px 13px; gap:10px; flex-wrap:wrap; }
+            .pfv-marca { flex:0 0 36px; width:36px; height:36px; border-radius:11px; font-size:15px; }
+            .pfv-titulos h3 { font-size:13px; white-space:normal; }
+            .pfv-acoes { width:100%; }
+            .pfv-btn { flex:1; justify-content:center; padding:11px 12px; }
+            .pfv-palco { gap:7px; padding:10px 9px 4px; }
+            .pfv-seta { flex:0 0 40px; width:40px; height:40px; font-size:15px; }
+            .pfv-rodape { gap:9px; padding:8px 12px 13px; }
+            .pfv-dica { display:none; }
+            .pfv-face { padding:8px 15px; }
+        }
+        @media(max-height:560px) {
+            .pfv-topo { padding:8px 14px; }
+            .pfv-marca { flex:0 0 32px; width:32px; height:32px; font-size:14px; }
+            .pfv-btn { padding:8px 13px; }
+            .pfv-palco { padding:8px 16px 2px; }
+            .pfv-seta { flex:0 0 42px; width:42px; height:42px; font-size:16px; }
+            .pfv-rodape { padding:6px 14px 9px; }
+            .pfv-dica { display:none; }
+        }
+        @media(prefers-reduced-motion:reduce) {
+            .pfv-bg { animation:none; }
+            .pfv-folha.pfv-entra-dir, .pfv-folha.pfv-entra-esq { animation:none; }
+        }
+        @media print {
+            body.pfv-aberto .pfv { display:none !important; }
+        }
         @media(max-width:600px) {
             .pf-cert-espera { padding:40px 16px 34px; border-radius:16px; }
             .pf-cert-espera h3 { font-size:17px; }
@@ -578,6 +662,7 @@
                                         <div id="pf-cert-modal-instituicao" class="pf-cert-declaracao-inst"></div>
                                     </div>
                                     <img id="pf-cert-modal-qr" class="pf-cert-declaracao-qr" alt="QR Code" style="display:none">
+                                    <div id="pf-cert-modal-cred" class="pf-cert-declaracao-cred" style="display:none"></div>
                                 </div>
                                 <div id="pf-cert-modal-vazia" class="pf-cert-folha-vazia" style="display:none"><i class="fa-solid fa-file-image"></i></div>
                             </div>
@@ -592,11 +677,49 @@
                 </div>
             </div>
             <div class="pf-cert-modal-acoes">
-                <button type="button" id="pf-cert-modal-baixar" class="pf-cert-btn pf-cert-btn-verde" onclick="pfVisualizarCertificadoPapel()"><i class="fa-solid fa-eye"></i> VISUALIZAR O PAPEL JUNTO COM A DECLARAÇÃO</button>
+                <button type="button" id="pf-cert-modal-baixar" class="pf-cert-btn pf-cert-btn-verde" onclick="pfVisualizarCertificadoPapel()"><i class="fa-solid fa-eye"></i> VISUALIZAR</button>
                 <button type="button" id="pf-cert-modal-ficha" class="pf-cert-btn pf-cert-btn-verde" style="background:linear-gradient(135deg,#0f766e,#115e59);box-shadow:0 4px 14px rgba(15,118,110,.3)" onclick="pfAbrirFichaGeralCert()"><i class="fa-solid fa-file-lines"></i> VISUALIZAR FICHA GERAL</button>
                 <button type="button" class="pf-cert-btn pf-cert-btn-neutro" onclick="pfFecharCertificado()"><i class="fa-solid fa-xmark"></i> Fechar</button>
             </div>
         </div>
+    </div>
+
+    <!-- VISUALIZADOR DO CERTIFICADO EM TELA CHEIA (frente / verso) -->
+    <div id="pf-cert-viewer" class="pfv" role="dialog" aria-modal="true" aria-label="Certificado em tela cheia">
+        <div class="pfv-bg"></div>
+        <header class="pfv-topo">
+            <div class="pfv-marca"><i class="fa-solid fa-certificate"></i></div>
+            <div class="pfv-titulos">
+                <h3 id="pfv-titulo">Certificado</h3>
+                <div class="pfv-sub"><span id="pfv-face-nome">Frente</span> <b id="pfv-face-pos">1 de 1</b></div>
+            </div>
+            <div class="pfv-acoes">
+                <button type="button" class="pfv-btn pfv-btn-print" onclick="pfImprimirCertificado()"><i class="fa-solid fa-print"></i> IMPRIMIR</button>
+                <button type="button" class="pfv-btn pfv-btn-fechar" onclick="pfFecharVisualizador()" title="Fechar (Esc)"><i class="fa-solid fa-xmark"></i> FECHAR</button>
+            </div>
+        </header>
+        <div class="pfv-palco">
+            <button type="button" class="pfv-seta" id="pfv-anterior" onclick="pfCertViewIr(-1)" title="Voltar para a frente" aria-label="Voltar para a frente"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="pfv-moldura" id="pfv-moldura">
+                <div class="pfv-folha" id="pfv-folha">
+                    <img id="pfv-img" class="pfv-papel" src="" alt="Folha do certificado" style="display:none">
+                    <div id="pfv-decl" class="pf-cert-declaracao-overlay" style="display:none">
+                        <div class="pf-cert-decl-conteudo">
+                            <div class="pf-cert-declaracao-texto" id="pfv-decl-texto"></div>
+                            <div class="pf-cert-declaracao-inst" id="pfv-decl-inst"></div>
+                        </div>
+                        <img id="pfv-decl-qr" class="pf-cert-declaracao-qr" src="" alt="QR Code da credencial" style="display:none">
+                        <div id="pfv-decl-cred" class="pf-cert-declaracao-cred" style="display:none"></div>
+                    </div>
+                    <div class="pfv-vazio" id="pfv-vazio" style="display:none"><i class="fa-solid fa-file-image"></i><span>Sem imagem nesta face</span></div>
+                </div>
+            </div>
+            <button type="button" class="pfv-seta" id="pfv-proxima" onclick="pfCertViewIr(1)" title="Ver o verso" aria-label="Ver o verso"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <footer class="pfv-rodape">
+            <div class="pfv-faces" id="pfv-faces"></div>
+            <div class="pfv-dica"><kbd>&larr;</kbd><kbd>&r;</kbd> trocar face <span style="opacity:.5">·</span> <kbd>Esc</kbd> fechar</div>
+        </footer>
     </div>
 
     <!-- MODAL EDITAR DADOS -->
@@ -1071,11 +1194,16 @@
             if (qrUrl) { qrEl.src = qrUrl; qrEl.style.display = 'block'; }
             else { qrEl.removeAttribute('src'); qrEl.style.display = 'none'; }
         }
+        var credEl = document.getElementById('pf-cert-modal-cred');
+        if (credEl) {
+            if (credQR) { credEl.textContent = credQR; credEl.style.display = 'block'; }
+            else { credEl.textContent = ''; credEl.style.display = 'none'; }
+        }
 
         var titulo = document.getElementById('pf-cert-modal-titulo');
         if (titulo) titulo.textContent = r.curso || 'Certificado';
 
-        pfCertAtual = { papel: r.papel || '', papelVerso: verso || '', versoPaisagem: !!versoPaisagem, declaracao: declaracaoSub || '', instituicao: instStr || '', paisagem: !!paisagem, curso: r.curso || 'Certificado', cursoNome: r.curso || '', cursoId: r.cursoId || '', qrUrl: qrUrl || '' };
+        pfCertAtual = { papel: r.papel || '', papelVerso: verso || '', versoPaisagem: !!versoPaisagem, declaracao: declaracaoSub || '', instituicao: instStr || '', paisagem: !!paisagem, curso: r.curso || 'Certificado', cursoNome: r.curso || '', cursoId: r.cursoId || '', qrUrl: qrUrl || '', credencial: credQR || '' };
         var btnVer = document.getElementById('pf-cert-modal-baixar');
         if (btnVer) {
             btnVer.style.display = (r.papel || declaracaoSub || verso) ? 'inline-flex' : 'none';
@@ -1091,9 +1219,12 @@
     }
 
     /* Reduz a fonte da declaracao o necessario para ela caber entre o topo e o
-       QR Code, mantendo tudo proporcional ao tamanho da folha (cqw). */
-    function pfCertAjustarDeclaracao() {
-        var overlay = document.getElementById('pf-cert-modal-declaracao');
+       QR Code, mantendo tudo proporcional ao tamanho da folha (cqw).
+       O argumento e o id do overlay: o visualizador em tela cheia tem o seu.
+       Quando vem do requestAnimationFrame chega um timestamp, nao um id. */
+    function pfCertAjustarDeclaracao(overlayId) {
+        var id = (typeof overlayId === 'string' && overlayId) ? overlayId : 'pf-cert-modal-declaracao';
+        var overlay = document.getElementById(id);
         if (!overlay || overlay.style.display === 'none') return;
         var conteudo = overlay.querySelector('.pf-cert-decl-conteudo');
         if (!conteudo) return;
@@ -1108,6 +1239,7 @@
     window.addEventListener('resize', function () {
         var modal = document.getElementById('pf-cert-modal');
         if (modal && modal.classList.contains('active')) pfCertAjustarDeclaracao();
+        pfCertViewMedir();
     });
 
     async function pfFichaGeralFoto() {
@@ -1174,9 +1306,158 @@
         }
     }
 
+    /* ===== VISUALIZADOR EM TELA CHEIA =====
+       A frente abre primeiro, ocupando a tela toda. As setas (e o teclado)
+       levam ao verso e trazem de volta; Fechar devolve ao modal do certificado. */
+    var pfCertViewFaces = [];
+    var pfCertViewFace = 0;
+
     function pfVisualizarCertificadoPapel() {
         var c = pfCertAtual;
         if (!c || (!c.papel && !c.declaracao && !c.papelVerso)) { alert('Nenhum certificado para visualizar.'); return; }
+        pfCertViewFaces = [{ rotulo: 'FRENTE', papel: c.papel || '', paisagem: !!c.paisagem, frente: true }];
+        if (c.papelVerso) pfCertViewFaces.push({ rotulo: 'VERSO', papel: c.papelVerso, paisagem: !!c.versoPaisagem, frente: false });
+        pfCertViewFace = 0;
+        var v = document.getElementById('pf-cert-viewer');
+        if (!v) return;
+        var titulo = document.getElementById('pfv-titulo');
+        if (titulo) titulo.textContent = c.curso || 'Certificado';
+        v.classList.add('active');
+        document.body.classList.add('pfv-aberto');
+        pfCertViewPintar(0);
+        requestAnimationFrame(pfCertViewMedir);
+        var prox = document.getElementById('pfv-proxima');
+        if (prox && pfCertViewFaces.length > 1) prox.focus();
+    }
+
+    function pfFecharVisualizador() {
+        var v = document.getElementById('pf-cert-viewer');
+        if (v) v.classList.remove('active');
+        document.body.classList.remove('pfv-aberto');
+        var folha = document.getElementById('pfv-folha');
+        if (folha) folha.classList.remove('pfv-entra-dir', 'pfv-entra-esq');
+        var btn = document.getElementById('pf-cert-modal-baixar');
+        if (btn) btn.focus();
+    }
+
+    function pfCertViewIr(delta) {
+        var alvo = pfCertViewFace + delta;
+        if (alvo < 0 || alvo >= pfCertViewFaces.length) return;
+        pfCertViewPintar(delta, alvo);
+    }
+
+    function pfCertViewFaceIr(idx) {
+        if (idx < 0 || idx >= pfCertViewFaces.length || idx === pfCertViewFace) return;
+        pfCertViewPintar(idx > pfCertViewFace ? 1 : -1, idx);
+    }
+
+    function pfCertViewPintar(delta, idx) {
+        if (typeof idx === 'number') pfCertViewFace = idx;
+        var f = pfCertViewFaces[pfCertViewFace];
+        if (!f) return;
+        var c = pfCertAtual || {};
+        var total = pfCertViewFaces.length;
+
+        var nome = document.getElementById('pfv-face-nome');
+        if (nome) nome.textContent = f.frente ? 'Frente' : 'Verso';
+        var pos = document.getElementById('pfv-face-pos');
+        if (pos) pos.textContent = (pfCertViewFace + 1) + ' de ' + total;
+
+        var ant = document.getElementById('pfv-anterior');
+        var prox = document.getElementById('pfv-proxima');
+        if (ant) { ant.disabled = pfCertViewFace === 0; ant.style.visibility = total > 1 ? 'visible' : 'hidden'; }
+        if (prox) { prox.disabled = pfCertViewFace === total - 1; prox.style.visibility = total > 1 ? 'visible' : 'hidden'; }
+
+        var faces = document.getElementById('pfv-faces');
+        if (faces) {
+            faces.innerHTML = '';
+            pfCertViewFaces.forEach(function (face, i) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'pfv-face' + (i === pfCertViewFace ? ' ativa' : '');
+                b.setAttribute('aria-current', i === pfCertViewFace ? 'true' : 'false');
+                b.innerHTML = '<i class="fa-solid ' + (face.frente ? 'fa-file-lines' : 'fa-rotate') + '"></i>' + face.rotulo;
+                b.addEventListener('click', function () { pfCertViewFaceIr(i); });
+                faces.appendChild(b);
+            });
+        }
+
+        var img = document.getElementById('pfv-img');
+        var vazio = document.getElementById('pfv-vazio');
+        if (img) {
+            if (f.papel) { img.src = f.papel; img.style.display = 'block'; img.alt = f.frente ? 'Frente do certificado' : 'Verso do certificado'; }
+            else { img.removeAttribute('src'); img.style.display = 'none'; }
+        }
+        if (vazio) vazio.style.display = f.papel ? 'none' : 'flex';
+
+        /* A declaracao, a instituicao e o QR so existem na frente: o verso e
+           a arte enviada pelo administrador, sem composicao por cima. */
+        var decl = document.getElementById('pfv-decl');
+        if (decl) {
+            var tem = f.frente && (c.declaracao || c.instituicao || c.qrUrl);
+            decl.style.display = tem ? 'block' : 'none';
+            if (tem) {
+                var tx = document.getElementById('pfv-decl-texto');
+                if (tx) tx.textContent = c.declaracao || '';
+                var ins = document.getElementById('pfv-decl-inst');
+                if (ins) ins.textContent = c.instituicao || '';
+                var qr = document.getElementById('pfv-decl-qr');
+                if (qr) {
+                    if (c.qrUrl) { qr.src = c.qrUrl; qr.style.display = 'block'; }
+                    else { qr.removeAttribute('src'); qr.style.display = 'none'; }
+                }
+                var cred = document.getElementById('pfv-decl-cred');
+                if (cred) {
+                    if (c.credencial) { cred.textContent = c.credencial; cred.style.display = 'block'; }
+                    else { cred.textContent = ''; cred.style.display = 'none'; }
+                }
+            }
+        }
+
+        var folha = document.getElementById('pfv-folha');
+        if (folha && delta) {
+            folha.classList.remove('pfv-entra-dir', 'pfv-entra-esq');
+            void folha.offsetWidth;
+            folha.classList.add(delta > 0 ? 'pfv-entra-dir' : 'pfv-entra-esq');
+        }
+        pfCertViewMedir();
+    }
+
+    /* A folha recebe o maior tamanho que cabe no palco sem distorcer o A4.
+       Medido em JS porque aspect-ratio com max-width/max-height nos dois eixos
+       entorta a folha quando a tela e mais larga que alta (e vice-versa). */
+    function pfCertViewMedir() {
+        var v = document.getElementById('pf-cert-viewer');
+        if (!v || !v.classList.contains('active')) return;
+        var moldura = document.getElementById('pfv-moldura');
+        var folha = document.getElementById('pfv-folha');
+        var f = pfCertViewFaces[pfCertViewFace];
+        if (!moldura || !folha || !f) return;
+        var w = f.paisagem ? 2000 : 1414;
+        var h = f.paisagem ? 1414 : 2000;
+        var aw = moldura.clientWidth, ah = moldura.clientHeight;
+        if (!aw || !ah) return;
+        var sw = aw, sh = sw * h / w;
+        if (sh > ah) { sh = ah; sw = sh * w / h; }
+        folha.style.width = Math.max(1, Math.round(sw)) + 'px';
+        folha.style.height = Math.max(1, Math.round(sh)) + 'px';
+        /* Síncrono: ler scrollHeight já força o layout com o novo tamanho, e
+           requestAnimationFrame fica suspenso quando a aba está oculta. */
+        pfCertAjustarDeclaracao('pfv-decl');
+    }
+
+    function pfImprimirCertificado() {
+        var c = pfCertAtual;
+        if (!c || (!c.papel && !c.declaracao && !c.papelVerso)) { alert('Nenhum certificado para imprimir.'); return; }
+        var win = window.open('', '_blank');
+        if (!win) { alert('Permita pop-ups para imprimir o certificado.'); return; }
+        win.document.open();
+        win.document.write(pfCertDocumentoImpressao(true));
+        win.document.close();
+    }
+
+    function pfCertDocumentoImpressao(autoPrint) {
+        var c = pfCertAtual;
         var frenteW = c.paisagem ? 2000 : 1414, frenteH = c.paisagem ? 1414 : 2000;
         var versoW = c.versoPaisagem ? 2000 : 1414, versoH = c.versoPaisagem ? 1414 : 2000;
         var safeText = pfCertEsc(c.declaracao || '');
@@ -1187,22 +1468,19 @@
             : '<div style="position:absolute;inset:0;background:#fff"></div>';
         var instHtml = safeInst ? '<div class="decl-inst">' + safeInst + '</div>' : '';
         var qrHtml = c.qrUrl ? '<img class="decl-qr" src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code">' : '';
-        var declHtml = (safeText || safeInst || c.qrUrl)
+        var credHtml = c.credencial ? '<div class="decl-cred">' + pfCertEsc(c.credencial) + '</div>' : '';
+        var declHtml = (safeText || safeInst || c.qrUrl || c.credencial)
             ? '<div class="decl"><div class="decl-conteudo">' +
                 (safeText ? '<div class="decl-texto">' + safeText + '</div>' : '') + instHtml +
-              '</div>' + qrHtml + '</div>'
+              '</div>' + qrHtml + credHtml + '</div>'
             : '';
-        // Com verso, cada folha ocupa menos altura na tela para caber frente e verso juntos.
-        var vhFit = c.papelVerso ? 42 : 82;
-        var frenteLargura = 'min(92vw, calc(' + vhFit + 'vh * ' + (frenteW / frenteH).toFixed(4) + '))';
-        var versoLargura = 'min(92vw, calc(' + vhFit + 'vh * ' + (versoW / versoH).toFixed(4) + '))';
         var frenteHtml = '<div class="pagina"><div class="rotulo">FRENTE</div>' +
-            '<div class="folha ' + (c.paisagem ? 'paisagem' : 'retrato') + '" style="width:' + frenteLargura + ';aspect-ratio:' + frenteW + ' / ' + frenteH + '">' +
+            '<div class="folha ' + (c.paisagem ? 'paisagem' : 'retrato') + '" style="aspect-ratio:' + frenteW + ' / ' + frenteH + '">' +
                 imgHtml + declHtml +
             '</div></div>';
         var versoHtml = c.papelVerso
             ? '<div class="pagina"><div class="rotulo">VERSO</div>' +
-                '<div class="folha ' + (c.versoPaisagem ? 'paisagem' : 'retrato') + '" style="width:' + versoLargura + ';aspect-ratio:' + versoW + ' / ' + versoH + '">' +
+                '<div class="folha ' + (c.versoPaisagem ? 'paisagem' : 'retrato') + '" style="aspect-ratio:' + versoW + ' / ' + versoH + '">' +
                     '<img src="' + pfCertEsc(c.papelVerso) + '" alt="Verso do certificado" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block">' +
                 '</div></div>'
             : '';
@@ -1211,42 +1489,50 @@
             '<style>' +
                 'html,body{margin:0;background:#0f172a;min-height:100%;font-family:Inter,Arial,sans-serif}' +
                 '.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;gap:20px}' +
-                '.pagina{display:flex;flex-direction:column;align-items:center;gap:8px}' +
+                '.pagina{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}' +
                 '.rotulo{color:#86efac;font-size:11px;font-weight:800;letter-spacing:1.2px}' +
-                '.folha{position:relative;container-type:inline-size;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}' +
+                '.folha{position:relative;container-type:inline-size;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;width:min(92vw,794px)}' +
                 '.decl{position:absolute;inset:0;pointer-events:none;color:#0f172a;text-shadow:0 1px 0 rgba(255,255,255,.35)}' +
                 '.decl-conteudo{position:absolute;left:10%;right:10%;top:35%;bottom:23%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1.8cqw;text-align:center;font-size:12px;font-size:1.51cqw}' +
                 '.decl-texto{font-size:1em;line-height:1.6;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
                 '.decl-inst{font-size:.92em;line-height:1.7;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
-                '.decl-qr{position:absolute;right:2.5%;bottom:15%;width:9.5%;height:auto;background:#fff;padding:.45cqw;border-radius:.6cqw;border:1px solid rgba(15,23,42,.12)}' +
-                '.bar{position:fixed;top:10px;right:10px;z-index:5}' +
-                '.bar button{background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}' +
+                '.decl-qr{position:absolute;right:5%;bottom:10%;width:9.5%;height:auto;background:#fff;padding:.45cqw;border-radius:.6cqw;border:1px solid rgba(15,23,42,.12)}' +
+                '.decl-cred{position:absolute;right:2.5%;bottom:43%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:1.5cqw;font-weight:800;letter-spacing:.14em;line-height:1;color:#0f172a;white-space:nowrap}' +
+                '.bar{position:fixed;top:10px;right:10px;z-index:5;display:flex;gap:8px}' +
+                '.bar button{background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:inherit}' +
+                '.bar button.fechar{background:#334155}' +
                 '@page{size:A4;margin:0}' +
                 '@page retrato{size:A4 portrait;margin:0}' +
                 '@page paisagem{size:A4 landscape;margin:0}' +
                 '@media print{body{background:#fff}.wrap{padding:0;min-height:auto;display:block}.bar,.rotulo{display:none}' +
-                '.pagina{display:block}.folha{width:100%!important;max-width:none;box-shadow:none;page-break-after:always;break-after:page}' +
+                '.pagina{display:block;width:auto}.folha{width:100%!important;max-width:none;box-shadow:none;page-break-after:always;break-after:page}' +
                 '.folha.retrato{page:retrato}.folha.paisagem{page:paisagem}' +
                 '.pagina:last-child .folha{page-break-after:auto;break-after:auto}}' +
             '</style></head><body>' +
-            '<div class="bar"><button onclick="window.print()">Imprimir</button></div>' +
+            '<div class="bar"><button onclick="window.print()">Imprimir</button><button class="fechar" onclick="window.close()">Fechar</button></div>' +
             '<div class="wrap">' + frenteHtml + versoHtml + '</div>' +
-            '<script>(function(){var c=document.querySelector(".decl-conteudo");if(!c)return;var f=1.51,g=0;c.style.fontSize=f+"cqw";while(c.scrollHeight>c.clientHeight+1&&f>0.6&&g++<40){f=Math.round((f-0.05)*100)/100;c.style.fontSize=f+"cqw";}})();<\/script>' +
+            '<script>(function(){var c=document.querySelector(".decl-conteudo");if(c){var f=1.51,g=0;c.style.fontSize=f+"cqw";while(c.scrollHeight>c.clientHeight+1&&f>0.6&&g++<40){f=Math.round((f-0.05)*100)/100;c.style.fontSize=f+"cqw";}}' +
+            (autoPrint ? 'window.addEventListener("load",function(){setTimeout(function(){window.print()},400)});' : '') +
+            '})();<\/script>' +
             '</body></html>';
-        var win = window.open('', '_blank');
-        if (!win) { alert('Permita pop-ups para visualizar o certificado.'); return; }
-        win.document.open();
-        win.document.write(html);
-        win.document.close();
+        return html;
     }
 
     function pfFecharCertificado() {
+        pfFecharVisualizador();
         pfCertAtual = null;
         var modal = document.getElementById('pf-cert-modal');
         if (modal) modal.classList.remove('active');
     }
 
     document.addEventListener('keydown', function(ev) {
+        var v = document.getElementById('pf-cert-viewer');
+        if (v && v.classList.contains('active')) {
+            if (ev.key === 'Escape') { ev.preventDefault(); pfFecharVisualizador(); }
+            else if (ev.key === 'ArrowRight') { ev.preventDefault(); pfCertViewIr(1); }
+            else if (ev.key === 'ArrowLeft') { ev.preventDefault(); pfCertViewIr(-1); }
+            return;
+        }
         if (ev.key === 'Escape') pfFecharCertificado();
     });
 
