@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FARN - Consultar Regularidade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gold: #d4af37;
+            --gold-l: #f0d78c;
+            --navy: #0a1c40;
+            --green: #16a34a;
+            --red: #dc2626;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #e8f2e9;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(59,130,246,.18) 0%, transparent 38%),
+                radial-gradient(circle at 85% 60%, rgba(212,175,55,.10) 0%, transparent 30%),
+                linear-gradient(160deg, #0a1c40 0%, #122c5e 40%, #1a3a7a 70%, #0e2547 100%);
+            background-attachment: fixed;
+        }
+        .cr-header {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background: rgba(5, 18, 40, .88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(212,175,55,.25);
+        }
+        .cr-header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 12px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+        .cr-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .cr-brand img {
+            width: 44px; height: 44px; object-fit: contain;
+            border-radius: 50%; background: #fff; padding: 3px;
+            border: 2px solid var(--gold);
+        }
+        .cr-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+        .cr-brand-text strong { font-size: 16px; font-weight: 800; letter-spacing: .5px; }
+        .cr-brand-text span { font-size: 11.5px; color: #b9d4bd; }
+        .cr-back {
+            display: inline-flex; align-items: center; gap: 7px;
+            color: #cfe6d2; text-decoration: none; font-size: 13px; font-weight: 600;
+            padding: 9px 14px; border-radius: 9px;
+            border: 1px solid rgba(212,175,55,.30);
+            transition: .25s; white-space: nowrap;
+        }
+        .cr-back:hover { background: rgba(255,255,255,.09); color: var(--gold-l); }
+
+        .cr-main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 34px 18px 60px;
+        }
+        .cr-title {
+            text-align: center;
+            margin: 0 0 6px;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: .3px;
+        }
+        .cr-title i { color: var(--gold); margin-right: 8px; }
+        .cr-sub {
+            text-align: center;
+            color: #b9d4bd;
+            font-size: 13.5px;
+            line-height: 1.6;
+            margin: 0 auto 24px;
+            max-width: 560px;
+        }
+        .cr-card {
+            background: rgba(8, 24, 52, .72);
+            border: 1px solid rgba(212,175,55,.28);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 18px 50px rgba(0,0,0,.35);
+        }
+        .cr-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            color: #cfd9d2;
+            margin-bottom: 8px;
+        }
+        .cr-field {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .cr-input-wrap {
+            position: relative;
+            flex: 1 1 260px;
+        }
+        .cr-input-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f9bb8;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        #cr-credencial {
+            width: 100%;
+            padding: 13px 14px 13px 40px;
+            border-radius: 11px;
+            border: 1px solid rgba(255,255,255,.16);
+            background: rgba(0,0,0,.30);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            outline: none;
+            transition: border-color .2s;
+        }
+        #cr-credencial:focus { border-color: var(--gold); }
+        #cr-credencial::placeholder { color: #7790aa; letter-spacing: .5px; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .cr-btn {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 20px;
+            border: none;
+            border-radius: 11px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .cr-btn-primary { background: linear-gradient(135deg, #d4af37, #b8942a); color: #10233f; }
+        .cr-btn-primary:hover { filter: brightness(1.07); transform: translateY(-1px); }
+        .cr-btn-camera {
+            width: 100%;
+            margin-top: 12px;
+            background: rgba(255,255,255,.06);
+            color: #e8f2e9;
+            border: 1px solid rgba(212,175,55,.35);
+        }
+        .cr-btn-camera:hover { background: rgba(255,255,255,.12); }
+        .cr-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+        .cr-scanner {
+            display: none;
+            margin-top: 14px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(212,175,55,.35);
+            background: #000;
+            position: relative;
+        }
+        .cr-scanner.active { display: block; }
+        #cr-reader { width: 100%; }
+        .cr-scanner-hint {
+            padding: 10px 14px;
+            font-size: 12.5px;
+            color: #cfd9d2;
+            background: rgba(8, 24, 52, .9);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .cr-scanner-hint button {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,.25);
+            color: #fff;
+            border-radius: 8px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .cr-scanner-hint button:hover { background: rgba(255,255,255,.12); }
+
+        .cr-feedback {
+            display: none;
+            margin-top: 18px;
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid transparent;
+        }
+        .cr-feedback.show { display: block; }
+        .cr-feedback.error {
+            background: rgba(220,38,38,.14);
+            border-color: rgba(248,113,113,.55);
+            color: #fecaca;
+        }
+        .cr-feedback.error strong { color: #fca5a5; }
+        .cr-feedback.info {
+            background: rgba(59,130,246,.13);
+            border-color: rgba(96,165,250,.45);
+            color: #dbeafe;
+        }
+
+        .cr-result { display: none; margin-top: 20px; }
+        .cr-result.show { display: block; }
+        .cr-person {
+            display: flex;
+            gap: 18px;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+        .cr-photo-col { flex: 0 0 140px; }
+        .cr-photo {
+            width: 140px;
+            aspect-ratio: 3 / 4;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255,255,255,.08);
+            border: 2px solid rgba(212,175,55,.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7890a8;
+            font-size: 34px;
+        }
+        .cr-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .cr-photo-cap {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: .8px;
+            color: #9fb4c9;
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+        .cr-data { flex: 1 1 260px; min-width: 0; }
+        .cr-name {
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin: 0 0 4px;
+            color: #fff;
+            word-break: break-word;
+        }
+        .cr-cred {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+            color: var(--gold-l);
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+        .cr-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 13px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+        .cr-badge.ok { background: rgba(22,163,74,.18); color: #86efac; border: 1px solid rgba(74,222,128,.5); }
+        .cr-badge.bad { background: rgba(220,38,38,.18); color: #fca5a5; border: 1px solid rgba(248,113,113,.55); }
+        .cr-msg {
+            margin-top: 14px;
+            font-size: 14px;
+            line-height: 1.65;
+            color: #dfe9e2;
+        }
+        .cr-msg strong { color: #fff; }
+        .cr-alert {
+            margin-top: 16px;
+            background: rgba(220,38,38,.20);
+            border: 1px solid rgba(248,113,113,.75);
+            border-left: 5px solid #ef4444;
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: #fecaca;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+        .cr-alert i { color: #f87171; margin-right: 6px; }
+        .cr-foot {
+            margin-top: 26px;
+            text-align: center;
+            font-size: 11px;
+            color: #7f97b0;
+            line-height: 1.6;
+        }
+        @media (max-width: 520px) {
+            .cr-photo-col { flex: 1 1 100%; display: flex; flex-direction: column; align-items: center; }
+            .cr-photo { width: 128px; }
+            .cr-title { font-size: 21px; }
+            .cr-card { padding: 18px 15px; }
+            .cr-btn-primary { flex: 1 1 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="cr-header">
+    <div class="cr-header-inner">
+        <div class="cr-brand">
+            <img src="logo-farn.png.png" alt="Logo da instituição">
+            <div class="cr-brand-text">
+                <strong>FARN</strong>
+                <span>Força Auxiliar de Resgate Nacional</span>
+            </div>
+        </div>
+        <a class="cr-back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Voltar ao site</a>
+    </div>
+</header>
+
+<main class="cr-main">
+    <h1 class="cr-title"><i class="fa-solid fa-qrcode"></i> Consultar Regularidade</h1>
+    <p class="cr-sub">Digite a credencial do certificado ou use a câmera do navegador para ler o QR Code e conferir se o formado faz parte do corpo de cadastrados e formados da instituição.</p>
+
+    <section class="cr-card">
+        <label class="cr-label" for="cr-credencial">Credencial do certificado</label>
+        <div class="cr-field">
+            <div class="cr-input-wrap">
+                <i class="fa-solid fa-id-card"></i>
+                <input id="cr-credencial" type="text" placeholder="Ex.: BCBA12345601012026" autocomplete="off" spellcheck="false">
+            </div>
+            <button type="button" class="cr-btn cr-btn-primary" id="cr-consultar-btn" onclick="crConsultar()">
+                <i class="fa-solid fa-magnifying-glass"></i> Consultar
+            </button>
+        </div>
+        <button type="button" class="cr-btn cr-btn-camera" id="cr-camera-btn" onclick="crAlternarCamera()">
+            <i class="fa-solid fa-camera"></i> Ler QR Code com a câmera
+        </button>
+
+        <div class="cr-scanner" id="cr-scanner">
+            <div id="cr-reader"></div>
+            <div class="cr-scanner-hint">
+                <span><i class="fa-solid fa-camera"></i> Aponte a câmera para o QR Code do certificado.</span>
+                <button type="button" onclick="crPararCamera()">Fechar câmera</button>
+            </div>
+        </div>
+
+        <div class="cr-feedback" id="cr-feedback"></div>
+
+        <div class="cr-result" id="cr-result">
+            <div class="cr-person">
+                <div class="cr-photo-col">
+                    <div class="cr-photo" id="cr-photo"><i class="fa-solid fa-user"></i></div>
+                    <div class="cr-photo-cap">Foto 3x4</div>
+                </div>
+                <div class="cr-data">
+                    <h2 class="cr-name" id="cr-nome">---</h2>
+                    <div class="cr-cred" id="cr-cred">---</div>
+                    <span class="cr-badge" id="cr-status-badge">---</span>
+                    <div class="cr-msg" id="cr-msg"></div>
+                    <div class="cr-alert" id="cr-alert" style="display:none">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        O indivíduo deve procurar a administração para regularizar seus dados.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <p class="cr-foot">A consulta verifica os dados diretamente no cadastro de formados da instituição.<br>Em caso de divergência, procure a administração.</p>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+    var firebaseConfig = {
+        apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+        authDomain: "farn-app.firebaseapp.com",
+        databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+        projectId: "farn-app",
+        storageBucket: "farn-app.firebasestorage.app",
+        messagingSenderId: "16254677061",
+        appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    var dbFirestore = firebase.firestore();
+
+    var crScanner = null;
+    var crScanRodando = false;
+    var crConsultaEmAndamento = false;
+
+    function crEsc(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    /* Extrai a credencial do texto lido: aceita a credencial pura (BCBA...),
+       uma URL com ?cred=/?credencial=/?matricula= ou entao o texto integral. */
+    function crExtrairCredencial(texto) {
+        var t = String(texto || '').trim();
+        if (!t) return '';
+        var deUrl = '';
+        try {
+            var u = new URL(t);
+            deUrl = u.searchParams.get('cred') || u.searchParams.get('credencial') || u.searchParams.get('matricula') || '';
+        } catch (e) {}
+        if (deUrl) t = deUrl;
+        var m = t.toUpperCase().match(/BCBA[0-9]{6,}/);
+        if (m) return m[0];
+        return t.toUpperCase().replace(/\s+/g, '');
+    }
+
+    function crNormalizar(v) {
+        return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+
+    function crFeedback(tipo, html) {
+        var el = document.getElementById('cr-feedback');
+        if (!el) return;
+        el.className = 'cr-feedback show ' + tipo;
+        el.innerHTML = html;
+    }
+
+    function crLimparResultado() {
+        document.getElementById('cr-result').classList.remove('show');
+    }
+
+    function crErroLeitura() {
+        crLimparResultado();
+        crFeedback('error', '<strong>Infelizmente não é possível ler os dados da credencial ou QR Code informado.</strong><br>Verifique as informações e tente novamente.');
+    }
+
+    async function crBuscar(cred) {
+        var alvo = String(cred || '').trim();
+        if (!alvo) return null;
+        var tentativas = [alvo, alvo.toUpperCase(), crNormalizar(alvo)];
+        var vistos = {};
+        var campos = ['credencial', 'matricula'];
+        for (var f = 0; f < campos.length; f++) {
+            for (var i = 0; i < tentativas.length; i++) {
+                var v = tentativas[i];
+                if (!v || vistos[campos[f] + '|' + v]) continue;
+                vistos[campos[f] + '|' + v] = 1;
+                var snap = await dbFirestore.collection('candidatos').where(campos[f], '==', v).limit(5).get();
+                var achado = null;
+                snap.forEach(function (doc) {
+                    if (achado) return;
+                    var d = doc.data() || {};
+                    // So considera quem esta na lista de formados do administrador.
+                    var ehFormado = String(d.tipoPessoa || '') === 'F' || !!d.formadoEm || !!d.credencial;
+                    if (ehFormado) { d.__id = doc.id; achado = d; }
+                });
+                if (achado) return achado;
+            }
+        }
+        return null;
+    }
+
+    function crStatusRegular(d) {
+        var s = String(d.status || '').trim().toLowerCase();
+        if (!s) return false;
+        if (s === 'ativo' || s === 'regular' || s === 'regular ativo') return true;
+        if (s.indexOf('irregular') >= 0 || s.indexOf('inativo') >= 0 || s.indexOf('suspens') >= 0 || s.indexOf('cancel') >= 0) return false;
+        return s === 'ativo';
+    }
+
+    function crFoto(d) {
+        return d.photoDataUrl || d.foto || d.fotoUrl || d.photoURL || '';
+    }
+
+    function crMostrarPessoa(d, regular, cred) {
+        crLimparResultado();
+        var fb = document.getElementById('cr-feedback');
+        if (fb) { fb.className = 'cr-feedback'; fb.innerHTML = ''; }
+
+        var nome = String(d.nome || d.nomeCompleto || '---').trim();
+        var credencial = String(d.credencial || d.matricula || cred || '---').trim();
+        var foto = crFoto(d);
+
+        document.getElementById('cr-nome').textContent = nome;
+        document.getElementById('cr-cred').textContent = credencial;
+
+        var photoEl = document.getElementById('cr-photo');
+        if (foto) {
+            photoEl.innerHTML = '<img src="' + crEsc(foto) + '" alt="Foto 3x4 de ' + crEsc(nome) + '">';
+        } else {
+            photoEl.innerHTML = '<i class="fa-solid fa-user"></i>';
+        }
+
+        var badge = document.getElementById('cr-status-badge');
+        var msg = document.getElementById('cr-msg');
+        var alerta = document.getElementById('cr-alert');
+
+        if (regular) {
+            badge.className = 'cr-badge ok';
+            badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Status regular ativo';
+            msg.innerHTML = 'O indivíduo <strong>' + crEsc(nome) + '</strong>, credencial <strong>' + crEsc(credencial) + '</strong>, faz parte do corpo de cadastrados e formados de nossa instituição e está com <strong>status regular ativo</strong>.';
+            alerta.style.display = 'none';
+        } else {
+            badge.className = 'cr-badge bad';
+            badge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Status irregular';
+            msg.innerHTML = 'O indivíduo <strong>' + crEsc(nome) + '</strong>, credencial <strong>' + crEsc(credencial) + '</strong>, faz parte do corpo de cadastrados e formados de nossa instituição, porém está com <strong>status irregular</strong>.';
+            alerta.style.display = 'block';
+        }
+
+        document.getElementById('cr-result').classList.add('show');
+    }
+
+    async function crConsultar() {
+        if (crConsultaEmAndamento) return;
+        var input = document.getElementById('cr-credencial');
+        var cred = crExtrairCredencial(input ? input.value : '');
+        if (!cred) {
+            crErroLeitura();
+            if (input) input.focus();
+            return;
+        }
+        if (input) input.value = cred;
+
+        crConsultaEmAndamento = true;
+        var btn = document.getElementById('cr-consultar-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Consultando...'; }
+        crLimparResultado();
+        crFeedback('info', '<i class="fa-solid fa-spinner fa-spin"></i> Consultando o cadastro...');
+
+        try {
+            var d = await crBuscar(cred);
+            if (!d) {
+                crErroLeitura();
+            } else {
+                crMostrarPessoa(d, crStatusRegular(d), cred);
+            }
+        } catch (e) {
+            console.error('Erro na consulta de regularidade:', e);
+            crFeedback('error', '<strong>Não foi possível concluir a consulta agora.</strong><br>Verifique sua conexão e tente novamente.');
+        } finally {
+            crConsultaEmAndamento = false;
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Consultar'; }
+        }
+    }
+
+    async function crAlternarCamera() {
+        if (crScanRodando) { crPararCamera(); return; }
+        await crAbrirCamera();
+    }
+
+    async function crAbrirCamera() {
+        var caixa = document.getElementById('cr-scanner');
+        var btn = document.getElementById('cr-camera-btn');
+        if (!caixa) return;
+        if (typeof Html5Qrcode === 'undefined') {
+            crFeedback('error', '<strong>Não foi possível carregar o leitor de QR Code.</strong><br>Digite a credencial para consultar.');
+            return;
+        }
+        caixa.classList.add('active');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Fechar câmera';
+        try {
+            if (!crScanner) crScanner = new Html5Qrcode('cr-reader');
+            crScanRodando = true;
+            await crScanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: function (w, h) { var m = Math.floor(Math.min(w, h) * 0.7); return { width: m, height: m }; } },
+                function (texto) {
+                    var cred = crExtrairCredencial(texto);
+                    if (!cred) return;
+                    crPararCamera();
+                    var input = document.getElementById('cr-credencial');
+                    if (input) input.value = cred;
+                    crConsultar();
+                },
+                function () {}
+            );
+        } catch (e) {
+            console.error('Erro ao abrir a câmera:', e);
+            crScanRodando = false;
+            caixa.classList.remove('active');
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-camera"></i> Ler QR Code com a câmera';
+            crFeedback('error', '<strong>Não foi possível acessar a câmera.</strong><br>Permita o uso da câmera no navegador ou digite a credencial para consultar.');
+        }
+    }
+
+    async function crPararCamera() {
+        var caixa = document.getElementById('cr-scanner');
+        var btn = document.getElementById('cr-camera-btn');
+        try {
+            if (crScanner && crScanRodando) await crScanner.stop();
+            if (crScanner) { try { crScanner.clear(); } catch (e) {} }
+        } catch (e) { console.warn('Falha ao parar a câmera:', e); }
+        crScanRodando = false;
+        if (caixa) caixa.classList.remove('active');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-camera"></i> Ler QR Code com a câmera';
+    }
+
+    (function () {
+        var input = document.getElementById('cr-credencial');
+        if (input) {
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); crConsultar(); }
+            });
+        }
+        try {
+            var p = new URLSearchParams(location.search);
+            var cred = p.get('cred') || p.get('credencial') || p.get('matricula') || '';
+            if (cred && input) {
+                input.value = crExtrairCredencial(cred);
+                crConsultar();
+            }
+        } catch (e) {}
+        window.addEventListener('pagehide', function () { if (crScanRodando) crPararCamera(); });
+    })();
+</script>
+</body>
+</html>
