@@ -78,8 +78,9 @@
         .pf-nav-item i { width:18px; text-align:center; font-size:14px; }
 
         .pf-sidebar-footer { padding:16px 20px; border-top:1px solid #e2e8f0; }
-        .pf-sidebar-footer .pf-user { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-        .pf-sidebar-footer .pf-user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#16a34a,#15803d); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; }
+        .pf-sidebar-footer .pf-user { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+        .pf-sidebar-footer .pf-user-avatar { width:45px; height:60px; flex:0 0 45px; border-radius:10px; background:linear-gradient(135deg,#16a34a,#15803d); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#fff; overflow:hidden; border:2px solid #bbf7d0; box-shadow:0 2px 8px rgba(22,163,74,.25); }
+        .pf-sidebar-footer .pf-user-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
         .pf-sidebar-footer .pf-user-info { flex:1; }
         .pf-sidebar-footer .pf-user-name { font-size:13px; font-weight:600; color:#1e293b; }
         .pf-sidebar-footer .pf-user-cpf { font-size:11px; color:#94a3b8; }
@@ -759,6 +760,43 @@
         input.value = v;
     }
 
+    /* ===== FOTO 3X4 DO USUARIO LOGADO =====
+       Mostra a foto ao lado do nome no rodape da barra lateral. Sem foto,
+       mantem as iniciais como antes. Se o cadastro de recadastramento nao
+       tiver a imagem, busca no cadastro de candidatos/formados. */
+    function pfIniciaisUsuario(u) {
+        var nome = (u && (u.nome || u.nomeCompleto)) ? String(u.nome || u.nomeCompleto) : '';
+        return nome.split(' ').filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase() || 'FD';
+    }
+
+    function pfRenderAvatarUsuario(u, foto) {
+        var el = document.getElementById('pf-user-avatar');
+        if (!el) return;
+        var src = foto || (u && (u.photoDataUrl || u.foto || u.fotoUrl || u.photoURL)) || '';
+        if (!src) {
+            el.textContent = pfIniciaisUsuario(u);
+            return;
+        }
+        el.textContent = '';
+        var img = document.createElement('img');
+        img.alt = 'Foto 3x4 de ' + ((u && (u.nome || u.nomeCompleto)) || 'formado');
+        img.src = src;
+        img.onerror = function () {
+            el.textContent = pfIniciaisUsuario(u);
+        };
+        el.appendChild(img);
+    }
+
+    function pfAtualizarFotoUsuario(u) {
+        pfRenderAvatarUsuario(u);
+        var temFoto = u && (u.photoDataUrl || u.foto || u.fotoUrl || u.photoURL);
+        if (!temFoto && typeof pfFichaGeralFoto === 'function') {
+            pfFichaGeralFoto().then(function (url) {
+                if (url) pfRenderAvatarUsuario(u, url);
+            }).catch(function () {});
+        }
+    }
+
     /* ===== LOGIN ===== */
     async function pfLogin() {
         var cpf = document.getElementById('pf-cpf').value.replace(/\D/g, '');
@@ -819,8 +857,7 @@
             document.getElementById('screen-login').style.display = 'none';
             document.getElementById('screen-portal').classList.add('active');
 
-            var initials = (pfUser.nome || 'FD').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
-            document.getElementById('pf-user-avatar').textContent = initials;
+            pfAtualizarFotoUsuario(pfUser);
             document.getElementById('pf-user-name').textContent = pfUser.nome || '---';
             var matEl = document.getElementById('pf-user-matricula');
             if (matEl) matEl.textContent = pfUser.matricula ? 'Mat: ' + pfUser.matricula : '';
@@ -858,8 +895,7 @@
         var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
         if (adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-formado'))) {
             document.getElementById('screen-portal').classList.add('active');
-            var initials = (adminData.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
-            document.getElementById('pf-user-avatar').textContent = initials;
+            pfAtualizarFotoUsuario(adminData);
             document.getElementById('pf-user-name').textContent = adminData.nome || 'Administrador';
             var matEl = document.getElementById('pf-user-matricula');
             if (matEl) matEl.textContent = 'Administrador | Acesso total';
@@ -1262,19 +1298,19 @@
     });
 
     async function pfFichaGeralFoto() {
-        if (pfUser && (pfUser.foto || pfUser.fotoUrl)) return pfUser.foto || pfUser.fotoUrl;
+        if (pfUser && (pfUser.photoDataUrl || pfUser.foto || pfUser.fotoUrl)) return pfUser.photoDataUrl || pfUser.foto || pfUser.fotoUrl;
         try {
             var cpf = pfUser && pfUser.cpf ? String(pfUser.cpf).replace(/\D/g, '') : '';
             if (!cpf) return null;
             var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
             if (!snap.empty) {
                 var d = snap.docs[0].data() || {};
-                if (d.foto || d.fotoUrl) return d.foto || d.fotoUrl;
+                if (d.photoDataUrl || d.foto || d.fotoUrl) return d.photoDataUrl || d.foto || d.fotoUrl;
             }
             var snap2 = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
             if (!snap2.empty) {
                 var d2 = snap2.docs[0].data() || {};
-                if (d2.foto || d2.fotoUrl) return d2.foto || d2.fotoUrl;
+                if (d2.photoDataUrl || d2.foto || d2.fotoUrl) return d2.photoDataUrl || d2.foto || d2.fotoUrl;
             }
         } catch (e) {}
         return null;
