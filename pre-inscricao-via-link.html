@@ -223,6 +223,13 @@
             setTimeout(function(){t.style.display='none';},3000);
         }
 
+        function preLinkCurso(){ return linkValido ? (linkValido.curso || linkValido.projeto || '') : ''; }
+        function preencherCursoTurma(){
+            var c = preLinkCurso();
+            var elc = document.getElementById('f-pre-curso'); if(elc) elc.value = c;
+            var elp = document.getElementById('f-pre-projeto'); if(elp) elp.value = c;
+            var elt = document.getElementById('f-pre-turma'); if(elt) elt.value = linkValido ? (linkValido.turma||'') : '';
+        }
         function confirmarLimpar(){
             var form=document.getElementById('form-pre');
             var reqs=form.querySelectorAll('input[required],select[required]');
@@ -232,8 +239,7 @@
             if(!confirm('Limpar todos os campos preenchidos?')) return;
             form.reset();
             document.getElementById('f-nacionalidade').value='Brasileira';
-            document.getElementById('f-pre-projeto').value=linkValido?linkValido.projeto||'':'';
-            document.getElementById('f-pre-turma').value=linkValido?linkValido.turma||'':'';
+            preencherCursoTurma();
         }
 
         function mostrarInvalido(titulo, texto){
@@ -265,7 +271,7 @@
                 candidatoEdicao=c;
                 candidatoEdicao.__id=res.docs[0].id;
                 modoEdicao=true;
-                linkValido={projeto:c.projeto||'',turma:c.turma||'',coletivo:!!c.linkColetivo};
+                linkValido={curso:(c.curso||c.projeto||''),projeto:(c.projeto||c.curso||''),turma:c.turma||'',coletivo:!!c.linkColetivo};
                 preencherForm(c);
                 document.getElementById('btn-enviar').innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações';
                 document.getElementById('btn-enviar').style.background='linear-gradient(135deg,#d97706,#b45309)';
@@ -294,8 +300,7 @@
                     return;
                 }
                 linkValido=doc.data();
-                document.getElementById('f-pre-projeto').value=linkValido.projeto||'';
-                document.getElementById('f-pre-turma').value=linkValido.turma||'';
+                preencherCursoTurma();
                 load.style.display='none';
                 document.getElementById('area-formulario').style.display='block';
                 if(linkValido.coletivo){
@@ -460,7 +465,8 @@
             data.matricula=generateMatricula(data.cpf);
             data.tipoPessoa='A';
             data.status='Pendente';
-            data.projeto=linkValido.projeto||'';
+            data.curso=preLinkCurso();
+            data.projeto=preLinkCurso(); // compat legado
             data.turma=linkValido.turma||'';
             data.dataCadastro=new Date().toLocaleDateString('pt-BR');
             data.dataHoraCadastro=new Date().toLocaleString('pt-BR');
@@ -591,7 +597,7 @@
             t=linha(t,'E-mail: '+c.email);
             t=linha(t,'WhatsApp: '+c.whatsapp);
             t=linha(t,'Endereço: '+[c.endereco,c.numero].filter(function(x){return x;}).join(', ')+', '+[c.bairro,c.cidade,c.estado].filter(function(x){return x;}).join(', '));
-            t=linha(t,'Projeto: '+c.projeto);
+            t=linha(t,'Curso: '+(c.curso || c.projeto || ''));
             t=linha(t,'Turma: '+c.turma);
             t=linha(t,'Status da pré-inscrição: '+c.status);
             t=linha(t,'Data do registro: '+c.dataCadastro);

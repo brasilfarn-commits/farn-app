@@ -445,6 +445,7 @@ async function fichaGeralSincronizarApontamentos(db, c, presencas) {
             disciplina: a.disciplina || '',
             aula: apt[apt.length - 1].aula || '',
             turma: a.turma || c.turma,
+            curso: a.curso || a.projeto || c.curso || c.projeto,
             projeto: a.projeto || c.projeto,
             status: registro.status || '',
             obs: registro.obs || '',
@@ -823,7 +824,7 @@ function fichaGeralCabecalho(inst, c, fotoHtml) {
         ? '<div style="display:flex;gap:6px;flex-wrap:wrap;min-width:0">' + chips + '</div>'
         : '<div style="font-size:10.5px;color:#64748b;font-style:italic">Dados da instituicao nao cadastrados no administrativo.</div>';
     linha += '<div style="font-size:11px;font-weight:800;color:#0284c7;white-space:nowrap">'
-        + '<i class="fa-solid fa-layer-group" style="margin-right:4px"></i>Projeto: ' + fgEsc(fichaGeralProjeto || c.projeto || '')
+        + '<i class="fa-solid fa-book" style="margin-right:4px"></i>Curso: ' + fgEsc(fichaGeralProjeto || c.curso || c.projeto || '')
         + '  &bull;  Turma: ' + fgEsc(fichaGeralTurma || c.turma || '') + '</div>';
     linha += '</div>';
 

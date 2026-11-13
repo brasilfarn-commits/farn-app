@@ -1297,17 +1297,17 @@
                             <small>Fichas completas dos cadastrados: todos os dados do formulario, foto 3x4 e todas as avaliacoes, com visual moderno de pagina PDF e botoes de impressao.</small>
                         </div>
                         <div class="card-body">
-                            <!-- Selecao Projeto + Turma -->
+                            <!-- Selecao Curso + Turma -->
                             <div style="padding:20px;background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);border:2px solid #0ea5e9;border-radius:12px;margin-bottom:20px">
                                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                                     <i class="fa-solid fa-filter" style="color:#0ea5e9;font-size:16px"></i>
-                                    <span style="color:#0ea5e9;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para gerar as fichas</span>
+                                    <span style="color:#0ea5e9;font-weight:700;font-size:14px">Selecione o Curso e a Turma para gerar as fichas</span>
                                 </div>
                                 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Projeto *</label>
-                                        <select id="ficha-geral-selecao-projeto" class="config-input" style="width:100%;border-color:#0ea5e9" onchange="fichaGeralOnProjetoChange()">
-                                            <option value="">Selecione o projeto...</option>
+                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Curso *</label>
+                                        <select id="ficha-geral-selecao-curso" class="config-input" style="width:100%;border-color:#0ea5e9" onchange="fichaGeralOnCursoChange()">
+                                            <option value="">Selecione o curso...</option>
                                         </select>
                                     </div>
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
@@ -1318,7 +1318,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                            <!-- Conteudo (oculto ate selecionar curso+turma) -->
                             <div id="ficha-geral-conteudo" style="display:none">
                                 <div class="alunos-toolbar" style="flex-wrap:wrap;gap:8px">
                                     <div style="font-size:13px;color:#0f172a;font-weight:700"><i class="fa-solid fa-folder-open" style="color:#0ea5e9;margin-right:6px"></i><span id="ficha-geral-count">0</span> ficha(s) gerada(s)</div>
@@ -2171,17 +2171,17 @@
                             <h3><i class="fa-solid fa-clipboard-check" style="color:#ca8a04;margin-right:8px"></i> Apontamento de Presenca</h3>
                         </div>
                         <div class="card-body">
-                            <!-- Selecao Projeto + Turma -->
+                            <!-- Selecao Curso + Turma -->
                             <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                                     <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
+                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Curso e a Turma para continuar</span>
                                 </div>
                                 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
-                                        <select id="apt-selecao-projeto" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoProjetoChange()">
-                                            <option value="">Selecione o projeto...</option>
+                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Curso *</label>
+                                        <select id="apt-selecao-curso" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoCursoChange()">
+                                            <option value="">Selecione o curso...</option>
                                         </select>
                                     </div>
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
@@ -2192,7 +2192,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                            <!-- Conteudo (oculto ate selecionar curso+turma) -->
                             <div id="apt-conteudo" style="display:none">
                                 <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
                                     <button class="btn-primary" onclick="apontamentoAbrirModal()">
@@ -2774,17 +2774,17 @@
 
                 <!-- LISTA PRE-INSCRITOS -->
                 <div id="admin-pre-inscricao" class="admin-section active">
-                    <!-- Selecao Projeto + Turma -->
+                    <!-- Selecao Curso + Turma -->
                     <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                             <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                            <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para visualizar os pre-inscritos</span>
+                            <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Curso e a Turma para visualizar os pré-inscritos</span>
                         </div>
                         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                             <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
-                                <select id="pre-selecao-projeto" class="config-input" style="width:100%;border-color:#16a34a" onchange="preOnSelecaoProjetoChange()">
-                                    <option value="">Selecione o projeto...</option>
+                                <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Curso *</label>
+                                <select id="pre-selecao-curso" class="config-input" style="width:100%;border-color:#16a34a" onchange="preOnSelecaoCursoChange()">
+                                    <option value="">Selecione o curso...</option>
                                 </select>
                             </div>
                             <div class="form-group" style="flex:1;min-width:200px;margin:0">
@@ -2795,7 +2795,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Conteudo (oculto ate selecionar projeto+turma) -->
+                    <!-- Conteudo (oculto ate selecionar curso+turma) -->
                     <div id="pre-conteudo" style="display:none">
                         <div class="card full-width">
                             <div class="card-header">
@@ -2840,7 +2840,7 @@
                                 </div>
                                 <table class="data-table" id="pre-table">
                                     <thead>
-                                        <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Idade</th><th>Gen. Nasc.</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Acoes</th></tr>
+                                        <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Idade</th><th>Gen. Nasc.</th><th>Turma</th><th>Curso</th><th>Status</th><th>Cadastrado por</th><th>Ações</th></tr>
                                     </thead>
                                     <tbody id="pre-table-body"></tbody>
                                 </table>
@@ -4107,6 +4107,98 @@
                             <button class="modal-close" onclick="cursorFecharDetalhe()"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                         <div class="modal-body" id="curso-detalhe-content"></div>
+                    </div>
+                </div>
+
+                <!-- GERENCIAR CURSO (TURMAS / DISCIPLINAS / AULAS) -->
+                <div id="admin-curso-gerenciar" class="admin-section">
+                    <div class="card full-width" style="margin-bottom:16px">
+                        <div class="card-header">
+                            <h3 id="cg-titulo"><i class="fa-solid fa-book" style="color:#2563eb;margin-right:8px"></i> Gerenciar Curso</h3>
+                            <button class="btn-outline" onclick="showAdminSection('admin-cursos'); cursoListLoad()"><i class="fa-solid fa-arrow-left"></i> Voltar aos Cursos</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="cg-curso-info" style="font-size:13px;color:#475569;margin-bottom:12px"></div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                                <div class="form-group" style="margin:0">
+                                    <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma do curso *</label>
+                                    <select id="cg-turma" class="config-input" onchange="cgOnTurmaChange()"><option value="">Selecione ou crie uma turma...</option></select>
+                                </div>
+                                <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
+                                    <button class="btn-primary btn-sm" onclick="cgNovaTurma()"><i class="fa-solid fa-plus"></i> Nova Turma</button>
+                                    <button class="btn-outline btn-sm" onclick="cgEditarTurma()"><i class="fa-solid fa-pen"></i> Editar Turma</button>
+                                    <button class="btn-danger btn-sm" onclick="cgExcluirTurma()"><i class="fa-solid fa-trash"></i> Excluir Turma</button>
+                                </div>
+                            </div>
+                            <div id="cg-turma-form" style="display:none;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:14px">
+                                <h4 id="cg-turma-form-title" style="margin:0 0 10px;color:#1e293b;font-size:14px">Nova Turma</h4>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Nome da Turma *</label><input type="text" id="cg-turma-nome" class="config-input" placeholder="Ex: Turma A"></div>
+                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Status</label><select id="cg-turma-status" class="config-input"><option value="Em Andamento">Em Andamento</option><option value="Concluido">Concluido</option></select></div>
+                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Início</label><input type="date" id="cg-turma-inicio" class="config-input"></div>
+                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Previsão Final</label><input type="date" id="cg-turma-previsao" class="config-input"></div>
+                                    <div class="form-group" style="grid-column:1/-1"><label style="font-size:11px;font-weight:600;color:#475569">Descrição</label><input type="text" id="cg-turma-desc" class="config-input" placeholder="Opcional"></div>
+                                </div>
+                                <div style="display:flex;gap:8px;margin-top:10px">
+                                    <button class="btn-primary btn-sm" onclick="cgSalvarTurma()"><i class="fa-solid fa-check"></i> Salvar Turma</button>
+                                    <button class="btn-outline btn-sm" onclick="cgCancelarTurma()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                </div>
+                            </div>
+                            <div id="cg-turma-hint" style="font-size:12px;color:#64748b;padding:10px;background:#f8fafc;border-radius:8px">Selecione ou crie uma turma para cadastrar disciplinas e aulas deste curso.</div>
+                        </div>
+                    </div>
+
+                    <div id="cg-conteudo-turma" style="display:none">
+                        <div style="display:grid;grid-template-columns:1fr;gap:16px">
+                            <div class="card full-width">
+                                <div class="card-header"><h3><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;margin-right:8px"></i> Disciplinas da Turma</h3></div>
+                                <div class="card-body">
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Nome da Disciplina *</label><input type="text" id="cg-disc-nome" class="config-input" placeholder="Ex: Primeiros Socorros"></div>
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Docente</label><select id="cg-disc-docente" class="config-input"><option value="">Selecione o docente...</option></select></div>
+                                    </div>
+                                    <button class="btn-primary btn-sm" id="cg-disc-save-btn" onclick="cgDiscSalvar()"><i class="fa-solid fa-check"></i> Cadastrar Disciplina</button>
+                                    <div id="cg-disc-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                                    <div id="cg-disc-list" style="margin-top:14px"></div>
+                                </div>
+                            </div>
+
+                            <div class="card full-width">
+                                <div class="card-header"><h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas da Turma</h3></div>
+                                <div class="card-body">
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Disciplina *</label><select id="cg-aula-disciplina" class="config-input"><option value="">Selecione a disciplina...</option></select></div>
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Docente</label><select id="cg-aula-docente" class="config-input"><option value="">Selecione o docente...</option></select></div>
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Data da Aula *</label><input type="date" id="cg-aula-data" class="config-input"></div>
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Horário</label><input type="text" id="cg-aula-horario" class="config-input" placeholder="Ex: 14:00 as 17:00"></div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:12px"><label style="font-size:12px;font-weight:600;color:#475569">Conteúdo / Assunto</label><input type="text" id="cg-aula-conteudo" class="config-input" placeholder="Breve descrição do conteúdo da aula"></div>
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Terá AV Teórica</label><select id="cg-aula-av-teorica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select></div>
+                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Terá AV Prática</label><select id="cg-aula-av-pratica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select></div>
+                                    </div>
+                                    <button class="btn-primary btn-sm" id="cg-aula-save-btn" onclick="cgAulaSalvar()"><i class="fa-solid fa-check"></i> Cadastrar Aula</button>
+                                    <div id="cg-aula-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+                                    <div id="cg-aula-list" style="margin-top:14px"></div>
+                                </div>
+                            </div>
+
+                            <div class="card full-width">
+                                <div class="card-header"><h3><i class="fa-solid fa-users" style="color:#16a34a;margin-right:8px"></i> Alunos Ativos da Turma</h3></div>
+                                <div class="card-body">
+                                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+                                        <div class="form-group" style="flex:1;min-width:260px;margin:0">
+                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Adicionar aluno (pré-inscrito/cadastrado)</label>
+                                            <select id="cg-aluno-add" class="config-input"><option value="">Selecione um aluno...</option></select>
+                                        </div>
+                                        <button class="btn-primary btn-sm" onclick="cgAlunoAdicionar()"><i class="fa-solid fa-user-plus"></i> Adicionar à Turma</button>
+                                        <button class="btn-outline btn-sm" onclick="cgAlunosCarregar()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                                    </div>
+                                    <div style="font-size:12px;color:#64748b;margin-bottom:10px">Alunos adicionados aqui ficam vinculados a este curso/turma. Alunos enviados pelo formulário de pré-inscrição aparecem quando direcionados para esta turma.</div>
+                                    <div id="cg-alunos-list"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
