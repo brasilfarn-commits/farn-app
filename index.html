@@ -2874,7 +2874,7 @@
                                             </div>
                                             <div class="form-group" style="flex:1">
                                                 <label style="color:#16a34a;font-weight:700">Turma *</label>
-                                                <select id="fc-turma" class="config-input" required style="height:46px;border-color:#16a34a">
+                                                <select id="fc-turma" class="config-input" required style="height:46px;border-color:#16a34a" onchange="fcAtualizarTipoCredencial()">
                                                     <option value="">Selecione a turma...</option>
                                                 </select>
                                             </div>
@@ -2882,18 +2882,23 @@
                                         <div id="fc-turma-info" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.3)">
                                             <span style="color:#16a34a;font-size:12px;font-weight:600"><i class="fa-solid fa-info-circle"></i> <span id="fc-turma-info-text"></span></span>
                                         </div>
+                                        <div id="fc-data-final-box" style="display:none;margin-top:10px;padding:12px 14px;border-radius:8px;background:#fffbeb;border:1px solid #f59e0b">
+                                            <label for="fc-data-final" style="display:block;color:#92400e;font-size:13px;font-weight:700;margin-bottom:6px"><i class="fa-solid fa-calendar-check"></i> Data Final (gera a credencial) *</label>
+                                            <input type="date" id="fc-data-final" class="config-input" onchange="updateMatricula(document.getElementById('fc-cpf').value)">
+                                            <div style="margin-top:6px;color:#92400e;font-size:11px;line-height:1.5">A credencial do formado sera <strong>CRD.TURMA.6 primeiros digitos do CPF + DDMMYYYY</strong> desta data.</div>
+                                        </div>
                                         <div id="fc-matricula-wrapper" style="display:none;margin-top:14px">
-                                            <label style="color:#475569;font-size:13px;font-weight:600">Matricula</label>
+                                            <label id="fc-matricula-label" style="color:#475569;font-size:13px;font-weight:600">Matricula</label>
                                             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
                                                 <div id="fc-matricula-display" style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:12px 16px;text-align:center;color:#16a34a;font-size:22px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace"></div>
                                                 <img id="fc-matricula-qr" src="" alt="QR Code Matricula" style="width:80px;height:80px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff;display:none;">
                                                 <div style="display:flex;flex-direction:column;gap:6px;margin-left:8px">
                                                     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#f0fdf4;transition:all .2s" id="fc-tipo-academico-label">
-                                                        <input type="radio" name="fc-tipo-pessoa" value="A" style="accent-color:#16a34a" checked onchange="patenteSugerirNoFormulario()">
+                                                        <input type="radio" name="fc-tipo-pessoa" value="A" style="accent-color:#16a34a" checked onchange="patenteSugerirNoFormulario();fcAtualizarTipoCredencial()">
                                                         <span style="color:#2563eb;font-weight:700;font-size:13px">Academico (A)</span>
                                                     </label>
                                                     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#f0fdf4;transition:all .2s" id="fc-tipo-formado-label">
-                                                        <input type="radio" name="fc-tipo-pessoa" value="F" style="accent-color:#16a34a" onchange="patenteSugerirNoFormulario()">
+                                                        <input type="radio" name="fc-tipo-pessoa" value="F" style="accent-color:#16a34a" onchange="patenteSugerirNoFormulario();fcAtualizarTipoCredencial()">
                                                         <span style="color:#16a34a;font-weight:700;font-size:13px">Formado (A)</span>
                                                     </label>
                                                 </div>
@@ -2941,7 +2946,6 @@
                                             <div class="form-group"><label>Data de Nascimento *</label><input type="date" id="fc-nascimento" class="config-input" required onchange="calcularIdadeCampo('fc-nascimento','fc-idade')"></div>
                                             <div class="form-group"><label>Idade (auto)</label><input type="text" id="fc-idade" class="config-input" placeholder="0 anos" readonly tabindex="-1"></div>
                                             <div class="form-group"><label>Data de Inscricao</label><input type="date" id="fc-data-inscricao" class="config-input"></div>
-                                            <div class="form-group"><label>Data Final</label><input type="date" id="fc-data-final" class="config-input"></div>
                                             <div class="form-group"><label>Estado Civil *</label>
                                                 <select id="fc-estado-civil" class="config-input" required>
                                                     <option value="">Selecione...</option>
@@ -5909,7 +5913,7 @@
     <script src="noticias-feed.js?v=5"></script>
     <script src="oportunidades.js?v=4"></script>
     <script src="certificados.js?v=3"></script>
-    <script src="app.js?v=99"></script>
+    <script src="app.js?v=103"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>

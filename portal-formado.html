@@ -451,7 +451,7 @@
                     <div class="pf-user-avatar" id="pf-user-avatar">--</div>
                     <div class="pf-user-info">
                         <div class="pf-user-name" id="pf-user-name">---</div>
-                        <div id="pf-user-matricula" style="display:inline-block;margin-top:4px;padding:3px 10px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:8px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px">---</div>
+                        <div id="pf-user-matricula" style="display:inline-block;max-width:100%;margin-top:4px;padding:3px 10px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:8px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px;word-break:break-all;line-height:1.35">---</div>
                         <div class="pf-user-cpf" id="pf-user-cpf">CPF: ---</div>
                     </div>
                 </div>
@@ -860,7 +860,7 @@
             pfAtualizarFotoUsuario(pfUser);
             document.getElementById('pf-user-name').textContent = pfUser.nome || '---';
             var matEl = document.getElementById('pf-user-matricula');
-            if (matEl) matEl.textContent = pfUser.matricula ? 'Mat: ' + pfUser.matricula : '';
+            if (matEl) { var _cred = pfUser.credencial || ''; matEl.style.display = _cred ? '' : 'none'; matEl.textContent = _cred ? 'Credencial: ' + _cred : ''; }
             var cpfDisp = pfUser.cpf || '';
             if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;

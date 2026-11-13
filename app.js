@@ -58,9 +58,34 @@ function turmaConcluida(t) {
     return statusDaTurma(t) === 'Concluido';
 }
 
+/* Compara nomes de projeto ignorando acentos, espacos, barras e hifens.
+   Serve para ligar turmas antigas gravadas com o nome do projeto escrito de
+   outro jeito (ex.: "PREFEITURA DE BUENOS AIRES-PE" x "BUENOS AIRES /PE"). */
+function projetoNomeChave(nome) {
+    return String(nome || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase().replace(/[^A-Z0-9]+/g, '');
+}
+
+function projetoCorresponde(a, b) {
+    var x = projetoNomeChave(a);
+    var y = projetoNomeChave(b);
+    if (!x || !y) return false;
+    if (x === y) return true;
+    /* Tolera apenas o prefixo "PREFEITURA (MUNICIPAL) DE" / "MUNICIPIO DE",
+       sem comparar projetos diferentes que tenham palavras em comum. */
+    var re = /^(PREFEITURAMUNICIPALDE|PREFEITURADE|MUNICIPIODEDE|MUNICIPIODE)/;
+    var xs = x.replace(re, '');
+    var ys = y.replace(re, '');
+    return !!(xs && ys && xs === ys);
+}
+
 function turmasDoProjeto(nome) {
     var alvo = String(nome || '').trim();
-    return (turmas || []).filter(function(t) { return String(t.projeto || '').trim() === alvo; });
+    if (!alvo) return [];
+    return (turmas || []).filter(function(t) {
+        return String(t.projeto || '').trim() === alvo || projetoCorresponde(t.projeto, alvo);
+    });
 }
 
 function projetoEmAndamento(nome) {
@@ -89,7 +114,7 @@ function encontrarTurma(nome, projeto) {
     if (!candidatas.length) return null;
     if (p) {
         var comProjeto = candidatas.find(function(t) {
-            return String(t.projeto || '').trim().toLowerCase() === p;
+            return projetoCorresponde(t.projeto, projeto);
         });
         if (comProjeto) return comProjeto;
     }
@@ -977,24 +1002,90 @@ function generateMatricula(cpf) {
     return 'ACD' + digits.slice(-5);
 }
 
+/* ===== CREDENCIAL DO FORMADO =====
+   Modelo: CRD.<TURMA>.<6 primeiros digitos do CPF><DDMMYYYY da data final>
+   Ex.: CRD.SLM01.05004909112026
+   Somente formados (tipoPessoa F) usam este modelo. Alunos ativos e
+   pre-inscritos continuam com a matricula ACD. */
+function normalizarTurmaCredencial(turma) {
+    return String(turma || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function dataFinalCredencial(v) {
+    var s = String(v || '').trim();
+    if (!s) return '';
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[3] + m[2] + m[1];
+    m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) return m[1] + m[2] + m[3];
+    var d = s.replace(/\D/g, '');
+    return d.length === 8 ? d : '';
+}
+
+function gerarCredencialFormado(dados) {
+    var c = dados || {};
+    var turma = normalizarTurmaCredencial(c.formadoTurma || c.turma || '');
+    var cpf6 = String(c.cpf || '').replace(/\D/g, '').slice(0, 6);
+    var data = dataFinalCredencial(c.dataFinal || c.data_final || c.dataAVFinalPraticaFmt || c.dataAVFinalPratica || c.dataAvFinalPratica || '');
+    if (!turma || cpf6.length < 6 || data.length !== 8) return '';
+    return 'CRD.' + turma + '.' + cpf6 + data;
+}
+
 function updateMatricula(cpfFormatted) {
     const wrapper = document.getElementById('fc-matricula-wrapper');
     const display = document.getElementById('fc-matricula-display');
     const qr = document.getElementById('fc-matricula-qr');
     if (!wrapper || !display) return;
-    const mat = generateMatricula(cpfFormatted);
+    const tipoEl = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
+    const isFormado = !!(tipoEl && tipoEl.value === 'F');
+    const label = document.getElementById('fc-matricula-label');
+    if (label) label.textContent = isFormado ? 'Credencial' : 'Matricula';
+
+    const cpfDigits = String(cpfFormatted || '').replace(/\D/g, '');
+    let mat = '';
+    if (isFormado) {
+        mat = gerarCredencialFormado({
+            cpf: cpfDigits,
+            turma: (document.getElementById('fc-turma') || {}).value || '',
+            dataFinal: (document.getElementById('fc-data-final') || {}).value || ''
+        });
+    } else {
+        mat = generateMatricula(cpfDigits);
+    }
+
     if (mat) {
         display.textContent = mat;
+        display.style.fontSize = '22px';
+        display.style.letterSpacing = '2px';
         wrapper.style.display = '';
         if (qr) {
             qr.src = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
             qr.style.display = 'block';
         }
+    } else if (isFormado && cpfDigits.length >= 6) {
+        display.textContent = 'Informe a Data Final';
+        display.style.fontSize = '13px';
+        display.style.letterSpacing = '0';
+        wrapper.style.display = '';
+        if (qr) { qr.removeAttribute('src'); qr.style.display = 'none'; }
     } else {
         wrapper.style.display = 'none';
         display.textContent = '';
-        if (qr) qr.style.display = 'none';
+        if (qr) { qr.removeAttribute('src'); qr.style.display = 'none'; }
     }
+}
+
+/* Mostra a Data Final e troca o rotulo Matricula/Credencial conforme o tipo
+   escolhido no formulario. Tambem atualiza a previa da credencial. */
+function fcAtualizarTipoCredencial() {
+    const tipoEl = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
+    const isFormado = !!(tipoEl && tipoEl.value === 'F');
+    const box = document.getElementById('fc-data-final-box');
+    if (box) box.style.display = isFormado ? '' : 'none';
+    const campo = document.getElementById('fc-cpf');
+    updateMatricula(campo ? campo.value : '');
 }
 
 function formatPhone(input) {
@@ -2064,19 +2155,8 @@ async function editCandidato(index, origem) {
     const tipoPessoa = c.tipoPessoa || 'A';
     const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"][value="' + tipoPessoa + '"]');
     if (tipoRadio) tipoRadio.checked = true;
-    // Atualizar matricula e QR code
-    const mat = c.matricula || generateMatricula(c.cpf);
-    const wrapper = document.getElementById('fc-matricula-wrapper');
-    const display = document.getElementById('fc-matricula-display');
-    const qr = document.getElementById('fc-matricula-qr');
-    if (wrapper && display) {
-        display.textContent = mat;
-        wrapper.style.display = '';
-        if (qr) {
-            qr.src = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
-            qr.style.display = 'block';
-        }
-    }
+    // Atualiza o rotulo Matricula/Credencial, a Data Final e a previa com QR code
+    fcAtualizarTipoCredencial();
     const senhaWrapper = document.getElementById('senha-field-wrapper');
     if (c.status === 'Ativo') {
         senhaWrapper.style.display = '';
@@ -2121,12 +2201,18 @@ function resetFormCandidato() {
     formFields.forEach(id => { const el = document.getElementById(id); if (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; } });
     document.getElementById('senha-field-wrapper').style.display = 'none';
     document.getElementById('fc-senha').required = false;
+    const tipoNovo = document.querySelector('input[name="fc-tipo-pessoa"][value="A"]');
+    if (tipoNovo) tipoNovo.checked = true;
     const mw = document.getElementById('fc-matricula-wrapper');
     const md = document.getElementById('fc-matricula-display');
     const mq = document.getElementById('fc-matricula-qr');
     if (mw) mw.style.display = 'none';
     if (md) md.textContent = '';
     if (mq) { mq.src = ''; mq.style.display = 'none'; }
+    const boxDataFinal = document.getElementById('fc-data-final-box');
+    if (boxDataFinal) boxDataFinal.style.display = 'none';
+    const labelCred = document.getElementById('fc-matricula-label');
+    if (labelCred) labelCred.textContent = 'Matricula';
     const btnAtualizar = document.getElementById('btn-atualizar-cadastro');
     if (btnAtualizar) { btnAtualizar.style.display = 'none'; btnAtualizar.style.background = 'transparent'; btnAtualizar.style.color = '#4caf50'; btnAtualizar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Atualizar Cadastro'; }
     // No formulario vazio, nenhum curso deve permanecer selecionado.
@@ -2165,7 +2251,10 @@ async function handleCandidatoSubmit(event) {
     // Origem do formulario em uso: define para qual tela voltar apos salvar.
     const origemSalvar = editingOrigem || 'pre-inscricao';
     const isNovoCadastro = editingIndex === null;
-    const data = {};
+    const anterior = editingIndex !== null ? candidatos[editingIndex] : null;
+    /* Parte do registro anterior para nao perder foto, credencial, formadoEm
+       e outros campos que nao aparecem no formulario. */
+    const data = anterior ? Object.assign({}, anterior) : {};
     formFields.forEach(id => {
         const key = id.replace('fc-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
         const el = document.getElementById(id);
@@ -2176,21 +2265,45 @@ async function handleCandidatoSubmit(event) {
     const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
     data.tipoPessoa = tipoRadio ? tipoRadio.value : 'A';
     data.cursos = fcCursosColetar();
-    data.matricula = generateMatricula(data.cpf);
-    data.status = editingIndex !== null ? candidatos[editingIndex].status : 'Pendente';
-    data.dataCadastro = (editingIndex !== null && candidatos[editingIndex].dataCadastro) ? candidatos[editingIndex].dataCadastro : new Date().toLocaleDateString('pt-BR');
-    data.dataHoraCadastro = (editingIndex !== null && candidatos[editingIndex].dataHoraCadastro) ? candidatos[editingIndex].dataHoraCadastro : new Date().toLocaleString('pt-BR');
+    data.status = anterior ? anterior.status : 'Pendente';
+    data.dataCadastro = (anterior && anterior.dataCadastro) ? anterior.dataCadastro : new Date().toLocaleDateString('pt-BR');
+    data.dataHoraCadastro = (anterior && anterior.dataHoraCadastro) ? anterior.dataHoraCadastro : new Date().toLocaleString('pt-BR');
     data.dataInscricao = document.getElementById('fc-data-inscricao').value || '';
     data.dataFinal = (document.getElementById('fc-data-final') || {}).value || '';
-    if (editingIndex !== null && candidatos[editingIndex].atualizarCadastro) {
+    if (anterior && anterior.atualizarCadastro) {
         data.atualizarCadastro = true;
     }
 
-    if (editingIndex !== null) {
-        const anterior = candidatos[editingIndex];
-        data.id = anterior.id;
-        data.photoDataUrl = anterior.photoDataUrl || null;
-        data.hasPhoto = anterior.hasPhoto || false;
+    if (data.tipoPessoa === 'F') {
+        /* Formado: a matricula passa a ser a credencial
+           CRD.<TURMA>.<6 digitos do CPF><DDMMYYYY da data final>. */
+        data.formadoProjeto = data.projeto || data.formadoProjeto || '';
+        data.formadoTurma = data.turma || data.formadoTurma || '';
+        if (!data.formadoEm) data.formadoEm = new Date().toISOString();
+        const novaCredencial = gerarCredencialFormado(data);
+        if (novaCredencial) {
+            data.credencial = novaCredencial;
+            data.matricula = novaCredencial;
+            data.credencialAtualizadaEm = new Date().toISOString();
+            data.credencialModelo = 'CRD.TURMA.CPF6DATA';
+        } else if (!data.credencial) {
+            alert('Informe a Data Final do formado para gerar a credencial (CRD.TURMA.CPF+DATA).');
+            const campoData = document.getElementById('fc-data-final');
+            if (campoData) {
+                campoData.focus();
+                if (campoData.scrollIntoView) campoData.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
+        }
+    } else {
+        data.credencial = '';
+        data.matricula = generateMatricula(data.cpf);
+        data.formadoEm = '';
+        data.formadoProjeto = '';
+        data.formadoTurma = '';
+    }
+
+    if (anterior) {
         /* Carrega a patente antiga para que o modulo registre a troca
            (patenteAnterior / patenteAlteradoPor) em vez de fingir
            que sempre foi essa. */
@@ -2249,8 +2362,8 @@ function preOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('pre-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t));
-        turmasDoProjeto.forEach(t => {
+        const turmasProjeto = turmasDoProjeto(projetoNome).filter(turmaEmAndamento);
+        turmasProjeto.forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -2607,7 +2720,8 @@ async function confirmDelete() {
 
 function printCandidato(i) {
     const c = candidatos[i]; if (!c) return;
-    const mat = c.matricula || generateMatricula(c.cpf);
+    const isFormado = (c.tipoPessoa || 'A') === 'F' || !!c.credencial;
+    const mat = c.credencial || c.matricula || generateMatricula(c.cpf);
     getFoto(c.cpf).then(function(photoSrc) {
     const w = window.open('', '_blank');
     w.document.write(`<html><head><title>FARN - ${c.nome}</title><style>
@@ -2638,7 +2752,7 @@ function printCandidato(i) {
         <h2>Uniforme</h2>
         <div class="row"><div class="col"><div class="label">Calca</div><div class="val">${c.calca||'---'}</div></div><div class="col"><div class="label">Camisa</div><div class="val">${c.camisa||'---'}</div></div><div class="col"><div class="label">Calcado</div><div class="val">${c.calcado||'---'}</div></div></div>
         <h2>Turma</h2>
-        ${mat ? `<div class="row"><div class="col"><div class="label">Matricula</div><div class="val" style="color:#e65100;font-size:18px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</div></div></div>` : ''}
+        ${mat ? `<div class="row"><div class="col"><div class="label">${isFormado ? 'Credencial' : 'Matricula'}</div><div class="val" style="color:#e65100;font-size:18px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</div></div></div>` : ''}
         <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}${c.turma ? '<br><small style="color:#666;font-size:6px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</div></div><div class="col"><div class="label">Projeto</div><div class="val" style="color:#e65100;font-weight:700">${c.projeto||'---'}</div></div></div>
         ${c.status === 'Ativo' && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
         ${c.dataHoraCadastro ? `<div class="row"><div class="col"><div class="label">Data/Hora 1o Cadastro</div><div class="val" style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro}</div></div></div>` : ''}
@@ -2989,8 +3103,8 @@ function alunosOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('alunos-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t));
-        turmasDoProjeto.forEach(t => {
+        const turmasProjeto = turmasDoProjeto(projetoNome).filter(turmaEmAndamento);
+        turmasProjeto.forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -3184,7 +3298,7 @@ function deleteCandidatoFormados(i) {
     if (!c) return;
     pendingDeleteIndex = i;
     pendingDeleteId = candidatoDocId(c);
-    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o formado <strong>${c.nome}</strong> (${c.matricula || 'sem matricula'})?` +
+    document.getElementById('confirm-text').innerHTML = `Tem certeza que deseja excluir o formado <strong>${c.nome}</strong> (${c.credencial || c.matricula || 'sem credencial'})?` +
         '<div style="margin-top:10px;font-size:12px;color:#b45309"><i class="fa-solid fa-triangle-exclamation"></i> A ficha, as presencas e os termos ja assinados ficam no banco: a exclusao apaga só o cadastro.</div>';
     document.getElementById('modal-confirm-overlay').classList.remove('hidden');
 }
@@ -3203,7 +3317,7 @@ async function _formarTurmaBuscarDataAVFinalPratica(projeto, turma) {
             var p = d.projeto || '';
             var t = d.turma || '';
             var matchTurma = (t === turma) || (Array.isArray(d.turmas) && d.turmas.indexOf(turma) !== -1);
-            var matchProjeto = !projeto || !p || p === projeto;
+            var matchProjeto = !projeto || !p || projetoCorresponde(p, projeto);
             if (matchTurma && matchProjeto) {
                 var dt = d.data || d.dataAplicacao || d.dataAvaliacao || d.dataCriacao || '';
                 if (d.createdAt && d.createdAt.toDate) { try { dt = dt || d.createdAt.toDate().toISOString().slice(0,10); } catch(e){} }
@@ -3230,11 +3344,10 @@ function _formarTurmaFormatDataCompleta(isoOrDate) {
     return dd + mm + yy;
 }
 
-function _formarTurmaGerarCredencial(cpf, dataAV) {
-    var dig = String(cpf || '').replace(/\D/g, '').slice(0, 6);
-    while (dig.length < 6) dig += '0';
+function _formarTurmaGerarCredencial(cpf, dataAV, turma) {
     var dt = _formarTurmaFormatDataCompleta(dataAV);
-    return 'BCBA' + dig + dt;
+    var dtIso = dt.length === 8 ? (dt.slice(4) + '-' + dt.slice(2, 4) + '-' + dt.slice(0, 2)) : '';
+    return gerarCredencialFormado({ cpf: cpf, turma: turma, dataFinal: dtIso });
 }
 
 async function formarTurmaAbrir() {
@@ -3246,13 +3359,13 @@ async function formarTurmaAbrir() {
     if (currentAlunosTab !== 'aprovados') { alert('Abra a guia Ativos para formar a turma.'); return; }
 
     var ativos = candidatos.filter(function(c) {
-        return (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && !c.pediuBaixa && c.turma === turma && (!projeto || c.projeto === projeto);
+        return (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && !c.pediuBaixa && c.turma === turma && (!projeto || projetoCorresponde(c.projeto, projeto));
     });
     if (!ativos.length) { alert('Nenhum aluno ativo encontrado nesta turma para formar.'); return; }
 
     var msg = 'Formar turma "' + turma + '" (' + projeto + ')?\n\n' +
         'Serão transferidos ' + ativos.length + ' aluno(s) ativo(s) para Indivíduo Formado.\n' +
-        'Para cada aluno: todos os dados serão mantidos; tipo acadêmico passa a Formado; a matrícula (ACD) será substituída pela Credencial (BCBA + 6 primeiros dígitos do CPF + data completa da AV Final Prática).\n\n' +
+        'Para cada aluno: todos os dados serão mantidos; tipo acadêmico passa a Formado; a matrícula (ACD) será substituída pela Credencial (CRD + turma + 6 primeiros dígitos do CPF + data final).\n\n' +
         'Deseja continuar?';
     if (!confirm(msg)) return;
 
@@ -3274,18 +3387,23 @@ async function formarTurmaAbrir() {
 
         for (var k = 0; k < ativos.length; k++) {
             var c = ativos[k];
-            var cred = _formarTurmaGerarCredencial(c.cpf, dataAV);
+            var cred = _formarTurmaGerarCredencial(c.cpf, dataAV, turma);
             var updates = {
                 tipoPessoa: 'F',
                 status: 'Ativo',
-                credencial: cred,
-                matricula: cred, // compatibilidade: onde exibia matricula, passa a mostrar credencial
                 formadoEm: nowIso,
                 formadoProjeto: projeto,
                 formadoTurma: turma,
                 dataAVFinalPratica: dataAV,
-                dataAVFinalPraticaFmt: dataAVFmt
+                dataAVFinalPraticaFmt: dataAVFmt,
+                dataFinal: dataAV
             };
+            if (cred) {
+                updates.credencial = cred;
+                updates.matricula = cred; // compatibilidade: onde exibia matricula, passa a mostrar credencial
+                updates.credencialModelo = 'CRD.TURMA.CPF6DATA';
+                updates.credencialAtualizadaEm = nowIso;
+            }
             // aplica no objeto local
             Object.keys(updates).forEach(function(key){ c[key] = updates[key]; });
 
@@ -3305,7 +3423,7 @@ async function formarTurmaAbrir() {
         if (typeof renderList === 'function') renderList();
         if (typeof renderFormadosList === 'function') renderFormadosList();
 
-        alert('Turma formada com sucesso!\n\n' + ativos.length + ' aluno(s) transferido(s) para Indivíduo Formado.\nCredencial gerada: BCBA + 6 dígitos do CPF + data da AV Final Prática (' + dataAVFmt + ').');
+        alert('Turma formada com sucesso!\n\n' + ativos.length + ' aluno(s) transferido(s) para Indivíduo Formado.\nCredencial gerada: CRD + turma + 6 dígitos do CPF + data final (' + dataAVFmt + ').');
     } catch(e) {
         console.error('Erro ao formar turma:', e);
         alert('Erro ao formar turma: ' + (e && e.message ? e.message : e));
@@ -3468,7 +3586,7 @@ function foto3x4OnProjetoChange() {
     const selTurma = document.getElementById('foto3x4-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
+        turmasDoProjeto(projetoNome).filter(turmaEmAndamento).forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -5249,7 +5367,7 @@ function relGerarCertificadoFormado(lista) {
         var nasc = c.nascimento || '---';
         if (nasc && nasc.indexOf('-') !== -1) { var p = nasc.split('-'); if (p.length === 3) nasc = p[2] + '/' + p[1] + '/' + p[0]; }
         var natural = c.naturalidade || '---';
-        var mat = c.matricula || '---';
+        var mat = c.credencial || c.matricula || '---';
         var formacao = c.dataCertificado || '---';
         if (formacao && formacao.indexOf('-') !== -1) { var p2 = formacao.split('-'); if (p2.length === 3) formacao = p2[2] + '/' + p2[1] + '/' + p2[0]; }
         var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=200x200&margin=2';
@@ -5260,7 +5378,7 @@ function relGerarCertificadoFormado(lista) {
                 '<span style="margin:0 1.5%">CPF: ' + cpfDisp + '</span>' +
                 '<span style="margin:0 1.5%">Nascido em: ' + nasc + '</span>' +
                 '<span style="margin:0 1.5%">Natural de: ' + natural + '</span>' +
-                '<span style="margin:0 1.5%">Matricula: ' + mat + '</span>' +
+                '<span style="margin:0 1.5%">Credencial: ' + mat + '</span>' +
                 '<span style="margin:0 1.5%">Formacao: ' + formacao + '</span>' +
             '</div>' +
             '<img style="position:absolute;right:8.7%;bottom:21.7%;width:8%;background:#fff;border:2px solid #1c1917;padding:2px;box-sizing:border-box" src="' + qrUrl + '" alt="QR">' +
@@ -5276,7 +5394,7 @@ function relGerarCertificadoFormado(lista) {
 
 function relGerarCarteiraFormado(lista) {
     var cards = lista.map(function(c) {
-        var mat = c.matricula || '---';
+        var mat = c.credencial || c.matricula || '---';
         var cpfDisp = c.cpf || '';
         if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(mat) + '&size=100x100&margin=2';
@@ -5286,7 +5404,7 @@ function relGerarCarteiraFormado(lista) {
                 '<div class="pf-carteira-foto-box"><i class="fa-solid fa-user"></i></div>' +
                 '<div class="pf-carteira-dados-box">' +
                     '<div class="pf-carteira-dado" style="font-size:12px;font-weight:800;letter-spacing:.5px;color:#1a237e;margin-bottom:2px">' + (c.nome || '---').toUpperCase() + '</div>' +
-                    '<div class="pf-carteira-dado"><span class="pf-cd-label">MATRICULA:</span> <span class="pf-cd-val pf-cd-mat">' + mat + '</span></div>' +
+                    '<div class="pf-carteira-dado"><span class="pf-cd-label">CREDENCIAL:</span> <span class="pf-cd-val pf-cd-mat">' + mat + '</span></div>' +
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">CPF:</span> <span class="pf-cd-val">' + cpfDisp + '</span></div>' +
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">NASC.:</span> <span class="pf-cd-val">' + (c.nascimento || '---') + '</span></div>' +
                     '<div class="pf-carteira-dado"><span class="pf-cd-label">TIPO SANG.:</span> <span class="pf-cd-val">' + (c.fatorRh || '---') + '</span></div>' +
@@ -5306,10 +5424,10 @@ function relGerarCarteiraFormado(lista) {
         '.pf-carteira-foto-box{position:absolute;top:38%;left:9%;width:17%;aspect-ratio:3/4;background:#f5f5f5;border:2px solid #8B6914;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}' +
         '.pf-carteira-foto-box .fa-user{font-size:28px;color:#bbb}' +
         '.pf-carteira-dados-box{position:absolute;top:36%;left:29%;width:32%;display:flex;flex-direction:column;gap:7px}' +
-        '.pf-carteira-dado{font-size:13px;line-height:1.4;color:#1e293b;display:flex;gap:4px;align-items:baseline}' +
+        '.pf-carteira-dado{font-size:13px;line-height:1.4;color:#1e293b;display:flex;gap:4px;align-items:baseline;flex-wrap:wrap}' +
         '.pf-cd-label{font-weight:700;color:#374151;font-size:10px;text-transform:uppercase;white-space:nowrap;min-width:58px}' +
-        '.pf-cd-val{font-weight:600;font-size:13px}' +
-        '.pf-cd-mat{color:#7c3aed;font-family:Courier New,monospace;font-size:14px;font-weight:800;letter-spacing:1px}' +
+        '.pf-cd-val{font-weight:600;font-size:13px;min-width:0;overflow-wrap:anywhere}' +
+        '.pf-cd-mat{color:#7c3aed;font-family:Courier New,monospace;font-size:9px;font-weight:800;letter-spacing:0;overflow-wrap:anywhere}' +
         '.pf-carteira-qr-box{position:absolute;top:52%;right:2%;width:18%;text-align:center}' +
         '.pf-carteira-qr-box img{width:100%;border-radius:4px;background:#fff;padding:2px}' +
         '.pf-carteira-title-overlay{position:absolute;top:3%;left:0;width:100%;text-align:center;color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;text-shadow:1px 1px 3px rgba(0,0,0,.6)}' +
@@ -6697,8 +6815,8 @@ function fcProjetoOnTurmaChange() {
     const current = select.value;
     select.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome);
-        turmasDoProjeto.forEach(t => {
+        const turmasProjeto = turmasDoProjeto(projetoNome);
+        turmasProjeto.forEach(t => {
             const opt = document.createElement('option');
             opt.value = t.nome;
             opt.textContent = t.nome + (t.descricao ? ' - ' + t.descricao : '');
@@ -6706,7 +6824,7 @@ function fcProjetoOnTurmaChange() {
         });
         if (infoDiv && infoText) {
             infoDiv.style.display = 'block';
-            infoText.textContent = turmasDoProjeto.length + ' turma(s) vinculada(s) ao projeto "' + projetoNome + '"';
+            infoText.textContent = turmasProjeto.length + ' turma(s) vinculada(s) ao projeto "' + projetoNome + '"';
         }
     } else {
         turmas.forEach(t => {
@@ -7273,8 +7391,8 @@ function apontamentoOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('apt-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        const turmasDoProjeto = turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t));
-        turmasDoProjeto.forEach(t => {
+        const turmasProjeto = turmasDoProjeto(projetoNome).filter(turmaEmAndamento);
+        turmasProjeto.forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -8385,7 +8503,7 @@ function tfmOnSelecaoProjetoChange() {
     const selTurma = document.getElementById('tfm-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
+        turmasDoProjeto(projetoNome).filter(turmaEmAndamento).forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -9231,7 +9349,7 @@ function tfmNovoOnProjetoChange() {
     const selTurma = document.getElementById('tfm-novo-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
+        turmasDoProjeto(projetoNome).filter(turmaEmAndamento).forEach(t => {
             selTurma.innerHTML += '<option value="' + tfmEsc(t.nome).replace(/"/g, '&quot;') + '">' + tfmEsc(t.nome + (t.descricao ? ' - ' + t.descricao : '')).replace(/</g, '&lt;') + '</option>';
         });
     }
@@ -9785,8 +9903,8 @@ function discOnProjetoChange() {
     var selTurma = document.getElementById('disc-turma');
     selTurma.innerHTML = '<option value="">Todas as turmas</option>';
     if (projetoNome) {
-        var turmasDoProjeto = turmas.filter(function(t) { return t.projeto === projetoNome; });
-        turmasDoProjeto.forEach(function(t) {
+        var turmasProjeto = turmasDoProjeto(projetoNome);
+        turmasProjeto.forEach(function(t) {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -9993,8 +10111,8 @@ function aulaOnProjetoChange() {
     var selTurma = document.getElementById('aula-turma');
     selTurma.innerHTML = '<option value="">Todas as turmas</option>';
     if (projetoNome) {
-        var turmasDoProjeto = turmas.filter(function(t) { return t.projeto === projetoNome; });
-        turmasDoProjeto.forEach(function(t) {
+        var turmasProjeto = turmasDoProjeto(projetoNome);
+        turmasProjeto.forEach(function(t) {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -11176,13 +11294,17 @@ function formadosInicializar() {
     var projsComFormado = {};
     (candidatos || []).forEach(function(c) {
         if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return;
-        var t = encontrarTurma(c.turma, c.projeto);
-        var formadoPorTurma = t ? turmaConcluida(t) : projetoConcluido(c.projeto);
-        var formadoExplicito = !!(c.formadoEm || c.credencial);
-        if ((formadoPorTurma || formadoExplicito) && c.projeto) projsComFormado[c.projeto] = true;
+        var proj = c.projeto || c.formadoProjeto;
+        if (proj) projsComFormado[proj] = true;
     });
     projetos.filter(function(p) { return projetoConcluido(p.nome) || projsComFormado[p.nome]; }).forEach(function(p) {
         selProj.innerHTML += '<option value="' + p.nome + '">' + p.nome + '</option>';
+    });
+    // garante que projetos de formados antigos também apareçam no filtro
+    Object.keys(projsComFormado).forEach(function(nome) {
+        if (!selProj.querySelector('option[value="' + nome.replace(/"/g, '\\"') + '"]')) {
+            selProj.innerHTML += '<option value="' + nome + '">' + nome + '</option>';
+        }
     });
     // garante que o projeto atual do filtro permaneça selecionável mesmo fora das regras
     if (currentProj && !selProj.querySelector('option[value="' + currentProj.replace(/"/g, '\\"') + '"]')) {
@@ -11202,14 +11324,17 @@ function formadosOnFiltroChange() {
     var turmasComFormado = {};
     (candidatos || []).forEach(function(c) {
         if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return;
-        if (projeto && c.projeto !== projeto) return;
-        var t = encontrarTurma(c.turma, c.projeto);
-        var formadoPorTurma = t ? turmaConcluida(t) : projetoConcluido(c.projeto);
-        var formadoExplicito = !!(c.formadoEm || c.credencial);
-        if ((formadoPorTurma || formadoExplicito) && c.turma) turmasComFormado[c.turma] = true;
+        var proj = c.projeto || c.formadoProjeto;
+        if (projeto && !projetoCorresponde(proj, projeto)) return;
+        var turmaNome = c.turma || c.formadoTurma;
+        if (turmaNome) turmasComFormado[turmaNome] = true;
     });
+    var turmasVistas = {};
     var turmasFiltradas = turmas.filter(function(t) {
-        return (turmaConcluida(t) || turmasComFormado[t.nome]) && (!projeto || t.projeto === projeto);
+        if (turmasVistas[t.nome]) return false;
+        var entra = (turmaConcluida(t) || turmasComFormado[t.nome]) && (!projeto || projetoCorresponde(t.projeto, projeto));
+        if (entra) turmasVistas[t.nome] = true;
+        return entra;
     });
     turmasFiltradas.forEach(function(t) {
         selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + '</option>';
@@ -11259,12 +11384,8 @@ function renderFormadosList() {
     var turma = selTurma ? selTurma.value : '';
     var lista = candidatos.filter(function(c) {
         if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return false;
-        var t = encontrarTurma(c.turma, c.projeto);
-        var formadoPorTurma = t ? turmaConcluida(t) : projetoConcluido(c.projeto);
-        var formadoExplicito = !!(c.formadoEm || c.credencial);
-        if (!formadoPorTurma && !formadoExplicito) return false;
-        return (!projeto || c.projeto === projeto) &&
-            (!turma || c.turma === turma);
+        return (!projeto || projetoCorresponde(c.projeto || c.formadoProjeto, projeto)) &&
+            (!turma || c.turma === turma || c.formadoTurma === turma);
     });
     var badge = document.getElementById('formados-count-badge');
     if (badge) badge.textContent = lista.length + ' formado' + (lista.length !== 1 ? 's' : '');
@@ -11283,7 +11404,7 @@ function renderFormadosList() {
         var remanejado = c.remanejadoDocente
             ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>'
             : '<span style="color:#94a3b8;font-size:11px">---</span>';
-        var credencial = c.credencial || c.matricula || '-';
+        var credencial = c.credencial || '<span style="color:#dc2626;font-weight:700" title="Informe a Data Final no cadastro para gerar a credencial">PENDENTE</span>';
         return '<tr>' +
             '<td style="font-weight:600">' + (c.nome || '-') + patenteTag(c) + '</td>' +
             '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
@@ -13666,7 +13787,7 @@ function cavPopulateTurmas(projetoNome, value) {
     const sel = document.getElementById('cav-turma');
     if (!sel) return;
     sel.innerHTML = '<option value="">Selecione a turma...</option>';
-    (turmas || []).filter(t => (!projetoNome || t.projeto === projetoNome) && (turmaEmAndamento(t) || t.nome === value)).forEach(t => {
+    (turmas || []).filter(t => (!projetoNome || projetoCorresponde(t.projeto, projetoNome)) && (turmaEmAndamento(t) || t.nome === value)).forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.nome || '';
         opt.textContent = (t.nome || '');
@@ -15437,7 +15558,7 @@ function fichaGeralOnProjetoChange() {
     const selTurma = document.getElementById('ficha-geral-selecao-turma');
     selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
     if (projetoNome) {
-        turmas.filter(t => t.projeto === projetoNome && turmaEmAndamento(t)).forEach(t => {
+        turmasDoProjeto(projetoNome).filter(turmaEmAndamento).forEach(t => {
             selTurma.innerHTML += '<option value="' + t.nome + '">' + t.nome + (t.descricao ? ' - ' + t.descricao : '') + '</option>';
         });
     }
@@ -15474,7 +15595,8 @@ function fgGrupoHeader(status, qtd) {
 function fichaGeralItemHTML(c, calc, aulas, idx) {
     const st = c.status || '—';
     const stCor = fichaGeralStatusCor(st);
-    const mat = c.matricula || generateMatricula(c.cpf) || '—';
+    const isFormado = (c.tipoPessoa || 'A') === 'F' || !!c.credencial;
+    const mat = c.credencial || c.matricula || generateMatricula(c.cpf) || '—';
     const cpfFmt = formatCPFDisplay(c.cpf) || '—';
     const nome = c.nome || '—';
     const cursos = Array.isArray(c.cursos) ? c.cursos.filter(Boolean) : (c.cursos ? [c.cursos] : []);
@@ -15484,7 +15606,7 @@ function fichaGeralItemHTML(c, calc, aulas, idx) {
         + '<div style="width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0"><i class="fa-solid fa-user"></i></div>'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:14px;font-weight:800;color:#0f172a">' + escHTML(nome) + '</div>'
-        + '<div style="font-size:11px;color:#64748b;margin-top:2px">Matricula: ' + escHTML(mat) + '  •  CPF: ' + escHTML(cpfFmt) + '  •  ' + escHTML(fichaGeralProjeto || c.projeto) + ' / ' + escHTML(fichaGeralTurma || c.turma) + '</div>'
+        + '<div style="font-size:11px;color:#64748b;margin-top:2px">' + (isFormado ? 'Credencial' : 'Matricula') + ': ' + escHTML(mat) + '  •  CPF: ' + escHTML(cpfFmt) + '  •  ' + escHTML(fichaGeralProjeto || c.projeto) + ' / ' + escHTML(fichaGeralTurma || c.turma) + '</div>'
         + '<div style="font-size:11px;font-weight:800;color:#dc2626;margin-top:3px;word-break:break-word"><i class="fa-solid fa-book-open" style="margin-right:4px"></i> Cursos: ' + escHTML(cursosResumo) + '</div>'
         + '</div>'
         + '<span style="background:' + stCor[1] + ';color:' + stCor[0] + ';border:1px solid ' + stCor[2] + ';border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:800;flex-shrink:0">' + escHTML(st) + '</span>'
