@@ -15,7 +15,8 @@ let editingOrigem = 'pre-inscricao';
 const FC_ORIGENS = {
     'pre-inscricao': { rotulo: 'Pre-Cadastro', icone: 'fa-user-plus', cor: '#16a34a', salvar: 'Salvar Pre-Cadastro', section: 'admin-pre-inscricao' },
     'alunos': { rotulo: 'Aluno', icone: 'fa-user-graduate', cor: '#2563eb', salvar: 'Salvar Aluno', section: 'admin-alunos' },
-    'formados': { rotulo: 'Formado', icone: 'fa-user-graduate', cor: '#2563eb', salvar: 'Salvar Formado', section: 'admin-formados' }
+    'formados': { rotulo: 'Formado', icone: 'fa-user-graduate', cor: '#2563eb', salvar: 'Salvar Formado', section: 'admin-formados' },
+    'cadastro-geral': { rotulo: 'Cadastro Geral', icone: 'fa-address-card', cor: '#0891b2', salvar: 'Salvar Cadastro Geral', section: 'admin-cadastro-geral' }
 };
 let candidatos = [];
 let turmas = [];
@@ -1961,7 +1962,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -2001,6 +2002,21 @@ function calcularIdadeCampo(nascId, idadeId) {
 }
 
 const formFields = ['fc-projeto','fc-turma','fc-nome','fc-cpf','fc-nascimento','fc-idade','fc-data-inscricao','fc-data-final','fc-estado-civil','fc-genero','fc-nacionalidade','fc-naturalidade','fc-titulo','fc-profissao','fc-mae','fc-pai','fc-email','fc-whatsapp','fc-endereco','fc-numero','fc-bairro','fc-cidade','fc-estado','fc-local-votacao','fc-altura','fc-peso','fc-fator-rh','fc-hipertensao','fc-diabetes','fc-deficiencia','fc-tatuagem','fc-cirurgia','fc-alcool','fc-medicamento','fc-cansaco','fc-calca','fc-camisa','fc-calcado','fc-senha'];
+
+/* Le os campos do formulario no mesmo formato usado em handleCandidatoSubmit.
+   Fica aqui para o Cadastro Geral reaproveitar o formulario de Formado sem
+   duplicar a lista de campos. */
+function fcCamposFormulario() {
+    const data = {};
+    formFields.forEach(id => {
+        const key = id.replace('fc-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'fc-cpf') data[key] = el.value.replace(/\D/g, '');
+        else data[key] = el.value;
+    });
+    return data;
+}
 
 function fcFormularioModo(origem, nome, isNovo) {
     const cfg = FC_ORIGENS[origem] || FC_ORIGENS['pre-inscricao'];
@@ -2091,6 +2107,9 @@ function fcCursosColetar() {
 async function editCandidato(index, origem) {
     const c = candidatos[index]; if (!c) return;
     editingIndex = index;
+    if (origem !== 'cadastro-geral') {
+        if (typeof cadastroGeralLimparModo === 'function') cadastroGeralLimparModo();
+    }
     await populateTurmaSelect();
     populateProjetoSelect();
     document.getElementById('fc-nome').value = c.nome || '';
@@ -2197,6 +2216,7 @@ function resetFormCandidato() {
     editingIndex = null;
     editingFormadoMode = false;
     editingOrigem = 'pre-inscricao';
+    if (typeof cadastroGeralLimparModo === 'function') cadastroGeralLimparModo();
     fcFormularioModo('pre-inscricao', '', true);
     formFields.forEach(id => { const el = document.getElementById(id); if (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; } });
     document.getElementById('senha-field-wrapper').style.display = 'none';
@@ -2248,6 +2268,11 @@ function toggleAtualizarCadastro() {
 
 async function handleCandidatoSubmit(event) {
     event.preventDefault();
+    /* Cadastro Geral: docente, coordenacao, usuario e CFF usam o mesmo
+       formulario do formado, mas gravam na colecao de origem. */
+    if (typeof cadastroGeralAlvo !== 'undefined' && cadastroGeralAlvo && cadastroGeralAlvo.origem !== 'candidato') {
+        return cadastroGeralSalvarExterno(event);
+    }
     // Origem do formulario em uso: define para qual tela voltar apos salvar.
     const origemSalvar = editingOrigem || 'pre-inscricao';
     const isNovoCadastro = editingIndex === null;
@@ -2255,13 +2280,7 @@ async function handleCandidatoSubmit(event) {
     /* Parte do registro anterior para nao perder foto, credencial, formadoEm
        e outros campos que nao aparecem no formulario. */
     const data = anterior ? Object.assign({}, anterior) : {};
-    formFields.forEach(id => {
-        const key = id.replace('fc-', '').replace(/-([a-z])/g, (_, l) => l.toUpperCase());
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (id === 'fc-cpf') data[key] = el.value.replace(/\D/g, '');
-        else data[key] = el.value;
-    });
+    Object.assign(data, fcCamposFormulario());
     const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
     data.tipoPessoa = tipoRadio ? tipoRadio.value : 'A';
     data.cursos = fcCursosColetar();
@@ -2323,14 +2342,19 @@ async function handleCandidatoSubmit(event) {
     backupCandidatos();
     editingFormadoMode = false;
     editingOrigem = 'pre-inscricao';
-    if (origemSalvar === 'formados') {
+    var origemConcluida = origemSalvar;
+    cadastroGeralAlvo = null;
+    if (origemConcluida === 'formados') {
         showAdminSection('admin-formados');
         if (typeof formadosInicializar === 'function') formadosInicializar();
         renderFormadosList();
-    } else if (origemSalvar === 'alunos') {
+    } else if (origemConcluida === 'alunos') {
         // Formulario de Alunos e independente: mantem a aba e os filtros atuais.
         showAdminSection('admin-alunos');
         renderAlunosList();
+    } else if (origemConcluida === 'cadastro-geral') {
+        showAdminSection('admin-cadastro-geral');
+        if (typeof cadastroGeralInicializar === 'function') cadastroGeralInicializar();
     } else {
         showAdminSection('admin-pre-inscricao');
         renderList();
@@ -17841,6 +17865,7 @@ async function patentesGravarProposta() {
    aqui e literalmente a pagina original, com os mesmos campos e filtros. */
 
 var INDIVIDUO_SECOES = {
+    geral:   { id: 'admin-cadastro-geral', rotulo: 'Cadastro Geral', iniciar: 'cadastroGeralInicializar' },
     aluno:   { id: 'admin-alunos',        rotulo: 'Aluno Ativo',  iniciar: 'alunosInicializar' },
     pre:     { id: 'admin-pre-inscricao', rotulo: 'Pre-inscrito', iniciar: 'preInicializar' },
     formado: { id: 'admin-formados',      rotulo: 'Formado',      iniciar: 'formadosInicializar' },
@@ -17987,6 +18012,730 @@ function individuoEscolher(tipo) {
     aChamar.forEach(function (fn) {
         if (typeof window[fn] === 'function') window[fn]();
     });
+}
+
+/* ===== CADASTRO GERAL (INDIVIDUO) =====
+   Um unico cadastro que enxerga todas as pessoas do sistema: alunos ativos,
+   formados, docentes, coordenacao, usuarios e CFF. A lista agrupa os registros
+   pelo CPF (ou nome + nascimento quando nao ha CPF) para nao mostrar a mesma
+   pessoa duas vezes. O formulario aberto e o mesmo do Formado; ao salvar, o
+   Cadastro Geral grava na colecao de origem do vinculo escolhido. */
+
+var cadastroGeralPessoas = [];
+var cadastroGeralCff = [];
+var cadastroGeralAlvo = null;
+var cadastroGeralPessoaAtual = null;
+var cadastroGeralCarregando = false;
+
+function cgSoDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+
+function cgPrimeiro(v) {
+    if (Array.isArray(v)) return v.filter(Boolean)[0] || '';
+    return v == null ? '' : v;
+}
+
+function cgNormalizar(s) {
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function cgBusca(s) { return cgNormalizar(s).toLowerCase(); }
+
+function cgAtributo(s) {
+    return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+function cgDataIso(v) {
+    var s = String(v || '').trim();
+    var m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return m[3] + '-' + m[2] + '-' + m[1];
+    return s;
+}
+
+function cgIniciais(nome) {
+    var partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return '?';
+    var a = partes[0].charAt(0);
+    var b = partes.length > 1 ? partes[partes.length - 1].charAt(0) : '';
+    return (a + b).toUpperCase();
+}
+
+function cgRotuloOrigem(o) {
+    return ({ candidato: 'Aluno/Formado', docente: 'Docente', usuario: 'Usuário', cff: 'CFF' })[o] || o;
+}
+
+function cgPrioRegistro(r) {
+    if (r.origem === 'candidato') return (r.dados.tipoPessoa === 'F') ? 1 : 2;
+    if (r.origem === 'docente') return 3;
+    if (r.origem === 'cff') return 4;
+    return 5;
+}
+
+function cgBadgeTipo(rotulo) {
+    var cores = {
+        'Formado': ['#eff6ff', '#1d4ed8', '#bfdbfe'],
+        'Aluno Ativo': ['#f0fdf4', '#15803d', '#bbf7d0'],
+        'Docente': ['#fef2f2', '#b91c1c', '#fecaca'],
+        'Coordenação': ['#faf5ff', '#7e22ce', '#e9d5ff'],
+        'Usuário': ['#eff6ff', '#1d4ed8', '#bfdbfe'],
+        'CFF': ['#f5f3ff', '#6d28d9', '#ddd6fe']
+    };
+    var c = cores[rotulo] || ['#f8fafc', '#475569', '#e2e8f0'];
+    return '<span class="badge" style="font-size:10px;font-weight:700;background:' + c[0] + ';color:' + c[1] + ';border:1px solid ' + c[2] + '">' + escHTML(rotulo) + '</span>';
+}
+
+function cgRegistro(origem, colecao, docId, rotulo, dados, index) {
+    return { origem: origem, colecao: colecao, docId: String(docId), rotulo: rotulo, dados: dados || {}, index: index };
+}
+
+/* Informacoes que o cadastro geral considera essenciais. A lista de pendencias
+   e o que o administrador vai completar manualmente depois. */
+function cadastroGeralPendencias(dados) {
+    var d = dados || {};
+    var falta = [];
+    if (cgSoDigitos(d.cpf).length !== 11) falta.push('CPF');
+    if (!d.nascimento) falta.push('Nascimento');
+    if (!d.mae) falta.push('Mãe');
+    if (!d.email) falta.push('E-mail');
+    if (!d.whatsapp && !d.fone) falta.push('WhatsApp');
+    if (!d.endereco) falta.push('Endereço');
+    if (!d.cidade || !d.estado) falta.push('Cidade/UF');
+    if (!cgPrimeiro(d.projeto || d.formadoProjeto)) falta.push('Projeto');
+    if (!cgPrimeiro(d.turma || d.formadoTurma)) falta.push('Turma');
+    return falta;
+}
+
+function cadastroGeralMontar() {
+    var registros = [];
+    (candidatos || []).forEach(function (c, i) {
+        if (!c) return;
+        var formado = (c.tipoPessoa || 'A') === 'F';
+        if (!formado && c.status !== 'Ativo') return;
+        var did = (typeof candidatoDocId === 'function' ? candidatoDocId(c) : '') || c.docId || c.id;
+        registros.push(cgRegistro('candidato', 'candidatos', did, formado ? 'Formado' : 'Aluno Ativo', c, i));
+    });
+    (docentes || []).forEach(function (d) {
+        if (!d || d.id === '_index') return;
+        registros.push(cgRegistro('docente', 'docentes', d.id, 'Docente', d));
+    });
+    (usuarios || []).forEach(function (u) {
+        if (!u || u.id === '_index') return;
+        registros.push(cgRegistro('usuario', 'usuarios', u.id, u.tipo === 'coordenacao' ? 'Coordenação' : 'Usuário', u));
+    });
+    (cadastroGeralCff || []).forEach(function (x) {
+        if (!x || x.id === '_index') return;
+        registros.push(cgRegistro('cff', 'cffAlunos', x.id, 'CFF', x.d || x));
+    });
+
+    var mapa = {};
+    var ordem = [];
+    registros.forEach(function (r) {
+        var cpf = cgSoDigitos(r.dados.cpf);
+        var chave;
+        if (cpf.length === 11) {
+            chave = 'CPF:' + cpf;
+        } else {
+            var nome = cgBusca(r.dados.nome).replace(/\s+/g, '');
+            chave = nome ? ('NOME:' + nome + '|' + String(r.dados.nascimento || '')) : ('DOC:' + r.origem + ':' + r.docId);
+        }
+        if (!mapa[chave]) {
+            mapa[chave] = { chave: chave, registros: [], dados: Object.assign({}, r.dados), tipos: [] };
+            ordem.push(chave);
+        }
+        var p = mapa[chave];
+        p.registros.push(r);
+        if (p.tipos.indexOf(r.rotulo) === -1) p.tipos.push(r.rotulo);
+        Object.keys(r.dados || {}).forEach(function (k) {
+            var v = r.dados[k];
+            var atual = p.dados[k];
+            if ((atual === undefined || atual === null || atual === '') && v !== undefined && v !== null && v !== '') p.dados[k] = v;
+        });
+    });
+
+    var lista = ordem.map(function (k) { return mapa[k]; });
+    lista.forEach(function (p) {
+        p.registros.sort(function (a, b) { return cgPrioRegistro(a) - cgPrioRegistro(b); });
+        p.principal = p.registros[0];
+        p.nome = p.dados.nome || p.principal.dados.nome || '(sem nome)';
+        p.cpf = cgSoDigitos(p.dados.cpf);
+        p.projeto = cgPrimeiro(p.dados.projeto || p.dados.formadoProjeto);
+        p.turma = cgPrimeiro(p.dados.turma || p.dados.formadoTurma);
+        p.credencial = p.dados.credencial || p.dados.matricula || '';
+        p.pendencias = cadastroGeralPendencias(p.dados);
+        p.status = p.principal.dados.status || (p.principal.origem === 'usuario' ? (p.principal.dados.ativo === false ? 'Inativo' : 'Ativo') : 'Ativo');
+        p.busca = cgBusca([p.nome, p.cpf, formatCPFDisplay(p.cpf), p.credencial, p.dados.email, p.dados.whatsapp, p.dados.fone, p.projeto, p.turma, p.tipos.join(' ')].join(' '));
+    });
+    lista.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' }); });
+    cadastroGeralPessoas = lista;
+    return lista;
+}
+
+async function cadastroGeralInicializar() {
+    if (typeof dbFirestore !== 'undefined' && dbFirestore && !cadastroGeralCarregando) {
+        cadastroGeralCarregando = true;
+        try {
+            var snap = await dbFirestore.collection('cffAlunos').get();
+            cadastroGeralCff = [];
+            snap.forEach(function (d) {
+                if (d.id !== '_index') cadastroGeralCff.push({ id: d.id, d: d.data() || {} });
+            });
+        } catch (e) {
+            console.warn('Cadastro Geral: falha ao carregar o CFF', e);
+        }
+        cadastroGeralCarregando = false;
+    }
+    cadastroGeralMontar();
+    cadastroGeralFiltroProjetos();
+    cadastroGeralRender();
+}
+
+function cadastroGeralCarregar() { return cadastroGeralInicializar(); }
+
+function cadastroGeralFiltroProjetos() {
+    var sel = document.getElementById('cg-filtro-projeto');
+    if (!sel) return;
+    var atual = sel.value;
+    var nomes = {};
+    (cadastroGeralPessoas || []).forEach(function (p) { if (p.projeto) nomes[p.projeto] = 1; });
+    sel.innerHTML = '<option value="">Todos os projetos</option>';
+    Object.keys(nomes).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); }).forEach(function (n) {
+        sel.innerHTML += '<option value="' + escHTML(n) + '">' + escHTML(n) + '</option>';
+    });
+    if (atual) sel.value = atual;
+}
+
+function cadastroGeralChips(lista) {
+    var box = document.getElementById('cg-resumo');
+    if (!box) return;
+    var porTipo = {};
+    var vinculos = 0;
+    var incompletos = 0;
+    lista.forEach(function (p) {
+        vinculos += p.registros.length;
+        p.tipos.forEach(function (t) { porTipo[t] = (porTipo[t] || 0) + 1; });
+        if (p.pendencias.length) incompletos++;
+    });
+    function chip(txt, cor) {
+        return '<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;background:' + cor + ';font-size:11px;font-weight:700;color:#0f172a">' + txt + '</span>';
+    }
+    var html = chip('Pessoas: ' + lista.length, '#e0f2fe');
+    html += chip('Vínculos: ' + vinculos, '#f1f5f9');
+    html += chip('Com pendências: ' + incompletos, incompletos ? '#fef2f2' : '#f0fdf4');
+    Object.keys(porTipo).sort().forEach(function (t) { html += chip(t + ': ' + porTipo[t], '#f8fafc'); });
+    box.innerHTML = html;
+}
+
+function cadastroGeralRender() {
+    var tbody = document.getElementById('cg-table-body');
+    if (!tbody) return;
+    var busca = cgBusca((document.getElementById('cg-search') || {}).value || '').trim();
+    var tipo = (document.getElementById('cg-filtro-tipo') || {}).value || '';
+    var projeto = (document.getElementById('cg-filtro-projeto') || {}).value || '';
+    var soInc = !!(document.getElementById('cg-so-incompletos') || {}).checked;
+    var todos = cadastroGeralPessoas || [];
+    cadastroGeralChips(todos);
+    var lista = todos.filter(function (p) {
+        if (busca && p.busca.indexOf(busca) === -1) return false;
+        if (tipo && p.tipos.indexOf(tipo) === -1) return false;
+        if (projeto && String(p.projeto || '') !== projeto) return false;
+        if (soInc && !p.pendencias.length) return false;
+        return true;
+    });
+    if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:#94a3b8">Nenhum individuo encontrado com os filtros atuais.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = lista.map(function (p) {
+        var tipos = p.tipos.map(cgBadgeTipo).join(' ');
+        var cred = p.credencial
+            ? escHTML(p.credencial)
+            : '<span style="color:#b91c1c;font-weight:700">PENDENTE</span>';
+        var contato = [p.dados.whatsapp || p.dados.fone, p.dados.email].filter(Boolean).join(' · ') || '-';
+        var pend = p.pendencias.length
+            ? '<span style="color:#b91c1c;font-size:11px;font-weight:700"><i class="fa-solid fa-triangle-exclamation"></i> ' + escHTML(p.pendencias.slice(0, 3).join(', ')) + (p.pendencias.length > 3 ? ' +' + (p.pendencias.length - 3) : '') + '</span>'
+            : '<span style="color:#15803d;font-size:11px;font-weight:700"><i class="fa-solid fa-circle-check"></i> Completo</span>';
+        var statusCores = p.status === 'Ativo' ? 'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0'
+            : p.status === 'Inativo' ? 'background:#f8fafc;color:#64748b;border:1px solid #e2e8f0'
+            : 'background:#fffbeb;color:#b45309;border:1px solid #fde68a';
+        return '<tr>' +
+            '<td><div style="display:flex;align-items:center;gap:9px">' +
+                '<span style="display:inline-flex;width:34px;height:34px;border-radius:50%;background:#e0f2fe;color:#0369a1;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:0 0 34px">' + escHTML(cgIniciais(p.nome)) + '</span>' +
+                '<div style="min-width:0"><div style="font-weight:700;color:#0f172a">' + escHTML(p.nome) + '</div><div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">' + tipos + '</div></div>' +
+            '</div></td>' +
+            '<td>' + (p.cpf ? escHTML(formatCPFDisplay(p.cpf)) : '<span style="color:#b91c1c;font-weight:700">sem CPF</span>') + '</td>' +
+            '<td>' + escHTML(p.projeto || '-') + '</td>' +
+            '<td>' + escHTML(p.turma || '-') + '</td>' +
+            '<td style="font-family:\'Courier New\',monospace;font-size:11px;font-weight:700;color:#0f766e">' + cred + '</td>' +
+            '<td style="font-size:11px;color:#475569">' + escHTML(contato) + '</td>' +
+            '<td><span class="badge" style="font-size:10px;font-weight:700;' + statusCores + '">' + escHTML(p.status || '-') + '</span></td>' +
+            '<td>' + pend + '</td>' +
+            '<td style="text-align:center;white-space:nowrap">' +
+                '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">' +
+                    '<button class="btn-outline btn-sm" onclick="cadastroGeralAbrir(\'' + cgAtributo(p.chave) + '\')" title="Abrir o formulario deste individuo"><i class="fa-solid fa-pen-to-square"></i> Abrir</button>' +
+                    '<button class="btn-outline btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="cadastroGeralExcluir(\'' + cgAtributo(p.chave) + '\')" title="Excluir"><i class="fa-solid fa-trash"></i> Excluir</button>' +
+                    '<button class="btn-outline btn-sm" onclick="cadastroGeralCopiarPara(\'' + cgAtributo(p.chave) + '\')" title="Copiar para outros tipos"><i class="fa-solid fa-copy"></i> Copiar para</button>' +
+                    '<button class="btn-outline btn-sm" onclick="cadastroGeralMoverPara(\'' + cgAtributo(p.chave) + '\')" title="Mover para outros tipos"><i class="fa-solid fa-arrow-right-arrow-left"></i> Mover para</button>' +
+                '</div>' +
+            '</td>' +
+        '</tr>';
+    }).join('');
+}
+
+async function cadastroGeralAbrir(chave, origemPref) {
+    var p = (cadastroGeralPessoas || []).find(function (x) { return x.chave === chave; });
+    if (!p) { alert('Cadastro não encontrado. Atualize a lista e tente novamente.'); return; }
+    var reg = null;
+    if (origemPref) reg = p.registros.find(function (r) { return r.origem === origemPref; });
+    if (!reg) reg = p.principal;
+    cadastroGeralPessoaAtual = p;
+
+    if (reg.origem === 'candidato') {
+        cadastroGeralAlvo = reg;
+        await editCandidato(reg.index, 'cadastro-geral');
+        cadastroGeralModoVisual(false);
+        cadastroGeralMostrarVinculos(p, reg.origem);
+        return;
+    }
+
+    /* Docente, coordenacao, usuario e CFF: usa o mesmo formulario do Formado,
+       mas sem as validacoes obrigatorias, para permitir salvar aos poucos. */
+    editingIndex = null;
+    editingFormadoMode = false;
+    resetFormCandidato();
+    cadastroGeralAlvo = reg;
+    await populateTurmaSelect();
+    populateProjetoSelect();
+    var radioA = document.querySelector('input[name="fc-tipo-pessoa"][value="A"]');
+    if (radioA) radioA.checked = true;
+    cadastroGeralPreencherForm(reg.dados);
+    fcFormularioModo('cadastro-geral', reg.dados.nome || '', false);
+    showAdminSection('admin-form-candidato');
+    cadastroGeralModoVisual(true);
+    cadastroGeralMostrarVinculos(p, reg.origem);
+}
+
+function cadastroGeralPreencherForm(dados) {
+    var d = dados || {};
+    function set(id, valor) {
+        var el = document.getElementById(id);
+        if (el) el.value = valor == null ? '' : valor;
+    }
+    set('fc-nome', d.nome);
+    set('fc-cpf', formatCPFDisplay(d.cpf || ''));
+    set('fc-nascimento', cgDataIso(d.nascimento));
+    calcularIdadeCampo('fc-nascimento', 'fc-idade');
+    set('fc-data-inscricao', cgDataIso(d.dataInscricao));
+    set('fc-estado-civil', d.estadoCivil);
+    set('fc-genero', d.genero);
+    set('fc-nacionalidade', d.nacionalidade);
+    set('fc-naturalidade', d.naturalidade);
+    set('fc-titulo', d.tituloEleitor);
+    set('fc-profissao', d.profissao);
+    set('fc-mae', d.mae);
+    set('fc-pai', d.pai);
+    set('fc-email', d.email);
+    set('fc-whatsapp', d.whatsapp || d.fone);
+    set('fc-endereco', d.endereco);
+    set('fc-numero', d.numero);
+    set('fc-bairro', d.bairro);
+    set('fc-cidade', d.cidade);
+    set('fc-estado', d.estado);
+    set('fc-local-votacao', d.localVotacao);
+    set('fc-altura', d.altura);
+    set('fc-peso', d.peso);
+    set('fc-fator-rh', d.fatorRh);
+    set('fc-hipertensao', d.hipertensao || 'Nao');
+    set('fc-diabetes', d.diabetes || 'Nao');
+    set('fc-deficiencia', d.deficiencia || 'Nao');
+    set('fc-tatuagem', d.tatuagem || 'Nao');
+    set('fc-cirurgia', d.cirurgia || 'Nao');
+    set('fc-alcool', d.alcool || 'Nao');
+    set('fc-medicamento', d.medicamento);
+    set('fc-cansaco', d.cansaco || 'Nao');
+    set('fc-calca', d.calca);
+    set('fc-camisa', d.camisa);
+    set('fc-calcado', d.calcado);
+    set('fc-data-final', cgDataIso(d.dataFinal));
+    set('fc-matricula-manual', d.credencial || d.matricula || '');
+
+    var proj = cgPrimeiro(d.projeto || d.formadoProjeto);
+    var tur = cgPrimeiro(d.turma || d.formadoTurma);
+    var selProj = document.getElementById('fc-projeto');
+    if (selProj) {
+        if (proj && !Array.prototype.some.call(selProj.options, function (o) { return o.value === proj; })) {
+            var op = document.createElement('option'); op.value = proj; op.textContent = proj; selProj.appendChild(op);
+        }
+        selProj.value = proj || '';
+    }
+    fcProjetoOnTurmaChange();
+    var selTurma = document.getElementById('fc-turma');
+    if (selTurma) {
+        if (tur && !Array.prototype.some.call(selTurma.options, function (o) { return o.value === tur; })) {
+            var ot = document.createElement('option'); ot.value = tur; ot.textContent = tur; selTurma.appendChild(ot);
+        }
+        selTurma.value = tur || '';
+    }
+
+    try { fcCursosCarregar(Array.isArray(d.cursos) ? d.cursos : []); } catch (e) {}
+    var sw = document.getElementById('senha-field-wrapper');
+    if (sw) sw.style.display = '';
+    var senha = document.getElementById('fc-senha');
+    if (senha) { senha.value = d.senha || ''; senha.required = false; }
+    try {
+        patentePopularSelects({ fc: { codigo: d.patente || '', obs: d.patenteObs || '' } });
+        patenteIgnorarSugestao();
+    } catch (e) {}
+}
+
+function cadastroGeralModoVisual(ativo) {
+    var form = document.getElementById('form-candidato');
+    if (form) form.noValidate = !!ativo;
+    var box = document.getElementById('fc-cg-box');
+    if (box) box.style.display = ativo ? '' : 'none';
+    var manualWrap = document.getElementById('fc-matricula-manual-wrap');
+    if (manualWrap) manualWrap.style.display = ativo ? '' : 'none';
+    if (ativo) {
+        var wrapper = document.getElementById('fc-matricula-wrapper');
+        if (wrapper) wrapper.style.display = 'none';
+    } else {
+        var manual = document.getElementById('fc-matricula-manual');
+        if (manual) manual.value = '';
+        var disp = document.getElementById('fc-matricula-display');
+        if (disp) { disp.style.fontSize = '22px'; disp.style.letterSpacing = '2px'; }
+    }
+}
+
+function cadastroGeralMostrarVinculos(p, origemAtual) {
+    var box = document.getElementById('fc-cg-box');
+    if (!box) return;
+    box.style.display = '';
+    var atual = (p.registros.find(function (r) { return r.origem === origemAtual; }) || p.principal || {});
+    var txt = document.getElementById('fc-cg-vinculo');
+    if (txt) {
+        txt.textContent = p.nome + '  |  editando ' + (atual.rotulo || cgRotuloOrigem(origemAtual)) + '  |  vínculos: ' + p.tipos.join(' · ');
+    }
+    var troca = document.getElementById('fc-cg-trocar');
+    if (!troca) return;
+    if (p.registros.length <= 1) {
+        troca.style.display = 'none';
+        troca.innerHTML = '';
+        return;
+    }
+    troca.style.display = 'flex';
+    troca.innerHTML = '<span style="font-size:11px;color:#155e75;align-self:center;font-weight:700">Editar vínculo:</span>' +
+        p.registros.map(function (r) {
+            var marcado = r.origem === origemAtual;
+            return '<button type="button" class="btn-outline btn-sm" style="' + (marcado ? 'background:#0891b2;color:#fff;border-color:#0891b2' : '') + '" onclick="cadastroGeralAbrir(\'' + cgAtributo(p.chave) + '\',\'' + cgAtributo(r.origem) + '\')">' + escHTML(r.rotulo) + '</button>';
+        }).join('');
+}
+
+function cadastroGeralLimparModo() {
+    cadastroGeralAlvo = null;
+    cadastroGeralPessoaAtual = null;
+    var form = document.getElementById('form-candidato');
+    if (form) form.noValidate = false;
+    var box = document.getElementById('fc-cg-box');
+    if (box) box.style.display = 'none';
+    var txt = document.getElementById('fc-cg-vinculo');
+    if (txt) txt.textContent = '';
+    var troca = document.getElementById('fc-cg-trocar');
+    if (troca) { troca.style.display = 'none'; troca.innerHTML = ''; }
+    var manualWrap = document.getElementById('fc-matricula-manual-wrap');
+    if (manualWrap) manualWrap.style.display = 'none';
+    var manual = document.getElementById('fc-matricula-manual');
+    if (manual) manual.value = '';
+}
+
+function cadastroGeralAtualizarCache(alvo, update) {
+    if (alvo.origem === 'docente') {
+        var d = (docentes || []).find(function (x) { return String(x.id) === String(alvo.docId); });
+        if (d) Object.assign(d, update);
+    } else if (alvo.origem === 'usuario') {
+        var u = (usuarios || []).find(function (x) { return String(x.id) === String(alvo.docId); });
+        if (u) Object.assign(u, update);
+    } else if (alvo.origem === 'cff') {
+        var x = (cadastroGeralCff || []).find(function (i) { return String(i.id) === String(alvo.docId); });
+        if (x) Object.assign(x.d, update);
+    }
+}
+
+/* Grava o formulario na colecao de origem (docentes, usuarios ou cffAlunos).
+   O cadastro do candidato continua no handleCandidatoSubmit, para preservar
+   foto, credencial, patente e historico. */
+async function cadastroGeralSalvarExterno(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    var alvo = cadastroGeralAlvo;
+    if (!alvo) return false;
+    var data = fcCamposFormulario();
+    var manual = ((document.getElementById('fc-matricula-manual') || {}).value || '').trim();
+    var atual = alvo.dados || {};
+    var update = { atualizadoEm: new Date().toISOString() };
+    var campos = ['nome', 'cpf', 'nascimento', 'estadoCivil', 'genero', 'nacionalidade', 'naturalidade', 'tituloEleitor', 'profissao', 'mae', 'pai', 'email', 'whatsapp', 'endereco', 'numero', 'bairro', 'cidade', 'estado', 'localVotacao', 'altura', 'peso', 'fatorRh', 'hipertensao', 'diabetes', 'deficiencia', 'tatuagem', 'cirurgia', 'alcool', 'medicamento', 'cansaco', 'calca', 'camisa', 'calcado', 'senha'];
+    campos.forEach(function (k) {
+        if (data[k] === undefined) return;
+        update[k] = (k === 'cpf') ? cgSoDigitos(data[k]) : data[k];
+    });
+    if (manual) update.matricula = manual;
+    if (alvo.origem === 'docente' && data.whatsapp) update.fone = data.whatsapp;
+    if (alvo.origem === 'docente' || alvo.origem === 'cff') {
+        try { update.cursos = fcCursosColetar(); } catch (e) {}
+    }
+    if (alvo.origem !== 'usuario') {
+        var projAntes = cgPrimeiro(atual.projeto);
+        var turAntes = cgPrimeiro(atual.turma);
+        if (String(data.projeto || '') !== String(projAntes || '')) {
+            update.projeto = data.projeto ? (Array.isArray(atual.projeto) ? [data.projeto] : data.projeto) : (Array.isArray(atual.projeto) ? [] : '');
+        }
+        if (String(data.turma || '') !== String(turAntes || '')) {
+            update.turma = data.turma ? (Array.isArray(atual.turma) ? [data.turma] : data.turma) : (Array.isArray(atual.turma) ? [] : '');
+        }
+    }
+    try {
+        await dbFirestore.collection(alvo.colecao).doc(String(alvo.docId)).set(update, { merge: true });
+        cadastroGeralAtualizarCache(alvo, update);
+        alert('Cadastro de ' + (update.nome || atual.nome || '') + ' atualizado!');
+        cadastroGeralAlvo = null;
+        cadastroGeralModoVisual(false);
+        cadastroGeralLimparModo();
+        showAdminSection('admin-cadastro-geral');
+        await cadastroGeralInicializar();
+    } catch (e) {
+        console.error('Cadastro Geral: erro ao salvar', e);
+        alert('Erro ao salvar o cadastro: ' + e.message);
+    }
+    return false;
+}
+
+function cadastroGeralExportar() {
+    var lista = cadastroGeralPessoas || [];
+    if (!lista.length) { alert('Nenhum individuo para exportar.'); return; }
+    var linhas = [['Nome', 'CPF', 'Vinculos', 'Projeto', 'Turma', 'Credencial/Matricula', 'Email', 'WhatsApp', 'Status', 'Pendencias']];
+    lista.forEach(function (p) {
+        linhas.push([
+            p.nome,
+            p.cpf ? formatCPFDisplay(p.cpf) : '',
+            p.tipos.join(' / '),
+            p.projeto,
+            p.turma,
+            p.credencial,
+            p.dados.email || '',
+            p.dados.whatsapp || p.dados.fone || '',
+            p.status || '',
+            p.pendencias.join(', ')
+        ]);
+    });
+    var csv = linhas.map(function (l) {
+        return l.map(function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\n');
+    var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cadastro_geral_farn.csv';
+    a.click();
+}
+
+function _cadastroGeralPessoa(chave) {
+    return (cadastroGeralPessoas || []).find(function (x) { return x.chave === chave; }) || null;
+}
+
+function _cadastroGeralEscolherRegistro(p, titulo) {
+    if (!p || !(p.registros || []).length) return null;
+    if (p.registros.length === 1) return p.registros[0];
+    var msg = (titulo || 'Escolha o vínculo') + ' de "' + (p.nome || '') + '":\n\n';
+    p.registros.forEach(function (r, i) {
+        msg += (i + 1) + ' - ' + (r.rotulo || cgRotuloOrigem(r.origem)) + '\n';
+    });
+    msg += '\nDigite o número do vínculo:';
+    var resp = prompt(msg, '1');
+    if (resp == null) return null;
+    var idx = parseInt(String(resp).trim(), 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= p.registros.length) {
+        alert('Opção inválida.');
+        return null;
+    }
+    return p.registros[idx];
+}
+
+async function cadastroGeralExcluir(chave) {
+    var p = _cadastroGeralPessoa(chave);
+    if (!p) { alert('Cadastro não encontrado. Atualize a lista e tente novamente.'); return; }
+    var reg = _cadastroGeralEscolherRegistro(p, 'Excluir qual vínculo');
+    if (!reg) return;
+    var rotulo = reg.rotulo || cgRotuloOrigem(reg.origem) || reg.origem;
+    if (!confirm('Excluir "' + (p.nome || '') + '" (' + rotulo + ')? Esta ação não pode ser desfeita.')) return;
+    try {
+        if (reg.origem === 'candidato') {
+            // candidatos podem estar no array local e/ou Firestore
+            var idx = (typeof candidatos !== 'undefined' && candidatos) ? candidatos.findIndex(function (c) {
+                return String(c.id || c.docId || '') === String(reg.docId || '');
+            }) : -1;
+            if (idx >= 0 && typeof deleteCandidato === 'function') {
+                await deleteCandidato(idx);
+            } else if (reg.colecao && reg.docId && typeof dbFirestore !== 'undefined' && dbFirestore) {
+                await dbFirestore.collection(reg.colecao).doc(String(reg.docId)).delete();
+            } else {
+                throw new Error('Não foi possível localizar o registro para exclusão.');
+            }
+        } else {
+            if (!reg.colecao || !reg.docId) throw new Error('Registro sem coleção/documento.');
+            await dbFirestore.collection(reg.colecao).doc(String(reg.docId)).delete();
+            if (reg.origem === 'docente' && typeof docentes !== 'undefined') {
+                docentes = (docentes || []).filter(function (x) { return String(x.id) !== String(reg.docId); });
+            } else if (reg.origem === 'usuario' && typeof usuarios !== 'undefined') {
+                usuarios = (usuarios || []).filter(function (x) { return String(x.id) !== String(reg.docId); });
+            }
+        }
+        await cadastroGeralInicializar();
+        alert('Vínculo excluído com sucesso.');
+    } catch (e) {
+        console.error('Cadastro Geral: erro ao excluir', e);
+        alert('Erro ao excluir: ' + (e && e.message ? e.message : e));
+    }
+}
+
+function _cadastroGeralTipoDestinoPrompt(acao) {
+    var tipos = [
+        { key: 'aluno', label: 'Aluno Ativo' },
+        { key: 'pre', label: 'Pre-inscrito' },
+        { key: 'formado', label: 'Formado' },
+        { key: 'docente', label: 'Docente' },
+        { key: 'usuario', label: 'Usuario' },
+        { key: 'cff', label: 'Aluno CFF' }
+    ];
+    var msg = (acao || 'Selecionar') + ' para qual tipo?\n\n';
+    tipos.forEach(function (t, i) { msg += (i + 1) + ' - ' + t.label + '\n'; });
+    msg += '\nDigite o número:';
+    var resp = prompt(msg, '1');
+    if (resp == null) return null;
+    var idx = parseInt(String(resp).trim(), 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= tipos.length) {
+        alert('Opção inválida.');
+        return null;
+    }
+    return tipos[idx].key;
+}
+
+function _cadastroGeralDadosBase(reg, p) {
+    var d = Object.assign({}, (reg && reg.dados) || {}, (p && p.dados) || {});
+    d.nome = d.nome || (p && p.nome) || '';
+    d.cpf = cgSoDigitos(d.cpf || (p && p.cpf) || '');
+    if (!d.whatsapp && d.fone) d.whatsapp = d.fone;
+    if (!d.fone && d.whatsapp) d.fone = d.whatsapp;
+    return d;
+}
+
+async function _cadastroGeralAplicarDestino(tipo, dados, origemReg) {
+    var agora = new Date().toISOString();
+    if (tipo === 'aluno' || tipo === 'pre' || tipo === 'formado') {
+        var status = tipo === 'aluno' ? 'Ativo' : (tipo === 'pre' ? 'Pre-inscrito' : 'Formado');
+        var payload = Object.assign({}, dados, {
+            status: status,
+            nome: (dados.nome || '').trim(),
+            cpf: cgSoDigitos(dados.cpf || ''),
+            atualizadoEm: agora
+        });
+        if (!payload.criadoEm) payload.criadoEm = agora;
+        var ref = await dbFirestore.collection('candidatos').add(payload);
+        // atualiza cache local se existir
+        if (typeof candidatos !== 'undefined' && Array.isArray(candidatos)) {
+            candidatos.push(Object.assign({ id: ref.id, docId: ref.id }, payload));
+        }
+        return { colecao: 'candidatos', docId: ref.id };
+    }
+    if (tipo === 'docente') {
+        var d = Object.assign({}, dados, {
+            nome: (dados.nome || '').trim(),
+            cpf: cgSoDigitos(dados.cpf || ''),
+            atualizadoEm: agora
+        });
+        if (!d.criadoEm) d.criadoEm = agora;
+        var refDoc = await dbFirestore.collection('docentes').add(d);
+        if (typeof docentes !== 'undefined' && Array.isArray(docentes)) docentes.push(Object.assign({ id: refDoc.id }, d));
+        return { colecao: 'docentes', docId: refDoc.id };
+    }
+    if (tipo === 'usuario') {
+        var u = {
+            nome: (dados.nome || '').trim(),
+            cpf: cgSoDigitos(dados.cpf || ''),
+            email: dados.email || '',
+            whatsapp: dados.whatsapp || dados.fone || '',
+            fone: dados.whatsapp || dados.fone || '',
+            status: dados.status || 'Ativo',
+            nivel: dados.nivel || 'usuario',
+            atualizadoEm: agora,
+            criadoEm: dados.criadoEm || agora
+        };
+        var refU = await dbFirestore.collection('usuarios').add(u);
+        if (typeof usuarios !== 'undefined' && Array.isArray(usuarios)) usuarios.push(Object.assign({ id: refU.id }, u));
+        return { colecao: 'usuarios', docId: refU.id };
+    }
+    if (tipo === 'cff') {
+        var c = Object.assign({}, dados, {
+            nome: (dados.nome || '').trim(),
+            cpf: cgSoDigitos(dados.cpf || ''),
+            atualizadoEm: agora
+        });
+        if (!c.criadoEm) c.criadoEm = agora;
+        var refC = await dbFirestore.collection('cffAlunos').add(c);
+        cadastroGeralCff = cadastroGeralCff || [];
+        cadastroGeralCff.push({ id: refC.id, d: c });
+        return { colecao: 'cffAlunos', docId: refC.id };
+    }
+    throw new Error('Tipo de destino não suportado.');
+}
+
+async function cadastroGeralCopiarPara(chave) {
+    var p = _cadastroGeralPessoa(chave);
+    if (!p) { alert('Cadastro não encontrado. Atualize a lista e tente novamente.'); return; }
+    var reg = _cadastroGeralEscolherRegistro(p, 'Copiar qual vínculo');
+    if (!reg) return;
+    var tipo = _cadastroGeralTipoDestinoPrompt('Copiar');
+    if (!tipo) return;
+    try {
+        var dados = _cadastroGeralDadosBase(reg, p);
+        await _cadastroGeralAplicarDestino(tipo, dados, reg);
+        await cadastroGeralInicializar();
+        alert('Cópia criada com sucesso.');
+    } catch (e) {
+        console.error('Cadastro Geral: erro ao copiar', e);
+        alert('Erro ao copiar: ' + (e && e.message ? e.message : e));
+    }
+}
+
+async function cadastroGeralMoverPara(chave) {
+    var p = _cadastroGeralPessoa(chave);
+    if (!p) { alert('Cadastro não encontrado. Atualize a lista e tente novamente.'); return; }
+    var reg = _cadastroGeralEscolherRegistro(p, 'Mover qual vínculo');
+    if (!reg) return;
+    var tipo = _cadastroGeralTipoDestinoPrompt('Mover');
+    if (!tipo) return;
+    if (!confirm('Mover "' + (p.nome || '') + '" para o tipo selecionado? O vínculo atual será removido após a cópia.')) return;
+    try {
+        var dados = _cadastroGeralDadosBase(reg, p);
+        await _cadastroGeralAplicarDestino(tipo, dados, reg);
+        // excluir origem após copiar
+        if (reg.origem === 'candidato') {
+            var idx = (typeof candidatos !== 'undefined' && candidatos) ? candidatos.findIndex(function (c) {
+                return String(c.id || c.docId || '') === String(reg.docId || '');
+            }) : -1;
+            if (idx >= 0 && typeof deleteCandidato === 'function') {
+                await deleteCandidato(idx);
+            } else if (reg.colecao && reg.docId) {
+                await dbFirestore.collection(reg.colecao).doc(String(reg.docId)).delete();
+            }
+        } else if (reg.colecao && reg.docId) {
+            await dbFirestore.collection(reg.colecao).doc(String(reg.docId)).delete();
+            if (reg.origem === 'docente' && typeof docentes !== 'undefined') {
+                docentes = (docentes || []).filter(function (x) { return String(x.id) !== String(reg.docId); });
+            } else if (reg.origem === 'usuario' && typeof usuarios !== 'undefined') {
+                usuarios = (usuarios || []).filter(function (x) { return String(x.id) !== String(reg.docId); });
+            }
+        }
+        await cadastroGeralInicializar();
+        alert('Movido com sucesso.');
+    } catch (e) {
+        console.error('Cadastro Geral: erro ao mover', e);
+        alert('Erro ao mover: ' + (e && e.message ? e.message : e));
+    }
 }
 
 /* ===== VIDEO AULA (ADMIN) =====
