@@ -2861,6 +2861,16 @@
                         <div class="card-body">
                             <form id="form-candidato" onsubmit="return handleCandidatoSubmit(event)">
 
+                                <!-- AVISO DO CADASTRO GERAL -->
+                                <div id="fc-cg-box" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:10px;background:#ecfeff;border:1px solid #67e8f9">
+                                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                                        <i class="fa-solid fa-address-card" style="color:#0891b2"></i>
+                                        <strong style="color:#0e7490;font-size:13px">Cadastro Geral</strong>
+                                        <span id="fc-cg-vinculo" style="font-size:12px;color:#155e75"></span>
+                                    </div>
+                                    <div id="fc-cg-trocar" style="display:none;margin-top:8px;gap:6px;flex-wrap:wrap"></div>
+                                </div>
+
                                 <!-- PROJETO E TURMA (DESTAQUE) -->
                                 <div class="form-section-card" style="border:2px solid #16a34a;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%)">
                                     <div class="form-section-title"><i class="fa-solid fa-folder-open" style="color:#16a34a"></i><h3 style="color:#16a34a">Projeto & Turma</h3></div>
@@ -2902,6 +2912,17 @@
                                                         <span style="color:#16a34a;font-weight:700;font-size:13px">Formado (A)</span>
                                                     </label>
                                                 </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- MATRICULA MANUAL (CADASTRO GERAL PARA DOCENTE/USUARIO/CFF) -->
+                                        <div id="fc-matricula-manual-wrap" style="display:none;margin-top:14px;padding:12px 14px;border-radius:8px;background:#f8fafc;border:1px solid #cbd5e1">
+                                            <label for="fc-matricula-manual" style="display:block;color:#334155;font-size:13px;font-weight:700;margin-bottom:6px">
+                                                <i class="fa-solid fa-id-badge"></i> Matricula / Credencial
+                                            </label>
+                                            <input type="text" id="fc-matricula-manual" class="config-input" placeholder="Matricula ou credencial do individuo">
+                                            <div style="margin-top:6px;color:#64748b;font-size:11px;line-height:1.5">
+                                                Campo manual para docente, coordenacao, usuario e CFF. Para formados a credencial e gerada pela Data Final.
                                             </div>
                                         </div>
 
@@ -4509,6 +4530,10 @@
                         </div>
                         <div class="card-body">
                             <div id="individuo-botoes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px">
+                                <button type="button" class="individuo-opcao" data-tipo="geral" data-cor="#0891b2" onclick="individuoEscolher('geral')">
+                                    <i class="fa-solid fa-address-card" style="color:#0891b2"></i>
+                                    <span>Cadastro Geral<small>Todos os individuos em um so cadastro</small></span>
+                                </button>
                                 <button type="button" class="individuo-opcao" data-tipo="aluno" data-cor="#16a34a" onclick="individuoEscolher('aluno')">
                                     <i class="fa-solid fa-user-graduate" style="color:#16a34a"></i>
                                     <span>Aluno Ativo<small>Escolhe projeto e turma</small></span>
@@ -4528,11 +4553,6 @@
                                 <button type="button" class="individuo-opcao" data-tipo="usuario" data-cor="#2563eb" onclick="individuoEscolher('usuario')">
                                     <i class="fa-solid fa-users-gear" style="color:#2563eb"></i>
                                     <span>Usuario<small>Usuarios cadastrados</small></span>
-                                </button>
-
-                                <button type="button" class="individuo-opcao" data-tipo="cff" data-cor="#7c3aed" onclick="individuoEscolher('cff')">
-                                    <i class="fa-solid fa-chalkboard" style="color:#7c3aed"></i>
-                                    <span>Aluno CFF<small>Todos os cadastrados no CFF</small></span>
                                 </button>
                             </div>
                             <div id="individuo-vazio" style="text-align:center;padding:50px 20px;color:#94a3b8">
@@ -4576,6 +4596,71 @@
                                 <i class="fa-solid fa-clipboard-check" style="color:#7c3aed"></i>
                                 <span>Secao de Avaliacao CFF<small>Abre em outra aba</small></span>
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECAO CADASTRO GERAL -->
+                <div id="admin-cadastro-geral" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-address-card" style="color:#0891b2;margin-right:8px"></i> Cadastro Geral</h3>
+                            <div class="header-actions">
+                                <button class="btn-outline btn-sm" onclick="cadastroGeralCarregar()" title="Recarregar a lista">
+                                    <i class="fa-solid fa-rotate"></i> Atualizar
+                                </button>
+                                <button class="btn-outline btn-sm" onclick="cadastroGeralExportar()" title="Exportar em CSV">
+                                    <i class="fa-solid fa-download"></i> Exportar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size:13px;color:#475569;margin:0 0 14px">
+                                Todos os individuos do sistema em um unico cadastro: alunos ativos, formados, docentes,
+                                coordenacao, usuarios e CFF. Use <strong>Abrir cadastro</strong> para completar as
+                                informacoes que ainda faltam.
+                            </p>
+                            <div id="cg-resumo" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+                            <div class="users-search-bar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+                                <div class="input-wrapper" style="max-width:360px;flex:1;min-width:220px">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="cg-search" placeholder="Buscar por nome, CPF, credencial, e-mail..." class="config-input" style="padding-left:44px" oninput="cadastroGeralRender()">
+                                </div>
+                                <select id="cg-filtro-tipo" class="config-input" style="max-width:200px" onchange="cadastroGeralRender()">
+                                    <option value="">Todos os tipos</option>
+                                    <option value="Aluno Ativo">Aluno Ativo</option>
+                                    <option value="Formado">Formado</option>
+                                    <option value="Docente">Docente</option>
+                                    <option value="Coordenação">Coordenação</option>
+                                    <option value="Usuário">Usuário</option>
+                                    <option value="CFF">CFF</option>
+                                </select>
+                                <select id="cg-filtro-projeto" class="config-input" style="max-width:240px" onchange="cadastroGeralRender()">
+                                    <option value="">Todos os projetos</option>
+                                </select>
+                                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;font-weight:600;cursor:pointer">
+                                    <input type="checkbox" id="cg-so-incompletos" style="accent-color:#0891b2" onchange="cadastroGeralRender()">
+                                    Somente com pendencias
+                                </label>
+                            </div>
+                            <div style="overflow:auto;margin-top:12px">
+                                <table class="data-table" id="cg-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>CPF</th>
+                                            <th>Projeto</th>
+                                            <th>Turma</th>
+                                            <th>Credencial / Matricula</th>
+                                            <th>Contato</th>
+                                            <th>Status</th>
+                                            <th>Pendencias</th>
+                                            <th>Acoes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cg-table-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -5913,7 +5998,7 @@
     <script src="noticias-feed.js?v=5"></script>
     <script src="oportunidades.js?v=4"></script>
     <script src="certificados.js?v=3"></script>
-    <script src="app.js?v=103"></script>
+    <script src="app.js?v=104"></script>
     <script src="recad-admin.js"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
