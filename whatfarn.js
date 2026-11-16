@@ -3,6 +3,8 @@
    Usado em: index.html (admin) e portal-aluno.html
    ============================================================ */
 
+
+function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
 var WF_ADMIN_ID = 'administrativo';
 var WF_ADMIN_NOME = 'Administrativo FARN';
 var WF_GRUPO_ID = 'grp_ba_alpha';
@@ -219,7 +221,7 @@ function wfCriarGrupo() {
             snap.forEach(function (d2) {
                 var d = d2.data();
                 if (!d || !d.cpf) return;
-                if (d.status !== 'Ativo') return;
+                if (!fgStatusAtivo(d.status)) return;
                 if (d.tipoPessoa && d.tipoPessoa === 'F') return;
                 var id = String(d.cpf);
                 if (membros.indexOf(id) === -1) membros.push(id);
@@ -346,7 +348,7 @@ function wfLogin(cpf, senha, cb) {
         if (dados.senha !== senha) { if (cb) cb(false, 'Senha incorreta.'); return; }
         if (dados.pediuBaixa) { if (cb) cb(false, 'Voce solicitou a baixa do curso. Seu acesso sera restabelecido somente apos autorizacao da administracao.'); return; }
         if (dados.ativo === false) { if (cb) cb(false, 'Seu acesso ainda nao foi liberado. Aguarde aprovacao da administracao.'); return; }
-        if (dados.status !== 'Ativo' && dados.status !== 'Inativo por Falta') { if (cb) cb(false, 'Somente alunos com status Ativo ou Inativo por Falta podem acessar.'); return; }
+        if (!fgStatusAtivo(dados.status) && dados.status !== 'Inativo por Falta') { if (cb) cb(false, 'Somente alunos com status Ativo ou Inativo por Falta podem acessar.'); return; }
         var sess = { cpf: String(dados.cpf), nome: dados.nome || 'Aluno' };
         wfSetSessao(sess);
         if (cb) cb(true, sess);
@@ -782,7 +784,7 @@ function wfMostrarContatos() {
         snap.forEach(function (doc) {
             var d = doc.data();
             if (!d || !d.cpf) return;
-            if (d.status !== 'Ativo') return;
+            if (!fgStatusAtivo(d.status)) return;
             if (d.tipoPessoa && d.tipoPessoa === 'F') return;
             if (String(d.cpf) === wfState.me.id) return;
             var foto = d.photoDataUrl || wfFotoLocal(String(d.cpf)) || '';

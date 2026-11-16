@@ -814,6 +814,7 @@
                         <i class="fa-solid fa-globe"></i>
                         <select id="landing-login-portal" aria-label="Escolha o portal">
                             <option value="admin">Administrador</option>
+                            <option value="usuario">Portal do Usuário</option>
                             <option value="formado">Portal do Formado</option>
                             <option value="aluno">Portal do Aluno</option>
                             <option value="docente">Portal do Docente</option>
@@ -1015,10 +1016,6 @@
                         <i class="fa-solid fa-list-check"></i>
                         <span>Criar Avaliação</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-cursos" onclick="showAdminSection('admin-cursos', this); cursoListLoad(); cursoEpiRender()">
-                        <i class="fa-solid fa-book"></i>
-                        <span>Cursos</span>
-                    </a>
                     <a href="#" class="nav-item" data-secao="admin-whatfarn" onclick="showAdminSection('admin-whatfarn', this); wfIniciar('admin')">
                         <i class="fa-brands fa-whatsapp"></i>
                         <span>WhatFarn</span>
@@ -1038,6 +1035,10 @@
                     <a href="#" class="nav-item" data-secao="admin-oportunidades" onclick="showAdminSection('admin-oportunidades', this); oportunidadesAdminInicializar()">
                         <i class="fa-solid fa-briefcase"></i>
                         <span>Oportunidade</span>
+                    </a>
+                    <a href="#" class="nav-item" data-secao="admin-cadastro-cursos" onclick="showAdminSection('admin-cadastro-cursos', this); ccInicializar()">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Cadastro de Cursos</span>
                     </a>
                 </nav>
                 <div class="sidebar-footer">
@@ -1297,17 +1298,17 @@
                             <small>Fichas completas dos cadastrados: todos os dados do formulario, foto 3x4 e todas as avaliacoes, com visual moderno de pagina PDF e botoes de impressao.</small>
                         </div>
                         <div class="card-body">
-                            <!-- Selecao Curso + Turma -->
+                            <!-- Selecao Projeto + Turma -->
                             <div style="padding:20px;background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);border:2px solid #0ea5e9;border-radius:12px;margin-bottom:20px">
                                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                                     <i class="fa-solid fa-filter" style="color:#0ea5e9;font-size:16px"></i>
-                                    <span style="color:#0ea5e9;font-weight:700;font-size:14px">Selecione o Curso e a Turma para gerar as fichas</span>
+                                    <span style="color:#0ea5e9;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para gerar as fichas</span>
                                 </div>
                                 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Curso *</label>
+                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Projeto *</label>
                                         <select id="ficha-geral-selecao-curso" class="config-input" style="width:100%;border-color:#0ea5e9" onchange="fichaGeralOnCursoChange()">
-                                            <option value="">Selecione o curso...</option>
+                                            <option value="">Selecione o projeto...</option>
                                         </select>
                                     </div>
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
@@ -1318,7 +1319,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Conteudo (oculto ate selecionar curso+turma) -->
+                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
                             <div id="ficha-geral-conteudo" style="display:none">
                                 <div class="alunos-toolbar" style="flex-wrap:wrap;gap:8px">
                                     <div style="font-size:13px;color:#0f172a;font-weight:700"><i class="fa-solid fa-folder-open" style="color:#0ea5e9;margin-right:6px"></i><span id="ficha-geral-count">0</span> ficha(s) gerada(s)</div>
@@ -1509,6 +1510,9 @@
                                         </select>
                                     </div>
                                 </div>
+                                <button type="button" class="btn-outline btn-sm" id="btn-desfazer-formados" style="display:none;margin-top:12px;color:#b45309;border-color:#fcd34d;background:#fffbeb" onclick="desfazerFormados()" title="Devolve os formados filtrados para alunos ativos de sua turma">
+                                    <i class="fa-solid fa-rotate-left" style="margin-right:4px"></i> Desfazer Formados <span id="desfazer-formados-count" style="margin-left:4px;font-weight:800">(0)</span>
+                                </button>
                             </div>
                             <div id="formados-empty" class="empty-state" style="display:none;padding:40px">
                                 <i class="fa-solid fa-graduation-cap" style="font-size:48px;color:#334155;margin-bottom:12px"></i>
@@ -2001,6 +2005,7 @@
                         <div class="card-header">
                             <h3><i class="fa-solid fa-handshake" style="color:#16a34a;margin-right:8px"></i> Projetos</h3>
                             <div class="header-actions">
+                                <button class="btn-outline" onclick="projetosMesclarDuplicatas()" title="Remove projetos repetidos e unifica as turmas"><i class="fa-solid fa-layer-group"></i> Mesclar duplicatas</button>
                                 <button class="btn-primary" onclick="openFormProjeto()">
                                     <i class="fa-solid fa-plus"></i> Novo Projeto
                                 </button>
@@ -2144,6 +2149,15 @@
                                     <span>Dados da Instituicao</span>
                                     <small>Razao social, CNPJ, logo, dados do administrador</small>
                                 </div>
+                                <!-- Migracao de fotos para o Storage (gratuito) -->
+                                <div class="config-card" onclick="fsMigrarFotosInterface()">
+                                    <i class="fa-solid fa-images"></i>
+                                    <span>Migrar fotos para o Storage</span>
+                                    <small>Remove as imagens em base64 do Firestore e deixa só URLs</small>
+                                    <button class="btn-primary" style="margin-top:12px" onclick="event.stopPropagation(); fsMigrarFotosInterface()">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Migrar fotos
+                                    </button>
+                                </div>
                                 <!-- Novos botoes: Backup e Restaurar -->
                                 <div class="config-card" onclick="backupAllData()">
                                     <i class="fa-solid fa-download"></i>
@@ -2171,17 +2185,17 @@
                             <h3><i class="fa-solid fa-clipboard-check" style="color:#ca8a04;margin-right:8px"></i> Apontamento de Presenca</h3>
                         </div>
                         <div class="card-body">
-                            <!-- Selecao Curso + Turma -->
+                            <!-- Selecao Projeto + Turma -->
                             <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                                     <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Curso e a Turma para continuar</span>
+                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
                                 </div>
                                 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Curso *</label>
+                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
                                         <select id="apt-selecao-curso" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoCursoChange()">
-                                            <option value="">Selecione o curso...</option>
+                                            <option value="">Selecione o projeto...</option>
                                         </select>
                                     </div>
                                     <div class="form-group" style="flex:1;min-width:200px;margin:0">
@@ -2192,7 +2206,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Conteudo (oculto ate selecionar curso+turma) -->
+                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
                             <div id="apt-conteudo" style="display:none">
                                 <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
                                     <button class="btn-primary" onclick="apontamentoAbrirModal()">
@@ -2698,6 +2712,14 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
+                                            <input type="checkbox" class="uf-perm-check" value="portal-usuario">
+                                            <div class="permissao-card">
+                                                <i class="fa-solid fa-user"></i>
+                                                <span>Portal do Usuário</span>
+                                                <small>Acessar o portal do usuário</small>
+                                            </div>
+                                        </label>
+                                        <label class="permissao-item">
                                             <input type="checkbox" class="uf-perm-check" value="portal-formado">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-user-tie"></i>
@@ -2774,17 +2796,17 @@
 
                 <!-- LISTA PRE-INSCRITOS -->
                 <div id="admin-pre-inscricao" class="admin-section active">
-                    <!-- Selecao Curso + Turma -->
+                    <!-- Selecao Projeto + Turma -->
                     <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                             <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                            <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Curso e a Turma para visualizar os pré-inscritos</span>
+                            <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para visualizar os pré-inscritos</span>
                         </div>
                         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                             <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Curso *</label>
+                                <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
                                 <select id="pre-selecao-curso" class="config-input" style="width:100%;border-color:#16a34a" onchange="preOnSelecaoCursoChange()">
-                                    <option value="">Selecione o curso...</option>
+                                    <option value="">Selecione o projeto...</option>
                                 </select>
                             </div>
                             <div class="form-group" style="flex:1;min-width:200px;margin:0">
@@ -2795,7 +2817,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Conteudo (oculto ate selecionar curso+turma) -->
+                    <!-- Conteudo (oculto ate selecionar projeto+turma) -->
                     <div id="pre-conteudo" style="display:none">
                         <div class="card full-width">
                             <div class="card-header">
@@ -2840,7 +2862,7 @@
                                 </div>
                                 <table class="data-table" id="pre-table">
                                     <thead>
-                                        <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Idade</th><th>Gen. Nasc.</th><th>Turma</th><th>Curso</th><th>Status</th><th>Cadastrado por</th><th>Ações</th></tr>
+                                        <tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Idade</th><th>Gen. Nasc.</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Ações</th></tr>
                                     </thead>
                                     <tbody id="pre-table-body"></tbody>
                                 </table>
@@ -3768,7 +3790,7 @@
                         <div class="card-body" style="text-align:center;padding:40px 20px">
                             <i class="fa-solid fa-file-circle-check" style="font-size:48px;color:#16a34a;margin-bottom:14px;display:block"></i>
                             <p style="font-size:14px;color:#475569;margin-bottom:20px;line-height:1.6">A Seção de Avaliação abre em uma janela própria, onde você seleciona o projeto e a turma e avalia cada aluno ativo com as 5 avaliações.</p>
-                            <button class="btn-primary" onclick="window.open('secao-avaliacao.html?v=6','_blank')" style="padding:12px 24px;font-size:14px"><i class="fa-solid fa-external-link-alt"></i> Abrir Seção de Avaliação</button>
+                            <button class="btn-primary" onclick="window.open('secao-avaliacao.html?v=9','_blank')" style="padding:12px 24px;font-size:14px"><i class="fa-solid fa-external-link-alt"></i> Abrir Seção de Avaliação</button>
                         </div>
                     </div>
                 </div>
@@ -4017,187 +4039,148 @@
                     </div>
                 </div>
 
-                <!-- CURSOS -->
-                <div id="admin-cursos" class="admin-section">
-                    <div style="display:flex;justify-content:flex-start;margin-bottom:20px">
-                        <button class="btn-primary" id="curso-criar-btn" onclick="cursoAbrirForm()" style="height:44px;padding:0 24px;font-size:14px"><i class="fa-solid fa-plus"></i> Criar Curso</button>
-                    </div>
-
-                    <div id="curso-form-container" style="display:none;padding:20px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #2563eb;border-radius:12px;margin-bottom:20px">
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-                            <h3 style="margin:0;color:#1e40af"><i class="fa-solid fa-book" style="margin-right:8px"></i><span id="curso-form-titulo">Novo Curso</span></h3>
-                            <button class="btn-outline btn-sm" id="curso-cancelar-btn" onclick="cursoFecharForm()" style="display:inline-flex"><i class="fa-solid fa-xmark"></i> Fechar formulario</button>
-                        </div>
-
-                        <div class="form-group">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome do Curso *</label>
-                            <input type="text" id="curso-nome" class="config-input" placeholder="Ex: Curso de Bombeiro Civil">
-                        </div>
-
-                        <div class="form-group" style="margin-top:12px">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;display:block">Tipo *</label>
-                            <div style="display:flex;gap:10px;flex-wrap:wrap" id="curso-tipos">
-                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
-                                    <input type="radio" name="curso-tipo" value="Profissionalizante" checked style="accent-color:#2563eb"> Profissionalizante
-                                </label>
-                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
-                                    <input type="radio" name="curso-tipo" value="Especialização" style="accent-color:#2563eb"> Especialização
-                                </label>
-                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
-                                    <input type="radio" name="curso-tipo" value="Qualificação" style="accent-color:#2563eb"> Qualificação
-                                </label>
-                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
-                                    <input type="radio" name="curso-tipo" value="Técnico" style="accent-color:#2563eb"> Técnico
-                                </label>
-                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
-                                    <input type="radio" name="curso-tipo" value="Tecnólogo" style="accent-color:#2563eb"> Tecnólogo
-                                </label>
-                                <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#334155">
-                                    <input type="radio" name="curso-tipo" value="Superior" style="accent-color:#2563eb"> Superior
-                                </label>
-                            </div>
-                        </div>
-
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Carga Horária Total (horas) *</label>
-                                <input type="number" id="curso-carga" class="config-input" min="0" step="1" placeholder="Ex: 240">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Lei e Normas</label>
-                                <input type="text" id="curso-lei" class="config-input" placeholder="Ex: Lei nº 12.302/2010 e Norma NBR 14608">
-                            </div>
-                        </div>
-
-                        <div class="form-group" style="margin-top:12px">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Lei e Normas (detalhamento)</label>
-                            <textarea id="curso-normas" class="config-input" rows="3" style="resize:vertical" placeholder="Detalhe as leis, normas e regulamentações aplicáveis ao curso..."></textarea>
-                        </div>
-
-                        <div style="margin-top:16px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:12px">
-                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin:0"><i class="fa-solid fa-hard-hat" style="color:#f59e0b;margin-right:4px"></i> Equipamentos de Proteção Individual (EPI) do Aluno</label>
-                                <button type="button" class="btn-outline btn-sm" onclick="cursoEpiAdicionarLinha()"><i class="fa-solid fa-plus"></i> Adicionar Equipamento</button>
-                            </div>
-                            <div id="curso-epi-lista"></div>
-                        </div>
-
-                        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-                            <button class="btn-primary" id="curso-save-btn" onclick="cursoSalvar()" style="height:42px"><i class="fa-solid fa-check"></i> Salvar Curso</button>
-                            <button class="btn-outline" id="curso-limpar-btn" onclick="cursoResetForm()" style="height:42px"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
-                        </div>
-                        <div id="curso-msg" style="display:none;margin-top:12px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-book" style="color:#2563eb;margin-right:8px"></i> Cursos Cadastrados</h3>
-                        </div>
-                        <div id="curso-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando cursos...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MODAL VISUALIZAR CURSO -->
-                <div id="curso-detalhe-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cursorFecharDetalhe()">
-                    <div class="modal-content" style="max-width:640px;max-height:85vh;overflow-y:auto">
-                        <div class="modal-header">
-                            <h3 id="curso-detalhe-titulo"><i class="fa-solid fa-book" style="margin-right:8px"></i> Detalhes do Curso</h3>
-                            <button class="modal-close" onclick="cursorFecharDetalhe()"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                        <div class="modal-body" id="curso-detalhe-content"></div>
-                    </div>
-                </div>
-
-                <!-- GERENCIAR CURSO (TURMAS / DISCIPLINAS / AULAS) -->
-                <div id="admin-curso-gerenciar" class="admin-section">
-                    <div class="card full-width" style="margin-bottom:16px">
-                        <div class="card-header">
-                            <h3 id="cg-titulo"><i class="fa-solid fa-book" style="color:#2563eb;margin-right:8px"></i> Gerenciar Curso</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-cursos'); cursoListLoad()"><i class="fa-solid fa-arrow-left"></i> Voltar aos Cursos</button>
-                        </div>
-                        <div class="card-body">
-                            <div id="cg-curso-info" style="font-size:13px;color:#475569;margin-bottom:12px"></div>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                                <div class="form-group" style="margin:0">
-                                    <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma do curso *</label>
-                                    <select id="cg-turma" class="config-input" onchange="cgOnTurmaChange()"><option value="">Selecione ou crie uma turma...</option></select>
-                                </div>
-                                <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
-                                    <button class="btn-primary btn-sm" onclick="cgNovaTurma()"><i class="fa-solid fa-plus"></i> Nova Turma</button>
-                                    <button class="btn-outline btn-sm" onclick="cgEditarTurma()"><i class="fa-solid fa-pen"></i> Editar Turma</button>
-                                    <button class="btn-danger btn-sm" onclick="cgExcluirTurma()"><i class="fa-solid fa-trash"></i> Excluir Turma</button>
-                                </div>
-                            </div>
-                            <div id="cg-turma-form" style="display:none;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:14px">
-                                <h4 id="cg-turma-form-title" style="margin:0 0 10px;color:#1e293b;font-size:14px">Nova Turma</h4>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Nome da Turma *</label><input type="text" id="cg-turma-nome" class="config-input" placeholder="Ex: Turma A"></div>
-                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Status</label><select id="cg-turma-status" class="config-input"><option value="Em Andamento">Em Andamento</option><option value="Concluido">Concluido</option></select></div>
-                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Início</label><input type="date" id="cg-turma-inicio" class="config-input"></div>
-                                    <div class="form-group"><label style="font-size:11px;font-weight:600;color:#475569">Previsão Final</label><input type="date" id="cg-turma-previsao" class="config-input"></div>
-                                    <div class="form-group" style="grid-column:1/-1"><label style="font-size:11px;font-weight:600;color:#475569">Descrição</label><input type="text" id="cg-turma-desc" class="config-input" placeholder="Opcional"></div>
-                                </div>
-                                <div style="display:flex;gap:8px;margin-top:10px">
-                                    <button class="btn-primary btn-sm" onclick="cgSalvarTurma()"><i class="fa-solid fa-check"></i> Salvar Turma</button>
-                                    <button class="btn-outline btn-sm" onclick="cgCancelarTurma()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                                </div>
-                            </div>
-                            <div id="cg-turma-hint" style="font-size:12px;color:#64748b;padding:10px;background:#f8fafc;border-radius:8px">Selecione ou crie uma turma para cadastrar disciplinas e aulas deste curso.</div>
+            <!-- CADASTRO DE CURSOS -->
+                <div id="admin-cadastro-cursos" class="admin-section">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:16px">
+                        <div><h2 style="margin:0;font-size:18px"><i class="fa-solid fa-book-open" style="margin-right:8px"></i> Cadastro de Cursos</h2>
+                            <span style="font-size:12px;opacity:.9">Cada curso tem avaliação, disciplinas, aulas, indivíduos e apontamentos próprios.</span></div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn-outline" onclick="ccRestaurarCursosLocal()" style="background:#fff;color:#0f766e;border:none" title="Recria cursos a partir do backup salvo neste navegador"><i class="fa-solid fa-rotate-left"></i> Restaurar cursos</button>
+                            <button class="btn-primary" id="cc-btn-novo" onclick="ccAbrirFormCurso(null)" style="background:#fff;color:#1d4ed8;border:none"><i class="fa-solid fa-plus"></i> Criar novo curso</button>
                         </div>
                     </div>
 
-                    <div id="cg-conteudo-turma" style="display:none">
-                        <div style="display:grid;grid-template-columns:1fr;gap:16px">
-                            <div class="card full-width">
-                                <div class="card-header"><h3><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;margin-right:8px"></i> Disciplinas da Turma</h3></div>
-                                <div class="card-body">
-                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Nome da Disciplina *</label><input type="text" id="cg-disc-nome" class="config-input" placeholder="Ex: Primeiros Socorros"></div>
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Docente</label><select id="cg-disc-docente" class="config-input"><option value="">Selecione o docente...</option></select></div>
-                                    </div>
-                                    <button class="btn-primary btn-sm" id="cg-disc-save-btn" onclick="cgDiscSalvar()"><i class="fa-solid fa-check"></i> Cadastrar Disciplina</button>
-                                    <div id="cg-disc-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                                    <div id="cg-disc-list" style="margin-top:14px"></div>
+                    <div id="cc-lista"></div>
+
+                    <div id="cc-workspace" style="display:none">
+                        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+                            <div id="cc-workspace-icone" style="width:48px;height:48px;border-radius:10px;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden"></div>
+                            <div style="flex:1;min-width:200px"><div id="cc-workspace-titulo" style="font-size:17px;font-weight:800;color:#0f172a"></div>
+                                <button class="btn-outline btn-sm" onclick="ccMostrarWorkspace(false)" style="margin-top:4px"><i class="fa-solid fa-arrow-left"></i> Voltar à lista de cursos</button></div>
+                            <div style="min-width:240px">
+                                <label style="display:block;font-size:10px;font-weight:800;color:#475569;margin-bottom:3px">Turma de origem (administrador)</label>
+                                <select id="cc-turma-admin" class="config-input" style="width:100%"><option value="">Selecione a turma...</option></select>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid #e2e8f0;margin-bottom:16px">
+                            <button class="nav-item" id="cc-aba-geral" onclick="ccSetAba('geral')"><i class="fa-solid fa-circle-info"></i> Visão Geral</button>
+                            <button class="nav-item" id="cc-aba-avaliacao" onclick="ccSetAba('avaliacao')"><i class="fa-solid fa-clipboard-check"></i> Criar Avaliação</button>
+                            <button class="nav-item" id="cc-aba-disciplinas" onclick="ccSetAba('disciplinas')"><i class="fa-solid fa-chalkboard"></i> Disciplinas e Aulas</button>
+                            <button class="nav-item" id="cc-aba-individuos" onclick="ccSetAba('individuos')"><i class="fa-solid fa-users"></i> Indivíduos</button>
+                            <button class="nav-item" id="cc-aba-apontamento" onclick="ccSetAba('apontamento')"><i class="fa-solid fa-clipboard-user"></i> Apontamentos</button>
+                            <button class="nav-item" id="cc-aba-ficha" onclick="ccSetAba('ficha')"><i class="fa-solid fa-file-lines"></i> Ficha Geral</button>
+                            <button class="nav-item" id="cc-aba-certificado" onclick="ccSetAba('certificado')"><i class="fa-solid fa-award"></i> Certificados</button>
+                        </div>
+
+                        <!-- ABA GERAL -->
+                        <div id="cc-tab-geral"><div id="cc-geral-conteudo"></div></div>
+
+                        <!-- ABA AVALIACAO -->
+                        <div id="cc-tab-avaliacao" style="display:none">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                <h3 style="margin:0;color:#1e293b"><i class="fa-solid fa-clipboard-check" style="color:#7c3aed;margin-right:8px"></i> Avaliações do curso</h3>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                    <button class="btn-outline" onclick="ccImportarAvaliacoes()"><i class="fa-solid fa-file-import"></i> Importar avaliações</button>
+                                    <button class="btn-primary" onclick="ccNovaAv()"><i class="fa-solid fa-plus"></i> Nova avaliação</button>
                                 </div>
                             </div>
+                            <div id="cc-avaliacoes-lista"></div>
+                        </div>
 
-                            <div class="card full-width">
-                                <div class="card-header"><h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas da Turma</h3></div>
-                                <div class="card-body">
-                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Disciplina *</label><select id="cg-aula-disciplina" class="config-input"><option value="">Selecione a disciplina...</option></select></div>
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Docente</label><select id="cg-aula-docente" class="config-input"><option value="">Selecione o docente...</option></select></div>
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Data da Aula *</label><input type="date" id="cg-aula-data" class="config-input"></div>
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Horário</label><input type="text" id="cg-aula-horario" class="config-input" placeholder="Ex: 14:00 as 17:00"></div>
-                                    </div>
-                                    <div class="form-group" style="margin-bottom:12px"><label style="font-size:12px;font-weight:600;color:#475569">Conteúdo / Assunto</label><input type="text" id="cg-aula-conteudo" class="config-input" placeholder="Breve descrição do conteúdo da aula"></div>
-                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Terá AV Teórica</label><select id="cg-aula-av-teorica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select></div>
-                                        <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569">Terá AV Prática</label><select id="cg-aula-av-pratica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select></div>
-                                    </div>
-                                    <button class="btn-primary btn-sm" id="cg-aula-save-btn" onclick="cgAulaSalvar()"><i class="fa-solid fa-check"></i> Cadastrar Aula</button>
-                                    <div id="cg-aula-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                                    <div id="cg-aula-list" style="margin-top:14px"></div>
-                                </div>
-                            </div>
-
-                            <div class="card full-width">
-                                <div class="card-header"><h3><i class="fa-solid fa-users" style="color:#16a34a;margin-right:8px"></i> Alunos Ativos da Turma</h3></div>
-                                <div class="card-body">
-                                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-                                        <div class="form-group" style="flex:1;min-width:260px;margin:0">
-                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Adicionar aluno (pré-inscrito/cadastrado)</label>
-                                            <select id="cg-aluno-add" class="config-input"><option value="">Selecione um aluno...</option></select>
+                        <!-- ABA DISCIPLINAS E AULAS -->
+                        <div id="cc-tab-disciplinas" style="display:none">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                                <div class="card"><div class="card-header"><h3><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;margin-right:8px"></i> Disciplinas</h3>
+                                    <button class="btn-outline btn-sm" onclick="ccImportarDisciplinasAulas()" title="Importar disciplinas e aulas do administrador"><i class="fa-solid fa-file-import"></i> Importar</button></div>
+                                    <div class="card-body">
+                                        <input id="cc-disc-nome" class="config-input" placeholder="Nome da disciplina" style="width:100%;margin-bottom:8px">
+                                        <input id="cc-disc-docente" class="config-input" placeholder="Docente" style="width:100%;margin-bottom:8px">
+                                        <button class="btn-primary btn-sm" onclick="ccSalvarDisc()"><i class="fa-solid fa-plus"></i> Cadastrar disciplina</button>
+                                        <div id="cc-disc-lista" style="margin-top:12px"></div>
+                                    </div></div>
+                                <div class="card"><div class="card-header"><h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas</h3></div>
+                                    <div class="card-body">
+                                        <select id="cc-aula-disciplina" class="config-input" style="width:100%;margin-bottom:8px"><option value="">Selecione a disciplina...</option></select>
+                                        <input id="cc-aula-docente" class="config-input" placeholder="Docente" style="width:100%;margin-bottom:8px">
+                                        <input type="date" id="cc-aula-data" class="config-input" style="width:100%;margin-bottom:8px">
+                                        <input id="cc-aula-horario" class="config-input" placeholder="Horário (ex.: 14:00 às 17:00)" style="width:100%;margin-bottom:8px">
+                                        <input id="cc-aula-conteudo" class="config-input" placeholder="Conteúdo / nome da aula" style="width:100%;margin-bottom:8px">
+                                        <div style="display:flex;gap:8px;margin-bottom:8px">
+                                            <select id="cc-aula-av-teorica" class="config-input"><option value="">AV Teórica</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
+                                            <select id="cc-aula-av-pratica" class="config-input"><option value="">AV Prática</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
                                         </div>
-                                        <button class="btn-primary btn-sm" onclick="cgAlunoAdicionar()"><i class="fa-solid fa-user-plus"></i> Adicionar à Turma</button>
-                                        <button class="btn-outline btn-sm" onclick="cgAlunosCarregar()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
-                                    </div>
-                                    <div style="font-size:12px;color:#64748b;margin-bottom:10px">Alunos adicionados aqui ficam vinculados a este curso/turma. Alunos enviados pelo formulário de pré-inscrição aparecem quando direcionados para esta turma.</div>
-                                    <div id="cg-alunos-list"></div>
+                                        <button class="btn-primary btn-sm" onclick="ccSalvarAula()"><i class="fa-solid fa-plus"></i> Cadastrar aula</button>
+                                        <div id="cc-aula-lista" style="margin-top:12px"></div>
+                                    </div></div>
+                            </div>
+                        </div>
+
+                        <!-- ABA INDIVIDUOS -->
+                        <div id="cc-tab-individuos" style="display:none">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                                <div class="card"><div class="card-header"><h3><i class="fa-solid fa-file-import" style="color:#16a34a;margin-right:8px"></i> Importar indivíduos</h3>
+                                    <span id="cc-individuos-count" style="margin-left:auto;font-size:11px;color:#64748b">0</span></div>
+                                    <div class="card-body">
+                                        <p style="font-size:11px;color:#64748b;margin:0 0 10px">Selecione cadastros do sistema. Será criada uma cópia independente de projeto/turma.</p>
+                                        <div id="cc-importar-lista"></div>
+                                        <button class="btn-primary btn-sm" onclick="ccImportarSelecionados()" style="margin-top:10px"><i class="fa-solid fa-download"></i> Importar selecionados</button>
+                                    </div></div>
+                                <div class="card"><div class="card-header"><h3><i class="fa-solid fa-users" style="color:#2563eb;margin-right:8px"></i> Indivíduos do curso</h3></div>
+                                    <div class="card-body"><div id="cc-individuos-lista"></div></div></div>
+                            </div>
+                        </div>
+
+                        <!-- ABA APONTAMENTO -->
+                        <div id="cc-tab-apontamento" style="display:none">
+                            <div style="padding:16px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:16px">
+                                <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                                    <div style="flex:1;min-width:220px"><label style="font-size:11px;font-weight:700;color:#15803d;display:block;margin-bottom:4px">Aula *</label>
+                                        <select id="cc-apt-aula" class="config-input" style="width:100%;border-color:#16a34a"><option value="">Selecione a aula...</option></select></div>
+                                    <button class="btn-primary" onclick="ccAbrirApontamento()"><i class="fa-solid fa-clipboard-check"></i> Apontar alunos</button>
+                                    <button class="btn-outline" onclick="ccImportarApontamentos()"><i class="fa-solid fa-file-import"></i> Importar Apontamentos</button>
+                                    <button class="btn-outline" onclick="ccLoadAulas();ccCarregarHistorico()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
                                 </div>
                             </div>
+                            <div class="card"><div class="card-header"><h3><i class="fa-solid fa-clock-rotate-left" style="color:#16a34a;margin-right:8px"></i> Histórico de apontamentos</h3></div>
+                                <div class="card-body"><div id="cc-apt-historico"></div></div></div>
+                        </div>
+
+                        <!-- ABA FICHA GERAL -->
+                        <div id="cc-tab-ficha" style="display:none">
+                            <div style="padding:14px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:12px;margin-bottom:14px">
+                                <h3 style="margin:0;font-size:14px;color:#0c4a6e"><i class="fa-solid fa-file-lines" style="margin-right:8px"></i> Ficha Geral dos indivíduos deste curso</h3>
+                                <p style="font-size:11px;color:#075985;margin:6px 0 0">Mesma montagem da Ficha Geral do administrador, com notas, AVs e apontamentos de cada indivíduo.</p>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                                    <button class="btn-primary" onclick="ccImportarFicha()"><i class="fa-solid fa-file-import" style="margin-right:6px"></i> Importar Informações</button>
+                                    <button class="btn-outline" onclick="ccSincronizarFicha(false);ccInitFicha()"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Sincronizar Ficha Geral</button>
+                                </div>
+                            </div>
+                            <div id="cc-ficha-lista"></div>
+                        </div>
+
+                        <!-- ABA CERTIFICADOS -->
+                        <div id="cc-tab-certificado" style="display:none">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+                                <h3 style="margin:0;color:#1e293b"><i class="fa-solid fa-award" style="color:#1d4ed8;margin-right:8px"></i> Certificados do curso</h3>
+                                <button class="btn-primary" onclick="ccAbrirFormCert(null)"><i class="fa-solid fa-plus"></i> Novo certificado</button>
+                            </div>
+                            <div id="cc-cert-form" style="display:none;padding:16px;background:#eff6ff;border:2px solid #2563eb;border-radius:12px;margin-bottom:14px">
+                                <input type="hidden" id="cc-cert-id">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                                    <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Nome do certificado *</label>
+                                        <input id="cc-cert-nome" class="config-input" style="width:100%"></div>
+                                    <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Instituição</label>
+                                        <input id="cc-cert-instituicao" class="config-input" style="width:100%"></div>
+                                </div>
+                                <div class="form-group" style="margin-top:10px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Declaração</label>
+                                    <textarea id="cc-cert-declaracao" class="config-input" rows="4" style="width:100%"></textarea></div>
+                                <label style="font-size:12px;color:#475569;margin-top:10px;display:block"><input type="checkbox" id="cc-cert-ativo" checked> Ativo (visível no Portal do Usuário)</label>
+                                <div style="display:flex;gap:10px;margin-top:14px">
+                                    <button class="btn-outline" onclick="ccFecharFormCert()" style="flex:1"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                                    <button class="btn-primary" onclick="ccSalvarCertificado()" style="flex:1"><i class="fa-solid fa-check"></i> Salvar certificado</button>
+                                </div>
+                            </div>
+                            <div id="cc-certs-lista"></div>
                         </div>
                     </div>
                 </div>
@@ -5712,6 +5695,100 @@
         </div>
     </div>
 
+    <!-- MODAIS CADASTRO DE CURSOS -->
+    <div id="cc-modal-curso" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:480px">
+            <div class="modal-header"><h3 id="cc-curso-titulo"><i class="fa-solid fa-book" style="color:#2563eb;margin-right:8px"></i> Criar novo curso</h3>
+                <button class="modal-close" onclick="ccFecharFormCurso()"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="modal-body">
+                <div class="form-group"><label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome do curso *</label>
+                    <input id="cc-curso-nome" class="config-input" style="width:100%" placeholder="Ex.: Curso de Bombeiro Civil"></div>
+                <div class="form-group" style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Ícone do curso (JPG)</label>
+                    <div id="cc-curso-icone-preview" style="width:120px;height:120px;border:2px dashed #cbd5e1;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;overflow:hidden;background:#f8fafc;cursor:pointer" onclick="document.getElementById('cc-curso-icone-file').click()">
+                        <i class="fa-solid fa-image" style="font-size:32px;color:#94a3b8"></i></div>
+                    <input type="file" id="cc-curso-icone-file" accept="image/jpeg,image/jpg,image/png" onchange="ccSelecionarIcone(this)" style="font-size:12px"></div>
+                <div class="form-group" style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Apostila (PDF até 850 KB)</label>
+                    <div id="cc-apostila-preview" style="font-size:11px;color:#64748b;margin-bottom:6px">Nenhuma apostila anexada</div>
+                    <input type="file" id="cc-curso-apostila-file" accept="application/pdf,.pdf" onchange="ccSelecionarApostila(this)" style="font-size:12px"></div>
+                <div class="form-group" style="margin-top:10px"><label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Ou link da apostila</label>
+                    <input id="cc-curso-apostila-url" class="config-input" style="width:100%" placeholder="https://... ou caminho do arquivo"></div>
+                <div style="display:flex;gap:10px;margin-top:18px">
+                    <button class="btn-outline" onclick="ccFecharFormCurso()" style="flex:1"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                    <button class="btn-primary" onclick="ccSalvarCurso()" style="flex:1"><i class="fa-solid fa-check"></i> Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cc-modal-av" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:760px;max-height:90vh;overflow-y:auto">
+            <div class="modal-header"><h3><i class="fa-solid fa-clipboard-check" style="color:#7c3aed;margin-right:8px"></i> Avaliação do curso</h3>
+                <button class="modal-close" onclick="ccFecharFormAv()"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="modal-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Nome da avaliação *</label>
+                        <input id="cc-av-nome" class="config-input" style="width:100%"></div>
+                    <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Tipo</label>
+                        <select id="cc-av-tipo" class="config-input" style="width:100%" onchange="ccRenderQuestoes()">
+                            <option value="teorica">AV Teórica</option><option value="pratica">AV Prática</option>
+                            <option value="final_teorica">AV Final Teórica</option><option value="final_pratica">AV Final Prática</option></select></div>
+                    <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Disciplina</label>
+                        <select id="cc-av-disciplina" class="config-input" style="width:100%"><option value="">Selecione...</option></select></div>
+                    <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Aula</label>
+                        <select id="cc-av-aula" class="config-input" style="width:100%"><option value="">Selecione...</option></select></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px">
+                    <h4 style="margin:0;font-size:14px;color:#1e293b">Questões</h4>
+                    <button class="btn-outline btn-sm" onclick="ccAddQuestao()"><i class="fa-solid fa-plus"></i> Adicionar questão</button></div>
+                <div id="cc-av-questoes"></div>
+                <div style="display:flex;gap:10px;margin-top:18px">
+                    <button class="btn-outline" onclick="ccFecharFormAv()" style="flex:1"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                    <button class="btn-primary" onclick="ccSalvarAv()" style="flex:1"><i class="fa-solid fa-check"></i> Salvar avaliação</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cc-modal-generico" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:700px;max-height:88vh;overflow-y:auto">
+            <div class="modal-header"><h3 id="cc-generico-titulo">Detalhes</h3>
+                <button class="modal-close" onclick="ccFecharGenerico()"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="modal-body" id="cc-generico-body"></div>
+        </div>
+    </div>
+
+    <div id="cc-modal-apontamento" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:980px;max-height:92vh;overflow-y:auto">
+            <div class="modal-header"><h3><i class="fa-solid fa-clipboard-user" style="color:#16a34a;margin-right:8px"></i> Apontamento de presença</h3>
+                <button class="modal-close" onclick="ccFecharApontamento()"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="modal-body">
+                <div style="display:grid;grid-template-columns:280px 1fr;gap:14px">
+                    <div>
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#f8fafc">
+                            <h4 style="margin:0 0 8px;font-size:13px;color:#1e293b">Leitura do QR</h4>
+                            <div id="cc-apt-qr" style="width:100%;min-height:180px;background:#fff;border-radius:8px"></div>
+                            <button class="btn-primary btn-sm" id="cc-apt-btn-scanner" onclick="ccIniciarScanner()" style="width:100%;margin-top:8px"><i class="fa-solid fa-camera"></i> Ler QR Code</button>
+                        </div>
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff;margin-top:10px">
+                            <h4 style="margin:0 0 8px;font-size:13px;color:#1e293b">Matrícula manual</h4>
+                            <input id="cc-apt-matricula" class="config-input" placeholder="Digite a matrícula" onkeydown="if(event.key==='Enter')ccAptBuscarMatricula()" style="width:100%;margin-bottom:6px">
+                            <button class="btn-outline btn-sm" onclick="ccAptBuscarMatricula()" style="width:100%"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <h4 style="margin:0;font-size:13px;color:#1e293b">Presenças <span id="cc-apt-count" style="color:#64748b">(0)</span></h4></div>
+                        <div id="cc-apt-lista" style="max-height:340px;overflow:auto;border:1px solid #e2e8f0;border-radius:8px"></div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:18px">
+                    <button class="btn-outline" onclick="ccFecharApontamento()" style="flex:1"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                    <button class="btn-primary" onclick="ccSalvarApontamento()" style="flex:1"><i class="fa-solid fa-check"></i> Salvar apontamento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DADOS DA INSTITUICAO -->
     <div id="modal-config-inst-overlay" class="modal-overlay hidden" onclick="configInstituicaoFechar(event)">
         <div class="modal-content" style="max-width:650px;max-height:90vh;overflow-y:auto">
@@ -6083,15 +6160,17 @@
         </div>
     </div>
 
-    <script src="ficha-geral-compartilhar.js?v=22"></script>
+    <script src="ficha-geral-compartilhar.js?v=25"></script>
     <script src="patentes.js?v=2"></script>
     <script src="foto3x4-editor.js?v=3"></script>
     <script src="foto3x4-bloqueio.js?v=7"></script>
     <script src="noticias-feed.js?v=5"></script>
     <script src="oportunidades.js?v=4"></script>
     <script src="certificados.js?v=3"></script>
+    <script src="farn-storage.js?v=1"></script>
     <script src="app.js?v=104"></script>
     <script src="recad-admin.js"></script>
+    <script src="cadastro-cursos.js?v=8"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
     <script>

@@ -44,6 +44,15 @@ let firebaseError = false;
 /* ===== STATUS DAS TURMAS =====
    O status Em Andamento/Concluido agora pertence a cada turma. Projetos
    antigos podem conservar o campo status apenas como fallback de transicao. */
+/* Status dos individuos: "Formado" ou "Acadêmico" (campo do formulario).
+   "Ativo" continua aceito para cadastros antigos nao migrados. */
+function fgStatusAtivo(st) {
+    return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico';
+}
+/* Situacao operacional antiga (Ativo/Pendente/Rejeitado...) preservada em
+   statusOriginal quando o status virou Formado/Acadêmico. */
+function fgStatusOriginal(c) { return (c && c.statusOriginal) || (c && c.status) || ''; }
+
 function statusDaTurma(t) {
     if (!t) return 'Em Andamento';
     if (t.status) return t.status;
@@ -79,6 +88,19 @@ function projetoCorresponde(a, b) {
     var xs = x.replace(re, '');
     var ys = y.replace(re, '');
     return !!(xs && ys && xs === ys);
+}
+
+/* Turmas duplicadas (mesmo nome com grafia de projeto diferente) devem
+   contar como uma só na lista e no formulario de edicao. */
+function turmasUnicasPorNome(lista) {
+    var vistos = {}, saida = [];
+    (lista || []).forEach(function (t) {
+        var chave = projetoNomeChave(t && t.nome);
+        if (!chave || vistos[chave]) return;
+        vistos[chave] = true;
+        saida.push(t);
+    });
+    return saida;
 }
 
 function turmasDoProjeto(nome) {
@@ -231,46 +253,42 @@ function fotoVersaoGravar(cpf, versao) {
 var fotoMemo = {};
 var FOTO_MEMO_MS = 30000;
 
-function getFoto(cpf, forcar) {
+async function getFoto(cpf, forcar) {
     var local = localStorage.getItem('farn_photo_' + cpf) || localStorage.getItem('foto3x4_' + cpf) || null;
     var c = candidatos.find(function (x) { return x.cpf === cpf; });
     var memo = fotoMemo[cpf];
-    if (!forcar && memo && (Date.now() - memo.t) < FOTO_MEMO_MS) return Promise.resolve(memo.src);
-    if (!c || !c.id) {
-        var semDoc = local || (c && c.photoDataUrl) || null;
-        fotoMemo[cpf] = { t: Date.now(), src: semDoc };
-        return Promise.resolve(semDoc);
+    if (!forcar && memo && (Date.now() - memo.t) < FOTO_MEMO_MS) return memo.src;
+    if (!cpf) return local || (c && (c.fotoUrl || c.photoDataUrl)) || null;
+
+    /* Consulta primeiro o documento pequeno de URL (fotosUrls/CPF).
+       Evita baixar o cadastro inteiro, que pode conter base64 antigo. */
+    var remota = null, versao = '';
+    try {
+        if (typeof fsBuscarFoto === 'function') remota = await fsBuscarFoto(cpf) || null;
+    } catch (e) {}
+    if (!remota && dbFirestore) {
+        try {
+            var doc = await dbFirestore.collection('candidatos').doc(String(cpf)).get();
+            if (doc.exists) {
+                var dados = doc.data() || {};
+                remota = dados.fotoUrl || dados.photoDataUrl || null;
+                versao = String(dados.fotoVersao || dados.fotoAtualizadaEm || '');
+            }
+        } catch (e) {}
     }
-    /* A foto pode ter sido atualizada no portal do aluno: a versao do
-       Firestore prevalece sobre a copia antiga guardada no aparelho. */
-    return dbFirestore.collection('candidatos').doc(String(c.id)).get().then(function (doc) {
-        if (!doc.exists) {
-            var atual = local || c.photoDataUrl || null;
-            fotoMemo[cpf] = { t: Date.now(), src: atual };
-            return atual;
-        }
-        var dados = doc.data() || {};
-        var remota = dados.photoDataUrl || null;
-        var versao = String(dados.fotoVersao || dados.fotoAtualizadaEm || '');
-        if (versao && versao !== fotoVersaoLocal(cpf) && remota) {
-            try { localStorage.setItem('farn_photo_' + cpf, remota); } catch (e) {}
-            try { localStorage.setItem('foto3x4_' + cpf, remota); } catch (e) {}
-            fotoVersaoGravar(cpf, versao);
-            c.photoDataUrl = remota; c.hasPhoto = true; c.fotoVersao = versao;
-            fotoMemo[cpf] = { t: Date.now(), src: remota };
-            return remota;
-        }
-        if (versao) fotoVersaoGravar(cpf, versao);
-        var final = local || remota || c.photoDataUrl || null;
-        fotoMemo[cpf] = { t: Date.now(), src: final };
-        return final;
-    }).catch(function () {
-        var salvou = local || (c && c.photoDataUrl) || null;
-        return salvou;
-    });
+    if (remota && versao && versao !== fotoVersaoLocal(cpf)) {
+        try { localStorage.setItem('farn_photo_' + cpf, remota); } catch (e) {}
+        try { localStorage.setItem('foto3x4_' + cpf, remota); } catch (e) {}
+        fotoVersaoGravar(cpf, versao);
+        if (c) { c.fotoUrl = remota; c.hasPhoto = true; c.fotoVersao = versao; }
+    }
+    if (versao) fotoVersaoGravar(cpf, versao);
+    var final = local || remota || (c && (c.fotoUrl || c.photoDataUrl)) || null;
+    fotoMemo[cpf] = { t: Date.now(), src: final };
+    return final;
 }
 
-function setFoto(cpf, dataUrl) {
+async function setFoto(cpf, dataUrl) {
     try { localStorage.setItem('farn_photo_' + cpf, dataUrl); } catch(e) {}
     try { localStorage.setItem('foto3x4_' + cpf, dataUrl); } catch(e) {}
     var versao = String(Date.now());
@@ -279,15 +297,23 @@ function setFoto(cpf, dataUrl) {
     var c = candidatos.find(function(x) { return x.cpf === cpf; });
     if (c) { c.photoDataUrl = dataUrl; c.hasPhoto = true; c.fotoVersao = versao; }
     if (currentAluno && currentAluno.cpf === cpf) { currentAluno.photoDataUrl = dataUrl; currentAluno.hasPhoto = true; currentAluno.fotoVersao = versao; }
+
+    /* Arquivo vai para o Storage; no Firestore fica so a URL (curta). */
+    var url = null;
+    try { if (typeof fsSalvarFoto === 'function') url = await fsSalvarFoto(cpf, dataUrl, versao); }
+    catch (e) { console.warn('Foto salva localmente; envio ao Storage falhou:', e); }
+    if (url) { if (c) c.fotoUrl = url; if (currentAluno && currentAluno.cpf === cpf) currentAluno.fotoUrl = url; }
+
     var docId = c && c.id ? String(c.id) : null;
     if (docId) {
-        dbFirestore.collection('candidatos').doc(docId).set({
-            photoDataUrl: dataUrl,
+        var campos = {
             hasPhoto: true,
             fotoVersao: versao,
             fotoAtualizadaEm: versao,
             fotoAtualizadaPor: 'Administrador'
-        }, { merge: true }).catch(function() {});
+        };
+        if (url) campos.fotoUrl = url;
+        dbFirestore.collection('candidatos').doc(docId).set(campos, { merge: true }).catch(function() {});
     }
 }
 
@@ -305,21 +331,26 @@ function backupCandidatos() {
     batch.commit().catch(e => console.error('Erro ao salvar candidatos:', e));
 }
 
+/* Grava as turmas da memoria no Firestore SEM APAGAR nada.
+   Antes esta funcao apagava todo documento ausente da memoria; com a lista
+   ainda vazia, clicar em "Sincronizar tudo" apagava TODAS as turmas do banco.
+   Exclusoes passam a ser sempre explicitas (deleteProjeto, cgExcluirTurma). */
 async function backupTurmas() {
     if (!firebaseReady && !firebaseError) return;
     try {
         const ref = dbFirestore.collection(FB_TURMAS);
         const snap = await ref.get();
-        const existingIds = new Set();
         const statusExistente = {};
         snap.forEach(doc => {
             if (doc.id !== '_index') {
-                existingIds.add(doc.id);
                 const dados = doc.data() || {};
                 if (dados.status) statusExistente[doc.id] = dados.status;
             }
         });
-        const currentIds = new Set();
+        if (!turmas || !turmas.length) {
+            console.warn('backupTurmas: lista de turmas vazia; nada sera gravado e nenhum documento sera apagado.');
+            return;
+        }
         const batch = dbFirestore.batch();
         batch.set(ref.doc('_index'), { count: turmas.length, timestamp: Date.now() });
         turmas.forEach((t) => {
@@ -330,13 +361,7 @@ async function backupTurmas() {
             }
             /* Nao deixa uma copia antiga sem status apagar o status ja migrado. */
             if (!t.status && statusExistente[id]) t.status = statusExistente[id];
-            currentIds.add(id);
             batch.set(ref.doc(id), t);
-        });
-        existingIds.forEach(docId => {
-            if (!currentIds.has(docId)) {
-                batch.delete(ref.doc(docId));
-            }
         });
         await batch.commit();
     } catch(e) { console.error('Erro ao salvar turmas:', e); }
@@ -1291,7 +1316,9 @@ function applyUserPermissions() {
            quem so administra a instituicao. Quem nao tem nenhum, nao ve. */
         'admin-patentes': p.includes('alunos') || p.includes('docentes')
             || p.includes('formados') || p.includes('usuarios')
-            || p.includes('config') || isGeral
+            || p.includes('config') || isGeral,
+        'admin-cadastro-cursos': p.includes('admin') || isGeral
+            || p.includes('disciplinas') || p.includes('avaliacao') || p.includes('apontamento')
     };
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
@@ -1478,6 +1505,8 @@ async function landingLogin(event) {
             saveLoginState(); // salva farn_login = 'admin' e farn_user_data
             if (portal === 'admin') {
                 enterAdminPanel();
+            } else if (portal === 'usuario') {
+                location.href = 'portal-usuario.html';
             } else if (portal === 'formado') {
                 location.href = 'portal-formado.html';
             } else if (portal === 'aluno') {
@@ -1501,6 +1530,7 @@ async function landingLogin(event) {
         }
         if (!ok) {
             if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
+            else if (portal === 'usuario') ok = await landingLoginUsuario(cpf, senha);
             else if (portal === 'formado') ok = await landingLoginFormado(cpf, senha);
             else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
             else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
@@ -1531,7 +1561,8 @@ async function landingLoginPortalPerm(cpf, senha, portal) {
     currentUserData = user;
     saveLastLogin(cpf);
     try { localStorage.setItem('farn_user_data', JSON.stringify(user)); } catch(e) {}
-    if (portal === 'formado') location.href = 'portal-formado.html';
+    if (portal === 'usuario') location.href = 'portal-usuario.html';
+    else if (portal === 'formado') location.href = 'portal-formado.html';
     else if (portal === 'aluno') location.href = 'portal-aluno.html';
     else if (portal === 'docente') location.href = 'portal-docente.html';
     else if (portal === 'coordenacao') location.href = 'portal-coordenacao.html';
@@ -1556,6 +1587,49 @@ async function landingLoginAdmin(cpf, senha) {
     enterAdminPanel();
     saveLoginState();
     return true;
+}
+
+/* Portal do Usuario: so entra quem esta no Cadastro Geral dos Individuos
+   (candidatos, docentes, usuarios e CFF) com o formulario em status Ativo. */
+async function landingLoginUsuario(cpf, senha) {
+    var fontes = [
+        { colecao: 'candidatos', rotulo: 'Aluno/Formado' },
+        { colecao: 'docentes', rotulo: 'Docente' },
+        { colecao: 'usuarios', rotulo: 'Usuario' },
+        { colecao: 'cffAlunos', rotulo: 'CFF' }
+    ];
+    for (var i = 0; i < fontes.length; i++) {
+        var fonte = fontes[i];
+        try {
+            var snap = await dbFirestore.collection(fonte.colecao).where('cpf', '==', cpf).get();
+            var encontrado = null;
+            snap.forEach(function (doc) {
+                if (encontrado) return;
+                var d = doc.data() || {};
+                if (d.senha !== senha) return;
+                var status = d.status;
+                if (!status && fonte.colecao === 'usuarios') status = (d.ativo === false ? 'Inativo' : 'Acadêmico');
+                if (!status) status = 'Acadêmico';
+                if (!fgStatusAtivo(status)) return;
+                encontrado = Object.assign({}, d, {
+                    _origem: fonte.colecao,
+                    _rotulo: fonte.rotulo,
+                    _docId: doc.id
+                });
+            });
+            if (encontrado) {
+                currentUserData = encontrado;
+                saveLastLogin(cpf);
+                saveLoginState();
+                try { localStorage.setItem('farn_user_data', JSON.stringify(encontrado)); } catch (e) {}
+                try { localStorage.setItem('pu_sessao', JSON.stringify(encontrado)); } catch (e) {}
+                location.href = 'portal-usuario.html';
+                return true;
+            }
+        } catch (e) { console.warn('Portal do Usuario: falha ao consultar ' + fonte.colecao, e); }
+    }
+    landingShowLoginError('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.');
+    return false;
 }
 
 async function landingLoginFormado(cpf, senha) {
@@ -1591,7 +1665,7 @@ async function landingLoginAluno(cpf, senha) {
     var u = snap.docs[0].data();
     if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
     if (u.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
-    if (u.status !== 'Ativo' && u.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar.'); return false; }
+    if (!fgStatusAtivo(u.status) && u.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar.'); return false; }
     if (!u.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
     localStorage.setItem('pa_lembrar_cpf', cpf);
     localStorage.setItem('pa_lembrar_senha', senha);
@@ -1962,7 +2036,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes', 'admin-cadastro-cursos': 'Cadastro de Cursos' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -2177,7 +2251,7 @@ async function editCandidato(index, origem) {
     // Atualiza o rotulo Matricula/Credencial, a Data Final e a previa com QR code
     fcAtualizarTipoCredencial();
     const senhaWrapper = document.getElementById('senha-field-wrapper');
-    if (c.status === 'Ativo') {
+    if (fgStatusAtivo(c.status)) {
         senhaWrapper.style.display = '';
         document.getElementById('fc-senha').value = c.senha || (c.cpf ? c.cpf.substring(0, 6) : '');
         document.getElementById('fc-senha').required = true;
@@ -2284,7 +2358,11 @@ async function handleCandidatoSubmit(event) {
     const tipoRadio = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
     data.tipoPessoa = tipoRadio ? tipoRadio.value : 'A';
     data.cursos = fcCursosColetar();
-    data.status = anterior ? anterior.status : 'Pendente';
+    /* Status agora e apenas a categoria do individuo; a situacao operacional
+       fica em statusOriginal. */
+    if (anterior && anterior.statusOriginal) data.statusOriginal = anterior.statusOriginal;
+    else if (!anterior) data.statusOriginal = 'Pendente';
+    data.status = data.tipoPessoa === 'F' ? 'Formado' : 'Acadêmico';
     data.dataCadastro = (anterior && anterior.dataCadastro) ? anterior.dataCadastro : new Date().toLocaleDateString('pt-BR');
     data.dataHoraCadastro = (anterior && anterior.dataHoraCadastro) ? anterior.dataHoraCadastro : new Date().toLocaleString('pt-BR');
     data.dataInscricao = document.getElementById('fc-data-inscricao').value || '';
@@ -2370,22 +2448,24 @@ async function handleCandidatoSubmit(event) {
 
 /* ===== PRE-INSCRICAO - FILTRO POR PROJETO/TURMA ===== */
 
+/* Agrupa por PROJETO. O campo curso so existe em alguns registros legados e
+   nao pode esconder as turmas dos outros projetos. */
 function preCursosDisponiveis() {
     const nomes = new Set();
-    (turmas || []).forEach(t => { const c = (t.curso || '').trim(); if (c) nomes.add(c); });
+    (turmas || []).forEach(t => { const p = (t.projeto || '').trim(); if (p) nomes.add(p); });
     if (!nomes.size) (projetos || []).forEach(p => { if (p.nome) nomes.add(p.nome); });
     return Array.from(nomes).sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
 function preTurmasDoCurso(nome) {
     nome = (nome||'').trim();
-    let lista = (turmas||[]).filter(t => (t.curso||'').trim() === nome);
-    if (!lista.length) lista = turmasDoProjeto(nome);
+    let lista = turmasDoProjeto(nome);
+    if (!lista.length) lista = (turmas||[]).filter(t => (t.curso||'').trim() === nome);
     return lista;
 }
 function preInicializar() {
     const selCurso = document.getElementById('pre-selecao-curso') || document.getElementById('pre-selecao-projeto');
     if (!selCurso) return;
-    selCurso.innerHTML = '<option value="">Selecione o curso...</option>';
+    selCurso.innerHTML = '<option value="">Selecione o projeto...</option>';
     preCursosDisponiveis().forEach(nome => {
         selCurso.innerHTML += '<option value="' + nome.replace(/"/g,'&quot;') + '">' + nome + '</option>';
     });
@@ -2548,13 +2628,13 @@ function renderList() {
     const cursoFiltro = (document.getElementById('pre-selecao-curso') || document.getElementById('pre-selecao-projeto') || {}).value || '';
     // Pre-inscricao mostra apenas os cadastros ainda em avaliacao.
     // Ao virar Ativo, o cadastro sai daqui e passa a integrar o formulario de Alunos.
-    const filtrados = candidatos.filter(c => { const cc=(c.curso||c.projeto||''); return c.status !== 'Ativo' && (!turmaFiltro || c.turma === turmaFiltro) && (!cursoFiltro || cc===cursoFiltro || c.projeto===cursoFiltro || !cc); });
+    const filtrados = candidatos.filter(c => { const cc=(c.curso||c.projeto||''); return !fgStatusAtivo(c.status) && (!turmaFiltro || c.turma === turmaFiltro) && (!cursoFiltro || cc===cursoFiltro || c.projeto===cursoFiltro || !cc); });
     const p = filtrados.filter(c => c.status === 'Pendente').length;
     if (badge) badge.textContent = p + ' pendente' + (p !== 1 ? 's' : '');
     if (!filtrados.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:24px">Nenhum candidato nesta turma</td></tr>'; return; }
     tbody.innerHTML = filtrados.map((c) => {
         const i = candidatos.indexOf(c);
-        const sc = c.status === 'Ativo' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
+        const sc = fgStatusAtivo(c.status) ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
         const nomeStyle = c.pediuBaixa ? 'color:#dc2626;font-weight:700' : (c.atualizarCadastro ? 'color:#a5d6a7;font-weight:700' : '');
         const baixaTag = c.pediuBaixa ? ' <span style="background:rgba(220,38,38,.12);color:#dc2626;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-power-off"></i> PEDI BAIXA</span>' : '';
         return `<tr>
@@ -2642,7 +2722,7 @@ function viewCandidato(i) {
             <div class="detail-item"><span class="detail-label">Inscricao</span><span class="detail-value">${c.dataInscricao || '---'}</span></div>
             <div class="detail-item full"><span class="detail-label">Data/Hora 1o Cadastro</span><span class="detail-value" style="color:#4caf50;font-weight:600">${c.dataHoraCadastro||'---'}</span></div>
             <div class="detail-item"><span class="detail-label">Cadastrado por</span><span class="detail-value" style="color:#16a34a;font-weight:600">${c.cadastradoPor || '---'}</span></div>
-            ${c.status === 'Ativo' && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
+            ${fgStatusAtivo(c.status) && c.senha ? `<div class="detail-item"><span class="detail-label">Senha de Acesso</span><span class="detail-value" style="color:#4caf50;font-weight:700">${c.senha}</span></div>` : ''}
             ${c.pediuBaixa ? `<div style="grid-column:1/-1;margin-top:12px;padding:16px;border:2px solid #dc2626;border-radius:10px;background:rgba(220,38,38,.06)"><p style="font-size:13px;color:#991b1b;margin-bottom:6px;font-weight:800"><i class="fa-solid fa-power-off"></i> ALUNO SOLICITOU BAIXA DO CURSO</p><p style="font-size:12px;color:#7f1d1d;margin-bottom:10px">Solicitado em ${c.pediuBaixaEm ? new Date(c.pediuBaixaEm).toLocaleString('pt-BR') : '---'}. O aluno esta com o acesso ao portal bloqueado.</p>${c.obsBaixa ? `<div style="background:#fff;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#7f1d1d"><b>Obs. Baixa:</b> ${escHTML(c.obsBaixa)}</div>` : ''}${c.reingressoSolicitado ? `<div style="background:#fff;border:1px solid #93c5fd;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#1e3a8a"><p style="font-weight:800;margin-bottom:4px"><i class="fa-solid fa-rotate"></i> PEDIDO DE REINGRESSO PENDENTE</p><p style="margin-bottom:4px">Solicitado em ${c.reingressoEm ? new Date(c.reingressoEm).toLocaleString('pt-BR') : '---'}.</p>${c.obsReingresso ? `<p><b>Obs. Reingresso:</b> ${escHTML(c.obsReingresso)}</p>` : ''}</div>` : ''}<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn-primary" style="background:linear-gradient(135deg,#16a34a,#15803d)" onclick="autorizarBaixa(${i})"><i class="fa-solid fa-check"></i> Autorizar Retorno</button>${c.reingressoSolicitado ? `<button class="btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca" onclick="recusarReingresso(${i})"><i class="fa-solid fa-xmark"></i> Recusar Reingresso</button>` : ''}</div></div>` : ''}
             ${(c.tipoPessoa || 'A') === 'F' ? (c.remanejadoDocente ? `<div class="detail-item full" style="margin-top:8px"><span class="detail-label">Remanejamento</span><span class="detail-value" style="color:#1d4ed8;font-weight:700">Formado remanejado como Docente em ${c.remanejadoEm || '---'} por ${c.remanejadoPor || '---'}</span></div>` : `<div style="grid-column:1/-1;text-align:center;margin-top:14px;padding:16px;border:1px dashed #2563eb;border-radius:10px;background:rgba(37,99,235,.04)"><p style="font-size:13px;color:#475569;margin-bottom:10px;font-weight:600">Formado elegivel para entrar no corpo de docentes.</p><button class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" onclick="remanejarFormado(${i})"><i class="fa-solid fa-arrows-rotate"></i> Remanejar como Docente</button></div>`) : ''}
         </div>`;
@@ -2795,7 +2875,7 @@ function printCandidato(i) {
         <h2>Turma</h2>
         ${mat ? `<div class="row"><div class="col"><div class="label">${isFormado ? 'Credencial' : 'Matricula'}</div><div class="val" style="color:#e65100;font-size:18px;font-weight:800;letter-spacing:2px;font-family:'Courier New',monospace">${mat}</div></div></div>` : ''}
         <div class="row"><div class="col"><div class="label">Turma</div><div class="val">${c.turma||'---'}${c.turma ? '<br><small style="color:#666;font-size:6px">' + getTurmaDescricao(c.turma) + '</small>' : ''}</div></div><div class="col"><div class="label">Projeto</div><div class="val" style="color:#e65100;font-weight:700">${c.projeto||'---'}</div></div></div>
-        ${c.status === 'Ativo' && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
+        ${fgStatusAtivo(c.status) && c.senha ? `<div class="row"><div class="col"><div class="label">Senha de Acesso</div><div class="val" style="color:#2e7d32;font-weight:bold">${c.senha}</div></div></div>` : ''}
         ${c.dataHoraCadastro ? `<div class="row"><div class="col"><div class="label">Data/Hora 1o Cadastro</div><div class="val" style="color:#2e7d32;font-size:11px">${c.dataHoraCadastro}</div></div></div>` : ''}
         <script>window.onload=function(){window.print();}<\/script></body></html>`);
     w.document.close();
@@ -3050,7 +3130,7 @@ async function importExcelFile(event) {
             const row = rows[r];
             if (!row || !row[0]) { erros++; continue; }
 
-            const data = { status: 'Pendente', dataCadastro: new Date().toLocaleDateString('pt-BR') };
+            const data = { status: 'Acadêmico', statusOriginal: 'Pendente', dataCadastro: new Date().toLocaleDateString('pt-BR') };
 
             for (let c = 0; c < Math.min(fieldMap.length, row.length); c++) {
                 let val = row[c] !== undefined ? String(row[c]).trim() : '';
@@ -3060,7 +3140,12 @@ async function importExcelFile(event) {
 
             if (!data.nome || !data.cpf) { erros++; continue; }
 
-            if (data.status === 'Ativo' && !data.senha) {
+            /* Normaliza status legado vindo da planilha. */
+            if (data.status === 'Ativo' || data.status === 'Pendente' || data.status === 'Rejeitado') {
+                if (!data.statusOriginal) data.statusOriginal = data.status;
+                data.status = data.tipoPessoa === 'F' ? 'Formado' : 'Acadêmico';
+            }
+            if (fgStatusAtivo(data.status) && !data.senha) {
                 data.senha = data.cpf.substring(0, 6);
             }
 
@@ -3083,7 +3168,7 @@ function exportExcel() {
     const turmaFiltro = document.getElementById('pre-selecao-turma') ? document.getElementById('pre-selecao-turma').value : '';
     const cursoFiltro = (document.getElementById('pre-selecao-curso') || document.getElementById('pre-selecao-projeto') || {}).value || '';
     // Mantem o mesmo criterio da lista de pre-inscricao: exclui os já Ativos.
-    const filtrados = candidatos.filter(c => { const cc=(c.curso||c.projeto||''); return c.status !== 'Ativo' && (!turmaFiltro || c.turma === turmaFiltro) && (!cursoFiltro || cc===cursoFiltro || c.projeto===cursoFiltro || !cc); });
+    const filtrados = candidatos.filter(c => { const cc=(c.curso||c.projeto||''); return !fgStatusAtivo(c.status) && (!turmaFiltro || c.turma === turmaFiltro) && (!cursoFiltro || cc===cursoFiltro || c.projeto===cursoFiltro || !cc); });
     if (!filtrados.length) { alert('Nenhum candidato para exportar nesta turma.'); return; }
     let csv = 'Nome,CPF,Nascimento,Idade,Genero de Nascimento,Estado Civil,Nacionalidade,Naturalidade,Profissao,Mae,Pai,Titulo,Email,WhatsApp,Endereco,Numero,Bairro,Cidade,Estado,Altura,Peso,Fator RH,Hipertensao,Diabetes,Deficiencia,Tatuagem,Cirurgia,Alcool,Medicamento,Cansaco,Calca,Camisa,Calcado,Turma,Projeto,Status,Senha,Cadastro,Data/Hora 1o Cadastro\n';
     filtrados.forEach(c => {
@@ -3124,8 +3209,8 @@ function alunosFiltrarPorAba(statusFilter, turmaFiltro) {
         if ((c.tipoPessoa || 'A') === 'F') return false;
         if (turmaFiltro && c.turma !== turmaFiltro) return false;
         if (tab === 'pediu-baixa') return !!c.pediuBaixa;
-        if (tab === 'aprovados') return c.status === statusFilter && !c.pediuBaixa;
-        return c.status === statusFilter;
+        if (tab === 'aprovados') return fgStatusOriginal(c) === statusFilter && !c.pediuBaixa;
+        return fgStatusOriginal(c) === statusFilter;
     });
 }
 
@@ -3160,7 +3245,7 @@ function alunosOnSelecaoChange() {
     if (projeto && turma) {
         conteudo.style.display = '';
         renderAlunosList();
-        const cpfsAtivos = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.turma === turma).map(c => c.cpf);
+        const cpfsAtivos = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && fgStatusAtivo(c.status) && c.turma === turma).map(c => c.cpf);
         if (cpfsAtivos.length) verificarInativosPorFalta(cpfsAtivos);
     } else {
         conteudo.style.display = 'none';
@@ -3186,15 +3271,15 @@ function renderAlunosList() {
 
     const allByTurma = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && (!turmaFiltro || c.turma === turmaFiltro));
     const elContAprovados = document.getElementById('tab-count-aprovados');
-    if (elContAprovados) elContAprovados.textContent = allByTurma.filter(c => c.status === 'Ativo' && !c.pediuBaixa).length;
+    if (elContAprovados) elContAprovados.textContent = allByTurma.filter(c => fgStatusAtivo(c.status) && !c.pediuBaixa).length;
     const elContInativo = document.getElementById('tab-count-inativo-falta');
-    if (elContInativo) elContInativo.textContent = allByTurma.filter(c => c.status === 'Inativo por Falta').length;
+    if (elContInativo) elContInativo.textContent = allByTurma.filter(c => fgStatusOriginal(c) === 'Inativo por Falta').length;
     const elContPendentes = document.getElementById('tab-count-pendentes');
-    if (elContPendentes) elContPendentes.textContent = allByTurma.filter(c => c.status === 'Pendente').length;
+    if (elContPendentes) elContPendentes.textContent = allByTurma.filter(c => fgStatusOriginal(c) === 'Pendente').length;
     const elContReprovados = document.getElementById('tab-count-reprovados');
-    if (elContReprovados) elContReprovados.textContent = allByTurma.filter(c => c.status === 'Rejeitado').length;
+    if (elContReprovados) elContReprovados.textContent = allByTurma.filter(c => fgStatusOriginal(c) === 'Rejeitado').length;
     const elContSegunda = document.getElementById('tab-count-segunda-chamada');
-    if (elContSegunda) elContSegunda.textContent = allByTurma.filter(c => c.status === 'Segunda Chamada').length;
+    if (elContSegunda) elContSegunda.textContent = allByTurma.filter(c => fgStatusOriginal(c) === 'Segunda Chamada').length;
     const elContPediuBaixa = document.getElementById('tab-count-pediu-baixa');
     if (elContPediuBaixa) elContPediuBaixa.textContent = allByTurma.filter(c => c.pediuBaixa).length;
 
@@ -3213,7 +3298,7 @@ function renderAlunosList() {
         var countFormar = document.getElementById('formar-turma-count');
         if (btnFormar) {
             var mostrarFormar = (currentAlunosTab === 'aprovados') && !!turmaFiltro;
-            var _formarAtivosList = mostrarFormar ? allByTurma.filter(function(c){ return c.status === 'Ativo' && !c.pediuBaixa; }) : [];
+            var _formarAtivosList = mostrarFormar ? allByTurma.filter(function(c){ return fgStatusAtivo(c.status) && !c.pediuBaixa; }) : [];
             _formarAtivosCount = _formarAtivosList.length;
             btnFormar.style.display = mostrarFormar ? '' : 'none';
             if (countFormar) countFormar.textContent = _formarAtivosCount;
@@ -3258,7 +3343,7 @@ function renderAlunosList() {
                 <button class="btn-icon" title="Copiar para a seção CFF" onclick="alunosCopyParaCff(${i})" style="color:#7c3aed"><i class="fa-solid fa-chalkboard"></i></button>
                 ${c.pediuBaixa && c.reingressoSolicitado ? `<button class="btn-icon" title="Recusar Reingresso" onclick="recusarReingresso(${i})" style="color:#dc2626"><i class="fa-solid fa-xmark"></i></button>` : ''}
                 ${c.pediuBaixa ? `<button class="btn-icon btn-success" title="Autorizar Retorno" onclick="autorizarBaixa(${i})" style="color:#16a34a"><i class="fa-solid fa-check"></i></button>` : ''}
-                ${c.status === 'Ativo' ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
+                ${fgStatusAtivo(c.status) ? `<button class="btn-icon btn-contrato" title="Contrato de BC" onclick="gerarContratoBC(${i})"><i class="fa-solid fa-file-contract"></i></button>` : ''}
                 <div class="status-dropdown">
                     <button class="btn-icon btn-status" title="Alterar Status" onclick="toggleStatusDropdown(event, ${i})"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
                     <div class="status-dropdown-menu hidden" id="status-dd-${i}">
@@ -3401,13 +3486,29 @@ async function formarTurmaAbrir() {
     if (currentAlunosTab !== 'aprovados') { alert('Abra a guia Ativos para formar a turma.'); return; }
 
     var ativos = candidatos.filter(function(c) {
-        return (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && !c.pediuBaixa && c.turma === turma && (!projeto || projetoCorresponde(c.projeto, projeto));
+        return (c.tipoPessoa || 'A') !== 'F' && fgStatusAtivo(c.status) && !c.pediuBaixa && c.turma === turma && (!projeto || projetoCorresponde(c.projeto, projeto));
     });
     if (!ativos.length) { alert('Nenhum aluno ativo encontrado nesta turma para formar.'); return; }
 
+    /* Como a formacao e uma COPIA, o aluno original continua ativo. Evita
+       criar uma segunda copia de formado para a mesma pessoa/turma. */
+    var jaCopiados = ativos.filter(function (c) {
+        return (candidatos || []).some(function (x) {
+            return x !== c && (x.tipoPessoa || 'A') === 'F' && String(x.cpf) === String(c.cpf) &&
+                ((x.turma || x.formadoTurma) === turma);
+        });
+    });
+    if (jaCopiados.length) {
+        ativos = ativos.filter(function (c) {
+            return !jaCopiados.some(function (j) { return j === c; });
+        });
+    }
+    if (!ativos.length) { alert('Todos os alunos desta turma já possuem cópia de formado.'); return; }
+
     var msg = 'Formar turma "' + turma + '" (' + projeto + ')?\n\n' +
-        'Serão transferidos ' + ativos.length + ' aluno(s) ativo(s) para Indivíduo Formado.\n' +
-        'Para cada aluno: todos os dados serão mantidos; tipo acadêmico passa a Formado; a matrícula (ACD) será substituída pela Credencial (CRD + turma + 6 primeiros dígitos do CPF + data final).\n\n' +
+        'Serão COPIADOS ' + ativos.length + ' cadastro(s) de aluno(s) ativo(s) para Indivíduo Formado.\n' +
+        'Os cadastros originais Continuam como Alunos Ativos na turma — nada será alterado neles.\n' +
+        'Cada cópia terá todos os dados do aluno, o tipo Formado e a Credencial (CRD + turma + 6 primeiros dígitos do CPF + data final).\n\n' +
         'Deseja continuar?';
     if (!confirm(msg)) return;
 
@@ -3430,33 +3531,63 @@ async function formarTurmaAbrir() {
         for (var k = 0; k < ativos.length; k++) {
             var c = ativos[k];
             var cred = _formarTurmaGerarCredencial(c.cpf, dataAV, turma);
-            var updates = {
-                tipoPessoa: 'F',
-                status: 'Ativo',
-                formadoEm: nowIso,
-                formadoProjeto: projeto,
-                formadoTurma: turma,
-                dataAVFinalPratica: dataAV,
-                dataAVFinalPraticaFmt: dataAVFmt,
-                dataFinal: dataAV
-            };
-            if (cred) {
-                updates.credencial = cred;
-                updates.matricula = cred; // compatibilidade: onde exibia matricula, passa a mostrar credencial
-                updates.credencialModelo = 'CRD.TURMA.CPF6DATA';
-                updates.credencialAtualizadaEm = nowIso;
+
+            /* Copia integral do aluno. O cadastro original NAO e tocado: ele
+               continua como Aluno Ativo na turma; so a copia vira Formado. */
+            var copia = Object.assign({}, c);
+            delete copia.docKey;
+            delete copia.patenteInsigniaUrl;
+
+            /* Retrato da Ficha Geral de quando ainda era aluno ativo, lido pelo
+               nucleo compartilhado no portal do aluno, certificacoes e ficha. */
+            try {
+                if (typeof dbFirestore !== 'undefined' && dbFirestore) {
+                    var avDoc = await dbFirestore.collection('avaliacoesAlunos').doc(String(c.cpf)).get();
+                    if (avDoc.exists) {
+                        var avSnapshot = avDoc.data() || {};
+                        copia.fichaGeralAluno = {
+                            av: avSnapshot,
+                            projeto: c.projeto || '',
+                            turma: c.turma || '',
+                            matricula: c.matricula || '',
+                            formadoEm: nowIso,
+                            registradoEm: nowIso
+                        };
+                    }
+                }
+            } catch (e) {
+                console.warn('Nao foi possivel guardar o retrato da ficha de ' + (c.nome || c.cpf) + ':', e && e.message);
             }
-            // aplica no objeto local
-            Object.keys(updates).forEach(function(key){ c[key] = updates[key]; });
+
+            copia.tipoPessoa = 'F';
+            copia.status = 'Formado';
+            copia.statusOriginal = 'Ativo';
+            copia.formadoEm = nowIso;
+            copia.formadoProjeto = projeto;
+            copia.formadoTurma = turma;
+            copia.dataAVFinalPratica = dataAV;
+            copia.dataAVFinalPraticaFmt = dataAVFmt;
+            copia.dataFinal = dataAV;
+            if (cred) {
+                copia.credencial = cred;
+                copia.credencialModelo = 'CRD.TURMA.CPF6DATA';
+                copia.credencialAtualizadaEm = nowIso;
+            }
 
             if (typeof dbFirestore !== 'undefined' && dbFirestore) {
                 if (!batch) { batch = dbFirestore.batch(); batchCount = 0; }
-                var docId = (typeof candidatoDocId === 'function') ? candidatoDocId(c) : (c.id ? String(c.id) : null);
-                var ref = docId ? dbFirestore.collection('candidatos').doc(String(docId)) : dbFirestore.collection('candidatos').doc(String(c.id));
-                batch.set(ref, updates, { merge: true });
+                var ref = dbFirestore.collection('candidatos').doc();
+                copia.id = parseInt(ref.id) || ref.id;
+                copia.docKey = ref.id;
+                var dadosCopia = Object.assign({}, copia);
+                delete dadosCopia.docKey;
+                batch.set(ref, dadosCopia);
                 batchCount++;
                 if (batchCount >= 450) await commitBatch();
+            } else {
+                copia.id = 'copia-' + Date.now() + '-' + k;
             }
+            candidatos.push(copia);
         }
         await commitBatch();
 
@@ -3465,7 +3596,7 @@ async function formarTurmaAbrir() {
         if (typeof renderList === 'function') renderList();
         if (typeof renderFormadosList === 'function') renderFormadosList();
 
-        alert('Turma formada com sucesso!\n\n' + ativos.length + ' aluno(s) transferido(s) para Indivíduo Formado.\nCredencial gerada: CRD + turma + 6 dígitos do CPF + data final (' + dataAVFmt + ').');
+        alert('Turma formada com sucesso!\n\n' + ativos.length + ' cadastro(s) copiado(s) para Indivíduo Formado. Os alunos originais continuam ativos na turma.\nCredencial gerada: CRD + turma + 6 dígitos do CPF + data final (' + dataAVFmt + ').');
     } catch(e) {
         console.error('Erro ao formar turma:', e);
         alert('Erro ao formar turma: ' + (e && e.message ? e.message : e));
@@ -3657,7 +3788,7 @@ function foto3x4RenderList() {
     const countEl = document.getElementById('foto3x4-count');
 
     const filtrados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F'
-        && c.status === 'Ativo'
+        && fgStatusAtivo(c.status)
         && (!projeto || c.projeto === projeto)
         && (!turma || c.turma === turma));
 
@@ -3929,7 +4060,7 @@ function foto3x4CandidatoPorIndice(fi) {
     const projeto = document.getElementById('foto3x4-selecao-projeto').value;
     const turma = document.getElementById('foto3x4-selecao-turma').value;
     const filtrados = candidatos.filter(x => (x.tipoPessoa || 'A') !== 'F'
-        && x.status === 'Ativo'
+        && fgStatusAtivo(x.status)
         && (!projeto || x.projeto === projeto)
         && (!turma || x.turma === turma));
     return filtrados[fi] || null;
@@ -3952,7 +4083,7 @@ function foto3x4Filtrados() {
     const projeto = selProj ? selProj.value : '';
     const turma = selTurma ? selTurma.value : '';
     return candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F'
-        && c.status === 'Ativo'
+        && fgStatusAtivo(c.status)
         && (!projeto || c.projeto === projeto)
         && (!turma || c.turma === turma));
 }
@@ -4209,7 +4340,7 @@ async function relatorioRegimento() {
         snap.forEach(doc => aceites.push(doc.data()));
 
         /* Base: apenas alunos ATIVOS do formulario (status Ativo e nao formados) */
-        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo');
+        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && fgStatusAtivo(c.status));
         const aprovadosCpf = {};
         aprovados.forEach(c => { if (c.cpf) aprovadosCpf[c.cpf] = true; });
         const aceitesAtivos = aceites.filter(a => aprovadosCpf[a.cpf]);
@@ -4342,7 +4473,7 @@ async function relatorioTermo() {
         const aceites = [];
         snap.forEach(doc => aceites.push(doc.data()));
 
-        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo');
+        const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && fgStatusAtivo(c.status));
         const aprovadosCpf = {};
         aprovados.forEach(c => { if (c.cpf) aprovadosCpf[c.cpf] = true; });
         const aceitesAtivos = aceites.filter(a => aprovadosCpf[a.cpf]);
@@ -4626,7 +4757,7 @@ async function relatorioTermoPratica() {
 
     /* Base: apenas alunos ATIVOS do formulario (status Ativo e nao formados),
        a mesma regra do relatorio do Regimento Interno. */
-    const ativos = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo');
+    const ativos = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && fgStatusAtivo(c.status));
     const ativosPorCpf = {};
     ativos.forEach(c => { const k = termoPraticaCpfLimpo(c.cpf); if (k) ativosPorCpf[k] = c; });
 
@@ -4890,7 +5021,7 @@ function relDocAbrir(tipo) {
     var turmas = new Set();
     var fonte = tipo === 'certificado-formado' || tipo === 'carteira-formado'
         ? candidatos.filter(function(c) { return (c.tipoPessoa || 'A') === 'F'; })
-        : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+        : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status); });
     fonte.forEach(function(c) { if (c.turma) turmas.add(c.turma); });
     turmaSel.innerHTML = '<option value="">Selecione a turma...</option>';
     Array.from(turmas).sort().forEach(function(t) {
@@ -4937,7 +5068,7 @@ function relDocGerar() {
         if (cpf.length < 10) { errEl.textContent = 'Digite um CPF valido.'; errEl.style.display = 'block'; return; }
         var fonte = relDocTipo === 'certificado-formado' || relDocTipo === 'carteira-formado'
             ? candidatos.filter(function(c) { return (c.tipoPessoa || 'A') === 'F'; })
-            : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+            : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status); });
         var pessoa = fonte.find(function(c) { return (c.cpf || '').replace(/\D/g, '') === cpf; });
         if (!pessoa) { errEl.textContent = 'Cadastro nao encontrado com este CPF.'; errEl.style.display = 'block'; return; }
         relDocFechar();
@@ -4949,7 +5080,7 @@ function relDocGerar() {
         if (!turma) { errEl.textContent = 'Selecione uma turma.'; errEl.style.display = 'block'; return; }
         var fonte = relDocTipo === 'certificado-formado' || relDocTipo === 'carteira-formado'
             ? candidatos.filter(function(c) { return (c.tipoPessoa || 'A') === 'F'; })
-            : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+            : candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status); });
         var lista = fonte.filter(function(c) { return c.turma === turma; });
         if (!lista.length) { errEl.textContent = 'Nenhum cadastro encontrado para esta turma.'; errEl.style.display = 'block'; return; }
         lista.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
@@ -4966,7 +5097,7 @@ function relatorioCarteiraFormado() { relDocAbrir('carteira-formado'); }
 
 function relatorioFaltas() {
     var turmas = new Set();
-    candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; }).forEach(function(c) { if (c.turma) turmas.add(c.turma); });
+    candidatos.filter(function(c) { return (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status); }).forEach(function(c) { if (c.turma) turmas.add(c.turma); });
     if (!turmas.size) { alert('Nenhuma turma encontrada.'); return; }
 
     var selHtml = '<option value="">Selecione a turma...</option>';
@@ -5267,7 +5398,7 @@ function relatorioEquipamentos() {
                     epis = curSnap.docs[0].data().epis || [];
                 }
 
-                var alunos = candidatos.filter(function(c) { return c.turma === turma && (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo'; });
+                var alunos = candidatos.filter(function(c) { return c.turma === turma && (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status); });
                 alunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
 
                 if (!alunos.length) {
@@ -5838,7 +5969,7 @@ function relDeclCertImprimir(projeto, turma, curso, carga, inst, lista) {
 }
 
 function relatorioUniforme() {
-    const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo');
+    const aprovados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status));
     if (!aprovados.length) { alert('Nenhum aluno ativo para gerar relatorio.'); return; }
     aprovados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     const w = window.open('', '_blank');
@@ -5997,7 +6128,7 @@ function getCamposSelecionados() {
 function getValorCampo(c, key) {
     if (key === 'matricula') return c.matricula || generateMatricula(c.cpf) || '---';
     if (key === 'cpf') return formatCPFDisplay(c.cpf) || '---';
-    if (key === 'senha') return c.status === 'Ativo' && c.senha ? c.senha : '---';
+    if (key === 'senha') return fgStatusAtivo(c.status) && c.senha ? c.senha : '---';
     return c[key] || '---';
 }
 
@@ -6006,7 +6137,7 @@ function gerarRelatorioPersonalizado() {
     if (!campos.length) { alert('Selecione pelo menos um campo para gerar o relatorio.'); return; }
     if (!candidatos.length) { alert('Nenhum candidato cadastrado.'); return; }
     fecharModalMontarRelatorio();
-    let lista = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo');
+    let lista = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status));
     if (!lista.length) { alert('Nenhum aluno ativo para gerar relatorio.'); return; }
     lista.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     const w = window.open('', '_blank');
@@ -6149,7 +6280,7 @@ function viagemCarregarAlunos() {
     if (!projetoNome || !turmaNome) { alert('Selecione o projeto e a turma.'); return; }
     var alunos = (Array.isArray(candidatos) ? candidatos : []).filter(function(c) {
         return c && c.projeto === projetoNome && c.turma === turmaNome
-            && (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && c.status === 'Ativo';
+            && (c.tipoPessoa || 'A') !== 'F' && !c.remanejadoDocente && fgStatusAtivo(c.status);
     });
     alunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
     if (!alunos.length) { alert('Nenhum aluno ativo encontrado nessa turma.'); return; }
@@ -6419,8 +6550,11 @@ function projetoRenderTurmas() {
         if (t.inicio) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-flag" style="margin-right:4px"></i>Inicio: ' + t.inicio + '</span>';
         if (t.previsao) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>Previsao: ' + t.previsao + '</span>';
         if (t.dias && t.dias.length) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-calendar-days" style="margin-right:4px"></i>' + t.dias.join(', ') + '</span>';
-        if (t.horarios) {
-            var hList = Object.entries(t.horarios).map(function(e) { return e[0] + ': ' + e[1].inicio + ' - ' + e[1].fim; }).join(', ');
+        if (t.horarios && typeof t.horarios === 'object') {
+            var hList = Object.entries(t.horarios).map(function(e) {
+                var h = e[1] && typeof e[1] === 'object' ? e[1] : {};
+                return e[0] + ': ' + (h.inicio || '-') + ' - ' + (h.fim || '-');
+            }).join(', ');
             if (hList) infoExtra += '<span style="color:#94a3b8;font-size:11px;margin-left:8px"><i class="fa-solid fa-clock" style="margin-right:4px"></i>' + hList + '</span>';
         }
         div.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;gap:2px">' +
@@ -6476,7 +6610,7 @@ function pfTurmaCarregarCursos(valor) {
     var sel = document.getElementById('pf-turma-curso');
     if (!sel) return;
     dbFirestore.collection('cursos').orderBy('nome').get().then(function(snap) {
-        var html = '<option value="">Selecione o curso...</option>';
+        var html = '<option value="">Selecione o projeto...</option>';
         snap.forEach(function(doc) {
             var c = doc.data();
             var nome = c.nome || '';
@@ -6486,7 +6620,7 @@ function pfTurmaCarregarCursos(valor) {
         sel.innerHTML = html;
     }).catch(function(e) {
         console.error('Erro ao carregar cursos:', e);
-        sel.innerHTML = '<option value="">Selecione o curso...</option>';
+        sel.innerHTML = '<option value="">Selecione o projeto...</option>';
     });
 }
 
@@ -6719,10 +6853,27 @@ async function handleProjetoSubmit(event) {
             turmas = turmas.filter(t => t.projeto !== old.nome);
             editingProjetoIndex = null;
         } else {
-            data.dataCadastro = new Date().toLocaleDateString('pt-BR');
-            const ref = await dbFirestore.collection(FB_PROJETOS).add(data);
-            data.docId = ref.id;
-            projetos.push(data);
+            /* Evita duplicar projeto que ja existe com grafia diferente. */
+            var existente = null;
+            try {
+                var snapProj = await dbFirestore.collection(FB_PROJETOS).get();
+                snapProj.forEach(function (d) {
+                    var atual = d.data() || {};
+                    if (projetoNomeChave(atual.nome) === projetoNomeChave(nome)) existente = d;
+                });
+            } catch (e) {}
+            if (existente) {
+                data.docId = existente.id;
+                data.dataCadastro = (existente.data() || {}).dataCadastro || new Date().toLocaleDateString('pt-BR');
+                await dbFirestore.collection(FB_PROJETOS).doc(String(existente.id)).set(data, { merge: true });
+                var idxExistente = projetos.findIndex(function (p) { return p.docId === existente.id; });
+                if (idxExistente >= 0) projetos[idxExistente] = data; else projetos.push(data);
+            } else {
+                data.dataCadastro = new Date().toLocaleDateString('pt-BR');
+                const ref = await dbFirestore.collection(FB_PROJETOS).add(data);
+                data.docId = ref.id;
+                projetos.push(data);
+            }
         }
         for (const t of projetoTurmasTemp) {
             const existe = turmas.find(tx => tx.nome === t.nome && tx.projeto === nome);
@@ -6757,7 +6908,7 @@ function renderProjetosList() {
     if (empty) empty.style.display = 'none';
     let html = '<table class="data-table"><thead><tr><th>Nome</th><th>CNPJ</th><th>Responsavel</th><th>Turmas</th><th>Data Cadastro</th><th>Acoes</th></tr></thead><tbody>';
     projetos.forEach((p, i) => {
-        const turmasProjeto = turmas.filter(t => t.projeto === p.nome);
+        const turmasProjeto = turmasUnicasPorNome(turmas.filter(t => !p.nome || projetoCorresponde(t.projeto, p.nome)));
         const ativas = turmasProjeto.filter(turmaEmAndamento).length;
         const concluidas = turmasProjeto.length - ativas;
         let turmasInfo = '---';
@@ -6782,15 +6933,108 @@ function renderProjetosList() {
     tbody.innerHTML = html;
 }
 
-function editProjeto(i) {
+async /* Remove projetos duplicados (mesmo nome com grafia diferente), mantendo um
+   e redirecionando as turmas/cadastros que usavam os nomes repetidos. */
+async function projetosMesclarDuplicatas() {
+    var grupos = {};
+    (projetos || []).forEach(function (p, i) {
+        var chave = projetoNomeChave(p.nome);
+        if (!chave) return;
+        if (!grupos[chave]) grupos[chave] = [];
+        grupos[chave].push({ p: p, i: i });
+    });
+    var duplicados = Object.keys(grupos).filter(function (k) { return grupos[k].length > 1; });
+    if (!duplicados.length) { alert('Nenhum projeto duplicado encontrado.'); return; }
+    var resumo = duplicados.map(function (k) {
+        return grupos[k].map(function (x) { return x.p.nome || '(sem nome)'; }).join('  +  ');
+    }).join('\n\n');
+    if (!confirm('Foram encontrados projetos duplicados:\n\n' + resumo
+        + '\n\nDeseja manter apenas um de cada e redirecionar turmas e cadastros?')) return;
+    try {
+        var batch = dbFirestore.batch(), alterados = 0, removidos = 0;
+        duplicados.forEach(function (chave) {
+            var itens = grupos[chave];
+            /* Mantem o que tem docId e a data de cadastro mais recente. */
+            itens.sort(function (a, b) {
+                if (!!a.p.docId !== !!b.p.docId) return a.p.docId ? -1 : 1;
+                return String(b.p.dataCadastro || '').localeCompare(String(a.p.dataCadastro || ''));
+            });
+            var manter = itens[0].p;
+            itens.slice(1).forEach(function (x) {
+                var nomeAntigo = x.p.nome;
+                if (x.p.docId) batch.delete(dbFirestore.collection(FB_PROJETOS).doc(String(x.p.docId)));
+                /* Redireciona turmas e candidatos do nome repetido. */
+                (turmas || []).forEach(function (t) {
+                    if (projetoNomeChave(t.projeto) === chave && t.projeto !== manter.nome) {
+                        if (t.docId || t.id) {
+                            batch.update(dbFirestore.collection(FB_TURMAS).doc(String(t.docId || t.id)), { projeto: manter.nome });
+                        }
+                        t.projeto = manter.nome; alterados++;
+                    }
+                });
+                (candidatos || []).forEach(function (c) {
+                    if (projetoNomeChave(c.projeto) === chave && c.projeto !== manter.nome) {
+                        var did = (typeof candidatoDocId === 'function') ? candidatoDocId(c) : c.id;
+                        if (did) batch.update(dbFirestore.collection(FB_CANDIDATOS).doc(String(did)), { projeto: manter.nome });
+                        c.projeto = manter.nome; alterados++;
+                    }
+                });
+                projetos = projetos.filter(function (pp) { return pp !== x.p; });
+                removidos++;
+            });
+        });
+        /* Turmas repetidas pelo nome: mantem apenas o documento mais antigo
+           (o original) e apaga os demais do Firestore. */
+        var gruposTurma = {}, vistosDoc = {};
+        (turmas || []).forEach(function (t) {
+            var chave = projetoNomeChave(t && t.nome);
+            if (!chave) return;
+            if (!gruposTurma[chave]) gruposTurma[chave] = [];
+            gruposTurma[chave].push(t);
+        });
+        Object.keys(gruposTurma).forEach(function (chave) {
+            var itens = gruposTurma[chave];
+            if (itens.length < 2) return;
+            itens.sort(function (a, b) { return String(a.id || '').localeCompare(String(b.id || '')); });
+            itens.slice(1).forEach(function (t) {
+                var id = t.docId || t.id;
+                if (id) batch.delete(dbFirestore.collection(FB_TURMAS).doc(String(id)));
+                turmas = turmas.filter(function (x) { return x !== t; });
+                removidos++;
+            });
+        });
+        await batch.commit();
+        renderProjetosList();
+        populateProjetoSelect();
+        populateTurmaSelect();
+        alert('Mesclagem concluída: ' + removidos + ' registro(s) duplicado(s) removido(s), ' + alterados + ' vínculo(s) redirecionado(s).');
+    } catch (e) {
+        console.error('Erro ao mesclar projetos:', e);
+        alert('Erro ao mesclar: ' + e.message);
+    }
+}
+
+async function editProjeto(i) {
     const p = projetos[i]; if (!p) return;
+    /* Cadastro antigo pode nao ter docId: localiza pelo nome para a edicao
+       atualizar o registro existente em vez de criar outro (duplicata). */
+    if (!p.docId && typeof dbFirestore !== 'undefined' && dbFirestore && p.nome) {
+        try {
+            var snap = await dbFirestore.collection(FB_PROJETOS).where('nome', '==', p.nome).limit(1).get();
+            if (!snap.empty) p.docId = snap.docs[0].id;
+        } catch (e) { console.warn('Nao foi possivel localizar o projeto no Firestore:', e); }
+    }
     editingProjetoIndex = i;
     projetoCancelarEdicaoTurma();
     pfTurmaCarregarCursos('');
     document.getElementById('pf-nome').value = p.nome || '';
     document.getElementById('pf-cnpj').value = p.cnpj || '';
     document.getElementById('pf-responsavel').value = p.responsavel || '';
-    projetoTurmasTemp = turmas.filter(t => t.projeto === p.nome).map(t => ({ nome: t.nome, descricao: t.descricao || '', inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '', status: t.status || p.status || 'Em Andamento' }));
+    var listaTurmas = turmasUnicasPorNome(turmas.filter(t => !p.nome || projetoCorresponde(t.projeto, p.nome)))
+        .map(function (t) {
+            return { nome: t.nome, descricao: t.descricao || '', inicio: t.inicio || '', previsao: t.previsao || '', dias: t.dias || [], horarios: t.horarios || {}, curso: t.curso || '', status: t.status || p.status || 'Em Andamento' };
+        });
+    projetoTurmasTemp = listaTurmas;
     projetoRenderTurmas();
     document.getElementById('projeto-form-title').innerHTML = '<i class="fa-solid fa-handshake" style="color:#ff9800;margin-right:8px"></i> Editar - ' + (p.nome || '');
     showAdminSection('admin-form-projeto');
@@ -6802,7 +7046,17 @@ async function deleteProjeto(i) {
     if (p.docId) {
         try { await dbFirestore.collection(FB_PROJETOS).doc(p.docId).delete(); } catch(e) { console.error(e); }
     }
+    var turmasRemovidas = turmas.filter(t => t.projeto === p.nome);
     turmas = turmas.filter(t => t.projeto !== p.nome);
+    /* Exclusao explicita: backupTurmas() nunca apaga documentos do Firestore. */
+    try {
+        const batch = dbFirestore.batch();
+        turmasRemovidas.forEach(t => {
+            const id = t.docId || t.id;
+            if (id !== undefined && id !== null) batch.delete(dbFirestore.collection(FB_TURMAS).doc(String(id)));
+        });
+        await batch.commit();
+    } catch(e) { console.error('Erro ao excluir turmas do projeto:', e); }
     await backupTurmas();
     projetos.splice(i, 1);
     backupProjetos();
@@ -7422,10 +7676,10 @@ function apontamentoInicializar() {
 function apontamentoCursosDisponiveis() {
     const nomes = new Set();
     (turmas || []).forEach(t => {
-        const curso = (t.curso || '').trim();
-        if (curso) nomes.add(curso);
+        const projeto = (t.projeto || '').trim();
+        if (projeto) nomes.add(projeto);
     });
-    // fallback: se turmas antigas não tiverem curso, usa projeto como agrupador
+    // fallback: se nao houver turmas, usa a lista de projetos cadastrados
     if (!nomes.size) {
         (projetos || []).forEach(p => { if (p.nome) nomes.add(p.nome); });
     }
@@ -7435,7 +7689,7 @@ function apontamentoCursosDisponiveis() {
 function apontamentoPopularSelecaoCurso() {
     const sel = document.getElementById('apt-selecao-curso');
     if (!sel) return;
-    sel.innerHTML = '<option value="">Selecione o curso...</option>';
+    sel.innerHTML = '<option value="">Selecione o projeto...</option>';
     apontamentoCursosDisponiveis().forEach(nome => {
         sel.innerHTML += '<option value="' + nome.replace(/"/g,'&quot;') + '">' + nome + '</option>';
     });
@@ -7444,10 +7698,10 @@ function apontamentoPopularSelecaoCurso() {
 function apontamentoTurmasDoCurso(cursoNome) {
     const nome = (cursoNome || '').trim();
     if (!nome) return [];
-    let lista = (turmas || []).filter(t => (t.curso || '').trim() === nome);
+    let lista = turmasDoProjeto(nome);
     if (!lista.length) {
-        // compat: turmas antigas agrupadas por projeto
-        lista = turmasDoProjeto(nome);
+        // compat: turmas antigas agrupadas apenas pelo campo curso
+        lista = (turmas || []).filter(t => (t.curso || '').trim() === nome);
     }
     return lista;
 }
@@ -7667,7 +7921,7 @@ function apontamentoOnAulaChange() {
         snap.forEach(doc => {
             const c = doc.data();
             if (c.ativo === false) return;
-            if (c.status !== 'Ativo') return;
+            if (!fgStatusAtivo(c.status)) return;
             aptAlunosNaTurma.push({ cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '' });
             aptPresencas[c.cpf] = { cpf: c.cpf || '', nome: c.nome || '', matricula: c.matricula || '', status: 'Falta', obs: '' };
         });
@@ -8225,13 +8479,13 @@ async function verificarInativosPorFalta(cpfs) {
         if (!k || !faltas[k]) return;
         if ((c.tipoPessoa || 'A') === 'F' || c.remanejadoDocente) return;
         const totalFaltas = faltas[k].size;
-        if (c.status === 'Ativo' && totalFaltas >= 3) {
-            candidatos[i].status = 'Inativo por Falta';
-            if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { status: 'Inativo por Falta', inativoPorFaltaEm: new Date().toISOString(), inativoPorFaltaMotivo: '3 ou mais faltas' });
+        if (fgStatusAtivo(c.status) && fgStatusOriginal(c) !== 'Inativo por Falta' && totalFaltas >= 3) {
+            candidatos[i].statusOriginal = 'Inativo por Falta';
+            if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { statusOriginal: 'Inativo por Falta', inativoPorFaltaEm: new Date().toISOString(), inativoPorFaltaMotivo: '3 ou mais faltas' });
             mudou = true;
-        } else if (c.status === 'Inativo por Falta' && totalFaltas < 3) {
-            candidatos[i].status = 'Ativo';
-            if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { status: 'Ativo', inativoPorFaltaEm: firebase.firestore.FieldValue.delete(), inativoPorFaltaMotivo: firebase.firestore.FieldValue.delete() });
+        } else if (fgStatusOriginal(c) === 'Inativo por Falta' && totalFaltas < 3) {
+            candidatos[i].statusOriginal = 'Ativo';
+            if (c.id) batch.update(dbFirestore.collection('candidatos').doc(String(c.id)), { statusOriginal: 'Ativo', inativoPorFaltaEm: firebase.firestore.FieldValue.delete(), inativoPorFaltaMotivo: firebase.firestore.FieldValue.delete() });
             mudou = true;
         }
     });
@@ -8588,7 +8842,7 @@ async function tfmOnSelecaoChange() {
     if (!projeto || !turma) { conteudo.style.display = 'none'; tfmRenderSalvos(); return; }
     conteudo.style.display = '';
 
-    tfmAlunos = candidatos.filter(c => c.status === 'Ativo' && c.ativo !== false && c.turma === turma)
+    tfmAlunos = candidatos.filter(c => fgStatusAtivo(c.status) && c.ativo !== false && c.turma === turma)
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     tfmExistentes = {};
@@ -11357,6 +11611,60 @@ function docenteLimparForm() {
 
 /* ===== FORMADOS ===== */
 
+var formadosFiltradosAtuais = [];
+
+/* Desfaz a formacao apenas dos formados visiveis no filtro de turma.
+   Notas, AVs, apontamentos e o retrato da ficha de aluno permanecem; so
+   voltam os campos de tipo/status/matricula e sao removidos os de formado. */
+async function desfazerFormados() {
+    var selTurma = document.getElementById('formados-filtro-turma');
+    var turma = selTurma ? selTurma.value : '';
+    if (!turma) { alert('Selecione uma turma no filtro antes de desfazer os formados.'); return; }
+    var lista = (formadosFiltradosAtuais || []).filter(function(c) {
+        return c && (c.tipoPessoa || 'A') === 'F' && fgStatusAtivo(c.status) &&
+            ((c.turma || c.formadoTurma) === turma);
+    });
+    if (!lista.length) { alert('Nenhum formado encontrado nesta turma.'); return; }
+    if (!confirm('Desfazer a formação de ' + lista.length + ' indivíduo(s) da turma "' + turma + '"?\n\nAs cópias de formado serão excluídas. Os alunos originais continuam ativos na turma, com notas, AVs e apontamentos intactos.')) return;
+
+    var btn = document.getElementById('btn-desfazer-formados');
+    var txtAnt = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Desfazendo...'; }
+    try {
+        var batch = null, batchCount = 0;
+        var commit = async function () {
+            if (batch && batchCount) { await batch.commit(); batch = null; batchCount = 0; }
+        };
+        var removidos = [];
+        for (var i = 0; i < lista.length; i++) {
+            var c = lista[i];
+            var docId = (typeof candidatoDocId === 'function') ? candidatoDocId(c) : (c.id ? String(c.id) : null);
+            if (typeof dbFirestore !== 'undefined' && dbFirestore && docId) {
+                if (!batch) { batch = dbFirestore.batch(); batchCount = 0; }
+                batch.delete(dbFirestore.collection('candidatos').doc(String(docId)));
+                batchCount++;
+                if (batchCount >= 400) await commit();
+            }
+            removidos.push(c);
+        }
+        await commit();
+        /* Remove tambem da memoria para a copia nao continuar aparecendo. */
+        removidos.forEach(function (c) {
+            var idx = candidatos.indexOf(c);
+            if (idx >= 0) candidatos.splice(idx, 1);
+        });
+        renderAlunosList();
+        renderList();
+        renderFormadosList();
+        alert('Formação desfeita: ' + lista.length + ' cópia(s) de formado excluída(s). Os alunos originais permanecem ativos na turma ' + turma + '.');
+    } catch (e) {
+        console.error('Erro ao desfazer formados:', e);
+        alert('Erro ao desfazer formados: ' + (e && e.message ? e.message : e));
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = txtAnt; }
+    }
+}
+
 function formadosInicializar() {
     var selProj = document.getElementById('formados-filtro-projeto');
     if (!selProj) return;
@@ -11364,7 +11672,7 @@ function formadosInicializar() {
     selProj.innerHTML = '<option value="">Todos os projetos</option>';
     var projsComFormado = {};
     (candidatos || []).forEach(function(c) {
-        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return;
+        if ((c.tipoPessoa || 'A') !== 'F' || !fgStatusAtivo(c.status)) return;
         var proj = c.projeto || c.formadoProjeto;
         if (proj) projsComFormado[proj] = true;
     });
@@ -11394,7 +11702,7 @@ function formadosOnFiltroChange() {
     selTurma.innerHTML = '<option value="">Todas as turmas</option>';
     var turmasComFormado = {};
     (candidatos || []).forEach(function(c) {
-        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return;
+        if ((c.tipoPessoa || 'A') !== 'F' || !fgStatusAtivo(c.status)) return;
         var proj = c.projeto || c.formadoProjeto;
         if (projeto && !projetoCorresponde(proj, projeto)) return;
         var turmaNome = c.turma || c.formadoTurma;
@@ -11420,8 +11728,8 @@ function formadosOnFiltroChange() {
 async function formadoAbrirFichaGeral(i) {
     var c = candidatos[i];
     if (!c) { alert('Formado não encontrado.'); return; }
-    var projeto = c.projeto || c.formadoProjeto || '';
-    var turma = c.turma || c.formadoTurma || '';
+    var projeto = String(c.projeto || c.formadoProjeto || '').trim();
+    var turma = String(c.turma || c.formadoTurma || '').trim();
     if (!projeto || !turma) { alert('Este formado não possui projeto/turma para abrir a Ficha Geral.'); return; }
     try {
         if (typeof fichaGeralCarregarAulas !== 'function' || typeof fichaGeralDadosAluno !== 'function' || typeof fichaGeralCalcular !== 'function' || typeof fichaGeralFolha !== 'function' || typeof fichaGeralAbrirImpressao !== 'function') {
@@ -11454,10 +11762,15 @@ function renderFormadosList() {
     var projeto = selProj ? selProj.value : '';
     var turma = selTurma ? selTurma.value : '';
     var lista = candidatos.filter(function(c) {
-        if ((c.tipoPessoa || 'A') !== 'F' || c.status !== 'Ativo') return false;
+        if ((c.tipoPessoa || 'A') !== 'F' || !fgStatusAtivo(c.status)) return false;
         return (!projeto || projetoCorresponde(c.projeto || c.formadoProjeto, projeto)) &&
             (!turma || c.turma === turma || c.formadoTurma === turma);
     });
+    formadosFiltradosAtuais = lista;
+    var btnDesfazer = document.getElementById('btn-desfazer-formados');
+    var countDesfazer = document.getElementById('desfazer-formados-count');
+    if (btnDesfazer) btnDesfazer.style.display = (turma && lista.length) ? '' : 'none';
+    if (countDesfazer) countDesfazer.textContent = '(' + lista.length + ')';
     var badge = document.getElementById('formados-count-badge');
     if (badge) badge.textContent = lista.length + ' formado' + (lista.length !== 1 ? 's' : '');
     var empty = document.getElementById('formados-empty');
@@ -11471,7 +11784,7 @@ function renderFormadosList() {
     if (listaEl) listaEl.style.display = 'block';
     tbody.innerHTML = lista.map(function(c) {
         var i = candidatos.indexOf(c);
-        var statusBadge = c.status === 'Ativo' ? '<span class="badge green">Ativo</span>' : '<span class="badge pendente">' + (c.status || '-') + '</span>';
+        var statusBadge = '<span class="badge green">' + escHTML(c.status || (c.tipoPessoa === 'F' ? 'Formado' : 'Acadêmico')) + '</span>';
         var remanejado = c.remanejadoDocente
             ? '<span style="display:inline-block;background:rgba(37,99,235,.1);color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap"><i class="fa-solid fa-user-check"></i> DOCENTE</span>'
             : '<span style="color:#94a3b8;font-size:11px">---</span>';
@@ -15526,7 +15839,7 @@ function cgLimparFormsDiscAula() {
 }
 
 function cgCandidatoCurso(c) {
-    return ((c.curso || (Array.isArray(c.cursos) && c.cursos[0]) || c.projeto || '') + '').trim();
+    return ((c.projeto || c.curso || (Array.isArray(c.cursos) && c.cursos[0]) || '') + '').trim();
 }
 
 async function cgAlunosCarregar() {
@@ -15601,7 +15914,7 @@ async function cgAlunoAdicionar() {
     var c = cgEncontrarCandidatoPorId(id);
     if (!c) { alert('Aluno não encontrado.'); return; }
     try {
-        await cgSalvarCandidato(c, { curso: cgCursoNome, projeto: cgCursoNome, turma: turma, status: 'Ativo' });
+        await cgSalvarCandidato(c, { curso: cgCursoNome, projeto: cgCursoNome, turma: turma, status: 'Acadêmico', statusOriginal: 'Ativo' });
         await cgAlunosCarregar();
         alert('Aluno adicionado/ativado na turma.');
     } catch(e) { console.error(e); alert('Erro ao adicionar aluno: ' + e.message); }
@@ -15612,7 +15925,7 @@ async function cgAlunoAtivar(id) {
     var c = cgEncontrarCandidatoPorId(id);
     if (!c) return;
     try {
-        await cgSalvarCandidato(c, { curso: cgCursoNome, projeto: cgCursoNome, turma: turma, status: 'Ativo' });
+        await cgSalvarCandidato(c, { curso: cgCursoNome, projeto: cgCursoNome, turma: turma, status: 'Acadêmico', statusOriginal: 'Ativo' });
         await cgAlunosCarregar();
     } catch(e) { console.error(e); alert('Erro: ' + e.message); }
 }
@@ -16161,8 +16474,8 @@ var fichaGeralCache = [];
 function fichaGeralCursosDisponiveis() {
     const nomes = new Set();
     (turmas || []).forEach(t => {
-        const curso = (t.curso || '').trim();
-        if (curso) nomes.add(curso);
+        const projeto = (t.projeto || '').trim();
+        if (projeto) nomes.add(projeto);
     });
     if (!nomes.size) {
         (projetos || []).forEach(p => { if (p.nome) nomes.add(p.nome); });
@@ -16173,15 +16486,15 @@ function fichaGeralCursosDisponiveis() {
 function fichaGeralTurmasDoCurso(cursoNome) {
     const nome = (cursoNome || '').trim();
     if (!nome) return [];
-    let lista = (turmas || []).filter(t => (t.curso || '').trim() === nome);
-    if (!lista.length) lista = turmasDoProjeto(nome);
+    let lista = turmasDoProjeto(nome);
+    if (!lista.length) lista = (turmas || []).filter(t => (t.curso || '').trim() === nome);
     return lista;
 }
 
 function fichaGeralInicializar() {
     const selCurso = document.getElementById('ficha-geral-selecao-curso');
     if (!selCurso) return;
-    selCurso.innerHTML = '<option value="">Selecione o curso...</option>';
+    selCurso.innerHTML = '<option value="">Selecione o projeto...</option>';
     fichaGeralCursosDisponiveis().forEach(nome => {
         selCurso.innerHTML += '<option value="' + nome.replace(/"/g,'&quot;') + '">' + nome + '</option>';
     });
@@ -16223,7 +16536,7 @@ function fichaGeralOnTurmaChange() {
 }
 
 function fgStatusOrdem(status) {
-    const mapa = { 'Ativo': 0, 'Pendente': 1, 'Espera': 2, 'Inativo por Falta': 3, '2a Chamada': 4, 'Reprovado': 5, 'Inativo': 6 };
+    const mapa = { 'Ativo': 0, 'Acadêmico': 0, 'Formado': 0, 'Pendente': 1, 'Espera': 2, 'Inativo por Falta': 3, '2a Chamada': 4, 'Reprovado': 5, 'Inativo': 6 };
     const s = String(status || '');
     return mapa[s] !== undefined ? mapa[s] : 99;
 }
@@ -16283,7 +16596,7 @@ async function fichaGeralRenderList() {
     fichaGeralAulasCache = null;
     fichaGeralCache = [];
 
-    const cursoDoCandidato = (c) => ((c.curso || (Array.isArray(c.cursos) && c.cursos[0]) || c.projeto || '') + '').trim();
+    const cursoDoCandidato = (c) => ((c.projeto || c.curso || (Array.isArray(c.cursos) && c.cursos[0]) || '') + '').trim();
     const filtrados = candidatos.filter(c => (c.tipoPessoa || 'A') !== 'F'
         && (!curso || cursoDoCandidato(c) === curso || c.projeto === curso)
         && (!turma || c.turma === turma));
@@ -16305,7 +16618,7 @@ async function fichaGeralRenderList() {
     lista.innerHTML = '<div style="text-align:center;color:#64748b;padding:24px">Carregando fichas... <i class="fa-solid fa-spinner fa-spin"></i></div>';
 
     try {
-        const aulas = await fichaGeralCarregarAulas(projeto, turma);
+        const aulas = await fichaGeralCarregarAulas(curso, turma);
         await fichaGeralCarregarInstituicao();
         const jobs = filtrados.map(c => fichaGeralDadosAluno(c));
         const dadosList = await Promise.all(jobs);
@@ -16901,10 +17214,10 @@ function condecBuscaListar() {
     var achados = base.filter(function (p) {
         if (tipo === 'A') {
             if ((p.tipoPessoa || 'A') === 'F') return false;
-            if (p.status !== 'Ativo') return false;
+            if (!fgStatusAtivo(p.status)) return false;
         } else if (tipo === 'F') {
             if (p.tipoPessoa !== 'F') return false;
-            if (p.status !== 'Ativo') return false;
+            if (!fgStatusAtivo(p.status)) return false;
         }
         if (!condecTemProjeto(p, projeto)) return false;
         if (!condecTemTurma(p, turma)) return false;
@@ -18731,7 +19044,7 @@ function cadastroGeralMontar() {
     (candidatos || []).forEach(function (c, i) {
         if (!c) return;
         var formado = (c.tipoPessoa || 'A') === 'F';
-        if (!formado && c.status !== 'Ativo') return;
+        if (!formado && !fgStatusAtivo(c.status)) return;
         var did = (typeof candidatoDocId === 'function' ? candidatoDocId(c) : '') || c.docId || c.id;
         registros.push(cgRegistro('candidato', 'candidatos', did, formado ? 'Formado' : 'Aluno Ativo', c, i));
     });
@@ -18875,7 +19188,7 @@ function cadastroGeralRender() {
         var pend = p.pendencias.length
             ? '<span style="color:#b91c1c;font-size:11px;font-weight:700"><i class="fa-solid fa-triangle-exclamation"></i> ' + escHTML(p.pendencias.slice(0, 3).join(', ')) + (p.pendencias.length > 3 ? ' +' + (p.pendencias.length - 3) : '') + '</span>'
             : '<span style="color:#15803d;font-size:11px;font-weight:700"><i class="fa-solid fa-circle-check"></i> Completo</span>';
-        var statusCores = p.status === 'Ativo' ? 'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0'
+        var statusCores = fgStatusAtivo(p.status) ? 'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0'
             : p.status === 'Inativo' ? 'background:#f8fafc;color:#64748b;border:1px solid #e2e8f0'
             : 'background:#fffbeb;color:#b45309;border:1px solid #fde68a';
         return '<tr>' +
@@ -18892,7 +19205,7 @@ function cadastroGeralRender() {
             '<td>' + pend + '</td>' +
             '<td style="text-align:center;white-space:nowrap">' +
                 '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">' +
-                    '<button class="btn-outline btn-sm" onclick="cadastroGeralAbrir(\'' + cgAtributo(p.chave) + '\')" title="Abrir o formulario deste individuo"><i class="fa-solid fa-pen-to-square"></i> Abrir</button>' +
+                    '<button class="btn-outline btn-sm" onclick="cadastroGeralAbrir(\'' + cgAtributo(p.chave) + '\')" title="Editar"><i class="fa-solid fa-pen"></i> Editar</button>' +
                     '<button class="btn-outline btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="cadastroGeralExcluir(\'' + cgAtributo(p.chave) + '\')" title="Excluir"><i class="fa-solid fa-trash"></i> Excluir</button>' +
                     '<button class="btn-outline btn-sm" onclick="cadastroGeralCopiarPara(\'' + cgAtributo(p.chave) + '\')" title="Copiar para outros tipos"><i class="fa-solid fa-copy"></i> Copiar para</button>' +
                     '<button class="btn-outline btn-sm" onclick="cadastroGeralMoverPara(\'' + cgAtributo(p.chave) + '\')" title="Mover para outros tipos"><i class="fa-solid fa-arrow-right-arrow-left"></i> Mover para</button>' +

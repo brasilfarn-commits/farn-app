@@ -17,6 +17,8 @@
 
 /* Contexto do filtro do administrador (vazio no portal do aluno: a ficha usa
    o projeto e a turma do proprio cadastro). */
+
+function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
 var fichaGeralProjeto = '';
 var fichaGeralTurma = '';
 
@@ -471,6 +473,21 @@ async function fichaGeralDadosAluno(c, opcoes) {
     try {
         await fichaGeralCompletarNotasAV(db, c, av);
     } catch (e) { console.warn('Ficha geral: nao foi possivel completar as notas das AVs:', e); }
+    /* Formado: o cadastro guarda o retrato da ficha de quando era aluno ativo.
+       Faz o merge para que as notas antigas nao desaparecam se o registro de
+       avaliacoes tiver mudado ou estiver incompleto depois da formatura. */
+    const retrato = c && c.fichaGeralAluno && c.fichaGeralAluno.av;
+    if (retrato && typeof retrato === 'object') {
+        ['notasTeoricas', 'notasPraticas', 'avTeoricaManual', 'avPraticaManual'].forEach(function (k) {
+            av[k] = Object.assign({}, retrato[k] || {}, av[k] || {});
+        });
+        ['mediaTeoricaManual', 'mediaPraticaManual', 'avFinalTeorica', 'avFinalPratica'].forEach(function (k) {
+            if ((av[k] === '' || av[k] == null || av[k] === 0) && retrato[k] !== '' && retrato[k] != null) av[k] = retrato[k];
+        });
+        ['foPositivos', 'foNegativos'].forEach(function (k) {
+            if ((!av[k] || !av[k].length) && retrato[k] && retrato[k].length) av[k] = retrato[k];
+        });
+    }
     if (!semPresencas) {
         try {
             const snap = await db.collection('presencasAlunos').where('cpf', '==', c.cpf).get();
@@ -824,7 +841,7 @@ function fichaGeralCabecalho(inst, c, fotoHtml) {
         ? '<div style="display:flex;gap:6px;flex-wrap:wrap;min-width:0">' + chips + '</div>'
         : '<div style="font-size:10.5px;color:#64748b;font-style:italic">Dados da instituicao nao cadastrados no administrativo.</div>';
     linha += '<div style="font-size:11px;font-weight:800;color:#0284c7;white-space:nowrap">'
-        + '<i class="fa-solid fa-book" style="margin-right:4px"></i>Curso: ' + fgEsc(fichaGeralProjeto || c.curso || c.projeto || '')
+        + '<i class="fa-solid fa-layer-group" style="margin-right:4px"></i>Projeto: ' + fgEsc(fichaGeralProjeto || c.projeto || c.curso || '')
         + '  &bull;  Turma: ' + fgEsc(fichaGeralTurma || c.turma || '') + '</div>';
     linha += '</div>';
 
@@ -847,6 +864,76 @@ function fichaGeralCabecalho(inst, c, fotoHtml) {
         + '</div></div>'
         + linha
         + '</div>';
+}
+
+/* HISTORICO DE NOTAS - avaliacoes respondidas enquanto a pessoa era aluno.
+   Essas notas ficam em avaliacoesAlunos (chaveadas pelo CPF) e NAO dependem
+   da turma atual da ficha: continuam aparecendo depois que o aluno se torna
+   formado. Antes a ficha mostrava apenas as notas lancadas por aula da turma. */
+function fgHistoricoNotas(av, c) {
+    const linhas = [];
+    [['avTeoricaManual', 'Teorica'], ['avPraticaManual', 'Pratica']].forEach(function (par) {
+        const mapa = av && av[par[0]];
+        if (!mapa || typeof mapa !== 'object') return;
+        Object.keys(mapa).forEach(function (id) {
+            const r = mapa[id];
+            if (!r || typeof r !== 'object') return;
+            const nota = parseFloat(String(r.nota == null ? '' : r.nota).replace(',', '.'));
+            if (isNaN(nota)) return;
+            let quando = r.respondidoEm || r.data || '';
+            if (quando && typeof quando.toDate === 'function') {
+                try { quando = quando.toDate().toLocaleString('pt-BR'); } catch (e) { quando = String(quando); }
+            } else if (quando instanceof Date) {
+                quando = quando.toLocaleString('pt-BR');
+            } else if (typeof quando === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(quando)) {
+                const d = new Date(quando);
+                if (!isNaN(d.getTime())) quando = d.toLocaleString('pt-BR');
+            }
+            linhas.push({
+                data: quando || '---',
+                tipo: par[1],
+                nome: r.avaliacaoNome || r.nome || id,
+                nota: nota,
+                total: r.totalQuestoes != null ? r.totalQuestoes : ''
+            });
+        });
+    });
+    linhas.sort(function (a, b) { return String(b.data).localeCompare(String(a.data), 'pt-BR'); });
+    const retrato = c && c.fichaGeralAluno;
+    const avisoPreservado = retrato
+        ? '<div style="border:1px solid #bbf7d0;border-radius:8px;padding:7px 9px;margin-bottom:8px;background:#f0fdf4;color:#166534;font-size:10px;line-height:1.5">'
+            + '<i class="fa-solid fa-shield-halved" style="margin-right:5px"></i>'
+            + 'Historico preservado de quando era aluno ativo'
+            + (retrato.turma ? ' (turma ' + fgEsc(retrato.turma) + ')' : '')
+            + (retrato.formadoEm ? ' — formado em ' + fgEsc(fichaGeralData(retrato.formadoEm)) : '')
+            + '.'
+            + '</div>'
+        : '';
+    if (!linhas.length) {
+        return avisoPreservado + '<div style="font-size:11px;color:#94a3b8;padding:6px 2px">Nenhuma avalicao respondida registrada para este cadastro.</div>';
+    }
+    let html = avisoPreservado + '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;background:#fff">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap"><i class="fa-solid fa-clock-rotate-left" style="color:#7c3aed;font-size:12px"></i>'
+        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">Historico de Notas (periodo como aluno)</span>'
+        + '<span style="margin-left:auto;font-size:9.5px;color:#94a3b8">' + linhas.length + ' avaliacao(oes)</span></div>'
+        + '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f1f5f9">'
+        + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:left">Data</th>'
+        + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:left">Tipo</th>'
+        + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:left">Avaliacao</th>'
+        + '<th style="padding:5px 6px;font-size:9.5px;text-transform:uppercase;color:#64748b;text-align:center">Nota</th>'
+        + '</tr></thead><tbody>';
+    linhas.forEach(function (l) {
+        const cor = fichaGeralCorNota(l.nota);
+        html += '<tr style="border-bottom:1px solid #eef2f7">'
+            + '<td style="padding:5px 6px;font-size:10.5px;color:#64748b;white-space:nowrap">' + fgEsc(l.data) + '</td>'
+            + '<td style="padding:5px 6px;font-size:10px;font-weight:700;color:' + (l.tipo === 'Pratica' ? '#c2410c' : '#1d4ed8') + '">' + l.tipo + '</td>'
+            + '<td style="padding:5px 6px;font-size:10.5px;color:#0f172a;word-break:break-word">' + fgEsc(l.nome) + '</td>'
+            + '<td style="padding:5px 6px;font-size:11px;font-weight:800;color:' + cor + ';text-align:center;white-space:nowrap">'
+            + fgEsc(String(l.nota).replace('.', ','))
+            + (l.total !== '' ? '<div style="font-size:8px;color:#94a3b8;font-weight:600">' + fgEsc(String(l.total)) + ' questoes</div>' : '')
+            + '</td></tr>';
+    });
+    return html + '</tbody></table></div>';
 }
 
 /* ===== MONTAGEM DA FICHA ===== */
@@ -952,7 +1039,7 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         const guiasAtuais = (function () {
             const g = [];
             if (c.pediuBaixa) g.push('Aluno que pediu baixa');
-            if (c.status === 'Ativo' && !c.pediuBaixa) g.push('Ativos');
+            if (fgStatusAtivo(c.status) && !c.pediuBaixa) g.push('Ativos');
             if (c.status === 'Inativo por Falta') g.push('Inativo por Falta');
             if (c.status === 'Pendente') g.push('Pendentes');
             if (c.status === 'Rejeitado') g.push('Reprovados');
@@ -1117,6 +1204,10 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
         + '</div>'
         + '</div>';
     secoes.push(fgSecao('fa-clipboard-check', 'Avaliacoes', avHtml));
+
+    /* Historico completo das avalicoes respondidas como aluno. Fica depois
+       das medias para nao alterar o calculo nem a situacao final. */
+    secoes.push(fgSecao('fa-clock-rotate-left', 'Historico de Notas', fgHistoricoNotas(calc.av, c)));
 
     // Assinaturas
     const assinaturas = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:22px">'

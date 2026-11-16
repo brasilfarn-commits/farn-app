@@ -20,7 +20,9 @@
     'use strict';
 
     /* --- GRUPOS: o "tipo de pessoa" da instituicao ------------------- */
-    var GRUPOS = [
+    
+function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
+var GRUPOS = [
         { codigo: 'PRE', curto: 'PRE', nome: 'Pre-Inscrito (ainda sem matricula)',            cor: '#64748b' },
         { codigo: 'ACD', curto: 'ACD', nome: 'Aluno Ativo',                                    cor: '#2563eb' },
         { codigo: 'ACI', curto: 'ACI', nome: 'Aspirante a Instrutor (aluno do CFF)',           cor: '#0891b2' },
@@ -249,7 +251,7 @@
             else { codigo = base; motivo = 'formado'; }
         }
         else if (p.cff) { codigo = 'ACI'; motivo = 'aluno matriculado no CFF'; }
-        else if (p.status === 'Ativo') { codigo = 'ACD'; motivo = 'aluno ativo'; }
+        else if (fgStatusAtivo(p.status)) { codigo = 'ACD'; motivo = 'aluno ativo'; }
         else { codigo = 'PRE'; motivo = 'pre-inscrito'; }
         return { codigo: codigo, rotulo: rotuloDe(codigo, p.catalogo), motivo: motivo };
     }

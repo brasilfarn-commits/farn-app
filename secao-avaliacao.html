@@ -256,8 +256,11 @@
             </div>
         </div>
     </div>
+<script>
+        function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
+        function avChave(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ''); }
+        function avMesmoProjeto(a, b) { var x = avChave(a), y = avChave(b); return !!x && !!y && (x === y || x.indexOf(y) >= 0 || y.indexOf(x) >= 0); }
 
-    <script>
         const ADMIN_CPF_AV = '05004959471';
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -307,21 +310,23 @@
                     db.collection('parceiros').orderBy('nome').get(),
                     db.collection('turmas').get()
                 ]);
-                var projetosComTurmaAtiva = {};
-                resultados[1].forEach(function(doc) {
-                    var t = doc.data();
-                    if (t.projeto && (t.status || 'Em Andamento') !== 'Concluido') {
-                        projetosComTurmaAtiva[t.projeto] = true;
-                    }
-                });
+                var nomes = [], vistos = {};
+                /* Uniao de parceiros e projetos das turmas: se o projeto foi
+                   renomeado no administrador, o aluno continua aparecendo. */
                 resultados[0].forEach(function(doc) {
                     var p = doc.data();
-                    if (projetosComTurmaAtiva[p.nome]) {
-                        var op = document.createElement('option');
-                        op.value = p.nome;
-                        op.textContent = p.nome;
-                        sel.appendChild(op);
-                    }
+                    if (p.nome && !vistos[avChave(p.nome)]) { vistos[avChave(p.nome)] = true; nomes.push(p.nome); }
+                });
+                resultados[1].forEach(function(doc) {
+                    var t = doc.data();
+                    if (t.projeto && !vistos[avChave(t.projeto)]) { vistos[avChave(t.projeto)] = true; nomes.push(t.projeto); }
+                });
+                nomes.sort(function(a, b) { return String(a).localeCompare(String(b), 'pt-BR'); });
+                nomes.forEach(function(nome) {
+                    var op = document.createElement('option');
+                    op.value = nome;
+                    op.textContent = nome;
+                    sel.appendChild(op);
                 });
             } catch (e) { console.error('Erro ao carregar projetos:', e); }
         }
@@ -336,7 +341,7 @@
             try {
                 var snap = await db.collection('turmas').get();
                 var turmas = [];
-                snap.forEach(function(doc) { var t = doc.data(); if (t.projeto === avProjeto && (t.status || 'Em Andamento') !== 'Concluido') turmas.push(t); });
+                snap.forEach(function(doc) { var t = doc.data(); if (avMesmoProjeto(t.projeto, avProjeto) && (t.status || 'Em Andamento') !== 'Concluido') turmas.push(t); });
                 turmas.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
                 turmas.forEach(function(t) {
                     var op = document.createElement('option');
@@ -357,7 +362,11 @@
                 avAlunos = [];
                 snap.forEach(function(doc) {
                     var c = doc.data();
-                    if ((c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.ativo !== false && c.turma === avTurma && c.projeto === avProjeto) {
+                    var mesmaTurma = avChave(c.turma) === avChave(avTurma);
+                    var mesmoProjeto = !c.projeto || avMesmoProjeto(c.projeto, avProjeto);
+                    /* Mesmo criterio da Ficha Geral do administrador: qualquer
+                       cadastro nao formado vinculado a turma entra na ficha. */
+                    if ((c.tipoPessoa || 'A') !== 'F' && mesmaTurma && mesmoProjeto) {
                         avAlunos.push({ cpf: c.cpf, nome: c.nome, matricula: c.matricula, turma: c.turma, projeto: c.projeto });
                     }
                 });

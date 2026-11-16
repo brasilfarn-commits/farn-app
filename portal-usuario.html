@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Portal do Usuário</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="ficha-geral-compartilhar.js?v=25"></script>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; }
+        .pu-login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+            background:linear-gradient(135deg,#0f766e,#115e59 45%,#0f172a); }
+        .pu-login-card { width:100%; max-width:400px; background:#fff; border-radius:18px; padding:30px;
+            box-shadow:0 18px 50px rgba(0,0,0,.28); }
+        .pu-login-card h1 { font-size:20px; color:#0f172a; margin-bottom:4px; }
+        .pu-login-card p { font-size:12px; color:#64748b; margin-bottom:22px; }
+        .pu-login-card label { display:block; font-size:11px; font-weight:700; color:#475569; margin:12px 0 4px; }
+        .pu-login-card input { width:100%; padding:11px 12px; border:1px solid #cbd5e1; border-radius:9px; font-size:14px; }
+        .pu-login-card button { width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px;
+            background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; font-weight:800; font-size:14px; cursor:pointer; }
+        .pu-login-card button:disabled { opacity:.6; cursor:not-allowed; }
+        .pu-erro { color:#dc2626; font-size:12px; margin-top:12px; display:none; }
+        .pu-app { display:none; }
+        .pu-topbar { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:14px 20px;
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .pu-topbar h1 { font-size:17px; }
+        .pu-topbar .pu-user { margin-left:auto; font-size:12px; text-align:right; }
+        .pu-topbar button { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); color:#fff;
+            border-radius:8px; padding:7px 12px; cursor:pointer; font-size:12px; font-weight:700; }
+        .pu-container { max-width:980px; margin:20px auto; padding:0 16px; }
+        .pu-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:18px;
+            box-shadow:0 4px 14px rgba(2,6,23,.06); }
+        .pu-card h2 { font-size:16px; color:#0f172a; margin-bottom:14px; }
+        .pu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+        .pu-campo { border:1px solid #e2e8f0; border-radius:9px; padding:10px 12px; background:#f8fafc; }
+        .pu-campo span { display:block; font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .pu-campo b { display:block; font-size:13px; color:#0f172a; margin-top:3px; word-break:break-word; }
+        .pu-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:800;
+            background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+        .pu-aviso { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px;
+            padding:12px 14px; font-size:12px; line-height:1.6; }
+        .pu-menu-btn { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); color:#fff;
+            border-radius:8px; padding:8px 11px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+        .pu-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:40; }
+        .pu-drawer-overlay.aberto { display:block; }
+        .pu-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#fff; z-index:41;
+            transform:translateX(-100%); transition:transform .22s; box-shadow:6px 0 24px rgba(0,0,0,.18);
+            display:flex; flex-direction:column; }
+        .pu-drawer.aberto { transform:translateX(0); }
+        .pu-drawer-head { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:20px 18px; }
+        .pu-drawer-head h2 { font-size:16px; margin-top:8px; }
+        .pu-drawer-head p { font-size:11px; opacity:.85; margin-top:3px; }
+        .pu-drawer-nav { padding:12px 10px; flex:1; }
+        .pu-drawer-nav button { width:100%; display:flex; align-items:center; gap:10px; padding:12px 12px;
+            border:none; background:transparent; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700;
+            color:#334155; text-align:left; margin-bottom:4px; }
+        .pu-drawer-nav button:hover { background:#f1f5f9; }
+        .pu-drawer-nav button.ativo { background:#e6fffa; color:#0f766e; }
+        .pu-drawer-foot { padding:12px 10px; border-top:1px solid #e2e8f0; }
+        .pu-drawer-foot button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:#fef2f2; color:#b91c1c; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700; }
+        .pu-view { display:none; }
+        .pu-view.ativo { display:block; }
+        .pu-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+    </style>
+</head>
+<body>
+    <!-- LOGIN -->
+    <div class="pu-login-wrap" id="pu-tela-login">
+        <form class="pu-login-card" onsubmit="puLogin(event)" autocomplete="off">
+            <h1><i class="fa-solid fa-user" style="color:#0f766e;margin-right:8px"></i> Portal do Usuário</h1>
+            <p>Acesso para indivíduos ativos do Cadastro Geral.</p>
+            <label for="pu-cpf">CPF</label>
+            <input type="text" id="pu-cpf" placeholder="000.000.000-00" maxlength="14" oninput="puFormatCpf(this)">
+            <label for="pu-senha">Senha</label>
+            <input type="password" id="pu-senha" placeholder="Sua senha" autocomplete="current-password">
+            <button type="submit" id="pu-btn-login"><i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar</button>
+            <div class="pu-erro" id="pu-erro"></div>
+        </form>
+    </div>
+
+    <!-- MENU LATERAL (HAMBURGUE) -->
+    <div class="pu-drawer-overlay" id="pu-overlay" onclick="puFecharMenu()"></div>
+    <aside class="pu-drawer" id="pu-drawer">
+        <div class="pu-drawer-head">
+            <i class="fa-solid fa-user-circle" style="font-size:32px"></i>
+            <h2 id="pu-nome-menu">Usuário</h2>
+            <p id="pu-vinculo-menu">—</p>
+        </div>
+        <nav class="pu-drawer-nav">
+            <button id="pu-menu-dados" class="ativo" onclick="puSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
+            <button id="pu-menu-cursos" onclick="puSetView('cursos')"><i class="fa-solid fa-book-open"></i> Cursos</button>
+        </nav>
+        <div class="pu-drawer-foot">
+            <button onclick="puLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        </div>
+    </aside>
+
+    <!-- APP -->
+    <div class="pu-app" id="pu-tela-app">
+        <div class="pu-topbar">
+            <button class="pu-menu-btn" onclick="puAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+            <h1>Portal do Usuário</h1>
+            <div class="pu-user"><div id="pu-nome-topo">—</div><div id="pu-vinculo-topo" style="opacity:.85"></div></div>
+        </div>
+        <div class="pu-container">
+            <!-- SECAO MEUS DADOS -->
+            <div class="pu-view ativo" id="pu-view-dados">
+                <div class="pu-secao-titulo"><i class="fa-solid fa-id-card" style="color:#0f766e;margin-right:8px"></i> Meus Dados</div>
+                <div class="pu-card"><h2>Cadastro</h2><div class="pu-grid" id="pu-dados"></div></div>
+                <div class="pu-card"><h2><i class="fa-solid fa-file-lines" style="color:#0f766e;margin-right:8px"></i> Ficha Geral</h2>
+                    <div id="pu-ficha"><div class="pu-aviso">Carregando sua ficha...</div></div></div>
+            </div>
+            <!-- SECAO CURSOS -->
+            <div class="pu-view" id="pu-view-cursos">
+                <div class="pu-secao-titulo"><i class="fa-solid fa-book-open" style="color:#0f766e;margin-right:8px"></i> Meus Cursos</div>
+                <div class="pu-card"><h2><i class="fa-solid fa-book" style="color:#2563eb;margin-right:8px"></i> Guia do Curso</h2>
+                    <div id="pu-guias"><div class="pu-aviso">Carregando seus cursos...</div></div></div>
+            </div>
+        </div>
+    </div>
+<script>
+        function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const dbFirestore = firebase.firestore();
+
+        var puUser = null;
+        var FONTES = [
+            { colecao:'candidatos', rotulo:'Aluno / Formado' },
+            { colecao:'docentes', rotulo:'Docente' },
+            { colecao:'usuarios', rotulo:'Usuário' },
+            { colecao:'cffAlunos', rotulo:'CFF' }
+        ];
+
+        function puFormatCpf(el) {
+            var v = el.value.replace(/\D/g,'').slice(0,11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            el.value = v;
+        }
+        function puSoDigitos(v) { return String(v||'').replace(/\D/g,''); }
+        function puFmtCpf(v) { v = puSoDigitos(v); return v.length===11 ? v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : v; }
+        function puEsc(v) { return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function puErro(msg) { var e=document.getElementById('pu-erro'); if(e){e.textContent=msg;e.style.display='block';} }
+        function puCampo(rotulo, valor) { return '<div class="pu-campo"><span>'+puEsc(rotulo)+'</span><b>'+(valor ? puEsc(valor) : '—')+'</b></div>'; }
+
+        function puAbrirMenu() {
+            var d = document.getElementById('pu-drawer'); var o = document.getElementById('pu-overlay');
+            if (d) d.classList.add('aberto'); if (o) o.classList.add('aberto');
+        }
+        function puFecharMenu() {
+            var d = document.getElementById('pu-drawer'); var o = document.getElementById('pu-overlay');
+            if (d) d.classList.remove('aberto'); if (o) o.classList.remove('aberto');
+        }
+        function puSetView(view) {
+            ['dados','cursos'].forEach(function (v) {
+                var el = document.getElementById('pu-view-' + v); if (el) el.className = 'pu-view' + (v === view ? ' ativo' : '');
+                var btn = document.getElementById('pu-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
+            });
+            puFecharMenu();
+            if (view === 'cursos') puCarregarGuias();
+        }
+
+        async function puLogin(ev) {
+            if (ev) ev.preventDefault();
+            var cpf = puSoDigitos((document.getElementById('pu-cpf')||{}).value);
+            var senha = (document.getElementById('pu-senha')||{}).value || '';
+            var btn = document.getElementById('pu-btn-login');
+            var erro = document.getElementById('pu-erro'); if (erro) erro.style.display='none';
+            if (cpf.length !== 11 || !senha) { puErro('Informe CPF e senha.'); return false; }
+            if (btn) { btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Entrando...'; }
+            try {
+                var encontrado = null;
+                for (var i=0;i<FONTES.length;i++) {
+                    var f = FONTES[i];
+                    var snap = await dbFirestore.collection(f.colecao).where('cpf','==',cpf).get();
+                    snap.forEach(function(doc) {
+                        if (encontrado) return;
+                        var d = doc.data() || {};
+                        if (d.senha !== senha) return;
+                        var status = d.status;
+                        if (!status && f.colecao === 'usuarios') status = (d.ativo === false ? 'Inativo' : 'Acadêmico');
+                        if (!status) status = 'Acadêmico';
+                        if (!fgStatusAtivo(status)) return;
+                        encontrado = Object.assign({}, d, { _origem:f.colecao, _rotulo:f.rotulo, _docId:doc.id });
+                    });
+                    if (encontrado) break;
+                }
+                if (!encontrado) { puErro('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.'); }
+                else {
+                    puUser = encontrado;
+                    try { localStorage.setItem('pu_sessao', JSON.stringify(encontrado)); } catch(e){}
+                    puMostrarApp();
+                }
+            } catch (e) { puErro('Falha de conexão: ' + e.message); }
+            if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar'; }
+            return false;
+        }
+
+        function puMostrarApp() {
+            document.getElementById('pu-tela-login').style.display='none';
+            var app = document.getElementById('pu-tela-app'); if (app) app.style.display='block';
+            var nome = puUser.nome || puUser.nomeCompleto || 'Usuário';
+            var topo = document.getElementById('pu-nome-topo'); if (topo) topo.textContent = nome;
+            var vin = document.getElementById('pu-vinculo-topo'); if (vin) vin.textContent = puUser._rotulo || '';
+            var nomeMenu = document.getElementById('pu-nome-menu'); if (nomeMenu) nomeMenu.textContent = nome;
+            var vinMenu = document.getElementById('pu-vinculo-menu'); if (vinMenu) vinMenu.textContent = puUser._rotulo || 'Usuário';
+            var dados = document.getElementById('pu-dados');
+            if (dados) {
+                dados.innerHTML =
+                    puCampo('Nome', nome) +
+                    puCampo('CPF', puFmtCpf(puUser.cpf)) +
+                    puCampo('Matrícula / Credencial', puUser.credencial || puUser.matricula) +
+                    puCampo('Vínculo', puUser._rotulo) +
+                    puCampo('Projeto', puUser.projeto || puUser.formadoProjeto) +
+                    puCampo('Turma', puUser.turma || puUser.formadoTurma) +
+                    puCampo('E-mail', puUser.email) +
+                    puCampo('WhatsApp', puUser.whatsapp) +
+                    '<div class="pu-campo"><span>Status</span><b><span class="pu-badge">Ativo</span></b></div>';
+            }
+            puSetView('dados');
+            puCarregarFicha();
+        }
+
+        /* GUIA DO CURSO: apostila e certificado dos cursos em que o CPF do
+           usuario aparece na lista de individuos importados. */
+        async function puCarregarGuias() {
+            var box = document.getElementById('pu-guias'); if (!box || !puUser) return;
+            var cpf = puSoDigitos(puUser.cpf);
+            if (!cpf) { box.innerHTML = '<div class="pu-aviso">CPF não informado no cadastro.</div>'; return; }
+            try {
+                var snap = await dbFirestore.collection('cursosCadastro').orderBy('nome').get();
+                var cursos = [];
+                for (var i = 0; i < snap.docs.length; i++) {
+                    var doc = snap.docs[i];
+                    var pessoa = await dbFirestore.collection('cursosCadastro').doc(doc.id)
+                        .collection('individuos').where('cpf', '==', cpf).limit(1).get();
+                    if (!pessoa.empty) cursos.push(Object.assign({ _id: doc.id }, doc.data() || {}));
+                }
+                if (!cursos.length) { box.innerHTML = '<div class="pu-aviso">Nenhum curso vinculado ao seu CPF.</div>'; return; }
+                var html = '';
+                for (var j = 0; j < cursos.length; j++) {
+                    var c = cursos[j];
+                    var certSnap = await dbFirestore.collection('cursosCadastro').doc(c._id)
+                        .collection('certificados').where('ativo', '==', true).limit(1).get();
+                    var cert = certSnap.empty ? null : certSnap.docs[0].data();
+                    html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;background:#fff">'
+                        + '<b style="font-size:13px;color:#0f172a">' + puEsc(c.nome) + '</b>'
+                        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">';
+                    var pdfUrl = c.apostilaPdfUrl || c.apostilaPdf;
+                    if (pdfUrl) html += '<a class="btn-outline btn-sm" href="' + pdfUrl + '" download="apostila.pdf" target="_blank"><i class="fa-solid fa-file-pdf" style="color:#dc2626;margin-right:5px"></i> Baixar apostila (PDF)</a>';
+                    if (c.apostilaUrl) html += '<a class="btn-outline btn-sm" href="' + puEsc(c.apostilaUrl) + '" target="_blank"><i class="fa-solid fa-link" style="color:#2563eb;margin-right:5px"></i> Abrir apostila (link)</a>';
+                    if (cert) html += '<button class="btn-outline btn-sm" onclick="puVerCertificado(\'' + c._id + '\')"><i class="fa-solid fa-award" style="color:#ca8a04;margin-right:5px"></i> Ver certificado</button>';
+                    if (!pdfUrl && !c.apostilaUrl && !cert) html += '<span style="font-size:11px;color:#94a3b8">Nenhuma apostila ou certificado disponível.</span>';
+                    html += '</div></div>';
+                }
+                box.innerHTML = html;
+            } catch (e) {
+                console.error('Erro ao carregar guias:', e);
+                box.innerHTML = '<div class="pu-aviso">Não foi possível carregar os guias dos cursos.</div>';
+            }
+        }
+
+        async function puVerCertificado(cursoId) {
+            try {
+                var snap = await dbFirestore.collection('cursosCadastro').doc(cursoId)
+                    .collection('certificados').where('ativo', '==', true).limit(1).get();
+                if (snap.empty) { alert('Nenhum certificado ativo para este curso.'); return; }
+                var c = snap.docs[0].data();
+                var cursoSnap = await dbFirestore.collection('cursosCadastro').doc(cursoId).get();
+                var nomeCurso = cursoSnap.exists ? (cursoSnap.data().nome || '') : '';
+                var html = '<html><head><meta charset="utf-8"><title>Certificado</title></head><body style="font-family:Arial;padding:30px">'
+                    + '<div style="border:3px double #1d4ed8;padding:34px;text-align:center">'
+                    + '<div style="font-size:12px;font-weight:800;color:#1d4ed8;letter-spacing:2px">' + puEsc(c.instituicao || 'FARN') + '</div>'
+                    + '<h2 style="margin:18px 0;color:#0f172a">CERTIFICADO</h2>'
+                    + '<p style="font-size:14px;color:#334155;line-height:1.8">' + puEsc(c.declaracao || '') + '</p>'
+                    + '<div style="margin-top:30px;font-size:13px;font-weight:700">' + puEsc(puUser.nome || '') + '</div>'
+                    + '<div style="margin-top:16px;font-size:12px;color:#64748b">' + puEsc(nomeCurso) + '</div>'
+                    + '</div></body></html>';
+                var w = window.open('', '_blank');
+                if (w) { w.document.write(html); w.document.close(); setTimeout(function () { w.print(); }, 400); }
+            } catch (e) { alert('Erro ao abrir certificado: ' + e.message); }
+        }
+
+        async function puCarregarFicha() {
+            var box = document.getElementById('pu-ficha'); if (!box || !puUser) return;
+            var projeto = String(puUser.projeto || puUser.formadoProjeto || '').trim();
+            var turma = String(puUser.turma || puUser.formadoTurma || '').trim();
+            if (!projeto || !turma) {
+                box.innerHTML = '<div class="pu-aviso">Seu cadastro não possui projeto/turma vinculados para exibir a Ficha Geral.</div>';
+                return;
+            }
+            try {
+                if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
+                var aulas = await fichaGeralCarregarAulas(projeto, turma);
+                var dados = await fichaGeralDadosAluno(puUser);
+                var calc = fichaGeralCalcular(puUser, dados, aulas);
+                var foto = puUser.photoDataUrl || puUser.foto || puUser.fotoUrl || null;
+                if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
+                if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
+                box.innerHTML = fichaGeralFolha(puUser, calc, foto, 0, aulas);
+                fichaGeralAplicarLogo(box);
+            } catch (e) {
+                console.error('Erro ao carregar ficha:', e);
+                box.innerHTML = '<div class="pu-aviso">Não foi possível carregar a Ficha Geral. Tente novamente mais tarde.</div>';
+            }
+        }
+
+        function puLogout() {
+            puUser = null;
+            try { localStorage.removeItem('pu_sessao'); } catch(e){}
+            location.reload();
+        }
+
+        window.addEventListener('DOMContentLoaded', function () {
+            var salvo = null;
+            try { salvo = JSON.parse(localStorage.getItem('pu_sessao') || 'null'); } catch(e){}
+            if (salvo && salvo.cpf) { puUser = salvo; puMostrarApp(); }
+        });
+    </script>
+</body>
+</html>

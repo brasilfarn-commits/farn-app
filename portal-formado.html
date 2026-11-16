@@ -11,7 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="oportunidades-portais.js?v=2"></script>
-    <script src="ficha-geral-compartilhar.js?v=22"></script>
+    <script src="ficha-geral-compartilhar.js?v=25"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -1297,10 +1297,32 @@
         pfCertViewMedir();
     });
 
-    async function pfFichaGeralFoto() {
-        if (pfUser && (pfUser.photoDataUrl || pfUser.foto || pfUser.fotoUrl)) return pfUser.photoDataUrl || pfUser.foto || pfUser.fotoUrl;
+    /* A ficha do portal deve ser a MESMA do administrador. O pfUser e lido no
+       login e pode estar desatualizado (o admin alterou dados, turma,
+       credencial ou patente depois disso). Busca o registro atual em
+       `candidatos`, que e a mesma colecao que alimenta o administrador. */
+    async function pfFichaGeralCadastro() {
+        var cpf = pfUser && pfUser.cpf ? String(pfUser.cpf).replace(/\D/g, '') : '';
+        if (!cpf) return pfUser;
         try {
-            var cpf = pfUser && pfUser.cpf ? String(pfUser.cpf).replace(/\D/g, '') : '';
+            var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+            if (!snap.empty) {
+                var atual = snap.docs[0].data() || {};
+                /* O registro do administrador prevalece; campos internos
+                   (_docId, _origem) e dados exclusivos do login permanecem. */
+                return Object.assign({}, pfUser, atual);
+            }
+        } catch (e) {
+            console.warn('Nao foi possivel atualizar os dados da Ficha Geral:', e && e.message);
+        }
+        return pfUser;
+    }
+
+    async function pfFichaGeralFoto(c) {
+        var pessoa = c || pfUser;
+        if (pessoa && (pessoa.photoDataUrl || pessoa.foto || pessoa.fotoUrl)) return pessoa.photoDataUrl || pessoa.foto || pessoa.fotoUrl;
+        try {
+            var cpf = pessoa && pessoa.cpf ? String(pessoa.cpf).replace(/\D/g, '') : '';
             if (!cpf) return null;
             var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
             if (!snap.empty) {
@@ -1316,8 +1338,9 @@
         return null;
     }
 
-    async function pfFichaGeralCatalogo() {
-        var codigo = pfUser && pfUser.patente ? String(pfUser.patente).trim() : '';
+    async function pfFichaGeralCatalogo(c) {
+        var pessoa = c || pfUser;
+        var codigo = pessoa && pessoa.patente ? String(pessoa.patente).trim() : '';
         if (!codigo || typeof fichaGeralCatalogoRecebido !== 'function') { if (typeof fichaGeralCatalogoRecebido === 'function') fichaGeralCatalogoRecebido([]); return; }
         try {
             var snap = await dbFirestore.collection('patentes').doc(codigo).get();
@@ -1332,27 +1355,30 @@
             alert('Módulo de Ficha Geral não carregado. Recarregue a página.');
             return;
         }
-        var cert = pfCertAtual || {};
-        var projeto = String(cert.cursoNome || pfUser.projeto || pfUser.formadoProjeto || '').trim();
-        var turma = String(pfUser.turma || pfUser.formadoTurma || '').trim();
-        if (!projeto || !turma) {
-            alert('Não foi possível identificar o projeto/turma deste curso para abrir a Ficha Geral.');
-            return;
-        }
         var txtAnt = btn ? btn.innerHTML : '';
         try {
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Carregando...'; }
+            /* Dados frescos do mesmo lugar que o administrador usa, para a
+               ficha do formado refletir cadastros alterados pelo admin. */
+            var c = await pfFichaGeralCadastro();
+            var cert = pfCertAtual || {};
+            var projeto = String(cert.cursoNome || c.projeto || c.formadoProjeto || '').trim();
+            var turma = String(c.turma || c.formadoTurma || '').trim();
+            if (!projeto || !turma) {
+                alert('Não foi possível identificar o curso/turma deste cadastro para abrir a Ficha Geral.');
+                return;
+            }
             if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
             if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
             if (typeof fichaGeralAulasCache !== 'undefined') fichaGeralAulasCache = null;
-            await pfFichaGeralCatalogo();
+            await pfFichaGeralCatalogo(c);
             if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
             var aulas = await fichaGeralCarregarAulas(projeto, turma);
-            var dados = await fichaGeralDadosAluno(pfUser);
-            var calc = fichaGeralCalcular(pfUser, dados, aulas);
-            var foto = await pfFichaGeralFoto();
-            var body = fichaGeralFolha(pfUser, calc, foto, 0, aulas);
-            fichaGeralAbrirImpressao('FARN - Ficha Geral - ' + (pfUser.nome || pfUser.nomeCompleto || '') + ' - ' + projeto, body, false);
+            var dados = await fichaGeralDadosAluno(c);
+            var calc = fichaGeralCalcular(c, dados, aulas);
+            var foto = await pfFichaGeralFoto(c);
+            var body = fichaGeralFolha(c, calc, foto, 0, aulas);
+            fichaGeralAbrirImpressao('FARN - Ficha Geral - ' + (c.nome || c.nomeCompleto || '') + ' - ' + projeto, body, false);
         } catch (e) {
             console.error('Erro ao abrir Ficha Geral (certificado):', e);
             alert('Erro ao abrir Ficha Geral: ' + (e && e.message ? e.message : e));

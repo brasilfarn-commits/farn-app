@@ -1980,12 +1980,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="ficha-geral-compartilhar.js?v=22"></script>
+    <script src="farn-storage.js?v=1"></script>
+    <script src="ficha-geral-compartilhar.js?v=25"></script>
 <script src="foto3x4-editor.js?v=3"></script>
 <script src="foto3x4-bloqueio.js?v=7"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
 <script src="oportunidades-portais.js?v=2"></script>
-    <script>
+<script>
+        function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
+
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
     var dbFirestore=firebase.firestore();
@@ -2081,7 +2084,7 @@
             }
 
             /* Verifica se esta ativo */
-            if (dados.status !== 'Ativo' && dados.status !== 'Inativo por Falta') {
+            if (!fgStatusAtivo(dados.status) && dados.status !== 'Inativo por Falta') {
                 errEl.textContent = 'Seu cadastro ainda nao foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar o portal.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
@@ -4694,23 +4697,24 @@
         try { localStorage.setItem('farn_foto_ver_' + paUser.cpf, String(versao || '')); } catch (e) {}
     }
 
-    function paFotoEnviarFirestore(dataUrl) {
+    async function paFotoEnviarFirestore(dataUrl) {
         if (!paUser || !paUser._docId) return;
         var versao = String(Date.now());
         paFotoVersaoGravar(versao);
         paUser.photoDataUrl = dataUrl;
         paUser.hasPhoto = true;
         paUser.fotoVersao = versao;
+        var url = null;
+        try { if (typeof fsSalvarFoto === 'function') url = await fsSalvarFoto(paUser.cpf, dataUrl, versao); }
+        catch (e) { console.warn('Foto salva localmente; envio ao Storage falhou:', e); }
+        if (url) paUser.fotoUrl = url;
+        var campos = { hasPhoto: true, fotoVersao: versao, fotoAtualizadaEm: versao };
+        if (url) campos.fotoUrl = url;
         try {
             dbFirestore.collection('candidatos').doc(paUser._docId)
-                .set({
-                    photoDataUrl: dataUrl,
-                    hasPhoto: true,
-                    fotoVersao: versao,
-                    fotoAtualizadaEm: versao
-                }, { merge: true })
-                .catch(function(e) { console.error('Erro ao salvar foto no Firestore:', e); });
-        } catch(e) { console.error('Erro ao salvar foto no Firestore:', e); }
+                .set(campos, { merge: true })
+                .catch(function(e) { console.error('Erro ao salvar foto:', e); });
+        } catch(e) { console.error('Erro ao salvar foto:', e); }
     }
 
     function paFotoExibir(src, img, icon, pv, pvIcon) {
@@ -4758,7 +4762,7 @@
             .then(function (dFind) {
                 if (!dFind.exists) return { src: paFotoLocal(), mudou: false };
                 var dados = dFind.data() || {};
-                var remota = dados.photoDataUrl || null;
+                var remota = dados.fotoUrl || dados.photoDataUrl || null;
                 var versao = String(dados.fotoVersao || dados.fotoAtualizadaEm || '');
                 var local = paFotoLocal();
                 if (versao && versao !== paFotoVersaoLocal()) {
@@ -5834,7 +5838,7 @@
 
     async function paAceitarRegimento() {
         if (!paUser) return;
-        if (paUser.status !== 'Ativo' && paUser.status !== 'Inativo por Falta') {
+        if (!fgStatusAtivo(paUser.status) && paUser.status !== 'Inativo por Falta') {
             alert('Seu cadastro precisa estar com status Ativo para aceitar o Regimento.');
             return;
         }

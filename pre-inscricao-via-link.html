@@ -464,7 +464,8 @@
 
             data.matricula=generateMatricula(data.cpf);
             data.tipoPessoa='A';
-            data.status='Pendente';
+            data.status='Acadêmico';
+            data.statusOriginal='Pendente';
             data.curso=preLinkCurso();
             data.projeto=preLinkCurso(); // compat legado
             data.turma=linkValido.turma||'';
@@ -514,7 +515,8 @@
             }catch(e){ console.error(e); }
 
             var novoh=Object.assign({}, candidatoEdicao, data, {
-                status:'Pendente',
+                status:'Acadêmico',
+                statusOriginal:'Pendente',
                 dataHoraEdicao:new Date().toLocaleString('pt-BR')
             });
             delete novoh.__id;

@@ -16,7 +16,9 @@
 <script src="foto3x4-editor.js?v=3"></script>
 <script src="video-aula-compartilhar.js?v=1"></script>
 <script src="oportunidades-portais.js?v=2"></script>
-    <script>
+<script>
+        function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
+
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
             authDomain: "farn-app.firebaseapp.com",
@@ -1846,7 +1848,7 @@
                     var snap = await dbFirestore.collection('candidatos').where('turma', '==', turma).get();
                     snap.forEach(function(d) {
                         var c = d.data();
-                        if (c.status === 'Ativo' && c.ativo !== false && (c.tipoPessoa || 'A') !== 'F') alunos.push(c);
+                        if (fgStatusAtivo(c.status) && c.ativo !== false && (c.tipoPessoa || 'A') !== 'F') alunos.push(c);
                     });
                 } catch (e) {}
                 pdTfmAlunos = alunos.sort(function(a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
@@ -2993,7 +2995,7 @@
                 if (!k || !faltas[k]) return;
                 if ((c.tipoPessoa || 'A') === 'F' || c.remanejadoDocente) return;
                 const totalFaltas = faltas[k].size;
-                if (c.status === 'Ativo' && totalFaltas >= 3) {
+                if (fgStatusAtivo(c.status) && totalFaltas >= 3) {
                     batch.update(doc.ref, { status: 'Inativo por Falta', inativoPorFaltaEm: new Date().toISOString(), inativoPorFaltaMotivo: '3 ou mais faltas' });
                     mudou = true;
                 } else if (c.status === 'Inativo por Falta' && totalFaltas < 3) {
@@ -4177,7 +4179,7 @@
                 pdAvAlunos = [];
                 snap.forEach(function(doc) {
                     var c = doc.data();
-                    if ((c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.ativo !== false) {
+                    if ((c.tipoPessoa || 'A') !== 'F' && fgStatusAtivo(c.status) && c.ativo !== false) {
                         pdAvAlunos.push({ cpf: c.cpf, nome: c.nome, matricula: c.matricula, turma: c.turma, projeto: c.projeto });
                     }
                 });
@@ -4658,7 +4660,7 @@
                 pdAvpAlunos = [];
                 snap.forEach(function(doc) {
                     var c = doc.data();
-                    if ((c.tipoPessoa || 'A') !== 'F' && c.status === 'Ativo' && c.ativo !== false) {
+                    if ((c.tipoPessoa || 'A') !== 'F' && fgStatusAtivo(c.status) && c.ativo !== false) {
                         pdAvpAlunos.push({ cpf: c.cpf, nome: c.nome, matricula: c.matricula, turma: c.turma, projeto: c.projeto });
                     }
                 });
