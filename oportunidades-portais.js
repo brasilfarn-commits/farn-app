@@ -139,7 +139,7 @@
       setTimeout(aguardarFirebase, 100);
       return;
     }
-    db = firebase.firestore();
+    db = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
     iniciar();
   }
 

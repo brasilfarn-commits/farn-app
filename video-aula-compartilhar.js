@@ -1,13 +1,10 @@
 /* ==========================================================================
-   VIDEO AULA - NUCLEO COMPARTILHADO (PORTAL DO DOCENTE E PORTAL DO ALUNO)
+   VIDEO AULA - NUCLEO COMPARTILHADO
    --------------------------------------------------------------------------
    Este arquivo e a unica fonte da camada ao vivo da Video Aula: a sessao, a
    presenca (quadro 02), o quadro do docente (03), o quadro de material (04) e
-   a lista da turma. E carregado por:
-     - portal-docente.html
-     - portal-aluno.html
-   Um ajuste na tela vale para os dois lados ao mesmo tempo, exatamente como a
-   Ficha Geral faz com o administrador.
+   a lista da turma. Os portais que o carregavam foram removidos; o modulo
+   permanece disponivel para reutilizacao futura.
 
    ONDE CADA COISA MORA, E POR QUE:
 

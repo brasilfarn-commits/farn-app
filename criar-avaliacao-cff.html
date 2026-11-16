@@ -354,6 +354,7 @@
         </div>
     </div>
 
+    <script src="farn-db.js"></script>
     <script>
         const ADMIN_CPF = '05004959471';
         const FB_CFFAV = 'cffAvaliacoes';
@@ -370,7 +371,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const db = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
         function escHTML(str) {
             return String(str == null ? '' : str)

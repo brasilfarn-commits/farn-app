@@ -1,0 +1,238 @@
+/* =====================================================================
+   FARN DB - adaptador compatível com a API do Firestore usada pelo app.
+   Backend: Cloudflare Worker + D1 (farn-api).
+   Troca apenas a linha que cria dbFirestore; o resto do código continua.
+   ===================================================================== */
+(function (global) {
+  'use strict';
+
+  var DEL = { __farnDelete: true };
+  var SERVER_TS = { __farnServerTs: true };
+
+  function FarnDB(baseUrl) {
+    this.baseUrl = String(baseUrl || '').replace(/\/$/, '');
+    this.cache = {};           // col -> { id: data }
+    this.listeners = [];
+    this.since = 0;
+    this.timer = null;
+    this._iniciarPolling();
+  }
+
+  FarnDB.prototype._req = async function (path, opts) {
+    var r = await fetch(this.baseUrl + path, Object.assign({
+      headers: { 'Content-Type': 'application/json' }
+    }, opts || {}));
+    var txt = await r.text();
+    var dados;
+    try { dados = JSON.parse(txt); } catch (e) { throw new Error('Resposta inválida: ' + txt.slice(0, 120)); }
+    if (!r.ok || dados.error) throw new Error(dados.error || ('HTTP ' + r.status));
+    return dados;
+  };
+
+  FarnDB.prototype._todos = async function (col) {
+    if (!this.cache[col]) {
+      var r = await this._req('/api/all?col=' + encodeURIComponent(col));
+      var mapa = {};
+      (r.docs || []).forEach(function (d) { mapa[d.id] = d.data; });
+      this.cache[col] = mapa;
+    }
+    return this.cache[col];
+  };
+
+  FarnDB.prototype._iniciarPolling = function () {
+    var self = this;
+    if (self.timer) clearInterval(self.timer);
+    self.timer = setInterval(function () { self._poll(); }, 5000);
+  };
+
+  FarnDB.prototype._poll = async function () {
+    if (!this.listeners.length && this.since === 0) return;
+    try {
+      var r = await this._req('/api/changes?since=' + this.since);
+      var mudou = false;
+      (r.docs || []).forEach(function (d) {
+        if (!self.cache[d.col]) self.cache[d.col] = {};
+        self.cache[d.col][d.id] = d.data;
+        mudou = true;
+      });
+      this.since = r.since || this.since;
+      if (mudou) this.listeners.slice().forEach(function (l) { l.emitir(); });
+    } catch (e) { /* silencioso: tenta de novo no proximo ciclo */ }
+  };
+
+  /* ---------- snippets ---------- */
+  function DocSnap(db, col, id, data) {
+    this.id = id;
+    this.exists = data !== undefined && data !== null;
+    this._data = data;
+    this.ref = new DocRef(db, col, id);
+  }
+  DocSnap.prototype.data = function () { return this._data ? JSON.parse(JSON.stringify(this._data)) : undefined; };
+
+  function QuerySnap(db, docs) {
+    this.docs = docs;
+    this.empty = docs.length === 0;
+    this.size = docs.length;
+  }
+  QuerySnap.prototype.forEach = function (cb) { this.docs.forEach(cb); };
+
+  /* ---------- Query ---------- */
+  function Query(db, col) {
+    this._db = db; this._col = col;
+    this._where = []; this._order = null; this._limitN = null;
+  }
+  Query.prototype.where = function (campo, op, valor) {
+    var q = Object.create(Query.prototype);
+    Object.assign(q, this);
+    q._where = this._where.concat([{ campo: campo, op: op, valor: valor }]);
+    return q;
+  };
+  Query.prototype.orderBy = function (campo, dir) {
+    var q = Object.create(Query.prototype); Object.assign(q, this);
+    q._order = { campo: campo, dir: String(dir || 'asc').toLowerCase() }; return q;
+  };
+  Query.prototype.limit = function (n) {
+    var q = Object.create(Query.prototype); Object.assign(q, this); q._limitN = n; return q;
+  };
+  Query.prototype._avaliar = function (d) {
+    for (var i = 0; i < this._where.length; i++) {
+      var w = this._where[i], v = d[w.campo];
+      if (w.op === '==') { if (v !== w.valor) return false; }
+      else if (w.op === '!=') { if (v === w.valor) return false; }
+      else if (w.op === '>') { if (!(v > w.valor)) return false; }
+      else if (w.op === '>=') { if (!(v >= w.valor)) return false; }
+      else if (w.op === '<') { if (!(v < w.valor)) return false; }
+      else if (w.op === '<=') { if (!(v <= w.valor)) return false; }
+      else if (w.op === 'in') { if (!Array.isArray(w.valor) || w.valor.indexOf(v) < 0) return false; }
+      else if (w.op === 'array-contains') { if (!Array.isArray(v) || v.indexOf(w.valor) < 0) return false; }
+    }
+    return true;
+  };
+  Query.prototype._resultado = async function () {
+    var mapa = await this._db._todos(this._col);
+    var docs = [];
+    for (var id in mapa) {
+      if (!Object.prototype.hasOwnProperty.call(mapa, id)) continue;
+      var d = mapa[id];
+      if (this._avaliar(d)) docs.push(new DocSnap(this._db, this._col, id, d));
+    }
+    if (this._order) {
+      var campo = this._order.campo, dir = this._order.dir;
+      docs.sort(function (a, b) {
+        var x = a._data && a._data[campo], y = b._data && b._data[campo];
+        var c = String(x == null ? '' : x).localeCompare(String(y == null ? '' : y), 'pt-BR', { numeric: true });
+        return dir === 'desc' ? -c : c;
+      });
+    }
+    if (this._limitN != null) docs = docs.slice(0, this._limitN);
+    return new QuerySnap(this._db, docs);
+  };
+  Query.prototype.get = function () { return this._resultado(); };
+  Query.prototype.onSnapshot = function (cb, errCb) {
+    var self = this, ultima = '';
+    var listener = {
+      emitir: async function () {
+        try {
+          var snap = await self._resultado();
+          var chave = JSON.stringify(snap.docs.map(function (d) { return [d.id, d._data]; }));
+          if (chave !== ultima) { ultima = chave; cb(snap); }
+        } catch (e) { if (errCb) errCb(e); }
+      }
+    };
+    this._db.listeners.push(listener);
+    listener.emitir();
+    var db = this._db;
+    return function () { db.listeners = db.listeners.filter(function (l) { return l !== listener; }); };
+  };
+  Query.prototype.add = async function (data) {
+    var id = String(Date.now()) + Math.random().toString(36).slice(2, 8);
+    await this._db._req('/api/set', {
+      method: 'POST',
+      body: JSON.stringify({ col: this._col, id: id, data: limpar(data) })
+    });
+    this._db.cache[this._col] = this._db.cache[this._col] || {};
+    this._db.cache[this._col][id] = limpar(data);
+    return new DocRef(this._db, this._col, id);
+  };
+
+  /* ---------- DocumentReference ---------- */
+  function DocRef(db, col, id) { this._db = db; this._col = col; this.id = id; }
+  DocRef.prototype.collection = function (nome) { return new Query(this._db, this._col + '/' + this.id + '/' + nome); };
+  DocRef.prototype.get = async function () {
+    var mapa = await this._db._todos(this._col);
+    return new DocSnap(this._db, this._col, this.id, mapa[this.id]);
+  };
+  DocRef.prototype.set = async function (data, opts) {
+    var corpo = { col: this._col, id: this.id, data: limpar(data), merge: !!(opts && opts.merge) };
+    await this._db._req('/api/set', { method: 'POST', body: JSON.stringify(corpo) });
+    var mapa = this._db.cache[this._col] = this._db.cache[this._col] || {};
+    mapa[this.id] = corpo.merge ? Object.assign({}, mapa[this.id] || {}, limpar(data)) : limpar(data);
+    this._avisar();
+  };
+  DocRef.prototype.update = function (data) { return this.set(data, { merge: true }); };
+  DocRef.prototype.delete = async function () {
+    await this._db._req('/api/delete', { method: 'POST', body: JSON.stringify({ col: this._col, id: this.id }) });
+    if (this._db.cache[this._col]) delete this._db.cache[this._col][this.id];
+    this._avisar();
+  };
+  DocRef.prototype._avisar = function () {
+    this._db.listeners.slice().forEach(function (l) { l.emitir(); });
+  };
+
+  /* ---------- Batch ---------- */
+  function Batch(db) { this._db = db; this._ops = []; }
+  Batch.prototype.set = function (ref, data, opts) {
+    this._ops.push({ type: 'set', col: ref._col, id: ref.id, data: limpar(data, !!(opts && opts.merge)), merge: !!(opts && opts.merge) }); return this;
+  };
+  Batch.prototype.update = function (ref, data) {
+    this._ops.push({ type: 'set', col: ref._col, id: ref.id, data: limpar(data, true), merge: true }); return this;
+  };
+  Batch.prototype.delete = function (ref) {
+    this._ops.push({ type: 'delete', col: ref._col, id: ref.id }); return this;
+  };
+  Batch.prototype.commit = async function () {
+    if (!this._ops.length) return;
+    await this._db._req('/api/batch', { method: 'POST', body: JSON.stringify({ ops: this._ops }) });
+    var self = this;
+    self._ops.forEach(function (op) {
+      var mapa = self._db.cache[op.col] = self._db.cache[op.col] || {};
+      if (op.type === 'delete') delete mapa[op.id];
+      else mapa[op.id] = op.merge ? Object.assign({}, mapa[op.id] || {}, op.data) : op.data;
+    });
+    self._db.listeners.slice().forEach(function (l) { l.emitir(); });
+  };
+
+  function limpar(data, manterDelete) {
+    var out = {};
+    Object.keys(data || {}).forEach(function (k) {
+      var v = data[k];
+      if (v === DEL || (v && v.__farnDelete)) {
+        if (manterDelete) out[k] = DEL;
+        return;
+      }
+      if (v === SERVER_TS || (v && v.__farnServerTs)) { out[k] = new Date().toISOString(); return; }
+      out[k] = v;
+    });
+    return out;
+  }
+
+  /* ---------- API publica ---------- */
+  FarnDB.prototype.collection = function (nome) { return new Query(this, nome); };
+  FarnDB.prototype.doc = function (caminho) {
+    var partes = String(caminho).split('/');
+    var col = partes.shift(), id = partes.join('/');
+    return new DocRef(this, col, id);
+  };
+  FarnDB.prototype.batch = function () { return new Batch(this); };
+
+  global.FarnDB = FarnDB;
+  global.FarnFieldValue = {
+    delete: function () { return DEL; },
+    serverTimestamp: function () { return SERVER_TS; }
+  };
+  /* Compatibilidade com firebase.firestore.FieldValue usado em app.js */
+  if (!global.firebase) global.firebase = {};
+  if (!global.firebase.firestore) global.firebase.firestore = {};
+  global.firebase.firestore.FieldValue = global.FarnFieldValue;
+
+})(window);

@@ -1,6 +1,6 @@
 /* ============================================================
    WHATFARN - Mensagens instantaneas entre Aluno e Administrativo
-   Usado em: index.html (admin) e portal-aluno.html
+   Usado em: index.html (admin)
    ============================================================ */
 
 

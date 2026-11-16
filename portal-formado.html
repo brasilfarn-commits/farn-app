@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="oportunidades-portais.js?v=2"></script>
     <script src="ficha-geral-compartilhar.js?v=25"></script>
+    <script src="farn-db.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -23,7 +24,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const dbFirestore = firebase.firestore();
+        const dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
         /* ===== MANUTENCAO DOS PORTAIS ===== */
         async function pfChecarManutencaoPortais() {

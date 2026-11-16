@@ -769,6 +769,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="farn-db.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -780,7 +781,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        var dbFirestore = firebase.firestore();
+        var dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
     </script>
     <script>
         if ('serviceWorker' in navigator) {
@@ -816,10 +817,6 @@
                             <option value="admin">Administrador</option>
                             <option value="usuario">Portal do Usuário</option>
                             <option value="formado">Portal do Formado</option>
-                            <option value="aluno">Portal do Aluno</option>
-                            <option value="docente">Portal do Docente</option>
-                            <option value="coordenacao">Portal da Coordenação</option>
-                            <option value="cff">Portal do CFF</option>
                         </select>
                     </div>
                     <div class="landing-login-field">
@@ -2728,30 +2725,6 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" class="uf-perm-check" value="portal-aluno">
-                                            <div class="permissao-card">
-                                                <i class="fa-solid fa-graduation-cap"></i>
-                                                <span>Portal do Aluno</span>
-                                                <small>Acessar o portal do aluno</small>
-                                            </div>
-                                        </label>
-                                        <label class="permissao-item">
-                                            <input type="checkbox" class="uf-perm-check" value="portal-docente">
-                                            <div class="permissao-card">
-                                                <i class="fa-solid fa-chalkboard-user"></i>
-                                                <span>Portal do Docente</span>
-                                                <small>Acessar o portal do docente</small>
-                                            </div>
-                                        </label>
-                                        <label class="permissao-item">
-                                            <input type="checkbox" class="uf-perm-check" value="portal-coordenacao">
-                                            <div class="permissao-card">
-                                                <i class="fa-solid fa-users-viewfinder"></i>
-                                                <span>Portal da Coordenacao</span>
-                                                <small>Acessar o portal da coordenacao</small>
-                                            </div>
-                                        </label>
-                                        <label class="permissao-item">
                                             <input type="checkbox" class="uf-perm-check" value="formados">
                                             <div class="permissao-card">
                                                 <i class="fa-solid fa-user-tie"></i>
@@ -3624,12 +3597,9 @@
                                 <div class="blog-field">
                                     <label class="blog-label">Compartilhar em</label>
                                     <div class="blog-portais" id="blog-form-portais">
-                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="aluno"> Portal do Aluno</label>
                                         <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="index"> Index - Notícias</label>
+                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="usuario"> Portal do Usuário</label>
                                         <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="formado"> Portal do Formado</label>
-                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="cff"> Portal do CFF</label>
-                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="docente"> Portal do Docente</label>
-                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="coordenacao"> Portal da Coordenação</label>
                                     </div>
                                     <small>Ao ativar, a postagem aparece nos locais marcados acima.</small>
                                 </div>
@@ -4557,7 +4527,7 @@
 
                                 <!-- ACESSO -->
                                 <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-key"></i><h3>Senha de Acesso ao Portal do CFF</h3></div>
+                                    <div class="form-section-title"><i class="fa-solid fa-key"></i><h3>Senha de Acesso ao Portal do Usuário</h3></div>
                                     <div class="form-section-body">
                                         <div class="form-row">
                                             <div class="form-group"><label>Senha de Acesso *</label>
@@ -4568,7 +4538,7 @@
                                                         <i class="fa-solid fa-eye" id="cff-eye-icon"></i>
                                                     </button>
                                                 </div>
-                                                <span class="field-hint">Minimo 6 caracteres. Sera usada junto com o CPF para acessar o Portal do CFF.</span>
+                                                <span class="field-hint">Minimo 6 caracteres. Sera usada junto com o CPF para acessar o Portal do Usuário.</span>
                                             </div>
                                         </div>
                                     </div>
@@ -6187,7 +6157,7 @@
     <script>
     (function(){
         if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
-        firebase.firestore().collection('configuracoes').doc('instituicao').get().then(function(doc){
+        new FarnDB('https://farn-api.farn-api-farn.workers.dev').collection('configuracoes').doc('instituicao').get().then(function(doc){
             if(doc.exists && doc.data().logo){
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
             }

@@ -384,6 +384,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="farn-db.js"></script>
 <script>
     var firebaseConfig = {
         apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -395,7 +396,7 @@
         appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    var dbFirestore = firebase.firestore();
+    var dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
     var crScanner = null;
     var crScanRodando = false;

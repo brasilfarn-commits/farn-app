@@ -357,6 +357,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="farn-db.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -368,7 +369,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        var dbFirestore = firebase.firestore();
+        var dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
     </script>
     <script>
         if ('serviceWorker' in navigator) {
@@ -1510,30 +1511,6 @@
                                                 <i class="fa-solid fa-user-tie"></i>
                                                 <span>Portal do Formado</span>
                                                 <small>Acessar o portal do formado</small>
-                                            </div>
-                                        </label>
-                                        <label class="permissao-item">
-                                            <input type="checkbox" class="uf-perm-check" value="portal-aluno">
-                                            <div class="permissao-card">
-                                                <i class="fa-solid fa-graduation-cap"></i>
-                                                <span>Portal do Aluno</span>
-                                                <small>Acessar o portal do aluno</small>
-                                            </div>
-                                        </label>
-                                        <label class="permissao-item">
-                                            <input type="checkbox" class="uf-perm-check" value="portal-docente">
-                                            <div class="permissao-card">
-                                                <i class="fa-solid fa-chalkboard-user"></i>
-                                                <span>Portal do Docente</span>
-                                                <small>Acessar o portal do docente</small>
-                                            </div>
-                                        </label>
-                                        <label class="permissao-item">
-                                            <input type="checkbox" class="uf-perm-check" value="portal-coordenacao">
-                                            <div class="permissao-card">
-                                                <i class="fa-solid fa-users-viewfinder"></i>
-                                                <span>Portal da Coordenacao</span>
-                                                <small>Acessar o portal da coordenacao</small>
                                             </div>
                                         </label>
                                         <label class="permissao-item">
@@ -2845,7 +2822,7 @@
     <script>
     (function(){
         if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
-        firebase.firestore().collection('configuracoes').doc('instituicao').get().then(function(doc){
+        new FarnDB('https://farn-api.farn-api-farn.workers.dev').collection('configuracoes').doc('instituicao').get().then(function(doc){
             if(doc.exists && doc.data().logo){
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
             }

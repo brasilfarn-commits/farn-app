@@ -1,0 +1,8 @@
+name = "farn-api"
+main = "worker.js"
+compatibility_date = "2026-11-16"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "farn-db"
+database_id = "026c2e8a-f12e-416a-871d-faf34ce963e3"

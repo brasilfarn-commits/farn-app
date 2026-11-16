@@ -124,6 +124,7 @@
             </div>
         </div>
     </div>
+<script src="farn-db.js"></script>
 <script>
         function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
 
@@ -137,7 +138,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const dbFirestore = firebase.firestore();
+        const dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
         var puUser = null;
         var FONTES = [

@@ -11,6 +11,7 @@
     <meta name="theme-color" content="#16a34a">
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="farn-db.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -22,7 +23,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        const dbFirestore = firebase.firestore();
+        const dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -1119,7 +1120,7 @@
     <script>
     (function(){
         if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
-        firebase.firestore().collection('configuracoes').doc('instituicao').get().then(function(doc){
+        new FarnDB('https://farn-api.farn-api-farn.workers.dev').collection('configuracoes').doc('instituicao').get().then(function(doc){
             if(doc.exists && doc.data().logo){
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
             }

@@ -20,6 +20,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="farn-db.js"></script>
     <script>
         firebase.initializeApp({
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -29,7 +30,7 @@
             messagingSenderId: "1093375527738",
             appId: "1:1093375527738:web:7320e1d794364c9ad12035"
         });
-        var db = firebase.firestore();
+        var db = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
         async function run() {
             var html = '';

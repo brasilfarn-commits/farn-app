@@ -256,6 +256,7 @@
             </div>
         </div>
     </div>
+<script src="farn-db.js"></script>
 <script>
         function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
         function avChave(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ''); }
@@ -272,7 +273,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const db = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
         var avProjeto = '';
         var avTurma = '';

@@ -16,3 +16,7 @@ ISIGNEAS/
 whatfarn.apk
 
 opencode.exe
+
+# Cloudflare / Wrangler (estado local de autenticacao)
+.wrangler/
+

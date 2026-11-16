@@ -1509,14 +1509,6 @@ async function landingLogin(event) {
                 location.href = 'portal-usuario.html';
             } else if (portal === 'formado') {
                 location.href = 'portal-formado.html';
-            } else if (portal === 'aluno') {
-                location.href = 'portal-aluno.html';
-            } else if (portal === 'docente') {
-                location.href = 'portal-docente.html';
-            } else if (portal === 'coordenacao') {
-                location.href = 'portal-coordenacao.html';
-            } else if (portal === 'cff') {
-                location.href = 'portal-cff.html';
             }
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return true;
@@ -1532,10 +1524,6 @@ async function landingLogin(event) {
             if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
             else if (portal === 'usuario') ok = await landingLoginUsuario(cpf, senha);
             else if (portal === 'formado') ok = await landingLoginFormado(cpf, senha);
-            else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
-            else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
-            else if (portal === 'coordenacao') ok = await landingLoginCoordenacao(cpf, senha);
-            else if (portal === 'cff') ok = await landingLoginCff(cpf, senha);
         }
         if (!ok) {
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
@@ -1563,10 +1551,6 @@ async function landingLoginPortalPerm(cpf, senha, portal) {
     try { localStorage.setItem('farn_user_data', JSON.stringify(user)); } catch(e) {}
     if (portal === 'usuario') location.href = 'portal-usuario.html';
     else if (portal === 'formado') location.href = 'portal-formado.html';
-    else if (portal === 'aluno') location.href = 'portal-aluno.html';
-    else if (portal === 'docente') location.href = 'portal-docente.html';
-    else if (portal === 'coordenacao') location.href = 'portal-coordenacao.html';
-    else if (portal === 'cff') location.href = 'portal-cff.html';
     return true;
 }
 
@@ -1656,67 +1640,6 @@ async function landingLoginFormado(cpf, senha) {
     localStorage.setItem('pf_lembrar_cpf', cpf);
     localStorage.setItem('pf_lembrar_senha', senha);
     location.href = 'portal-formado.html';
-    return true;
-}
-
-async function landingLoginAluno(cpf, senha) {
-    var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF não encontrado.'); return false; }
-    var u = snap.docs[0].data();
-    if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    if (u.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
-    if (!fgStatusAtivo(u.status) && u.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar.'); return false; }
-    if (!u.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
-    localStorage.setItem('pa_lembrar_cpf', cpf);
-    localStorage.setItem('pa_lembrar_senha', senha);
-    location.href = 'portal-aluno.html';
-    return true;
-}
-
-async function landingLoginDocente(cpf, senha) {
-    if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-        var adminDoc = { nome: 'Administrador Geral', cpf: cpf, guerra: '', matricula: '', isAdmin: true };
-        sessionStorage.setItem('pd_sessao', JSON.stringify(adminDoc));
-        localStorage.setItem('pd_lembrar_cpf', cpf);
-        localStorage.setItem('pd_lembrar_senha', senha);
-        location.href = 'portal-docente.html';
-        return true;
-    }
-    var snap = await dbFirestore.collection('docentes').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF não encontrado entre os docentes.'); return false; }
-    var u = snap.docs[0].data();
-    if (!u.senha) { landingShowLoginError('Senha de acesso não cadastrada. Contate a administração.'); return false; }
-    if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    u._docId = snap.docs[0].id;
-    sessionStorage.setItem('pd_sessao', JSON.stringify(u));
-    localStorage.setItem('pd_lembrar_cpf', cpf);
-    localStorage.setItem('pd_lembrar_senha', senha);
-    location.href = 'portal-docente.html';
-    return true;
-}
-
-async function landingLoginCoordenacao(cpf, senha) {
-    var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
-    var u = snap.docs[0].data();
-    if (u.senha !== senha) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
-    if (u.ativo === false) { landingShowLoginError('Usuário desativado. Contate o administrador.'); return false; }
-    localStorage.setItem('pc_lembrar_cpf', cpf);
-    localStorage.setItem('pc_lembrar_senha', senha);
-    location.href = 'portal-coordenacao.html';
-    return true;
-}
-
-// login do PORTAL DO CFF (alunos cadastrados na seção CFF do admin)
-async function landingLoginCff(cpf, senha) {
-    var snap = await dbFirestore.collection('cffAlunos').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF não encontrado na inscrição do CFF.'); return false; }
-    var u = snap.docs[0].data();
-    if (u.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    localStorage.setItem('cff_lembrar_cpf', cpf);
-    localStorage.setItem('cff_lembrar_senha', senha);
-    sessionStorage.setItem('cff_sessao', JSON.stringify(u));
-    location.href = 'portal-cff.html';
     return true;
 }
 
@@ -7456,9 +7379,6 @@ function renderUsuariosList() {
                 'disciplinas': '<span class="usuario-tag usuario-tag-docente">Disciplinas</span>',
                 'apontamento': '<span class="usuario-tag usuario-tag-admin">Apontamento</span>',
                 'portal-formado': '<span class="usuario-tag usuario-tag-portal">Portal Formado</span>',
-                'portal-aluno': '<span class="usuario-tag usuario-tag-portal">Portal Aluno</span>',
-                'portal-docente': '<span class="usuario-tag usuario-tag-portal">Portal Docente</span>',
-                'portal-coordenacao': '<span class="usuario-tag usuario-tag-portal">Portal Coordenacao</span>',
                 'formados': '<span class="usuario-tag usuario-tag-pre">Formados</span>',
                 'tfm': '<span class="usuario-tag usuario-tag-docente">TFM</span>',
                 'noticias': '<span class="usuario-tag usuario-tag-admin">Noticias</span>',
@@ -12678,12 +12598,9 @@ var blogRemoverImagemFlag = false;
 var blogRemoverVideoFlag = false;
 
 var BLOG_PORTAIS = [
-    { id: 'aluno', nome: 'Portal do Aluno' },
     { id: 'index', nome: 'Index - Notícias' },
-    { id: 'formado', nome: 'Portal do Formado' },
-    { id: 'cff', nome: 'Portal do CFF' },
-    { id: 'docente', nome: 'Portal do Docente' },
-    { id: 'coordenacao', nome: 'Portal da Coordenação' }
+    { id: 'usuario', nome: 'Portal do Usuário' },
+    { id: 'formado', nome: 'Portal do Formado' }
 ];
 
 function blogEsc(s) {
