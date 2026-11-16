@@ -771,6 +771,21 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="farn-db.js"></script>
     <script>
+    (function () {
+        function atualizarSync() {
+            var el = document.getElementById('farn-sync-status');
+            if (!el || typeof dbFirestore === 'undefined' || typeof dbFirestore.status !== 'function') return;
+            var s = dbFirestore.status();
+            if (!s.online) { el.textContent = 'Offline' + (s.pendentes ? ' (' + s.pendentes + ' pend.)' : ''); el.style.background = '#fef3c7'; el.style.color = '#92400e'; }
+            else if (s.pendentes) { el.textContent = 'Sincronizando (' + s.pendentes + ')'; el.style.background = '#dbeafe'; el.style.color = '#1e40af'; }
+            else { el.textContent = 'Sincronizado'; el.style.background = '#dcfce7'; el.style.color = '#166534'; }
+        }
+        setInterval(atualizarSync, 2000);
+        window.addEventListener('online', atualizarSync);
+        window.addEventListener('offline', atualizarSync);
+    })();
+    </script>
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
             authDomain: "farn-app.firebaseapp.com",
@@ -1057,6 +1072,7 @@
                         <h1 id="admin-page-title">Pre-Inscricao</h1>
                     </div>
                     <div class="topbar-right">
+                        <span id="farn-sync-status" title="Estado da sincronização com a nuvem" style="margin-right:10px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:800;background:rgba(255,255,255,.16);color:#fff">Conectando...</span>
                         <div class="user-info">
                             <div class="user-avatar"><i class="fa-solid fa-user-shield"></i></div>
                             <span id="topbar-user-name">Administrador</span>

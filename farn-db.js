@@ -8,6 +8,9 @@
 
   var DEL = { __farnDelete: true };
   var SERVER_TS = { __farnServerTs: true };
+  var KEY_CACHE = 'farn_db_cache_v1';
+  var KEY_QUEUE = 'farn_db_queue_v1';
+  var KEY_SINCE = 'farn_db_since_v1';
 
   function FarnDB(baseUrl) {
     this.baseUrl = String(baseUrl || '').replace(/\/$/, '');
@@ -15,8 +18,54 @@
     this.listeners = [];
     this.since = 0;
     this.timer = null;
+    this.online = true;
+    this.fila = [];
+    this._carregarLocal();
+    var self = this;
+    window.addEventListener('online', function () { self.online = true; self._flush(); self._poll(); });
+    window.addEventListener('offline', function () { self.online = false; });
     this._iniciarPolling();
+    this._flush();
   }
+
+  /* ---------- persistencia local (offline) ---------- */
+  FarnDB.prototype._carregarLocal = function () {
+    try {
+      var c = JSON.parse(localStorage.getItem(KEY_CACHE) || 'null');
+      if (c && typeof c === 'object') this.cache = c;
+      var s = Number(localStorage.getItem(KEY_SINCE) || 0);
+      if (s) this.since = s;
+      var q = JSON.parse(localStorage.getItem(KEY_QUEUE) || '[]');
+      if (Array.isArray(q)) this.fila = q;
+    } catch (e) {}
+  };
+  FarnDB.prototype._salvarLocal = function () {
+    try { localStorage.setItem(KEY_CACHE, JSON.stringify(this.cache)); } catch (e) {}
+    try { localStorage.setItem(KEY_SINCE, String(this.since)); } catch (e) {}
+    try { localStorage.setItem(KEY_QUEUE, JSON.stringify(this.fila)); } catch (e) {}
+  };
+  FarnDB.prototype._enfileirar = function (op) {
+    this.fila.push(op);
+    this._salvarLocal();
+    this._flush();
+  };
+  FarnDB.prototype._flush = async function () {
+    if (!this.fila.length || !navigator.onLine) return;
+    var lote = this.fila.slice();
+    try {
+      await this._req('/api/batch', { method: 'POST', body: JSON.stringify({ ops: lote }) });
+      this.fila = this.fila.filter(function (op) { return lote.indexOf(op) < 0; });
+      this._salvarLocal();
+      this.online = true;
+      this._avisarTodos();
+    } catch (e) { this.online = false; }
+  };
+  FarnDB.prototype._avisarTodos = function () {
+    this.listeners.slice().forEach(function (l) { l.emitir(); });
+  };
+  FarnDB.prototype.status = function () {
+    return { online: this.online && navigator.onLine !== false, pendentes: this.fila.length };
+  };
 
   FarnDB.prototype._req = async function (path, opts) {
     var r = await fetch(this.baseUrl + path, Object.assign({
@@ -31,10 +80,17 @@
 
   FarnDB.prototype._todos = async function (col) {
     if (!this.cache[col]) {
-      var r = await this._req('/api/all?col=' + encodeURIComponent(col));
-      var mapa = {};
-      (r.docs || []).forEach(function (d) { mapa[d.id] = d.data; });
-      this.cache[col] = mapa;
+      try {
+        var r = await this._req('/api/all?col=' + encodeURIComponent(col));
+        var mapa = {};
+        (r.docs || []).forEach(function (d) { mapa[d.id] = d.data; });
+        this.cache[col] = mapa;
+        this._salvarLocal();
+        this.online = true;
+      } catch (e) {
+        this.online = false;
+        this.cache[col] = {};   // funciona vazio enquanto offline
+      }
     }
     return this.cache[col];
   };
@@ -56,8 +112,13 @@
         mudou = true;
       });
       this.since = r.since || this.since;
-      if (mudou) this.listeners.slice().forEach(function (l) { l.emitir(); });
-    } catch (e) { /* silencioso: tenta de novo no proximo ciclo */ }
+      this.online = true;
+      this._salvarLocal();
+      if (mudou) this._avisarTodos();
+      if (this.fila.length) this._flush();
+    } catch (e) {
+      this.online = false;
+    }
   };
 
   /* ---------- snippets ---------- */
@@ -144,15 +205,15 @@
     var db = this._db;
     return function () { db.listeners = db.listeners.filter(function (l) { return l !== listener; }); };
   };
-  Query.prototype.add = async function (data) {
+  Query.prototype.add = function (data) {
     var id = String(Date.now()) + Math.random().toString(36).slice(2, 8);
-    await this._db._req('/api/set', {
-      method: 'POST',
-      body: JSON.stringify({ col: this._col, id: id, data: limpar(data) })
-    });
+    var limpo = limpar(data);
     this._db.cache[this._col] = this._db.cache[this._col] || {};
-    this._db.cache[this._col][id] = limpar(data);
-    return new DocRef(this._db, this._col, id);
+    this._db.cache[this._col][id] = limpo;
+    this._db._salvarLocal();
+    this._db._enfileirar({ type: 'set', col: this._col, id: id, data: limpo, merge: false });
+    this._db._avisarTodos();
+    return Promise.resolve(new DocRef(this._db, this._col, id));
   };
 
   /* ---------- DocumentReference ---------- */
@@ -162,22 +223,27 @@
     var mapa = await this._db._todos(this._col);
     return new DocSnap(this._db, this._col, this.id, mapa[this.id]);
   };
-  DocRef.prototype.set = async function (data, opts) {
-    var corpo = { col: this._col, id: this.id, data: limpar(data), merge: !!(opts && opts.merge) };
-    await this._db._req('/api/set', { method: 'POST', body: JSON.stringify(corpo) });
+  DocRef.prototype.set = function (data, opts) {
+    var merge = !!(opts && opts.merge);
+    var limpo = limpar(data, merge);
     var mapa = this._db.cache[this._col] = this._db.cache[this._col] || {};
-    mapa[this.id] = corpo.merge ? Object.assign({}, mapa[this.id] || {}, limpar(data)) : limpar(data);
+    var novo = merge ? Object.assign({}, mapa[this.id] || {}, limpo) : limpo;
+    Object.keys(novo).forEach(function (k) { if (novo[k] && novo[k].__farnDelete) delete novo[k]; });
+    mapa[this.id] = novo;
+    this._db._salvarLocal();
+    this._db._enfileirar({ type: 'set', col: this._col, id: this.id, data: limpo, merge: merge });
     this._avisar();
+    return Promise.resolve();
   };
   DocRef.prototype.update = function (data) { return this.set(data, { merge: true }); };
-  DocRef.prototype.delete = async function () {
-    await this._db._req('/api/delete', { method: 'POST', body: JSON.stringify({ col: this._col, id: this.id }) });
+  DocRef.prototype.delete = function () {
     if (this._db.cache[this._col]) delete this._db.cache[this._col][this.id];
+    this._db._salvarLocal();
+    this._db._enfileirar({ type: 'delete', col: this._col, id: this.id });
     this._avisar();
+    return Promise.resolve();
   };
-  DocRef.prototype._avisar = function () {
-    this._db.listeners.slice().forEach(function (l) { l.emitir(); });
-  };
+  DocRef.prototype._avisar = function () { this._db._avisarTodos(); };
 
   /* ---------- Batch ---------- */
   function Batch(db) { this._db = db; this._ops = []; }
@@ -190,16 +256,24 @@
   Batch.prototype.delete = function (ref) {
     this._ops.push({ type: 'delete', col: ref._col, id: ref.id }); return this;
   };
-  Batch.prototype.commit = async function () {
-    if (!this._ops.length) return;
-    await this._db._req('/api/batch', { method: 'POST', body: JSON.stringify({ ops: this._ops }) });
+  Batch.prototype.commit = function () {
+    if (!this._ops.length) return Promise.resolve();
     var self = this;
     self._ops.forEach(function (op) {
       var mapa = self._db.cache[op.col] = self._db.cache[op.col] || {};
       if (op.type === 'delete') delete mapa[op.id];
-      else mapa[op.id] = op.merge ? Object.assign({}, mapa[op.id] || {}, op.data) : op.data;
+      else {
+        var novo = op.merge ? Object.assign({}, mapa[op.id] || {}, op.data) : op.data;
+        Object.keys(novo).forEach(function (k) { if (novo[k] && novo[k].__farnDelete) delete novo[k]; });
+        mapa[op.id] = novo;
+      }
     });
-    self._db.listeners.slice().forEach(function (l) { l.emitir(); });
+    self._db._salvarLocal();
+    self._ops.forEach(function (op) { self._db.fila.push(op); });
+    self._db._salvarLocal();
+    self._db._avisarTodos();
+    self._db._flush();
+    return Promise.resolve();
   };
 
   function limpar(data, manterDelete) {
