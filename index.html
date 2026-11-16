@@ -4070,6 +4070,7 @@
                             <button class="nav-item" id="cc-aba-apontamento" onclick="ccSetAba('apontamento')"><i class="fa-solid fa-clipboard-user"></i> Apontamentos</button>
                             <button class="nav-item" id="cc-aba-ficha" onclick="ccSetAba('ficha')"><i class="fa-solid fa-file-lines"></i> Ficha Geral</button>
                             <button class="nav-item" id="cc-aba-certificado" onclick="ccSetAba('certificado')"><i class="fa-solid fa-award"></i> Certificados</button>
+                            <button class="nav-item" id="cc-aba-secaoavaliacao" onclick="ccSetAba('secaoavaliacao')"><i class="fa-solid fa-clipboard-list"></i> Seção de Avaliação</button>
                         </div>
 
                         <!-- ABA GERAL -->
@@ -4181,6 +4182,16 @@
                                 </div>
                             </div>
                             <div id="cc-certs-lista"></div>
+                        </div>
+
+                        <!-- ABA SECAO DE AVALIACAO -->
+                        <div id="cc-tab-secaoavaliacao" style="display:none">
+                            <div style="padding:16px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:2px solid #7c3aed;border-radius:12px;margin-bottom:14px">
+                                <h3 style="margin:0;font-size:14px;color:#5b21b6"><i class="fa-solid fa-clipboard-list" style="margin-right:8px"></i> Seção de Avaliação do curso</h3>
+                                <p style="font-size:11px;color:#6d28d9;margin:6px 0 0">Ficha de avaliação de cada indivíduo: apontamento, comportamento, AVs teórica/prática, provas finais e resultado.</p>
+                                <button class="btn-primary" onclick="ccImportarDadosAvaliacao()" style="margin-top:10px"><i class="fa-solid fa-file-import" style="margin-right:6px"></i> Importar dados da Seção de Avaliação</button>
+                            </div>
+                            <div id="cc-avaliacao-lista"></div>
                         </div>
                     </div>
                 </div>
@@ -6170,7 +6181,7 @@
     <script src="farn-storage.js?v=1"></script>
     <script src="app.js?v=104"></script>
     <script src="recad-admin.js"></script>
-    <script src="cadastro-cursos.js?v=8"></script>
+    <script src="cadastro-cursos.js?v=9"></script>
     <script src="noticias-slider.js"></script>
     <script src="whatfarn.js?v=17"></script>
     <script>

@@ -263,7 +263,7 @@ function ccAbrirCurso(id) {
 
 function ccSetAba(aba) {
     ccAba = aba;
-    ['geral','avaliacao','disciplinas','individuos','apontamento','ficha','certificado'].forEach(function (a) {
+    ['geral','avaliacao','disciplinas','individuos','apontamento','ficha','certificado','secaoavaliacao'].forEach(function (a) {
         var el = document.getElementById('cc-tab-' + a);
         if (el) el.style.display = (a === aba) ? '' : 'none';
         var btn = document.getElementById('cc-aba-' + a);
@@ -276,6 +276,7 @@ function ccSetAba(aba) {
     if (aba === 'apontamento') ccInitApontamento();
     if (aba === 'ficha') ccInitFicha();
     if (aba === 'certificado') ccInitCertificados();
+    if (aba === 'secaoavaliacao') ccInitAvaliacao();
 }
 
 /* ============ IMPORTAÇÃO DO ADMINISTRADOR ============
@@ -1261,6 +1262,203 @@ function ccImprimirFichaCurso(i) {
     var html = fichaGeralFolha(item.p, item.calc, null, i, item.aulas);
     var w = window.open('', '_blank');
     if (w) { w.document.write('<html><head><meta charset="utf-8"><title>Ficha Geral</title><link rel="stylesheet" href="style.css"></head><body>' + html + '</body></html>'); w.document.close(); setTimeout(function () { w.print(); }, 400); }
+}
+
+/* ============ ABA SEÇÃO DE AVALIAÇÃO (POR CURSO) ============
+   Reproduz a experiencia da Seção de Avaliação do administrador: escolhe o
+   individuo do curso e abre a ficha com as abas Apontamento, Comportamento,
+   Teorica, Pratica, Finais e Resultado. */
+var ccAvalPessoas = [], ccAvalAtual = null, ccAvalAba = 'apontamento', ccAvalCache = null;
+
+async function ccInitAvaliacao() {
+    var box = document.getElementById('cc-avaliacao-lista');
+    if (!box || !ccAtual) return;
+    box.innerHTML = '<p style="color:#64748b">Carregando indivíduos...</p>';
+    try {
+        var snap = await ccRef('individuos').get();
+        ccAvalPessoas = [];
+        snap.forEach(function (d) { ccAvalPessoas.push(Object.assign({ _id: d.id }, d.data() || {})); });
+        if (!ccAvalPessoas.length) {
+            box.innerHTML = '<p style="color:#94a3b8;font-size:12px">Nenhum indivíduo importado. Use a guia Indivíduos ou o botão de importação abaixo.</p>';
+            return;
+        }
+        box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">'
+            + ccAvalPessoas.map(function (p) {
+                return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;background:#fff;display:flex;align-items:center;gap:10px">'
+                    + '<div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">'
+                    + ccEsc(String(p.nome || '?').substring(0, 2).toUpperCase()) + '</div>'
+                    + '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + ccEsc(p.nome) + '</div>'
+                    + '<div style="font-size:10px;color:#64748b">' + ccEsc(p.cpf || '') + '</div></div>'
+                    + '<button class="btn-outline btn-sm" onclick="ccAbrirFichaAvaliacao(\'' + ccEsc(String(p.cpf || '')) + '\')"><i class="fa-solid fa-file-lines"></i> Abrir avaliação</button>'
+                    + '</div>';
+            }).join('') + '</div>';
+    } catch (e) { box.innerHTML = '<p style="color:#dc2626">' + ccEsc(e.message) + '</p>'; }
+}
+
+async function ccAbrirFichaAvaliacao(cpf) {
+    var p = ccAvalPessoas.find(function (x) { return String(x.cpf) === String(cpf); });
+    if (!p) return;
+    ccAvalAtual = p;
+    try {
+        var resultado = await Promise.all([
+            ccRef('aulas').orderBy('data').get(),
+            ccRef('fichaAvaliacoes').get(),
+            ccRef('presencas').get()
+        ]);
+        var aulas = { todas: [], teorica: [], pratica: [] };
+        resultado[0].forEach(function (d) {
+            var a = Object.assign({ _id: d.id }, d.data() || {});
+            aulas.todas.push(a);
+            if (a.avTeorica === 'Sim') aulas.teorica.push(a);
+            if (a.avPratica === 'Sim') aulas.pratica.push(a);
+        });
+        var dados = (typeof fichaGeralDadosAluno === 'function') ? await fichaGeralDadosAluno(p) : { av: {}, presencas: [] };
+        var snapshot = null;
+        resultado[1].forEach(function (d) {
+            var f = d.data() || {};
+            if (String(f.cpf) === String(cpf)) snapshot = f;
+        });
+        if (snapshot) {
+            dados.av = Object.assign({}, snapshot.av || {}, dados.av || {});
+            ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
+                dados.av[k] = Object.assign({}, (snapshot.av || {})[k] || {}, (dados.av || {})[k] || {});
+            });
+            var presencasCurso = [];
+            resultado[2].forEach(function (d) {
+                var pr = d.data() || {};
+                if (String(pr.cpf) === String(cpf)) presencasCurso.push(pr);
+            });
+            if (presencasCurso.length) dados.presencas = presencasCurso;
+            else if (snapshot.presencas) dados.presencas = snapshot.presencas;
+        }
+        var calc = (typeof fichaGeralCalcular === 'function') ? fichaGeralCalcular(p, dados, aulas) : null;
+        ccAvalCache = { p: p, calc: calc, aulas: aulas, dados: dados };
+        var tit = document.getElementById('cc-generico-titulo'); var body = document.getElementById('cc-generico-body'); var m = document.getElementById('cc-modal-generico');
+        if (tit) tit.textContent = 'Avaliação - ' + (p.nome || '');
+        if (body) body.innerHTML = ccAvalRenderModal();
+        if (m) m.classList.remove('hidden');
+    } catch (e) { alert('Erro ao abrir avaliação: ' + e.message); }
+}
+
+function ccAvalRenderModal() {
+    var c = ccAvalCache; if (!c) return '';
+    var abas = [
+        ['apontamento','Apontamento'], ['comportamento','Comportamento'],
+        ['teorica','Teórica'], ['pratica','Prática'],
+        ['final_teorica','Final Teórica'], ['final_pratica','Final Prática'], ['resultado','Resultado']
+    ];
+    var html = '<div style="display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-bottom:14px">'
+        + abas.map(function (a) {
+            return '<button class="btn-outline btn-sm" onclick="ccAvalSetAba(\'' + a[0] + '\')" style="'
+                + (ccAvalAba === a[0] ? 'background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;font-weight:800' : '') + '">'
+                + a[1] + '</button>';
+        }).join('') + '</div><div id="cc-avaliacao-conteudo">' + ccAvalRenderAba() + '</div>';
+    return html;
+}
+function ccAvalSetAba(aba) {
+    ccAvalAba = aba;
+    var box = document.getElementById('cc-avaliacao-conteudo');
+    if (box) box.innerHTML = ccAvalRenderAba();
+    var modal = document.getElementById('cc-generico-body');
+    if (modal) modal.innerHTML = ccAvalRenderModal();
+}
+function ccAvalLinha(rotulo, valor) {
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px">'
+        + '<span style="color:#64748b">' + ccEsc(rotulo) + '</span><b style="color:#0f172a">' + ccEsc(valor == null || valor === '' ? '—' : valor) + '</b></div>';
+}
+function ccAvalRenderAba() {
+    var c = ccAvalCache; if (!c || !c.calc) return '<p style="color:#94a3b8">Sem dados calculados.</p>';
+    var calc = c.calc, av = c.dados.av || {};
+    var html = '';
+    if (ccAvalAba === 'apontamento') {
+        html = '<h4 style="margin:0 0 10px;font-size:14px">Apontamento de presença</h4>'
+            + ccAvalLinha('Aulas da turma', calc.totalAulas)
+            + ccAvalLinha('Presentes', calc.pres)
+            + ccAvalLinha('Faltas', calc.fal)
+            + ccAvalLinha('Justificadas', calc.just)
+            + ccAvalLinha('Percentual', calc.pct + '%')
+            + '<div style="margin-top:10px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">'
+            + c.aulas.todas.map(function (a) {
+                var pr = (calc.presencasTurma || []).find(function (p) { return p.aulaId === a._id; });
+                return '<div style="display:flex;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px">'
+                    + '<span style="color:#64748b;width:80px">' + ccEsc(a.data || '') + '</span>'
+                    + '<span style="flex:1">' + ccEsc(a.conteudo || a.disciplina || '') + '</span>'
+                    + '<b style="color:' + (pr && pr.status === 'Presente' ? '#16a34a' : '#dc2626') + '">' + ccEsc(pr ? pr.status : 'Sem registro') + '</b></div>';
+            }).join('') + '</div>';
+    } else if (ccAvalAba === 'comportamento') {
+        html = '<h4 style="margin:0 0 10px;font-size:14px">AV Comportamento</h4>'
+            + ccAvalLinha('FO positivos', calc.foP)
+            + ccAvalLinha('FO negativos', calc.foN)
+            + ccAvalLinha('Pontos', (calc.pontosComp >= 0 ? '+' : '') + calc.pontosComp);
+        (av.foPositivos || []).forEach(function (f) { html += ccAvalLinha('FO+ ' + (f.data || ''), f.obs || ''); });
+        (av.foNegativos || []).forEach(function (f) { html += ccAvalLinha('FO- ' + (f.data || ''), f.obs || ''); });
+    } else if (ccAvalAba === 'teorica' || ccAvalAba === 'pratica') {
+        var pratica = ccAvalAba === 'pratica';
+        var lista = pratica ? c.aulas.pratica : c.aulas.teorica;
+        var notas = pratica ? (av.notasPraticas || {}) : (av.notasTeoricas || {});
+        html = '<h4 style="margin:0 0 10px;font-size:14px">AV ' + (pratica ? 'Prática' : 'Teórica') + '</h4>'
+            + ccAvalLinha('Média', pratica ? calc.notaPrat : calc.notaTeor);
+        html += '<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-top:8px">'
+            + lista.map(function (a) {
+                return '<div style="display:flex;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px">'
+                    + '<span style="color:#64748b;width:80px">' + ccEsc(a.data || '') + '</span>'
+                    + '<span style="flex:1">' + ccEsc(a.conteudo || a.disciplina || '') + '</span>'
+                    + '<b>' + ccEsc(notas[a._id] != null ? notas[a._id] : '—') + '</b></div>';
+            }).join('') + '</div>';
+    } else if (ccAvalAba === 'final_teorica' || ccAvalAba === 'final_pratica') {
+        var ft = ccAvalAba === 'final_teorica';
+        html = '<h4 style="margin:0 0 10px;font-size:14px">AV Final ' + (ft ? 'Teórica' : 'Prática') + '</h4>'
+            + ccAvalLinha('Nota', ft ? (calc.avFinalTeorica === '' ? '—' : calc.avFinalTeorica) : (calc.avFinalPratica === '' ? '—' : calc.avFinalPratica))
+            + ccAvalLinha('Média manual', ft ? (av.mediaTeoricaManual || '—') : (av.mediaPraticaManual || '—'));
+        var manuais = ft ? (av.avTeoricaManual || {}) : (av.avPraticaManual || {});
+        Object.keys(manuais).forEach(function (k) {
+            var m = manuais[k] || {};
+            html += ccAvalLinha(m.avaliacaoNome || 'Avaliação', m.nota != null ? m.nota : '—');
+        });
+    } else {
+        html = '<h4 style="margin:0 0 10px;font-size:14px">Resultado final</h4>'
+            + ccAvalLinha('Média Teórica', calc.mT)
+            + ccAvalLinha('Média Prática', calc.mP)
+            + ccAvalLinha('Média (T+P)/2', calc.mediaFinal)
+            + ccAvalLinha('Comportamento', calc.pontosComp)
+            + ccAvalLinha('AV Final', calc.avFinal)
+            + ccAvalLinha('FIN', calc.fin)
+            + ccAvalLinha('Nota Certificadora', calc.notaCertificadora)
+            + '<div style="margin-top:12px;text-align:center;padding:10px;border-radius:8px;background:'
+            + (calc.aprovado ? '#dcfce7;color:#166534' : '#fee2e2;color:#991b1b') + ';font-weight:800">'
+            + (calc.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</div>';
+    }
+    return html;
+}
+
+/* Importa da Seção de Avaliação do administrador os dados ligados a turma. */
+async function ccImportarDadosAvaliacao() {
+    var turma = ccExigirTurma(); if (!turma) return;
+    try {
+        var snapCand = await ccDb().collection('candidatos').where('turma', '==', turma).get();
+        if (snapCand.empty) { alert('Nenhum indivíduo encontrado nesta turma no administrador.'); return; }
+        if (!confirm('Importar os dados da Seção de Avaliação da turma ' + turma + ' para este curso?')) return;
+        var cpfs = [];
+        snapCand.forEach(function (d) { var c = d.data() || {}; if (c.cpf) cpfs.push(String(c.cpf)); });
+        var ok = 0;
+        for (var i = 0; i < cpfs.length; i++) {
+            var cpf = cpfs[i];
+            var avDoc = await ccDb().collection('avaliacoesAlunos').doc(cpf).get();
+            var pres = await ccDb().collection('presencasAlunos').where('cpf', '==', cpf).get();
+            var presencas = [];
+            pres.forEach(function (d) { presencas.push(Object.assign({ _id: d.id }, d.data() || {})); });
+            if (!avDoc.exists && !presencas.length) continue;
+            var av = avDoc.exists ? (avDoc.data() || {}) : {};
+            await ccRef('fichaAvaliacoes', cpf).set({
+                cpf: cpf, av: av, presencas: presencas,
+                turmaOrigem: turma, cursoId: ccAtual._id, importadoEm: new Date().toISOString()
+            });
+            ok++;
+        }
+        await ccSincronizarFicha(true);
+        ccInitAvaliacao();
+        alert(ok + ' avaliação(ões) importada(s) da turma ' + turma + '.');
+    } catch (e) { alert('Erro ao importar avaliações: ' + e.message); }
 }
 
 /* ============ ABA CERTIFICADOS DO CURSO ============ */
