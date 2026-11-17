@@ -6892,7 +6892,7 @@ function renderProjetosList() {
     tbody.innerHTML = html;
 }
 
-async /* Remove projetos duplicados (mesmo nome com grafia diferente), mantendo um
+/* Remove projetos duplicados (mesmo nome com grafia diferente), mantendo um
    e redirecionando as turmas/cadastros que usavam os nomes repetidos. */
 async function projetosMesclarDuplicatas() {
     var grupos = {};
