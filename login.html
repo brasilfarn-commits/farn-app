@@ -66,7 +66,7 @@
         async function fazerLogin(ev) {
             if (ev) ev.preventDefault();
             var cpf = soDigitos((document.getElementById('lg-cpf') || {}).value);
-            var senha = (document.getElementById('lg-senha') || {}).value || '';
+            var senha = String((document.getElementById('lg-senha') || {}).value || '').trim();
             var btn = document.getElementById('lg-btn');
             var e = document.getElementById('lg-erro'); if (e) e.style.display = 'none';
             if (cpf.length !== 11 || !senha) { erro('Informe CPF e senha.'); return false; }
@@ -102,7 +102,7 @@
                     });
                     if (user) { encontrado = user; break; }
                 }
-                if (!encontrado) { erro('CPF/senha inválidos ou cadastro não está Ativo.'); }
+                if (!encontrado) { erro('CPF/senha inválidos ou cadastro não está Ativo. (CPF lido: ' + cpf + ')'); }
                 else {
                     localStorage.setItem('pu_sessao', JSON.stringify(encontrado));
                     localStorage.setItem('farn_user_data', JSON.stringify(encontrado));
