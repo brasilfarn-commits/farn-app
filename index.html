@@ -785,7 +785,7 @@
         window.addEventListener('unhandledrejection', function (e) { mostrar('ERRO PROMessa: ' + ((e.reason && e.reason.message) || e.reason)); });
     })();
     </script>
-    <script src="farn-db.js?v=2"></script>
+    <script src="farn-db.js?v=3"></script>
     <script>
     (function () {
         function atualizarSync() {
@@ -2165,6 +2165,15 @@
                                     <small>Remove as imagens em base64 do Firestore e deixa só URLs</small>
                                     <button class="btn-primary" style="margin-top:12px" onclick="event.stopPropagation(); fsMigrarFotosInterface()">
                                         <i class="fa-solid fa-cloud-arrow-up"></i> Migrar fotos
+                                    </button>
+                                </div>
+                                <!-- Limpar cache local do banco -->
+                                <div class="config-card" onclick="farnLimparCache()">
+                                    <i class="fa-solid fa-broom"></i>
+                                    <span>Limpar cache local e recarregar</span>
+                                    <small>Força a leitura dos dados direto do banco online</small>
+                                    <button class="btn-primary" style="margin-top:12px" onclick="event.stopPropagation(); farnLimparCache()">
+                                        <i class="fa-solid fa-rotate"></i> Limpar e recarregar
                                     </button>
                                 </div>
                                 <!-- Novos botoes: Backup e Restaurar -->

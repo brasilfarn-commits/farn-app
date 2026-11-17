@@ -20,7 +20,11 @@
     this.timer = null;
     this.online = true;
     this.fila = [];
+    this._carregadas = {};
     this._carregarLocal();
+    /* Sempre reconcilia desde o inicio: um since antigo com cache vazio
+       deixaria o sistema sem dados mesmo com o banco cheio. */
+    this.since = 0;
     var self = this;
     window.addEventListener('online', function () { self.online = true; self._flush(); self._poll(); });
     window.addEventListener('offline', function () { self.online = false; });
@@ -78,21 +82,33 @@
     return dados;
   };
 
+  FarnDB.prototype._buscarColecao = async function (col) {
+    try {
+      var r = await this._req('/api/all?col=' + encodeURIComponent(col));
+      var mapa = {};
+      (r.docs || []).forEach(function (d) { mapa[d.id] = d.data; });
+      this.cache[col] = mapa;
+      this._salvarLocal();
+      this.online = true;
+      this._avisarTodos();
+    } catch (e) {
+      this.online = false;
+    }
+  };
+
   FarnDB.prototype._todos = async function (col) {
-    if (!this.cache[col]) {
-      try {
-        var r = await this._req('/api/all?col=' + encodeURIComponent(col));
-        var mapa = {};
-        (r.docs || []).forEach(function (d) { mapa[d.id] = d.data; });
-        this.cache[col] = mapa;
-        this._salvarLocal();
-        this.online = true;
-      } catch (e) {
-        this.online = false;
-        this.cache[col] = {};   // funciona vazio enquanto offline
+    if (!this._carregadas[col]) {
+      this._carregadas[col] = true;
+      var temLocal = !!(this.cache[col] && Object.keys(this.cache[col]).length);
+      if (temLocal) {
+        /* Mostra o cache na hora e atualiza em segundo plano. */
+        this._buscarColecao(col).catch(function () {});
+      } else {
+        await this._buscarColecao(col);
+        if (!this.cache[col]) this.cache[col] = {};
       }
     }
-    return this.cache[col];
+    return this.cache[col] || {};
   };
 
   FarnDB.prototype._iniciarPolling = function () {
@@ -300,6 +316,15 @@
     return new DocRef(this, col, id);
   };
   FarnDB.prototype.batch = function () { return new Batch(this); };
+
+  /* Utilitario: descarta o espelho local e volta a ler tudo do servidor. */
+  global.farnLimparCache = function () {
+    try {
+      localStorage.removeItem(KEY_CACHE);
+      localStorage.removeItem(KEY_SINCE);
+    } catch (e) {}
+    if (confirm('Cache local removido. Recarregar a pagina agora?')) location.reload();
+  };
 
   global.FarnDB = FarnDB;
   global.FarnFieldValue = {
