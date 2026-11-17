@@ -205,6 +205,8 @@
     var db = this._db;
     return function () { db.listeners = db.listeners.filter(function (l) { return l !== listener; }); };
   };
+  /* CollectionReference tambem precisa de doc() (o app usa collection().doc()). */
+  Query.prototype.doc = function (id) { return new DocRef(this._db, this._col, id); };
   Query.prototype.add = function (data) {
     var id = String(Date.now()) + Math.random().toString(36).slice(2, 8);
     var limpo = limpar(data);
