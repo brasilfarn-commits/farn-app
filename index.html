@@ -770,6 +770,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <div id="farn-debug-erro" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999999;background:#b91c1c;color:#fff;padding:14px 16px;font:bold 16px monospace;word-break:break-word;user-select:text;cursor:text"></div>
+    <div id="farn-debug-dados" style="position:fixed;bottom:0;right:0;z-index:99999;background:#0f172a;color:#a5f3fc;padding:6px 10px;font:11px monospace;opacity:.85"></div>
     <script>
     (function () {
         function mostrar(msg) {
@@ -796,7 +797,14 @@
             else if (s.pendentes) { el.textContent = 'Sincronizando (' + s.pendentes + ')'; el.style.background = '#dbeafe'; el.style.color = '#1e40af'; }
             else { el.textContent = 'Sincronizado'; el.style.background = '#dcfce7'; el.style.color = '#166534'; }
         }
-        setInterval(atualizarSync, 2000);
+        function atualizarDados() {
+            var el = document.getElementById('farn-debug-dados');
+            if (!el || typeof dbFirestore === 'undefined') return;
+            var c = dbFirestore.cache || {};
+            function n(k) { return (c[k] && Object.keys(c[k]).length) || 0; }
+            el.textContent = 'Banco no navegador: Projetos ' + n('parceiros') + ' | Cadastros ' + n('candidatos') + ' | Turmas ' + n('turmas');
+        }
+        setInterval(function () { atualizarSync(); atualizarDados(); }, 2000);
         window.addEventListener('online', atualizarSync);
         window.addEventListener('offline', atualizarSync);
     })();
@@ -6170,7 +6178,7 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=111"></script>
+    <script src="app.js?v=112"></script>
     <script src="recad-admin.js?v=1"></script>
     <script src="cadastro-cursos.js?v=10"></script>
     <script src="noticias-slider.js?v=1"></script>
