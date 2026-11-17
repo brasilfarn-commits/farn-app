@@ -648,20 +648,28 @@ function fichaGeralCalcular(c, dados, aulas) {
     // AV Teorica / Pratica (medias automaticas): soma de todas as notas
     // registradas dividida pela quantidade de aulas daquele tipo (aula sem
     // nota conta 0 no denominador).
-    let somaT = 0;
+    let somaT = 0, qtdT = 0;
     const totalT = (aulas.teorica || []).length;
     (aulas.teorica || []).forEach(a => {
-        const n = parseFloat((av.notasTeoricas || {})[a._id]);
-        if (!isNaN(n) && n >= 0) somaT += n;
+        const mapa = av.notasTeoricas || {};
+        const raw = mapa[a._id] != null ? mapa[a._id] : mapa[a.aulaId];
+        const n = parseFloat(raw);
+        if (!isNaN(n) && n >= 0) { somaT += n; qtdT++; }
     });
-    const notaTeor = totalT ? Math.round((somaT / totalT) * 10) / 10 : 0;
-    let somaP = 0;
+    /* Nos cursos as aulas importadas ganham novo ID; usa a media das notas
+       quando nao ha aulas marcadas como AV Teorica no subcolecao do curso. */
+    const notaTeor = totalT ? Math.round((somaT / totalT) * 10) / 10
+        : (qtdT ? Math.round((somaT / qtdT) * 10) / 10 : 0);
+    let somaP = 0, qtdP = 0;
     const totalP = (aulas.pratica || []).length;
     (aulas.pratica || []).forEach(a => {
-        const n = parseFloat((av.notasPraticas || {})[a._id]);
-        if (!isNaN(n) && n >= 0) somaP += n;
+        const mapa = av.notasPraticas || {};
+        const raw = mapa[a._id] != null ? mapa[a._id] : mapa[a.aulaId];
+        const n = parseFloat(raw);
+        if (!isNaN(n) && n >= 0) { somaP += n; qtdP++; }
     });
-    const notaPrat = totalP ? Math.round((somaP / totalP) * 10) / 10 : 0;
+    const notaPrat = totalP ? Math.round((somaP / totalP) * 10) / 10
+        : (qtdP ? Math.round((somaP / qtdP) * 10) / 10 : 0);
     // Media teorica e pratica finais: manual se preenchida; senao automatica.
     const mT = fichaGeralMediaFinal(av.mediaTeoricaManual, notaTeor);
     const mP = fichaGeralMediaFinal(av.mediaPraticaManual, notaPrat);

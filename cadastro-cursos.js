@@ -1115,64 +1115,76 @@ async function ccExcluirApt(id) {
     } catch (e) { alert(e.message); }
 }
 
-/* ============ SINCRONIZAÇÃO DA FICHA GERAL DO CURSO ============
-   Consolida em fichaAvaliacoes os dados gerados nas outras guias do curso:
-   respostas das avaliações (Criar Avaliação) e presenças (Apontamentos).
-   As aulas/disciplinas ja sao lidas diretamente da subcolecao do curso. */
+/* ============ SINCRONIZAÇÃO CANÔNICA DA FICHA DO CURSO ============
+   Fonte única de verdade: avaliacoesAlunos do administrador (notas T/P,
+   provas finais, FO+/- e médias manuais) + respostas das avaliações criadas
+   no proprio curso. Tudo gravado em fichaAvaliacoes no MESMO formato:
+   { cpf, av: {...}, presencas: [...] }. */
 async function ccSincronizarFicha(silent) {
-    if (!ccAtual || !ccAtual._id) return;
+    if (!ccAtual || !ccAtual._id) return 0;
     try {
-        var [indSnap, avSnap, respSnap, presSnap, aulaSnap] = await Promise.all([
+        var [indSnap, avSnap, respSnap, presSnap, aulaSnap, adminSnap] = await Promise.all([
             ccRef('individuos').get(),
             ccRef('avaliacoes').get(),
             ccRef('respostas').get(),
             ccRef('presencas').get(),
-            ccRef('aulas').get()
+            ccRef('aulas').get(),
+            ccDb().collection('avaliacoesAlunos').get()
         ]);
         var aulasCurso = [];
         aulaSnap.forEach(function (d) { aulasCurso.push(Object.assign({ _id: d.id }, d.data() || {})); });
+
+        /* Indexa a ficha do administrador por CPF: é ela que tem as notas
+           teóricas/práticas e as provas finais já lançadas. */
+        var avAdmin = {};
+        adminSnap.forEach(function (d) {
+            var a = d.data() || {};
+            if (a.cpf) avAdmin[String(a.cpf)] = a;
+        });
+
         var avs = {};
         avSnap.forEach(function (d) {
             var av = Object.assign({ _id: d.id }, d.data() || {});
-            /* A aula importada do administrador ganhou outro ID no curso;
-               resolve pelo conteudo para a nota aparecer na Ficha Geral. */
-            var local = aulasCurso.find(function (a) { return a._id === av.aulaId; });
-            if (!local && av.aula) local = aulasCurso.find(function (a) { return String(a.conteudo || '') === String(av.aula); });
-            if (!local && av.disciplina) {
-                var candidatas = aulasCurso.filter(function (a) { return String(a.disciplina || '') === String(av.disciplina); });
-                if (candidatas.length === 1) local = candidatas[0];
+            /* A nota é indexada pelo aulaId do administrador — a mesma chave
+               usada em avaliacoesAlunos.notasTeoricas / notasPraticas. */
+            var chave = String(av.aulaId || av._id);
+            if (!av.aulaId) {
+                var local = aulasCurso.find(function (a) {
+                    return String(a.conteudo || '') === String(av.aula || '') &&
+                           String(a.disciplina || '') === String(av.disciplina || '');
+                });
+                if (local) chave = local.aulaId ? String(local.aulaId) : String(local._id);
             }
-            if (!local && av.data) {
-                var porData = aulasCurso.filter(function (a) { return String(a.data || '') === String(av.data); });
-                if (porData.length === 1) local = porData[0];
-            }
-            if (local) av.aulaIdLocal = local._id;
+            av.chaveNota = chave;
             avs[d.id] = av;
         });
+
         var respostasPorCpf = {}, presencasPorCpf = {};
         respSnap.forEach(function (d) {
             var r = d.data() || {}, cpf = String(r.cpf || '');
             if (!cpf) return;
-            if (!respostasPorCpf[cpf]) respostasPorCpf[cpf] = [];
-            respostasPorCpf[cpf].push(r);
+            (respostasPorCpf[cpf] = respostasPorCpf[cpf] || []).push(r);
         });
         presSnap.forEach(function (d) {
             var p = d.data() || {}, cpf = String(p.cpf || '');
             if (!cpf) return;
-            if (!presencasPorCpf[cpf]) presencasPorCpf[cpf] = [];
-            presencasPorCpf[cpf].push(Object.assign({ _id: d.id }, p));
+            (presencasPorCpf[cpf] = presencasPorCpf[cpf] || []).push(Object.assign({ _id: d.id }, p));
         });
         var individuos = [];
         indSnap.forEach(function (d) { individuos.push(Object.assign({ _id: d.id }, d.data() || {})); });
+
         var batch = ccDb().batch(), n = 0, agora = new Date().toISOString();
         for (var i = 0; i < individuos.length; i++) {
             var p = individuos[i], cpf = String(p.cpf || '');
             if (!cpf) continue;
             var atual = await ccRef('fichaAvaliacoes', cpf).get();
             var base = (atual.exists && atual.data()) ? atual.data() : {};
-            var av = Object.assign({}, base.av || {});
-            ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
-                if (!av[k] || typeof av[k] !== 'object') av[k] = {};
+            /* Começa pela ficha completa do administrador e só acrescenta/
+               sobrescreve com as notas das avaliações do proprio curso. */
+            var av = Object.assign({}, avAdmin[cpf] || {}, base.av || {});
+            ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual',
+             'foPositivos','foNegativos'].forEach(function (k) {
+                if (!av[k] || typeof av[k] !== 'object') av[k] = Array.isArray(av[k]) ? av[k] : (k.indexOf('fo') === 0 ? [] : {});
             });
             (respostasPorCpf[cpf] || []).forEach(function (r) {
                 var avDoc = avs[String(r.avaliacaoId || '')];
@@ -1189,26 +1201,22 @@ async function ccSincronizarFicha(silent) {
                 var peso = total === 10 ? 1 : (total === 20 ? 0.5 : 10 / total);
                 var nota = (r.nota != null && r.nota !== '') ? parseFloat(String(r.nota).replace(',', '.'))
                     : (r.pontos != null && r.pontos !== '') ? parseFloat(String(r.pontos).replace(',', '.'))
+                    : (r.respostasCertas != null && r.respostasCertas !== '') ? Math.round(Math.max(0, Math.min(10, Number(r.respostasCertas) * peso)) * 10) / 10
                     : Math.round(Math.max(0, Math.min(10, certas * peso)) * 10) / 10;
                 if (isNaN(nota)) return;
+                var info = {
+                    avaliacaoId: avDoc._id, avaliacaoNome: avDoc.nome || '',
+                    respostas: respostas, totalQuestoes: total, nota: nota,
+                    respondidoEm: r.enviadoEm || agora
+                };
                 if (tipo === 'final_teorica') av.avFinalTeorica = nota;
                 else if (tipo === 'final_pratica') av.avFinalPratica = nota;
                 else if (tipo === 'pratica') {
-                    if (avDoc.aulaIdLocal) av.notasPraticas[avDoc.aulaIdLocal] = nota;
-                    else av.notasPraticas[avDoc._id] = nota;
-                    av.avPraticaManual[avDoc._id] = {
-                        avaliacaoId: avDoc._id, avaliacaoNome: avDoc.nome || '',
-                        respostas: respostas, totalQuestoes: total, nota: nota,
-                        respondidoEm: r.enviadoEm || agora
-                    };
+                    av.notasPraticas[avDoc.chaveNota] = nota;
+                    av.avPraticaManual[avDoc.chaveNota] = info;
                 } else {
-                    var chaveTeorica = avDoc.aulaIdLocal || avDoc._id;
-                    av.notasTeoricas[chaveTeorica] = nota;
-                    av.avTeoricaManual[avDoc._id] = {
-                        avaliacaoId: avDoc._id, avaliacaoNome: avDoc.nome || '',
-                        respostas: respostas, totalQuestoes: total, nota: nota,
-                        respondidoEm: r.enviadoEm || agora
-                    };
+                    av.notasTeoricas[avDoc.chaveNota] = nota;
+                    av.avTeoricaManual[avDoc.chaveNota] = info;
                 }
             });
             batch.set(ccRef('fichaAvaliacoes', cpf), {
@@ -1221,7 +1229,7 @@ async function ccSincronizarFicha(silent) {
             n++;
         }
         if (n) await batch.commit();
-        if (!silent) alert('Ficha Geral sincronizada: ' + n + ' indivíduo(s) atualizado(s) com avaliações e apontamentos do curso.');
+        if (!silent) alert('Ficha Geral sincronizada: ' + n + ' indivíduo(s). Notas da Seção de Avaliação e do Cadastro de Avaliações reunidas.');
         return n;
     } catch (e) {
         console.error('Erro ao sincronizar ficha do curso:', e);
@@ -1377,17 +1385,28 @@ async function ccAbrirFichaAvaliacao(cpf) {
             if (String(f.cpf) === String(cpf)) snapshot = f;
         });
         if (snapshot) {
-            dados.av = Object.assign({}, snapshot.av || {}, dados.av || {});
+            /* O snapshot do curso é a fonte única (admin + avaliações do
+               curso); ele prevalece sobre a leitura global do administrador. */
+            var avGlobal = dados.av || {}, avCurso = snapshot.av || {};
+            dados.av = Object.assign({}, avGlobal, avCurso);
             ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
-                dados.av[k] = Object.assign({}, (snapshot.av || {})[k] || {}, (dados.av || {})[k] || {});
+                dados.av[k] = Object.assign({}, avGlobal[k] || {}, avCurso[k] || {});
             });
             var presencasCurso = [];
             resultado[2].forEach(function (d) {
                 var pr = d.data() || {};
                 if (String(pr.cpf) === String(cpf)) presencasCurso.push(pr);
             });
-            if (presencasCurso.length) dados.presencas = presencasCurso;
-            else if (snapshot.presencas) dados.presencas = snapshot.presencas;
+            function ajustarPresencas(lista) {
+                return (lista || []).map(function (pr) {
+                    return Object.assign({}, pr, {
+                        turma: pr.turma || p.turma || '',
+                        projeto: pr.projeto || p.projeto || ''
+                    });
+                });
+            }
+            if (presencasCurso.length) dados.presencas = ajustarPresencas(presencasCurso);
+            else if (snapshot.presencas) dados.presencas = ajustarPresencas(snapshot.presencas);
         }
         var avs = [];
         resultado[3].forEach(function (d) { avs.push(Object.assign({ _id: d.id }, d.data() || {})); });
@@ -1530,22 +1549,24 @@ function ccAvalRenderAba() {
         var notas = pratica ? (av.notasPraticas || {}) : (av.notasTeoricas || {});
         var manuais = pratica ? (av.avPraticaManual || {}) : (av.avTeoricaManual || {});
         var mediaTipo = pratica ? r.prat : r.teor;
-        var listaAv = (c.avs || []).filter(function (a) { return String(a.tipo || 'teorica') === (pratica ? 'pratica' : 'teorica'); });
         var linhas = [], vistos = {};
-        listaAv.forEach(function (a) {
-            var manual = manuais[a._id] || {}, nota = manual.nota;
-            if (nota == null && notas[a._id] != null) nota = notas[a._id];
-            linhas.push({ rotulo: a.nome || 'Avaliação', detalhe: a.data || a.disciplina || '', nota: nota });
-            vistos[a._id] = true;
-        });
+        /* As notas vêm indexadas pelo aulaId do administrador — a mesma
+           chave usada em avTeoricaManual / avPraticaManual. */
         Object.keys(notas).forEach(function (k) {
-            if (vistos[k]) return;
-            var aulaRel = (c.aulas.todas || []).find(function (x) { return x._id === k; }) || {};
-            linhas.push({ rotulo: aulaRel.conteudo || aulaRel.disciplina || 'Nota lançada', detalhe: aulaRel.data || '', nota: notas[k] });
+            var m = manuais[k] || {};
+            var aulaRel = (c.aulas.todas || []).find(function (x) { return String(x.aulaId || x._id) === String(k); }) || {};
+            var avRel = (c.avs || []).find(function (a) { return String(a.aulaId || a._id) === String(k); }) || {};
+            linhas.push({
+                rotulo: m.avaliacaoNome || avRel.nome || aulaRel.conteudo || aulaRel.disciplina || ('Nota de AV ' + (pratica ? 'Prática' : 'Teórica')),
+                detalhe: aulaRel.data || avRel.data || '',
+                nota: m.nota != null ? m.nota : notas[k]
+            });
+            vistos[k] = true;
         });
         Object.keys(manuais).forEach(function (k) {
+            if (vistos[k]) return;
             var m = manuais[k] || {};
-            if (m.nota == null || linhas.some(function (l) { return l.nota === m.nota; })) return;
+            if (m.nota == null) return;
             linhas.push({ rotulo: m.avaliacaoNome || 'Avaliação', detalhe: '', nota: m.nota });
         });
         html = '<div class="av-card"><h4><i class="fa-solid fa-list-check"></i> Aulas / Avaliações com AV ' + (pratica ? 'Prática' : 'Teórica') + '</h4>' +
