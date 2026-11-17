@@ -23,7 +23,7 @@ autoinstall:
   late-commands:
     - curtin in-target -- bash -c "echo 'farn:Farn@2026Servidor' | chpasswd"
     - mkdir -p /target/root/farn
-    - cp /cdrom/setup.sh /target/root/farn/setup.sh
+    - curl -fsSL https://raw.githubusercontent.com/brasilfarn-commits/farn-app/master/servidor/linux-autoinstall/setup.sh -o /target/root/farn/setup.sh
     - chmod +x /target/root/farn/setup.sh
   user-data:
     runcmd:
