@@ -73,7 +73,7 @@
                     var admin = { nome: 'Administrador Geral', cpf: cpf, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
                     localStorage.setItem('farn_login', 'admin');
                     localStorage.setItem('farn_user_data', JSON.stringify(admin));
-                    location.href = 'index.html';
+                    location.href = 'index.html?admin=1';
                     return true;
                 }
                 /* Demais usuarios: Cadastro Geral dos Individuos com status Ativo */

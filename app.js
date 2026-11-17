@@ -959,7 +959,10 @@ async function initFirebaseListeners() {
 async function initApp() {
     /* Sessão administrativa vinda de login.html: mostra o painel na hora,
        antes de aguardar o carregamento dos dados do banco. */
-    var sessaoAdmin = restoreLoginState();
+    var porUrl = false;
+    try { porUrl = new URLSearchParams(location.search).has('admin'); } catch (e) {}
+    var sessaoAdmin = restoreLoginState() || porUrl;
+    if (porUrl) saveLoginState();
     if (sessaoAdmin) {
         document.body.classList.remove('landing-mode');
         document.getElementById('screen-login').classList.remove('active');
