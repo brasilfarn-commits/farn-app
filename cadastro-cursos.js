@@ -1268,11 +1268,23 @@ async function ccInitFicha() {
                 var dados = await fichaGeralDadosAluno(p);
                 var snapshot = fichasSnapshot[String(p.cpf)];
                 if (snapshot) {
-                    dados.av = Object.assign({}, snapshot, dados.av || {});
+                    /* O nucleo da Ficha Geral calcula com dados.av; o snapshot
+                       do curso tem tudo que veio de Apontamento e Avaliacoes. */
+                    var avCurso = snapshot.av || snapshot;
+                    dados.av = Object.assign({}, dados.av || {}, avCurso);
                     ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
-                        dados.av[k] = Object.assign({}, snapshot[k] || {}, (dados.av && dados.av[k]) || {});
+                        dados.av[k] = Object.assign({}, (dados.av && dados.av[k]) || {}, avCurso[k] || {});
                     });
-                    if (snapshot.presencas && snapshot.presencas.length) dados.presencas = snapshot.presencas;
+                    /* Presencas do curso precisam da turma/projeto para o
+                       calculo de presenca da Ficha Geral nao descarta-las. */
+                    if (snapshot.presencas && snapshot.presencas.length) {
+                        dados.presencas = snapshot.presencas.map(function (pr) {
+                            return Object.assign({}, pr, {
+                                turma: pr.turma || p.turma || '',
+                                projeto: pr.projeto || p.projeto || ''
+                            });
+                        });
+                    }
                 }
                 var calc = fichaGeralCalcular(p, dados, aulas);
                 if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = ccAtual.nome;
