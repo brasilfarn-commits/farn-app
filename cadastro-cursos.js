@@ -1327,6 +1327,53 @@ async function ccSincronizarFicha(silent) {
     }
 }
 
+/* Vincula os quadros AV Teórica/Prática da Ficha Geral aos registros da guia
+   Criar Avaliação. Cada avaliação vira uma linha do quadro, com o nome da AV,
+   e a nota é lida pela mesma chave (aulaId) usada na sincronização. */
+function ccDataAvFicha(v) {
+    if (!v) return '';
+    if (typeof v === 'object' && typeof v.toDate === 'function') {
+        try { return v.toDate().toLocaleDateString('pt-BR'); } catch (e) {}
+    }
+    if (v instanceof Date) return v.toLocaleDateString('pt-BR');
+    var s = String(v);
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        var d = new Date(s);
+        if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR');
+    }
+    return s;
+}
+function ccAulasDaFicha(avaliacoes, aulasReais) {
+    var todas = (aulasReais || []).slice();
+    function doTipo(tipo, flag) {
+        var lista = (avaliacoes || []).filter(function (a) { return String(a.tipo || 'teorica') === tipo; });
+        /* Sem avaliação cadastrada no quadro, mantém o comportamento antigo
+           (aulas marcadas como AV Teórica/Prática). */
+        if (!lista.length) {
+            return (aulasReais || []).filter(function (a) { return a[flag] === 'Sim'; });
+        }
+        var vistos = {}, out = [];
+        lista.forEach(function (a) {
+            var chave = String(a.aulaId || a._id);
+            if (vistos[chave]) return;
+            vistos[chave] = true;
+            out.push({
+                _id: chave,
+                aulaId: a.aulaId || '',
+                data: ccDataAvFicha(a.data || a.dataAula || a.criadoEm),
+                disciplina: a.disciplina || '',
+                conteudo: a.nome || a.aula || 'Avaliação',
+                avTeorica: tipo === 'teorica' ? 'Sim' : '',
+                avPratica: tipo === 'pratica' ? 'Sim' : '',
+                _avaliacaoId: a._id,
+                _vinculadoCriarAvaliacao: true
+            });
+        });
+        return out;
+    }
+    return { todas: todas, teorica: doTipo('teorica', 'avTeorica'), pratica: doTipo('pratica', 'avPratica') };
+}
+
 /* Vincula os apontamentos da guia Apontamentos aos registros da Ficha Geral. */
 async function ccSincronizarApontamentosFicha() {
     try {
@@ -1348,20 +1395,21 @@ async function ccInitFicha() {
         var resultado = await Promise.all([
             ccRef('individuos').get(),
             ccRef('aulas').orderBy('data').get(),
-            ccRef('fichaAvaliacoes').get()
+            ccRef('fichaAvaliacoes').get(),
+            ccRef('avaliacoes').get()
         ]);
         var fichasSnapshot = {};
         resultado[2].forEach(function (d) {
             var f = d.data() || {};
             if (f.cpf) fichasSnapshot[String(f.cpf)] = f;
         });
-        var aulas = { todas: [], teorica: [], pratica: [] };
+        var aulasReais = [];
         resultado[1].forEach(function (d) {
-            var a = Object.assign({ _id: d.id }, d.data() || {});
-            aulas.todas.push(a);
-            if (a.avTeorica === 'Sim') aulas.teorica.push(a);
-            if (a.avPratica === 'Sim') aulas.pratica.push(a);
+            aulasReais.push(Object.assign({ _id: d.id }, d.data() || {}));
         });
+        var avsFicha = [];
+        resultado[3].forEach(function (d) { avsFicha.push(Object.assign({ _id: d.id }, d.data() || {})); });
+        var aulas = ccAulasDaFicha(avsFicha, aulasReais);
         var pessoas = [];
         resultado[0].forEach(function (d) { pessoas.push(Object.assign({ _id: d.id }, d.data() || {})); });
         ccFichaCache = [];
@@ -1511,13 +1559,13 @@ async function ccAbrirFichaAvaliacao(cpf) {
             ccRef('presencas').get(),
             ccRef('avaliacoes').get()
         ]);
-        var aulas = { todas: [], teorica: [], pratica: [] };
+        var aulasReaisAval = [];
         resultado[0].forEach(function (d) {
-            var a = Object.assign({ _id: d.id }, d.data() || {});
-            aulas.todas.push(a);
-            if (a.avTeorica === 'Sim') aulas.teorica.push(a);
-            if (a.avPratica === 'Sim') aulas.pratica.push(a);
+            aulasReaisAval.push(Object.assign({ _id: d.id }, d.data() || {}));
         });
+        var avsDaAval = [];
+        resultado[3].forEach(function (d) { avsDaAval.push(Object.assign({ _id: d.id }, d.data() || {})); });
+        var aulas = ccAulasDaFicha(avsDaAval, aulasReaisAval);
         var dados = (typeof fichaGeralDadosAluno === 'function') ? await fichaGeralDadosAluno(p) : { av: {}, presencas: [] };
         var snapshot = null;
         resultado[1].forEach(function (d) {
