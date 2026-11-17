@@ -100,7 +100,8 @@
             <p id="pu-vinculo-menu">—</p>
         </div>
         <nav class="pu-drawer-nav">
-            <button id="pu-menu-dados" class="ativo" onclick="puSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
+            <button id="pu-menu-inicio" class="ativo" onclick="puSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
+            <button id="pu-menu-dados" onclick="puSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
             <button id="pu-menu-cursos" onclick="puSetView('cursos')"><i class="fa-solid fa-book-open"></i> Cursos</button>
         </nav>
         <div class="pu-drawer-foot">
@@ -116,8 +117,16 @@
             <div class="pu-user"><div id="pu-nome-topo">—</div><div id="pu-vinculo-topo" style="opacity:.85"></div></div>
         </div>
         <div class="pu-container">
+            <!-- SECAO INICIO -->
+            <div class="pu-view ativo" id="pu-view-inicio">
+                <div class="pu-card" style="text-align:center;padding:56px 24px">
+                    <div style="font-size:52px;color:#0f766e;margin-bottom:14px"><i class="fa-solid fa-hand-wave"></i></div>
+                    <h2 style="font-size:24px;color:#0f172a;margin-bottom:8px">Bem-vindo, <span id="pu-boas-vindas-nome">usuário</span>!</h2>
+                    <p style="font-size:14px;color:#64748b">É bom ter você aqui.</p>
+                </div>
+            </div>
             <!-- SECAO MEUS DADOS -->
-            <div class="pu-view ativo" id="pu-view-dados">
+            <div class="pu-view" id="pu-view-dados">
                 <div class="pu-secao-titulo"><i class="fa-solid fa-id-card" style="color:#0f766e;margin-right:8px"></i> Meus Dados</div>
                 <div class="pu-card"><h2>Cadastro</h2><div class="pu-grid" id="pu-dados"></div></div>
                 <div class="pu-card"><h2><i class="fa-solid fa-file-lines" style="color:#0f766e;margin-right:8px"></i> Ficha Geral</h2>
@@ -177,11 +186,12 @@
             if (d) d.classList.remove('aberto'); if (o) o.classList.remove('aberto');
         }
         function puSetView(view) {
-            ['dados','cursos'].forEach(function (v) {
+            ['inicio','dados','cursos'].forEach(function (v) {
                 var el = document.getElementById('pu-view-' + v); if (el) el.className = 'pu-view' + (v === view ? ' ativo' : '');
                 var btn = document.getElementById('pu-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
             });
             puFecharMenu();
+            if (view === 'dados') puCarregarDados();
             if (view === 'cursos') puCarregarGuias();
         }
 
@@ -221,14 +231,10 @@
             return false;
         }
 
-        function puMostrarApp() {
-            document.getElementById('pu-tela-login').style.display='none';
-            var app = document.getElementById('pu-tela-app'); if (app) app.style.display='block';
+        /* Carrega Meus Dados somente quando a aba e aberta. */
+        function puCarregarDados() {
+            if (!puUser) return;
             var nome = puUser.nome || puUser.nomeCompleto || 'Usuário';
-            var topo = document.getElementById('pu-nome-topo'); if (topo) topo.textContent = nome;
-            var vin = document.getElementById('pu-vinculo-topo'); if (vin) vin.textContent = puUser._rotulo || '';
-            var nomeMenu = document.getElementById('pu-nome-menu'); if (nomeMenu) nomeMenu.textContent = nome;
-            var vinMenu = document.getElementById('pu-vinculo-menu'); if (vinMenu) vinMenu.textContent = puUser._rotulo || 'Usuário';
             var dados = document.getElementById('pu-dados');
             if (dados) {
                 dados.innerHTML =
@@ -242,8 +248,22 @@
                     puCampo('WhatsApp', puUser.whatsapp) +
                     '<div class="pu-campo"><span>Status</span><b><span class="pu-badge">Ativo</span></b></div>';
             }
-            puSetView('dados');
             puCarregarFicha();
+        }
+
+        function puMostrarApp() {
+            document.getElementById('pu-tela-login').style.display='none';
+            var app = document.getElementById('pu-tela-app'); if (app) app.style.display='block';
+            var nome = puUser.nome || puUser.nomeCompleto || 'Usuário';
+            var topo = document.getElementById('pu-nome-topo'); if (topo) topo.textContent = nome;
+            var vin = document.getElementById('pu-vinculo-topo'); if (vin) vin.textContent = puUser._rotulo || '';
+            var nomeMenu = document.getElementById('pu-nome-menu'); if (nomeMenu) nomeMenu.textContent = nome;
+            var vinMenu = document.getElementById('pu-vinculo-menu'); if (vinMenu) vinMenu.textContent = puUser._rotulo || 'Usuário';
+            var boas = document.getElementById('pu-boas-vindas-nome');
+            if (boas) boas.textContent = (puUser.nome || puUser.nomeCompleto || 'usuário').split(' ')[0];
+            /* A tela inicial mostra só as boas-vindas; as outras abas carregam
+               seus dados apenas quando o usuario abrir cada uma. */
+            puSetView('inicio');
         }
 
         /* GUIA DO CURSO: apostila e certificado dos cursos em que o CPF do
