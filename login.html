@@ -33,7 +33,7 @@
             <h1>Acesso ao Sistema</h1>
             <p>Entre com seu CPF e senha</p>
         </div>
-        <form onsubmit="fazerLogin(event)" autocomplete="off">
+        <form onsubmit="return fazerLogin(event)" autocomplete="off">
             <label for="lg-cpf">CPF</label>
             <input type="text" id="lg-cpf" placeholder="000.000.000-00" maxlength="14" oninput="formatarCpf(this)">
             <label for="lg-senha">Senha</label>
@@ -45,7 +45,11 @@
     </div>
 
     <script>
-        var dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
+        /* O login administrativo NAO depende do banco: se o modulo falhar,
+           as credenciais do admin continuam funcionando. */
+        var dbFirestore = null;
+        try { if (typeof FarnDB === 'function') dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev'); }
+        catch (e) { console.warn('Modulo do banco indisponivel no login:', e); }
         var ADMIN_CPF = '05004959471';
         var ADMIN_SENHA = '212121';
 
@@ -84,7 +88,8 @@
                     { col: 'cffAlunos', rotulo: 'CFF' }
                 ];
                 var encontrado = null;
-                for (var i = 0; i < fontes.length; i++) {
+                if (!dbFirestore) { erro('Banco indisponível no momento. Tente novamente.'); }
+                for (var i = 0; i < fontes.length && !encontrado && dbFirestore; i++) {
                     var snap = await dbFirestore.collection(fontes[i].col).where('cpf', '==', cpf).get();
                     var user = null;
                     snap.forEach(function (doc) {
