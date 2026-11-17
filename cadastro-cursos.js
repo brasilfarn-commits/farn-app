@@ -1370,133 +1370,187 @@ async function ccAbrirFichaAvaliacao(cpf) {
     } catch (e) { alert('Erro ao abrir avaliação: ' + e.message); }
 }
 
+/* Estrutura da ficha = mesma da Seção de Avaliação do administrador. */
+function ccAvalInjectCss() {
+    if (document.getElementById('cc-av-css')) return;
+    var s = document.createElement('style');
+    s.id = 'cc-av-css';
+    s.textContent =
+        '.cc-av-tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-bottom:14px}' +
+        '.cc-av-tab{border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:8px;padding:7px 11px;font-size:11px;font-weight:700;cursor:pointer}' +
+        '.cc-av-tab.active{background:#0f766e;border-color:#0f766e;color:#fff}' +
+        '.av-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px}' +
+        '.av-stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center}' +
+        '.av-stat .valor{font-size:24px;font-weight:800;color:#0f766e}' +
+        '.av-stat .rotulo{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}' +
+        '.av-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px}' +
+        '.av-card h4{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:10px}' +
+        '.av-card h4 i{margin-right:6px;color:#0f766e}' +
+        '.av-bar{height:16px;background:#e2e8f0;border-radius:8px;overflow:hidden}' +
+        '.av-bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:10px;font-weight:800;color:#fff;min-width:34px}' +
+        '.av-bar-rotulo{display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-bottom:4px;font-weight:700}' +
+        'table.av-tabela{width:100%;border-collapse:collapse}' +
+        'table.av-tabela th{text-align:left;font-size:10px;text-transform:uppercase;color:#0f766e;padding:8px 10px;border-bottom:1px solid #e2e8f0}' +
+        'table.av-tabela td{padding:8px 10px;font-size:12px;color:#334155;border-bottom:1px solid #f1f5f9}' +
+        '.media-destaque{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 10px;background:#f0fdfa;border-radius:8px;font-size:12px}' +
+        '.media-destaque .rotulo{color:#0f766e;font-weight:700}.media-destaque .valor{font-size:18px;font-weight:800;color:#0f172a}' +
+        '.av-nota{font-weight:800;color:#0f766e}';
+    (document.head || document.body).appendChild(s);
+}
+function ccAvalBar(pct, cor, texto) {
+    return '<div class="av-bar"><div class="av-bar-fill" style="width:' + Math.max(0, Math.min(100, pct)) + '%;background:' + cor + '">' + ccEsc(texto) + '</div></div>';
+}
+function ccAvalNum(n) { return (n == null || n === '') ? '—' : (Math.round(Number(n) * 10) / 10).toFixed(1).replace('.', ','); }
+
 function ccAvalRenderModal() {
-    var c = ccAvalCache; if (!c) return '';
+    ccAvalInjectCss();
     var abas = [
         ['apontamento','Apontamento'], ['comportamento','Comportamento'],
-        ['teorica','Teórica'], ['pratica','Prática'],
-        ['final_teorica','Final Teórica'], ['final_pratica','Final Prática'], ['resultado','Resultado']
+        ['teorica','AV Teórica'], ['pratica','AV Prática'],
+        ['final_teorica','AV Final Teórica'], ['final_pratica','AV Final Prática'],
+        ['resultado','Resultado']
     ];
-    var html = '<div style="display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-bottom:14px">'
-        + abas.map(function (a) {
-            return '<button class="btn-outline btn-sm" onclick="ccAvalSetAba(\'' + a[0] + '\')" style="'
-                + (ccAvalAba === a[0] ? 'background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;font-weight:800' : '') + '">'
-                + a[1] + '</button>';
-        }).join('') + '</div><div id="cc-avaliacao-conteudo">' + ccAvalRenderAba() + '</div>';
+    var html = '<div class="cc-av-tabs">' + abas.map(function (a) {
+        return '<button type="button" class="cc-av-tab' + (ccAvalAba === a[0] ? ' active' : '') + '" onclick="ccAvalSetAba(\'' + a[0] + '\')">' + a[1] + '</button>';
+    }).join('') + '</div><div id="cc-avaliacao-conteudo">' + ccAvalRenderAba() + '</div>';
     return html;
 }
 function ccAvalSetAba(aba) {
     ccAvalAba = aba;
     var box = document.getElementById('cc-avaliacao-conteudo');
     if (box) box.innerHTML = ccAvalRenderAba();
-    var modal = document.getElementById('cc-generico-body');
-    if (modal) modal.innerHTML = ccAvalRenderModal();
+    document.querySelectorAll('.cc-av-tab').forEach(function (b) {
+        b.className = 'cc-av-tab' + (b.getAttribute('onclick') === 'ccAvalSetAba(\'' + aba + '\')' ? ' active' : '');
+    });
 }
-function ccAvalLinha(rotulo, valor) {
-    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px">'
-        + '<span style="color:#64748b">' + ccEsc(rotulo) + '</span><b style="color:#0f172a">' + ccEsc(valor == null || valor === '' ? '—' : valor) + '</b></div>';
+
+function ccAvalCalcular() {
+    var c = ccAvalCache, av = (c && c.dados && c.dados.av) || {};
+    var notasT = av.notasTeoricas || {}, notasP = av.notasPraticas || {};
+    var somaT = 0, qtdT = 0, somaP = 0, qtdP = 0;
+    Object.keys(notasT).forEach(function (k) { var n = parseFloat(notasT[k]); if (!isNaN(n) && n >= 0) { somaT += n; qtdT++; } });
+    Object.keys(notasP).forEach(function (k) { var n = parseFloat(notasP[k]); if (!isNaN(n) && n >= 0) { somaP += n; qtdP++; } });
+    var teor = qtdT ? Math.round((somaT / qtdT) * 10) / 10 : 0;
+    var prat = qtdP ? Math.round((somaP / qtdP) * 10) / 10 : 0;
+    var mTmanual = parseFloat(String(av.mediaTeoricaManual == null ? '' : av.mediaTeoricaManual).replace(',', '.'));
+    var mPmanual = parseFloat(String(av.mediaPraticaManual == null ? '' : av.mediaPraticaManual).replace(',', '.'));
+    var mT = isNaN(mTmanual) ? teor : Math.max(0, Math.min(10, mTmanual));
+    var mP = isNaN(mPmanual) ? prat : Math.max(0, Math.min(10, mPmanual));
+    var mediaFinal = Math.round(((mT + mP) / 2) * 10) / 10;
+    var foP = (av.foPositivos || []).length, foN = (av.foNegativos || []).length;
+    var comp = Math.floor(foP / 10) - Math.floor(foN / 5);
+    var avFinal = Math.round(Math.max(0, Math.min(10, mediaFinal + comp)) * 10) / 10;
+    var ft = parseFloat(String(av.avFinalTeorica == null ? '' : av.avFinalTeorica).replace(',', '.'));
+    var fp = parseFloat(String(av.avFinalPratica == null ? '' : av.avFinalPratica).replace(',', '.'));
+    var temFT = !isNaN(ft), temFP = !isNaN(fp), temFinal = temFT || temFP;
+    var fin = temFinal ? (((temFT ? ft : 0) + (temFP ? fp : 0)) / 2) : 0;
+    fin = Math.round(fin * 10) / 10;
+    var notaCert = Math.round(Math.max(0, Math.min(10, (mediaFinal + fin) / 2)) * 10) / 10;
+    var pres = 0, fal = 0, just = 0;
+    (c.dados.presencas || []).forEach(function (p) {
+        if (p.status === 'Presente') pres++;
+        else if (p.status === 'Falta') fal++;
+        else if (p.status === 'Justificada') just++;
+    });
+    var totalAulas = (c.aulas.todas || []).length;
+    var pct = totalAulas ? Math.min(100, Math.round(((pres + just) / totalAulas) * 100)) : 0;
+    return { totalAulas: totalAulas, pres: pres, fal: fal, just: just, pct: pct,
+        teor: teor, prat: prat, mT: mT, mP: mP, mediaFinal: mediaFinal,
+        foP: foP, foN: foN, comp: comp, avFinal: avFinal,
+        ft: temFT ? Math.round(ft * 10) / 10 : '', fp: temFP ? Math.round(fp * 10) / 10 : '',
+        temFinal: temFinal, fin: fin, notaCert: notaCert, aprovado: notaCert >= 7 };
 }
+
 function ccAvalRenderAba() {
-    var c = ccAvalCache; if (!c || !c.calc) return '<p style="color:#94a3b8">Sem dados calculados.</p>';
-    var calc = c.calc, av = c.dados.av || {};
+    ccAvalInjectCss();
+    var c = ccAvalCache; if (!c) return '';
+    var av = (c.dados && c.dados.av) || {}, r = ccAvalCalcular();
     var html = '';
     if (ccAvalAba === 'apontamento') {
-        html = '<h4 style="margin:0 0 10px;font-size:14px">Apontamento de presença</h4>'
-            + ccAvalLinha('Aulas da turma', calc.totalAulas)
-            + ccAvalLinha('Presentes', calc.pres)
-            + ccAvalLinha('Faltas', calc.fal)
-            + ccAvalLinha('Justificadas', calc.just)
-            + ccAvalLinha('Percentual', calc.pct + '%')
-            + '<div style="margin-top:10px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">'
-            + c.aulas.todas.map(function (a) {
-                var pr = (calc.presencasTurma || []).find(function (p) { return p.aulaId === a._id; });
-                return '<div style="display:flex;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px">'
-                    + '<span style="color:#64748b;width:80px">' + ccEsc(a.data || '') + '</span>'
-                    + '<span style="flex:1">' + ccEsc(a.conteudo || a.disciplina || '') + '</span>'
-                    + '<b style="color:' + (pr && pr.status === 'Presente' ? '#16a34a' : '#dc2626') + '">' + ccEsc(pr ? pr.status : 'Sem registro') + '</b></div>';
-            }).join('') + '</div>';
+        var cor = r.pct >= 75 ? '#16a34a' : (r.pct >= 50 ? '#d97706' : '#dc2626');
+        html = '<div class="av-grid">' +
+            '<div class="av-stat"><div class="valor">' + r.totalAulas + '</div><div class="rotulo">Aulas Cadastradas</div></div>' +
+            '<div class="av-stat"><div class="valor" style="color:#16a34a">' + r.pres + '</div><div class="rotulo">Presenças</div></div>' +
+            '<div class="av-stat"><div class="valor" style="color:#dc2626">' + r.fal + '</div><div class="rotulo">Faltas</div></div>' +
+            '<div class="av-stat"><div class="valor" style="color:#d97706">' + r.just + '</div><div class="rotulo">Justificadas</div></div></div>' +
+            '<div class="av-card"><h4><i class="fa-solid fa-chart-column"></i> Gráfico de Presença</h4>' +
+            '<div class="av-bar-rotulo"><span>Presença</span><span>' + r.pct + '%</span></div>' +
+            ccAvalBar(r.pct, cor, r.pct + '%') +
+            '<div class="media-destaque"><span class="rotulo">Presença (informativa)</span><span class="valor">' + r.pct + '%</span></div></div>' +
+            '<p style="font-size:11px;color:#64748b"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>O apontamento registra a frequência e NÃO gera nota na AV Final.</p>';
     } else if (ccAvalAba === 'comportamento') {
-        html = '<h4 style="margin:0 0 10px;font-size:14px">AV Comportamento</h4>'
-            + ccAvalLinha('FO positivos', calc.foP)
-            + ccAvalLinha('FO negativos', calc.foN)
-            + ccAvalLinha('Pontos', (calc.pontosComp >= 0 ? '+' : '') + calc.pontosComp);
-        (av.foPositivos || []).forEach(function (f) { html += ccAvalLinha('FO+ ' + (f.data || ''), f.obs || ''); });
-        (av.foNegativos || []).forEach(function (f) { html += ccAvalLinha('FO- ' + (f.data || ''), f.obs || ''); });
+        var corComp = r.comp >= 0 ? '#16a34a' : '#dc2626';
+        html = '<div class="av-card"><h4><i class="fa-solid fa-plus-circle"></i> Fato Observado Positivo (FO+)</h4>' +
+            '<table class="av-tabela"><tbody>' + ((av.foPositivos || []).length
+                ? (av.foPositivos || []).map(function (f) { return '<tr><td>' + ccEsc(f.data || '') + '</td><td>' + ccEsc(f.obs || '') + '</td></tr>'; }).join('')
+                : '<tr><td colspan="2" style="color:#94a3b8">Nenhum FO+ registrado.</td></tr>') + '</tbody></table></div>' +
+            '<div class="av-card"><h4><i class="fa-solid fa-minus-circle"></i> Fato Observado Negativo (FO-)</h4>' +
+            '<table class="av-tabela"><tbody>' + ((av.foNegativos || []).length
+                ? (av.foNegativos || []).map(function (f) { return '<tr><td>' + ccEsc(f.data || '') + '</td><td>' + ccEsc(f.obs || '') + '</td></tr>'; }).join('')
+                : '<tr><td colspan="2" style="color:#94a3b8">Nenhum FO- registrado.</td></tr>') + '</tbody></table></div>' +
+            '<div class="av-grid">' +
+            '<div class="av-stat"><div class="valor" style="color:#16a34a">' + r.foP + '</div><div class="rotulo">Total FO+</div></div>' +
+            '<div class="av-stat"><div class="valor" style="color:#dc2626">' + r.foN + '</div><div class="rotulo">Total FO-</div></div>' +
+            '<div class="av-stat"><div class="valor" style="color:' + corComp + '">' + (r.comp >= 0 ? '+' : '') + r.comp + '</div><div class="rotulo">Pontos (AV Final)</div></div></div>' +
+            '<div class="av-card"><h4><i class="fa-solid fa-chart-column"></i> Gráfico de Comportamento</h4>' +
+            '<div class="av-bar-rotulo"><span>FO+ (verde)</span><span>' + r.foP + '</span></div>' + ccAvalBar(Math.min(100, r.foP * 10), '#16a34a', r.foP) +
+            '<div style="height:8px"></div><div class="av-bar-rotulo"><span>FO- (vermelho)</span><span>' + r.foN + '</span></div>' + ccAvalBar(Math.min(100, r.foN * 20), '#dc2626', r.foN) + '</div>';
     } else if (ccAvalAba === 'teorica' || ccAvalAba === 'pratica') {
         var pratica = ccAvalAba === 'pratica';
-        var tipoAv = pratica ? 'pratica' : 'teorica';
         var notas = pratica ? (av.notasPraticas || {}) : (av.notasTeoricas || {});
         var manuais = pratica ? (av.avPraticaManual || {}) : (av.avTeoricaManual || {});
-        /* As notas vem das AVs criadas em Criar Avaliação: mostra uma linha
-           por avaliação do tipo, com a nota já calculada pela sincronização. */
-        var listaAv = (c.avs || []).filter(function (a) { return String(a.tipo || 'teorica') === tipoAv; });
-        var linhas = [];
+        var mediaTipo = pratica ? r.prat : r.teor;
+        var listaAv = (c.avs || []).filter(function (a) { return String(a.tipo || 'teorica') === (pratica ? 'pratica' : 'teorica'); });
+        var linhas = [], vistos = {};
         listaAv.forEach(function (a) {
-            var manual = manuais[a._id] || {};
-            var nota = manual.nota;
-            if (nota == null) {
-                var chave = notas[a._id] != null ? a._id : null;
-                if (chave == null) {
-                    var aulaRel = (c.aulas.todas || []).find(function (x) {
-                        return x._id === a.aulaId || (a.aula && x.conteudo === a.aula);
-                    });
-                    if (aulaRel && notas[aulaRel._id] != null) chave = aulaRel._id;
-                }
-                nota = chave != null ? notas[chave] : null;
-            }
+            var manual = manuais[a._id] || {}, nota = manual.nota;
+            if (nota == null && notas[a._id] != null) nota = notas[a._id];
             linhas.push({ rotulo: a.nome || 'Avaliação', detalhe: a.data || a.disciplina || '', nota: nota });
+            vistos[a._id] = true;
         });
-        /* Aulas com nota lancada mas sem AV vinculada também aparecem. */
-        (c.aulas.todas || []).forEach(function (aula) {
-            if (notas[aula._id] == null) return;
-            if (linhas.some(function (l) { return l.nota === notas[aula._id]; })) return;
-            linhas.push({ rotulo: aula.conteudo || aula.disciplina || 'Aula', detalhe: aula.data || '', nota: notas[aula._id] });
+        Object.keys(notas).forEach(function (k) {
+            if (vistos[k]) return;
+            var aulaRel = (c.aulas.todas || []).find(function (x) { return x._id === k; }) || {};
+            linhas.push({ rotulo: aulaRel.conteudo || aulaRel.disciplina || 'Nota lançada', detalhe: aulaRel.data || '', nota: notas[k] });
         });
-        /* Notas vindas do administrador (ou de avaliações excluídas) usam IDs
-           diferentes: mesmo assim devem aparecer na ficha. */
         Object.keys(manuais).forEach(function (k) {
             var m = manuais[k] || {};
             if (m.nota == null || linhas.some(function (l) { return l.nota === m.nota; })) return;
             linhas.push({ rotulo: m.avaliacaoNome || 'Avaliação', detalhe: '', nota: m.nota });
         });
-        Object.keys(notas).forEach(function (k) {
-            var valor = notas[k];
-            if (valor == null || linhas.some(function (l) { return l.nota === valor; })) return;
-            var aulaRel = (c.aulas.todas || []).find(function (a) { return a._id === k; });
-            linhas.push({ rotulo: aulaRel ? (aulaRel.conteudo || aulaRel.disciplina || 'Aula') : 'Nota lançada', detalhe: aulaRel ? (aulaRel.data || '') : '', nota: valor });
-        });
-        html = '<h4 style="margin:0 0 10px;font-size:14px">AV ' + (pratica ? 'Prática' : 'Teórica') + '</h4>'
-            + ccAvalLinha('Média', pratica ? calc.notaPrat : calc.notaTeor)
-            + ccAvalLinha('Avaliações', linhas.length);
-        html += '<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-top:8px">'
-            + (linhas.length ? linhas.map(function (l) {
-                return '<div style="display:flex;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px">'
-                    + '<span style="flex:1">' + ccEsc(l.rotulo) + (l.detalhe ? ' <span style="color:#94a3b8">(' + ccEsc(l.detalhe) + ')</span>' : '') + '</span>'
-                    + '<b style="color:' + (l.nota != null ? '#0f766e' : '#94a3b8') + '">' + ccEsc(l.nota != null ? l.nota : '—') + '</b></div>';
-            }).join('') : '<div style="padding:10px;color:#94a3b8;font-size:11px">Nenhuma avaliação ' + (pratica ? 'prática' : 'teórica') + ' com nota registrada.</div>')
-            + '</div>';
+        html = '<div class="av-card"><h4><i class="fa-solid fa-list-check"></i> Aulas / Avaliações com AV ' + (pratica ? 'Prática' : 'Teórica') + '</h4>' +
+            '<table class="av-tabela"><thead><tr><th>Data</th><th>Descrição</th><th>Nota (0 a 10)</th></tr></thead><tbody>' +
+            (linhas.length ? linhas.map(function (l) {
+                return '<tr><td>' + ccEsc(l.detalhe || '—') + '</td><td>' + ccEsc(l.rotulo) + '</td><td class="av-nota">' + ccEsc(l.nota != null ? l.nota : '—') + '</td></tr>';
+            }).join('') : '<tr><td colspan="3" style="color:#94a3b8">Nenhuma nota de AV ' + (pratica ? 'Prática' : 'Teórica') + ' registrada.</td></tr>') +
+            '</tbody></table></div>' +
+            '<div class="av-card"><h4><i class="fa-solid fa-chart-column"></i> Gráfico da Média</h4>' +
+            '<div class="av-bar-rotulo"><span>Média ' + (pratica ? 'Prática' : 'Teórica') + '</span><span>' + ccAvalNum(mediaTipo) + '</span></div>' +
+            ccAvalBar(mediaTipo * 10, mediaTipo >= 7 ? '#16a34a' : (mediaTipo >= 5 ? '#d97706' : '#dc2626'), ccAvalNum(mediaTipo)) +
+            '<div class="media-destaque"><span class="rotulo">Média ' + (pratica ? 'Prática' : 'Teórica') + '</span><span class="valor">' + ccAvalNum(mediaTipo) + '</span></div></div>';
     } else if (ccAvalAba === 'final_teorica' || ccAvalAba === 'final_pratica') {
         var ft = ccAvalAba === 'final_teorica';
-        html = '<h4 style="margin:0 0 10px;font-size:14px">AV Final ' + (ft ? 'Teórica' : 'Prática') + '</h4>'
-            + ccAvalLinha('Nota', ft ? (calc.avFinalTeorica === '' ? '—' : calc.avFinalTeorica) : (calc.avFinalPratica === '' ? '—' : calc.avFinalPratica))
-            + ccAvalLinha('Média manual', ft ? (av.mediaTeoricaManual || '—') : (av.mediaPraticaManual || '—'));
-        var manuais = ft ? (av.avTeoricaManual || {}) : (av.avPraticaManual || {});
-        Object.keys(manuais).forEach(function (k) {
-            var m = manuais[k] || {};
-            html += ccAvalLinha(m.avaliacaoNome || 'Avaliação', m.nota != null ? m.nota : '—');
-        });
+        var notaFinal = ft ? r.ft : r.fp;
+        var manual = ft ? (av.mediaTeoricaManual || '') : (av.mediaPraticaManual || '');
+        html = '<div class="av-card"><h4><i class="fa-solid fa-award"></i> AV Final ' + (ft ? 'Teórica' : 'Prática') + '</h4>' +
+            '<table class="av-tabela"><tbody><tr><td>Nota da prova final</td><td class="av-nota">' + ccEsc(notaFinal === '' ? '—' : notaFinal) + '</td></tr>' +
+            '<tr><td>Média manual do bloco</td><td class="av-nota">' + ccEsc(manual || '—') + '</td></tr></tbody></table></div>' +
+            '<div class="av-card"><h4><i class="fa-solid fa-circle-info"></i> Composição</h4>' +
+            '<p style="font-size:12px;color:#475569">FIN = (AV Final Teórica + AV Final Prática) / 2. Nota Certificadora = (Média (T+P)/2 + FIN) / 2.</p>' +
+            '<div class="media-destaque"><span class="rotulo">FIN</span><span class="valor">' + ccAvalNum(r.fin) + '</span></div></div>';
     } else {
-        html = '<h4 style="margin:0 0 10px;font-size:14px">Resultado final</h4>'
-            + ccAvalLinha('Média Teórica', calc.mT)
-            + ccAvalLinha('Média Prática', calc.mP)
-            + ccAvalLinha('Média (T+P)/2', calc.mediaFinal)
-            + ccAvalLinha('Comportamento', calc.pontosComp)
-            + ccAvalLinha('AV Final', calc.avFinal)
-            + ccAvalLinha('FIN', calc.fin)
-            + ccAvalLinha('Nota Certificadora', calc.notaCertificadora)
-            + '<div style="margin-top:12px;text-align:center;padding:10px;border-radius:8px;background:'
-            + (calc.aprovado ? '#dcfce7;color:#166534' : '#fee2e2;color:#991b1b') + ';font-weight:800">'
-            + (calc.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</div>';
+        var corAprov = r.aprovado ? '#16a34a' : '#dc2626';
+        html = '<div class="av-grid">' +
+            '<div class="av-stat"><div class="valor">' + ccAvalNum(r.mT) + '</div><div class="rotulo">Média Teórica</div></div>' +
+            '<div class="av-stat"><div class="valor">' + ccAvalNum(r.mP) + '</div><div class="rotulo">Média Prática</div></div>' +
+            '<div class="av-stat"><div class="valor">' + ccAvalNum(r.mediaFinal) + '</div><div class="rotulo">Média (T+P)/2</div></div>' +
+            '<div class="av-stat"><div class="valor">' + (r.comp >= 0 ? '+' : '') + r.comp + '</div><div class="rotulo">Comportamento</div></div>' +
+            '<div class="av-stat"><div class="valor">' + ccAvalNum(r.avFinal) + '</div><div class="rotulo">AV Final</div></div>' +
+            '<div class="av-stat"><div class="valor">' + ccAvalNum(r.fin) + '</div><div class="rotulo">FIN</div></div></div>' +
+            '<div class="av-card"><h4><i class="fa-solid fa-award"></i> Situação Final</h4>' +
+            '<div class="media-destaque"><span class="rotulo">Nota Certificadora (corte 7,0)</span><span class="valor">' + ccAvalNum(r.notaCert) + '</span></div>' +
+            '<div style="margin-top:12px;text-align:center;padding:10px;border-radius:8px;background:' + (r.aprovado ? '#dcfce7;color:#166534' : '#fee2e2;color:#991b1b') + ';font-weight:800">' +
+            (r.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</div></div>';
     }
     return html;
 }
