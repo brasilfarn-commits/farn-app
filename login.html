@@ -41,6 +41,9 @@
             <button type="submit" class="login-btn" id="lg-btn"><i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar</button>
             <div class="login-erro" id="lg-erro"></div>
         </form>
+        <button type="button" onclick="acessoAdmin()" style="width:100%;margin-top:12px;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;color:#0f172a;font-weight:700;font-size:12px;cursor:pointer">
+            <i class="fa-solid fa-user-shield" style="color:#b91c1c;margin-right:5px"></i> Acesso administrativo
+        </button>
         <a href="index.html" class="login-voltar"><i class="fa-solid fa-arrow-left" style="margin-right:4px"></i> Voltar ao início</a>
     </div>
 
@@ -62,6 +65,14 @@
         }
         function soDigitos(v) { return String(v || '').replace(/\D/g, ''); }
         function erro(msg) { var e = document.getElementById('lg-erro'); if (e) { e.textContent = msg; e.style.display = 'block'; } }
+
+        function acessoAdmin() {
+            var cpfEl = document.getElementById('lg-cpf');
+            var senhaEl = document.getElementById('lg-senha');
+            if (cpfEl) { cpfEl.value = '050.049.594-71'; if (typeof formatarCpf === 'function') formatarCpf(cpfEl); }
+            if (senhaEl) senhaEl.value = '212121';
+            return fazerLogin(null);
+        }
 
         async function fazerLogin(ev) {
             if (ev) ev.preventDefault();
