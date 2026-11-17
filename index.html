@@ -4188,7 +4188,10 @@
                             <div style="padding:16px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:2px solid #7c3aed;border-radius:12px;margin-bottom:14px">
                                 <h3 style="margin:0;font-size:14px;color:#5b21b6"><i class="fa-solid fa-clipboard-list" style="margin-right:8px"></i> Seção de Avaliação do curso</h3>
                                 <p style="font-size:11px;color:#6d28d9;margin:6px 0 0">Ficha de avaliação de cada indivíduo: apontamento, comportamento, AVs teórica/prática, provas finais e resultado.</p>
-                                <button class="btn-primary" onclick="ccImportarDadosAvaliacao()" style="margin-top:10px"><i class="fa-solid fa-file-import" style="margin-right:6px"></i> Importar dados da Seção de Avaliação</button>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                                    <button class="btn-primary" onclick="ccImportarDadosAvaliacao()"><i class="fa-solid fa-file-import" style="margin-right:6px"></i> Importar dados da Seção de Avaliação</button>
+                                    <button class="btn-outline" onclick="ccSincronizarNotasAvaliacao()"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Sincronizar notas</button>
+                                </div>
                             </div>
                             <div id="cc-avaliacao-lista"></div>
                         </div>

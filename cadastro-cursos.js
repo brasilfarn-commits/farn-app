@@ -599,6 +599,7 @@ async function ccSalvarAv() {
         if (ccEditandoAvId) await ccRef('avaliacoes', ccEditandoAvId).update(dados);
         else { dados.criadoEm = new Date().toISOString(); dados.ativa = false; await ccRef('avaliacoes').add(dados); }
         ccFecharFormAv(); ccLoadAvaliacoes();
+        await ccSincronizarFicha(true);
     } catch (e) { alert('Erro ao salvar avaliação: ' + e.message); }
 }
 async function ccExcluirAv(id) {
@@ -631,6 +632,7 @@ async function ccEnviarAv(id) {
             alunosSelecionados: cpfs, cursoId: ccAtual._id
         });
         ccLoadAvaliacoes();
+        await ccSincronizarFicha(true);
         alert('Avaliação enviada para ' + cpfs.length + ' indivíduo(s).');
     } catch (e) { alert('Erro ao enviar: ' + e.message); }
 }
@@ -1284,11 +1286,22 @@ function ccImprimirFichaCurso(i) {
    Teorica, Pratica, Finais e Resultado. */
 var ccAvalPessoas = [], ccAvalAtual = null, ccAvalAba = 'apontamento', ccAvalCache = null;
 
+/* Sincroniza manualmente as notas das avaliações com a ficha. */
+async function ccSincronizarNotasAvaliacao() {
+    try {
+        await ccSincronizarFicha(false);
+        ccInitAvaliacao();
+    } catch (e) { alert('Erro ao sincronizar: ' + e.message); }
+}
+
 async function ccInitAvaliacao() {
     var box = document.getElementById('cc-avaliacao-lista');
     if (!box || !ccAtual) return;
-    box.innerHTML = '<p style="color:#64748b">Carregando indivíduos...</p>';
+    box.innerHTML = '<p style="color:#64748b">Sincronizando notas das avaliações...</p>';
     try {
+        /* Traz as notas geradas em Criar Avaliação para a ficha de cada
+           individuo antes de mostrar a Seção de Avaliação. */
+        await ccSincronizarFicha(true);
         var snap = await ccRef('individuos').get();
         ccAvalPessoas = [];
         snap.forEach(function (d) { ccAvalPessoas.push(Object.assign({ _id: d.id }, d.data() || {})); });
