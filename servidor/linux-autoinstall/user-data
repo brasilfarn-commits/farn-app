@@ -1,0 +1,31 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: pt_BR.UTF-8
+  keyboard:
+    layout: br
+  timezone: America/Sao_Paulo
+  identity:
+    hostname: farn-servidor
+    username: farn
+    password: "$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0"
+  ssh:
+    install-server: true
+    allow-pw: true
+  storage:
+    layout:
+      name: direct
+  packages:
+    - curl
+    - ca-certificates
+    - git
+    - cron
+  late-commands:
+    - curtin in-target -- bash -c "echo 'farn:Farn@2026Servidor' | chpasswd"
+    - mkdir -p /target/root/farn
+    - cp /cdrom/setup.sh /target/root/farn/setup.sh
+    - chmod +x /target/root/farn/setup.sh
+  user-data:
+    runcmd:
+      - [ /bin/bash, /root/farn/setup.sh ]
+  reboot: reboot
