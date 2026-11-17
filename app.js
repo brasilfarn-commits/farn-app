@@ -1,3 +1,17 @@
+/* Patentes: declaradas no topo para evitar erro de inicializacao quando
+   os formularios sao populados durante o bootstrap do app. */
+let patenteClasses = ['01', '02', '03'];
+let patenteAlvo = null;
+let patentesCatalogo = [];
+const PATENTE_FORMULARIOS = [
+    { p: 'fc', sel: 'fc-patente', obs: 'fc-patente-obs' },
+    { p: 'intr', sel: 'intr-patente', obs: 'intr-patente-obs' },
+    { p: 'uf', sel: 'uf-patente', obs: 'uf-patente-obs' }
+];
+const PATENTES_CHAVES = ['patente', 'patenteNome', 'patenteGrupo', 'patenteClasse',
+    'patenteCff', 'patenteCargo', 'patenteObs', 'patenteAnterior',
+    'patenteAnteriorNome', 'patenteAlteradoEm', 'patenteAlteradoPor'];
+
 const ADMIN_CPF = '05004959471';
 const ADMIN_SENHA = '212121';
 let selectedLoginRole = 'admin';
@@ -17560,22 +17574,6 @@ function condecImprimir() {
    No remanejamento (virou formado, entrou no CFF, virou docente) o sistema
    apenas SUGERE a patente nova. Quem decide e o administrador.
    ========================================================================== */
-let patenteClasses = ['01', '02', '03'];
-let patenteAlvo = null;
-/* O CATALOGO de patentes (secao PATENTES do admin). Vazio = os
-   formularios usam a lista derivada de sempre. */
-let patentesCatalogo = [];
-
-const PATENTE_FORMULARIOS = [
-    { p: 'fc', sel: 'fc-patente', obs: 'fc-patente-obs' },
-    { p: 'intr', sel: 'intr-patente', obs: 'intr-patente-obs' },
-    { p: 'uf', sel: 'uf-patente', obs: 'uf-patente-obs' }
-];
-
-const PATENTES_CHAVES = ['patente', 'patenteNome', 'patenteGrupo', 'patenteClasse',
-    'patenteCff', 'patenteCargo', 'patenteObs', 'patenteAnterior',
-    'patenteAnteriorNome', 'patenteAlteradoEm', 'patenteAlteradoPor'];
-
 function patenteTemModulo() { return typeof PATENTES !== 'undefined'; }
 /* Rotulo legivel da patente. Se o modulo nao carregou, mostra o codigo --
    melhor um codigo na tela do que a tela inteira quebrar. */
