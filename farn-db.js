@@ -13,7 +13,17 @@
   var KEY_SINCE = 'farn_db_since_v1';
 
   function FarnDB(baseUrl) {
-    this.baseUrl = String(baseUrl || '').replace(/\/$/, '');
+    /* Servidor proprio: a configuracao salva em configurar-servidor.html
+       prevalece sobre a URL fixa passada pelas paginas. Assim basta trocar
+       a URL do tunel em um unico lugar, sem editar os HTMLs. */
+    var cfg = null;
+    try { cfg = JSON.parse(localStorage.getItem('farn_api_config') || 'null'); } catch (e) {}
+    var escolhida = (typeof window !== 'undefined' && window.FARN_API_URL)
+        || (cfg && cfg.url) || baseUrl
+        || 'https://farn-api.farn-api-farn.workers.dev';
+    this.baseUrl = String(escolhida).replace(/\/$/, '');
+    this.headers = { 'Content-Type': 'application/json' };
+    if (cfg && cfg.token) this.headers['X-Farn-Token'] = String(cfg.token);
     this.cache = {};           // col -> { id: data }
     this.listeners = [];
     this.since = 0;
@@ -73,7 +83,7 @@
 
   FarnDB.prototype._req = async function (path, opts) {
     var r = await fetch(this.baseUrl + path, Object.assign({
-      headers: { 'Content-Type': 'application/json' }
+      headers: this.headers
     }, opts || {}));
     var txt = await r.text();
     var dados;

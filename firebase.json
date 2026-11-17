@@ -37,6 +37,9 @@
       "**/*.cmd",
       "**/*.ps1",
       "**/*.apk",
+      "**/*.db",
+      "**/*.db-*",
+      "servidor/dados/**",
       "ISIGNEAS/**"
     ]
   },

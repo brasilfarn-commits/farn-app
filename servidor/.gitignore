@@ -1,0 +1,4 @@
+dados/
+cloudflared.exe
+*.db
+*.db-*
