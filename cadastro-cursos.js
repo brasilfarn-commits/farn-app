@@ -1330,7 +1330,8 @@ async function ccAbrirFichaAvaliacao(cpf) {
         var resultado = await Promise.all([
             ccRef('aulas').orderBy('data').get(),
             ccRef('fichaAvaliacoes').get(),
-            ccRef('presencas').get()
+            ccRef('presencas').get(),
+            ccRef('avaliacoes').get()
         ]);
         var aulas = { todas: [], teorica: [], pratica: [] };
         resultado[0].forEach(function (d) {
@@ -1358,8 +1359,10 @@ async function ccAbrirFichaAvaliacao(cpf) {
             if (presencasCurso.length) dados.presencas = presencasCurso;
             else if (snapshot.presencas) dados.presencas = snapshot.presencas;
         }
+        var avs = [];
+        resultado[3].forEach(function (d) { avs.push(Object.assign({ _id: d.id }, d.data() || {})); });
         var calc = (typeof fichaGeralCalcular === 'function') ? fichaGeralCalcular(p, dados, aulas) : null;
-        ccAvalCache = { p: p, calc: calc, aulas: aulas, dados: dados };
+        ccAvalCache = { p: p, calc: calc, aulas: aulas, dados: dados, avs: avs };
         var tit = document.getElementById('cc-generico-titulo'); var body = document.getElementById('cc-generico-body'); var m = document.getElementById('cc-modal-generico');
         if (tit) tit.textContent = 'Avaliação - ' + (p.nome || '');
         if (body) body.innerHTML = ccAvalRenderModal();
@@ -1421,17 +1424,44 @@ function ccAvalRenderAba() {
         (av.foNegativos || []).forEach(function (f) { html += ccAvalLinha('FO- ' + (f.data || ''), f.obs || ''); });
     } else if (ccAvalAba === 'teorica' || ccAvalAba === 'pratica') {
         var pratica = ccAvalAba === 'pratica';
-        var lista = pratica ? c.aulas.pratica : c.aulas.teorica;
+        var tipoAv = pratica ? 'pratica' : 'teorica';
         var notas = pratica ? (av.notasPraticas || {}) : (av.notasTeoricas || {});
+        var manuais = pratica ? (av.avPraticaManual || {}) : (av.avTeoricaManual || {});
+        /* As notas vem das AVs criadas em Criar Avaliação: mostra uma linha
+           por avaliação do tipo, com a nota já calculada pela sincronização. */
+        var listaAv = (c.avs || []).filter(function (a) { return String(a.tipo || 'teorica') === tipoAv; });
+        var linhas = [];
+        listaAv.forEach(function (a) {
+            var manual = manuais[a._id] || {};
+            var nota = manual.nota;
+            if (nota == null) {
+                var chave = notas[a._id] != null ? a._id : null;
+                if (chave == null) {
+                    var aulaRel = (c.aulas.todas || []).find(function (x) {
+                        return x._id === a.aulaId || (a.aula && x.conteudo === a.aula);
+                    });
+                    if (aulaRel && notas[aulaRel._id] != null) chave = aulaRel._id;
+                }
+                nota = chave != null ? notas[chave] : null;
+            }
+            linhas.push({ rotulo: a.nome || 'Avaliação', detalhe: a.data || a.disciplina || '', nota: nota });
+        });
+        /* Aulas com nota lancada mas sem AV vinculada também aparecem. */
+        (c.aulas.todas || []).forEach(function (aula) {
+            if (notas[aula._id] == null) return;
+            if (linhas.some(function (l) { return l.nota === notas[aula._id]; })) return;
+            linhas.push({ rotulo: aula.conteudo || aula.disciplina || 'Aula', detalhe: aula.data || '', nota: notas[aula._id] });
+        });
         html = '<h4 style="margin:0 0 10px;font-size:14px">AV ' + (pratica ? 'Prática' : 'Teórica') + '</h4>'
-            + ccAvalLinha('Média', pratica ? calc.notaPrat : calc.notaTeor);
+            + ccAvalLinha('Média', pratica ? calc.notaPrat : calc.notaTeor)
+            + ccAvalLinha('Avaliações', linhas.length);
         html += '<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-top:8px">'
-            + lista.map(function (a) {
+            + (linhas.length ? linhas.map(function (l) {
                 return '<div style="display:flex;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px">'
-                    + '<span style="color:#64748b;width:80px">' + ccEsc(a.data || '') + '</span>'
-                    + '<span style="flex:1">' + ccEsc(a.conteudo || a.disciplina || '') + '</span>'
-                    + '<b>' + ccEsc(notas[a._id] != null ? notas[a._id] : '—') + '</b></div>';
-            }).join('') + '</div>';
+                    + '<span style="flex:1">' + ccEsc(l.rotulo) + (l.detalhe ? ' <span style="color:#94a3b8">(' + ccEsc(l.detalhe) + ')</span>' : '') + '</span>'
+                    + '<b style="color:' + (l.nota != null ? '#0f766e' : '#94a3b8') + '">' + ccEsc(l.nota != null ? l.nota : '—') + '</b></div>';
+            }).join('') : '<div style="padding:10px;color:#94a3b8;font-size:11px">Nenhuma avaliação ' + (pratica ? 'prática' : 'teórica') + ' com nota registrada.</div>')
+            + '</div>';
     } else if (ccAvalAba === 'final_teorica' || ccAvalAba === 'final_pratica') {
         var ft = ccAvalAba === 'final_teorica';
         html = '<h4 style="margin:0 0 10px;font-size:14px">AV Final ' + (ft ? 'Teórica' : 'Prática') + '</h4>'
