@@ -590,11 +590,20 @@
             /* Media do bloco: soma de todas as notas registradas dividida pela
                quantidade de aulas daquele tipo (aula sem nota conta 0). */
             var soma = 0;
+            var quantidade = 0;
             aulas.forEach(function(a) {
                 var n = parseFloat(notas[a._id]);
-                if (!isNaN(n) && n >= 0) { soma += n; }
+                if (!isNaN(n) && n >= 0) { soma += n; quantidade++; }
             });
-            return aulas.length ? Math.round((soma / aulas.length) * 10) / 10 : 0;
+            /* Sem aulas carregadas, usa as proprias notas para a media. */
+            if (!quantidade) {
+                Object.keys(notas).forEach(function(k) {
+                    var n = parseFloat(notas[k]);
+                    if (!isNaN(n) && n >= 0) { soma += n; quantidade++; }
+                });
+            }
+            return aulas.length ? Math.round((soma / aulas.length) * 10) / 10
+                : (quantidade ? Math.round((soma / quantidade) * 10) / 10 : 0);
         }
 
         function avCalcularFinal() {
@@ -777,18 +786,45 @@
             var media = avCalcularMedia(tipo);
             var cor = media >= 7 ? '#22c55e' : (media >= 5 ? '#fbbf24' : '#ef4444');
             var html = '';
-            if (!aulas.length) {
-                html += '<div class="av-card"><p style="font-size:13px;color:#b9d4bd"><i class="fa-solid fa-circle-info" style="margin-right:4px;color:#fbbf24"></i>Nenhuma aula cadastrada com AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + ' (Sim) para esta turma.</p></div>';
+            /* Notas lancadas em Criar Avaliacao ficam em avaliacoesAlunos,
+               indexadas pelo ID da aula. Mesmo sem a rede carregada (ou sem
+               a aula no banco), elas precisam aparecer aqui. */
+            var linhas = [];
+            var vistas = {};
+            aulas.forEach(function (a) {
+                var aulaInfo = (avAulasCache.todas || []).find(function (x) { return x._id === a._id; }) || a;
+                linhas.push({
+                    id: a._id,
+                    data: a.data || aulaInfo.data || '',
+                    disciplina: a.disciplina || aulaInfo.disciplina || '',
+                    conteudo: a.conteudo || aulaInfo.conteudo || '',
+                    nota: notas[a._id]
+                });
+                vistas[a._id] = true;
+            });
+            Object.keys(notas).forEach(function (id) {
+                if (vistas[id]) return;
+                var aulaInfo = (avAulasCache.todas || []).find(function (x) { return x._id === id; }) || {};
+                linhas.push({
+                    id: id,
+                    data: aulaInfo.data || '',
+                    disciplina: aulaInfo.disciplina || '',
+                    conteudo: aulaInfo.conteudo || ('Nota lancada (' + id + ')'),
+                    nota: notas[id]
+                });
+            });
+            if (!linhas.length) {
+                html += '<div class="av-card"><p style="font-size:13px;color:#b9d4bd"><i class="fa-solid fa-circle-info" style="margin-right:4px;color:#fbbf24"></i>Nenhuma nota de AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + ' registrada para este aluno.</p></div>';
             } else {
-                html += '<div class="av-card"><h4><i class="fa-solid fa-list-check"></i> Aulas com AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + '</h4>' +
+                html += '<div class="av-card"><h4><i class="fa-solid fa-list-check"></i> AV ' + (tipo === 'teorica' ? 'Teórica' : 'Prática') + ' - notas lancadas</h4>' +
                     '<table class="av-tabela"><thead><tr><th>Data</th><th>Disciplina</th><th>Conteúdo</th><th>Nota (0 a 10)</th></tr></thead><tbody>';
-                aulas.forEach(function(a) {
-                    var data = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+                linhas.forEach(function (l) {
+                    var data = l.data ? new Date(l.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
                     html += '<tr>' +
                         '<td>' + data + '</td>' +
-                        '<td>' + escHtml(a.disciplina || '') + '</td>' +
-                        '<td>' + escHtml(a.conteudo || '') + '</td>' +
-                        '<td><input type="number" step="0.1" min="0" max="10" class="av-nota-input" value="' + (notas[a._id] != null ? notas[a._id] : '') + '" onchange="avSalvarNota(\'' + tipo + '\',\'' + a._id + '\',this)" placeholder="—"></td>' +
+                        '<td>' + escHtml(l.disciplina || '') + '</td>' +
+                        '<td>' + escHtml(l.conteudo || '') + '</td>' +
+                        '<td><input type="number" step="0.1" min="0" max="10" class="av-nota-input" value="' + (l.nota != null ? l.nota : '') + '" onchange="avSalvarNota(\'' + tipo + '\',\'' + l.id + '\',this)" placeholder="—"></td>' +
                     '</tr>';
                 });
                 html += '</tbody></table></div>';
