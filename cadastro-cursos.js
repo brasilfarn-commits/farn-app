@@ -1123,11 +1123,12 @@ async function ccExcluirApt(id) {
 async function ccSincronizarFicha(silent) {
     if (!ccAtual || !ccAtual._id) return 0;
     try {
-        var [indSnap, avSnap, respSnap, presSnap, aulaSnap, adminSnap] = await Promise.all([
+        var [indSnap, avSnap, respSnap, presSnap, aptSnap, aulaSnap, adminSnap] = await Promise.all([
             ccRef('individuos').get(),
             ccRef('avaliacoes').get(),
             ccRef('respostas').get(),
             ccRef('presencas').get(),
+            ccRef('apontamentos').get(),
             ccRef('aulas').get(),
             ccDb().collection('avaliacoesAlunos').get()
         ]);
@@ -1169,6 +1170,57 @@ async function ccSincronizarFicha(silent) {
             var p = d.data() || {}, cpf = String(p.cpf || '');
             if (!cpf) return;
             (presencasPorCpf[cpf] = presencasPorCpf[cpf] || []).push(Object.assign({ _id: d.id }, p));
+        });
+
+        /* Registros da guia Apontamentos: cada apontamento guarda um array
+           "alunos" com o resultado de cada pessoa. Vira a fonte da Ficha
+           Geral, junto das presenças. */
+        var apontamentosPorCpf = {};
+        aptSnap.forEach(function (d) {
+            var apt = Object.assign({ _id: d.id }, d.data() || {});
+            (apt.alunos || []).forEach(function (al) {
+                var cpfAl = String(al.cpf || '').replace(/\D/g, '');
+                if (!cpfAl) return;
+                (apontamentosPorCpf[cpfAl] = apontamentosPorCpf[cpfAl] || []).push(Object.assign({}, al, {
+                    apontamentoId: apt._id,
+                    apontamentoData: apt.dataAula || apt.data || '',
+                    aula: apt.aula || al.aula || '',
+                    aulaId: apt.aulaId || al.aulaId || '',
+                    disciplina: apt.disciplina || al.disciplina || '',
+                    turma: apt.turma || al.turma || '',
+                    projeto: apt.projeto || al.projeto || '',
+                    instrutor: apt.instrutor || apt.docente || '',
+                    criadoEm: apt.criadoEm || '',
+                    criadoPor: apt.criadoPor || ''
+                }));
+            });
+        });
+        /* Completa as presenças com os registros dos apontamentos (sem
+           duplicar quando a presença ja foi gravada pelo apontamento). */
+        Object.keys(apontamentosPorCpf).forEach(function (cpf) {
+            apontamentosPorCpf[cpf].forEach(function (reg) {
+                var lista = presencasPorCpf[cpf] = presencasPorCpf[cpf] || [];
+                var jaExiste = lista.some(function (x) {
+                    return String(x.apontamentoId || '') === String(reg.apontamentoId || '');
+                });
+                if (jaExiste) return;
+                lista.push({
+                    _id: 'apt-' + reg.apontamentoId,
+                    apontamentoId: reg.apontamentoId,
+                    aulaId: reg.aulaId,
+                    aula: reg.aula,
+                    disciplina: reg.disciplina,
+                    dataAula: reg.apontamentoData,
+                    turma: reg.turma,
+                    projeto: reg.projeto,
+                    status: reg.status,
+                    obs: reg.obs || reg.observacaoJustificativa || '',
+                    justificadaEm: reg.justificadaEm || '',
+                    instrutor: reg.instrutor,
+                    criadoEm: reg.criadoEm,
+                    deApontamento: true
+                });
+            });
         });
         var individuos = [];
         indSnap.forEach(function (d) { individuos.push(Object.assign({ _id: d.id }, d.data() || {})); });
@@ -1223,6 +1275,7 @@ async function ccSincronizarFicha(silent) {
                 cpf: cpf,
                 av: av,
                 presencas: presencasPorCpf[cpf] || base.presencas || [],
+                apontamentos: apontamentosPorCpf[cpf] || base.apontamentos || [],
                 sincronizadoEm: agora,
                 cursoId: ccAtual._id
             });
@@ -1236,6 +1289,15 @@ async function ccSincronizarFicha(silent) {
         if (!silent) alert('Erro ao sincronizar: ' + e.message);
         return 0;
     }
+}
+
+/* Vincula os apontamentos da guia Apontamentos aos registros da Ficha Geral. */
+async function ccSincronizarApontamentosFicha() {
+    try {
+        await ccSincronizarFicha(true);
+        await ccInitFicha();
+        alert('Apontamentos do curso vinculados à Ficha Geral.');
+    } catch (e) { alert('Erro ao sincronizar apontamentos: ' + e.message); }
 }
 
 /* ============ ABA FICHA GERAL DO CURSO ============ */
@@ -1283,37 +1345,79 @@ async function ccInitFicha() {
                     ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
                         dados.av[k] = Object.assign({}, (dados.av && dados.av[k]) || {}, avCurso[k] || {});
                     });
-                    /* Presencas do curso precisam da turma/projeto para o
-                       calculo de presenca da Ficha Geral nao descarta-las. */
-                    if (snapshot.presencas && snapshot.presencas.length) {
-                        dados.presencas = snapshot.presencas.map(function (pr) {
-                            return Object.assign({}, pr, {
-                                turma: pr.turma || p.turma || '',
-                                projeto: pr.projeto || p.projeto || ''
-                            });
+                    /* Presenças/registros vêm da guia Apontamentos do curso.
+                       Usa a turma/projeto do INDIVIDUO no filtro da Ficha
+                       Geral: o apontamento grava o projeto por extenso e o
+                       cadastro pode estar com a sigla (ex.: BUENOS AIRES /PE). */
+                    function ajustarRegistroCurso(reg) {
+                        return Object.assign({}, reg, {
+                            turma: p.turma || reg.turma || '',
+                            projeto: p.projeto || reg.projeto || ''
                         });
+                    }
+                    if (snapshot.presencas && snapshot.presencas.length) {
+                        dados.presencas = snapshot.presencas.map(ajustarRegistroCurso);
+                    }
+                    if (snapshot.apontamentos && snapshot.apontamentos.length) {
+                        dados.apontamentos = snapshot.apontamentos.map(ajustarRegistroCurso);
                     }
                 }
                 var calc = fichaGeralCalcular(p, dados, aulas);
                 if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = ccAtual.nome;
                 if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = String(p.turma || '');
-                ccFichaCache.push({ p: p, calc: calc, aulas: aulas });
+                ccFichaCache.push({ p: p, calc: calc, aulas: aulas, apontamentos: dados.apontamentos || [] });
                 html += '<div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#fff;overflow:hidden">'
                     + '<div onclick="ccToggleFicha(' + i + ')" style="display:flex;gap:10px;align-items:center;padding:12px;cursor:pointer;background:#f8fafc">'
                     + '<b style="font-size:13px;flex:1">' + ccEsc(p.nome) + '</b>'
                     + '<span style="font-size:11px;color:#64748b">' + ccEsc(p.cpf || '') + '</span>'
                     + '<button class="btn-outline btn-sm" onclick="event.stopPropagation();ccImprimirFichaCurso(' + i + ')"><i class="fa-solid fa-print"></i></button>'
                     + '</div><div id="cc-ficha-' + i + '" style="display:none;padding:12px">'
-                    + fichaGeralFolha(p, calc, null, i, aulas) + '</div></div>';
+                    + fichaGeralFolha(p, calc, null, i, aulas)
+                    + ccRenderApontamentosFicha(dados.apontamentos || []) + '</div></div>';
             } catch (e) { console.warn('Erro ao montar ficha do curso:', e); }
         }
         box.innerHTML = html;
     } catch (e) { box.innerHTML = '<p style="color:#dc2626">' + ccEsc(e.message) + '</p>'; }
 }
 function ccToggleFicha(i) { var el = document.getElementById('cc-ficha-' + i); if (el) el.style.display = (el.style.display === 'none') ? '' : 'none'; }
+/* Registros de apontamentos do curso, exibidos dentro da Ficha Geral.
+   Cada linha corresponde a um aluno dentro de um apontamento da guia
+   Apontamentos, com status, observação, justificativa e QR da aula. */
+function ccRenderApontamentosFicha(lista) {
+    if (!lista || !lista.length) return '';
+    var html = '<div style="margin-top:14px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff">'
+        + '<div style="padding:9px 12px;background:#f0fdf4;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:800;color:#15803d">'
+        + '<i class="fa-solid fa-clipboard-check" style="margin-right:7px"></i> Registros de Apontamentos do curso (' + lista.length + ')</div>'
+        + '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Data</th>'
+        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Aula / Disciplina</th>'
+        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Status</th>'
+        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Observação / Justificativa</th>'
+        + '<th style="text-align:center;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">QR</th>'
+        + '</tr></thead><tbody>';
+    lista.slice().sort(function (a, b) { return String(b.apontamentoData || b.dataAula || '').localeCompare(String(a.apontamentoData || a.dataAula || '')); }).forEach(function (r) {
+        var st = String(r.status || '');
+        var cor = st === 'Presente' ? '#15803d' : (st === 'Falta' ? '#b91c1c' : '#b45309');
+        var obs = r.obs || r.observacaoJustificativa || '';
+        if (r.justificadaEm) obs += (obs ? ' — ' : '') + 'Justificado em ' + String(r.justificadaEm).substring(0, 10);
+        var qrAula = r.aulaId || r.apontamentoId;
+        var qr = qrAula ? 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent('FARN-INICIO:' + qrAula) + '&size=60x60&margin=1' : '';
+        html += '<tr>'
+            + '<td style="padding:7px 9px;font-size:11px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap">' + ccEsc(r.apontamentoData || r.dataAula || '—') + '</td>'
+            + '<td style="padding:7px 9px;font-size:11px;color:#334155;border-bottom:1px solid #f1f5f9">' + ccEsc(r.aula || '—')
+            + (r.disciplina ? '<div style="font-size:9px;color:#94a3b8">' + ccEsc(r.disciplina) + '</div>' : '') + '</td>'
+            + '<td style="padding:7px 9px;font-size:10px;font-weight:800;color:' + cor + ';border-bottom:1px solid #f1f5f9">' + ccEsc(st || '—') + '</td>'
+            + '<td style="padding:7px 9px;font-size:10px;color:#64748b;border-bottom:1px solid #f1f5f9">' + ccEsc(obs || '—')
+            + (r.instrutor ? '<div style="font-size:9px;color:#94a3b8">Instrutor: ' + ccEsc(r.instrutor) + '</div>' : '') + '</td>'
+            + '<td style="padding:7px 9px;text-align:center;border-bottom:1px solid #f1f5f9">' + (qr ? '<img src="' + qr + '" alt="QR" style="width:42px;height:42px">' : '—') + '</td>'
+            + '</tr>';
+    });
+    return html + '</tbody></table></div>';
+}
 function ccImprimirFichaCurso(i) {
     var item = ccFichaCache[i]; if (!item) return;
-    var html = fichaGeralFolha(item.p, item.calc, null, i, item.aulas);
+    var html = fichaGeralFolha(item.p, item.calc, null, i, item.aulas)
+        + ccRenderApontamentosFicha(item.apontamentos || []);
     var w = window.open('', '_blank');
     if (w) { w.document.write('<html><head><meta charset="utf-8"><title>Ficha Geral</title><link rel="stylesheet" href="style.css"></head><body>' + html + '</body></html>'); w.document.close(); setTimeout(function () { w.print(); }, 400); }
 }
@@ -1397,16 +1501,17 @@ async function ccAbrirFichaAvaliacao(cpf) {
                 var pr = d.data() || {};
                 if (String(pr.cpf) === String(cpf)) presencasCurso.push(pr);
             });
-            function ajustarPresencas(lista) {
-                return (lista || []).map(function (pr) {
-                    return Object.assign({}, pr, {
-                        turma: pr.turma || p.turma || '',
-                        projeto: pr.projeto || p.projeto || ''
-                    });
+            function ajustarRegistroAvaliacao(reg) {
+                return Object.assign({}, reg, {
+                    turma: p.turma || reg.turma || '',
+                    projeto: p.projeto || reg.projeto || ''
                 });
             }
-            if (presencasCurso.length) dados.presencas = ajustarPresencas(presencasCurso);
-            else if (snapshot.presencas) dados.presencas = ajustarPresencas(snapshot.presencas);
+            if (presencasCurso.length) dados.presencas = ajustarRegistroAvaliacao(presencasCurso);
+            else if (snapshot.presencas) dados.presencas = ajustarRegistroAvaliacao(snapshot.presencas);
+            if (snapshot.apontamentos && snapshot.apontamentos.length) {
+                dados.apontamentos = ajustarRegistroAvaliacao(snapshot.apontamentos);
+            }
         }
         var avs = [];
         resultado[3].forEach(function (d) { avs.push(Object.assign({ _id: d.id }, d.data() || {})); });
