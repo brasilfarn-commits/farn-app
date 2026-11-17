@@ -15,6 +15,11 @@ function json(body, status = 200) {
 }
 
 function agora() { return Date.now(); }
+function novoId() {
+  try { if (crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+  return String(Date.now()) + Math.random().toString(36).slice(2);
+}
+function idOuNovo(v) { return (v === undefined || v === null || v === '') ? novoId() : String(v); }
 
 export default {
   async fetch(request, env) {
@@ -51,7 +56,8 @@ export default {
       /* Grava (upsert) um documento */
       if (path === '/api/set' && request.method === 'POST') {
         const b = await request.json();
-        if (!b.col || !b.id || !b.data) return json({ error: 'col, id e data obrigatorios' }, 400);
+        if (!b.col || !b.data) return json({ error: 'col e data obrigatorios' }, 400);
+        b.id = idOuNovo(b.id);
         let data = b.data;
         if (b.merge) {
           const atual = await db.prepare('SELECT data FROM docs WHERE col = ? AND id = ?').bind(b.col, String(b.id)).first();
@@ -79,6 +85,7 @@ export default {
         const ops = b.ops || [];
         const stmts = [];
         for (const op of ops) {
+          op.id = idOuNovo(op.id);
           if (op.type === 'delete') {
             stmts.push(db.prepare('DELETE FROM docs WHERE col = ? AND id = ?').bind(op.col, String(op.id)));
           } else {

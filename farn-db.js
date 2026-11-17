@@ -222,7 +222,11 @@
     return function () { db.listeners = db.listeners.filter(function (l) { return l !== listener; }); };
   };
   /* CollectionReference tambem precisa de doc() (o app usa collection().doc()). */
-  Query.prototype.doc = function (id) { return new DocRef(this._db, this._col, id); };
+  Query.prototype.doc = function (id) {
+    /* Firestore gera um ID automatico quando doc() vem sem argumento. */
+    if (id === undefined || id === null) id = String(Date.now()) + Math.random().toString(36).slice(2, 10);
+    return new DocRef(this._db, this._col, id);
+  };
   Query.prototype.add = function (data) {
     var id = String(Date.now()) + Math.random().toString(36).slice(2, 8);
     var limpo = limpar(data);
@@ -311,8 +315,9 @@
   /* ---------- API publica ---------- */
   FarnDB.prototype.collection = function (nome) { return new Query(this, nome); };
   FarnDB.prototype.doc = function (caminho) {
-    var partes = String(caminho).split('/');
+    var partes = String(caminho || '').split('/');
     var col = partes.shift(), id = partes.join('/');
+    if (!id) id = String(Date.now()) + Math.random().toString(36).slice(2, 10);
     return new DocRef(this, col, id);
   };
   FarnDB.prototype.batch = function () { return new Batch(this); };
