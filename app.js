@@ -957,6 +957,15 @@ async function initFirebaseListeners() {
 }
 
 async function initApp() {
+    /* Sessão administrativa vinda de login.html: mostra o painel na hora,
+       antes de aguardar o carregamento dos dados do banco. */
+    var sessaoAdmin = restoreLoginState();
+    if (sessaoAdmin) {
+        document.body.classList.remove('landing-mode');
+        document.getElementById('screen-login').classList.remove('active');
+        document.getElementById('screen-admin').classList.add('active');
+        document.getElementById('topbar-user-name').textContent = currentUserData ? currentUserData.nome : 'Administrador';
+    }
     migrateLocalStorage();
     await migrateIndexedDB();
     await initFirebaseListeners();
@@ -977,11 +986,7 @@ async function initApp() {
        catalogo inicial usa a lista de classes. */
     patentesCarregar();
 
-    if (restoreLoginState()) {
-        document.body.classList.remove('landing-mode');
-        document.getElementById('screen-login').classList.remove('active');
-        document.getElementById('screen-admin').classList.add('active');
-        document.getElementById('topbar-user-name').textContent = currentUserData ? currentUserData.nome : 'Administrador';
+    if (sessaoAdmin) {
         applyUserPermissions();
         const firstVisible = document.querySelector('#screen-admin .sidebar-nav .nav-item:not([style*="display: none"])');
         if (firstVisible) firstVisible.click();
