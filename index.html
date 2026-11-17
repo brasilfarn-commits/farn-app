@@ -778,7 +778,11 @@
             d.style.display = 'block';
             d.textContent = 'ERRO JS: ' + msg;
         }
-        window.addEventListener('error', function (e) { mostrar(e.message + ' (' + (e.filename || '').split('/').pop() + ':' + e.lineno + ')'); });
+        window.addEventListener('error', function (e) {
+            var local = (e.filename || '').split('/').pop() + ':' + e.lineno;
+            var stack = (e.error && e.error.stack) ? String(e.error.stack).split('\n').slice(1, 4).join(' | ') : '';
+            mostrar(e.message + ' @ ' + local + (stack ? ' :: ' + stack : ''));
+        });
         window.addEventListener('unhandledrejection', function (e) { mostrar('Promessa: ' + ((e.reason && e.reason.message) || e.reason)); });
     })();
     </script>
@@ -6158,7 +6162,7 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=108"></script>
+    <script src="app.js?v=109"></script>
     <script src="recad-admin.js?v=1"></script>
     <script src="cadastro-cursos.js?v=10"></script>
     <script src="noticias-slider.js?v=1"></script>
