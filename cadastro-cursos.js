@@ -1452,6 +1452,19 @@ function ccAvalRenderAba() {
             if (linhas.some(function (l) { return l.nota === notas[aula._id]; })) return;
             linhas.push({ rotulo: aula.conteudo || aula.disciplina || 'Aula', detalhe: aula.data || '', nota: notas[aula._id] });
         });
+        /* Notas vindas do administrador (ou de avaliações excluídas) usam IDs
+           diferentes: mesmo assim devem aparecer na ficha. */
+        Object.keys(manuais).forEach(function (k) {
+            var m = manuais[k] || {};
+            if (m.nota == null || linhas.some(function (l) { return l.nota === m.nota; })) return;
+            linhas.push({ rotulo: m.avaliacaoNome || 'Avaliação', detalhe: '', nota: m.nota });
+        });
+        Object.keys(notas).forEach(function (k) {
+            var valor = notas[k];
+            if (valor == null || linhas.some(function (l) { return l.nota === valor; })) return;
+            var aulaRel = (c.aulas.todas || []).find(function (a) { return a._id === k; });
+            linhas.push({ rotulo: aulaRel ? (aulaRel.conteudo || aulaRel.disciplina || 'Aula') : 'Nota lançada', detalhe: aulaRel ? (aulaRel.data || '') : '', nota: valor });
+        });
         html = '<h4 style="margin:0 0 10px;font-size:14px">AV ' + (pratica ? 'Prática' : 'Teórica') + '</h4>'
             + ccAvalLinha('Média', pratica ? calc.notaPrat : calc.notaTeor)
             + ccAvalLinha('Avaliações', linhas.length);
