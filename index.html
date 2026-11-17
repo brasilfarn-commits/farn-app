@@ -769,21 +769,20 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <div id="farn-debug-erro" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999999;background:#b91c1c;color:#fff;padding:9px 12px;font:12px monospace;word-break:break-word"></div>
+    <div id="farn-debug-erro" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999999;background:#b91c1c;color:#fff;padding:14px 16px;font:bold 16px monospace;word-break:break-word;user-select:text;cursor:text"></div>
     <script>
     (function () {
         function mostrar(msg) {
             var d = document.getElementById('farn-debug-erro');
             if (!d) return;
             d.style.display = 'block';
-            d.textContent = 'ERRO JS: ' + msg;
+            d.textContent = msg;
         }
         window.addEventListener('error', function (e) {
             var local = (e.filename || '').split('/').pop() + ':' + e.lineno;
-            var stack = (e.error && e.error.stack) ? String(e.error.stack).split('\n').slice(1, 4).join(' | ') : '';
-            mostrar(e.message + ' @ ' + local + (stack ? ' :: ' + stack : ''));
+            mostrar('ERRO: ' + e.message + '  >>>  ' + local);
         });
-        window.addEventListener('unhandledrejection', function (e) { mostrar('Promessa: ' + ((e.reason && e.reason.message) || e.reason)); });
+        window.addEventListener('unhandledrejection', function (e) { mostrar('ERRO PROMessa: ' + ((e.reason && e.reason.message) || e.reason)); });
     })();
     </script>
     <script src="farn-db.js?v=2"></script>
@@ -6162,7 +6161,7 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=109"></script>
+    <script src="app.js?v=110"></script>
     <script src="recad-admin.js?v=1"></script>
     <script src="cadastro-cursos.js?v=10"></script>
     <script src="noticias-slider.js?v=1"></script>
