@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>FARN - Migrar dados do Firestore para o D1</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;padding:24px;max-width:900px;margin:0 auto}
+h1{color:#5eead4;font-size:20px}
+button{background:#0f766e;color:#fff;border:none;padding:12px 20px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px}
+button:disabled{opacity:.5}
+#log{background:#1e293b;border-radius:10px;padding:16px;margin-top:18px;font:12px monospace;white-space:pre-wrap;max-height:520px;overflow:auto}
+.ok{color:#4ade80}.erro{color:#f87171}.info{color:#7dd3fc}
+</style>
+</head>
+<body>
+<h1>Migração Firestore → D1 (Cloudflare)</h1>
+<p style="color:#94a3b8;font-size:13px">Esta página lê as coleções do Firestore no seu navegador e envia para a API do D1. Não apaga nada — apenas grava.</p>
+<button id="btn" onclick="migrar()">Iniciar migração</button>
+<div id="log">Aguardando...</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+  authDomain: "farn-app.firebaseapp.com",
+  databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+  projectId: "farn-app",
+  storageBucket: "farn-app.firebasestorage.app",
+  messagingSenderId: "16254677061",
+  appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const dbFs = firebase.firestore();
+const API = 'https://farn-api.farn-api-farn.workers.dev/api';
+
+const COLECOES = [
+  'disciplinas','aulas','avaliacoes','avaliacoesAlunos','avaliacoesRespostas',
+  'apontamentos','presencasAlunos','noticiasAlunos','noticiasSlides','configuracoes',
+  'config','tfmAgendamentos','tfmAlunos','apostilasAlunos','docentes','patentes',
+  'condecoracoes','usuarios','linksPreInscricao','onlineAlunos','fotosUrls'
+];
+
+function log(msg, tipo) {
+  const el = document.getElementById('log');
+  const linha = document.createElement('div');
+  linha.className = tipo || '';
+  linha.textContent = msg;
+  el.appendChild(linha);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function enviarLote(colecao, docs) {
+  let ok = 0;
+  for (let i = 0; i < docs.length; i += 200) {
+    const lote = docs.slice(i, i + 200);
+    const r = await fetch(API + '/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ docs: lote.map(d => ({ col: colecao, id: d.id, data: d.dados })) })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 150));
+    ok += lote.length;
+  }
+  return ok;
+}
+
+async function migrar() {
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  document.getElementById('log').innerHTML = '';
+  let total = 0;
+  for (const col of COLECOES) {
+    try {
+      const snap = await dbFs.collection(col).get();
+      const docs = [];
+      snap.forEach(d => {
+        const dados = d.data() || {};
+        for (const k of Object.keys(dados)) if (dados[k] === undefined) delete dados[k];
+        docs.push({ id: d.id, dados });
+      });
+      if (!docs.length) { log(col + ': vazia', 'info'); continue; }
+      const n = await enviarLote(col, docs);
+      total += n;
+      log(col + ': ' + n + ' documento(s) enviado(s)', 'ok');
+    } catch (e) {
+      log(col + ': ERRO ' + (e && e.message ? e.message : e), 'erro');
+    }
+  }
+  log('CONCLUÍDO: ' + total + ' documento(s). Recarregue o administrador com Ctrl+F5.', 'ok');
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
