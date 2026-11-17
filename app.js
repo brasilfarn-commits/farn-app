@@ -1,5 +1,9 @@
 /* Patentes: declaradas no topo para evitar erro de inicializacao quando
    os formularios sao populados durante o bootstrap do app. */
+/* Estado do historico de apontamentos (usado no bootstrap via initApp). */
+let aptHistoricoCache = [];
+let aptHistoricoUnsub = null;
+
 let patenteClasses = ['01', '02', '03'];
 let patenteAlvo = null;
 let patentesCatalogo = [];
@@ -1033,7 +1037,13 @@ async function initApp() {
     }
 }
 
-initApp();
+/* Inicia somente depois que todo o script foi avaliado: evita erros de
+   variaveis declaradas mais abaixo serem usadas no bootstrap. */
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { initApp(); });
+} else {
+    initApp();
+}
 
 /* ===== MASCARAS ===== */
 
@@ -8442,9 +8452,6 @@ async function verificarInativosPorFalta(cpfs) {
 }
 
 // ===== HISTÓRICO DE APONTAMENTOS =====
-let aptHistoricoCache = [];
-let aptHistoricoUnsub = null;
-
 function apontamentoCarregarHistorico() {
     if (aptHistoricoUnsub) { aptHistoricoUnsub(); aptHistoricoUnsub = null; }
     aptHistoricoUnsub = dbFirestore.collection('apontamentos').orderBy('criadoEm', 'desc').limit(200).onSnapshot(function(snap) {
