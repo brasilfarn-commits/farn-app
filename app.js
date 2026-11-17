@@ -968,6 +968,9 @@ async function initApp() {
         document.getElementById('screen-login').classList.remove('active');
         document.getElementById('screen-admin').classList.add('active');
         document.getElementById('topbar-user-name').textContent = currentUserData ? currentUserData.nome : 'Administrador';
+        /* Libera os botoes mesmo se a consulta ao banco estiver lenta. */
+        firebaseReady = true;
+        applyUserPermissions();
     }
     migrateLocalStorage();
     await migrateIndexedDB();
