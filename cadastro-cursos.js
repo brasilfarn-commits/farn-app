@@ -86,7 +86,7 @@ function ccRenderLista() {
             + 'Nenhum curso cadastrado. Clique em <b>Criar novo curso</b> para comecar.</div>';
         return;
     }
-    box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px">'
+    box.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px">'
         + ccCursos.map(function (c) {
             return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:16px;background:#fff;display:flex;gap:12px;align-items:center">'
                 + '<div style="width:52px;height:52px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">'
@@ -883,7 +883,14 @@ async function ccLoadIndividuos() {
     var box = document.getElementById('cc-individuos-lista'); if (!box || !ccAtual) return;
     try {
         var snap = await ccRef('individuos').get();
-        ccIndividuosCache = []; snap.forEach(function (d) { ccIndividuosCache.push(Object.assign({ _id: d.id }, d.data() || {})); });
+        ccIndividuosCache = [];
+        snap.forEach(function (d) {
+            var p = Object.assign({ _id: d.id }, d.data() || {});
+            /* Defesa extra: mesmo que o banco devolva algo de outro curso,
+               nada de outro curso aparece na lista deste. */
+            if (p.cursoId && String(p.cursoId) !== String(ccAtual._id)) return;
+            ccIndividuosCache.push(p);
+        });
         box.innerHTML = ccIndividuosCache.length ? '<div style="display:grid;gap:6px">' + ccIndividuosCache.map(function (p) {
             return '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:9px;background:#fff;display:flex;align-items:center;gap:8px">'
                 + '<b style="font-size:13px;flex:1">' + ccEsc(p.nome) + '</b><span style="font-size:11px;color:#64748b">' + ccEsc(p.cpf || '') + '</span>'
@@ -913,6 +920,10 @@ async function ccImportarSelecionados() {
     var todos = (typeof candidatos !== 'undefined' ? candidatos : []);
     var selecionados = todos.filter(function (c) { return ccImportSel[String(c.cpf || c.id || '')]; });
     if (!selecionados.length) { alert('Marque pelo menos um indivíduo.'); return; }
+    if (!ccAtual || !ccAtual._id || ccAtual._id === 'undefined') {
+        alert('Este curso está com ID inválido (criado antes de uma correção). Recrie o curso antes de importar.');
+        return;
+    }
     try {
         var batch = ccDb().batch(); var n = 0;
         selecionados.forEach(function (c) {
@@ -922,7 +933,10 @@ async function ccImportarSelecionados() {
             Object.keys(dados).forEach(function (k) {
                 if (dados[k] === undefined) delete dados[k];
             });
-            dados.cursoId = ccAtual._id; dados.importadoEm = new Date().toISOString();
+            /* Marca o dono dos dados: nada compartilha com outro curso. */
+            dados.cursoId = ccAtual._id;
+            dados.cursoNome = ccAtual.nome || '';
+            dados.importadoEm = new Date().toISOString();
             batch.set(ccRef('individuos').doc(), dados); n++;
         });
         await batch.commit();
