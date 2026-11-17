@@ -18735,9 +18735,7 @@ async function patentesGravarProposta() {
 
 var INDIVIDUO_SECOES = {
     geral:   { id: 'admin-cadastro-geral', rotulo: 'Cadastro Geral', iniciar: 'cadastroGeralInicializar' },
-    aluno:   { id: 'admin-alunos',        rotulo: 'Aluno Ativo',  iniciar: 'alunosInicializar' },
     pre:     { id: 'admin-pre-inscricao', rotulo: 'Pre-inscrito', iniciar: 'preInicializar' },
-    formado: { id: 'admin-formados',      rotulo: 'Formado',      iniciar: 'formadosInicializar' },
     docente: { id: 'admin-docentes',      rotulo: 'Docente',      iniciar: 'docentesInicializar' },
     usuario: { id: 'admin-usuarios',      rotulo: 'Usuario',      iniciar: 'renderUsuariosList' },
 
@@ -18977,7 +18975,9 @@ function cadastroGeralMontar() {
     var registros = [];
     (candidatos || []).forEach(function (c, i) {
         if (!c) return;
-        var formado = (c.tipoPessoa || 'A') === 'F';
+        /* Formado pode vir marcado pelo tipo, pela credencial ou pelo status.
+           Todos eles passam a viver somente no Cadastro Geral. */
+        var formado = (c.tipoPessoa === 'F') || !!c.credencial || c.status === 'Formado';
         if (!formado && !fgStatusAtivo(c.status)) return;
         var did = (typeof candidatoDocId === 'function' ? candidatoDocId(c) : '') || c.docId || c.id;
         registros.push(cgRegistro('candidato', 'candidatos', did, formado ? 'Formado' : 'Aluno Ativo', c, i));
