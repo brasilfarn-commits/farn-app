@@ -18,7 +18,9 @@ function agora() { return Date.now(); }
 
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') return json({}, 204);
+    if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: CORS });
+    }
     const url = new URL(request.url);
     const path = url.pathname;
     const db = env.DB;
