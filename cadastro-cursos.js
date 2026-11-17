@@ -88,6 +88,8 @@ function ccRenderLista() {
     }
     box.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px">'
         + ccCursos.map(function (c) {
+            var status = (c.status === 'Concluido') ? 'Concluido' : 'Em Andamento';
+            var cor = status === 'Concluido' ? '#2563eb' : '#16a34a';
             return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:16px;background:#fff;display:flex;gap:12px;align-items:center">'
                 + '<div style="width:52px;height:52px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">'
                 + ((c.iconeUrl || c.icone) ? '<img src="' + (c.iconeUrl || c.icone) + '" alt="Icone" style="width:100%;height:100%;object-fit:contain">'
@@ -97,10 +99,26 @@ function ccRenderLista() {
                 + '<div style="font-size:11px;color:#64748b;margin-top:3px">'
                 + (c.criadoEm ? new Date(c.criadoEm).toLocaleDateString('pt-BR') : '')
                 + '</div></div>'
+                + '<button class="btn-outline btn-sm" onclick="ccAlternarStatusCurso(\'' + c._id + '\')" title="Alternar status do curso" style="color:' + cor + ';border-color:' + cor + '"><i class="fa-solid fa-circle-check" style="margin-right:4px"></i>' + status + '</button>'
                 + '<button class="btn-primary btn-sm" onclick="ccAbrirCurso(\'' + c._id + '\')"><i class="fa-solid fa-door-open"></i> Abrir</button>'
                 + '<button class="btn-danger btn-sm" onclick="ccExcluirCurso(\'' + c._id + '\')" title="Excluir curso"><i class="fa-solid fa-trash"></i></button>'
                 + '</div>';
         }).join('') + '</div>';
+}
+
+/* Alterna o status do curso entre Em Andamento e Concluido. */
+async function ccAlternarStatusCurso(id) {
+    var c = (ccCursos || []).find(function (x) { return String(x._id) === String(id); });
+    if (!c) { alert('Curso não encontrado.'); return; }
+    var novo = c.status === 'Concluido' ? 'Em Andamento' : 'Concluido';
+    try {
+        await dbFirestore.collection(CC_COLECAO).doc(String(id)).update({
+            status: novo,
+            statusAtualizadoEm: new Date().toISOString()
+        });
+        c.status = novo;
+        ccRenderLista();
+    } catch (e) { alert('Erro ao alterar status: ' + (e && e.message ? e.message : e)); }
 }
 
 /* Recria no Firestore os cursos que estao no backup local e nao estao mais
