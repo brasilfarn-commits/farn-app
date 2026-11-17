@@ -511,6 +511,46 @@ function ccRenderGeral() {
 
 /* ============ ABA AVALIACAO ============ */
 var ccAvsCache = [];
+function ccTipoAvRotulo(tipo) {
+    return ({ teorica: 'AV Teórica', pratica: 'AV Prática',
+        final_teorica: 'AV Final Teórica', final_pratica: 'AV Final Prática' })[tipo] || (tipo || 'AV');
+}
+function ccCartaoAv(a) {
+    return '<div style="border:1px solid #e2e8f0;border-radius:9px;padding:10px;background:#fff;margin-bottom:8px">'
+        + '<div style="font-weight:700;color:#0f172a;font-size:12px;line-height:1.3">' + ccEsc(a.nome) + '</div>'
+        + '<div style="font-size:10px;color:#64748b;margin:5px 0 8px">' + ccQtdQuestoes(a) + ' questão(ões)'
+        + (a.ativa ? ' • <span style="color:#16a34a;font-weight:800">ATIVA</span>' : '')
+        + (a.enviada ? ' • <span style="color:#2563eb;font-weight:800">ENVIADA</span>' : '')
+        + (a.recuperacaoEm ? ' • <span style="color:#ca8a04;font-weight:800">RECUPERAÇÃO' + (a.recuperacaoParada ? ' PARADA' : '') + '</span>' : '')
+        + (a.embaralhamentos ? ' • <span style="color:#7c3aed">embaralhada x' + a.embaralhamentos + '</span>' : '')
+        + '</div>'
+        + '<div style="display:flex;gap:5px;flex-wrap:wrap">'
+        + '<button class="btn-outline btn-sm" onclick="ccEditarAv(\'' + a._id + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>'
+        + '<button class="btn-outline btn-sm" onclick="ccEnviarAv(\'' + a._id + '\')" title="Enviar"><i class="fa-solid fa-paper-plane"></i> Enviar</button>'
+        + '<button class="btn-outline btn-sm" onclick="ccAbrirRecuperacao(\'' + a._id + '\')" title="Recuperação">Recuperação</button>'
+        + '<button class="btn-outline btn-sm" onclick="ccEmbaralharAv(\'' + a._id + '\')" title="Embaralhar"><i class="fa-solid fa-shuffle"></i></button>'
+        + '<button class="btn-outline btn-sm" onclick="ccVerAvaliados(\'' + a._id + '\')"><i class="fa-solid fa-users"></i> Avaliados</button>'
+        + '<button class="btn-outline btn-sm" onclick="ccImprimirAv(\'' + a._id + '\')" title="Imprimir"><i class="fa-solid fa-print"></i></button>'
+        + '<button class="btn-outline btn-sm" onclick="ccAlternarAv(\'' + a._id + '\',' + (a.ativa ? 'false' : 'true') + ')">' + (a.ativa ? 'Desativar' : 'Ativar') + '</button>'
+        + '<button class="btn-danger btn-sm" onclick="ccExcluirAv(\'' + a._id + '\')" title="Excluir"><i class="fa-solid fa-trash"></i></button>'
+        + '</div></div>';
+}
+function ccQuadroAv(cfg) {
+    var botoes = cfg.botoes.map(function (b) {
+        return '<button class="btn-primary btn-sm" onclick="ccNovaAv(\'' + b.tipo + '\')"><i class="fa-solid fa-plus" style="margin-right:4px"></i>' + b.rotulo + '</button>';
+    }).join('');
+    return '<div style="border:1px solid #e2e8f0;border-top:4px solid ' + cfg.cor + ';border-radius:11px;background:#f8fafc;overflow:hidden">'
+        + '<div style="padding:12px 13px;background:#fff;border-bottom:1px solid #e2e8f0">'
+        + '<div style="display:flex;align-items:center;gap:8px"><i class="fa-solid ' + cfg.icone + '" style="color:' + cfg.cor + '"></i>'
+        + '<h4 style="margin:0;font-size:13px;color:#0f172a;flex:1">' + cfg.titulo + '</h4>'
+        + '<span style="font-size:10px;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:10px;padding:2px 8px">' + cfg.lista.length + '</span></div>'
+        + '<p style="font-size:10px;color:#94a3b8;margin:5px 0 9px">' + cfg.subtitulo + '</p>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap">' + botoes + '</div></div>'
+        + '<div style="padding:11px">' + (cfg.lista.length
+            ? cfg.lista.map(ccCartaoAv).join('')
+            : '<div style="font-size:11px;color:#94a3b8;text-align:center;padding:18px 6px">Nenhuma avaliação neste quadro.</div>')
+        + '</div></div>';
+}
 async function ccLoadAvaliacoes() {
     var box = document.getElementById('cc-avaliacoes-lista');
     if (!box || !ccAtual) return;
@@ -519,38 +559,34 @@ async function ccLoadAvaliacoes() {
         var snap = await ccRef('avaliacoes').orderBy('criadoEm', 'desc').get();
         ccAvsCache = [];
         snap.forEach(function (d) { ccAvsCache.push(Object.assign({ _id: d.id }, d.data() || {})); });
-        if (!ccAvsCache.length) { box.innerHTML = '<p style="color:#94a3b8;padding:16px">Nenhuma avaliação criada neste curso.</p>'; return; }
-        box.innerHTML = '<div style="display:grid;gap:10px">' + ccAvsCache.map(function (a) {
-            return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;background:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
-                + '<div style="flex:1;min-width:180px"><div style="font-weight:700;color:#0f172a">' + ccEsc(a.nome) + '</div>'
-                + '<div style="font-size:11px;color:#64748b;margin-top:3px">' + ccEsc(a.tipo || '') + ' • ' + ccQtdQuestoes(a) + ' questão(ões)'
-                + (a.ativa ? ' • <span style="color:#16a34a">ATIVA</span>' : '')
-                + (a.enviada ? ' • <span style="color:#2563eb">ENVIADA</span>' : '')
-                + (a.recuperacaoEm ? ' • <span style="color:#ca8a04">RECUPERAÇÃO' + (a.recuperacaoParada ? ' PARADA' : '') + '</span>' : '')
-                + (a.embaralhamentos ? ' • <span style="color:#7c3aed">embaralhada x' + a.embaralhamentos + '</span>' : '')
-                + '</div></div>'
-                + '<button class="btn-outline btn-sm" onclick="ccEditarAv(\'' + a._id + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>'
-                + '<button class="btn-outline btn-sm" onclick="ccEnviarAv(\'' + a._id + '\')" title="Enviar para os indivíduos"><i class="fa-solid fa-paper-plane"></i> Enviar</button>'
-                + '<button class="btn-outline btn-sm" onclick="ccAbrirRecuperacao(\'' + a._id + '\')" title="Recuperação">' + (a.recuperacaoEm ? 'Recuperação' : 'Recuperação') + '</button>'
-                + '<button class="btn-outline btn-sm" onclick="ccEmbaralharAv(\'' + a._id + '\')" title="Embaralhar respostas"><i class="fa-solid fa-shuffle"></i></button>'
-                + '<button class="btn-outline btn-sm" onclick="ccVerAvaliados(\'' + a._id + '\')"><i class="fa-solid fa-users"></i> Avaliados</button>'
-                + '<button class="btn-outline btn-sm" onclick="ccImprimirAv(\'' + a._id + '\')" title="Imprimir"><i class="fa-solid fa-print"></i></button>'
-                + '<button class="btn-outline btn-sm" onclick="ccAlternarAv(\'' + a._id + '\',' + (a.ativa ? 'false' : 'true') + ')">' + (a.ativa ? 'Desativar' : 'Ativar') + '</button>'
-                + '<button class="btn-danger btn-sm" onclick="ccExcluirAv(\'' + a._id + '\')" title="Excluir"><i class="fa-solid fa-trash"></i></button>'
-                + '</div>';
-        }).join('') + '</div>';
+        var teorica = ccAvsCache.filter(function (a) { return String(a.tipo || 'teorica') === 'teorica'; });
+        var pratica = ccAvsCache.filter(function (a) { return String(a.tipo || '') === 'pratica'; });
+        var final = ccAvsCache.filter(function (a) { return String(a.tipo || '').indexOf('final') === 0; });
+        var outros = ccAvsCache.filter(function (a) {
+            var t = String(a.tipo || 'teorica');
+            return t !== 'teorica' && t !== 'pratica' && t.indexOf('final') !== 0;
+        });
+        teorica = teorica.concat(outros);
+        box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px;align-items:start">'
+            + ccQuadroAv({ titulo:'AV Teórica', subtitulo:'Avaliações teóricas por disciplina/aula', cor:'#2563eb', icone:'fa-brain',
+                lista:teorica, botoes:[{ tipo:'teorica', rotulo:'Nova AV Teórica' }] })
+            + ccQuadroAv({ titulo:'AV Prática', subtitulo:'Avaliações práticas por disciplina/aula', cor:'#16a34a', icone:'fa-hands',
+                lista:pratica, botoes:[{ tipo:'pratica', rotulo:'Nova AV Prática' }] })
+            + ccQuadroAv({ titulo:'AV Final Teórica / Prática', subtitulo:'Provas finais que compõem o FIN', cor:'#7c3aed', icone:'fa-award',
+                lista:final, botoes:[{ tipo:'final_teorica', rotulo:'Final Teórica' }, { tipo:'final_pratica', rotulo:'Final Prática' }] })
+            + '</div>';
     } catch (e) { box.innerHTML = '<p style="color:#dc2626">Erro: ' + ccEsc(e.message) + '</p>'; }
 }
 
 function ccQtdQuestoes(a) { return (a.questoes || []).length; }
 
-function ccNovaAv() { ccAbrirFormAv(null); }
+function ccNovaAv(tipo) { ccAbrirFormAv(null, tipo || 'teorica'); }
 
-function ccAbrirFormAv(id) {
+function ccAbrirFormAv(id, tipoPadrao) {
     ccEditandoAvId = id || null;
     var av = id ? ccAvsCache.find(function (a) { return a._id === id; }) : null;
     var nome = document.getElementById('cc-av-nome'); if (nome) nome.value = av ? (av.nome || '') : '';
-    var tipo = document.getElementById('cc-av-tipo'); if (tipo) tipo.value = av ? (av.tipo || 'teorica') : 'teorica';
+    var tipo = document.getElementById('cc-av-tipo'); if (tipo) tipo.value = av ? (av.tipo || 'teorica') : (tipoPadrao || 'teorica');
     var disc = document.getElementById('cc-av-disciplina'); if (disc) disc.value = av ? (av.disciplina || '') : '';
     var aula = document.getElementById('cc-av-aula'); if (aula) aula.value = av ? (av.aula || '') : '';
     ccQuestoesTemp = av ? (JSON.parse(JSON.stringify(av.questoes || []))) : [];
