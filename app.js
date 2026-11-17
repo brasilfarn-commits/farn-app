@@ -20,6 +20,8 @@ const ADMIN_CPF = '05004959471';
 const ADMIN_SENHA = '212121';
 let selectedLoginRole = 'admin';
 let editingIndex = null;
+let editingProjetoIndex = null;
+let editingCffId = null;
 let editingFormadoMode = false;
 // Origem do formulario de candidato: 'pre-inscricao' | 'alunos' | 'formados'.
 // Define titulo, rotulo do botao Salvar e a tela de retorno apos salvar.
@@ -6472,7 +6474,6 @@ function viagemMontarHTML(dados, inst, comFotos) {
 
 /* ===== PROJETOS CRUD ===== */
 
-let editingProjetoIndex = null;
 let projetoTurmasTemp = [];
 
 function formatCNPJ(input) {
@@ -16160,7 +16161,6 @@ function cursorFecharDetalhe() {
 const FB_CFF = 'cffAlunos';
 const cffFormFields = ['cffc-nome','cffc-cpf','cffc-nascimento','cffc-idade','cffc-genero','cffc-estado-civil','cffc-nacionalidade','cffc-naturalidade','cffc-profissao','cffc-mae','cffc-pai','cffc-email','cffc-whatsapp','cffc-endereco','cffc-numero','cffc-bairro','cffc-cidade','cffc-estado','cffc-projeto','cffc-turma','cffc-senha'];
 let cffAlunosList = [];
-let editingCffId = null;
 
 function cffToggleSenha() {
     var el = document.getElementById('cffc-senha');
