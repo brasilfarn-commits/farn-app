@@ -12,7 +12,14 @@
     <script src="ficha-geral-compartilhar.js?v=26"></script>
     <style>
         * { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; }
+        /* Sobrescreve o overflow:hidden do style.css do administrador. */
+        html, body { height:auto !important; min-height:100vh !important; overflow:visible !important; overflow-y:auto !important; }
+        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh;
+            -webkit-overflow-scrolling:touch; }
+        ::-webkit-scrollbar { width:10px; height:10px; }
+        ::-webkit-scrollbar-track { background:#e2e8f0; }
+        ::-webkit-scrollbar-thumb { background:#94a3b8; border-radius:8px; border:2px solid #e2e8f0; }
+        ::-webkit-scrollbar-thumb:hover { background:#64748b; }
         .pu-login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
             background:linear-gradient(135deg,#0f766e,#115e59 45%,#0f172a); }
         .pu-login-card { width:100%; max-width:400px; background:#fff; border-radius:18px; padding:30px;
