@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>FARN - Diagnostico da tela</title>
+<style>
+ body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:24px;color:#0f172a}
+ .box{max-width:900px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px}
+ h1{color:#0f766e;font-size:20px;margin:0 0 8px}
+ p{font-size:13px;color:#475569}
+ pre{background:#0f172a;color:#a5f3fc;padding:16px;border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:500px;overflow:auto}
+ iframe{width:1px;height:1px;border:0;position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="box">
+ <h1>Diagnostico da tela Cadastro Geral</h1>
+ <p>Aguarde ~10 segundos. Depois copie o texto preto e cole aqui para mim.</p>
+ <pre id="out">Carregando o app dentro do diagnostico...</pre>
+</div>
+<iframe id="app" src="index.html"></iframe>
+<script>
+var iframe = document.getElementById('app');
+var tentativas = 0;
+function inspecionar() {
+  var w, d, L = [];
+  function add(k, v) { L.push(k + ': ' + v); }
+  try {
+    w = iframe.contentWindow;
+    d = w.document;
+    add('pronto', d.readyState);
+    add('firebaseReady', w.firebaseReady);
+    add('qtd candidatos (var global)', (w.candidatos || []).length);
+    add('qtd docentes', (w.docentes || []).length);
+    add('qtd usuarios', (w.usuarios || []).length);
+    add('cadastroGeralPessoas', (w.cadastroGeralPessoas || []).length);
+
+    var tbody = d.getElementById('cg-table-body');
+    add('tbody existe', !!tbody);
+    if (tbody) {
+      add('tbody HTML tamanho', (tbody.innerHTML || '').length);
+      add('tbody TRs', tbody.querySelectorAll('tr').length);
+      add('tbody trecho', (tbody.innerHTML || '').slice(0, 600));
+    }
+    var resumo = d.getElementById('cg-resumo');
+    add('resumo', resumo ? (resumo.textContent || '').slice(0,300) : 'n/a');
+
+    var busca = d.getElementById('cg-search');
+    var tipo = d.getElementById('cg-filtro-tipo');
+    var proj = d.getElementById('cg-filtro-projeto');
+    var inc = d.getElementById('cg-so-incompletos');
+    add('FILTRO busca', busca ? JSON.stringify(busca.value) : 'n/a');
+    add('FILTRO tipo', tipo ? JSON.stringify(tipo.value) : 'n/a');
+    add('FILTRO projeto', proj ? JSON.stringify(proj.value) : 'n/a');
+    add('FILTRO so-incompletos', inc ? inc.checked : 'n/a');
+
+    var sec = d.getElementById('admin-cadastro-geral');
+    add('secao visivel', sec ? (sec.className || '') : 'n/a');
+
+    /* Nomes das primeiras pessoas montadas */
+    var p = (w.cadastroGeralPessoas || []).slice(0, 8).map(function(x){ return x.nome; });
+    add('primeiras pessoas montadas', p.join(' | '));
+
+    /* Forca um render e ve se muda */
+    try {
+      w.cadastroGeralRender();
+      var t2 = d.getElementById('cg-table-body');
+      add('apos render manual, TRs', t2 ? t2.querySelectorAll('tr').length : 'n/a');
+    } catch (e) { add('ERRO ao render manual', e.stack); }
+  } catch (e) {
+    add('ERRO ao inspecionar', e.stack);
+  }
+  document.getElementById('out').textContent = L.join('\n');
+}
+iframe.addEventListener('load', function () {
+  tentativas++;
+  setTimeout(inspecionar, 8000);
+});
+setTimeout(function () {
+  if (document.getElementById('out').textContent.indexOf('Carregando') === 0) inspecionar();
+}, 13000);
+</script>
+</body>
+</html>
