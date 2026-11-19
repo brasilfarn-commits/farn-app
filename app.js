@@ -981,8 +981,11 @@ async function initApp() {
        antes de aguardar o carregamento dos dados do banco. */
     var porUrl = false;
     try { porUrl = new URLSearchParams(location.search).has('admin'); } catch (e) {}
-    var sessaoAdmin = restoreLoginState() || porUrl;
-    if (porUrl) saveLoginState();
+    /* Painel administrativo: so quem logou com CPF ADMIN_CPF e senha
+       ADMIN_SENHA (fazerLogin) abre o painel — o parametro ?admin=1 sozinho
+       nao concede acesso. */
+    var sessaoAdmin = restoreLoginState();
+    if (sessaoAdmin && porUrl) saveLoginState();
     if (sessaoAdmin) {
         document.body.classList.remove('landing-mode');
         document.getElementById('screen-login').classList.remove('active');
@@ -1220,8 +1223,8 @@ async function handleLogin(event) {
             return false;
         }
         const user = usuarios.find(u => u.cpf === cpf && u.senha === password && u.ativo !== false);
-        if (!user) {
-            errorEl.querySelector('span').textContent = 'CPF ou senha invalidos';
+        if (!user || user.cpf !== ADMIN_CPF) {
+            errorEl.querySelector('span').textContent = 'Acesso administrativo reservado ao CPF 05004959471.';
             errorEl.classList.remove('hidden');
             document.getElementById('password').value = '';
             return false;
@@ -1523,16 +1526,10 @@ async function landingLogin(event) {
     if (!cpf || !senha) { landingShowLoginError('Informe o CPF e a senha.'); return false; }
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
-        // Primeiro verifica se é admin na coleção usuarios (inclui admin geral hardcoded)
+        // Painel administrativo: so o CPF ADMIN_CPF + senha ADMIN_SENHA abrem o painel
         var adminUser = null;
         if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
             adminUser = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
-        } else {
-            var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-            snap.forEach(function(doc) {
-                var u = doc.data();
-                if (u.senha === senha && u.ativo !== false && u.permissoes && u.permissoes.includes('admin')) adminUser = u;
-            });
         }
 
         // Se é admin, tem acesso a TUDO
@@ -1596,12 +1593,6 @@ async function landingLoginAdmin(cpf, senha) {
     var user = null;
     if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
         user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
-    } else {
-        var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-        snap.forEach(function(doc) {
-            var u = doc.data();
-            if (u.senha === senha && u.ativo !== false) user = u;
-        });
     }
     if (!user) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
     currentUserData = user;
@@ -7144,8 +7135,11 @@ function restoreFormState() {
 
 function saveLoginState() {
     try {
+        /* Apenas o CPF ADMIN_CPF com a senha ADMIN_SENHA salva a sessao
+           admin: outros usuarios nao recebem o painel. */
+        if (!currentUserData || currentUserData.cpf !== ADMIN_CPF) return;
         localStorage.setItem('farn_login', 'admin');
-        if (currentUserData) localStorage.setItem('farn_user_data', JSON.stringify(currentUserData));
+        localStorage.setItem('farn_user_data', JSON.stringify(currentUserData));
     } catch(e) {}
 }
 
