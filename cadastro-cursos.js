@@ -1864,6 +1864,39 @@ function ccAbrirFormCert(id) {
     set('cc-cert-declaracao', c ? c.declaracao : '');
     set('cc-cert-instituicao', c ? c.instituicao : '');
     var at = document.getElementById('cc-cert-ativo'); if (at) at.checked = c ? c.ativo !== false : true;
+    ccCertSetImagens(c);
+    /* Novo certificado: vincula o campo instituicao com a instituicao
+       cadastrada em Configuracoes > Institucao (Admin). */
+    if (!c && typeof dbFirestore !== 'undefined' && dbFirestore) {
+        dbFirestore.collection('configuracoes').doc('instituicao').get()
+            .then(function (doc) {
+                var d = (doc && doc.exists) ? doc.data() || {} : {};
+                set('cc-cert-instituicao', (d.razaoSocial || d.nomeFantasia || '').trim());
+            })
+            .catch(function () {});
+    }
+}
+/* Mostra ou esconde a pre-visualizacao das imagens A4 do certificado. */
+function ccCertSetImagens(c) {
+    var f = document.getElementById('cc-cert-frente-img');
+    var v = document.getElementById('cc-cert-verso-img');
+    var df = (c && c.frente) || '';
+    var dv = (c && c.verso) || '';
+    if (f) { f.style.display = df ? '' : 'none'; f.src = df; }
+    if (v) { v.style.display = dv ? '' : 'none'; v.src = dv; }
+}
+/* Le o arquivo anexado (campo de imagem) como data URL. */
+function ccCertLerImagem(id) {
+    var inp = document.getElementById(id);
+    var f = inp && inp.files && inp.files[0];
+    if (!f) return Promise.resolve('');
+    if (f.size > 4 * 1024 * 1024) { alert('Imagem muito grande. Maximo 4MB.'); return Promise.resolve(''); }
+    return new Promise(function (resolve) {
+        var reader = new FileReader();
+        reader.onload = function (ev) { resolve(ev.target.result); };
+        reader.onerror = function () { resolve(''); };
+        reader.readAsDataURL(f);
+    });
 }
 function ccFecharFormCert() { var f = document.getElementById('cc-cert-form'); if (f) f.style.display = 'none'; }
 async function ccSalvarCertificado() {
@@ -1875,6 +1908,8 @@ async function ccSalvarCertificado() {
         declaracao: ((document.getElementById('cc-cert-declaracao') || {}).value || '').trim(),
         instituicao: ((document.getElementById('cc-cert-instituicao') || {}).value || '').trim(),
         ativo: !!(document.getElementById('cc-cert-ativo') || {}).checked,
+        frente: await ccCertLerImagem('cc-cert-frente'),
+        verso: await ccCertLerImagem('cc-cert-verso'),
         atualizadoEm: new Date().toISOString()
     };
     try {
@@ -1889,8 +1924,12 @@ async function ccExcluirCertificado(id) {
 }
 function ccVerCertificado(id) {
     var c = ccCertsCache.find(function (x) { return x._id === id; }); if (!c) return;
+    var img = function (url) {
+        return url ? '<img src="' + ccEsc(url) + '" style="max-width:80px;height:112px;object-fit:contain;margin-top:10px;border:1px solid #cbd5e1;border-radius:6px" alt="Imagem do certificado">' : '';
+    };
     var html = '<div style="border:3px double #1d4ed8;padding:34px;text-align:center;background:#fff">'
         + '<div style="font-size:12px;font-weight:800;color:#1d4ed8;letter-spacing:2px">' + ccEsc(c.instituicao || 'FARN') + '</div>'
+        + img(c.frente) + img(c.verso)
         + '<h2 style="margin:18px 0;color:#0f172a">CERTIFICADO</h2>'
         + '<p style="font-size:14px;color:#334155;line-height:1.8">' + ccEsc(c.declaracao || '') + '</p>'
         + '<div style="margin-top:36px;font-size:12px;color:#64748b">' + ccEsc(ccAtual ? ccAtual.nome : '') + '</div></div>';
