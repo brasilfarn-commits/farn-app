@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>FARN - Diagnostico</title>
+<style>
+ body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:24px;color:#0f172a}
+ .box{max-width:900px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px}
+ h1{color:#0f766e;font-size:20px;margin:0 0 8px}
+ p{font-size:13px;color:#475569}
+ pre{background:#0f172a;color:#a5f3fc;padding:16px;border-radius:8px;font-size:13px;white-space:pre-wrap;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="box">
+ <h1>Diagnostico do navegador FARN</h1>
+ <p>Selecione todo o texto preto abaixo, copie e cole aqui para mim.</p>
+ <pre id="out">Carregando...</pre>
+</div>
+<script src="farn-db.js"></script>
+<script>
+(async function () {
+  var L = [];
+  function add(k, v) { L.push(k + ': ' + v); }
+  try {
+    add('URL salva (farn_api_config)', localStorage.getItem('farn_api_config'));
+
+    var cache = {};
+    try { cache = JSON.parse(localStorage.getItem('farn_db_cache_v1') || '{}'); } catch (e) {}
+    Object.keys(cache).forEach(function (k) {
+      var c = cache[k];
+      add('cache local [' + k + ']', c && typeof c === 'object' ? Object.keys(c).length : String(c));
+    });
+
+    add('chaves antigas localStorage',
+        ['farn_candidatos','farn_turmas'].map(function(k){
+          try { var v = localStorage.getItem(k); return k + '=' + (v ? v.length : 0); } catch(e){ return k+'=?'; }
+        }).join(' | '));
+
+    var db = new FarnDB();
+    add('FarnDB.baseUrl', db.baseUrl);
+
+    try {
+      var s = await fetch(db.baseUrl + '/api/stats').then(function (r) { return r.json(); });
+      add('API /api/stats docs', s.docs);
+    } catch (e) { add('API /api/stats ERRO', e.message); }
+
+    try {
+      var snap = await db.collection('candidatos').get();
+      add('candidatos via FarnDB', snap.size);
+    } catch (e) { add('candidatos ERRO', e.message); }
+
+    try {
+      var snap2 = await db.collection('docentes').get();
+      add('docentes via FarnDB', snap2.size);
+    } catch (e) { add('docentes ERRO', e.message); }
+
+    try {
+      var snap3 = await db.collection('usuarios').get();
+      add('usuarios via FarnDB', snap3.size);
+    } catch (e) { add('usuarios ERRO', e.message); }
+  } catch (e) {
+    add('ERRO GERAL', e.stack);
+  }
+  document.getElementById('out').textContent = L.join('\n');
+})();
+</script>
+</body>
+</html>
