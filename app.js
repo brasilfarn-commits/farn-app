@@ -18738,6 +18738,8 @@ var INDIVIDUO_SECOES = {
     pre:     { id: 'admin-pre-inscricao', rotulo: 'Pre-inscrito', iniciar: 'preInicializar' },
     docente: { id: 'admin-docentes',      rotulo: 'Docente',      iniciar: 'docentesInicializar' },
     usuario: { id: 'admin-usuarios',      rotulo: 'Usuario',      iniciar: 'renderUsuariosList' },
+    alunos:   { id: 'admin-alunos',   rotulo: 'Alunos',   iniciar: 'alunosInicializar' },
+    formados: { id: 'admin-formados', rotulo: 'Formados', iniciar: 'formadosInicializar' },
 
     /* --- CFF --------------------------------------------------------------
        O CFF entrou no Individuo porque lista pessoas tambem: a inscricao e
