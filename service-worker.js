@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farn-v58';
+const CACHE_NAME = 'farn-v59';
 const OFFLINE_URLS = [
     './',
     './index.html',
@@ -25,9 +25,13 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
     /* A API do banco NAO pode ser servida do cache do service worker:
-       o FarnDB ja mantem seus proprios dados offline e a fila de escrita. */
+       o FarnDB ja mantem seus proprios dados offline e a fila de escrita.
+       Antes so era ignorado o workers.dev; com o servidor proprio (tunel
+       trycloudflare.com, ou qualquer outro dominio) as chamadas de API
+       acabavam sendo cacheadas aqui, servindo dados velhos e ate quebrando
+       telas. Por isso agora TODO request cross-origin passa direto. */
     const url = new URL(e.request.url);
-    if (url.hostname.indexOf('workers.dev') >= 0 || e.request.method !== 'GET') return;
+    if (url.origin !== self.location.origin || e.request.method !== 'GET') return;
     e.respondWith(
         fetch(e.request).then(resp => {
             const clone = resp.clone();
