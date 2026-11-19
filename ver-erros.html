@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>FARN - Erros capturados</title>
+<style>
+ body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:24px;color:#0f172a}
+ .box{max-width:1000px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px}
+ h1{color:#0f766e;font-size:20px;margin:0 0 8px}
+ p{font-size:13px;color:#475569}
+ pre{background:#0f172a;color:#a5f3fc;padding:16px;border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:600px;overflow:auto}
+ button{background:#0f766e;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;margin:6px 6px 6px 0}
+ button.cinza{background:#e2e8f0;color:#0f172a}
+</style>
+</head>
+<body>
+<div class="box">
+ <h1>Erros capturados do FARN</h1>
+ <p>Abra esta página DEPOIS de reproduzir o erro no app. Copie o texto preto e cole aqui para mim.</p>
+ <button onclick="location.reload()">Atualizar</button>
+ <button class="cinza" onclick="limpar()">Limpar log</button>
+ <pre id="out">Carregando...</pre>
+</div>
+<script>
+function limpar() {
+  try { localStorage.removeItem('farn_erros'); } catch (e) {}
+  location.reload();
+}
+(function () {
+  var log = [];
+  try { log = JSON.parse(localStorage.getItem('farn_erros') || '[]'); } catch (e) {}
+  var txt = log.length ? JSON.stringify(log, null, 2) : 'NENHUM ERRO CAPTURADO';
+  document.getElementById('out').textContent = txt;
+})();
+</script>
+</body>
+</html>

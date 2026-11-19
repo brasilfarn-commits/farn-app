@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>FARN - Forca Auxiliar de Resgate Nacional</title>
     <script>
+        /* CAPTURA TEMPORARIA DE ERROS - remover apos diagnosticar */
+        (function () {
+            function salvar(info) {
+                try {
+                    var log = JSON.parse(localStorage.getItem('farn_erros') || '[]');
+                    log.push(info);
+                    localStorage.setItem('farn_erros', JSON.stringify(log.slice(-12)));
+                } catch (e) {}
+            }
+            window.addEventListener('error', function (e) {
+                salvar({ tipo: 'erro', msg: e.message, arquivo: e.filename,
+                         linha: e.lineno, coluna: e.colno,
+                         stack: e.error && e.error.stack ? e.error.stack : '' });
+            });
+            window.addEventListener('unhandledrejection', function (e) {
+                var r = e.reason || {};
+                salvar({ tipo: 'promessa', msg: String(r.message || r),
+                         stack: r.stack ? r.stack : '' });
+            });
+        })();
+    </script>
+    <script>
         // Se já existe sessão de administrador, mostra APENAS o painel (sem flash da landing)
         try {
             if (localStorage.getItem('farn_login') === 'admin') {
