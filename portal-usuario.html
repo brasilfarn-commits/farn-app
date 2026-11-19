@@ -353,7 +353,8 @@
         function puLogout() {
             puUser = null;
             try { localStorage.removeItem('pu_sessao'); } catch(e){}
-            location.reload();
+            /* Ao sair do Portal do Usuário volta para a página inicial do app. */
+            location.href = 'index.html';
         }
 
         window.addEventListener('DOMContentLoaded', function () {
