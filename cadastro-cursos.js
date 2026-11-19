@@ -1591,10 +1591,18 @@ async function ccAbrirFichaAvaliacao(cpf) {
                     projeto: p.projeto || reg.projeto || ''
                 });
             }
-            if (presencasCurso.length) dados.presencas = ajustarRegistroAvaliacao(presencasCurso);
-            else if (snapshot.presencas) dados.presencas = ajustarRegistroAvaliacao(snapshot.presencas);
+            /* presencas e apontamentos vêm sempre como ARRAYS; o ajuste é
+               por registro — Object.assign num array viraria objeto numérico
+               e quebraria o .filter()/.forEach() dos consumidores. */
+            if (presencasCurso.length) {
+                dados.presencas = presencasCurso.map(ajustarRegistroAvaliacao);
+            } else if (snapshot.presencas && snapshot.presencas.length) {
+                var basePres = Array.isArray(snapshot.presencas) ? snapshot.presencas : [snapshot.presencas];
+                dados.presencas = basePres.map(ajustarRegistroAvaliacao);
+            }
             if (snapshot.apontamentos && snapshot.apontamentos.length) {
-                dados.apontamentos = ajustarRegistroAvaliacao(snapshot.apontamentos);
+                var baseApt = Array.isArray(snapshot.apontamentos) ? snapshot.apontamentos : [snapshot.apontamentos];
+                dados.apontamentos = baseApt.map(ajustarRegistroAvaliacao);
             }
         }
         var avs = [];
