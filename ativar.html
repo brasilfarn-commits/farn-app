@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FARN - Ativando servidor proprio</title>
+<style>
+ body{font-family:Arial,sans-serif;background:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;color:#0f172a}
+ .box{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:32px;max-width:560px;text-align:center;box-shadow:0 8px 30px rgba(15,23,42,.08)}
+ h1{font-size:20px;color:#0f766e;margin:0 0 12px}
+ p{font-size:14px;color:#475569;line-height:1.6}
+ code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="box">
+ <h1>Ativando servidor proprio...</h1>
+ <p id="msg">Configurando o navegador. Aguarde.</p>
+</div>
+<script>
+/* Endereco atual do tunel. Se o servidor reiniciar, a URL muda:
+   use a pagina configurar-servidor.html para atualizar. */
+var URL_TUNEL = 'https://location-anthropology-martial-fares.trycloudflare.com';
+try {
+  localStorage.setItem('farn_api_config', JSON.stringify({ url: URL_TUNEL, token: '' }));
+  /* Remove o espelho antigo (vinha da nuvem) para nao sobrescrever os dados
+     novos quando o app carregar. */
+  ['farn_db_cache_v1','farn_db_queue_v1','farn_db_since_v1'].forEach(function (k) {
+    try { localStorage.removeItem(k); } catch (e) {}
+  });
+  document.getElementById('msg').innerHTML =
+    'Servidor configurado:<br><code>' + URL_TUNEL + '</code><br><br>Abrindo o app...';
+} catch (e) {
+  document.getElementById('msg').textContent = 'Erro: ' + e.message;
+}
+setTimeout(function () { location.replace('index.html'); }, 1500);
+</script>
+</body>
+</html>
