@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FARN - Diagnostico</title>
 <style>
  body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:24px;color:#0f172a}
@@ -9,12 +10,14 @@
  h1{color:#0f766e;font-size:20px;margin:0 0 8px}
  p{font-size:13px;color:#475569}
  pre{background:#0f172a;color:#a5f3fc;padding:16px;border-radius:8px;font-size:13px;white-space:pre-wrap;word-break:break-all}
+ button{background:#0f766e;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;margin:8px 6px 8px 0}
 </style>
 </head>
 <body>
 <div class="box">
  <h1>Diagnostico do navegador FARN</h1>
- <p>Selecione todo o texto preto abaixo, copie e cole aqui para mim.</p>
+ <p>Selecione todo o texto preto, copie e cole aqui para mim.</p>
+ <button onclick="location.reload()">Atualizar diagnostico</button>
  <pre id="out">Carregando...</pre>
 </div>
 <script src="farn-db.js"></script>
@@ -24,6 +27,9 @@
   function add(k, v) { L.push(k + ': ' + v); }
   try {
     add('URL salva (farn_api_config)', localStorage.getItem('farn_api_config'));
+    add('Service Worker ativo',
+        navigator.serviceWorker && navigator.serviceWorker.controller
+          ? navigator.serviceWorker.controller.scriptURL : 'nenhum');
 
     var cache = {};
     try { cache = JSON.parse(localStorage.getItem('farn_db_cache_v1') || '{}'); } catch (e) {}
@@ -32,7 +38,7 @@
       add('cache local [' + k + ']', c && typeof c === 'object' ? Object.keys(c).length : String(c));
     });
 
-    add('chaves antigas localStorage',
+    add('chaves antigas',
         ['farn_candidatos','farn_turmas'].map(function(k){
           try { var v = localStorage.getItem(k); return k + '=' + (v ? v.length : 0); } catch(e){ return k+'=?'; }
         }).join(' | '));
@@ -48,6 +54,11 @@
     try {
       var snap = await db.collection('candidatos').get();
       add('candidatos via FarnDB', snap.size);
+      var primeiros = [];
+      snap.docs.slice(0, 5).forEach(function (d) {
+        primeiros.push((d.data && d.data.nome) || d.id);
+      });
+      add('primeiros nomes', primeiros.join(' | '));
     } catch (e) { add('candidatos ERRO', e.message); }
 
     try {
