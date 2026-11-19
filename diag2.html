@@ -74,11 +74,22 @@ function inspecionar() {
 }
 iframe.addEventListener('load', function () {
   tentativas++;
-  setTimeout(inspecionar, 8000);
+  setTimeout(async function () {
+    /* Abre a secao como o usuario faria, para disparar o carregamento. */
+    try {
+      var w = iframe.contentWindow;
+      if (typeof w.showAdminSection === 'function') w.showAdminSection('admin-cadastro-geral');
+      if (typeof w.cadastroGeralInicializar === 'function') await w.cadastroGeralInicializar();
+    } catch (e) {
+      document.getElementById('out').textContent = 'ERRO ao abrir secao: ' + e.stack;
+      return;
+    }
+    inspecionar();
+  }, 10000);
 });
 setTimeout(function () {
   if (document.getElementById('out').textContent.indexOf('Carregando') === 0) inspecionar();
-}, 13000);
+}, 18000);
 </script>
 </body>
 </html>
