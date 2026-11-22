@@ -1721,8 +1721,14 @@ async function landingLoginAluno(cpf, senha) {
     if (dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
     if (dados.pediuBaixa) { landingShowLoginError('Você solicitou a baixa do curso. Seu acesso será restabelecido somente após autorização da administração.'); return false; }
     if (dados.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
-    if (!fgStatusAtivo(dados.status) && dados.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos ativos (status Ativo, Formado ou Acadêmico) ou Inativo por Falta podem acessar o portal.'); return false; }
-    if (!dados.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
+    /* Acesso ao Portal do Aluno: alunos ativos que fazem parte de alguma turma com status Em Andamento */
+    if (!fgStatusAtivo(dados.status)) { landingShowLoginError('Acesso ao Portal do Aluno é para alunos ativos.'); return false; }
+    if (!dados.turma) { landingShowLoginError('Cadastro sem turma vinculada.'); return false; }
+    var snapT = await dbFirestore.collection('turmas').where('nome', '==', dados.turma).limit(1).get();
+    if (snapT.empty || !turmaEmAndamento(snapT.docs[0].data())) {
+        landingShowLoginError('Acesso ao Portal do Aluno é para alunos ativos das turmas em andamento.');
+        return false;
+    }
     localStorage.setItem('pa_lembrar_cpf', cpf);
     localStorage.setItem('pa_lembrar_senha', senha);
     location.href = 'portal-aluno.html';
