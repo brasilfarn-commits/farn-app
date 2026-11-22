@@ -1303,8 +1303,8 @@ async function togglePortais() {
         atualizarBotaoPortais();
         alert(novo ? 'Portais desligados. Os usuarios verao a mensagem de manutencao.' : 'Portais ligados. Acesso liberado aos portais.');
         if (!novo) {
-            // Botão "Ligar portais": o Portal do Aluno fica ativado e vinculado ao botão
-            location.href = 'portal-aluno.html';
+            // Botão "Ligar portais": abre o Portal do Usuário
+            location.href = 'portal-usuario.html';
         }
     } catch (e) {
         alert('Erro ao salvar o estado dos portais: ' + e.message);
@@ -1570,17 +1570,6 @@ async function landingLogin(event) {
                 enterAdminPanel();
             } else if (portal === 'usuario') {
                 location.href = 'portal-usuario.html';
-            } else if (portal === 'formado') {
-                location.href = 'portal-formado.html';
-            } else if (portal === 'aluno') {
-                location.href = 'portal-aluno.html';
-            } else if (portal === 'docente') {
-                location.href = 'portal-docente.html';
-            } else if (portal === 'coordenacao') {
-                location.href = 'portal-coordenacao.html';
-            } else if (portal === 'cff') {
-                landingCffSessao({ cpf: cpf, nome: 'Administrador Geral', permissoes: ['admin'] });
-                location.href = 'portal-cff.html';
             }
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return true;
@@ -1595,11 +1584,6 @@ async function landingLogin(event) {
         if (!ok) {
             if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
             else if (portal === 'usuario') ok = await landingLoginUsuario(cpf, senha);
-            else if (portal === 'formado') ok = await landingLoginFormado(cpf, senha);
-            else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
-            else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
-            else if (portal === 'coordenacao') ok = await landingLoginCoordenacao(cpf, senha);
-            else if (portal === 'cff') ok = await landingLoginCff(cpf, senha);
         }
         if (!ok) {
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
@@ -1626,7 +1610,6 @@ async function landingLoginPortalPerm(cpf, senha, portal) {
     saveLastLogin(cpf);
     try { localStorage.setItem('farn_user_data', JSON.stringify(user)); } catch(e) {}
     if (portal === 'usuario') location.href = 'portal-usuario.html';
-    else if (portal === 'formado') location.href = 'portal-formado.html';
     return true;
 }
 
@@ -1684,110 +1667,6 @@ async function landingLoginUsuario(cpf, senha) {
     }
     landingShowLoginError('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.');
     return false;
-}
-
-async function landingLoginFormado(cpf, senha) {
-    var snap = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).where('senha', '==', senha).limit(1).get();
-    if (!snap.empty) {
-        var u = snap.docs[0].data();
-        localStorage.setItem('pf_lembrar_cpf', cpf);
-        localStorage.setItem('pf_lembrar_senha', senha);
-        location.href = 'portal-formado.html';
-        return true;
-    }
-    var snapC = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).get();
-    var cand = null;
-    var candDoc = null;
-    snapC.forEach(function(doc) {
-        var d = doc.data();
-        if ((d.tipoPessoa || 'A') === 'F') {
-            cand = d;
-            candDoc = doc;
-        }
-    });
-    if (!cand) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
-    if (cand.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    localStorage.setItem('pf_lembrar_cpf', cpf);
-    localStorage.setItem('pf_lembrar_senha', senha);
-    location.href = 'portal-formado.html';
-    return true;
-}
-
-/* ===== PORTAL DO ALUNO ===== */
-async function landingLoginAluno(cpf, senha) {
-    var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF não encontrado.'); return false; }
-    var dados = snap.docs[0].data();
-    if (dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    if (dados.pediuBaixa) { landingShowLoginError('Você solicitou a baixa do curso. Seu acesso será restabelecido somente após autorização da administração.'); return false; }
-    if (dados.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
-    /* Acesso ao Portal do Aluno: alunos ativos que fazem parte de alguma turma com status Em Andamento */
-    if (!fgStatusAtivo(dados.status)) { landingShowLoginError('Acesso ao Portal do Aluno é para alunos ativos.'); return false; }
-    if (!dados.turma) { landingShowLoginError('Cadastro sem turma vinculada.'); return false; }
-    var snapT = await dbFirestore.collection('turmas').where('nome', '==', dados.turma).limit(1).get();
-    if (snapT.empty || !turmaEmAndamento(snapT.docs[0].data())) {
-        landingShowLoginError('Acesso ao Portal do Aluno é para alunos ativos das turmas em andamento.');
-        return false;
-    }
-    localStorage.setItem('pa_lembrar_cpf', cpf);
-    localStorage.setItem('pa_lembrar_senha', senha);
-    location.href = 'portal-aluno.html';
-    return true;
-}
-
-/* ===== PORTAL DO DOCENTE ===== */
-async function landingLoginDocente(cpf, senha) {
-    var snap = await dbFirestore.collection('docentes').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF não encontrado entre os docentes.'); return false; }
-    var dados = snap.docs[0].data();
-    if (!dados.senha) { landingShowLoginError('Senha de acesso não cadastrada. Contate a administração.'); return false; }
-    if (dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-    sessionStorage.setItem('pd_sessao', JSON.stringify(dados));
-    localStorage.setItem('pd_lembrar_cpf', cpf);
-    localStorage.setItem('pd_lembrar_senha', senha);
-    location.href = 'portal-docente.html';
-    return true;
-}
-
-/* ===== PORTAL DA COORDENAÇÃO ===== */
-async function landingLoginCoordenacao(cpf, senha) {
-    var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
-    var u = snap.docs[0].data();
-    if (u.senha !== senha) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
-    if (u.ativo === false) { landingShowLoginError('Usuário desativado. Contate o administrador.'); return false; }
-    localStorage.setItem('pc_lembrar_cpf', cpf);
-    localStorage.setItem('pc_lembrar_senha', senha);
-    location.href = 'portal-coordenacao.html';
-    return true;
-}
-
-/* ===== PORTAL DO CFF ===== */
-function landingCffSessao(cadastro) {
-    sessionStorage.setItem('cff_sessao', JSON.stringify({
-        cpf: cadastro && cadastro.cpf ? cadastro.cpf : '',
-        nome: cadastro && cadastro.nome ? cadastro.nome : 'Aluno CFF',
-        email: cadastro && cadastro.email ? cadastro.email : '',
-        whatsapp: cadastro && cadastro.whatsapp ? cadastro.whatsapp : ''
-    }));
-}
-
-async function landingLoginCff(cpf, senha) {
-    try {
-        var doc = await dbFirestore.collection('cffAlunos').doc(cpf).get();
-        if (doc.exists) {
-            var dados = doc.data();
-            if (dados.senha && dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
-            landingCffSessao(dados);
-        } else {
-            landingCffSessao({ cpf: cpf, nome: 'Aluno CFF' });
-        }
-    } catch (e) {
-        console.warn('Falha ao consultar o cadastro CFF no login:', e);
-        landingCffSessao({ cpf: cpf, nome: 'Aluno CFF' });
-    }
-    location.href = 'portal-cff.html';
-    return true;
 }
 
 /* ===== ONLINE TRACKING ===== */
