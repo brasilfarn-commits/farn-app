@@ -179,6 +179,8 @@ function ccAbrirFormCurso(id) {
     if (prevA) prevA.innerHTML = curso && (curso.apostilaPdfUrl || curso.apostilaPdf) ? '<i class="fa-solid fa-file-pdf" style="color:#dc2626"></i> PDF anexado ao curso'
         : (curso && curso.apostilaUrl ? '<i class="fa-solid fa-link" style="color:#2563eb"></i> Link configurado' : 'Nenhuma apostila anexada');
     var modal = document.getElementById('cc-modal-curso'); if (modal) modal.classList.remove('hidden');
+    var ckCert = document.getElementById('cc-perm-certificado'); if (ckCert) ckCert.checked = !!(curso && curso.permCertificado);
+    var ckFicha = document.getElementById('cc-perm-ficha'); if (ckFicha) ckFicha.checked = !!(curso && curso.permFichaGeral);
 }
 
 function ccFecharFormCurso() {
@@ -226,6 +228,8 @@ async function ccSalvarCurso() {
     if (!nome) { alert('Informe o nome do curso.'); return; }
     var dados = { nome: nome, atualizadoEm: new Date().toISOString() };
     dados.apostilaUrl = ((document.getElementById('cc-curso-apostila-url') || {}).value || '').trim();
+    dados.permCertificado = !!((document.getElementById('cc-perm-certificado') || {}).checked);
+    dados.permFichaGeral = !!((document.getElementById('cc-perm-ficha') || {}).checked);
     var novoRef = ccEditandoCursoId ? null : ccDb().collection(CC_COLECAO).doc();
     var cursoId = ccEditandoCursoId || (novoRef && novoRef.id);
     try {
@@ -276,12 +280,14 @@ function ccAbrirCurso(id) {
     if (tit) tit.textContent = ccAtual.nome;
     var ic = document.getElementById('cc-workspace-icone');
     if (ic) ic.innerHTML = (ccAtual.iconeUrl || ccAtual.icone) ? '<img src="' + (ccAtual.iconeUrl || ccAtual.icone) + '" style="width:100%;height:100%;object-fit:contain">' : '<i class="fa-solid fa-book"></i>';
+    var ckCert = document.getElementById('cc-perm-certificado'); if (ckCert) ckCert.checked = !!(ccAtual.permCertificado);
+    var ckFicha = document.getElementById('cc-perm-ficha'); if (ckFicha) ckFicha.checked = !!(ccAtual.permFichaGeral);
     ccSetAba('geral');
 }
 
 function ccSetAba(aba) {
     ccAba = aba;
-    ['geral','avaliacao','disciplinas','individuos','apontamento','ficha','certificado','secaoavaliacao'].forEach(function (a) {
+    ['geral','avaliacao','disciplinas','individuos','apontamento','ficha','certificado','secaoavaliacao','permissoes'].forEach(function (a) {
         var el = document.getElementById('cc-tab-' + a);
         if (el) el.style.display = (a === aba) ? '' : 'none';
         var btn = document.getElementById('cc-aba-' + a);

@@ -4119,6 +4119,7 @@
                             <button class="nav-item" id="cc-aba-ficha" onclick="ccSetAba('ficha')"><i class="fa-solid fa-file-lines"></i> Ficha Geral</button>
                             <button class="nav-item" id="cc-aba-certificado" onclick="ccSetAba('certificado')"><i class="fa-solid fa-award"></i> Certificados</button>
                             <button class="nav-item" id="cc-aba-secaoavaliacao" onclick="ccSetAba('secaoavaliacao')"><i class="fa-solid fa-clipboard-list"></i> Seção de Avaliação</button>
+                            <button class="nav-item" id="cc-aba-permissoes" onclick="ccSetAba('permissoes')"><i class="fa-solid fa-shield-halved" style="color:#8b5cf6;margin-right:8px"></i> Permissões</button>
                         </div>
 
                         <!-- ABA GERAL -->
@@ -4250,6 +4251,20 @@
                                 </div>
                             </div>
                             <div id="cc-avaliacao-lista"></div>
+                        </div>
+
+                        <!-- ABA PERMISSÕES -->
+                        <div id="cc-tab-permissoes" style="display:none">
+                            <div style="padding:16px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;margin-bottom:16px">
+                                <h3 style="margin:0 0 4px;color:#1e293b;font-size:14px;font-weight:800">Permissões - Portal do Usuário</h3>
+                                <p style="margin:0 0 12px;font-size:11px;color:#64748b">Marque o que do curso será exibido no Portal do Usuário.</p>
+                                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#334155;cursor:pointer">
+                                    <input type="checkbox" id="cc-perm-certificado" class="config-input" style="width:18px;height:18px"> Exibir Certificado no Portal do Usuário
+                                </label>
+                                <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#334155;cursor:pointer">
+                                    <input type="checkbox" id="cc-perm-ficha" class="config-input" style="width:18px;height:18px"> Exibir Ficha Geral no Portal do Usuário
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>

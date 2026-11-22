@@ -308,8 +308,12 @@
                     var certSnap = await dbFirestore.collection('cursosCadastro').doc(c._id)
                         .collection('certificados').where('ativo', '==', true).limit(1).get();
                     var cert = certSnap.empty ? null : certSnap.docs[0].data();
+                    var infoHtml = '';
+                    if (c.permCertificado) infoHtml += '<span style="font-size:10px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:3px 9px;">Certificado</span>';
+                    if (c.permFichaGeral) infoHtml += '<span style="font-size:10px;font-weight:700;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:3px 9px;">Ficha Geral</span>';
                     html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;background:#fff">'
                         + '<b style="font-size:13px;color:#0f172a">' + puEsc(c.nome) + '</b>'
+                        + (infoHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">' + infoHtml + '</div>' : '')
                         + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">';
                     var pdfUrl = c.apostilaPdfUrl || c.apostilaPdf;
                     if (pdfUrl) html += '<a class="btn-outline btn-sm" href="' + pdfUrl + '" download="apostila.pdf" target="_blank"><i class="fa-solid fa-file-pdf" style="color:#dc2626;margin-right:5px"></i> Baixar apostila (PDF)</a>';
