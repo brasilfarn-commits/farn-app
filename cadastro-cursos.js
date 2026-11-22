@@ -1950,3 +1950,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var btn = document.getElementById('cc-btn-novo');
     if (btn) btn.addEventListener('click', function () { ccAbrirFormCurso(null); });
 });
+
+/* Salva as permissoes (Portal do Usuario) do curso aberto na aba Permissoes. */
+async function ccSalvarPermissoes() {
+    if (!ccAtual) { alert('Abra um curso antes de salvar as permissoes.'); return; }
+    var ckCert = document.getElementById('cc-perm-certificado');
+    var ckFicha = document.getElementById('cc-perm-ficha');
+    var dados = {
+        permCertificado: !!(ckCert && ckCert.checked),
+        permFichaGeral: !!(ckFicha && ckFicha.checked),
+        atualizadoEm: new Date().toISOString()
+    };
+    try {
+        await dbFirestore.collection(CC_COLECAO).doc(ccAtual._id).update(dados);
+        alert('Permissoes do curso salvas.');
+    } catch (e) {
+        alert('Erro a salvar as permissoes: ' + e.message);
+    }
+}

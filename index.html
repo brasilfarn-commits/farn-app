@@ -4264,6 +4264,9 @@
                                 <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#334155;cursor:pointer">
                                     <input type="checkbox" id="cc-perm-ficha" class="config-input" style="width:18px;height:18px"> Exibir Ficha Geral no Portal do Usuário
                                 </label>
+                                <div style="margin-top:14px">
+                                    <button class="btn-primary btn-sm" onclick="ccSalvarPermissoes()"><i class="fa-solid fa-check" style="margin-right:6px"></i> Salvar permissões</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -6264,7 +6267,33 @@
     <script src="farn-storage.js?v=2"></script>
     <script src="app.js?v=114"></script>
     <script src="recad-admin.js?v=1"></script>
-    <script src="cadastro-cursos.js?v=15"></script>
+    <script src="cadastro-cursos.js?v=16"></script>
+    <script>
+    /* Garante que o botao "Salvar permissoes" da aba Permissoes do admin funcione mesmo
+       quando o cadastro-cursos.js carregado estiver desatualizado. */
+    function ccSalvarPermissoes() {
+        var ckCert = document.getElementById('cc-perm-certificado');
+        var ckFicha = document.getElementById('cc-perm-ficha');
+        var dados = {
+            permCertificado: !!(ckCert && ckCert.checked),
+            permFichaGeral: !!(ckFicha && ckFicha.checked),
+            atualizadoEm: new Date().toISOString()
+        };
+        try {
+            if (typeof CC_COLECAO === 'undefined' || typeof dbFirestore === 'undefined'
+                || typeof ccAtual === 'undefined' || !ccAtual || !ccAtual._id) {
+                alert('Nao foi possivel salvar as permissoes: abra um curso pelo menu Cadastro de Cursos.');
+                return;
+            }
+            dbFirestore.collection(CC_COLECAO).doc(ccAtual._id).update(dados);
+            if (ckCert) ckCert.checked = dados.permCertificado;
+            if (ckFicha) ckFicha.checked = dados.permFichaGeral;
+            alert('Permissoes do curso salvas.');
+        } catch (e) {
+            alert('Erro ao salvar as permissoes: ' + e.message);
+        }
+    }
+    </script>
     <script src="noticias-slider.js?v=1"></script>
     <script src="whatfarn.js?v=18"></script>
     <script>
