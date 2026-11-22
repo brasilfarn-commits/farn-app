@@ -24,8 +24,7 @@
 
         /* ===== LOGIN ===== */
         #screen-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--green-d) 0%,var(--green) 30%,var(--blue) 60%,var(--yellow) 100%);position:relative;overflow:hidden}
-        /* Login agora é centralizado na landing - esconder tela de login do portal */
-        #screen-login { display: none !important; }
+        /* Tela de login visível no portal quando não há sessão ativa; o app já loga no index */
         #screen-login::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);top:-250px;right:-150px;border-radius:50%}
         #screen-login::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%);bottom:-200px;left:-100px;border-radius:50%}
         .pf-login-card{background:rgba(255,255,255,.97);border:none;border-radius:28px;padding:44px 36px;width:100%;max-width:400px;position:relative;z-index:1;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -1174,28 +1173,6 @@
                 return;
             }
 
-            var parceiroSnap = await dbFirestore.collection('parceiros').where('nome','==',projetoDoAluno).limit(1).get();
-            var statusProjeto = parceiroSnap.empty ? '' : parceiroSnap.docs[0].data().status;
-            var projetoEncontrado = !parceiroSnap.empty;
-            if (parceiroSnap.empty) {
-                var snapAlt = await dbFirestore.collection('parceiros').get();
-                snapAlt.forEach(function(d) {
-                    if (projetoEncontrado) return;
-                    var nd = d.data();
-                    if (nd.nome && projetoDoAluno && (nd.nome.toLowerCase().indexOf(projetoDoAluno.toLowerCase()) !== -1 || projetoDoAluno.toLowerCase().indexOf(nd.nome.toLowerCase()) !== -1)) {
-                        statusProjeto = nd.status || '';
-                        projetoEncontrado = true;
-                    }
-                });
-            }
-            if (projetoEncontrado && statusProjeto !== 'Em Andamento' && statusProjeto !== 'Ativo') {
-                errEl.textContent = 'Seu projeto nao esta disponivel no momento.';
-                errEl.style.display = 'block';
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
-                return;
-            }
-
             paUser = dados;
             paUser._docId = doc.id;
 
@@ -1436,6 +1413,7 @@
         var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
         if (adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-aluno'))) {
             document.getElementById('screen-portal').classList.add('active');
+            document.getElementById('screen-login').style.display = 'none';
             var initials = (adminData.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
             document.getElementById('pf-user-avatar').textContent = initials;
             document.getElementById('pf-user-name').textContent = adminData.nome || 'Administrador';
