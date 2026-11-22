@@ -291,6 +291,8 @@
         var puFichaCursaAberta = null; /* id do curso com a Ficha Germazena aberta na Seção Cursos */
         async function puCarregarGuias() {
             var box = document.getElementById('pu-guias'); if (!box || !puUser) return;
+            /* Mantém a Ficha Germazena aberta estável — não re-renderiza enquanto ela estiver aberta. */
+            if (puFichaCursaAberta) return;
             /* Atualiza os guias ao detectar mudanças nos dados (ex.: admin marcou Ficha). */
             try { if (!puCarregarGuias._iv) { puCarregarGuias._iv = setInterval(puCarregarGuias, 4000); } } catch (e) {}
             var cpf = puSoDigitos(puUser.cpf);
