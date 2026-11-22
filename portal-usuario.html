@@ -74,6 +74,8 @@
         .pu-view { display:none; }
         .pu-view.ativo { display:block; }
         .pu-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+        .pu-inicio-foto-wrap { text-align:center; margin-bottom:18px; }
+        .pu-inicio-foto { width:110px; height:150px; object-fit:cover; border-radius:14px; border:2px solid #e2e8f0; display:block; margin:0 auto; }
     </style>
 </head>
 <body>
@@ -119,7 +121,10 @@
         <div class="pu-container">
             <!-- SECAO INICIO -->
             <div class="pu-view ativo" id="pu-view-inicio">
-                <div class="pu-card" style="text-align:center;padding:56px 24px">
+                <div class="pu-inicio-foto-wrap">
+                    <img id="pu-inicio-foto" class="pu-inicio-foto" src="" alt="Foto 3x4 do usuário" style="display:none">
+                </div>
+                <div class="pu-card" style="text-align:center;padding:34px 24px">
                     <div style="font-size:52px;color:#0f766e;margin-bottom:14px"><i class="fa-solid fa-hand-wave"></i></div>
                     <h2 style="font-size:24px;color:#0f172a;margin-bottom:8px">Bem-vindo, <span id="pu-boas-vindas-nome">usuário</span>!</h2>
                     <p style="font-size:14px;color:#64748b">É bom ter você aqui.</p>
@@ -263,7 +268,22 @@
             if (boas) boas.textContent = (puUser.nome || puUser.nomeCompleto || 'usuário').split(' ')[0];
             /* A tela inicial mostra só as boas-vindas; as outras abas carregam
                seus dados apenas quando o usuario abrir cada uma. */
+            puInicioCarregar();
             puSetView('inicio');
+        }
+
+        /* Exibe a foto 3x4 do usuário logado no topo do Início */
+        function puInicioCarregar() {
+            var img = document.getElementById('pu-inicio-foto');
+            if (!img) return;
+            var foto = null;
+            try {
+                var cpf = puSoDigitos(puUser.cpf);
+                foto = localStorage.getItem('farn_photo_' + cpf) || localStorage.getItem('foto3x4_' + cpf) || null;
+            } catch (e) { foto = null; }
+            if (!foto) foto = puUser.photoDataUrl || puUser.foto || puUser.fotoUrl || null;
+            if (foto) { img.src = foto; img.style.display = ''; }
+            else { img.style.display = 'none'; }
         }
 
         /* GUIA DO CURSO: apostila e certificado dos cursos em que o CPF do
