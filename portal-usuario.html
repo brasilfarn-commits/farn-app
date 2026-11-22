@@ -288,6 +288,7 @@
 
         /* GUIA DO CURSO: apostila e certificado dos cursos em que o CPF do
            usuario aparece na lista de individuos importados. */
+        var puFichaCursaAberta = null; /* id do curso com a Ficha Germazena aberta na Seção Cursos */
         async function puCarregarGuias() {
             var box = document.getElementById('pu-guias'); if (!box || !puUser) return;
             /* Atualiza os guias ao detectar mudanças nos dados (ex.: admin marcou Ficha). */
@@ -333,7 +334,10 @@
                     if (!pdfUrl && !c.apostilaUrl && !cert) html += '<span style="font-size:11px;color:#94a3b8">Nenhuma apostila ou certificado disponível.</span>';
                     html += '</div></div>';
                 }
+                /* Preserva a Ficha Germazena aberta ao re-renderizar a Seção Cursos. */
+                var fichaAberta = puFichaCursaAberta;
                 box.innerHTML = html;
+                if (fichaAberta) setTimeout(function () { try { puVerFichaDoCurso(fichaAberta); } catch (e) {} }, 50);
             } catch (e) {
                 console.error('Erro ao carregar guias:', e);
                 box.innerHTML = '<div class="pu-aviso">Não foi possível carregar os guias dos cursos.</div>';
@@ -366,6 +370,7 @@
         async function puVerFichaDoCurso(cid) {
             var cont = document.getElementById('pu-ficha-cursa-' + cid);
             if (!cont || !puUser) return;
+            puFichaCursaAberta = cid;
             try {
                 cont.style.display = '';
                 cont.innerHTML = '<div class="pu-aviso">Carregando Ficha Germazena...</div>';
