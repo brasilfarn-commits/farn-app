@@ -325,6 +325,10 @@
                     var pdfUrl = c.apostilaPdfUrl || c.apostilaPdf;
                     if (pdfUrl) html += '<a class="btn-outline btn-sm" href="' + pdfUrl + '" download="apostila.pdf" target="_blank"><i class="fa-solid fa-file-pdf" style="color:#dc2626;margin-right:5px"></i> Baixar apostila (PDF)</a>';
                     if (c.apostilaUrl) html += '<a class="btn-outline btn-sm" href="' + puEsc(c.apostilaUrl) + '" target="_blank"><i class="fa-solid fa-link" style="color:#2563eb;margin-right:5px"></i> Abrir apostila (link)</a>';
+                    if (c.permFichaGeral) {
+                        html += '<button class="btn-outline btn-sm" onclick="puVerFichaDoCurso(\'' + c._id + '\')"><i class="fa-solid fa-file-lines" style="color:#0ea5e9;margin-right:5px"></i> Ver Ficha Germazena</button>';
+                        html += '<div id="pu-ficha-cursa-' + c._id + '" style="display:none;margin-top:10px;border:1px dashed #0ea5e9;border-radius:8px;padding:10px;background:#f0f9ff"></div>';
+                    }
                     if (cert) html += '<button class="btn-outline btn-sm" onclick="puVerCertificado(\'' + c._id + '\')"><i class="fa-solid fa-award" style="color:#ca8a04;margin-right:5px"></i> Ver certificado</button>';
                     if (!pdfUrl && !c.apostilaUrl && !cert) html += '<span style="font-size:11px;color:#94a3b8">Nenhuma apostila ou certificado disponível.</span>';
                     html += '</div></div>';
@@ -355,6 +359,35 @@
                 var w = window.open('', '_blank');
                 if (w) { w.document.write(html); w.document.close(); setTimeout(function () { w.print(); }, 400); }
             } catch (e) { alert('Erro ao abrir certificado: ' + e.message); }
+        }
+
+        /* Carrega a Ficha Germazena do aluno para exibir no curso da Seção Cursos.
+           Usa as mesmas funções de montagem da Ficha Germazena do admin (ficha.js). */
+        async function puVerFichaDoCurso(cid) {
+            var cont = document.getElementById('pu-ficha-cursa-' + cid);
+            if (!cont || !puUser) return;
+            if (cont.style.display) { cont.style.display = ''; return; }
+            try {
+                cont.innerHTML = '<div class="pu-aviso">Carregando Ficha Germazena...</div>';
+                var projeto = String(puUser.projeto || puUser.formadoProjeto || '').trim();
+                var turma = String(puUser.turma || puUser.formadoTurma || '').trim();
+                if (!projeto || !turma) {
+                    cont.innerHTML = '<div class="pu-aviso">Seu cadastro não possui projeto/turma vinculados para exibir a Ficha Germazena.</div>';
+                    return;
+                }
+                if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
+                var aulas = await fichaGeralCarregarAulas(projeto, turma);
+                var dados = await fichaGeralDadosAluno(puUser);
+                var calc = fichaGeralCalcular(puUser, dados, aulas);
+                var foto = puUser.photoDataUrl || puUser.foto || puUser.fotoUrl || null;
+                if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
+                if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
+                cont.innerHTML = fichaGeralFolha(puUser, calc, foto, 0, aulas);
+                if (typeof fichaGeralAplicarLogo === 'function') fichaGeralAplicarLogo(cont);
+            } catch (e) {
+                console.error('Erro ao carregar Ficha Germazena do curso:', e);
+                cont.innerHTML = '<div class="pu-aviso">Não foi possível carregar a Ficha Germazena.</div>';
+            }
         }
 
         async function puCarregarFicha() {
