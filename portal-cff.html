@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal do CFF | FARN</title>
+<link rel="icon" href="logo-farn.png.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,Arial,sans-serif; }
+body { background:#0f172a; min-height:100vh; color:#0f172a; }
+.header { background:linear-gradient(135deg,#1e1b4b,#4c1d95); padding:16px 24px; display:flex; align-items:center; gap:12px; color:#fff; }
+.header img { width:44px; height:44px; object-fit:cover; border-radius:10px; }
+.header .tit { font-size:15px; font-weight:800; letter-spacing:.5px; }
+.header .sub { font-size:11px; opacity:.8; margin-top:2px; }
+.header .user { margin-left:auto; font-size:12px; opacity:.9; display:flex; align-items:center; gap:8px; }
+.header .sair { margin-left:12px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:10px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:7px; transition:.2s; }
+.header .sair:hover { background:rgba(255,255,255,.28); }
+.wrap { max-width:680px; margin:40px auto 40px; padding:0 18px; }
+.sec { display:none; }
+.sec.ativo { display:block; }
+.box { background:#fff; border-radius:18px; box-shadow:0 20px 60px rgba(0,0,0,.45); overflow:hidden; }
+.box-top { padding:34px 24px 8px; text-align:center; }
+.box-top i { font-size:52px; color:#7c3aed; }
+.box-top h1 { font-size:24px; font-weight:800; color:#1e1b4b; margin-top:10px; }
+.box-top p { color:#64748b; font-size:13.5px; margin-top:8px; line-height:1.6; }
+.badge-const { display:inline-flex; align-items:center; gap:8px; margin:18px auto 0; background:#fef3c7; color:#b45309; border:1px solid #fcd34d; border-radius:20px; padding:8px 18px; font-size:12px; font-weight:800; }
+.badge-const i { font-size:14px; }
+.box-body { padding:20px 24px 30px; text-align:center; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:8px 0 20px; }
+.card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:18px 12px; }
+.card i { font-size:24px; color:#7c3aed; }
+.card div { font-size:12px; font-weight:700; color:#334155; margin-top:8px; }
+.card span { font-size:11px; color:#94a3b8; display:block; margin-top:3px; }
+.nota { font-size:12px; color:#94a3b8; line-height:1.7; }
+
+.dados-head { padding:24px 24px 4px; }
+.dados-head h3 { font-size:18px; font-weight:800; color:#1e1b4b; }
+.dados-head p { font-size:12.5px; color:#64748b; margin-top:4px; }
+.dados-body { padding:18px 24px 26px; }
+.dados-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+.dados-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; }
+.dados-editable { cursor:pointer; transition:.25s; }
+.dados-editable:hover { border-color:#7c3aed; box-shadow:0 4px 16px rgba(124,58,237,.12); transform:translateY(-2px); }
+.dados-label { font-size:10px; color:#64748b; margin-bottom:5px; display:flex; align-items:center; text-transform:uppercase; letter-spacing:.5px; font-weight:700; }
+.dados-val { font-size:13.5px; font-weight:600; color:#0f172a; word-break:break-word; }
+
+.cff-aula-card { display:flex; align-items:center; gap:14px; padding:14px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:10px; transition:.2s; }
+.cff-aula-card:hover { border-color:#7c3aed; box-shadow:0 4px 16px rgba(124,58,237,.08); }
+.cff-aula-icon { width:46px; height:46px; background:rgba(124,58,237,.1); color:#7c3aed; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.cff-aula-card h4 { font-size:14px; font-weight:700; color:#1e1b4b; margin:0 0 4px; line-height:1.4; }
+.cff-aula-card p { font-size:12px; color:#64748b; margin:0; display:flex; gap:10px; flex-wrap:wrap; align-items:center; line-height:1.6; }
+.cff-aula-card p i { margin-right:3px; color:#7c3aed; opacity:.7; }
+.cff-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; }
+.cff-aula-empty { text-align:center; padding:40px 20px; color:#94a3b8; }
+.cff-aula-empty i { font-size:40px; color:#c4b5fd; display:block; margin-bottom:10px; }
+.cff-aula-empty p { font-size:13px; color:#64748b; }
+
+.cff-home { display:grid; grid-template-columns:1fr 300px; gap:18px; align-items:start; }
+@media (max-width:860px) { .cff-home { grid-template-columns:1fr; } }
+.cff-foto-janela { background:#fff; border-radius:18px; box-shadow:0 20px 60px rgba(0,0,0,.45); overflow:hidden; }
+.cff-foto-bar { display:flex; align-items:center; gap:10px; padding:13px 16px; background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; }
+.cff-foto-bar i { color:#a78bfa; font-size:18px; }
+.cff-foto-bar .t { font-size:12.5px; font-weight:800; letter-spacing:.4px; }
+.cff-foto-bar .s { font-size:10px; opacity:.75; display:block; margin-top:2px; }
+.cff-foto-frames { background:#f8fafc; padding:20px 18px; display:flex; justify-content:center; }
+.cff-foto-frame { width:100%; max-width:220px; aspect-ratio:3/4; border-radius:14px; overflow:hidden; background:#fff; border:1px solid #e2e8f0; position:relative; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(15,23,42,.08); }
+.cff-foto-frame img { width:100%; height:100%; object-fit:cover; display:none; }
+.cff-foto-empty { text-align:center; color:#94a3b8; padding:12px; }
+.cff-foto-empty i { font-size:52px; color:#c4b5fd; display:block; margin-bottom:8px; }
+.cff-foto-empty div { font-size:10.5px; line-height:1.5; }
+.cff-foto-actions { padding:0 18px 18px; background:#f8fafc; }
+.cff-foto-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-bottom:9px; padding:11px; border:none; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; }
+.cff-foto-btn.primario { background:linear-gradient(135deg,#7c3aed,#5b21b6); color:#fff; }
+.cff-foto-btn.primario:hover { filter:brightness(1.08); }
+.cff-foto-status { font-size:11px; color:#16a34a; text-align:center; min-height:14px; margin-top:6px; }
+.cff-foto-dica { font-size:10px; color:#94a3b8; text-align:center; line-height:1.5; margin-top:4px; }
+.cff-crop-overlay { position:fixed; inset:0; z-index:10000; background:rgba(8,12,24,.82); display:none; align-items:center; justify-content:center; padding:18px; }
+.cff-crop-overlay.aberto { display:flex; }
+.cff-crop-card { background:#fff; border-radius:18px; max-width:520px; width:100%; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.5); display:flex; flex-direction:column; }
+.cff-crop-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 18px; border-bottom:1px solid #e2e8f0; }
+.cff-crop-head h3 { font-size:15px; font-weight:800; color:#0f172a; margin:0; }
+.cff-crop-close { background:#f1f5f9; border:none; border-radius:9px; width:32px; height:32px; cursor:pointer; color:#475569; font-size:14px; }
+.cff-crop-view { position:relative; overflow:hidden; background:#0f172a; margin:0; cursor:grab; touch-action:none; user-select:none; }
+.cff-crop-view img { position:absolute; left:0; top:0; max-width:none; pointer-events:none; }
+.cff-crop-box { position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(15,23,42,.55); cursor:move; pointer-events:auto; }
+.cff-crop-toolbar { display:flex; align-items:center; gap:8px; padding:12px 18px; border-top:1px solid #e2e8f0; flex-wrap:wrap; }
+.cff-crop-zoom { display:flex; align-items:center; gap:6px; margin-right:auto; }
+.cff-crop-zoom span { font-size:11px; color:#94a3b8; }
+.cff-crop-btn { border:none; border-radius:9px; padding:9px 14px; font-size:12.5px; font-weight:700; cursor:pointer; }
+.cff-crop-btn.ghost { background:#f1f5f9; color:#475569; }
+.cff-crop-btn.primary { background:linear-gradient(135deg,#7c3aed,#5b21b6); color:#fff; }
+
+.menu-btn { background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.35); color:#fff; border-radius:10px; width:42px; height:42px; font-size:17px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .2s; }
+.menu-btn:hover { background:rgba(255,255,255,.28); }
+.drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; opacity:0; visibility:hidden; transition:.25s; }
+.drawer-overlay.open { opacity:1; visibility:visible; }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:280px; max-width:82vw; background:#1e1b4b; z-index:210; transform:translateX(-100%); transition:transform .28s ease; display:flex; flex-direction:column; box-shadow:0 0 40px rgba(0,0,0,.5); }
+.drawer.open { transform:translateX(0); }
+.drawer-head { padding:16px 16px 14px; border-bottom:1px solid rgba(255,255,255,.12); display:flex; align-items:center; gap:12px; color:#fff; }
+.drawer-head img { width:38px; height:38px; object-fit:cover; border-radius:9px; }
+.drawer-head strong { font-size:14px; letter-spacing:.4px; }
+.drawer-head span { font-size:10.5px; opacity:.75; display:block; margin-top:2px; }
+.drawer-close { margin-left:auto; background:none; border:none; color:#fff; font-size:17px; cursor:pointer; opacity:.8; }
+.drawer-close:hover { opacity:1; }
+.drawer-nav { flex:1; overflow-y:auto; padding:10px 0; }
+.drawer-nav a { display:flex; align-items:center; gap:12px; padding:12px 18px; color:rgba(255,255,255,.85); text-decoration:none; font-size:13.5px; font-weight:600; border-left:3px solid transparent; transition:.15s; }
+.drawer-nav a i { width:18px; text-align:center; color:#a78bfa; }
+.drawer-nav a:hover { background:rgba(255,255,255,.08); border-left-color:#a78bfa; }
+.drawer-nav .em-breve { margin-left:auto; font-size:9px; font-weight:800; background:rgba(167,139,250,.18); color:#c4b5fd; padding:3px 8px; border-radius:12px; letter-spacing:.3px; }
+.drawer-nav a.ativo { background:rgba(167,139,250,.14); border-left-color:#7c3aed; color:#fff; }
+.drawer-foot { padding:12px 14px; border-top:1px solid rgba(255,255,255,.12); }
+.drawer-foot a { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; color:#fca5a5; font-size:13.5px; font-weight:700; text-decoration:none; transition:.15s; }
+.drawer-foot a:hover { background:rgba(248,113,113,.12); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <button class="menu-btn" onclick="cffToggleMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+    <img data-farn-logo src="logo-farn.png.png" alt="FARN">
+    <div>
+        <div class="tit">PORTAL DO CFF</div>
+        <div class="sub">Curso de Formação de Formadores</div>
+    </div>
+    <div class="user"><i class="fa-solid fa-circle-user"></i> <span id="cff-user-nome">Aluno CFF</span></div>
+    <a class="sair" href="#" onclick="cffLogout(event)"><i class="fa-solid fa-right-from-bracket"></i> Sair</a>
+</div>
+
+<div class="drawer-overlay" id="cff-drawer-overlay" onclick="cffCloseMenu()"></div>
+<aside class="drawer" id="cff-drawer" aria-hidden="true">
+    <div class="drawer-head">
+        <img data-farn-logo src="logo-farn.png.png" alt="FARN">
+        <div><strong>PORTAL DO CFF</strong><span>Curso de Formação de Formadores</span></div>
+        <button class="drawer-close" onclick="cffCloseMenu()" aria-label="Fechar menu"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <nav class="drawer-nav">
+        <a href="#" id="cff-nav-inicio" onclick="cffShowSecao('inicio'); cffCloseMenu(); return false;"><i class="fa-solid fa-house"></i> Início</a>
+        <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-book-open"></i> Apostilas <span class="em-breve">EM BREVE</span></a>
+        <a href="#" id="cff-nav-aulas" onclick="cffShowSecao('aulas'); cffCloseMenu(); return false;"><i class="fa-solid fa-chalkboard"></i> Aulas</a>
+        <a href="#" id="cff-nav-avaliacoes" onclick="cffShowSecao('avaliacoes'); cffCloseMenu(); return false;"><i class="fa-solid fa-list-check"></i> Avaliações</a>
+        <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-newspaper"></i> Notícias <span class="em-breve">EM BREVE</span></a>
+        <a href="#" onclick="cffMenuEmBreve(event)"><i class="fa-solid fa-graduation-cap"></i> Certificação <span class="em-breve">EM BREVE</span></a>
+        <a href="#" id="cff-nav-dados" onclick="cffShowSecao('dados'); cffCloseMenu(); return false;"><i class="fa-solid fa-user"></i> Meus Dados</a>
+    </nav>
+    <div class="drawer-foot">
+        <a href="#" onclick="cffLogout(event)"><i class="fa-solid fa-right-from-bracket"></i> Sair</a>
+    </div>
+</aside>
+
+<div class="wrap">
+
+    <!-- INICIO (EM CONSTRUCAO) -->
+    <div class="sec ativo" id="cff-sec-inicio">
+        <div class="cff-home">
+            <div class="box">
+                <div class="box-top">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <h1>Portal do CFF</h1>
+                    <div class="badge-const"><i class="fa-solid fa-hammer"></i> EM CONSTRUÇÃO</div>
+                    <p id="cff-welcome">Bem-vindo(a)!</p>
+                </div>
+                <div class="box-body">
+                    <div class="cards">
+                        <div class="card"><i class="fa-solid fa-book-open"></i><div>Apostilas</div><span>Em breve</span></div>
+                        <div class="card"><i class="fa-solid fa-video"></i><div>Aulas</div><span>Em breve</span></div>
+                        <div class="card"><i class="fa-solid fa-newspaper"></i><div>Notícias</div><span>Em breve</span></div>
+                        <div class="card"><i class="fa-solid fa-graduation-cap"></i><div>Certificação</div><span>Em breve</span></div>
+                    </div>
+                    <p class="nota">Esta área está sendo preparada. Em breve você poderá acessar as apostilas, aulas e conteúdos do Curso de Formação de Formadores. Fique atento aos comunicados.</p>
+                </div>
+            </div>
+            <div class="cff-foto-janela">
+                <div class="cff-foto-bar">
+                    <i class="fa-solid fa-id-badge"></i>
+                    <div><span class="t">MINHA FOTO</span><span class="s">Foto da cintura para cima</span></div>
+                </div>
+                <div class="cff-foto-frames">
+                    <div class="cff-foto-frame">
+                        <img id="cff-foto-img" alt="Foto do aluno CFF">
+                        <div class="cff-foto-empty" id="cff-foto-empty">
+                            <i class="fa-solid fa-user"></i>
+                            <div>Nenhuma foto anexada</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cff-foto-actions">
+                    <input type="file" id="cff-foto-input" accept="image/*" style="display:none" onchange="cffFotoOnFile(this)">
+                    <button class="cff-foto-btn primario" onclick="cffFotoAnexar()"><i class="fa-solid fa-camera"></i> Anexar Foto</button>
+                    <button class="cff-foto-btn primario" onclick="cffFotoAnexar()"><i class="fa-solid fa-rotate"></i> Substituir Foto</button>
+                    <div class="cff-foto-status" id="cff-foto-status"></div>
+                    <div class="cff-foto-dica">A foto deve estar <b>da cintura para cima</b>, de perfil, com fundo claro. Arraste o recorte para enquadrar.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEUS DADOS -->
+    <div class="sec" id="cff-sec-dados">
+        <div class="box">
+            <div class="dados-head">
+                <h3><i class="fa-solid fa-user" style="color:#7c3aed;margin-right:6px"></i> Meus Dados</h3>
+                <p>Seus dados de cadastro no Curso de Formação de Formadores. Clique em um campo editável para alterar.</p>
+            </div>
+            <div class="dados-body">
+                <div class="dados-grid" id="cff-dados-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AULAS -->
+    <div class="sec" id="cff-sec-aulas">
+        <div class="box">
+            <div class="dados-head">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                    <h3 style="margin:0"><i class="fa-solid fa-chalkboard" style="color:#7c3aed;margin-right:6px"></i> Aulas</h3>
+                    <button onclick="cffLoadAulas()" style="background:#fff;border:1px solid #7c3aed;color:#7c3aed;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                </div>
+                <p style="margin-top:8px">Acompanhe as aulas e conteúdos do Curso de Formação de Formadores.</p>
+            </div>
+            <div class="dados-body">
+                <div id="cff-aula-list">
+                    <div class="cff-aula-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AVALIACOES -->
+    <div class="sec" id="cff-sec-avaliacoes">
+        <div class="box">
+            <div class="dados-head">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                    <h3 style="margin:0"><i class="fa-solid fa-list-check" style="color:#7c3aed;margin-right:6px"></i> Avaliações</h3>
+                    <button onclick="cffLoadAvaliacoes()" style="background:#fff;border:1px solid #7c3aed;color:#7c3aed;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                </div>
+                <p style="margin-top:8px">Aqui você responde as avaliações disponibilizadas pela administração do CFF. Cada questão vale 1,0 ponto (10 questões) ou 0,5 ponto (20 questões) e você terá 30 minutos para concluir.</p>
+            </div>
+            <div class="dados-body">
+                <!-- Lista de avaliacoes -->
+                <div id="cff-rav-lista">
+                    <div class="cff-aula-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliações...</p></div>
+                </div>
+
+                <!-- Area da prova -->
+                <div id="cff-rav-prova" style="display:none">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:14px 18px;margin-bottom:18px;flex-wrap:wrap">
+                        <div>
+                            <div style="font-size:15px;font-weight:700;color:#0f172a" id="cff-rav-prova-nome"></div>
+                            <div style="font-size:11px;color:#64748b;margin-top:3px" id="cff-rav-prova-info"></div>
+                        </div>
+                        <div style="text-align:center">
+                            <div style="font-size:10px;color:#64748b;font-weight:700;letter-spacing:1px">TEMPO RESTANTE</div>
+                            <div id="cff-rav-timer-val" style="font-size:26px;font-weight:800;color:#dc2626;font-variant-numeric:tabular-nums">30:00</div>
+                        </div>
+                    </div>
+                    <div id="cff-rav-questoes" style="margin-bottom:20px"></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button onclick="cffRavEnviar()" id="cff-rav-enviar-btn" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer"><i class="fa-solid fa-paper-plane"></i> Enviar Respostas</button>
+                        <button onclick="cffRavCancelar()" style="background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:10px;padding:12px 20px;font-size:13px;font-weight:600;cursor:pointer">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RESULTADO AVALIACAO -->
+    <div id="cff-rav-resultado-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.6);align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:20px;max-width:460px;width:100%;padding:28px 26px;box-shadow:0 24px 70px rgba(15,23,42,.35);text-align:center">
+            <div style="width:72px;height:72px;border-radius:50%;background:#f5f3ff;border:3px solid #ddd6fe;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><i class="fa-solid fa-clock" style="font-size:30px;color:#7c3aed"></i></div>
+            <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:6px" id="cff-rav-res-titulo">Avaliação Finalizada</h3>
+            <p style="font-size:13px;color:#64748b;margin-bottom:18px" id="cff-rav-res-sub">O tempo chegou ao fim ou você enviou suas respostas.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 8px">
+                    <div style="font-size:11px;color:#64748b;font-weight:700">RESPONDIDAS</div>
+                    <div id="cff-rav-res-marcadas" style="font-size:22px;font-weight:800;color:#2563eb;margin-top:4px">0</div>
+                </div>
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 8px">
+                    <div style="font-size:11px;color:#16a34a;font-weight:700">CERTAS</div>
+                    <div id="cff-rav-res-certas" style="font-size:22px;font-weight:800;color:#16a34a;margin-top:4px">0</div>
+                </div>
+                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 8px">
+                    <div style="font-size:11px;color:#d97706;font-weight:700">PONTOS</div>
+                    <div id="cff-rav-res-pontos" style="font-size:22px;font-weight:800;color:#d97706;margin-top:4px">0,0</div>
+                </div>
+            </div>
+            <p id="cff-rav-res-peso" style="font-size:11px;color:#94a3b8;margin-bottom:18px;line-height:1.6">Cada questão vale 1,0 ponto. Questões não marcadas descontam 1,0 ponto.</p>
+            <button onclick="cffRavFecharResultado()" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;padding:12px 0;width:100%;font-size:13px;font-weight:700;cursor:pointer">Fechar</button>
+        </div>
+    </div>
+
+    <!-- MODAL VISUALIZAR AVALIACAO -->
+    <div id="cff-rav-visualizar-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.6);align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:20px;max-width:720px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(15,23,42,.35);overflow:hidden">
+            <div style="padding:22px 24px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div>
+                    <h3 style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:2px" id="cff-rav-vis-titulo">Visualizar Avaliação</h3>
+                    <div style="font-size:12px;color:#64748b" id="cff-rav-vis-sub">Resumo das suas respostas</div>
+                </div>
+                <button onclick="cffRavFecharVisualizar()" style="background:#f1f5f9;border:none;border-radius:9px;width:34px;height:34px;cursor:pointer;color:#475569;font-size:15px"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="cff-rav-vis-conteudo" style="padding:20px 24px;overflow-y:auto;flex:1;background:#f8fafc"></div>
+            <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;background:#fff">
+                <button onclick="cffRavFecharVisualizar()" style="background:#e2e8f0;color:#334155;border:none;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:700;cursor:pointer"><i class="fa-solid fa-xmark" style="margin-right:4px"></i>Fechar</button>
+                <button onclick="cffRavImprimirVisualizar()" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:700;cursor:pointer"><i class="fa-solid fa-print" style="margin-right:4px"></i>Imprimir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RECORTE FOTO -->
+<div class="cff-crop-overlay" id="cff-crop-overlay">
+    <div class="cff-crop-card">
+        <div class="cff-crop-head">
+            <h3><i class="fa-solid fa-crop" style="color:#7c3aed;margin-right:6px"></i> Recortar foto (cintura para cima)</h3>
+            <button class="cff-crop-close" onclick="cffCropCancelar()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="cff-crop-view" id="cff-crop-view">
+            <img id="cff-crop-img" alt="">
+            <div class="cff-crop-box" id="cff-crop-box"></div>
+        </div>
+        <div class="cff-crop-toolbar">
+            <div class="cff-crop-zoom">
+                <button class="cff-crop-btn ghost" onclick="cffCropZoom(-1)" title="Diminuir zoom"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                <button class="cff-crop-btn ghost" onclick="cffCropZoom(1)" title="Aumentar zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                <span>Arraste para enquadrar</span>
+            </div>
+            <button class="cff-crop-btn ghost" onclick="cffCropCancelar()">Cancelar</button>
+            <button class="cff-crop-btn primary" onclick="cffCropConfirmar()"><i class="fa-solid fa-check" style="margin-right:5px"></i>Confirmar Foto</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR DADOS -->
+<div id="cff-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cffCloseEditModal()">
+    <div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 id="cff-edit-title" style="margin:0;font-size:16px;color:#7c3aed"></h3>
+            <button onclick="cffCloseEditModal()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="cff-edit-body"></div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+            <button onclick="cffCloseEditModal()" style="flex:1;padding:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;font-size:13px;cursor:pointer">Cancelar</button>
+            <button onclick="cffConfirmEdit()" style="flex:1;padding:10px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+var firebaseConfig = { apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0", authDomain: "farn-app.firebaseapp.com", databaseURL: "https://farn-app-default-rtdb.firebaseio.com", projectId: "farn-app", storageBucket: "farn-app.firebasestorage.app", messagingSenderId: "16254677061", appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c" };
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+var dbFirestore = firebase.firestore();
+var cffUser = null;
+
+(function() {
+    var sessao = null;
+    try { sessao = JSON.parse(sessionStorage.getItem('cff_sessao') || 'null'); } catch (e) {}
+    if (!sessao || !sessao.cpf) {
+        location.href = 'index.html';
+        return;
+    }
+    document.getElementById('cff-user-nome').textContent = sessao.nome || 'Aluno CFF';
+    document.getElementById('cff-welcome').textContent = 'Bem-vindo(a), ' + (sessao.nome || '') + '!';
+
+    window.cffLogout = function(e) {
+        if (e) e.preventDefault();
+        sessionStorage.removeItem('cff_sessao');
+        localStorage.removeItem('cff_lembrar_cpf');
+        localStorage.removeItem('cff_lembrar_senha');
+        location.href = 'index.html';
+    };
+
+    var drawer = document.getElementById('cff-drawer');
+    var overlay = document.getElementById('cff-drawer-overlay');
+
+    window.cffToggleMenu = function() {
+        if (!drawer || !overlay) return;
+        var abrir = !drawer.classList.contains('open');
+        if (abrir) {
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+            drawer.setAttribute('aria-hidden', 'false');
+        } else {
+            cffCloseMenu();
+        }
+    };
+
+    window.cffCloseMenu = function() {
+        if (!drawer || !overlay) return;
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+        drawer.setAttribute('aria-hidden', 'true');
+    };
+
+    window.cffMenuEmBreve = function(e) {
+        if (e) e.preventDefault();
+        cffCloseMenu();
+        alert('Esta área está em construção e será liberada em breve.');
+    };
+
+    window.cffShowSecao = function(nome) {
+        document.querySelectorAll('.sec').forEach(function(s) { s.classList.remove('ativo'); });
+        var alvo = document.getElementById('cff-sec-' + nome);
+        if (alvo) alvo.classList.add('ativo');
+        var navs = { inicio: 'cff-nav-inicio', dados: 'cff-nav-dados', aulas: 'cff-nav-aulas', avaliacoes: 'cff-nav-avaliacoes' };
+        for (var key in navs) {
+            var n = document.getElementById(navs[key]);
+            if (n) n.classList.toggle('ativo', nome === key);
+        }
+        if (nome === 'dados' && cffUser) cffLoadDados();
+        if (nome === 'aulas') cffLoadAulas();
+        if (nome === 'avaliacoes') cffLoadAvaliacoes();
+        document.querySelector('.wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    /* ===== AULAS DO CFF ===== */
+    async function cffLoadAulas() {
+        var container = document.getElementById('cff-aula-list');
+        if (!container) return;
+        container.innerHTML = '<div class="cff-aula-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando...</p></div>';
+        try {
+            var snap = await dbFirestore.collection('cffAulas').orderBy('data', 'desc').get();
+            if (snap.empty) {
+                container.innerHTML = '<div class="cff-aula-empty"><i class="fa-solid fa-chalkboard-user"></i><p>Nenhuma aula disponível no momento.</p></div>';
+                return;
+            }
+            container.innerHTML = '';
+            snap.forEach(function(doc) {
+                cffRenderAula(container, doc.data());
+            });
+        } catch (e) {
+            console.error('Erro ao carregar aulas do CFF:', e);
+            container.innerHTML = '<div class="cff-aula-empty"><i class="fa-solid fa-triangle-exclamation"></i><p>Erro ao carregar as aulas.</p></div>';
+        }
+    }
+
+    function cffFormatDateBR(d) {
+        try {
+            var dt = new Date(String(d) + 'T12:00:00');
+            if (isNaN(dt.getTime())) return '';
+            return dt.toLocaleDateString('pt-BR');
+        } catch (e) { return d || ''; }
+    }
+
+    function cffRenderAula(container, a) {
+        var dateStr = cffFormatDateBR(a.data);
+        var card = document.createElement('div');
+        card.className = 'cff-aula-card';
+        card.innerHTML =
+            '<div class="cff-aula-icon"><i class="fa-solid fa-chalkboard"></i></div>' +
+            '<div style="flex:1;min-width:0">' +
+                '<h4>' + (a.disciplina || 'Aula') + (a.conteudo ? ' - ' + a.conteudo : '') + '</h4>' +
+                '<p>' +
+                    (dateStr ? '<span><i class="fa-solid fa-calendar-day"></i>' + dateStr + '</span>' : '') +
+                    (a.horario ? '<span><i class="fa-solid fa-clock"></i>' + a.horario + '</span>' : '') +
+                    (a.docente ? '<span><i class="fa-solid fa-chalkboard-user"></i>' + a.docente + '</span>' : '') +
+                    (a.avTeorica === 'Sim' ? '<span class="cff-badge" style="background:rgba(168,85,247,.12);color:#9333ea"><i class="fa-solid fa-file-lines"></i> AV Teórica</span>' : '') +
+                    (a.avPratica === 'Sim' ? '<span class="cff-badge" style="background:rgba(22,163,74,.12);color:#16a34a"><i class="fa-solid fa-flask"></i> AV Prática</span>' : '') +
+                '</p>' +
+            '</div>';
+        container.appendChild(card);
+    }
+
+    /* ===== MEUS DADOS ===== */
+    async function cffCarregarUsuario() {
+        var cpf = String(sessao.cpf || '').replace(/\D/g, '');
+        if (!cpf) return;
+        try {
+            var doc = await dbFirestore.collection('cffAlunos').doc(cpf).get();
+            if (doc.exists) {
+                cffUser = doc.data();
+                cffUser._docId = cpf;
+            } else {
+                cffUser = sessao;
+                cffUser._docId = cpf;
+            }
+            if (!cffUser.cpf) cffUser.cpf = cpf;
+        } catch (e) {
+            console.error('Falha ao carregar dados do CFF:', e);
+            cffUser = sessao;
+            cffUser._docId = cpf;
+            cffUser.cpf = cpf;
+        }
+        document.getElementById('cff-user-nome').textContent = cffUser.nome || 'Aluno CFF';
+        cffAtualizarSessao();
+    }
+
+    function cffFormatCpf(v) {
+        var d = String(v || '').replace(/\D/g, '');
+        if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        return v || '---';
+    }
+
+    function cffFormatPhone(input) {
+        var v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        else if (v.length > 0) v = v.replace(/(\d{0,2})/, '($1');
+        input.value = v;
+    }
+
+    function cffLoadDados() {
+        if (!cffUser) return;
+        var el = document.getElementById('cff-dados-content');
+        var endComp = [cffUser.endereco, cffUser.numero].filter(Boolean).join(', ');
+        endComp = [endComp, cffUser.bairro].filter(Boolean).join(' - ');
+        endComp = [endComp, [cffUser.cidade, cffUser.estado].filter(Boolean).join('/')].filter(Boolean).join(' - ');
+        el.innerHTML =
+            '<div class="dados-card"><div class="dados-label">Nome Completo</div><div class="dados-val">' + (cffUser.nome || '---') + '</div></div>' +
+            '<div class="dados-card"><div class="dados-label">CPF</div><div class="dados-val">' + cffFormatCpf(cffUser.cpf) + '</div></div>' +
+            '<div class="dados-card"><div class="dados-label">Data de Nascimento</div><div class="dados-val">' + (cffUser.nascimento || '---') + '</div></div>' +
+            '<div class="dados-card"><div class="dados-label">Gênero de Nascimento</div><div class="dados-val">' + (cffUser.genero || '---') + '</div></div>' +
+            '<div class="dados-card dados-editable" onclick="cffEditCampo(\'email\')"><div class="dados-label">Email <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="dados-val">' + (cffUser.email || '---') + '</div></div>' +
+            '<div class="dados-card dados-editable" onclick="cffEditCampo(\'whatsapp\')"><div class="dados-label">WhatsApp <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="dados-val">' + (cffUser.whatsapp || '---') + '</div></div>' +
+            '<div class="dados-card dados-editable" onclick="cffEditCampo(\'endereco\')" style="grid-column:1/-1"><div class="dados-label">Endereço Completo <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="dados-val">' + (endComp || '---') + '</div></div>' +
+            '<div class="dados-card dados-editable" onclick="cffEditCampo(\'senha\')" style="grid-column:1/-1"><div class="dados-label">Senha de Acesso <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="dados-val">******</div></div>';
+    }
+
+    window.cffEditCampo = function(campo) {
+        var modal = document.getElementById('cff-edit-modal');
+        var title = document.getElementById('cff-edit-title');
+        var body = document.getElementById('cff-edit-body');
+        var atual = '';
+
+        var styleInput = 'width:100%;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#0f172a;font-size:14px;margin-top:6px';
+        var styleLabel = 'color:#475569;font-size:12px;font-weight:600';
+
+        if (campo === 'email') {
+            title.textContent = 'Editar Email';
+            atual = cffUser.email || '';
+            body.innerHTML = '<label style="' + styleLabel + '">Email</label><input type="email" id="cff-edit-valor" value="' + atual + '" style="' + styleInput + '">';
+        } else if (campo === 'whatsapp') {
+            title.textContent = 'Editar WhatsApp';
+            atual = cffUser.whatsapp || '';
+            body.innerHTML = '<label style="' + styleLabel + '">WhatsApp</label><input type="text" id="cff-edit-valor" value="' + atual + '" oninput="cffFormatPhone(this)" maxlength="15" style="' + styleInput + '">';
+        } else if (campo === 'endereco') {
+            title.textContent = 'Editar Endereço';
+            body.innerHTML =
+                '<label style="' + styleLabel + '">Endereço (Rua/Av)</label><input type="text" id="cff-edit-endereco" value="' + (cffUser.endereco || '') + '" style="' + styleInput + '">' +
+                '<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px">' +
+                    '<div><label style="' + styleLabel + '">Número</label><input type="text" id="cff-edit-numero" value="' + (cffUser.numero || '') + '" style="' + styleInput + '"></div>' +
+                    '<div><label style="' + styleLabel + '">Bairro</label><input type="text" id="cff-edit-bairro" value="' + (cffUser.bairro || '') + '" style="' + styleInput + '"></div>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:10px">' +
+                    '<div><label style="' + styleLabel + '">Cidade</label><input type="text" id="cff-edit-cidade" value="' + (cffUser.cidade || '') + '" style="' + styleInput + '"></div>' +
+                    '<div><label style="' + styleLabel + '">Estado</label><input type="text" id="cff-edit-estado" value="' + (cffUser.estado || '') + '" maxlength="2" style="' + styleInput + '"></div>' +
+                '</div>';
+        } else if (campo === 'senha') {
+            title.textContent = 'Alterar Senha';
+            body.innerHTML =
+                '<label style="' + styleLabel + '">Nova Senha</label><input type="password" id="cff-edit-valor" placeholder="Minimo 6 caracteres" style="' + styleInput + '">' +
+                '<label style="margin-top:10px;display:block;' + styleLabel + '">Confirmar Senha</label><input type="password" id="cff-edit-valor2" placeholder="Repita a senha" style="' + styleInput + '">';
+        }
+
+        body.innerHTML += '<label style="margin-top:14px;display:block;font-size:12px;color:#64748b">Confirme com sua senha atual</label>' +
+            '<input type="password" id="cff-edit-senha" placeholder="Senha atual" style="' + styleInput + '">' +
+            '<div id="cff-edit-error" style="display:none;color:#dc2626;font-size:12px;margin-top:8px"></div>';
+
+        modal.style.display = 'flex';
+        modal._campo = campo;
+    };
+
+    window.cffCloseEditModal = function() {
+        document.getElementById('cff-edit-modal').style.display = 'none';
+    };
+
+    window.cffConfirmEdit = async function() {
+        var modal = document.getElementById('cff-edit-modal');
+        var campo = modal._campo;
+        var senha = document.getElementById('cff-edit-senha').value;
+        var errorEl = document.getElementById('cff-edit-error');
+
+        errorEl.style.display = 'none';
+        if (!senha) { errorEl.textContent = 'Informe sua senha atual.'; errorEl.style.display = 'block'; return; }
+        if (!cffUser || !cffUser.senha || cffUser.senha !== senha) { errorEl.textContent = 'Senha incorreta.'; errorEl.style.display = 'block'; return; }
+
+        var dados = {};
+        if (campo === 'email') {
+            var val = document.getElementById('cff-edit-valor').value.trim();
+            if (!val) { errorEl.textContent = 'Informe o email.'; errorEl.style.display = 'block'; return; }
+            dados.email = val;
+        } else if (campo === 'whatsapp') {
+            dados.whatsapp = document.getElementById('cff-edit-valor').value.trim();
+        } else if (campo === 'endereco') {
+            dados.endereco = document.getElementById('cff-edit-endereco').value.trim();
+            dados.numero = document.getElementById('cff-edit-numero').value.trim();
+            dados.bairro = document.getElementById('cff-edit-bairro').value.trim();
+            dados.cidade = document.getElementById('cff-edit-cidade').value.trim();
+            dados.estado = document.getElementById('cff-edit-estado').value.trim().toUpperCase();
+        } else if (campo === 'senha') {
+            var nova = document.getElementById('cff-edit-valor').value;
+            var conf = document.getElementById('cff-edit-valor2').value;
+            if (!nova || nova.length < 6) { errorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.'; errorEl.style.display = 'block'; return; }
+            if (nova !== conf) { errorEl.textContent = 'As senhas não conferem.'; errorEl.style.display = 'block'; return; }
+            dados.senha = nova;
+        }
+
+        try {
+            await dbFirestore.collection('cffAlunos').doc(cffUser._docId).update(dados);
+            for (var k in dados) cffUser[k] = dados[k];
+            if (dados.senha) localStorage.setItem('cff_lembrar_senha', dados.senha);
+            cffAtualizarSessao();
+            cffLoadDados();
+            cffCloseEditModal();
+            alert('Dados atualizados com sucesso!');
+        } catch (e) {
+            console.error('Erro ao salvar dados:', e);
+            errorEl.textContent = 'Erro ao salvar: ' + e.message;
+            errorEl.style.display = 'block';
+        }
+    };
+
+    function cffAtualizarSessao() {
+        try {
+            sessionStorage.setItem('cff_sessao', JSON.stringify(cffUser));
+        } catch (e) {}
+    }
+
+    async function cffInit() {
+        await cffCarregarUsuario();
+        if (cffUser) cffLoadDados();
+        cffFotoCarregar();
+    }
+    cffInit();
+
+    /* ===== FOTO DO ALUNO CFF (JANELA NA TELA INICIAL) ===== */
+    var cffCropImg = null;
+    var cffCrop = { x: 0, y: 0, w: 0, h: 0 };
+    var cffCropScale = 1;
+    var cffCropDragging = null;
+    var cffCropBindado = false;
+
+    function cffFotoCpf() {
+        var cpf = String((cffUser && cffUser.cpf) || sessao.cpf || '').replace(/\D/g, '');
+        return cpf || 'anonimo';
+    }
+
+    function cffFotoStatus(msg, erro) {
+        var el = document.getElementById('cff-foto-status');
+        if (!el) return;
+        el.textContent = msg || '';
+        el.style.color = erro ? '#dc2626' : '#16a34a';
+    }
+
+    function cffFotoCarregar() {
+        var imgEl = document.getElementById('cff-foto-img');
+        var emptyEl = document.getElementById('cff-foto-empty');
+        if (!imgEl) return;
+        var src = '';
+        try {
+            src = localStorage.getItem('cff_photo_' + cffFotoCpf()) || localStorage.getItem('cff_foto_' + cffFotoCpf()) || '';
+        } catch (e) {}
+        if (!src && cffUser && cffUser.photoDataUrl) src = cffUser.photoDataUrl;
+        if (src) {
+            imgEl.src = src;
+            imgEl.style.display = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
+        }
+    }
+
+    function cffFotoAnexar() {
+        var input = document.getElementById('cff-foto-input');
+        if (input) { input.value = ''; input.click(); }
+    }
+
+    function cffFotoOnFile(input) {
+        var files = input.files;
+        if (!files || !files.length) return;
+        var file = files[0];
+        if (file.size > 6 * 1024 * 1024) { cffFotoStatus('Imagem muito grande (máximo 6 MB).', true); return; }
+        cffFotoStatus('Carregando imagem...', false);
+        var reader = new FileReader();
+        reader.onload = function(ev) { cffCropAbrir(ev.target.result); };
+        reader.onerror = function() { cffFotoStatus('Não foi possível ler a imagem.', true); };
+        reader.readAsDataURL(file);
+    }
+
+    function cffCropAbrir(dataUrl) {
+        var img = new Image();
+        img.onload = function() {
+            cffCropImg = img;
+            var ASP = 3 / 4;
+            var iw = img.width, ih = img.height;
+            var w = Math.min(iw, ih * ASP);
+            var h = w / ASP;
+            cffCrop = { x: Math.round((iw - w) / 2), y: 0, w: w, h: h };
+            document.getElementById('cff-crop-img').src = dataUrl;
+            cffCropGarantirBind();
+            cffCropRender();
+            document.getElementById('cff-crop-overlay').classList.add('aberto');
+        };
+        img.onerror = function() { cffFotoStatus('Não foi possível ler a imagem.', true); };
+        img.src = dataUrl;
+    }
+
+    function cffCropGarantirBind() {
+        if (cffCropBindado) return;
+        cffCropBindado = true;
+        var view = document.getElementById('cff-crop-view');
+        if (!view) return;
+        view.addEventListener('pointerdown', function(e) {
+            var box = document.getElementById('cff-crop-box');
+            if (!box || !cffCropImg) return;
+            var x = e.clientX != null ? e.clientX : 0;
+            var y = e.clientY != null ? e.clientY : 0;
+            var r = box.getBoundingClientRect();
+            if (x < r.left - 8 || x > r.right + 8 || y < r.top - 8 || y > r.bottom + 8) return;
+            cffCropDragging = { dx: x - r.left, dy: y - r.top };
+            if (e.preventDefault) e.preventDefault();
+        }, false);
+        document.addEventListener('pointermove', function(e) {
+            if (!cffCropDragging || !cffCropImg) return;
+            var x = e.clientX != null ? e.clientX : 0;
+            var y = e.clientY != null ? e.clientY : 0;
+            var imgEl = document.getElementById('cff-crop-img');
+            var ir = imgEl.getBoundingClientRect();
+            var nx = (x - cffCropDragging.dx - ir.left) / cffCropScale;
+            var ny = (y - cffCropDragging.dy - ir.top) / cffCropScale;
+            cffCrop.x = Math.min(Math.max(0, Math.round(nx)), Math.round(cffCropImg.width - cffCrop.w));
+            cffCrop.y = Math.min(Math.max(0, Math.round(ny)), Math.round(cffCropImg.height - cffCrop.h));
+            cffCropRender();
+        }, false);
+        document.addEventListener('pointerup', function() { cffCropDragging = null; }, false);
+        document.addEventListener('pointercancel', function() { cffCropDragging = null; }, false);
+    }
+
+    function cffCropRender() {
+        var view = document.getElementById('cff-crop-view');
+        var imgEl = document.getElementById('cff-crop-img');
+        var box = document.getElementById('cff-crop-box');
+        if (!view || !imgEl || !box || !cffCropImg) return;
+        var vw = view.clientWidth;
+        var maxVh = Math.max(300, Math.min(430, window.innerHeight * 0.6));
+        var scale = Math.min(vw / cffCropImg.width, maxVh / cffCropImg.height);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        cffCropScale = scale;
+        view.style.height = Math.round(cffCropImg.height * scale) + 'px';
+        imgEl.style.width = Math.round(cffCropImg.width * scale) + 'px';
+        imgEl.style.height = Math.round(cffCropImg.height * scale) + 'px';
+        imgEl.style.left = '0px';
+        imgEl.style.top = '0px';
+        box.style.left = Math.round(cffCrop.x * scale) + 'px';
+        box.style.top = Math.round(cffCrop.y * scale) + 'px';
+        box.style.width = Math.round(cffCrop.w * scale) + 'px';
+        box.style.height = Math.round(cffCrop.h * scale) + 'px';
+    }
+
+    function cffCropZoom(direcao) {
+        if (!cffCropImg) return;
+        var ASP = 3 / 4;
+        var iw = cffCropImg.width, ih = cffCropImg.height;
+        var maxW = Math.min(iw, ih * ASP);
+        var minW = Math.min(150, maxW);
+        var fator = direcao > 0 ? 0.82 : 1.18;
+        var nw = Math.max(minW, Math.min(maxW, cffCrop.w * fator));
+        var cx = cffCrop.x + cffCrop.w / 2;
+        var cy = cffCrop.y + cffCrop.h / 2;
+        cffCrop.w = nw;
+        cffCrop.h = nw / ASP;
+        cffCrop.x = Math.min(Math.max(0, cx - cffCrop.w / 2), iw - cffCrop.w);
+        cffCrop.y = Math.min(Math.max(0, cy - cffCrop.h / 2), ih - cffCrop.h);
+        cffCropRender();
+    }
+
+    function cffCropFechar() {
+        document.getElementById('cff-crop-overlay').classList.remove('aberto');
+        cffCropImg = null;
+        cffCropDragging = null;
+    }
+
+    function cffCropCancelar() {
+        cffCropFechar();
+        cffFotoStatus('Recorte cancelado.', false);
+    }
+
+    function cffCropConfirmar() {
+        if (!cffCropImg) return;
+        var cw = Math.round(cffCrop.w), ch = Math.round(cffCrop.h);
+        var cx = Math.min(Math.max(0, Math.round(cffCrop.x)), cffCropImg.width - cw);
+        var cy = Math.min(Math.max(0, Math.round(cffCrop.y)), cffCropImg.height - ch);
+        var maxDim = 750;
+        var esc = Math.min(1, maxDim / Math.max(cw, ch));
+        var fw = Math.max(2, Math.round(cw * esc)), fh = Math.max(2, Math.round(ch * esc));
+        var canvas = document.createElement('canvas');
+        canvas.width = fw;
+        canvas.height = fh;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, fw, fh);
+        ctx.drawImage(cffCropImg, cx, cy, cw, ch, 0, 0, fw, fh);
+        var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
+        var final = null;
+        for (var i = 0; i < qualidades.length; i++) {
+            var url = canvas.toDataURL('image/jpeg', qualidades[i]);
+            if (Math.round(url.length * 3 / 4) <= 900 * 1024) { final = url; break; }
+        }
+        if (!final) final = canvas.toDataURL('image/jpeg', 0.1);
+        cffFotoPersistir(final);
+        cffCropFechar();
+    }
+
+    function cffFotoPersistir(dataUrl) {
+        var cpf = cffFotoCpf();
+        try { localStorage.setItem('cff_photo_' + cpf, dataUrl); } catch (e) {}
+        try { localStorage.setItem('cff_foto_' + cpf, dataUrl); } catch (e) {}
+        if (cffUser) {
+            cffUser.photoDataUrl = dataUrl;
+            cffUser.hasPhoto = true;
+            try { sessionStorage.setItem('cff_sessao', JSON.stringify(cffUser)); } catch (e2) {}
+        }
+        cffFotoCarregar();
+        cffFotoStatus('Foto anexada com sucesso!');
+        dbFirestore.collection('cffAlunos').doc(cpf).set({ photoDataUrl: dataUrl, hasPhoto: true }, { merge: true })
+            .then(function() { console.log('Foto CFF salva em cffAlunos/', cpf); })
+            .catch(function(e) {
+                console.error('Erro ao salvar foto CFF no servidor:', e);
+                cffFotoStatus('Foto salva no dispositivo, mas falha ao sincronizar o servidor.', true);
+            });
+    }
+
+    window.cffFotoAnexar = cffFotoAnexar;
+    window.cffFotoOnFile = cffFotoOnFile;
+    window.cffFotoCarregar = cffFotoCarregar;
+    window.cffCropZoom = cffCropZoom;
+    window.cffCropConfirmar = cffCropConfirmar;
+    window.cffCropCancelar = cffCropCancelar;
+
+    /* ===== RESPONDER AVALIACAO (PORTAL CFF) ===== */
+    var cffRavAtual = null;
+    var cffRavTimer = null;
+    var cffRavSegundos = 0;
+    var cffRavRespostas = {};
+    var cffRavCorretas = {};
+
+    function cffEsc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function cffRavUsuario() {
+        if (cffUser && cffUser.cpf) return cffUser;
+        return { cpf: sessao.cpf || '', nome: sessao.nome || '', email: sessao.email || '', whatsapp: sessao.whatsapp || '' };
+    }
+
+    function cffRavCpfLimpo() {
+        var cpf = String(cffRavUsuario().cpf || '').replace(/[^0-9a-zA-Z_-]/g, '');
+        return cpf || 'anonimo';
+    }
+
+    function cffRavMontarCard(av, jaAvaliada) {
+        var d = av.data;
+        var isPratica = (d.tipo === 'pratica');
+        var emBreve = (!isPratica && !jaAvaliada && d.ativa !== true);
+        var cor = emBreve ? '#dc2626' : (jaAvaliada ? '#16a34a' : '#7c3aed');
+        var btn;
+        if (isPratica || jaAvaliada) {
+            btn = '<button onclick="cffRavVisualizar(\'' + av.id + '\')" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-eye" style="margin-right:4px"></i>Visualizar Avaliação</button>';
+        } else if (emBreve) {
+            btn = '<span style="display:inline-flex;align-items:center;gap:5px;background:#dc2626;color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;flex-shrink:0"><i class="fa-solid fa-hourglass-half" style="margin-right:4px"></i>Em breve</span>';
+        } else {
+            btn = '<button onclick="cffRavAbrir(\'' + av.id + '\')" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen-to-square" style="margin-right:4px"></i>Responder Avaliação</button>';
+        }
+        var status = '<span style="font-size:10px;font-weight:700;color:#fff;background:' + cor + ';border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:6px">' + (emBreve ? 'Em breve' : (jaAvaliada ? 'Avaliada' : 'Disponível')) + '</span>';
+        var card = document.createElement('div');
+        card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:2px solid ' + cor + ';border-radius:12px;margin-bottom:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.04)';
+        card.innerHTML =
+            '<div style="width:42px;height:42px;background:' + cor + ';border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-lines" style="color:#fff;font-size:17px"></i></div>' +
+            '<div style="flex:1;min-width:160px">' +
+                '<div style="font-size:14px;font-weight:700;color:#0f172a">' + cffEsc(d.nome || 'Avaliação') + ' ' + status + '</div>' +
+                '<div style="font-size:11px;color:#64748b;margin-top:3px">' + (d.questoes ? d.questoes.length : 0) + ' questões</div>' +
+                (emBreve ? '<div style="font-size:11px;color:#dc2626;margin-top:2px">Disponível em breve para responder.</div>' : '') +
+                (d.aula || d.disciplina ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + cffEsc(d.aula || d.disciplina) + (d.docente ? ' · ' + cffEsc(d.docente) : '') + '</div>' : '') +
+            '</div>' +
+            btn;
+        return card;
+    }
+
+    async function cffLoadAvaliacoes() {
+        var lista = document.getElementById('cff-rav-lista');
+        if (!lista) return;
+        lista.innerHTML = '<div class="cff-aula-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando avaliações...</p></div>';
+        try {
+            var snap = await dbFirestore.collection('cffAvaliacoes').orderBy('criadoEm', 'desc').get();
+            var teoria = [];
+            var pratica = [];
+            snap.forEach(function(doc) {
+                var d = doc.data();
+                if (d.enviada === true) {
+                    if (d.tipo === 'pratica') pratica.push({ id: doc.id, data: d });
+                    else teoria.push({ id: doc.id, data: d });
+                }
+            });
+            if (teoria.length === 0 && pratica.length === 0) {
+                lista.innerHTML = '<div class="cff-aula-empty" style="padding:30px 20px"><i class="fa-solid fa-file-circle-question" style="font-size:42px;color:#cbd5e1;margin-bottom:10px"></i><p style="font-size:15px;color:#0f172a;margin-bottom:6px">Nenhuma avaliação disponível</p><p style="font-size:13px">Não há avaliações enviadas para os cadastrados do CFF no momento.</p></div>';
+                return;
+            }
+            var cpfPre = cffRavCpfLimpo();
+            var fichaPraDoc = null;
+            try {
+                fichaPraDoc = await dbFirestore.collection('cffAvaliacoesAlunos').doc(cpfPre).get();
+            } catch (e) { console.error('Falha ao verificar ficha de questoes praticas', e); }
+            var fichaPra = (fichaPraDoc && fichaPraDoc.exists) ? (fichaPraDoc.data() || {}) : null;
+            var manPra = (fichaPra && fichaPra.avPraticaManual) ? fichaPra.avPraticaManual : {};
+
+            lista.innerHTML = '';
+
+            function montarSecao(titulo, icone, cor, itens) {
+                var secao = '<div style="margin-bottom:6px">' +
+                    '<div style="display:flex;align-items:center;gap:8px;margin:14px 0 12px;padding-bottom:8px;border-bottom:2px solid ' + cor + '">' +
+                        '<i class="fa-solid ' + icone + '" style="color:' + cor + ';font-size:15px"></i>' +
+                        '<span style="font-size:14px;font-weight:800;color:' + cor + '">' + titulo + '</span>' +
+                        '<span style="background:rgba(15,23,42,.05);color:#475569;border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700">' + itens + '</span>' +
+                    '</div>';
+                if (itens === 0) {
+                    secao += '<p style="font-size:12.5px;color:#94a3b8;padding:4px 2px">Nenhuma avaliação nesta seção.</p>';
+                }
+                secao += '</div>';
+                return secao;
+            }
+
+            if (pratica.length > 0) {
+                lista.insertAdjacentHTML('beforeend', montarSecao('AV Prática', 'fa-flask', '#ea580c', pratica.length));
+                for (var j = 0; j < pratica.length; j++) {
+                    var avPr = pratica[j];
+                    var avaliaPr = false;
+                    if (manPra[avPr.id]) avaliaPr = true;
+                    lista.appendChild(cffRavMontarCard(avPr, avaliaPr));
+                }
+            }
+            if (teoria.length > 0) {
+                lista.insertAdjacentHTML('beforeend', montarSecao('AV Teórica', 'fa-book-open', '#ca8a04', teoria.length));
+                for (var k = 0; k < teoria.length; k++) {
+                    var avTe = teoria[k];
+                    var avalTe = false;
+                    try {
+                        var rDoc = await dbFirestore.collection('cffAvaliacoesRespostas').doc(cpfPre + '_' + avTe.id).get();
+                        if (rDoc.exists) avalTe = true;
+                    } catch (e) { console.error('Falha ao verificar resposta de', avTe.id, e); }
+                    lista.appendChild(cffRavMontarCard(avTe, avalTe));
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao carregar avaliações CFF:', e);
+            lista.innerHTML = '<div class="cff-aula-empty"><p style="color:#dc2626">Erro ao carregar avaliações.</p></div>';
+        }
+    }
+
+    async function cffRavAbrir(avId) {
+        var prova = document.getElementById('cff-rav-prova');
+        var lista = document.getElementById('cff-rav-lista');
+        if (!prova) return;
+        try {
+            var doc = await dbFirestore.collection('cffAvaliacoes').doc(avId).get();
+            if (!doc.exists) { alert('Avaliação não encontrada.'); return; }
+            var d = doc.data();
+            if (d.enviada !== true) { alert('Esta avaliação não está disponível.'); return; }
+            if (d.tipo === 'pratica') { cffRavVisualizar(avId); return; }
+            if (d.ativa !== true) { alert('Esta avaliação ainda não foi ativada pela administração. Aguarde a ativação para responder.'); return; }
+            cffRavAtual = { id: avId, conteudo: d };
+            cffRavRespostas = {};
+            cffRavCorretas = {};
+            if (d.questoes) d.questoes.forEach(function(q, i) { cffRavCorretas[i] = q.correta || ''; });
+            document.getElementById('cff-rav-prova-nome').textContent = d.nome || 'Avaliação';
+
+            var cpfPre = cffRavCpfLimpo();
+            var jaRespondeu = false;
+            try {
+                var respDoc = await dbFirestore.collection('cffAvaliacoesRespostas').doc(cpfPre + '_' + avId).get();
+                if (respDoc.exists) {
+                    jaRespondeu = true;
+                    var r = respDoc.data();
+                    var respostasSalvas = r.respostas || {};
+                    Object.keys(respostasSalvas).forEach(function(idx) {
+                        cffRavRespostas[idx] = respostasSalvas[idx];
+                    });
+                }
+            } catch (e) { console.error('Falha ao verificar respostas salvas:', e); }
+
+            if (jaRespondeu) {
+                document.getElementById('cff-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Você já respondeu esta avaliação';
+                document.getElementById('cff-rav-enviar-btn').disabled = true;
+                document.getElementById('cff-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-circle-check"></i> Já respondida';
+            } else {
+                document.getElementById('cff-rav-prova-info').textContent = (d.questoes ? d.questoes.length : 0) + ' questões · Tempo limite de 30 minutos';
+                document.getElementById('cff-rav-enviar-btn').disabled = false;
+                document.getElementById('cff-rav-enviar-btn').innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Respostas';
+            }
+            cffRavRenderQuestoes();
+            lista.style.display = 'none';
+            prova.style.display = 'block';
+            document.getElementById('cff-sec-avaliacoes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (!jaRespondeu) cffRavIniciarTimer();
+        } catch (e) {
+            console.error('Erro ao abrir avaliação:', e);
+            alert('Erro ao abrir avaliação.');
+        }
+    }
+
+    function cffRavRenderQuestoes() {
+        var wrap = document.getElementById('cff-rav-questoes');
+        if (!wrap || !cffRavAtual) return;
+        var questoes = cffRavAtual.conteudo.questoes || [];
+        wrap.innerHTML = '';
+        questoes.forEach(function(q, i) {
+            var qDiv = document.createElement('div');
+            qDiv.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:14px';
+            var opcoesHtml = ['a','b','c','d'].map(function(letra) {
+                var texto = q.opcoes && q.opcoes[letra];
+                var rotulo = letra.toUpperCase();
+                var checked = (cffRavRespostas[i] === letra) ? ' checked' : '';
+                return '<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #e2e8f0;border-radius:9px;margin-bottom:8px;cursor:pointer;background:#f8fafc;transition:.15s">' +
+                    '<input type="radio" name="cff-rav-q-' + i + '" value="' + letra + '"' + checked + ' onchange="cffRavMarcar(' + i + ', this.value)" style="width:17px;height:17px;flex-shrink:0;cursor:pointer">' +
+                    '<span style="width:24px;height:24px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;flex-shrink:0">' + rotulo + '</span>' +
+                    '<span style="font-size:13px;color:#1e293b;flex:1">' + cffEsc(texto || '') + '</span>' +
+                    '</label>';
+            }).join('');
+            qDiv.innerHTML =
+                '<div style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:12px">' + (i + 1) + '. ' + cffEsc(q.enunciado || '') + '</div>' +
+                opcoesHtml;
+            wrap.appendChild(qDiv);
+        });
+    }
+
+    function cffRavMarcar(qIdx, letra) {
+        cffRavRespostas[qIdx] = letra;
+    }
+
+    function cffRavCancelar() {
+        if (cffRavTimer) clearInterval(cffRavTimer);
+        cffRavTimer = null;
+        cffRavAtual = null;
+        cffRavRespostas = {};
+        document.getElementById('cff-rav-prova').style.display = 'none';
+        document.getElementById('cff-rav-lista').style.display = 'block';
+    }
+
+    function cffRavIniciarTimer() {
+        if (cffRavTimer) clearInterval(cffRavTimer);
+        cffRavSegundos = 30 * 60;
+        cffRavTimerVal();
+        cffRavTimer = setInterval(function() {
+            cffRavSegundos--;
+            cffRavTimerVal();
+            if (cffRavSegundos <= 0) {
+                clearInterval(cffRavTimer);
+                cffRavTimer = null;
+                cffRavFinalizar(true);
+            }
+        }, 1000);
+    }
+
+    function cffRavTimerVal() {
+        var m = Math.floor(cffRavSegundos / 60);
+        var s = cffRavSegundos % 60;
+        var el = document.getElementById('cff-rav-timer-val');
+        if (el) el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function cffRavEnviar() {
+        if (!cffRavAtual) return;
+        if (!confirm('Tem certeza que deseja FINALIZAR a avaliação agora? Suas respostas serão enviadas e a avaliação não poderá ser reaberta.')) return;
+        if (cffRavTimer) clearInterval(cffRavTimer);
+        cffRavTimer = null;
+        cffRavFinalizar(false);
+    }
+
+    function cffRavFinalizar(porTempo) {
+        var questoes = cffRavAtual.conteudo.questoes || [];
+        var total = questoes.length;
+        var marcadas = 0;
+        var certas = 0;
+        for (var i = 0; i < total; i++) {
+            if (cffRavRespostas[i]) {
+                marcadas++;
+                if (cffRavRespostas[i] === (cffRavCorretas[i] || '')) certas++;
+            }
+        }
+        var naoMarcadas = total - marcadas;
+        var pesoQuestao = (total === 10) ? 1.0 : (total === 20 ? 0.5 : (total > 0 ? 10 / total : 0));
+        var pontos = certas * pesoQuestao - naoMarcadas * pesoQuestao;
+        pontos = Math.round(pontos * 100) / 100;
+
+        var textPeso = (total === 10) ? 'Cada questão vale 1,0 ponto. Questões não marcadas descontam 1,0 ponto.' : (total === 20 ? 'Cada questão vale 0,5 ponto. Questões não marcadas descontam 0,5 ponto.' : 'Cada questão vale 0,5 ponto (escala até 10). Questões não marcadas descontam proporcionalmente.');
+        var resPesoEl = document.getElementById('cff-rav-res-peso');
+        if (resPesoEl) resPesoEl.textContent = textPeso;
+
+        document.getElementById('cff-rav-res-titulo').textContent = porTempo ? 'Avaliação Finalizada' : 'Respostas Enviadas';
+        document.getElementById('cff-rav-res-sub').textContent = porTempo ? 'O tempo de 30 minutos chegou ao fim.' : 'Suas respostas foram registradas.';
+        document.getElementById('cff-rav-res-marcadas').textContent = marcadas;
+        document.getElementById('cff-rav-res-certas').textContent = certas;
+        document.getElementById('cff-rav-res-pontos').textContent = pontos.toFixed(1).replace('.', ',');
+
+        document.getElementById('cff-rav-resultado-overlay').style.display = 'flex';
+
+        var usuario = cffRavUsuario();
+        var iuCPF = String(usuario.cpf || '').replace(/[^0-9a-zA-Z_-]/g, '');
+        var cpfPre = iuCPF || 'anonimo';
+        var avId = cffRavAtual.id;
+        var dados = {
+            avaliacaoId: avId,
+            avaliacaoNome: cffRavAtual.conteudo.nome || 'Avaliação',
+            cpf: usuario.cpf || '',
+            nome: usuario.nome || '',
+            respostas: cffRavRespostas,
+            respostasMarcadas: marcadas,
+            respostasCertas: certas,
+            totalQuestoes: total,
+            pontos: pontos,
+            finalizadaPorTempo: porTempo ? true : false,
+            enviadoEm: new Date()
+        };
+        try {
+            var backups = JSON.parse(localStorage.getItem('cff_respostas_backup') || '{}');
+            backups[avId] = dados;
+            localStorage.setItem('cff_respostas_backup', JSON.stringify(backups));
+        } catch (e) { console.error('Falha ao salvar backup local:', e); }
+        dbFirestore.collection('cffAvaliacoesRespostas').doc(cpfPre + '_' + avId).set(dados).then(function() {
+            console.log('Respostas salvas em cffAvaliacoesRespostas/', cpfPre + '_' + avId);
+        }).catch(function(erro) {
+            console.error('Erro ao salvar respostas no Firestore:', erro);
+            document.getElementById('cff-rav-res-sub').textContent = 'Respostas calculadas, mas ainda não foi possível gravar no servidor. Tente novamente em instantes.';
+        });
+
+        var aulaId = cffRavAtual.conteudo.aulaId || '';
+        if (aulaId && cpfPre !== 'anonimo') {
+            var nota = Math.max(0, Math.min(10, pontos));
+            nota = Math.round(nota * 10) / 10;
+            var notasTeoricas = {};
+            notasTeoricas[aulaId] = nota;
+            dbFirestore.collection('cffAvaliacoesAlunos').doc(cpfPre).set({
+                cpf: usuario.cpf || '',
+                nome: usuario.nome || '',
+                notasTeoricas: notasTeoricas
+            }, { merge: true }).then(function() {
+                console.log('Nota da AV Teorica gravada na ficha CFF (aula', aulaId + '):', nota);
+            }).catch(function(erro) {
+                console.error('Erro ao gravar nota na ficha CFF:', erro);
+            });
+        }
+    }
+
+    function cffRavFecharResultado() {
+        document.getElementById('cff-rav-resultado-overlay').style.display = 'none';
+        if (cffRavAtual) cffRavAtual = null;
+        document.getElementById('cff-rav-prova').style.display = 'none';
+        document.getElementById('cff-rav-lista').style.display = 'block';
+        cffLoadAvaliacoes();
+    }
+
+    async function cffRavVisualizar(avId) {
+        var overlay = document.getElementById('cff-rav-visualizar-overlay');
+        var conteudo = document.getElementById('cff-rav-vis-conteudo');
+        if (!overlay || !conteudo) return;
+        conteudo.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:10px">Carregando...</p></div>';
+        overlay.style.display = 'flex';
+        document.getElementById('cff-rav-prova').style.display = 'none';
+        try {
+            var avDoc = await dbFirestore.collection('cffAvaliacoes').doc(avId).get();
+            var cpfPre = cffRavCpfLimpo();
+            var respDoc = await dbFirestore.collection('cffAvaliacoesRespostas').doc(cpfPre + '_' + avId).get();
+            if (!avDoc.exists) { conteudo.innerHTML = '<p style="color:#dc2626">Avaliação não encontrada.</p>'; return; }
+            var d = avDoc.data() || {};
+            var questoes = d.questoes || [];
+            var mostrar = (d.enviada === true);
+            var r = respDoc.exists ? respDoc.data() : {};
+            var respostas = r.respostas || {};
+            var respostasCertas = (r.respostasCertas != null ? r.respostasCertas : '-');
+            var pontos = (r.pontos != null ? Number(r.pontos) : null);
+            var marcadas = r.respostasMarcadas != null ? r.respostasMarcadas : Object.keys(respostas).length;
+            var total = r.totalQuestoes != null ? r.totalQuestoes : questoes.length;
+
+            document.getElementById('cff-rav-vis-titulo').textContent = 'Visualizar Avaliação';
+            document.getElementById('cff-rav-vis-sub').textContent = (d.nome || 'Avaliação') + (d.disciplina ? ' · ' + d.disciplina : '');
+
+            var resumoHtml = '';
+            if (!mostrar) {
+                resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-lock" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Avaliação indisponível</h4><p style="font-size:13px">Esta avaliação não está mais disponível.</p></div>';
+            } else if (d.tipo === 'pratica') {
+                var manual = {};
+                var nota = null;
+                try {
+                    var fDoc = await dbFirestore.collection('cffAvaliacoesAlunos').doc(cpfPre).get();
+                    if (fDoc.exists) {
+                        var fdata = fDoc.data() || {};
+                        var men = (fdata.avPraticaManual || {})[avId];
+                        if (men) { manual = men.respostas || {}; nota = (men.nota != null ? Number(men.nota) : null); }
+                    }
+                } catch (e) { console.error('Falha ao ler ficha p/ visualizar prática:', e); }
+                var notaHtml = '';
+                if (nota != null) {
+                    notaHtml = '<div style="background:linear-gradient(135deg,#16a34a,#059669);border-radius:12px;padding:16px;text-align:center;color:#fff;margin-bottom:16px">' +
+                        '<div style="font-size:11px;font-weight:700;letter-spacing:1px">NOTA DA AVALIAÇÃO PRÁTICA</div>' +
+                        '<div style="font-size:34px;font-weight:800;margin-top:4px">' + String(nota).replace('.', ',') + '</div>' +
+                        '<div style="font-size:11px;opacity:.85">de 0 a 10</div>' +
+                        '</div>';
+                } else {
+                    notaHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:22px;text-align:center;color:#64748b;margin-bottom:16px"><i class="fa-solid fa-hourglass-half" style="font-size:30px;color:#94a3b8;margin-bottom:8px;display:block"></i><p style="font-size:13px">Ainda não há nota registrada para esta avaliação prática.</p></div>';
+                }
+                var qHtml2 = '';
+                questoes.forEach(function(q, i) {
+                    var st = manual[i] || '';
+                    var rotulo = st === 'certa' ? 'CERTA' : (st === 'parcial' ? 'PARCIAL' : (st === 'naorealizou' ? 'NÃO REALIZOU' : 'Aguardando'));
+                    var cor = st === 'certa' ? '#16a34a' : (st === 'parcial' ? '#f59e0b' : (st === 'naorealizou' ? '#dc2626' : '#94a3b8'));
+                    var bg = st === 'certa' ? '#f0fdf4' : (st === 'parcial' ? '#fffbeb' : (st === 'naorealizou' ? '#fef2f2' : '#f8fafc'));
+                    qHtml2 += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:12px">' +
+                        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="font-size:13.5px;font-weight:700;color:#0f172a;flex:1;min-width:180px">' + (i + 1) + '. ' + cffEsc(q.enunciado || '') + '</div>' +
+                        '<span style="background:' + bg + ';border:1px solid ' + cor + ';color:' + cor + ';font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;flex-shrink:0">' + rotulo + '</span></div>' +
+                        '</div>';
+                });
+                resumoHtml = notaHtml + qHtml2;
+            } else if (!respDoc.exists) {
+                resumoHtml = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px;text-align:center;color:#64748b"><i class="fa-solid fa-file-circle-question" style="font-size:34px;color:#94a3b8;margin-bottom:10px"></i><h4 style="font-size:15px;color:#0f172a;margin-bottom:4px">Ainda não respondida</h4><p style="font-size:13px">Você ainda não enviou respostas para esta avaliação.</p></div>';
+            } else {
+                var cards = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 8px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:700">RESPONDIDAS</div><div style="font-size:22px;font-weight:800;color:#2563eb;margin-top:4px">' + (marcadas || 0) + '/' + (total || 0) + '</div></div>' +
+                    '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 8px;text-align:center"><div style="font-size:11px;color:#16a34a;font-weight:700">CERTAS</div><div style="font-size:22px;font-weight:800;color:#16a34a;margin-top:4px">' + (respostasCertas == null ? '-' : respostasCertas) + '</div></div>' +
+                    '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 8px;text-align:center"><div style="font-size:11px;color:#d97706;font-weight:700">PONTOS</div><div style="font-size:22px;font-weight:800;color:#d97706;margin-top:4px">' + (pontos == null ? '-' : String(pontos).replace('.', ',')) + '</div></div>' +
+                    '</div>';
+                var qHtml = '';
+                questoes.forEach(function(q, i) {
+                    var escolhida = respostas[i] || '';
+                    var correta = q.correta || '';
+                    var opcoes = ['a','b','c','d'];
+                    var opHtml = opcoes.map(function(letra) {
+                        var texto = q.opcoes && q.opcoes[letra];
+                        var chosen = (escolhida === letra);
+                        var bg = chosen ? (letra === correta ? '#f0fdf4' : '#fef2f2') : '#fff';
+                        var bd = chosen ? (letra === correta ? '#86efac' : '#fca5a5') : '#e2e8f0';
+                        var marca = (letra === correta) ? '<i class="fa-solid fa-check" style="color:#16a34a"></i>' : (chosen ? '<i class="fa-solid fa-xmark" style="color:#dc2626"></i>' : '');
+                        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid ' + bd + ';border-radius:9px;margin-bottom:6px;background:' + bg + '">' +
+                            '<span style="width:22px;height:22px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#334155;flex-shrink:0">' + letra.toUpperCase() + '</span>' +
+                            '<span style="font-size:13px;color:#1e293b;flex:1">' + cffEsc(texto || '') + '</span>' +
+                            (escolhida === letra ? '<span style="font-size:10px;font-weight:700;color:' + (letra === correta ? '#16a34a' : '#dc2626') + '">SUA RESPOSTA</span>' : '') +
+                            marca +
+                            '</div>';
+                    }).join('');
+                    var status = '';
+                    if (escolhida) {
+                        status = escolhida === correta ? '<span style="color:#16a34a;font-size:11px;font-weight:700"><i class="fa-solid fa-circle-check"></i> Correta</span>' : '<span style="color:#dc2626;font-size:11px;font-weight:700"><i class="fa-solid fa-circle-xmark"></i> Errada</span>';
+                    } else {
+                        status = '<span style="color:#94a3b8;font-size:11px;font-weight:700"><i class="fa-solid fa-minus"></i> Não respondida</span>';
+                    }
+                    qHtml += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:12px">' +
+                        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:13.5px;font-weight:700;color:#0f172a">' + (i + 1) + '. ' + cffEsc(q.enunciado || '') + '</div>' + status + '</div>' +
+                        opHtml +
+                        '</div>';
+                });
+                resumoHtml = cards + qHtml;
+            }
+            conteudo.innerHTML = resumoHtml;
+        } catch (e) {
+            console.error('Erro ao visualizar avaliação:', e);
+            conteudo.innerHTML = '<p style="color:#dc2626">Erro ao carregar a avaliação.</p>';
+        }
+    }
+
+    function cffRavFecharVisualizar() {
+        document.getElementById('cff-rav-visualizar-overlay').style.display = 'none';
+    }
+
+    function cffRavImprimirVisualizar() {
+        var conteudo = document.getElementById('cff-rav-vis-conteudo');
+        var titulo = document.getElementById('cff-rav-vis-titulo');
+        var w = window.open('', '_blank');
+        if (!w) return;
+        w.document.write('<html><head><title>' + cffEsc(titulo ? titulo.textContent : 'Avaliação') + '</title>' +
+            '<style>body{font-family:Arial,sans-serif;color:#111;padding:30px;font-size:13px} h2{font-size:18px;margin-bottom:4px} .q{border:1px solid #ccc;border-radius:8px;padding:12px;margin-bottom:12px;page-break-inside:avoid} .opt{margin:4px 0;padding:6px 8px;border:1px solid #ddd;border-radius:6px} .cor{color:#16a34a;font-weight:700} .err{color:#dc2626;font-weight:700} .cards{display:flex;gap:12px;margin-bottom:16px} .cd{border:1px solid #ccc;border-radius:8px;padding:10px 14px;text-align:center;flex:1}</style>' +
+            '</head><body>' +
+            '<h2>' + cffEsc(titulo ? titulo.textContent : '') + '</h2>' +
+            conteudo.innerHTML +
+            '</body></html>');
+        w.document.close();
+        w.focus();
+        w.onload = function() { w.print(); };
+    }
+
+    window.cffLoadAvaliacoes = cffLoadAvaliacoes;
+    window.cffLoadAulas = cffLoadAulas;
+    window.cffRavAbrir = cffRavAbrir;
+    window.cffRavRenderQuestoes = cffRavRenderQuestoes;
+    window.cffRavMarcar = cffRavMarcar;
+    window.cffRavCancelar = cffRavCancelar;
+    window.cffRavIniciarTimer = cffRavIniciarTimer;
+    window.cffRavEnviar = cffRavEnviar;
+    window.cffRavFecharResultado = cffRavFecharResultado;
+    window.cffRavVisualizar = cffRavVisualizar;
+    window.cffRavFecharVisualizar = cffRavFecharVisualizar;
+    window.cffRavImprimirVisualizar = cffRavImprimirVisualizar;
+})();
+</script>
+</body>
+</html>

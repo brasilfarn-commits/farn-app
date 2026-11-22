@@ -9,10 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-    <script src="oportunidades-portais.js?v=3"></script>
-    <script src="ficha-geral-compartilhar.js?v=31"></script>
-    <script src="farn-db.js?v=12"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -23,21 +19,10 @@
             messagingSenderId: "16254677061",
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
+        firebase.initializeApp(firebaseConfig);
+        const dbFirestore = firebase.firestore();
 
-        /* ===== MANUTENCAO DOS PORTAIS ===== */
-        async function pfChecarManutencaoPortais() {
-            try {
-                const snap = await dbFirestore.collection('config').doc('portais').get();
-                if (snap.exists && snap.data().manutencao === true) {
-                    const ov = document.getElementById('portais-manutencao');
-                    if (ov) ov.style.display = 'flex';
-                }
-            } catch (e) {}
-        }
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pfChecarManutencaoPortais);
-        else pfChecarManutencaoPortais();
+        /* Portal do Formado ativado: sem bloqueio de manutenção global */
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -79,9 +64,8 @@
         .pf-nav-item i { width:18px; text-align:center; font-size:14px; }
 
         .pf-sidebar-footer { padding:16px 20px; border-top:1px solid #e2e8f0; }
-        .pf-sidebar-footer .pf-user { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-        .pf-sidebar-footer .pf-user-avatar { width:45px; height:60px; flex:0 0 45px; border-radius:10px; background:linear-gradient(135deg,#16a34a,#15803d); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#fff; overflow:hidden; border:2px solid #bbf7d0; box-shadow:0 2px 8px rgba(22,163,74,.25); }
-        .pf-sidebar-footer .pf-user-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+        .pf-sidebar-footer .pf-user { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .pf-sidebar-footer .pf-user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#16a34a,#15803d); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; }
         .pf-sidebar-footer .pf-user-info { flex:1; }
         .pf-sidebar-footer .pf-user-name { font-size:13px; font-weight:600; color:#1e293b; }
         .pf-sidebar-footer .pf-user-cpf { font-size:11px; color:#94a3b8; }
@@ -137,6 +121,62 @@
         .pf-em-construcao h3 { color:#ca8a04; font-size:18px; margin-bottom:6px; }
         .pf-em-construcao p { color:#64748b; font-size:13px; }
 
+        /* ===== CERTIFICADO ===== */
+        .pf-cert-wrapper { max-width:760px; margin:0 auto; }
+        .pf-cert-bg {
+            position:relative;
+            width:100%;
+            aspect-ratio: 3 / 2;
+            background:url('CERTIFICADO.png') no-repeat center;
+            background-size:100% 100%;
+            border-radius:8px;
+            box-shadow:0 4px 20px rgba(0,0,0,.15);
+            overflow:hidden;
+        }
+        .pf-cert-nome {
+            position:absolute;
+            left:12%; right:12%;
+            top:36.4%;
+            text-align:center;
+            font-family:Georgia,'Times New Roman',serif;
+            font-size:clamp(8px, 1.6vw, 16px);
+            font-weight:700;
+            color:#1c1917;
+            line-height:1.15;
+            text-transform:uppercase;
+        }
+        .pf-cert-campos {
+            position:absolute;
+            left:8%; right:8%;
+            top:40%;
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            gap:4% 3%;
+            transform:translateX(-2%);
+        }
+        .pf-cert-campo {
+            display:inline-block;
+            text-align:center;
+            font-family:Georgia,'Times New Roman',serif;
+            font-size:clamp(4px, 0.8vw, 8px);
+            color:#1c1917;
+            line-height:1.2;
+            white-space:nowrap;
+        }
+        .pf-cert-qr {
+            position:absolute;
+            right:8.7%;
+            bottom:21.7%;
+            width:8%;
+            height:auto;
+            background:#fff;
+            border:2px solid #1c1917;
+            padding:3px;
+            border-radius:4px;
+            box-sizing:border-box;
+        }
+
         /* ===== LATERAL DIREITA - GALERIA ===== */
         .pf-right { background:#ffffff; border-left:1px solid #e2e8f0; display:flex; flex-direction:column; overflow:hidden; }
         .pf-right-tabs { display:flex; border-bottom:1px solid #e2e8f0; }
@@ -171,178 +211,6 @@
         .pf-photo-modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.1); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; }
         .pf-photo-modal-info { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#cbd5e1; padding:8px 16px; border-radius:8px; font-size:12px; text-align:center; }
 
-        /* ===== CERTIFICACOES ===== */
-        .pf-cert-espera { position:relative; overflow:hidden; text-align:center; padding:54px 24px 46px; border-radius:20px; background:linear-gradient(160deg,#f0fdf4 0%,#ecfdf5 42%,#f0f9ff 100%); border:1px solid rgba(22,163,74,.22); box-shadow:0 10px 34px rgba(15,23,42,.06); }
-        .pf-cert-espera::before { content:''; position:absolute; inset:-45%; pointer-events:none; background:radial-gradient(circle at 28% 30%,rgba(22,163,74,.16),transparent 46%),radial-gradient(circle at 72% 68%,rgba(13,148,136,.14),transparent 46%),radial-gradient(circle at 55% 20%,rgba(202,138,4,.10),transparent 40%); animation:pfCertAura 16s ease-in-out infinite alternate; }
-        .pf-cert-espera::after { content:''; position:absolute; top:0; bottom:0; width:38%; left:-45%; pointer-events:none; background:linear-gradient(100deg,transparent,rgba(255,255,255,.72),transparent); transform:skewX(-14deg); animation:pfCertBrilho 5.5s ease-in-out infinite; }
-        @keyframes pfCertAura { from { transform:translate3d(-3%,-2%,0) scale(1); } to { transform:translate3d(4%,3%,0) scale(1.14); } }
-        @keyframes pfCertBrilho { 0%,62% { left:-45%; } 100% { left:115%; } }
-        .pf-cert-espera-inner { position:relative; z-index:2; max-width:520px; margin:0 auto; }
-        .pf-cert-selo { position:relative; width:104px; height:104px; margin:0 auto 24px; display:flex; align-items:center; justify-content:center; }
-        .pf-cert-selo i { position:relative; z-index:2; width:78px; height:78px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:34px; color:#fff; background:linear-gradient(135deg,#16a34a,#0d9488); box-shadow:0 12px 30px rgba(22,163,74,.38); }
-        .pf-cert-onda { position:absolute; inset:0; border-radius:50%; border:2px solid rgba(22,163,74,.5); animation:pfCertOnda 3s ease-out infinite; }
-        .pf-cert-onda:nth-child(2) { animation-delay:1s; }
-        .pf-cert-onda:nth-child(3) { animation-delay:2s; }
-        @keyframes pfCertOnda { 0% { transform:scale(.74); opacity:.8; } 100% { transform:scale(1.55); opacity:0; } }
-        .pf-cert-espera h3 { font-size:20px; font-weight:800; color:#14532d; margin:0 0 10px; letter-spacing:-.2px; }
-        .pf-cert-espera p { font-size:14px; color:#475569; line-height:1.8; margin:0 0 6px; }
-        .pf-cert-espera strong { color:#15803d; }
-        .pf-cert-status { display:inline-flex; align-items:center; gap:8px; margin-top:22px; padding:8px 16px; border-radius:999px; background:#fff; border:1px solid rgba(22,163,74,.3); font-size:11px; font-weight:700; color:#15803d; letter-spacing:.3px; box-shadow:0 2px 10px rgba(15,23,42,.05); }
-        .pf-cert-ponto { width:8px; height:8px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 0 rgba(22,163,74,.6); animation:pfCertPulso 2s ease-out infinite; }
-        @keyframes pfCertPulso { 0% { box-shadow:0 0 0 0 rgba(22,163,74,.55); } 70% { box-shadow:0 0 0 9px rgba(22,163,74,0); } 100% { box-shadow:0 0 0 0 rgba(22,163,74,0); } }
-        .pf-cert-status.erro { color:#b91c1c; border-color:#fecaca; }
-        .pf-cert-status.erro .pf-cert-ponto { background:#dc2626; animation:none; }
-        .pf-cert-passos { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:26px; }
-        .pf-cert-passo { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.82); border:1px solid rgba(22,163,74,.2); border-radius:12px; padding:9px 14px; font-size:11px; font-weight:600; color:#334155; }
-        .pf-cert-passo i { color:#16a34a; font-size:13px; }
-        .pf-cert-passo.feito { border-color:rgba(22,163,74,.5); background:#f0fdf4; color:#14532d; }
-        .pf-cert-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); gap:16px; }
-        .pf-cert-card { display:flex; flex-direction:column; background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; cursor:pointer; transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; animation:pfCertEntra .35s ease both; }
-        .pf-cert-card:hover { transform:translateY(-3px); box-shadow:0 14px 30px rgba(15,23,42,.13); border-color:rgba(22,163,74,.5); }
-        .pf-cert-card:focus-visible { outline:2px solid #16a34a; outline-offset:2px; }
-        @keyframes pfCertEntra { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        .pf-cert-card-papel { position:relative; padding:18px; display:flex; justify-content:center; background:linear-gradient(135deg,#f0fdf4,#ecfeff 60%,#eff6ff); border-bottom:1px solid #e2e8f0; }
-        .pf-cert-folha { position:relative; background:#fff; border:1px solid #cbd5e1; border-radius:3px; overflow:hidden; box-shadow:0 8px 22px rgba(15,23,42,.2); container-type:inline-size; }
-        .pf-cert-folha img { width:100%; height:100%; object-fit:contain; display:block; }
-        .pf-cert-folha-vazia { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#bbf7d0; font-size:26px; background:linear-gradient(135deg,#f8fafc,#f0fdf4); }
-        .pf-cert-novo { position:absolute; top:10px; right:10px; background:linear-gradient(135deg,#16a34a,#0d9488); color:#fff; font-size:9px; font-weight:800; letter-spacing:.6px; padding:4px 9px; border-radius:999px; text-transform:uppercase; box-shadow:0 3px 10px rgba(22,163,74,.35); }
-        .pf-cert-card-body { padding:14px 16px 16px; display:flex; flex-direction:column; gap:7px; flex:1; }
-        .pf-cert-card-curso { font-size:14px; font-weight:800; color:#14532d; line-height:1.4; }
-        .pf-cert-card-inst { font-size:11px; color:#64748b; display:flex; align-items:center; gap:5px; }
-        .pf-cert-card-inst i { color:#16a34a; }
-        .pf-cert-card-texto { font-size:12px; color:#475569; line-height:1.7; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-        .pf-cert-card-rodape { margin-top:auto; padding-top:10px; border-top:1px solid #f0fdf4; display:flex; align-items:center; gap:8px; font-size:10px; color:#94a3b8; }
-        .pf-cert-card-acao { margin-left:auto; display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:#15803d; }
-        .pf-cert-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(3,15,9,.9); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:18px; }
-        .pf-cert-modal.active { display:flex; }
-        .pf-cert-modal-box { background:#fff; border-radius:18px; width:100%; max-width:940px; max-height:92vh; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(22,163,74,.45) #f1f5f9; box-shadow:0 24px 70px rgba(0,0,0,.5); }
-        .pf-cert-modal-box::-webkit-scrollbar { width:8px; }
-        .pf-cert-modal-box::-webkit-scrollbar-track { background:#f1f5f9; }
-        .pf-cert-modal-box::-webkit-scrollbar-thumb { background:rgba(22,163,74,.45); border-radius:10px; }
-        .pf-cert-modal-box::-webkit-scrollbar-thumb:hover { background:rgba(22,163,74,.7); }
-        .pf-cert-modal-topo { position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:10px; padding:16px 20px; background:linear-gradient(135deg,#14532d,#166534 55%,#0f766e); color:#fff; }
-        .pf-cert-modal-topo h3 { margin:0; font-size:16px; font-weight:800; flex:1; line-height:1.4; }
-        .pf-cert-modal-fechar { background:rgba(255,255,255,.14); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; flex:0 0 34px; transition:background .2s; }
-        .pf-cert-modal-fechar:hover { background:rgba(255,255,255,.28); }
-        .pf-cert-modal-corpo { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; justify-content:center; padding:22px 20px; }
-        .pf-cert-modal-papel { flex:1 1 640px; max-width:880px; min-width:250px; display:flex; justify-content:center; padding:18px; border-radius:14px; border:1px solid #e2e8f0; background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 8px,#e9eef5 8px,#e9eef5 16px); }
-        .pf-cert-folha { position:relative; }
-        .pf-cert-declaracao-overlay { position:absolute; inset:0; display:block; pointer-events:none; color:#0f172a; text-shadow:0 1px 0 rgba(255,255,255,.35); }
-        /* 1.51cqw equivale a 12 px na largura A4 (794 px) mantendo a proporcao em qualquer zoom/tamanho */
-        .pf-cert-decl-conteudo { position:absolute; left:10%; right:10%; top:35%; bottom:23%; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:8px; gap:1.8cqw; text-align:center; font-size:12px; font-size:1.51cqw; }
-        .pf-cert-declaracao-texto { font-size:1em; line-height:1.6; font-weight:600; white-space:pre-wrap; word-break:break-word; max-width:100%; }
-        .pf-cert-declaracao-inst { font-size:.92em; line-height:1.7; font-weight:600; white-space:pre-wrap; word-break:break-word; text-align:center; max-width:100%; }
-        img.pf-cert-declaracao-qr { position:absolute; right:5%; bottom:10%; width:9.5%; height:auto; object-fit:contain; background:#fff; padding:.45cqw; border-radius:.6cqw; border:1px solid rgba(15,23,42,.12); }
-        /* No verso o QR Code fica cerca de 1 cm acima e 1,3 cm a esquerda do QR da frente */
-        img.pf-cert-declaracao-qr.verso { bottom:13.3%; right:11.5%; }
-        /* Credencial escrita na vertical (girada 90 graus) logo acima do QR Code */
-        .pf-cert-declaracao-cred { position:absolute; right:2.5%; bottom:43%; writing-mode:vertical-rl; transform:rotate(180deg); font-size:1.5cqw; font-weight:800; letter-spacing:.14em; line-height:1; color:#0f172a; white-space:nowrap; }
-        .pf-cert-modal-acoes { display:flex; gap:10px; flex-wrap:wrap; padding:0 20px 22px; }
-        .pf-cert-btn { display:inline-flex; align-items:center; gap:7px; padding:11px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid transparent; text-decoration:none; transition:transform .15s,box-shadow .15s; }
-        .pf-cert-btn:active { transform:translateY(1px); }
-        .pf-cert-btn-verde { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 4px 14px rgba(22,163,74,.3); }
-        .pf-cert-btn-verde:hover { box-shadow:0 7px 20px rgba(22,163,74,.42); }
-        .pf-cert-btn-neutro { background:#f8fafc; border-color:#e2e8f0; color:#475569; }
-        .pf-cert-btn-neutro:hover { background:#f1f5f9; }
-
-        /* ===== VISUALIZADOR DO CERTIFICADO EM TELA CHEIA =====
-           Uma folha por vez, do tamanho que a tela permitir. A frente abre
-           primeiro; as setas levam ao verso e trazem de volta. */
-        body.pfv-aberto { overflow:hidden; }
-        .pfv { display:none; position:fixed; inset:0; z-index:10050; flex-direction:column; overflow:hidden; background:#04140c; color:#ecfdf5; font-family:Inter,Arial,sans-serif; }
-        .pfv.active { display:flex; }
-        .pfv::-webkit-scrollbar { width:8px; }
-        .pfv::-webkit-scrollbar-track { background:#062018; }
-        .pfv::-webkit-scrollbar-thumb { background:rgba(22,163,74,.5); border-radius:10px; }
-        .pfv-bg { position:absolute; inset:0; pointer-events:none; background:
-            radial-gradient(900px 620px at 14% 8%, rgba(22,163,74,.26), transparent 62%),
-            radial-gradient(760px 560px at 88% 92%, rgba(13,148,136,.24), transparent 64%),
-            radial-gradient(620px 420px at 72% 12%, rgba(212,175,55,.11), transparent 66%),
-            linear-gradient(158deg,#062018 0%,#04140c 46%,#03151c 100%);
-            animation:pfvAurora 22s ease-in-out infinite alternate; }
-        .pfv-bg::after { content:''; position:absolute; inset:0; opacity:.5; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E"); }
-        @keyframes pfvAurora { from { transform:translate3d(0,0,0) scale(1); } to { transform:translate3d(0,-14px,0) scale(1.05); } }
-        .pfv-topo { position:relative; z-index:3; flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid rgba(134,239,172,.16); background:linear-gradient(180deg,rgba(4,20,12,.86),rgba(4,20,12,.42)); backdrop-filter:blur(10px); }
-        .pfv-marca { flex:0 0 42px; width:42px; height:42px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fde68a; background:linear-gradient(140deg,rgba(212,175,55,.26),rgba(22,163,74,.2)); border:1px solid rgba(253,230,138,.34); box-shadow:0 6px 20px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.16); }
-        .pfv-titulos { flex:1; min-width:0; }
-        .pfv-titulos h3 { margin:0; font-size:15px; font-weight:800; letter-spacing:.2px; line-height:1.35; color:#f0fdf4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .pfv-sub { margin-top:3px; font-size:11px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:#6ee7b7; display:flex; align-items:center; gap:7px; }
-        .pfv-sub b { color:#fde68a; font-weight:800; }
-        .pfv-acoes { flex:0 0 auto; display:flex; align-items:center; gap:9px; }
-        .pfv-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 17px; border-radius:11px; font-size:12px; font-weight:800; letter-spacing:.6px; cursor:pointer; border:1px solid transparent; font-family:inherit; transition:transform .16s, box-shadow .16s, background .16s, border-color .16s; }
-        .pfv-btn:active { transform:translateY(1px) scale(.985); }
-        .pfv-btn-print { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 6px 20px rgba(22,163,74,.36); }
-        .pfv-btn-print:hover { box-shadow:0 10px 28px rgba(22,163,74,.5); transform:translateY(-1px); }
-        .pfv-btn-fechar { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.2); color:#d1fae5; }
-        .pfv-btn-fechar:hover { background:rgba(248,113,113,.18); border-color:rgba(252,165,165,.5); color:#fee2e2; }
-        .pfv-palco { position:relative; z-index:2; flex:1 1 auto; min-height:0; display:flex; align-items:center; gap:16px; padding:16px 22px 6px; }
-        .pfv-seta { flex:0 0 54px; width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; color:#d1fae5; background:rgba(255,255,255,.07); border:1px solid rgba(134,239,172,.3); backdrop-filter:blur(8px); box-shadow:0 8px 26px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14); transition:transform .18s, background .18s, box-shadow .18s, color .18s, opacity .18s; }
-        .pfv-seta:hover:not(:disabled) { background:linear-gradient(135deg,rgba(22,163,74,.5),rgba(13,148,136,.42)); color:#fff; border-color:rgba(134,239,172,.72); box-shadow:0 12px 34px rgba(22,163,74,.42); transform:scale(1.09); }
-        .pfv-seta:active:not(:disabled) { transform:scale(.94); }
-        .pfv-seta:disabled { opacity:.2; cursor:not-allowed; }
-        .pfv-seta:focus-visible, .pfv-btn:focus-visible, .pfv-face:focus-visible { outline:2px solid #fde68a; outline-offset:3px; }
-        .pfv-moldura { flex:1 1 auto; min-width:0; height:100%; display:flex; align-items:center; justify-content:center; }
-        .pfv-folha { position:relative; flex:0 0 auto; container-type:inline-size; background:#fff; overflow:hidden; border-radius:2px; box-shadow:0 34px 90px rgba(0,0,0,.66), 0 4px 16px rgba(0,0,0,.4), 0 0 0 1px rgba(253,230,138,.26); }
-        .pfv-folha img.pfv-papel { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; }
-        .pfv-vazio { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#94a3b8; background:linear-gradient(135deg,#f8fafc,#f0fdf4); font-size:13px; font-weight:700; }
-        .pfv-vazio i { font-size:38px; color:#cbd5e1; }
-        .pfv-folha.pfv-entra-dir { animation:pfvEntraDir .3s cubic-bezier(.22,.75,.28,1) both; }
-        .pfv-folha.pfv-entra-esq { animation:pfvEntraEsq .3s cubic-bezier(.22,.75,.28,1) both; }
-        @keyframes pfvEntraDir { from { opacity:0; transform:translateX(30px) scale(.985); } to { opacity:1; transform:none; } }
-        @keyframes pfvEntraEsq { from { opacity:0; transform:translateX(-30px) scale(.985); } to { opacity:1; transform:none; } }
-        .pfv-rodape { position:relative; z-index:3; flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; padding:10px 20px 16px; }
-        .pfv-faces { display:flex; align-items:center; gap:7px; padding:5px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(134,239,172,.2); }
-        .pfv-face { display:inline-flex; align-items:center; gap:7px; padding:8px 18px; border-radius:999px; border:none; background:transparent; color:#86efac; font-family:inherit; font-size:11px; font-weight:800; letter-spacing:.9px; cursor:pointer; transition:background .18s, color .18s, box-shadow .18s; }
-        .pfv-face:hover { color:#f0fdf4; background:rgba(255,255,255,.07); }
-        .pfv-face.ativa { background:linear-gradient(135deg,#16a34a,#0f766e); color:#fff; box-shadow:0 5px 16px rgba(22,163,74,.42); }
-        .pfv-face:disabled { opacity:.35; cursor:not-allowed; }
-        .pfv-dica { font-size:11px; color:rgba(167,243,208,.62); display:flex; align-items:center; gap:7px; }
-        .pfv-dica kbd { font-family:inherit; font-size:10px; font-weight:800; padding:2px 7px; border-radius:5px; background:rgba(255,255,255,.09); border:1px solid rgba(134,239,172,.24); color:#a7f3d0; }
-        @media(max-width:700px) {
-            .pfv-topo { padding:11px 13px; gap:10px; flex-wrap:wrap; }
-            .pfv-marca { flex:0 0 36px; width:36px; height:36px; border-radius:11px; font-size:15px; }
-            .pfv-titulos h3 { font-size:13px; white-space:normal; }
-            .pfv-acoes { width:100%; }
-            .pfv-btn { flex:1; justify-content:center; padding:11px 12px; }
-            .pfv-palco { gap:7px; padding:10px 9px 4px; }
-            .pfv-seta { flex:0 0 40px; width:40px; height:40px; font-size:15px; }
-            .pfv-rodape { gap:9px; padding:8px 12px 13px; }
-            .pfv-dica { display:none; }
-            .pfv-face { padding:8px 15px; }
-        }
-        @media(max-height:560px) {
-            .pfv-topo { padding:8px 14px; }
-            .pfv-marca { flex:0 0 32px; width:32px; height:32px; font-size:14px; }
-            .pfv-btn { padding:8px 13px; }
-            .pfv-palco { padding:8px 16px 2px; }
-            .pfv-seta { flex:0 0 42px; width:42px; height:42px; font-size:16px; }
-            .pfv-rodape { padding:6px 14px 9px; }
-            .pfv-dica { display:none; }
-        }
-        @media(prefers-reduced-motion:reduce) {
-            .pfv-bg { animation:none; }
-            .pfv-folha.pfv-entra-dir, .pfv-folha.pfv-entra-esq { animation:none; }
-        }
-        @media print {
-            body.pfv-aberto .pfv { display:none !important; }
-        }
-        @media(max-width:600px) {
-            .pf-cert-espera { padding:40px 16px 34px; border-radius:16px; }
-            .pf-cert-espera h3 { font-size:17px; }
-            .pf-cert-selo { width:88px; height:88px; margin-bottom:18px; }
-            .pf-cert-selo i { width:66px; height:66px; font-size:28px; }
-            .pf-cert-grid { grid-template-columns:1fr; }
-            .pf-cert-modal { padding:10px; }
-            .pf-cert-modal-corpo { padding:16px 14px; gap:16px; }
-            .pf-cert-modal-papel { max-width:100%; }
-            .pf-cert-modal-acoes { padding:0 14px 16px; }
-            .pf-cert-btn { flex:1; justify-content:center; }
-        }
-        @media(prefers-reduced-motion:reduce) {
-            .pf-cert-espera::before, .pf-cert-espera::after, .pf-cert-onda, .pf-cert-ponto, .pf-cert-card { animation:none; }
-            .pf-cert-espera::after { display:none; }
-        }
-
         /* ===== TOPBAR MOBILE ===== */
         .pf-topbar{display:none;position:fixed;top:0;left:0;right:0;background:#ffffff;border-bottom:1px solid #e2e8f0;padding:10px 16px;align-items:center;gap:12px;z-index:150;box-shadow:0 2px 12px rgba(0,0,0,.06)}
         .pf-topbar-logo{width:34px;height:34px;border-radius:50%;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;background:#fff}
@@ -375,17 +243,6 @@
     </style>
 </head>
 <body>
-
-    <!-- OVERLAY MANUTENCAO -->
-    <div id="portais-manutencao" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;background:linear-gradient(135deg,#14532d 0%,#166534 40%,#1e3a8a 100%);align-items:center;justify-content:center;padding:24px;text-align:center;font-family:'Segoe UI',system-ui,sans-serif">
-        <div style="background:#fff;border-radius:20px;padding:42px 32px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35)">
-            <div style="width:72px;height:72px;margin:0 auto 18px;background:linear-gradient(135deg,#facc15,#ca8a04);border-radius:50%;display:flex;align-items:center;justify-content:center">
-                <i class="fa-solid fa-screwdriver-wrench" style="font-size:30px;color:#fff"></i>
-            </div>
-            <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;font-weight:800">Em Manutenção</h2>
-            <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6">Estamos em manutenção. Voltaremos em breve!</p>
-        </div>
-    </div>
 
     <!-- LOGIN -->
     <div id="screen-login">
@@ -434,17 +291,14 @@
                 <div class="pf-nav-item" onclick="pfShowSection('galeria', this)">
                     <i class="fa-solid fa-images"></i><span>Galeria de Fotos</span>
                 </div>
-                <div class="pf-nav-item" onclick="pfShowSection('certificacoes', this)">
-                    <i class="fa-solid fa-certificate"></i><span>Certificações</span>
-                </div>
                 <div class="pf-nav-item" onclick="pfShowSection('meus-dados', this)">
                     <i class="fa-solid fa-user-pen"></i><span>Meus Dados</span>
                 </div>
+                <div class="pf-nav-item" onclick="pfShowSection('certificado', this)">
+                    <i class="fa-solid fa-certificate"></i><span>Certificado</span>
+                </div>
                 <div class="pf-nav-item" onclick="pfShowSection('baixar-app', this)">
                     <i class="fa-solid fa-mobile-screen-button"></i><span>Baixar App</span>
-                </div>
-                <div class="pf-nav-item" onclick="pfShowSection('oportunidade', this)">
-                    <i class="fa-solid fa-briefcase"></i><span>Oportunidade</span>
                 </div>
             </nav>
             <div class="pf-sidebar-footer">
@@ -452,7 +306,7 @@
                     <div class="pf-user-avatar" id="pf-user-avatar">--</div>
                     <div class="pf-user-info">
                         <div class="pf-user-name" id="pf-user-name">---</div>
-                        <div id="pf-user-matricula" style="display:inline-block;max-width:100%;margin-top:4px;padding:3px 10px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:8px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px;word-break:break-all;line-height:1.35">---</div>
+                        <div id="pf-user-matricula" style="display:inline-block;margin-top:4px;padding:3px 10px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:8px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px">---</div>
                         <div class="pf-user-cpf" id="pf-user-cpf">CPF: ---</div>
                     </div>
                 </div>
@@ -481,11 +335,6 @@
                         <i class="fa-solid fa-heart" style="margin-right:4px"></i> Esse e seu espaco.<br>O espaco que lhe representa!
                     </p>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;margin:0 0 12px">
-                    <i class="fa-solid fa-share-nodes" style="color:#16a34a"></i>
-                    <h3 style="font-size:14px;font-weight:700;color:#1e293b;margin:0">Publicações recentes</h3>
-                </div>
-                <div id="pf-noticias-unificadas" style="margin-bottom:22px"></div>
                 <div id="pf-noticias-slider" data-noticias-slider style="--farn-slider-h:220px;margin-bottom:16px"></div>
                 <div id="pf-noticias-list">
                     <div class="pf-noticia-empty">
@@ -495,40 +344,6 @@
                 </div>
             </div>
 
-            <!-- CERTIFICACOES -->
-            <div id="pf-section-certificacoes" class="pf-section">
-                <div class="pf-center-header">
-                    <i class="fa-solid fa-certificate"></i>
-                    <div><h2>Certificações</h2></div>
-                    <p id="pf-cert-contagem">Enviadas pelo administrador</p>
-                </div>
-
-                <div id="pf-cert-espera" class="pf-cert-espera">
-                    <div class="pf-cert-espera-inner">
-                        <div class="pf-cert-selo">
-                            <span class="pf-cert-onda"></span>
-                            <span class="pf-cert-onda"></span>
-                            <span class="pf-cert-onda"></span>
-                            <i class="fa-solid fa-certificate"></i>
-                        </div>
-                        <h3>Aguardando novo registro</h3>
-                        <p>Sua <strong>certificação</strong> está sendo preparada e será <strong>enviada em breve pelo administrador</strong>.</p>
-                        <p style="font-size:13px;color:#64748b;margin-top:8px">Quando o registro chegar, ele aparece aqui sozinho. Não precisa atualizar a página.</p>
-                        <div class="pf-cert-status" id="pf-cert-status">
-                            <span class="pf-cert-ponto"></span>
-                            <span id="pf-cert-status-texto">Conectado &middot; aguardando envio</span>
-                        </div>
-                        <div class="pf-cert-passos">
-                            <div class="pf-cert-passo feito"><i class="fa-solid fa-circle-check"></i> Acesso ao portal</div>
-                            <div class="pf-cert-passo"><i class="fa-regular fa-clock"></i> Envio do administrador</div>
-                            <div class="pf-cert-passo"><i class="fa-regular fa-circle"></i> Certificado disponível</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="pf-cert-lista" class="pf-cert-grid" style="display:none"></div>
-            </div>
-
             <!-- MEUS DADOS -->
             <div id="pf-section-meus-dados" class="pf-section">
                 <div class="pf-section-header">
@@ -536,6 +351,15 @@
                     <h2>Meus Dados</h2>
                 </div>
                 <div class="pf-dados-grid" id="pf-dados-content"></div>
+            </div>
+
+            <!-- CERTIFICADO -->
+            <div id="pf-section-certificado" class="pf-section">
+                <div class="pf-section-header">
+                    <i class="fa-solid fa-certificate"></i>
+                    <h2>Meu Certificado</h2>
+                </div>
+                <div id="pf-cert-content"></div>
             </div>
 
             <!-- BAIXAR APP -->
@@ -573,21 +397,6 @@
                 </div>
                 <div style="margin-top:28px;text-align:center;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
                     <p style="color:#64748b;font-size:12px;margin:0"><i class="fa-solid fa-circle-info" style="color:#2563eb;margin-right:4px"></i> O aplicativo esta em fase de desenvolvimento. Em breve disponivel nas lojas!</p>
-                </div>
-            </div>
-
-            <!-- OPORTUNIDADE -->
-            <div id="pf-section-oportunidade" class="pf-section">
-                <div class="pf-center-header">
-                    <i class="fa-solid fa-briefcase"></i>
-                    <div><h2>Oportunidade</h2></div>
-                    <p>Oportunidades divulgadas pela FARN</p>
-                </div>
-                <div id="pf-oportunidade-lista" style="display:flex;flex-direction:column;gap:16px"></div>
-                <div id="pf-oportunidade-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;background:#fff;border:1px solid #e2e8f0;border-radius:16px">
-                    <i class="fa-solid fa-briefcase" style="font-size:40px;margin-bottom:12px;opacity:.5"></i>
-                    <h3 style="color:#475569;margin:0 0 6px">Nenhuma oportunidade no momento</h3>
-                    <p style="margin:0;font-size:13px">Quando houver oportunidades disponíveis, elas aparecerão aqui.</p>
                 </div>
             </div>
 
@@ -645,91 +454,6 @@
         <div class="pf-photo-modal-info" id="pf-photo-modal-info"></div>
     </div>
 
-    <!-- MODAL CERTIFICADO -->
-    <div id="pf-cert-modal" class="pf-cert-modal" onclick="if(event.target===this)pfFecharCertificado()">
-        <div class="pf-cert-modal-box">
-            <div class="pf-cert-modal-topo">
-                <i class="fa-solid fa-certificate"></i>
-                <h3 id="pf-cert-modal-titulo">Certificado</h3>
-                <button type="button" class="pf-cert-modal-fechar" onclick="pfFecharCertificado()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="pf-cert-modal-corpo">
-                <div class="pf-cert-modal-papel">
-                    <div style="width:100%;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:16px">
-                        <div style="flex:0 1 auto;width:clamp(220px,42vh,400px)">
-                            <div style="font-size:10px;font-weight:800;color:#15803d;letter-spacing:.6px;text-align:center;margin-bottom:6px">FRENTE</div>
-                            <div id="pf-cert-modal-folha" class="pf-cert-folha" style="width:100%;aspect-ratio:1414 / 2000;position:relative;overflow:hidden">
-                                <img id="pf-cert-modal-img" src="" alt="Papel A4 do certificado" style="width:100%;height:100%;object-fit:contain;display:block">
-                                <div id="pf-cert-modal-declaracao" class="pf-cert-declaracao-overlay" style="display:none">
-                                    <div class="pf-cert-decl-conteudo">
-                                        <div class="pf-cert-declaracao-texto"></div>
-                                        <div id="pf-cert-modal-instituicao" class="pf-cert-declaracao-inst"></div>
-                                    </div>
-                                    <img id="pf-cert-modal-qr" class="pf-cert-declaracao-qr" alt="QR Code" style="display:none">
-                                    <div id="pf-cert-modal-cred" class="pf-cert-declaracao-cred" style="display:none"></div>
-                                </div>
-                                <div id="pf-cert-modal-vazia" class="pf-cert-folha-vazia" style="display:none"><i class="fa-solid fa-file-image"></i></div>
-                            </div>
-                        </div>
-                        <div id="pf-cert-modal-verso-wrap" style="display:none;flex:0 1 auto;width:clamp(220px,42vh,400px)">
-                            <div style="font-size:10px;font-weight:800;color:#15803d;letter-spacing:.6px;text-align:center;margin-bottom:6px">VERSO</div>
-                            <div id="pf-cert-modal-verso-folha" class="pf-cert-folha" style="width:100%;aspect-ratio:1414 / 2000;position:relative;overflow:hidden">
-                                <img id="pf-cert-modal-verso-img" src="" alt="Verso do certificado" style="width:100%;height:100%;object-fit:contain;display:block">
-                                <div id="pf-cert-modal-verso-decl" class="pf-cert-declaracao-overlay" style="display:none">
-                                    <img id="pf-cert-modal-verso-qr" class="pf-cert-declaracao-qr verso" alt="QR Code" style="display:none">
-                                    <div id="pf-cert-modal-verso-cred" class="pf-cert-declaracao-cred" style="display:none"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="pf-cert-modal-acoes">
-                <button type="button" id="pf-cert-modal-baixar" class="pf-cert-btn pf-cert-btn-verde" onclick="pfVisualizarCertificadoPapel()"><i class="fa-solid fa-eye"></i> VISUALIZAR</button>
-                <button type="button" id="pf-cert-modal-ficha" class="pf-cert-btn pf-cert-btn-verde" style="background:linear-gradient(135deg,#0f766e,#115e59);box-shadow:0 4px 14px rgba(15,118,110,.3)" onclick="pfAbrirFichaGeralCert()"><i class="fa-solid fa-file-lines"></i> VISUALIZAR FICHA GERAL</button>
-                <button type="button" class="pf-cert-btn pf-cert-btn-neutro" onclick="pfFecharCertificado()"><i class="fa-solid fa-xmark"></i> Fechar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- VISUALIZADOR DO CERTIFICADO EM TELA CHEIA (frente / verso) -->
-    <div id="pf-cert-viewer" class="pfv" role="dialog" aria-modal="true" aria-label="Certificado em tela cheia">
-        <div class="pfv-bg"></div>
-        <header class="pfv-topo">
-            <div class="pfv-marca"><i class="fa-solid fa-certificate"></i></div>
-            <div class="pfv-titulos">
-                <h3 id="pfv-titulo">Certificado</h3>
-                <div class="pfv-sub"><span id="pfv-face-nome">Frente</span> <b id="pfv-face-pos">1 de 1</b></div>
-            </div>
-            <div class="pfv-acoes">
-                <button type="button" class="pfv-btn pfv-btn-print" onclick="pfImprimirCertificado()"><i class="fa-solid fa-print"></i> IMPRIMIR</button>
-                <button type="button" class="pfv-btn pfv-btn-fechar" onclick="pfFecharVisualizador()" title="Fechar (Esc)"><i class="fa-solid fa-xmark"></i> FECHAR</button>
-            </div>
-        </header>
-        <div class="pfv-palco">
-            <button type="button" class="pfv-seta" id="pfv-anterior" onclick="pfCertViewIr(-1)" title="Voltar para a frente" aria-label="Voltar para a frente"><i class="fa-solid fa-chevron-left"></i></button>
-            <div class="pfv-moldura" id="pfv-moldura">
-                <div class="pfv-folha" id="pfv-folha">
-                    <img id="pfv-img" class="pfv-papel" src="" alt="Folha do certificado" style="display:none">
-                    <div id="pfv-decl" class="pf-cert-declaracao-overlay" style="display:none">
-                        <div class="pf-cert-decl-conteudo">
-                            <div class="pf-cert-declaracao-texto" id="pfv-decl-texto"></div>
-                            <div class="pf-cert-declaracao-inst" id="pfv-decl-inst"></div>
-                        </div>
-                        <img id="pfv-decl-qr" class="pf-cert-declaracao-qr" src="" alt="QR Code da credencial" style="display:none">
-                        <div id="pfv-decl-cred" class="pf-cert-declaracao-cred" style="display:none"></div>
-                    </div>
-                    <div class="pfv-vazio" id="pfv-vazio" style="display:none"><i class="fa-solid fa-file-image"></i><span>Sem imagem nesta face</span></div>
-                </div>
-            </div>
-            <button type="button" class="pfv-seta" id="pfv-proxima" onclick="pfCertViewIr(1)" title="Ver o verso" aria-label="Ver o verso"><i class="fa-solid fa-chevron-right"></i></button>
-        </div>
-        <footer class="pfv-rodape">
-            <div class="pfv-faces" id="pfv-faces"></div>
-            <div class="pfv-dica"><kbd>&larr;</kbd><kbd>&r;</kbd> trocar face <span style="opacity:.5">·</span> <kbd>Esc</kbd> fechar</div>
-        </footer>
-    </div>
-
     <!-- MODAL EDITAR DADOS -->
     <div id="pf-edit-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)pfCloseEditModal()">
         <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
@@ -759,43 +483,6 @@
         else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
         else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
         input.value = v;
-    }
-
-    /* ===== FOTO 3X4 DO USUARIO LOGADO =====
-       Mostra a foto ao lado do nome no rodape da barra lateral. Sem foto,
-       mantem as iniciais como antes. Se o cadastro de recadastramento nao
-       tiver a imagem, busca no cadastro de candidatos/formados. */
-    function pfIniciaisUsuario(u) {
-        var nome = (u && (u.nome || u.nomeCompleto)) ? String(u.nome || u.nomeCompleto) : '';
-        return nome.split(' ').filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase() || 'FD';
-    }
-
-    function pfRenderAvatarUsuario(u, foto) {
-        var el = document.getElementById('pf-user-avatar');
-        if (!el) return;
-        var src = foto || (u && (u.photoDataUrl || u.foto || u.fotoUrl || u.photoURL)) || '';
-        if (!src) {
-            el.textContent = pfIniciaisUsuario(u);
-            return;
-        }
-        el.textContent = '';
-        var img = document.createElement('img');
-        img.alt = 'Foto 3x4 de ' + ((u && (u.nome || u.nomeCompleto)) || 'formado');
-        img.src = src;
-        img.onerror = function () {
-            el.textContent = pfIniciaisUsuario(u);
-        };
-        el.appendChild(img);
-    }
-
-    function pfAtualizarFotoUsuario(u) {
-        pfRenderAvatarUsuario(u);
-        var temFoto = u && (u.photoDataUrl || u.foto || u.fotoUrl || u.photoURL);
-        if (!temFoto && typeof pfFichaGeralFoto === 'function') {
-            pfFichaGeralFoto().then(function (url) {
-                if (url) pfRenderAvatarUsuario(u, url);
-            }).catch(function () {});
-        }
     }
 
     /* ===== LOGIN ===== */
@@ -858,18 +545,19 @@
             document.getElementById('screen-login').style.display = 'none';
             document.getElementById('screen-portal').classList.add('active');
 
-            pfAtualizarFotoUsuario(pfUser);
+            var initials = (pfUser.nome || 'FD').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+            document.getElementById('pf-user-avatar').textContent = initials;
             document.getElementById('pf-user-name').textContent = pfUser.nome || '---';
             var matEl = document.getElementById('pf-user-matricula');
-            if (matEl) { var _cred = pfUser.credencial || ''; matEl.style.display = _cred ? '' : 'none'; matEl.textContent = _cred ? 'Credencial: ' + _cred : ''; }
+            if (matEl) matEl.textContent = pfUser.matricula ? 'Mat: ' + pfUser.matricula : '';
             var cpfDisp = pfUser.cpf || '';
             if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
 
             pfLoadNoticias();
             pfLoadDados();
+            pfLoadCertificado();
             pfLoadGallery();
-            pfLoadCertificacoes();
 
 
         } catch(e) {
@@ -896,7 +584,8 @@
         var adminData = JSON.parse(localStorage.getItem('farn_user_data') || '{}');
         if (adminData.permissoes && (adminData.permissoes.includes('admin') || adminData.permissoes.includes('portal-formado'))) {
             document.getElementById('screen-portal').classList.add('active');
-            pfAtualizarFotoUsuario(adminData);
+            var initials = (adminData.nome || 'ADM').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+            document.getElementById('pf-user-avatar').textContent = initials;
             document.getElementById('pf-user-name').textContent = adminData.nome || 'Administrador';
             var matEl = document.getElementById('pf-user-matricula');
             if (matEl) matEl.textContent = 'Administrador | Acesso total';
@@ -905,8 +594,8 @@
             document.getElementById('pf-user-cpf').textContent = 'CPF: ' + cpfDisp;
             pfLoadNoticias();
             pfLoadDados();
+            pfLoadCertificado();
             pfLoadGallery();
-            pfLoadCertificacoes();
 
         }
     }
@@ -915,9 +604,6 @@
         if (pfGalleryUnsub) { pfGalleryUnsub(); pfGalleryUnsub = null; }
         if (pfGalleryUnsub2) { pfGalleryUnsub2(); pfGalleryUnsub2 = null; }
         if (pfNoticiasUnsub) { pfNoticiasUnsub(); pfNoticiasUnsub = null; }
-        if (pfCertUnsub) { pfCertUnsub(); pfCertUnsub = null; }
-        pfCertRegistros = [];
-        pfFecharCertificado();
         document.getElementById('screen-portal').classList.remove('active');
         localStorage.removeItem('pf_lembrar_cpf');
         localStorage.removeItem('pf_lembrar_senha');
@@ -973,15 +659,6 @@
     }
 
     /* ===== NOTICIAS ===== */
-    function pfTextoNoticia(texto) {
-        if (window.FarnNoticias && typeof FarnNoticias.linkify === 'function') {
-            return FarnNoticias.linkify(texto || '');
-        }
-        return String(texto == null ? '' : texto)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
     function pfLoadNoticias() {
         var container = document.getElementById('pf-noticias-list');
         pfNoticiasUnsub = dbFirestore.collection('noticiasFormados').orderBy('data', 'desc').onSnapshot(function(snap) {
@@ -999,635 +676,13 @@
                 var imgHtml = n.imagem ? '<img src="' + n.imagem + '" class="pf-noticia-img" alt="Noticia">' : '';
                 card.innerHTML = '<div class="pf-noticia-header">' + badgeHtml + '<span class="pf-noticia-date">' + dateStr + '</span></div>' +
                     '<div class="pf-noticia-title">' + (n.titulo || '') + '</div>' +
-                    '<div class="pf-noticia-text">' + pfTextoNoticia(n.texto || '') + '</div>' + imgHtml;
+                    '<div class="pf-noticia-text">' + (n.texto || '') + '</div>' + imgHtml;
                 container.appendChild(card);
             });
         }, function() {
             container.innerHTML = '<div class="pf-noticia-empty"><i class="fa-solid fa-newspaper"></i><p>Erro ao carregar noticias.</p></div>';
         });
     }
-
-    /* ===== CERTIFICACOES =====
-       O administrador cria o registro na secao Certificado do admin; ele chega
-       aqui ao vivo. Enquanto nao chega, a secao fica em espera. */
-    var pfCertUnsub = null;
-    var pfCertRegistros = [];
-    var pfCertAtual = null;
-
-    function pfCertEsc(v) {
-        return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
-            return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
-        });
-    }
-
-    function pfCertData(iso) {
-        if (!iso) return '';
-        var d = new Date(iso);
-        if (isNaN(d.getTime())) return '';
-        return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-    }
-
-    function pfCertStatus(texto, erro) {
-        var box = document.getElementById('pf-cert-status');
-        var txt = document.getElementById('pf-cert-status-texto');
-        if (txt) txt.textContent = texto;
-        if (box) box.classList.toggle('erro', !!erro);
-    }
-
-    function pfCertFormatCPF(cpf) {
-        var d = String(cpf || '').replace(/\D/g, '').slice(0, 11);
-        if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        return String(cpf || '').trim() || '—';
-    }
-
-    function pfCertFormatDataVal(v) {
-        if (v == null || v === '') return '—';
-        // Firestore Timestamp
-        if (typeof v === 'object' && typeof v.toDate === 'function') {
-            try { v = v.toDate(); } catch (e) {}
-        }
-        if (v instanceof Date) {
-            return isNaN(v.getTime()) ? '—' : v.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-        }
-        var s = String(v).trim();
-        if (!s) return '—';
-        // já formatado pt-BR (DD/MM/YYYY ou DD/MM/YY)
-        var mBR = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-        if (mBR) {
-            var dia = ('0' + mBR[1]).slice(-2), mes = ('0' + mBR[2]).slice(-2), ano = mBR[3];
-            if (ano.length === 2) ano = (parseInt(ano, 10) > 50 ? '19' : '20') + ano;
-            return dia + '/' + mes + '/' + ano;
-        }
-        // ISO ou YYYY-MM-DD
-        var d = new Date(s);
-        if (!isNaN(d.getTime())) {
-            // YYYY-MM-DD sem hora: evitar deslocamento de fuso
-            var mY = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (mY) return mY[3] + '/' + mY[2] + '/' + mY[1];
-            return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-        }
-        return s;
-    }
-
-    function pfCertSubstituirDeclaracao(texto) {
-        var t = String(texto || '');
-        var nome = (pfUser && (pfUser.nome || pfUser.nomeCompleto)) ? String(pfUser.nome || pfUser.nomeCompleto).trim() : '—';
-        var cpf = pfCertFormatCPF(pfUser ? (pfUser.cpf || '') : '');
-        var cred = (pfUser && (pfUser.credencial || pfUser.matricula)) ? String(pfUser.credencial || pfUser.matricula).trim() : '—';
-        // [inicio] = data de inscrição do formado logado; [fim] = data final (formulário do formado), com fallback para AV final prática
-        var dataInicio = pfUser ? (pfUser.dataInscricao || pfUser.dataMatricula || pfUser.dataCadastro || '') : '';
-        var dataFim = pfUser ? (pfUser.dataFinal || pfUser.data_final || pfUser.dataAVFinalPraticaFmt || pfUser.dataAVFinalPratica || pfUser.dataAvFinalPratica || '') : '';
-        var inicio = pfCertFormatDataVal(dataInicio);
-        var fim = pfCertFormatDataVal(dataFim);
-        // substitui chaves solicitadas (exatas e variações comuns)
-        t = t.split('[NOME]').join(nome);
-        t = t.split('[nome]').join(nome);
-        t = t.split('[000.000.000-00]').join(cpf);
-        t = t.split('[CPF]').join(cpf);
-        t = t.split('[cpf]').join(cpf);
-        t = t.split('[0000000000000]').join(cred);
-        t = t.split('[CREDENCIAL]').join(cred);
-        t = t.split('[credencial]').join(cred);
-        t = t.split('[inicio]').join(inicio);
-        t = t.split('[INICIO]').join(inicio);
-        t = t.split('[Inicio]').join(inicio);
-        t = t.split('[fim]').join(fim);
-        t = t.split('[FIM]').join(fim);
-        t = t.split('[Fim]').join(fim);
-        return t;
-    }
-
-    function pfCertPodeExibirFormado(r) {
-        var portais = Array.isArray(r.portais) ? r.portais : [];
-        if (typeof r.exibirFormado === 'boolean') return r.exibirFormado;
-        if (portais.length) return portais.indexOf('formado') !== -1;
-        return true; // compat: registro antigo sem flags
-    }
-
-    function pfLoadCertificacoes() {
-        if (pfCertUnsub) { pfCertUnsub(); pfCertUnsub = null; }
-        pfCertStatus('Conectado · aguardando envio', false);
-        /* Sem orderBy de proposito: o indice composto nao existe e documento
-           antigo sem o campo nao pode derrubar a escuta. A ordem vem no cliente. */
-        pfCertUnsub = dbFirestore.collection('certificados').onSnapshot(function(snap) {
-            var regs = [];
-            snap.forEach(function(doc) {
-                var r = doc.data() || {};
-                r.id = doc.id;
-                if (!pfCertPodeExibirFormado(r)) return;
-                regs.push(r);
-            });
-            regs.sort(function(a, b) {
-                return String(b.criadoEm || '').localeCompare(String(a.criadoEm || ''));
-            });
-            pfCertRegistros = regs;
-            pfCertStatus(regs.length ? 'Registro recebido do administrador' : 'Conectado · aguardando envio', false);
-            pfRenderCertificacoes();
-        }, function(err) {
-            console.error('Erro ao carregar certificacoes:', err);
-            pfCertStatus('Sem conexão · tentando de novo', true);
-        });
-    }
-
-    function pfRenderCertificacoes() {
-        var lista = document.getElementById('pf-cert-lista');
-        if (!lista) return;
-        var espera = document.getElementById('pf-cert-espera');
-        var contagem = document.getElementById('pf-cert-contagem');
-        var regs = pfCertRegistros;
-
-        if (!regs.length) {
-            lista.innerHTML = '';
-            lista.style.display = 'none';
-            if (espera) espera.style.display = 'block';
-            if (contagem) contagem.textContent = 'Enviadas pelo administrador';
-            return;
-        }
-        if (espera) espera.style.display = 'none';
-        lista.style.display = 'grid';
-        if (contagem) contagem.textContent = regs.length + (regs.length === 1 ? ' certificação' : ' certificações');
-        lista.innerHTML = regs.map(pfCertCardHtml).join('');
-        Array.prototype.forEach.call(lista.querySelectorAll('.pf-cert-card'), function(el) {
-            var id = el.getAttribute('data-id');
-            el.addEventListener('click', function() { pfAbrirCertificado(id); });
-            el.addEventListener('keydown', function(ev) {
-                if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pfAbrirCertificado(id); }
-            });
-        });
-    }
-
-    function pfCertCardHtml(r, i) {
-        var inst = r.instituicao || {};
-        var nomeInst = inst.nomeFantasia || inst.razaoSocial || 'FARN';
-        var paisagem = r.papelOrientacao === 'paisagem';
-        var resumo = String(r.declaracao || '').replace(/\s+/g, ' ').trim();
-        var criado = r.criadoEm ? new Date(r.criadoEm).getTime() : 0;
-        var novo = criado && (Date.now() - criado) < 7 * 24 * 60 * 60 * 1000;
-        return '<div class="pf-cert-card" role="button" tabindex="0" data-id="' + pfCertEsc(r.id) + '" style="animation-delay:' + Math.min(i, 8) * 55 + 'ms">' +
-            '<div class="pf-cert-card-papel">' +
-                (novo ? '<span class="pf-cert-novo"><i class="fa-solid fa-bolt" style="margin-right:3px"></i>Novo</span>' : '') +
-                '<div class="pf-cert-folha" style="width:' + (paisagem ? '100%' : '148px') + ';max-width:' + (paisagem ? '300px' : '148px') + ';aspect-ratio:' + (paisagem ? '2000 / 1414' : '1414 / 2000') + '">' +
-                    (r.papel
-                        ? '<img src="' + pfCertEsc(r.papel) + '" alt="Papel do certificado">'
-                        : '<div class="pf-cert-folha-vazia"><i class="fa-solid fa-file-image"></i></div>') +
-                '</div>' +
-            '</div>' +
-            '<div class="pf-cert-card-body">' +
-                '<div class="pf-cert-card-curso">' + pfCertEsc(r.curso || 'Certificado') + '</div>' +
-                '<div class="pf-cert-card-inst"><i class="fa-solid fa-building-columns"></i>' + pfCertEsc(nomeInst) + '</div>' +
-                '<div class="pf-cert-card-texto">' + pfCertEsc(resumo || 'Declaração não informada.') + '</div>' +
-                '<div class="pf-cert-card-rodape">' +
-                    '<i class="fa-regular fa-calendar"></i>' + pfCertEsc(pfCertData(r.criadoEm) || 'Aguardando data') +
-                    (r.papelVerso ? '<span style="margin-left:6px;color:#0f766e;font-weight:700">· Frente e verso</span>' : '') +
-                    '<span class="pf-cert-card-acao">Ver <i class="fa-solid fa-arrow-right"></i></span>' +
-                '</div>' +
-            '</div>' +
-        '</div>';
-    }
-
-    function pfAbrirCertificado(id) {
-        var r = pfCertRegistros.filter(function(x) { return x.id === id; })[0];
-        if (!r) return;
-        var inst = r.instituicao || {};
-        var paisagem = r.papelOrientacao === 'paisagem';
-        var folha = document.getElementById('pf-cert-modal-folha');
-        if (folha) folha.style.aspectRatio = paisagem ? '2000 / 1414' : '1414 / 2000';
-        var img = document.getElementById('pf-cert-modal-img');
-        var vazia = document.getElementById('pf-cert-modal-vazia');
-        if (img) {
-            if (r.papel) { img.src = r.papel; img.style.display = 'block'; }
-            else { img.removeAttribute('src'); img.style.display = 'none'; }
-        }
-        if (vazia) vazia.style.display = r.papel ? 'none' : 'flex';
-
-        // Verso do certificado (opcional)
-        var verso = r.papelVerso || '';
-        var versoPaisagem = r.papelVersoOrientacao === 'paisagem';
-        var versoWrap = document.getElementById('pf-cert-modal-verso-wrap');
-        var versoFolha = document.getElementById('pf-cert-modal-verso-folha');
-        var versoImg = document.getElementById('pf-cert-modal-verso-img');
-        if (versoFolha) versoFolha.style.aspectRatio = versoPaisagem ? '2000 / 1414' : '1414 / 2000';
-        if (versoImg) {
-            if (verso) { versoImg.src = verso; versoImg.style.display = 'block'; }
-            else { versoImg.removeAttribute('src'); versoImg.style.display = 'none'; }
-        }
-        if (versoWrap) versoWrap.style.display = verso ? 'block' : 'none';
-
-        // Declaração substituída e centralizada à frente do papel (Portal do Formado)
-        var declaracaoSub = pfCertSubstituirDeclaracao(r.declaracao || '');
-        var credQR = (pfUser && (pfUser.credencial || pfUser.matricula)) ? String(pfUser.credencial || pfUser.matricula).trim() : '';
-        var qrUrl = credQR ? ('https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(credQR) + '&size=120x120&margin=1') : '';
-        var instTxt = [];
-        if (inst.nomeFantasia || inst.razaoSocial) instTxt.push(inst.nomeFantasia || inst.razaoSocial);
-        if (inst.razaoSocial && inst.nomeFantasia) instTxt.push(inst.razaoSocial);
-        if (inst.cnpj) instTxt.push('CNPJ: ' + inst.cnpj);
-        if (inst.fone) instTxt.push('Tel: ' + inst.fone);
-        if (inst.email) instTxt.push(inst.email);
-        var instStr = instTxt.join('\n');
-        var overlay = document.getElementById('pf-cert-modal-declaracao');
-        if (overlay) {
-            var textoEl = overlay.querySelector('.pf-cert-declaracao-texto');
-            if (textoEl) textoEl.textContent = declaracaoSub;
-            var instEl = document.getElementById('pf-cert-modal-instituicao');
-            if (instEl) instEl.textContent = instStr;
-            overlay.style.display = (declaracaoSub || instStr || qrUrl) ? 'block' : 'none';
-        }
-        var qrEl = document.getElementById('pf-cert-modal-qr');
-        if (qrEl) {
-            if (qrUrl) { qrEl.src = qrUrl; qrEl.style.display = 'block'; }
-            else { qrEl.removeAttribute('src'); qrEl.style.display = 'none'; }
-        }
-        var credEl = document.getElementById('pf-cert-modal-cred');
-        if (credEl) {
-            if (credQR) { credEl.textContent = credQR; credEl.style.display = 'block'; }
-            else { credEl.textContent = ''; credEl.style.display = 'none'; }
-        }
-        /* No verso entram apenas o QR Code e a credencial, na mesma posicao da frente. */
-        var versoDecl = document.getElementById('pf-cert-modal-verso-decl');
-        var versoQr = document.getElementById('pf-cert-modal-verso-qr');
-        var versoCred = document.getElementById('pf-cert-modal-verso-cred');
-        if (versoQr) {
-            if (verso && qrUrl) { versoQr.src = qrUrl; versoQr.style.display = 'block'; }
-            else { versoQr.removeAttribute('src'); versoQr.style.display = 'none'; }
-        }
-        if (versoCred) {
-            if (verso && credQR) { versoCred.textContent = credQR; versoCred.style.display = 'block'; }
-            else { versoCred.textContent = ''; versoCred.style.display = 'none'; }
-        }
-        if (versoDecl) versoDecl.style.display = (verso && (qrUrl || credQR)) ? 'block' : 'none';
-
-        var titulo = document.getElementById('pf-cert-modal-titulo');
-        if (titulo) titulo.textContent = r.curso || 'Certificado';
-
-        pfCertAtual = { papel: r.papel || '', papelVerso: verso || '', versoPaisagem: !!versoPaisagem, declaracao: declaracaoSub || '', instituicao: instStr || '', paisagem: !!paisagem, curso: r.curso || 'Certificado', cursoNome: r.curso || '', cursoId: r.cursoId || '', qrUrl: qrUrl || '', credencial: credQR || '' };
-        var btnVer = document.getElementById('pf-cert-modal-baixar');
-        if (btnVer) {
-            btnVer.style.display = (r.papel || declaracaoSub || verso) ? 'inline-flex' : 'none';
-        }
-        var btnFicha = document.getElementById('pf-cert-modal-ficha');
-        if (btnFicha) btnFicha.style.display = 'inline-flex';
-
-        var modal = document.getElementById('pf-cert-modal');
-        if (modal) modal.classList.add('active');
-        var box = modal ? modal.querySelector('.pf-cert-modal-box') : null;
-        if (box) box.scrollTop = 0;
-        requestAnimationFrame(pfCertAjustarDeclaracao);
-    }
-
-    /* Reduz a fonte da declaracao o necessario para ela caber entre o topo e o
-       QR Code, mantendo tudo proporcional ao tamanho da folha (cqw).
-       O argumento e o id do overlay: o visualizador em tela cheia tem o seu.
-       Quando vem do requestAnimationFrame chega um timestamp, nao um id. */
-    function pfCertAjustarDeclaracao(overlayId) {
-        var id = (typeof overlayId === 'string' && overlayId) ? overlayId : 'pf-cert-modal-declaracao';
-        var overlay = document.getElementById(id);
-        if (!overlay || overlay.style.display === 'none') return;
-        var conteudo = overlay.querySelector('.pf-cert-decl-conteudo');
-        if (!conteudo) return;
-        var fs = 1.51, guard = 0;
-        conteudo.style.fontSize = fs + 'cqw';
-        while (conteudo.scrollHeight > conteudo.clientHeight + 1 && fs > 0.6 && guard++ < 40) {
-            fs = Math.round((fs - 0.05) * 100) / 100;
-            conteudo.style.fontSize = fs + 'cqw';
-        }
-    }
-
-    window.addEventListener('resize', function () {
-        var modal = document.getElementById('pf-cert-modal');
-        if (modal && modal.classList.contains('active')) pfCertAjustarDeclaracao();
-        pfCertViewMedir();
-    });
-
-    /* A ficha do portal deve ser a MESMA do administrador. O pfUser e lido no
-       login e pode estar desatualizado (o admin alterou dados, turma,
-       credencial ou patente depois disso). Busca o registro atual em
-       `candidatos`, que e a mesma colecao que alimenta o administrador. */
-    async function pfFichaGeralCadastro() {
-        var cpf = pfUser && pfUser.cpf ? String(pfUser.cpf).replace(/\D/g, '') : '';
-        if (!cpf) return pfUser;
-        try {
-            var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
-            if (!snap.empty) {
-                var atual = snap.docs[0].data() || {};
-                /* O registro do administrador prevalece; campos internos
-                   (_docId, _origem) e dados exclusivos do login permanecem. */
-                return Object.assign({}, pfUser, atual);
-            }
-        } catch (e) {
-            console.warn('Nao foi possivel atualizar os dados da Ficha Geral:', e && e.message);
-        }
-        return pfUser;
-    }
-
-    async function pfFichaGeralFoto(c) {
-        var pessoa = c || pfUser;
-        if (pessoa && (pessoa.photoDataUrl || pessoa.foto || pessoa.fotoUrl)) return pessoa.photoDataUrl || pessoa.foto || pessoa.fotoUrl;
-        try {
-            var cpf = pessoa && pessoa.cpf ? String(pessoa.cpf).replace(/\D/g, '') : '';
-            if (!cpf) return null;
-            var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
-            if (!snap.empty) {
-                var d = snap.docs[0].data() || {};
-                if (d.photoDataUrl || d.foto || d.fotoUrl) return d.photoDataUrl || d.foto || d.fotoUrl;
-            }
-            var snap2 = await dbFirestore.collection('recadastramentos').where('cpf', '==', cpf).limit(1).get();
-            if (!snap2.empty) {
-                var d2 = snap2.docs[0].data() || {};
-                if (d2.photoDataUrl || d2.foto || d2.fotoUrl) return d2.photoDataUrl || d2.foto || d2.fotoUrl;
-            }
-        } catch (e) {}
-        return null;
-    }
-
-    async function pfFichaGeralCatalogo(c) {
-        var pessoa = c || pfUser;
-        var codigo = pessoa && pessoa.patente ? String(pessoa.patente).trim() : '';
-        if (!codigo || typeof fichaGeralCatalogoRecebido !== 'function') { if (typeof fichaGeralCatalogoRecebido === 'function') fichaGeralCatalogoRecebido([]); return; }
-        try {
-            var snap = await dbFirestore.collection('patentes').doc(codigo).get();
-            fichaGeralCatalogoRecebido(snap.exists ? [Object.assign({ codigo: codigo }, snap.data())] : []);
-        } catch (e) { try { fichaGeralCatalogoRecebido([]); } catch(e2) {} }
-    }
-
-    async function pfAbrirFichaGeralCert() {
-        var btn = document.getElementById('pf-cert-modal-ficha');
-        if (!pfUser) { alert('Formado não identificado.'); return; }
-        if (typeof fichaGeralCarregarAulas !== 'function' || typeof fichaGeralDadosAluno !== 'function' || typeof fichaGeralCalcular !== 'function' || typeof fichaGeralFolha !== 'function' || typeof fichaGeralAbrirImpressao !== 'function') {
-            alert('Módulo de Ficha Geral não carregado. Recarregue a página.');
-            return;
-        }
-        var txtAnt = btn ? btn.innerHTML : '';
-        try {
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Carregando...'; }
-            /* Dados frescos do mesmo lugar que o administrador usa, para a
-               ficha do formado refletir cadastros alterados pelo admin. */
-            var c = await pfFichaGeralCadastro();
-            var cert = pfCertAtual || {};
-            var projeto = String(cert.cursoNome || c.projeto || c.formadoProjeto || '').trim();
-            var turma = String(c.turma || c.formadoTurma || '').trim();
-            if (!projeto || !turma) {
-                alert('Não foi possível identificar o curso/turma deste cadastro para abrir a Ficha Geral.');
-                return;
-            }
-            if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
-            if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
-            if (typeof fichaGeralAulasCache !== 'undefined') fichaGeralAulasCache = null;
-            await pfFichaGeralCatalogo(c);
-            if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
-            var aulas = await fichaGeralCarregarAulas(projeto, turma);
-            var dados = await fichaGeralDadosAluno(c);
-            var calc = fichaGeralCalcular(c, dados, aulas);
-            var foto = await pfFichaGeralFoto(c);
-            var body = fichaGeralFolha(c, calc, foto, 0, aulas);
-            fichaGeralAbrirImpressao('FARN - Ficha Geral - ' + (c.nome || c.nomeCompleto || '') + ' - ' + projeto, body, false);
-        } catch (e) {
-            console.error('Erro ao abrir Ficha Geral (certificado):', e);
-            alert('Erro ao abrir Ficha Geral: ' + (e && e.message ? e.message : e));
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = txtAnt; }
-        }
-    }
-
-    /* ===== VISUALIZADOR EM TELA CHEIA =====
-       A frente abre primeiro, ocupando a tela toda. As setas (e o teclado)
-       levam ao verso e trazem de volta; Fechar devolve ao modal do certificado. */
-    var pfCertViewFaces = [];
-    var pfCertViewFace = 0;
-
-    function pfVisualizarCertificadoPapel() {
-        var c = pfCertAtual;
-        if (!c || (!c.papel && !c.declaracao && !c.papelVerso)) { alert('Nenhum certificado para visualizar.'); return; }
-        pfCertViewFaces = [{ rotulo: 'FRENTE', papel: c.papel || '', paisagem: !!c.paisagem, frente: true }];
-        if (c.papelVerso) pfCertViewFaces.push({ rotulo: 'VERSO', papel: c.papelVerso, paisagem: !!c.versoPaisagem, frente: false });
-        pfCertViewFace = 0;
-        var v = document.getElementById('pf-cert-viewer');
-        if (!v) return;
-        var titulo = document.getElementById('pfv-titulo');
-        if (titulo) titulo.textContent = c.curso || 'Certificado';
-        v.classList.add('active');
-        document.body.classList.add('pfv-aberto');
-        pfCertViewPintar(0);
-        requestAnimationFrame(pfCertViewMedir);
-        var prox = document.getElementById('pfv-proxima');
-        if (prox && pfCertViewFaces.length > 1) prox.focus();
-    }
-
-    function pfFecharVisualizador() {
-        var v = document.getElementById('pf-cert-viewer');
-        if (v) v.classList.remove('active');
-        document.body.classList.remove('pfv-aberto');
-        var folha = document.getElementById('pfv-folha');
-        if (folha) folha.classList.remove('pfv-entra-dir', 'pfv-entra-esq');
-        var btn = document.getElementById('pf-cert-modal-baixar');
-        if (btn) btn.focus();
-    }
-
-    function pfCertViewIr(delta) {
-        var alvo = pfCertViewFace + delta;
-        if (alvo < 0 || alvo >= pfCertViewFaces.length) return;
-        pfCertViewPintar(delta, alvo);
-    }
-
-    function pfCertViewFaceIr(idx) {
-        if (idx < 0 || idx >= pfCertViewFaces.length || idx === pfCertViewFace) return;
-        pfCertViewPintar(idx > pfCertViewFace ? 1 : -1, idx);
-    }
-
-    function pfCertViewPintar(delta, idx) {
-        if (typeof idx === 'number') pfCertViewFace = idx;
-        var f = pfCertViewFaces[pfCertViewFace];
-        if (!f) return;
-        var c = pfCertAtual || {};
-        var total = pfCertViewFaces.length;
-
-        var nome = document.getElementById('pfv-face-nome');
-        if (nome) nome.textContent = f.frente ? 'Frente' : 'Verso';
-        var pos = document.getElementById('pfv-face-pos');
-        if (pos) pos.textContent = (pfCertViewFace + 1) + ' de ' + total;
-
-        var ant = document.getElementById('pfv-anterior');
-        var prox = document.getElementById('pfv-proxima');
-        if (ant) { ant.disabled = pfCertViewFace === 0; ant.style.visibility = total > 1 ? 'visible' : 'hidden'; }
-        if (prox) { prox.disabled = pfCertViewFace === total - 1; prox.style.visibility = total > 1 ? 'visible' : 'hidden'; }
-
-        var faces = document.getElementById('pfv-faces');
-        if (faces) {
-            faces.innerHTML = '';
-            pfCertViewFaces.forEach(function (face, i) {
-                var b = document.createElement('button');
-                b.type = 'button';
-                b.className = 'pfv-face' + (i === pfCertViewFace ? ' ativa' : '');
-                b.setAttribute('aria-current', i === pfCertViewFace ? 'true' : 'false');
-                b.innerHTML = '<i class="fa-solid ' + (face.frente ? 'fa-file-lines' : 'fa-rotate') + '"></i>' + face.rotulo;
-                b.addEventListener('click', function () { pfCertViewFaceIr(i); });
-                faces.appendChild(b);
-            });
-        }
-
-        var img = document.getElementById('pfv-img');
-        var vazio = document.getElementById('pfv-vazio');
-        if (img) {
-            if (f.papel) { img.src = f.papel; img.style.display = 'block'; img.alt = f.frente ? 'Frente do certificado' : 'Verso do certificado'; }
-            else { img.removeAttribute('src'); img.style.display = 'none'; }
-        }
-        if (vazio) vazio.style.display = f.papel ? 'none' : 'flex';
-
-        /* A declaracao, a instituicao e o QR so existem na frente: o verso e
-           a arte enviada pelo administrador, sem composicao por cima. */
-        var decl = document.getElementById('pfv-decl');
-        if (decl) {
-            var temTexto = f.frente && (c.declaracao || c.instituicao);
-            var temSelo = !!(c.qrUrl || c.credencial);
-            var mostrar = temTexto || temSelo;
-            decl.style.display = mostrar ? 'block' : 'none';
-            var corpo = decl.querySelector('.pf-cert-decl-conteudo');
-            if (corpo) corpo.style.display = f.frente ? 'flex' : 'none';
-            if (mostrar) {
-                var tx = document.getElementById('pfv-decl-texto');
-                if (tx) tx.textContent = f.frente ? (c.declaracao || '') : '';
-                var ins = document.getElementById('pfv-decl-inst');
-                if (ins) ins.textContent = f.frente ? (c.instituicao || '') : '';
-                var qr = document.getElementById('pfv-decl-qr');
-                if (qr) {
-                    qr.classList.toggle('verso', !f.frente);
-                    if (c.qrUrl) { qr.src = c.qrUrl; qr.style.display = 'block'; }
-                    else { qr.removeAttribute('src'); qr.style.display = 'none'; }
-                }
-                var cred = document.getElementById('pfv-decl-cred');
-                if (cred) {
-                    if (c.credencial) { cred.textContent = c.credencial; cred.style.display = 'block'; }
-                    else { cred.textContent = ''; cred.style.display = 'none'; }
-                }
-            }
-        }
-
-        var folha = document.getElementById('pfv-folha');
-        if (folha && delta) {
-            folha.classList.remove('pfv-entra-dir', 'pfv-entra-esq');
-            void folha.offsetWidth;
-            folha.classList.add(delta > 0 ? 'pfv-entra-dir' : 'pfv-entra-esq');
-        }
-        pfCertViewMedir();
-    }
-
-    /* A folha recebe o maior tamanho que cabe no palco sem distorcer o A4.
-       Medido em JS porque aspect-ratio com max-width/max-height nos dois eixos
-       entorta a folha quando a tela e mais larga que alta (e vice-versa). */
-    function pfCertViewMedir() {
-        var v = document.getElementById('pf-cert-viewer');
-        if (!v || !v.classList.contains('active')) return;
-        var moldura = document.getElementById('pfv-moldura');
-        var folha = document.getElementById('pfv-folha');
-        var f = pfCertViewFaces[pfCertViewFace];
-        if (!moldura || !folha || !f) return;
-        var w = f.paisagem ? 2000 : 1414;
-        var h = f.paisagem ? 1414 : 2000;
-        var aw = moldura.clientWidth, ah = moldura.clientHeight;
-        if (!aw || !ah) return;
-        var sw = aw, sh = sw * h / w;
-        if (sh > ah) { sh = ah; sw = sh * w / h; }
-        folha.style.width = Math.max(1, Math.round(sw)) + 'px';
-        folha.style.height = Math.max(1, Math.round(sh)) + 'px';
-        /* Síncrono: ler scrollHeight já força o layout com o novo tamanho, e
-           requestAnimationFrame fica suspenso quando a aba está oculta. */
-        pfCertAjustarDeclaracao('pfv-decl');
-    }
-
-    function pfImprimirCertificado() {
-        var c = pfCertAtual;
-        if (!c || (!c.papel && !c.declaracao && !c.papelVerso)) { alert('Nenhum certificado para imprimir.'); return; }
-        var win = window.open('', '_blank');
-        if (!win) { alert('Permita pop-ups para imprimir o certificado.'); return; }
-        win.document.open();
-        win.document.write(pfCertDocumentoImpressao(true));
-        win.document.close();
-    }
-
-    function pfCertDocumentoImpressao(autoPrint) {
-        var c = pfCertAtual;
-        var frenteW = c.paisagem ? 2000 : 1414, frenteH = c.paisagem ? 1414 : 2000;
-        var versoW = c.versoPaisagem ? 2000 : 1414, versoH = c.versoPaisagem ? 1414 : 2000;
-        var safeText = pfCertEsc(c.declaracao || '');
-        var safeInst = pfCertEsc(c.instituicao || '');
-        var safeTitle = pfCertEsc(c.curso || 'Certificado') + (c.papelVerso ? ' - frente e verso' : '');
-        var imgHtml = c.papel
-            ? '<img src="' + pfCertEsc(c.papel) + '" alt="Papel A4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block">'
-            : '<div style="position:absolute;inset:0;background:#fff"></div>';
-        var instHtml = safeInst ? '<div class="decl-inst">' + safeInst + '</div>' : '';
-        var qrHtml = c.qrUrl ? '<img class="decl-qr" src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code">' : '';
-        var qrHtmlVerso = c.qrUrl ? '<img class="decl-qr verso" src="' + pfCertEsc(c.qrUrl) + '" alt="QR Code">' : '';
-        var credHtml = c.credencial ? '<div class="decl-cred">' + pfCertEsc(c.credencial) + '</div>' : '';
-        var declHtml = (safeText || safeInst || c.qrUrl || c.credencial)
-            ? '<div class="decl"><div class="decl-conteudo">' +
-                (safeText ? '<div class="decl-texto">' + safeText + '</div>' : '') + instHtml +
-              '</div>' + qrHtml + credHtml + '</div>'
-            : '';
-        var frenteHtml = '<div class="pagina"><div class="rotulo">FRENTE</div>' +
-            '<div class="folha ' + (c.paisagem ? 'paisagem' : 'retrato') + '" style="aspect-ratio:' + frenteW + ' / ' + frenteH + '">' +
-                imgHtml + declHtml +
-            '</div></div>';
-        var versoDeclHtml = (c.qrUrl || c.credencial)
-            ? '<div class="decl">' + qrHtmlVerso + credHtml + '</div>'
-            : '';
-        var versoHtml = c.papelVerso
-            ? '<div class="pagina"><div class="rotulo">VERSO</div>' +
-                '<div class="folha ' + (c.versoPaisagem ? 'paisagem' : 'retrato') + '" style="aspect-ratio:' + versoW + ' / ' + versoH + '">' +
-                    '<img src="' + pfCertEsc(c.papelVerso) + '" alt="Verso do certificado" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block">' +
-                    versoDeclHtml +
-                '</div></div>'
-            : '';
-        var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-            '<title>' + safeTitle + ' - FARN</title>' +
-            '<style>' +
-                'html,body{margin:0;background:#0f172a;min-height:100%;font-family:Inter,Arial,sans-serif}' +
-                '.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;gap:20px}' +
-                '.pagina{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}' +
-                '.rotulo{color:#86efac;font-size:11px;font-weight:800;letter-spacing:1.2px}' +
-                '.folha{position:relative;container-type:inline-size;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;width:min(92vw,794px)}' +
-                '.decl{position:absolute;inset:0;pointer-events:none;color:#0f172a;text-shadow:0 1px 0 rgba(255,255,255,.35)}' +
-                '.decl-conteudo{position:absolute;left:10%;right:10%;top:35%;bottom:23%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1.8cqw;text-align:center;font-size:12px;font-size:1.51cqw}' +
-                '.decl-texto{font-size:1em;line-height:1.6;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
-                '.decl-inst{font-size:.92em;line-height:1.7;font-weight:600;white-space:pre-wrap;word-break:break-word;max-width:100%}' +
-                '.decl-qr{position:absolute;right:5%;bottom:10%;width:9.5%;height:auto;background:#fff;padding:.45cqw;border-radius:.6cqw;border:1px solid rgba(15,23,42,.12)}' +
-                '.decl-qr.verso{bottom:13.3%;right:11.5%}' +
-                '.decl-cred{position:absolute;right:2.5%;bottom:43%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:1.5cqw;font-weight:800;letter-spacing:.14em;line-height:1;color:#0f172a;white-space:nowrap}' +
-                '.bar{position:fixed;top:10px;right:10px;z-index:5;display:flex;gap:8px}' +
-                '.bar button{background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:inherit}' +
-                '.bar button.fechar{background:#334155}' +
-                '@page{size:A4;margin:0}' +
-                '@page retrato{size:A4 portrait;margin:0}' +
-                '@page paisagem{size:A4 landscape;margin:0}' +
-                '@media print{body{background:#fff}.wrap{padding:0;min-height:auto;display:block}.bar,.rotulo{display:none}' +
-                '.pagina{display:block;width:auto}.folha{width:100%!important;max-width:none;box-shadow:none;page-break-after:always;break-after:page}' +
-                '.folha.retrato{page:retrato}.folha.paisagem{page:paisagem}' +
-                '.pagina:last-child .folha{page-break-after:auto;break-after:auto}}' +
-            '</style></head><body>' +
-            '<div class="bar"><button onclick="window.print()">Imprimir</button><button class="fechar" onclick="window.close()">Fechar</button></div>' +
-            '<div class="wrap">' + frenteHtml + versoHtml + '</div>' +
-            '<script>(function(){var c=document.querySelector(".decl-conteudo");if(c){var f=1.51,g=0;c.style.fontSize=f+"cqw";while(c.scrollHeight>c.clientHeight+1&&f>0.6&&g++<40){f=Math.round((f-0.05)*100)/100;c.style.fontSize=f+"cqw";}}' +
-            (autoPrint ? 'window.addEventListener("load",function(){setTimeout(function(){window.print()},400)});' : '') +
-            '})();<\/script>' +
-            '</body></html>';
-        return html;
-    }
-
-    function pfFecharCertificado() {
-        pfFecharVisualizador();
-        pfCertAtual = null;
-        var modal = document.getElementById('pf-cert-modal');
-        if (modal) modal.classList.remove('active');
-    }
-
-    document.addEventListener('keydown', function(ev) {
-        var v = document.getElementById('pf-cert-viewer');
-        if (v && v.classList.contains('active')) {
-            if (ev.key === 'Escape') { ev.preventDefault(); pfFecharVisualizador(); }
-            else if (ev.key === 'ArrowRight') { ev.preventDefault(); pfCertViewIr(1); }
-            else if (ev.key === 'ArrowLeft') { ev.preventDefault(); pfCertViewIr(-1); }
-            return;
-        }
-        if (ev.key === 'Escape') pfFecharCertificado();
-    });
 
     /* ===== MEUS DADOS ===== */
     function pfLoadDados() {
@@ -1640,7 +695,7 @@
         el.innerHTML =
             '<div class="pf-dados-card"><div class="pf-dados-label">Nome Completo</div><div class="pf-dados-val">' + (pfUser.nome || '---') + '</div></div>' +
             '<div class="pf-dados-card"><div class="pf-dados-label">CPF</div><div class="pf-dados-val">' + (pfUser.cpf ? pfUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '---') + '</div></div>' +
-            '<div class="pf-dados-card"><div class="pf-dados-label">' + (pfUser.credencial ? 'Credencial' : 'Matrícula') + '</div><div class="pf-dados-val">' + (pfUser.credencial || pfUser.matricula || '---') + '</div></div>' +
+            '<div class="pf-dados-card"><div class="pf-dados-label">Matricula</div><div class="pf-dados-val">' + (pfUser.matricula || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'email\')"><div class="pf-dados-label">Email <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-email">' + (pfUser.email || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'whatsapp\')"><div class="pf-dados-label">WhatsApp <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-whatsapp">' + (pfUser.whatsapp || '---') + '</div></div>' +
             '<div class="pf-dados-card pf-dados-editable" onclick="pfEditCampo(\'endereco\')" style="grid-column:1/-1"><div class="pf-dados-label">Endereco Completo <i class="fa-solid fa-pen" style="font-size:9px;margin-left:4px;opacity:.5"></i></div><div class="pf-dados-val" id="pf-dados-endereco">' + (endComp || '---') + '</div></div>' +
@@ -1750,6 +805,77 @@
             errorEl.textContent = 'Erro ao salvar: ' + e.message;
             errorEl.style.display = 'block';
         }
+    }
+
+    /* ===== CERTIFICADO ===== */
+    function pfLoadCertificado() {
+        if (!pfUser) return;
+        var el = document.getElementById('pf-cert-content');
+        var c = pfUser;
+        var nome = (c.nome || '').toUpperCase();
+        var cpfDisp = c.cpf || '';
+        if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        var nasc = c.nascimento || '---';
+        if (nasc && nasc.indexOf('-') !== -1) {
+            var partes = nasc.split('-');
+            if (partes.length === 3) nasc = partes[2] + '/' + partes[1] + '/' + partes[0];
+        }
+        var natural = c.naturalidade || '---';
+        var matricula = c.matricula || '---';
+        var formacao = c.dataCertificado || '---';
+        if (formacao && formacao.indexOf('-') !== -1) {
+            var partesF = formacao.split('-');
+            if (partesF.length === 3) formacao = partesF[2] + '/' + partesF[1] + '/' + partesF[0];
+        }
+        var html = '' +
+            '<div class="pf-cert-wrapper">' +
+                '<div class="pf-cert-bg">' +
+                    '<div class="pf-cert-nome">' + nome + '</div>' +
+                    '<div class="pf-cert-campos">' +
+                        '<span class="pf-cert-campo">CPF: ' + cpfDisp + '</span>' +
+                        '<span class="pf-cert-campo">Nascido em: ' + nasc + '</span>' +
+                        '<span class="pf-cert-campo">Natural de: ' + natural + '</span>' +
+                        '<span class="pf-cert-campo">Matricula: ' + matricula + '</span>' +
+                        '<span class="pf-cert-campo">Formacao: ' + formacao + '</span>' +
+                    '</div>' +
+                    '<img class="pf-cert-qr" src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=200x200&margin=2" alt="QR Code Matricula">' +
+                '</div>' +
+                '<div style="text-align:center;margin-top:16px">' +
+                    '<button onclick="pfImprimirCertificado()" style="padding:10px 22px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer"><i class="fa-solid fa-print" style="margin-right:6px"></i>Imprimir / Salvar PDF</button>' +
+                '</div>' +
+            '</div>';
+        el.innerHTML = html;
+    }
+
+    function pfImprimirCertificado() {
+        if (!pfUser) return;
+        var c = pfUser;
+        var nome = (c.nome || '').toUpperCase();
+        var cpfDisp = c.cpf || '';
+        if (cpfDisp.length === 11) cpfDisp = cpfDisp.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        var nasc = c.nascimento || '---';
+        if (nasc && nasc.indexOf('-') !== -1) {
+            var partes = nasc.split('-');
+            if (partes.length === 3) nasc = partes[2] + '/' + partes[1] + '/' + partes[0];
+        }
+        var natural = c.naturalidade || '---';
+        var matricula = c.matricula || '---';
+        var formacao = c.dataCertificado || '---';
+        if (formacao && formacao.indexOf('-') !== -1) {
+            var partesF = formacao.split('-');
+            if (partesF.length === 3) formacao = partesF[2] + '/' + partesF[1] + '/' + partesF[0];
+        }
+        var w = window.open('', '_blank', 'width=1000,height=700');
+        w.document.write('<!DOCTYPE html><html><head><title>Certificado - FARN</title>' +
+            '<style>html,body{margin:0;padding:0}img{display:block;width:100%}.cert{position:relative;width:100%;max-width:900px;margin:0 auto;font-family:Georgia,\'Times New Roman\',serif}.cert img{width:100%;height:auto}.ov{position:absolute;left:0;right:0;text-align:center;color:#1c1917}.n{top:36.4%;font-size:1.8vw;font-weight:700}.linha{position:absolute;left:8%;right:8%;top:40%;text-align:center;font-size:1vw;transform:translateX(-2%)}.linha span{margin:0 1.5%;white-space:nowrap}.cert img.qr{position:absolute;right:8.7%;bottom:21.7%;width:8%;background:#fff;border:2px solid #1c1917;padding:2px;box-sizing:border-box}@media(min-width:900px){.n{font-size:16px}.linha{font-size:9px}}</style></head><body>' +
+            '<div class="cert"><img src="CERTIFICADO.png">' +
+            '<div class="ov n">' + nome + '</div>' +
+            '<div class="ov linha"><span>CPF: ' + cpfDisp + '</span><span>Nascido em: ' + nasc + '</span><span>Natural de: ' + natural + '</span><span>Matricula: ' + matricula + '</span><span>Formacao: ' + formacao + '</span></div>' +
+            '<img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(matricula) + '&size=200x200&margin=2" alt="QR Code Matricula">' +
+            '</div>' +
+            '<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>' +
+            '</body></html>');
+        w.document.close();
     }
 
     /* ===== GALERIA - ALBUNS ===== */
@@ -1886,21 +1012,7 @@
         }
     }).catch(function(){});
     </script>
-    <script src="noticias-slider.js?v=1"></script>
-    <script src="noticias-feed.js?v=6"></script>
-    <script>
-    (function(){
-        function iniciarFeedFormado(){
-            if (window.FarnNoticias) {
-                FarnNoticias.render('pf-noticias-unificadas', 'formado', { emptyText: 'Nenhuma publicação recente para o Portal do Formado.' });
-            } else {
-                setTimeout(iniciarFeedFormado, 300);
-            }
-        }
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarFeedFormado);
-        else iniciarFeedFormado();
-    })();
-    </script>
+    <script src="noticias-slider.js"></script>
     <!-- Botao voltar pagina anterior -->
     <style>
         #farn-btn-voltar{position:fixed;bottom:16px;left:16px;z-index:2147483000;width:44px;height:44px;border-radius:50%;background:#0a1c40;color:#fff;border:1px solid rgba(212,175,55,.55);box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .15s}

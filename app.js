@@ -1302,6 +1302,10 @@ async function togglePortais() {
         portaisManutencao = novo;
         atualizarBotaoPortais();
         alert(novo ? 'Portais desligados. Os usuarios verao a mensagem de manutencao.' : 'Portais ligados. Acesso liberado aos portais.');
+        if (!novo) {
+            // Botão "Ligar portais": o Portal do Aluno fica ativado e vinculado ao botão
+            location.href = 'portal-aluno.html';
+        }
     } catch (e) {
         alert('Erro ao salvar o estado dos portais: ' + e.message);
     }
@@ -1488,6 +1492,30 @@ function landingSelecionarPortal(portal) {
     landingFocarLogin();
 }
 
+function landingAbrirMenuPortais() {
+    var menu = document.getElementById('landing-portais-dropdown');
+    var btn = document.getElementById('landing-entrar-btn');
+    if (!menu || !btn) return;
+    if (menu.classList.contains('aberto')) {
+        menu.classList.remove('aberto');
+        btn.setAttribute('aria-expanded', 'false');
+    } else {
+        menu.classList.add('aberto');
+        btn.setAttribute('aria-expanded', 'true');
+    }
+}
+
+// Fecha o menu ao clicar fora dele (clique dentro do menu não faz nada: item ou botão)
+document.addEventListener('click', function (e) {
+    var menuEl = document.getElementById('landing-entrar-menu');
+    var menu = document.getElementById('landing-portais-dropdown');
+    var btn = document.getElementById('landing-entrar-btn');
+    if (!menu || !menuEl || !menu.classList.contains('aberto')) return;
+    if (menuEl.contains(e.target)) return;
+    menu.classList.remove('aberto');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+});
+
 function landingToggleMenu() {
     var overlay = document.getElementById('landing-drawer-overlay');
     var drawer = document.getElementById('landing-drawer');
@@ -1544,6 +1572,15 @@ async function landingLogin(event) {
                 location.href = 'portal-usuario.html';
             } else if (portal === 'formado') {
                 location.href = 'portal-formado.html';
+            } else if (portal === 'aluno') {
+                location.href = 'portal-aluno.html';
+            } else if (portal === 'docente') {
+                location.href = 'portal-docente.html';
+            } else if (portal === 'coordenacao') {
+                location.href = 'portal-coordenacao.html';
+            } else if (portal === 'cff') {
+                landingCffSessao({ cpf: cpf, nome: 'Administrador Geral', permissoes: ['admin'] });
+                location.href = 'portal-cff.html';
             }
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return true;
@@ -1559,6 +1596,10 @@ async function landingLogin(event) {
             if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
             else if (portal === 'usuario') ok = await landingLoginUsuario(cpf, senha);
             else if (portal === 'formado') ok = await landingLoginFormado(cpf, senha);
+            else if (portal === 'aluno') ok = await landingLoginAluno(cpf, senha);
+            else if (portal === 'docente') ok = await landingLoginDocente(cpf, senha);
+            else if (portal === 'coordenacao') ok = await landingLoginCoordenacao(cpf, senha);
+            else if (portal === 'cff') ok = await landingLoginCff(cpf, senha);
         }
         if (!ok) {
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
@@ -1669,6 +1710,77 @@ async function landingLoginFormado(cpf, senha) {
     localStorage.setItem('pf_lembrar_cpf', cpf);
     localStorage.setItem('pf_lembrar_senha', senha);
     location.href = 'portal-formado.html';
+    return true;
+}
+
+/* ===== PORTAL DO ALUNO ===== */
+async function landingLoginAluno(cpf, senha) {
+    var snap = await dbFirestore.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF não encontrado.'); return false; }
+    var dados = snap.docs[0].data();
+    if (dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
+    if (dados.pediuBaixa) { landingShowLoginError('Você solicitou a baixa do curso. Seu acesso será restabelecido somente após autorização da administração.'); return false; }
+    if (dados.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
+    if (dados.status !== 'Ativo' && dados.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar o portal.'); return false; }
+    if (!dados.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
+    localStorage.setItem('pa_lembrar_cpf', cpf);
+    localStorage.setItem('pa_lembrar_senha', senha);
+    location.href = 'portal-aluno.html';
+    return true;
+}
+
+/* ===== PORTAL DO DOCENTE ===== */
+async function landingLoginDocente(cpf, senha) {
+    var snap = await dbFirestore.collection('docentes').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF não encontrado entre os docentes.'); return false; }
+    var dados = snap.docs[0].data();
+    if (!dados.senha) { landingShowLoginError('Senha de acesso não cadastrada. Contate a administração.'); return false; }
+    if (dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
+    sessionStorage.setItem('pd_sessao', JSON.stringify(dados));
+    localStorage.setItem('pd_lembrar_cpf', cpf);
+    localStorage.setItem('pd_lembrar_senha', senha);
+    location.href = 'portal-docente.html';
+    return true;
+}
+
+/* ===== PORTAL DA COORDENAÇÃO ===== */
+async function landingLoginCoordenacao(cpf, senha) {
+    var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
+    if (snap.empty) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    var u = snap.docs[0].data();
+    if (u.senha !== senha) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
+    if (u.ativo === false) { landingShowLoginError('Usuário desativado. Contate o administrador.'); return false; }
+    localStorage.setItem('pc_lembrar_cpf', cpf);
+    localStorage.setItem('pc_lembrar_senha', senha);
+    location.href = 'portal-coordenacao.html';
+    return true;
+}
+
+/* ===== PORTAL DO CFF ===== */
+function landingCffSessao(cadastro) {
+    sessionStorage.setItem('cff_sessao', JSON.stringify({
+        cpf: cadastro && cadastro.cpf ? cadastro.cpf : '',
+        nome: cadastro && cadastro.nome ? cadastro.nome : 'Aluno CFF',
+        email: cadastro && cadastro.email ? cadastro.email : '',
+        whatsapp: cadastro && cadastro.whatsapp ? cadastro.whatsapp : ''
+    }));
+}
+
+async function landingLoginCff(cpf, senha) {
+    try {
+        var doc = await dbFirestore.collection('cffAlunos').doc(cpf).get();
+        if (doc.exists) {
+            var dados = doc.data();
+            if (dados.senha && dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
+            landingCffSessao(dados);
+        } else {
+            landingCffSessao({ cpf: cpf, nome: 'Aluno CFF' });
+        }
+    } catch (e) {
+        console.warn('Falha ao consultar o cadastro CFF no login:', e);
+        landingCffSessao({ cpf: cpf, nome: 'Aluno CFF' });
+    }
+    location.href = 'portal-cff.html';
     return true;
 }
 

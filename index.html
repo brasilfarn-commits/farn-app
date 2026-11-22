@@ -871,7 +871,31 @@
                     <a href="#landing-contato">Contato</a>
                     <a href="atelie.html" class="landing-btn-atelie"><i class="fa-solid fa-palette"></i> Ateliê</a>
                 </nav>
-                <a href="login.html" class="landing-login-btn" id="landing-login-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px"><span>Entrar</span><i class="fa-solid fa-right-to-bracket"></i></a>
+                <form class="landing-login" onsubmit="landingLogin(event)" autocomplete="off">
+                    <div class="landing-login-field landing-login-portal-field">
+                        <i class="fa-solid fa-globe"></i>
+                        <select id="landing-login-portal" aria-label="Escolha o portal">
+                            <option value="admin">Administrador</option>
+                            <option value="formado">Portal do Formado</option>
+                            <option value="aluno">Portal do Aluno</option>
+                            <option value="docente">Portal do Docente</option>
+                            <option value="coordenacao">Portal da Coordenação</option>
+                            <option value="cff">Portal do CFF</option>
+                            <option value="usuario">Portal do Usuário</option>
+                        </select>
+                    </div>
+                    <div class="landing-login-field">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="landing-login-cpf" placeholder="CPF" oninput="landingFormatCpf(this)" autocomplete="off">
+                    </div>
+                    <div class="landing-login-field">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="landing-login-senha" placeholder="Senha" autocomplete="current-password">
+                        <button type="button" class="landing-login-eye" onclick="landingToggleSenha()" tabindex="-1" aria-label="Mostrar senha"><i class="fa-solid fa-eye" id="landing-login-eye-icon"></i></button>
+                    </div>
+                    <button type="submit" class="landing-login-btn" id="landing-login-btn"><span>Entrar</span><i class="fa-solid fa-right-to-bracket"></i></button>
+                    <span class="landing-login-error" id="landing-login-error"></span>
+                </form>
             </div>
         </header>
 
