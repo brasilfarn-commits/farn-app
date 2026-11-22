@@ -299,7 +299,12 @@
                     var doc = snap.docs[i];
                     var pessoa = await dbFirestore.collection('cursosCadastro').doc(doc.id)
                         .collection('individuos').where('cpf', '==', cpf).limit(1).get();
-                    if (!pessoa.empty) cursos.push(Object.assign({ _id: doc.id }, doc.data() || {}));
+                    if (pessoa.empty) continue;
+                    /* Portal do Usuário exibe apenas os cursos vinculados ao aluno,
+                       conforme a guia de permissão de cada curso. */
+                    var cursoData = Object.assign({ _id: doc.id }, doc.data() || {});
+                    if (!cursoData.permCertificado && !cursoData.permFichaGeral) continue;
+                    cursos.push(cursoData);
                 }
                 if (!cursos.length) { box.innerHTML = '<div class="pu-aviso">Nenhum curso vinculado ao seu CPF.</div>'; return; }
                 var html = '';
