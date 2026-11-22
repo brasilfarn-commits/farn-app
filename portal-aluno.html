@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Portal do Aluno - FARN</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="farn-db.js"></script>
     <style>
         :root{
             --green:#16a34a;--green-l:#22c55e;--green-d:#15803d;
@@ -1065,6 +1066,7 @@
     var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
     var dbFirestore=firebase.firestore();
+    var dbLive = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
     /* Portal do Aluno ativado: sem bloqueio de manutenção global */
     /* ===== ESTADO ===== */
@@ -1153,8 +1155,20 @@
                 return;
             }
 
-            /* Verifica se esta ativo: status ativo do app (Ativo, Formado ou Acadêmico) ou Inativo por Falta */
-            if (dados.status !== 'Ativo' && dados.status !== 'Formado' && dados.status !== 'Acadêmico' && dados.status !== 'Inativo por Falta') {
+            /* Verifica se esta ativo: status ativo do app (Ativo, Formado ou Acadêmico) ou Inativo por Falta.
+               Se nao estiver nesses status no Firebase Firestore, consulta o banco do app (FarnDB):
+               o Firestore pode estar desatualizado em relacao ao banco do app. */
+            var statusPortal = (dados.status === 'Ativo' || dados.status === 'Formado' || dados.status === 'Acadêmico' || dados.status === 'Inativo por Falta');
+            if (!statusPortal) {
+                try {
+                    var snapLive = await dbLive.collection('candidatos').where('cpf', '==', cpf).limit(1).get();
+                    if (!snapLive.empty) {
+                        var dLive = snapLive.docs[0].data();
+                        if (dLive.status === 'Ativo' || dLive.status === 'Formado' || dLive.status === 'Acadêmico' || dLive.status === 'Inativo por Falta') statusPortal = true;
+                    }
+                } catch (e) { console.warn('Falha ao consultar o banco do app no login do aluno:', e); }
+            }
+            if (!statusPortal) {
                 errEl.textContent = 'Seu cadastro ainda nao foi ativado. Somente alunos ativos (status Ativo, Formado ou Acadêmico) ou Inativo por Falta podem acessar o portal.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
