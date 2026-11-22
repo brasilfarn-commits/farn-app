@@ -1665,6 +1665,31 @@ async function landingLoginUsuario(cpf, senha) {
             }
         } catch (e) { console.warn('Portal do Usuario: falha ao consultar ' + fonte.colecao, e); }
     }
+    /* Cursos concluidos (Cadastro de Cursos): alunos cadastrados nos individuos
+       dos cursos podem entrar no Portal do Usuario com CPF e senha do cadastro. */
+    try {
+        var cursosSnap = await dbFirestore.collection('cursosCadastro').where('status', '==', 'Concluido').get();
+        for (var c = 0; c < cursosSnap.docs.length; c++) {
+            var cursoDoc = cursosSnap.docs[c];
+            var snapCursos = await dbFirestore.collection('cursosCadastro').doc(cursoDoc.id)
+                .collection('individuos').where('cpf', '==', cpf).limit(1).get();
+            if (snapCursos.empty) continue;
+            var dCurso = snapCursos.docs[0].data();
+            if (dCurso.senha !== senha) continue;
+            var encontradoCursos = Object.assign({}, dCurso, {
+                _origem: 'cursosCadastro',
+                _rotulo: 'Curso: ' + String(cursoDoc.data().nome || ''),
+                _docId: snapCursos.docs[0].id
+            });
+            currentUserData = encontradoCursos;
+            saveLastLogin(cpf);
+            saveLoginState();
+            try { localStorage.setItem('farn_user_data', JSON.stringify(encontradoCursos)); } catch (e) {}
+            try { localStorage.setItem('pu_sessao', JSON.stringify(encontradoCursos)); } catch (e) {}
+            location.href = 'portal-usuario.html';
+            return true;
+        }
+    } catch (e) { console.warn('Portal do Usuario: falha ao consultar cursos concluidos', e); }
     landingShowLoginError('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.');
     return false;
 }
