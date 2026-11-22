@@ -330,6 +330,7 @@
                     if (c.apostilaUrl) html += '<a class="btn-outline btn-sm" href="' + puEsc(c.apostilaUrl) + '" target="_blank"><i class="fa-solid fa-link" style="color:#2563eb;margin-right:5px"></i> Abrir apostila (link)</a>';
                     if (c.permFichaGeral) {
                         html += '<button class="btn-outline btn-sm" onclick="puVerFichaDoCurso(\'' + c._id + '\')"><i class="fa-solid fa-file-lines" style="color:#0ea5e9;margin-right:5px"></i> Ficha do Curso</button>';
+                        html += '<button class="btn-outline btn-sm" onclick="puRecolherFichaDoCurso(\'' + c._id + '\')" title="Recolher a Ficha Germazena"><i class="fa-solid fa-angle-up"></i> Recolher</button>';
                         html += '<div id="pu-ficha-cursa-' + c._id + '" style="display:none;margin-top:10px;border:1px dashed #0ea5e9;border-radius:8px;padding:10px;background:#f0f9ff"></div>';
                     }
                     if (cert) html += '<button class="btn-outline btn-sm" onclick="puVerCertificado(\'' + c._id + '\')"><i class="fa-solid fa-award" style="color:#ca8a04;margin-right:5px"></i> Ver certificado</button>';
@@ -369,6 +370,13 @@
 
         /* Carrega a Ficha Germazena do aluno para exibir no curso da Seção Cursos.
            Usa as mesmas funções de montagem da Ficha Germazena do admin (ficha.js). */
+        function puRecolherFichaDoCurso(cid) {
+            var cont = document.getElementById('pu-ficha-cursa-' + cid);
+            if (!cont) return;
+            cont.style.display = 'none';
+            puFichaCursaAberta = null;
+        }
+
         async function puVerFichaDoCurso(cid) {
             var cont = document.getElementById('pu-ficha-cursa-' + cid);
             if (!cont || !puUser) return;
