@@ -1721,7 +1721,7 @@ async function landingLoginAluno(cpf, senha) {
     if (dados.senha !== senha) { landingShowLoginError('Senha incorreta.'); return false; }
     if (dados.pediuBaixa) { landingShowLoginError('Você solicitou a baixa do curso. Seu acesso será restabelecido somente após autorização da administração.'); return false; }
     if (dados.ativo === false) { landingShowLoginError('Seu acesso ainda não foi liberado. Aguarde aprovação da administração.'); return false; }
-    if (dados.status !== 'Ativo' && dados.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar o portal.'); return false; }
+    if (!fgStatusAtivo(dados.status) && dados.status !== 'Inativo por Falta') { landingShowLoginError('Seu cadastro ainda não foi ativado. Somente alunos ativos (status Ativo, Formado ou Acadêmico) ou Inativo por Falta podem acessar o portal.'); return false; }
     if (!dados.projeto) { landingShowLoginError('Nenhum projeto vinculado ao seu cadastro.'); return false; }
     localStorage.setItem('pa_lembrar_cpf', cpf);
     localStorage.setItem('pa_lembrar_senha', senha);

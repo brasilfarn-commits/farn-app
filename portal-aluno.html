@@ -1153,9 +1153,9 @@
                 return;
             }
 
-            /* Verifica se esta ativo */
-            if (dados.status !== 'Ativo' && dados.status !== 'Inativo por Falta') {
-                errEl.textContent = 'Seu cadastro ainda nao foi ativado. Somente alunos com status Ativo ou Inativo por Falta podem acessar o portal.';
+            /* Verifica se esta ativo: status ativo do app (Ativo, Formado ou Acadêmico) ou Inativo por Falta */
+            if (dados.status !== 'Ativo' && dados.status !== 'Formado' && dados.status !== 'Acadêmico' && dados.status !== 'Inativo por Falta') {
+                errEl.textContent = 'Seu cadastro ainda nao foi ativado. Somente alunos ativos (status Ativo, Formado ou Acadêmico) ou Inativo por Falta podem acessar o portal.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
