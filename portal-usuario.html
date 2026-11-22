@@ -290,6 +290,8 @@
            usuario aparece na lista de individuos importados. */
         async function puCarregarGuias() {
             var box = document.getElementById('pu-guias'); if (!box || !puUser) return;
+            /* Atualiza os guias ao detectar mudanças nos dados (ex.: admin marcou Ficha). */
+            try { if (!puCarregarGuias._iv) { puCarregarGuias._iv = setInterval(puCarregarGuias, 4000); } } catch (e) {}
             var cpf = puSoDigitos(puUser.cpf);
             if (!cpf) { box.innerHTML = '<div class="pu-aviso">CPF não informado no cadastro.</div>'; return; }
             try {
