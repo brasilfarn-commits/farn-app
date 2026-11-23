@@ -10,7 +10,9 @@
 
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 
 const PORT = Number(process.env.PORT || 8787);
@@ -48,6 +50,33 @@ function cacheLimpar() { cache.clear(); }
 function agora() { return Date.now(); }
 function novoId() { return String(Date.now()) + Math.random().toString(36).slice(2); }
 function idOuNovo(v) { return (v === undefined || v === null || v === '') ? novoId() : String(v); }
+
+/* Informacoes de capacidade para o painel da pagina de configuracao. */
+function espacoDisco() {
+  try {
+    if (typeof fs.statfsSync === 'function') {
+      const s = fs.statfsSync(DIR_DADOS);
+      const total = s.blocks * s.bsize;
+      const livre = s.bavail * s.bsize;
+      return { total, livre, usado: total - livre };
+    }
+  } catch (e) {}
+  try {
+    const out = execFileSync('df', ['-kP', DIR_DADOS], { encoding: 'utf8' }).trim().split('\n');
+    const p = out[out.length - 1].split(/\s+/);
+    const total = Number(p[1]) * 1024;
+    const livre = Number(p[3]) * 1024;
+    return { total, livre, usado: total - livre };
+  } catch (e) { return null; }
+}
+function tamanhoBanco() {
+  const r = db.prepare('SELECT COALESCE(SUM(LENGTH(data)),0) AS bytes, COUNT(*) AS docs, COUNT(DISTINCT col) AS colunas FROM docs').get();
+  return {
+    bytesDados: Number(r.bytes),
+    documentos: Number(r.docs),
+    colecoes: Number(r.colunas)
+  };
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -99,6 +128,29 @@ const servidor = http.createServer(async (req, res) => {
     if (p === '/api/stats') {
       const linhas = db.prepare('SELECT col, COUNT(*) AS n FROM docs GROUP BY col ORDER BY col').all();
       return json(res, { docs: Number(sqlContar.get().n), colecoes: linhas.map(x => ({ col: x.col, n: Number(x.n) })) });
+    }
+
+    /* capacidade do Ubuntu, memoria e tamanho do banco SQLite */
+    if (p === '/api/sistema') {
+      let bytesArquivo = 0;
+      try { bytesArquivo = fs.statSync(ARQ_DB).size; } catch (e) {}
+      const banco = tamanhoBanco();
+      return json(res, {
+        ok: true,
+        host: os.hostname(),
+        sistema: os.type() + ' ' + os.release(),
+        arquitetura: os.arch(),
+        node: process.version,
+        uptimeSistema: Math.floor(os.uptime()),
+        uptimeServidor: Math.floor(process.uptime()),
+        cpus: os.cpus().length,
+        carga: os.loadavg().map(x => Number(x.toFixed(2))),
+        ram: { total: os.totalmem(), livre: os.freemem() },
+        processo: { rss: process.memoryUsage().rss },
+        disco: espacoDisco(),
+        banco: Object.assign({ arquivo: ARQ_DB, bytesArquivo }, banco),
+        limites: { leituraBanco: 'ilimitado', observacao: 'O limite pratico e o espaco em disco do Ubuntu' }
+      });
     }
 
     if (p === '/api/all' && req.method === 'GET') {

@@ -70,6 +70,20 @@
     Uso atual: <b id="uso-local">—</b>. O app remove coleções grandes sozinho para não perder cadastros.</p>
     <div class="barra"><i id="barra-uso"></i></div>
   </div>
+
+  <h2>4. Uso do servidor Ubuntu</h2>
+  <div class="status" id="sistema"><div class="cartao"><b>—</b><span>Consultando...</span></div></div>
+
+  <h2>5. Publicação do app/site</h2>
+  <div class="aviso">
+    <b>Site:</b> Firebase Hosting, plano gratuito (Spark) — cerca de <b>10 GB de armazenamento</b> e
+    <b>360 MB de transferência por dia</b>. Confira sempre no console do Firebase.<br>
+    <b>Código:</b> GitHub <code>brasilfarn-commits/farn-app</code> — publicado com
+    <code>firebase.cmd deploy --only hosting --project farn-app</code>.<br>
+    <b>Banco de dados:</b> SQLite local em <code>servidor/dados/farn.db</code> —
+    <b>sem limite de leitura</b>; o limite é o disco do Ubuntu (acima).<br>
+    <b>Acesso externo:</b> Cloudflare Tunnel (túnel rápido). Se a URL mudar, atualize no campo 1.
+  </div>
 </div>
 
 <script>
@@ -145,7 +159,48 @@ async function testarLimiteNuvem() {
     box.textContent = 'HTTP ' + r.status + '\n' + txt.slice(0, 500);
   } catch (e) { box.textContent = 'Erro: ' + e.message; }
 }
-carregar(); verificar(); mostrarLimites();
+function fmtBytes(n) {
+  n = Number(n) || 0;
+  if (n >= 1073741824) return (n / 1073741824).toFixed(2) + ' GB';
+  if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+  return Math.round(n / 1024) + ' KB';
+}
+function pct(u, t) { return t > 0 ? Math.min(100, Math.max(0, Math.round(u / t * 100))) : 0; }
+async function verificarSistema() {
+  var box = document.getElementById('sistema');
+  var c = ler();
+  var base = c.url || URL_PADRAO;
+  var headers = { 'Content-Type': 'application/json' };
+  if (c.token) headers['X-Farn-Token'] = c.token;
+  try {
+    var r = await fetch(base + '/api/sistema', { headers: headers });
+    if (r.status === 404) throw new Error('Atualize o servidor.js no Ubuntu (git pull e reiniciar)');
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'Falha');
+    var d = j.disco || { total: 0, livre: 0, usado: 0 };
+    var ramUsada = j.ram.total - j.ram.livre;
+    var dias = Math.floor(j.uptimeSistema / 86400);
+    var horas = Math.floor((j.uptimeSistema % 86400) / 3600);
+    function cartao(valor, rotulo, porcentagem) {
+      return '<div class="cartao"><b>' + valor + '</b><span>' + rotulo + '</span>'
+        + (porcentagem != null ? '<div class="barra"><i style="width:' + porcentagem + '%"></i></div>' : '') + '</div>';
+    }
+    var host = String(j.host || '-').replace(/[<>&"]/g, '');
+    box.innerHTML =
+      cartao(fmtBytes(d.usado) + ' / ' + fmtBytes(d.total), 'Disco usado', pct(d.usado, d.total))
+      + cartao(fmtBytes(j.banco.bytesArquivo), 'Banco (arquivo)', pct(j.banco.bytesArquivo, d.total))
+      + cartao(j.banco.documentos, 'Documentos', null)
+      + cartao(j.banco.colecoes, 'Coleções', null)
+      + cartao(fmtBytes(ramUsada) + ' / ' + fmtBytes(j.ram.total), 'Memória RAM', pct(ramUsada, j.ram.total))
+      + cartao(dias + 'd ' + horas + 'h', 'Uptime Ubuntu', null)
+      + cartao(host, 'Hostname', null)
+      + cartao('Node ' + String(j.node || '').replace(/^v/, ''), 'Runtime', null);
+  } catch (e) {
+    var msg = String(e.message || e).replace(/[<>&"]/g, '');
+    box.innerHTML = '<div class="cartao" style="border-color:#fecaca;background:#fef2f2"><b style="color:#991b1b">INDISPONÍVEL</b><span>' + msg + '</span></div>';
+  }
+}
+carregar(); verificar(); mostrarLimites(); verificarSistema();
 </script>
 </body>
 </html>
