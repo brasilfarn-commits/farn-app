@@ -60,6 +60,89 @@ function admMatricula(cpf) {
     if (d.length < 5) return '';
     return 'ACD' + d.slice(-5);
 }
+
+/* Matrícula do DOCENTE: 6 primeiros dígitos do CPF + data de nascimento
+   (DDMMAAAA). Ex.: 12345631011980. */
+function admDocMatricula(cpf, nascimento) {
+    var c = admDigitos(cpf), d = admDigitos(nascimento);
+    var partes = String(nascimento || '').split('-');
+    if (partes.length === 3 && partes[0].length === 4) d = partes[2] + partes[1] + partes[0]; // DDMMAAAA
+    if (c.length < 6 || d.length !== 8) return '';
+    return c.slice(0, 6) + d;
+}
+
+var ADM_DOC_ESTADO_CIVIL = ['SOLTEIRO (A)', 'CASADO (A)', 'DIVORCIADO (A)', 'VIÚVO (A)', 'AMIGADO (A)'];
+var ADM_DOC_GENERO = ['MASCULINO', 'FEMININO', 'OUTROS'];
+var ADM_DOC_FATOR_RH = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+var ADM_DOC_CLINICO = [
+    ['hipertensao', 'Hipertensão'], ['diabetes', 'Diabetes'], ['fobias', 'Fobias'],
+    ['cancaso', 'Câncer'], ['problemasCronicos', 'Problemas crônicos'],
+    ['deficienciaFisica', 'Deficiência física'],
+    ['deficienciaPsicologica', 'Deficiência psicológica'],
+    ['pressaoBaixa', 'Pressão baixa'], ['cicatriz', 'Cicatriz'], ['tatuagem', 'Tatuagem'],
+    ['dentesQuebrados', 'Dentes quebrados'], ['deficienciaAuditiva', 'Deficiência auditiva']
+];
+
+/* Campos exclusivos do Docente do admin. O de Coordenação continua usando
+   ADM_PESSOA_CAMPOS, sem nenhuma destas alterações. */
+var ADM_DOC_CAMPOS = [
+    ['nome', 'Nome Completo', 'text'], ['cpf', 'CPF', 'text'],
+    ['nascimento', 'Data de Nascimento', 'date'],
+    ['estadoCivil', 'Estado Civil', 'select', ADM_DOC_ESTADO_CIVIL],
+    ['telefone', 'Telefone / WhatsApp', 'text'], ['email', 'E-mail', 'text'],
+    ['genero', 'Gênero', 'select', ADM_DOC_GENERO],
+    ['mae', 'Nome da mãe', 'text'], ['pai', 'Nome do pai', 'text'],
+    ['nacionalidade', 'Nacionalidade', 'text'], ['naturalidade', 'Naturalidade', 'text'],
+    ['profissao', 'Profissão', 'text'], ['cidade', 'Cidade', 'text'], ['estado', 'Estado', 'text'],
+    ['matricula', 'Matrícula (gerada pelo CPF + nascimento)', 'matricula'],
+    ['senha', 'Senha do Portal', 'text'],
+    ['fotoUrl', 'Foto 3x4', 'foto'],
+    ['fatorRh', 'Fator RH', 'select', ADM_DOC_FATOR_RH]
+].concat(ADM_DOC_CLINICO.map(function (x) {
+    return [x[0], x[1], 'simnao'];
+})).concat([
+    ['observacoes', 'Observações', 'textarea']
+]);
+
+/* Anexo de foto: recorta em 3x4 (300x400) e reduz a qualidade até caber
+   em 1 MB. Nada é enviado a servidor de terceiros. */
+function admDocFotoComprimir(arquivo, pronto) {
+    var leitor = new FileReader();
+    leitor.onerror = function () { pronto(null, 'Não foi possível ler a imagem.'); };
+    leitor.onload = function (ev) {
+        var img = new Image();
+        img.onerror = function () { pronto(null, 'Arquivo de imagem inválido.'); };
+        img.onload = function () {
+            var alvoW = 300, alvoH = 400;
+            var escala = Math.max(alvoW / img.width, alvoH / img.height);
+            var w = Math.max(1, Math.round(img.width * escala));
+            var h = Math.max(1, Math.round(img.height * escala));
+            var x = Math.round((w - alvoW) / 2), y = Math.round((h - alvoH) / 2);
+            var canvas = document.createElement('canvas');
+            canvas.width = alvoW; canvas.height = alvoH;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, alvoW, alvoH);
+            ctx.drawImage(img, -x, -y, w, h);
+            /* Limite aplicado ao texto gravado no Firestore (base64), que é
+               o que realmente ocupa espaço no documento: ~1 MB. */
+            var limite = 1000 * 1024;
+            var qualidades = [0.92, 0.85, 0.78, 0.7, 0.62, 0.55, 0.48, 0.4, 0.32, 0.25, 0.18, 0.1];
+            var final = null;
+            for (var i = 0; i < qualidades.length; i++) {
+                var url = canvas.toDataURL('image/jpeg', qualidades[i]);
+                if (url.length <= limite) { final = url; break; }
+            }
+            if (!final) final = canvas.toDataURL('image/jpeg', 0.08);
+            pronto(final, null);
+        };
+        img.src = ev.target.result;
+    };
+    leitor.readAsDataURL(arquivo);
+}
+function admDocFotoKB(dataUrl) {
+    return Math.round(String(dataUrl || '').length * 3 / 4 / 1024);
+}
 function admUsuarioAtual() {
     try {
         var u = JSON.parse(localStorage.getItem('usuarioLogado') || localStorage.getItem('adminUsuario') || 'null');
@@ -182,6 +265,7 @@ function criarCadastroAdminPessoa(cfg) {
     var registros = [];
     var editando = null;
     var tentativas = 0;
+    var camposCfg = cfg.campos || ADM_PESSOA_CAMPOS;
 
     function db() { return admDb(); }
     function ref(id) {
@@ -191,18 +275,59 @@ function criarCadastroAdminPessoa(cfg) {
     function el(sufixo) { return document.getElementById(P + '-' + sufixo); }
 
     /* ---------- FORMULARIO (sem Projeto e sem Turma) ---------- */
-    function campo(chave, rotuloCampo, tipo, valor) {
+    function campo(chave, rotuloCampo, tipo, opcoes, valor) {
         var id = P + '-' + chave;
         var v = admEsc(valor == null ? '' : valor);
-        var input = tipo === 'textarea'
-            ? '<textarea id="' + id + '" class="config-input" rows="2">' + v + '</textarea>'
-            : '<input type="' + tipo + '" id="' + id + '" class="config-input" value="' + v + '">';
+        var input;
+        if (tipo === 'textarea') {
+            input = '<textarea id="' + id + '" class="config-input" rows="2">' + v + '</textarea>';
+        } else if (tipo === 'select') {
+            var lista = opcoes || [];
+            var atual = valor == null ? '' : String(valor);
+            var extra = (atual && lista.indexOf(atual) < 0)
+                ? '<option value="' + v + '" selected>' + v + '</option>' : '';
+            input = '<select id="' + id + '" class="config-input">'
+                + '<option value="">— Selecione —</option>' + extra
+                + lista.map(function (o) {
+                    return '<option value="' + admEsc(o) + '"' + (o === atual ? ' selected' : '') + '>' + admEsc(o) + '</option>';
+                }).join('') + '</select>';
+        } else if (tipo === 'simnao') {
+            var escolhido = valor == null ? '' : String(valor);
+            input = '<div style="display:flex;gap:14px;align-items:center;height:38px">'
+                + ['Sim', 'Não'].map(function (op) {
+                    return '<label style="display:flex;gap:5px;align-items:center;font-size:12px;font-weight:600;margin:0">'
+                        + '<input type="radio" name="' + id + '" value="' + op + '"'
+                        + (escolhido === op ? ' checked' : '') + ' style="width:15px;height:15px;accent-color:#0d9488">'
+                        + op + '</label>';
+                }).join('') + '</div>';
+        } else if (tipo === 'matricula') {
+            input = '<input type="text" id="' + id + '" class="config-input" value="' + v + '" readonly'
+                + ' style="background:#f8fafc;font-weight:700;color:#0f766e">'
+                + '<div style="font-size:9px;color:#94a3b8;margin-top:3px">6 primeiros dígitos do CPF + data de nascimento (DDMMAAAA)</div>';
+        } else if (tipo === 'foto') {
+            var fotoAtual = valor ? String(valor) : '';
+            input = '<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">'
+                + '<div id="' + P + '-foto-preview" style="width:72px;height:96px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#f1f5f9;display:flex;align-items:center;justify-content:center">'
+                + (fotoAtual ? '<img src="' + v + '" style="width:100%;height:100%;object-fit:cover">'
+                             : '<i class="fa-solid fa-image" style="font-size:22px;color:#94a3b8"></i>')
+                + '</div>'
+                + '<div><input type="hidden" id="' + id + '" value="' + v + '">'
+                + '<input type="file" id="' + P + '-foto-file" accept="image/*" style="display:none" onchange="' + P + 'FotoArquivo(this.files)">'
+                + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+                + '<button type="button" class="btn-outline btn-sm" onclick="document.getElementById(\'' + P + '-foto-file\').click()"><i class="fa-solid fa-paperclip"></i> ANEXAR FOTO</button>'
+                + '<button type="button" class="btn-outline btn-sm" onclick="' + P + 'FotoRemover()"><i class="fa-solid fa-trash"></i> REMOVER</button>'
+                + '</div><div id="' + P + '-foto-status" style="font-size:10px;color:#64748b;margin-top:5px">'
+                + (fotoAtual ? 'Foto cadastrada (' + admDocFotoKB(fotoAtual) + ' KB).' : 'JPG/PNG — ajustada para 3x4 e no máximo 1 MB.')
+                + '</div></div></div>';
+        } else {
+            input = '<input type="' + tipo + '" id="' + id + '" class="config-input" value="' + v + '">';
+        }
         return '<div class="form-group"><label>' + admEsc(rotuloCampo) + '</label>' + input + '</div>';
     }
     function formHTML(reg) {
         var p = reg || {};
-        var campos = ADM_PESSOA_CAMPOS.map(function (x) {
-            return campo(x[0], x[1], x[2], p[x[0]]);
+        var campos = camposCfg.map(function (x) {
+            return campo(x[0], x[1], x[2], x[3], p[x[0]]);
         }).join('');
         var tipo = p.tipoPessoa || 'A';
         return '<div class="card full-width">'
@@ -225,15 +350,65 @@ function criarCadastroAdminPessoa(cfg) {
     }
     function valores() {
         var dados = {};
-        ADM_PESSOA_CAMPOS.forEach(function (x) {
-            var node = el(x[0]);
-            dados[x[0]] = node ? String(node.value || '').trim() : '';
+        camposCfg.forEach(function (x) {
+            var chave = x[0], tipo = x[2];
+            if (tipo === 'simnao') {
+                var marcado = document.querySelector('input[name="' + P + '-' + chave + '"]:checked');
+                dados[chave] = marcado ? marcado.value : 'Não';
+            } else {
+                var node = el(chave);
+                dados[chave] = node ? String(node.value || '').trim() : '';
+            }
         });
         dados.cpf = admDigitos(dados.cpf);
         dados.whatsapp = dados.telefone;
         dados.tipoPessoa = ((el('tipoPessoa') || {}).value || 'A');
         dados.idade = dados.nascimento ? admIdade(dados.nascimento) : 0;
+        if (cfg.prefixo === 'doc') {
+            var gerada = admDocMatricula(dados.cpf, dados.nascimento);
+            if (gerada) dados.matricula = gerada;
+        }
         return dados;
+    }
+    function atualizarMatricula() {
+        if (cfg.prefixo !== 'doc') return;
+        var node = el('matricula');
+        if (!node) return;
+        var gerada = admDocMatricula((el('cpf') || {}).value || '', (el('nascimento') || {}).value || '');
+        if (gerada) node.value = gerada;
+    }
+    function docFotoArquivo(files) {
+        var arquivo = files && files[0];
+        if (!arquivo) return;
+        if (String(arquivo.type || '').indexOf('image/') !== 0) {
+            alert('Escolha um arquivo de imagem.'); return;
+        }
+        var status = el('foto-status');
+        if (status) { status.textContent = 'Ajustando foto para 3x4 e reduzindo para no máximo 1 MB...'; status.style.color = '#64748b'; }
+        admDocFotoComprimir(arquivo, function (dataUrl, erro) {
+            if (erro || !dataUrl) {
+                if (status) { status.textContent = erro || 'Não foi possível processar a imagem.'; status.style.color = '#dc2626'; }
+                return;
+            }
+            var campoFoto = el('fotoUrl');
+            if (campoFoto) campoFoto.value = dataUrl;
+            var prev = el('foto-preview');
+            if (prev) prev.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover">';
+            if (status) {
+                status.textContent = 'Foto anexada (' + admDocFotoKB(dataUrl) + ' KB). Clique em Salvar para gravar.';
+                status.style.color = '#16a34a';
+            }
+        });
+    }
+    function docFotoRemover() {
+        var campoFoto = el('fotoUrl');
+        if (campoFoto) campoFoto.value = '';
+        var file = el('foto-file');
+        if (file) file.value = '';
+        var prev = el('foto-preview');
+        if (prev) prev.innerHTML = '<i class="fa-solid fa-image" style="font-size:22px;color:#94a3b8"></i>';
+        var status = el('foto-status');
+        if (status) { status.textContent = 'Foto será removida ao salvar.'; status.style.color = '#f57f17'; }
     }
 
     async function abrirForm(id) {
@@ -256,6 +431,13 @@ function criarCadastroAdminPessoa(cfg) {
         painel.innerHTML = formHTML(reg);
         painel.style.display = '';
         if (lista) lista.style.display = 'none';
+        if (cfg.prefixo === 'doc') {
+            atualizarMatricula();
+            ['cpf', 'nascimento'].forEach(function (k) {
+                var node = el(k);
+                if (node) node.addEventListener('input', atualizarMatricula);
+            });
+        }
         painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     function novo() {
@@ -329,8 +511,21 @@ function criarCadastroAdminPessoa(cfg) {
         if (!r) return;
         var w = window.open('', '_blank');
         if (!w) { alert('Permita pop-ups para imprimir a ficha.'); return; }
-        var foto = r.fotoUrl && /^https?:\/\//i.test(String(r.fotoUrl))
+        var foto = r.fotoUrl && /^(https?:\/\/|data:image\/)/i.test(String(r.fotoUrl))
             ? '<img class="foto" src="' + admEsc(r.fotoUrl) + '" alt="Foto">' : '';
+        var clinico = '';
+        if (cfg.prefixo === 'doc') {
+            var colunas = function (rotulo, valor) {
+                return '<div class="col"><div class="label">' + admEsc(rotulo) + '</div><div class="val">'
+                    + admEsc(valor || 'Não') + '</div></div>';
+            };
+            clinico = '<h2>Dados clínicos</h2>'
+                + '<div class="row">' + colunas('Fator RH', r.fatorRh || '-')
+                + colunas('Gênero', r.genero || '-') + colunas('Estado civil', r.estadoCivil || '-') + '</div>'
+                + '<div class="row">'
+                + ADM_DOC_CLINICO.map(function (c) { return colunas(c[1], r[c[0]] || 'Não'); }).join('')
+                + '</div>';
+        }
         var html = '<html><head><meta charset="utf-8"><title>FARN - ' + admEsc(r.nome || '') + '</title><style>'
             + 'body{font-family:Arial,sans-serif;padding:36px;color:#222}h1{color:#1a237e;font-size:19px;margin:0}'
             + 'h2{font-size:14px;margin:20px 0 8px;border-bottom:2px solid #1a237e;padding-bottom:5px}'
@@ -357,6 +552,7 @@ function criarCadastroAdminPessoa(cfg) {
             + '<div class="row"><div class="col"><div class="label">Matrícula / Credencial</div><div class="val" style="font-size:17px;font-weight:800;color:#e65100">'
             + admEsc(r.matricula || '-') + '</div></div><div class="col"><div class="label">Tipo</div><div class="val">'
             + admEsc(r.tipoPessoa === 'F' ? 'Formado' : 'Acadêmico') + '</div></div></div>'
+            + clinico
             + (r.observacoes ? '<h2>Observações</h2><div class="val">' + admEsc(r.observacoes) + '</div>' : '')
             + '<script>window.addEventListener("load",function(){window.print();});<\/script></body></html>';
         w.document.write(html);
@@ -524,6 +720,10 @@ function criarCadastroAdminPessoa(cfg) {
         window.coordSalvarPermissoes = salvarPermissoes;
         window.coordFecharPermissoes = fecharPermissoes;
     }
+    if (cfg.prefixo === 'doc') {
+        window.docFotoArquivo = docFotoArquivo;
+        window.docFotoRemover = docFotoRemover;
+    }
 }
 
 /* Helpers globais usados por app.js e cadastro-cursos.js. */
@@ -557,5 +757,6 @@ criarCadastroAdminPessoa({
     botaoNovo: 'NOVO DOCENTE',
     cor: '#0d9488',
     icon: 'fa-chalkboard-user',
+    campos: ADM_DOC_CAMPOS,
     fnInicializar: 'docenteAdminInicializar'
 });
