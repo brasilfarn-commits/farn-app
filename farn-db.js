@@ -49,10 +49,16 @@
     this._flushPromise = null;
     this.ultimaSincronizacao = null;
     this.erroSincronizacao = null;
+    this._ciclos = 0;
+    this._proxCol = 0;
     this._carregarLocal();
-    /* Se existe espelho local, o since salvo ainda serve e evita baixar o
-       historico inteiro a cada abertura. Com cache vazio, volta ao inicio. */
-    if (!Object.keys(this.cache).length) this.since = 0;
+    /* Nunca pedir o historico inteiro: /api/changes?since=0 devolve milhares
+       de documentos e estoura o tunel. O dados antigos ja vem via /api/all
+       quando a tela acessa a colecao; aqui so interessam mudancas recentes. */
+    var agoraMs = Date.now();
+    if (!this.since || !Object.keys(this.cache).length || this.since < agoraMs - 30 * 86400000) {
+      this.since = agoraMs;
+    }
     var self = this;
     window.addEventListener('online', function () { self.online = true; self.sincronizar(); });
     window.addEventListener('offline', function () { self.online = false; });
@@ -238,6 +244,18 @@
       this.online = false;
       this.erroSincronizacao = String((e && e.message) || e);
     }
+    /* Reconciliacao lenta: uma colecao carregada por minuto. Serve para
+       pegar exclusoes feitas antes do servidor gravar lapides e qualquer
+       diferenca que o /api/changes nao tenha alcancado. */
+    this._ciclos++;
+    if (this.online && this._ciclos % 12 === 0) {
+      var cols = Object.keys(this._carregadas);
+      if (cols.length) {
+        var col = cols[this._proxCol % cols.length];
+        this._proxCol = (this._proxCol + 1) % cols.length;
+        await this._buscarColecao(col);
+      }
+    }
     try {
       localStorage.setItem(KEY_SYNC, JSON.stringify({
         em: this.ultimaSincronizacao,
@@ -252,6 +270,7 @@
   /* Recebe SERVIDOR -> LOCAL. Exclusoes chegam como lapide (__farnDelete). */
   FarnDB.prototype._poll = async function () {
     var self = this;
+    if (!this.since) this.since = Date.now();
     var sinceAntes = this.since;
     var r = await this._req('/api/changes?since=' + this.since);
     var mudou = false;
