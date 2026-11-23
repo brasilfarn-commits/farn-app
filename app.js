@@ -1222,7 +1222,23 @@ async function handleLogin(event) {
             saveLoginState();
             return false;
         }
-        const user = usuarios.find(u => u.cpf === cpf && u.senha === password && u.ativo !== false);
+        let user = usuarios.find(u => u.cpf === cpf && u.senha === password && u.ativo !== false);
+        /* Coordenador também entra pelo administrador. */
+        if (!user || user.cpf !== ADMIN_CPF) {
+            try {
+                const snapCoord = await dbFirestore.collection('coordenacao').where('cpf', '==', cpf).limit(1).get();
+                snapCoord.forEach(doc => {
+                    if (user) return;
+                    const d = doc.data() || {};
+                    if (d.senha !== password) return;
+                    if (String(d.situacao || 'Ativo').toLowerCase() === 'inativo') return;
+                    user = Object.assign({}, d, {
+                        nome: d.nome || 'Coordenador', cpf: cpf,
+                        _origem: 'coordenacao', _docId: doc.id, permissoes: d.permissoes || []
+                    });
+                });
+            } catch (e) { console.warn('Login do coordenador:', e); }
+        }
         if (!user || user.cpf !== ADMIN_CPF) {
             errorEl.querySelector('span').textContent = 'Acesso administrativo reservado ao CPF 05004959471.';
             errorEl.classList.remove('hidden');
@@ -1315,6 +1331,8 @@ function applyUserPermissions() {
     if (!currentUserData) return;
     const p = currentUserData.permissoes || [];
     const isGeral = currentUserData.cpf === ADMIN_CPF;
+    const ehCoord = (typeof admEhCoordenador === 'function') && admEhCoordenador();
+    const pode = (chave, acao) => (typeof admPermItem === 'function') ? admPermItem(chave, acao) : true;
     const navItems = {
         'admin-home': true,
         'admin-pre-inscricao': p.includes('pre-inscricao') || isGeral,
@@ -1365,6 +1383,29 @@ function applyUserPermissions() {
             || p.includes('disciplinas') || p.includes('avaliacao') || p.includes('apontamento'),
         'admin-premissao-portal-usuario': p.includes('admin') || isGeral || p.includes('portal-usuario')
     };
+    /* Coordenador: o quadro salvo no cadastro dele manda em tudo o que aparece. */
+    if (ehCoord) {
+        const navCoord = {
+            'admin-home': pode('sec:inicio', 'ver'),
+            'admin-relatorios': pode('sec:relatorios', 'ver'),
+            'admin-cadastro-cursos': pode('sec:cadastroCursos', 'ver'),
+            'admin-docente': pode('sec:docente', 'ver')
+        };
+        document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
+            const m = (item.getAttribute('onclick') || '').match(/showAdminSection\('([^']+)'/);
+            item.style.display = (m && navCoord[m[1]]) ? '' : 'none';
+        });
+        document.querySelectorAll('#screen-admin .admin-home-card').forEach(card => {
+            const m = (card.getAttribute('onclick') || '').match(/showAdminSection\('([^']+)'/);
+            card.style.display = (m && navCoord[m[1]]) ? '' : 'none';
+        });
+        document.querySelectorAll('#admin-relatorios .config-card[onclick]').forEach(card => {
+            const m = (card.getAttribute('onclick') || '').match(/^\s*([A-Za-z_$][\w$]*)/);
+            if (m) card.style.display = pode('rel:' + m[1], 'ver') ? '' : 'none';
+        });
+        if (typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
+        return;
+    }
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
         const match = onclick.match(/showAdminSection\('([^']+)'/);
@@ -1617,6 +1658,26 @@ async function landingLoginAdmin(cpf, senha) {
     var user = null;
     if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
         user = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
+    }
+    /* Coordenador cadastrado entra no painel administrativo com CPF e senha.
+       O que ele vê/editar vem do quadro de permissões gravado no cadastro. */
+    if (!user && dbFirestore) {
+        try {
+            var snapCoord = await dbFirestore.collection('coordenacao').where('cpf', '==', cpf).limit(1).get();
+            snapCoord.forEach(function (doc) {
+                if (user) return;
+                var d = doc.data() || {};
+                if (d.senha !== senha) return;
+                if (String(d.situacao || 'Ativo').toLowerCase() === 'inativo') return;
+                user = Object.assign({}, d, {
+                    nome: d.nome || 'Coordenador',
+                    cpf: cpf,
+                    _origem: 'coordenacao',
+                    _docId: doc.id,
+                    permissoes: d.permissoes || []
+                });
+            });
+        } catch (e) { console.warn('Login do coordenador:', e); }
     }
     if (!user) { landingShowLoginError('CPF ou senha inválidos.'); return false; }
     currentUserData = user;
@@ -2017,6 +2078,9 @@ function showAdminSection(sectionId, navEl) {
     const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes', 'admin-cadastro-cursos': 'Cadastro de Cursos', 'admin-coordenacao': 'Coordenação', 'admin-docente': 'Docente', 'admin-premissao-portal-usuario': 'Premissão do Portal do Usuário' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
+    if (sectionId === 'admin-cadastro-cursos' && typeof ccAplicarPermissoesCoord === 'function') {
+        ccAplicarPermissoesCoord();
+    }
 }
 
 function toggleAdminSidebar() {
@@ -7161,9 +7225,10 @@ function restoreFormState() {
 
 function saveLoginState() {
     try {
-        /* Apenas o CPF ADMIN_CPF com a senha ADMIN_SENHA salva a sessao
-           admin: outros usuarios nao recebem o painel. */
-        if (!currentUserData || currentUserData.cpf !== ADMIN_CPF) return;
+        /* Admin geral e coordenadores cadastrados podem manter a sessão do
+           painel; demais usuários não recebem o painel. */
+        if (!currentUserData) return;
+        if (currentUserData.cpf !== ADMIN_CPF && currentUserData._origem !== 'coordenacao') return;
         localStorage.setItem('farn_login', 'admin');
         localStorage.setItem('farn_user_data', JSON.stringify(currentUserData));
     } catch(e) {}

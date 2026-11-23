@@ -68,6 +68,108 @@ function admUsuarioAtual() {
     return 'Administração';
 }
 
+/* ---------- CATALOGO DE PERMISSOES DO ADMIN ----------
+   Todo item novo (relatorio, aba de curso, acao de docente) entra aqui com
+   VER ligado e EDITAR desligado. Itens de acao entram com VER desligado. */
+var ADM_PERM_FIXO = [
+    { titulo: 'VISÃO GERAL', itens: [
+        { chave: 'sec:inicio', rotulo: 'Seção Início liberada' },
+        { chave: 'sec:relatorios', rotulo: 'Seção Relatórios' }
+    ]},
+    { titulo: 'CADASTRO DE CURSOS', itens: [
+        { chave: 'sec:cadastroCursos', rotulo: 'Acessar Cadastro de Cursos' },
+        { chave: 'cc:cursosAndamento', rotulo: 'Cursos em andamento' },
+        { chave: 'cc:cursosConcluidos', rotulo: 'Cursos concluídos' },
+        { chave: 'cc:guiasVisaoGeral', rotulo: 'Guias / Visão Geral' },
+        { chave: 'cc:criarAvaliacao', rotulo: 'Criar Avaliação' },
+        { chave: 'cc:disciplinasAulas', rotulo: 'Disciplinas e Aulas' },
+        { chave: 'cc:individuos', rotulo: 'Indivíduos' },
+        { chave: 'cc:projeto', rotulo: 'Projeto' },
+        { chave: 'cc:preInscricao', rotulo: 'Pré-Inscrição' },
+        { chave: 'cc:apontamento', rotulo: 'Apontamento' },
+        { chave: 'cc:fichaCurso', rotulo: 'Ficha do Curso' },
+        { chave: 'cc:certificados', rotulo: 'Certificados' },
+        { chave: 'cc:secaoAvaliacao', rotulo: 'Seção de Avaliação' },
+        { chave: 'cc:permissoes', rotulo: 'Permissões (aba do curso)' },
+        { chave: 'cc:editarCursos', rotulo: 'Editar cursos (criar, status, excluir)', acao: true }
+    ]},
+    { titulo: 'SEÇÃO DOCENTE', itens: [
+        { chave: 'sec:docente', rotulo: 'Acessar Seção Docente' },
+        { chave: 'doc:listaDocentes', rotulo: 'Lista de Docentes' },
+        { chave: 'doc:edicao', rotulo: 'Edição de Docentes', acao: true },
+        { chave: 'doc:exclusao', rotulo: 'Exclusão de Docentes', acao: true },
+        { chave: 'doc:impressao', rotulo: 'Impressão de Docentes', acao: true }
+    ]}
+];
+
+function admItensDinamicos() {
+    var out = [], vistos = {};
+    function add(chave, rotulo) {
+        if (!chave || vistos[chave]) return;
+        vistos[chave] = true;
+        out.push({ chave: chave, rotulo: rotulo, acao: false, dinamico: true });
+    }
+    var area = document.getElementById('admin-relatorios');
+    if (area) {
+        area.querySelectorAll('.config-card[onclick]').forEach(function (card) {
+            var m = (card.getAttribute('onclick') || '').match(/^\s*([A-Za-z_$][\w$]*)/);
+            if (!m) return;
+            var span = card.querySelector('span');
+            add('rel:' + m[1], span ? span.textContent.trim() : m[1]);
+        });
+    }
+    var chavesFixas = {};
+    ADM_PERM_FIXO.forEach(function (g) {
+        g.itens.forEach(function (i) { chavesFixas[i.chave] = true; });
+    });
+    document.querySelectorAll('#admin-cadastro-cursos .nav-item[id^="cc-aba-"]').forEach(function (btn) {
+        var chave = 'cc:' + btn.id.replace('cc-aba-', '');
+        if (!chavesFixas[chave]) add(chave, btn.textContent.trim());
+    });
+    return out;
+}
+function admCatalogoPermissoes() {
+    var grupos = ADM_PERM_FIXO.map(function (g) {
+        return { titulo: g.titulo, itens: g.itens.slice() };
+    });
+    var dinamicos = admItensDinamicos();
+    if (dinamicos.length) {
+        grupos.push({ titulo: 'ITENS DINÂMICOS (NOVOS RELATÓRIOS/ABAS)', itens: dinamicos });
+    }
+    return grupos;
+}
+function admPermissoesPadrao() {
+    var itens = {};
+    admCatalogoPermissoes().forEach(function (g) {
+        g.itens.forEach(function (i) {
+            itens[i.chave] = { ver: true, editar: false };
+        });
+    });
+    return itens;
+}
+function admEhCoordenador() {
+    var u = (typeof currentUserData !== 'undefined') ? currentUserData : null;
+    return !!(u && u._origem === 'coordenacao');
+}
+function admPermItem(chave, acao) {
+    var u = (typeof currentUserData !== 'undefined') ? currentUserData : null;
+    if (!u) return false;
+    if (u.cpf === ADMIN_CPF || (u.permissoes || []).indexOf('admin') >= 0) return true;
+    if (!admEhCoordenador()) return true;
+    var itens = (u.permAdmin && u.permAdmin.itens) || {};
+    var item = itens[chave];
+    if (item && typeof item[acao] === 'boolean') return item[acao];
+    var catalogo = admCatalogoPermissoes();
+    for (var g = 0; g < catalogo.length; g++) {
+        for (var i = 0; i < catalogo[g].itens.length; i++) {
+            if (catalogo[g].itens[i].chave === chave) {
+                return acao === 'ver';
+            }
+        }
+    }
+    return acao === 'ver';
+}
+
 /* ---------- FABRICA DE CADASTRO ---------- */
 function criarCadastroAdminPessoa(cfg) {
     var P = cfg.prefixo;                 // coord | doc
@@ -156,8 +258,18 @@ function criarCadastroAdminPessoa(cfg) {
         if (lista) lista.style.display = 'none';
         painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    function novo() { abrirForm(null); }
-    function editar(id) { abrirForm(id); }
+    function novo() {
+        if (cfg.prefixo === 'doc' && !admPermItem('doc:edicao', 'editar')) {
+            alert('Seu perfil não permite editar docentes.'); return;
+        }
+        abrirForm(null);
+    }
+    function editar(id) {
+        if (cfg.prefixo === 'doc' && !admPermItem('doc:edicao', 'editar')) {
+            alert('Seu perfil não permite editar docentes.'); return;
+        }
+        abrirForm(id);
+    }
     function voltarForm() {
         editando = null;
         var painel = el('form-painel');
@@ -167,6 +279,9 @@ function criarCadastroAdminPessoa(cfg) {
     }
 
     async function salvar() {
+        if (cfg.prefixo === 'doc' && !admPermItem('doc:edicao', 'editar')) {
+            alert('Seu perfil não permite editar docentes.'); return false;
+        }
         var dados = valores();
         if (!dados.nome) { alert('Informe o nome do ' + rotulo + '.'); return false; }
         if (admDigitos(dados.cpf).length !== 11) { alert('Informe um CPF válido.'); return false; }
@@ -174,6 +289,9 @@ function criarCadastroAdminPessoa(cfg) {
         if (!dados.matricula) dados.matricula = admMatricula(dados.cpf);
         dados.tipo = cfg.tipoRegistro;
         dados.situacao = (editando && editando.situacao) || 'Ativo';
+        dados.permAdmin = (editando && editando.permAdmin && editando.permAdmin.itens)
+            ? editando.permAdmin
+            : { itens: admPermissoesPadrao(), atualizadoEm: agora };
         dados.atualizadoEm = agora;
         try {
             if (editando && editando._id) {
@@ -190,6 +308,9 @@ function criarCadastroAdminPessoa(cfg) {
         return false;
     }
     async function excluir(id) {
+        if (cfg.prefixo === 'doc' && !admPermItem('doc:exclusao', 'editar')) {
+            alert('Seu perfil não permite excluir docentes.'); return;
+        }
         var r = registros.find(function (x) { return x._id === id; }) || null;
         if (!r) return;
         if (!confirm('Excluir "' + (r.nome || '') + '" da tabela de ' + plural + '?')) return;
@@ -201,6 +322,9 @@ function criarCadastroAdminPessoa(cfg) {
 
     /* ---------- IMPRESSAO ---------- */
     function imprimir(id) {
+        if (cfg.prefixo === 'doc' && !admPermItem('doc:impressao', 'editar')) {
+            alert('Seu perfil não permite imprimir docentes.'); return;
+        }
         var r = registros.find(function (x) { return x._id === id; }) || null;
         if (!r) return;
         var w = window.open('', '_blank');
@@ -237,6 +361,78 @@ function criarCadastroAdminPessoa(cfg) {
             + '<script>window.addEventListener("load",function(){window.print();});<\/script></body></html>';
         w.document.write(html);
         w.document.close();
+    }
+
+    /* ---------- PERMISSOES (somente Coordenação) ---------- */
+    function abrirPermissoes(id) {
+        var r = registros.find(function (x) { return x._id === id; }) || null;
+        if (!r) return;
+        var itens = admPermissoesPadrao();
+        if (r.permAdmin && r.permAdmin.itens) Object.assign(itens, r.permAdmin.itens);
+        var catalogo = admCatalogoPermissoes();
+        var idx = 0;
+        var linhas = catalogo.map(function (g) {
+            return '<div style="margin-bottom:18px">'
+                + '<h4 style="font-size:11px;font-weight:800;color:#7c3aed;letter-spacing:.06em;margin:0 0 8px">' + admEsc(g.titulo) + '</h4>'
+                + '<table class="data-table" style="width:100%"><thead><tr>'
+                + '<th>Item</th><th style="width:80px;text-align:center">Ver</th><th style="width:80px;text-align:center">Editar</th>'
+                + '</tr></thead><tbody>'
+                + g.itens.map(function (i) {
+                    var v = itens[i.chave] || { ver: false, editar: false };
+                    var n = idx++;
+                    return '<tr>'
+                        + '<td style="padding:7px;font-size:12px">' + admEsc(i.rotulo)
+                        + (i.dinamico ? ' <span style="font-size:8px;font-weight:800;color:#0d9488">(novo)</span>' : '') + '</td>'
+                        + '<td style="text-align:center"><input type="checkbox" class="admperm-check" data-chave="' + admEsc(i.chave) + '" data-acao="ver" data-i="' + n + '"'
+                        + (v.ver ? ' checked' : '') + ' style="width:15px;height:15px;accent-color:#7c3aed"></td>'
+                        + '<td style="text-align:center"><input type="checkbox" class="admperm-check" data-chave="' + admEsc(i.chave) + '" data-acao="editar" data-i="' + n + '"'
+                        + (v.editar ? ' checked' : '') + ' style="width:15px;height:15px;accent-color:#7c3aed"></td>'
+                        + '</tr>';
+                }).join('')
+                + '</tbody></table></div>';
+        }).join('');
+        var html = '<div class="modal-overlay" id="adm-perm-modal" onclick="if(event.target===this)coordFecharPermissoes()">'
+            + '<div class="modal-content" style="max-width:820px;width:95%">'
+            + '<div class="modal-header"><h3><i class="fa-solid fa-shield-halved" style="color:#7c3aed;margin-right:8px"></i> Permissões — ' + admEsc(r.nome) + '</h3>'
+            + '<button class="modal-close" onclick="coordFecharPermissoes()"><i class="fa-solid fa-xmark"></i></button></div>'
+            + '<div class="modal-body">'
+            + '<p style="font-size:12px;color:#475569;margin:0 0 12px">Marque <b>Ver</b> para liberar a tela/aba e <b>Editar</b> para permitir alterações. Itens novos entram marcados apenas para visualização.</p>'
+            + linhas
+            + '</div>'
+            + '<div style="display:flex;gap:8px;justify-content:flex-end;padding:14px;border-top:1px solid #e2e8f0">'
+            + '<button class="btn-outline" onclick="coordFecharPermissoes()">Cancelar</button>'
+            + '<button class="btn-primary" onclick="coordSalvarPermissoes(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-floppy-disk"></i> Salvar e aplicar no login</button>'
+            + '</div></div></div>';
+        var antigo = document.getElementById('adm-perm-modal');
+        if (antigo) antigo.remove();
+        document.body.insertAdjacentHTML('beforeend', html);
+    }
+    function fecharPermissoes() {
+        var m = document.getElementById('adm-perm-modal');
+        if (m) m.remove();
+    }
+    async function salvarPermissoes(id) {
+        var itens = {};
+        document.querySelectorAll('#adm-perm-modal .admperm-check').forEach(function (cb) {
+            var chave = cb.getAttribute('data-chave');
+            var acao = cb.getAttribute('data-acao');
+            if (!itens[chave]) itens[chave] = { ver: false, editar: false };
+            itens[chave][acao] = cb.checked;
+        });
+        try {
+            await ref(id).update({
+                permAdmin: { itens: itens, atualizadoEm: new Date().toISOString() }
+            });
+            fecharPermissoes();
+            await inicializar(true);
+            var r = registros.find(function (x) { return x._id === id; }) || {};
+            if (admEhCoordenador() && currentUserData && currentUserData._docId === id) {
+                currentUserData.permAdmin = { itens: itens };
+                if (typeof applyUserPermissions === 'function') applyUserPermissions();
+                if (typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
+            }
+            alert('Permissões salvas para ' + (r.nome || 'o coordenador') + '.');
+        } catch (e) { alert('Erro ao salvar permissões: ' + e.message); }
     }
 
     /* ---------- LISTA ---------- */
@@ -283,6 +479,9 @@ function criarCadastroAdminPessoa(cfg) {
                 + '</td></tr>';
             return;
         }
+        var podeEditar = admPermItem('doc:edicao', 'ver');
+        var podeExcluir = admPermItem('doc:exclusao', 'ver');
+        var podeImprimir = admPermItem('doc:impressao', 'ver');
         tb.innerHTML = lista.map(function (r) {
             var contato = [r.whatsapp || r.telefone, r.email].filter(Boolean).join(' · ') || '-';
             return '<tr style="border-bottom:1px solid #f1f5f9">'
@@ -293,9 +492,18 @@ function criarCadastroAdminPessoa(cfg) {
                 + '<td style="padding:8px;color:#475569;font-size:11px">' + admEsc(contato) + '</td>'
                 + '<td style="padding:8px"><span class="badge" style="background:#f1f5f9;color:#475569">' + admEsc(r.situacao || 'Ativo') + '</span></td>'
                 + '<td style="padding:8px"><div class="actions-cell">'
-                + '<button class="btn-icon" title="Editar" onclick="' + P + 'Editar(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-pen"></i></button>'
-                + '<button class="btn-icon" title="Imprimir" onclick="' + P + 'Imprimir(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-print"></i></button>'
-                + '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="' + P + 'Excluir(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-trash"></i></button>'
+                + (cfg.prefixo === 'coord'
+                    ? '<button class="btn-outline btn-sm" title="PERMISSÕES" onclick="coordPermissoes(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-shield-halved"></i> PERMISSÕES</button>'
+                    : '')
+                + (podeEditar
+                    ? '<button class="btn-icon" title="Editar" onclick="' + P + 'Editar(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-pen"></i></button>'
+                    : '')
+                + (podeImprimir
+                    ? '<button class="btn-icon" title="Imprimir" onclick="' + P + 'Imprimir(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-print"></i></button>'
+                    : '')
+                + (podeExcluir
+                    ? '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="' + P + 'Excluir(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-trash"></i></button>'
+                    : '')
                 + '</div></td></tr>';
         }).join('');
     }
@@ -311,7 +519,18 @@ function criarCadastroAdminPessoa(cfg) {
     window[P + 'Imprimir'] = imprimir;
     window[P + 'Render'] = render;
     window[P + 'Buscar'] = render;
+    if (cfg.prefixo === 'coord') {
+        window.coordPermissoes = abrirPermissoes;
+        window.coordSalvarPermissoes = salvarPermissoes;
+        window.coordFecharPermissoes = fecharPermissoes;
+    }
 }
+
+/* Helpers globais usados por app.js e cadastro-cursos.js. */
+window.admEhCoordenador = admEhCoordenador;
+window.admPermItem = admPermItem;
+window.admCatalogoPermissoes = admCatalogoPermissoes;
+window.admPermissoesPadrao = admPermissoesPadrao;
 
 criarCadastroAdminPessoa({
     prefixo: 'coord',

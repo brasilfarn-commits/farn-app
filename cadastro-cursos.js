@@ -133,10 +133,14 @@ function ccRenderLista() {
                 + '<button class="btn-danger btn-sm" onclick="ccExcluirCurso(\'' + c._id + '\')" title="Excluir curso"><i class="fa-solid fa-trash"></i></button>'
                 + '</div>';
         }).join('') + '</div>';
+        if (typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
 }
 
 /* Alterna o status do curso entre Em Andamento e Concluido. */
 async function ccAlternarStatusCurso(id) {
+    if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
+        alert('Seu perfil não permite editar cursos.'); return;
+    }
     var c = (ccCursos || []).find(function (x) { return String(x._id) === String(id); });
     if (!c) { alert('Curso não encontrado.'); return; }
     var novo = c.status === 'Concluido' ? 'Em Andamento' : 'Concluido';
@@ -192,6 +196,9 @@ function ccMostrarWorkspace(mostrar) {
 
 /* ============ CRIAR / EDITAR CURSO ============ */
 function ccAbrirFormCurso(id) {
+    if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
+        alert('Seu perfil não permite editar cursos.'); return;
+    }
     ccEditandoCursoId = id || null;
     window._ccIconeDataUrl = null;
     window._ccApostilaDataUrl = null;
@@ -293,6 +300,9 @@ async function ccSalvarCurso() {
 }
 
 async function ccExcluirCurso(id) {
+    if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
+        alert('Seu perfil não permite editar cursos.'); return;
+    }
     if (!confirm('Excluir este curso e TODOS os seus dados (projetos, turmas, inscrições, indivíduos, avaliações, fichas e certificados)?')) return;
     try {
         var base = ccDb().collection(CC_COLECAO).doc(id);
@@ -3075,3 +3085,92 @@ async function ccSalvarPermissoes() {
         alert('Erro a salvar as permissoes: ' + e.message);
     }
 }
+
+/* =====================================================================
+   PERMISSOES DO COORDENADOR LOGADO NO ADMIN
+   O quadro gravado no cadastro de Coordenacao define o que aparece aqui.
+   Admin geral e outros perfis continuam com acesso completo.
+   ===================================================================== */
+function ccPermCoord(chave, acao) {
+    if (typeof admPermItem !== 'function') return true;
+    if (typeof admEhCoordenador !== 'function' || !admEhCoordenador()) return true;
+    return admPermItem(chave, acao || 'ver');
+}
+function ccPodeEditarCursos() { return ccPermCoord('cc:editarCursos', 'editar'); }
+var CC_ABAS_PERM = {
+    geral: 'cc:guiasVisaoGeral',
+    avaliacao: 'cc:criarAvaliacao',
+    disciplinas: 'cc:disciplinasAulas',
+    individuos: 'cc:individuos',
+    projeto: 'cc:projeto',
+    preinscricao: 'cc:preInscricao',
+    apontamento: 'cc:apontamento',
+    ficha: 'cc:fichaCurso',
+    certificado: 'cc:certificados',
+    secaoavaliacao: 'cc:secaoAvaliacao',
+    permissoes: 'cc:permissoes'
+};
+function ccAplicarPermissoesCoord() {
+    var umaVisivel = null;
+    Object.keys(CC_ABAS_PERM).forEach(function (aba) {
+        var permitido = ccPermCoord(CC_ABAS_PERM[aba], 'ver');
+        var btn = document.getElementById('cc-aba-' + aba);
+        var tab = document.getElementById('cc-tab-' + aba);
+        if (btn) {
+            btn.style.display = permitido ? '' : 'none';
+            if (permitido && !umaVisivel) umaVisivel = aba;
+        }
+        if (tab) {
+            tab.style.display = permitido ? '' : 'none';
+            if (permitido) {
+                tab.setAttribute('data-cc-somente-leitura', ccPermCoord(CC_ABAS_PERM[aba], 'editar') ? '0' : '1');
+            }
+        }
+    });
+    var edicao = ccPermCoord('cc:editarCursos', 'ver'); // botões aparecem; ações exigem "Editar"
+    ['cc-btn-novo', 'cc-restaurar-cursos'].forEach(function (id) {
+        var b = document.getElementById(id);
+        if (b) b.style.display = edicao ? '' : 'none';
+    });
+    document.querySelectorAll('#cc-lista button[onclick*="ccAlternarStatusCurso"], #cc-lista button[onclick*="ccExcluirCurso"]').forEach(function (b) {
+        b.style.display = edicao ? '' : 'none';
+    });
+    if (!ccPermCoord('cc:cursosAndamento', 'ver')) {
+        document.querySelectorAll('#cc-lista > div > div').forEach(function (card) {
+            if (card.textContent.indexOf('Em Andamento') >= 0) card.style.display = 'none';
+        });
+    }
+    if (!ccPermCoord('cc:cursosConcluidos', 'ver')) {
+        document.querySelectorAll('#cc-lista > div > div').forEach(function (card) {
+            if (card.textContent.indexOf('Concluido') >= 0) card.style.display = 'none';
+        });
+    }
+    /* Se a aba atual foi escondida, mostra a primeira liberada. */
+    if (ccAtual && ccAba && Object.prototype.hasOwnProperty.call(CC_ABAS_PERM, ccAba)) {
+        if (!ccPermCoord(CC_ABAS_PERM[ccAba], 'ver') && umaVisivel) ccSetAba(umaVisivel);
+    }
+}
+/* Bloqueia ações de alteração nas abas em que o coordenador tem só "Ver". */
+if (!window._ccPermClickInstalado) {
+    window._ccPermClickInstalado = true;
+    document.addEventListener('click', function (ev) {
+        if (typeof admEhCoordenador !== 'function' || !admEhCoordenador()) return;
+        var alvo = ev.target;
+        while (alvo && alvo !== document.body) {
+            if (alvo.getAttribute && alvo.getAttribute('data-cc-somente-leitura') === '1') {
+                var botao = ev.target.closest('button, a, input[type="submit"]');
+                if (!botao) return;
+                var texto = ((botonTexto(botao)) + ' ' + (botao.getAttribute('onclick') || '')).toLowerCase();
+                if (/(salvar|excluir|novo|nova|criar|adicionar|editar|importar|enviar|remover|gerar|aprovar|reprovar)/.test(texto)) {
+                    ev.preventDefault();
+                    ev.stopImmediatePropagation();
+                    alert('Seu perfil tem apenas visualização nesta área. Marque "Editar" nas permissões do coordenador.');
+                }
+                return;
+            }
+            alvo = alvo.parentElement;
+        }
+    }, true);
+    function botonTexto(el) { return (el.textContent || el.value || '').trim(); }
+}
+window.ccAplicarPermissoesCoord = ccAplicarPermissoesCoord;
