@@ -1021,7 +1021,7 @@ async function ccImportarFicha() {
     var turma = ccExigirTurma(); if (!turma) return;
     var pessoas = (typeof candidatos !== 'undefined' ? candidatos : []).filter(function (c) { return c.turma === turma; });
     if (!pessoas.length) { alert('Nenhum indivíduo encontrado nesta turma no administrador.'); return; }
-    if (!confirm('Importar ' + pessoas.length + ' indivíduo(s) da turma ' + turma + ' para a Ficha Geral deste curso?')) return;
+    if (!confirm('Importar ' + pessoas.length + ' indivíduo(s) da turma ' + turma + ' para a Ficha do Curso?')) return;
     try {
         var snapshot = {};
         for (var i = 0; i < pessoas.length; i++) {
@@ -2231,11 +2231,19 @@ async function ccSincronizarFicha(silent) {
             var atual = await ccRef('fichaAvaliacoes', cpf).get();
             var base = (atual.exists && atual.data()) ? atual.data() : {};
             /* Começa pela ficha completa do administrador e só acrescenta/
-               sobrescreve com as notas das avaliações do proprio curso. */
-            var av = Object.assign({}, avAdmin[cpf] || {}, base.av || {});
-            ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual',
-             'foPositivos','foNegativos'].forEach(function (k) {
-                if (!av[k] || typeof av[k] !== 'object') av[k] = Array.isArray(av[k]) ? av[k] : (k.indexOf('fo') === 0 ? [] : {});
+               sobrescreve com as notas das avaliações do proprio curso.
+               IMPORTANTE: um mapa VAZIO no snapshot do curso NAO pode apagar
+               as notas que já existem na ficha global do administrador. */
+            var avAdm = avAdmin[cpf] || {}, avBase = base.av || {};
+            var av = Object.assign({}, avAdm, avBase);
+            ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
+                var a = (avAdm[k] && typeof avAdm[k] === 'object') ? avAdm[k] : {};
+                var b = (avBase[k] && typeof avBase[k] === 'object') ? avBase[k] : {};
+                av[k] = Object.assign({}, a, b);
+            });
+            ['foPositivos','foNegativos'].forEach(function (k) {
+                av[k] = (Array.isArray(avBase[k]) && avBase[k].length)
+                    ? avBase[k] : (Array.isArray(avAdm[k]) ? avAdm[k] : []);
             });
             (respostasPorCpf[cpf] || []).forEach(function (r) {
                 var avDoc = avs[String(r.avaliacaoId || '')];
@@ -2281,7 +2289,7 @@ async function ccSincronizarFicha(silent) {
             n++;
         }
         if (n) await batch.commit();
-        if (!silent) alert('Ficha Geral sincronizada: ' + n + ' indivíduo(s). Notas da Seção de Avaliação e do Cadastro de Avaliações reunidas.');
+        if (!silent) alert('Ficha do Curso sincronizada: ' + n + ' indivíduo(s). Notas da Seção de Avaliação e do Cadastro de Avaliações reunidas.');
         return n;
     } catch (e) {
         console.error('Erro ao sincronizar ficha do curso:', e);
@@ -2290,7 +2298,7 @@ async function ccSincronizarFicha(silent) {
     }
 }
 
-/* Vincula os quadros AV Teórica/Prática da Ficha Geral aos registros da guia
+/* Vincula os quadros AV Teórica/Prática da Ficha do Curso aos registros da guia
    Criar Avaliação. Cada avaliação vira uma linha do quadro, com o nome da AV,
    e a nota é lida pela mesma chave (aulaId) usada na sincronização. */
 function ccDataAvFicha(v) {
@@ -2337,23 +2345,28 @@ function ccAulasDaFicha(avaliacoes, aulasReais) {
     return { todas: todas, teorica: doTipo('teorica', 'avTeorica'), pratica: doTipo('pratica', 'avPratica') };
 }
 
-/* Vincula os apontamentos da guia Apontamentos aos registros da Ficha Geral. */
+/* Vincula os apontamentos da guia Apontamentos aos registros da Ficha do Curso. */
 async function ccSincronizarApontamentosFicha() {
     try {
         await ccSincronizarFicha(true);
         await ccInitFicha();
-        alert('Apontamentos do curso vinculados à Ficha Geral.');
+        alert('Apontamentos do curso vinculados à Ficha do Curso.');
     } catch (e) { alert('Erro ao sincronizar apontamentos: ' + e.message); }
 }
 
-/* ============ ABA FICHA GERAL DO CURSO ============ */
+/* ============ ABA FICHA DO CURSO ============
+   Montagem exclusiva do Cadastro de Cursos. O nucleo compartilhado continua
+   responsavel pelo CALCULO e pelos helpers de AV; a folha foi redesenhada na
+   ordem pedida: instituicao -> projeto/turma -> foto/matricula ->
+   identificacao -> apontamento -> avaliacao. */
 var ccFichaCache = [];
+
 async function ccInitFicha() {
     var box = document.getElementById('cc-ficha-lista');
     if (!box || !ccAtual) return;
     box.innerHTML = '<p style="color:#64748b">Carregando fichas...</p>';
     try {
-        /* Trai as respostas e apontamentos do proprio curso para a ficha. */
+        /* Traz as respostas e apontamentos do proprio curso para a ficha. */
         await ccSincronizarFicha(true);
         var resultado = await Promise.all([
             ccRef('individuos').get(),
@@ -2376,26 +2389,36 @@ async function ccInitFicha() {
         var pessoas = [];
         resultado[0].forEach(function (d) { pessoas.push(Object.assign({ _id: d.id }, d.data() || {})); });
         ccFichaCache = [];
+
+        /* Um unico carregamento institucional para todas as folhas da lista. */
+        if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
+
         if (!pessoas.length) { box.innerHTML = '<p style="color:#94a3b8;font-size:12px">Nenhum indivíduo importado para este curso.</p>'; return; }
-        var html = '';
+        var html = '', itensRenderizados = [];
         for (var i = 0; i < pessoas.length; i++) {
             var p = pessoas[i];
             try {
-                if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
                 var dados = await fichaGeralDadosAluno(p);
                 var snapshot = fichasSnapshot[String(p.cpf)];
                 if (snapshot) {
-                    /* O nucleo da Ficha Geral calcula com dados.av; o snapshot
-                       do curso tem tudo que veio de Apontamento e Avaliacoes. */
+                    /* O nucleo compartilhado calcula com dados.av; o snapshot
+                       do curso tem tudo que veio de Apontamento e Avaliacoes.
+                       Mapas vazios do curso NAO apagam as notas globais. */
+                    var avGlobal = dados.av || {};
                     var avCurso = snapshot.av || snapshot;
-                    dados.av = Object.assign({}, dados.av || {}, avCurso);
+                    dados.av = Object.assign({}, avGlobal, avCurso);
                     ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
-                        dados.av[k] = Object.assign({}, (dados.av && dados.av[k]) || {}, avCurso[k] || {});
+                        var a = (avGlobal[k] && typeof avGlobal[k] === 'object') ? avGlobal[k] : {};
+                        var b = (avCurso[k] && typeof avCurso[k] === 'object') ? avCurso[k] : {};
+                        dados.av[k] = Object.assign({}, a, b);
                     });
-                    /* Presenças/registros vêm da guia Apontamentos do curso.
-                       Usa a turma/projeto do INDIVIDUO no filtro da Ficha
-                       Geral: o apontamento grava o projeto por extenso e o
-                       cadastro pode estar com a sigla (ex.: BUENOS AIRES /PE). */
+                    ['foPositivos','foNegativos'].forEach(function (k) {
+                        dados.av[k] = (Array.isArray(avCurso[k]) && avCurso[k].length)
+                            ? avCurso[k] : (Array.isArray(avGlobal[k]) ? avGlobal[k] : []);
+                    });
+                    /* Usa projeto/turma do INDIVIDUO no filtro: o apontamento
+                       grava o projeto por extenso e o cadastro pode estar com
+                       a sigla (ex.: BUENOS AIRES /PE). */
                     function ajustarRegistroCurso(reg) {
                         return Object.assign({}, reg, {
                             turma: p.turma || reg.turma || '',
@@ -2410,63 +2433,368 @@ async function ccInitFicha() {
                     }
                 }
                 var calc = fichaGeralCalcular(p, dados, aulas);
-                if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = ccAtual.nome;
-                if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = String(p.turma || '');
-                ccFichaCache.push({ p: p, calc: calc, aulas: aulas, apontamentos: dados.apontamentos || [] });
+                /* Usa o MESMO calculo da guia Seção de Avaliação para os
+                   pontos de AV Teórica/Prática e as notas lancadas. Assim a
+                   ficha nunca mostra um numero diferente da guia. */
+                var calcAval = (typeof ccAvalCalcular === 'function')
+                    ? ccAvalCalcular(dados, aulas, avsFicha) : calc;
+                var item = {
+                    p: p, calc: calc, calcAval: calcAval, aulas: aulas, avs: avsFicha,
+                    apontamentos: dados.apontamentos || [], foto: null
+                };
+                ccFichaCache.push(item);
+                itensRenderizados.push({ i: i, item: item, p: p });
                 html += '<div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#fff;overflow:hidden">'
                     + '<div onclick="ccToggleFicha(' + i + ')" style="display:flex;gap:10px;align-items:center;padding:12px;cursor:pointer;background:#f8fafc">'
                     + '<b style="font-size:13px;flex:1">' + ccEsc(p.nome) + '</b>'
                     + '<span style="font-size:11px;color:#64748b">' + ccEsc(p.cpf || '') + '</span>'
+                    + '<span style="font-size:9px;font-weight:800;color:#0284c7;background:#e0f2fe;border-radius:20px;padding:3px 9px">FICHA DO CURSO</span>'
                     + '<button class="btn-outline btn-sm" onclick="event.stopPropagation();ccImprimirFichaCurso(' + i + ')"><i class="fa-solid fa-print"></i></button>'
                     + '</div><div id="cc-ficha-' + i + '" style="display:none;padding:12px">'
-                    + fichaGeralFolha(p, calc, null, i, aulas)
-                    + ccRenderApontamentosFicha(dados.apontamentos || []) + '</div></div>';
+                    + ccFichaCursoFolha(item, null, i)
+                    + '</div></div>';
             } catch (e) { console.warn('Erro ao montar ficha do curso:', e); }
         }
         box.innerHTML = html;
+        if (typeof fichaGeralAplicarLogo === 'function') fichaGeralAplicarLogo(box);
+
+        /* Foto 3x4: primeiro o que ja esta no registro/localStorage; se nao
+           houver, usa o mesmo resolvedor de fotos do administrador. */
+        itensRenderizados.forEach(function (entrada) {
+            var i = entrada.i, item = entrada.item, pessoa = entrada.p;
+            var aplicar = function (src) {
+                if (!src) return;
+                var el = document.getElementById('cc-fg-foto-' + i);
+                if (el) el.innerHTML = '<img src="' + ccEsc(src) + '" alt="Foto 3x4" style="width:92px;height:122px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">';
+                item.foto = src;
+            };
+            var digits = String(pessoa.cpf || '').replace(/\D/g, '');
+            var local = (typeof localStorage !== 'undefined')
+                ? (localStorage.getItem('foto3x4_' + digits) || localStorage.getItem('farn_photo_' + digits) || null)
+                : null;
+            var inicial = pessoa.fotoUrl || pessoa.photoDataUrl || local;
+            if (inicial) aplicar(inicial);
+            else if (typeof getFoto === 'function') getFoto(pessoa.cpf).then(aplicar).catch(function () {});
+        });
     } catch (e) { box.innerHTML = '<p style="color:#dc2626">' + ccEsc(e.message) + '</p>'; }
 }
 function ccToggleFicha(i) { var el = document.getElementById('cc-ficha-' + i); if (el) el.style.display = (el.style.display === 'none') ? '' : 'none'; }
-/* Registros de apontamentos do curso, exibidos dentro da Ficha Geral.
-   Cada linha corresponde a um aluno dentro de um apontamento da guia
-   Apontamentos, com status, observação, justificativa e QR da aula. */
-function ccRenderApontamentosFicha(lista) {
-    if (!lista || !lista.length) return '';
-    var html = '<div style="margin-top:14px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff">'
-        + '<div style="padding:9px 12px;background:#f0fdf4;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:800;color:#15803d">'
-        + '<i class="fa-solid fa-clipboard-check" style="margin-right:7px"></i> Registros de Apontamentos do curso (' + lista.length + ')</div>'
-        + '<table style="width:100%;border-collapse:collapse"><thead><tr>'
-        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Data</th>'
-        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Aula / Disciplina</th>'
-        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Status</th>'
-        + '<th style="text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">Observação / Justificativa</th>'
-        + '<th style="text-align:center;padding:7px 9px;font-size:9px;text-transform:uppercase;color:#15803d;border-bottom:1px solid #e2e8f0">QR</th>'
-        + '</tr></thead><tbody>';
-    lista.slice().sort(function (a, b) { return String(b.apontamentoData || b.dataAula || '').localeCompare(String(a.apontamentoData || a.dataAula || '')); }).forEach(function (r) {
-        var st = String(r.status || '');
-        var cor = st === 'Presente' ? '#15803d' : (st === 'Falta' ? '#b91c1c' : '#b45309');
-        var obs = r.obs || r.observacaoJustificativa || '';
-        if (r.justificadaEm) obs += (obs ? ' — ' : '') + 'Justificado em ' + String(r.justificadaEm).substring(0, 10);
-        var qrAula = r.aulaId || r.apontamentoId;
-        var qr = qrAula ? 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent('FARN-INICIO:' + qrAula) + '&size=60x60&margin=1' : '';
-        html += '<tr>'
-            + '<td style="padding:7px 9px;font-size:11px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap">' + ccEsc(r.apontamentoData || r.dataAula || '—') + '</td>'
-            + '<td style="padding:7px 9px;font-size:11px;color:#334155;border-bottom:1px solid #f1f5f9">' + ccEsc(r.aula || '—')
-            + (r.disciplina ? '<div style="font-size:9px;color:#94a3b8">' + ccEsc(r.disciplina) + '</div>' : '') + '</td>'
-            + '<td style="padding:7px 9px;font-size:10px;font-weight:800;color:' + cor + ';border-bottom:1px solid #f1f5f9">' + ccEsc(st || '—') + '</td>'
-            + '<td style="padding:7px 9px;font-size:10px;color:#64748b;border-bottom:1px solid #f1f5f9">' + ccEsc(obs || '—')
-            + (r.instrutor ? '<div style="font-size:9px;color:#94a3b8">Instrutor: ' + ccEsc(r.instrutor) + '</div>' : '') + '</td>'
-            + '<td style="padding:7px 9px;text-align:center;border-bottom:1px solid #f1f5f9">' + (qr ? '<img src="' + qr + '" alt="QR" style="width:42px;height:42px">' : '—') + '</td>'
-            + '</tr>';
-    });
-    return html + '</tbody></table></div>';
+
+/* ---- folha da Ficha do Curso (ordem exata solicitada) ---- */
+function ccFichaCursoFolha(item, fotoSrc, idx) {
+    var p = item.p || {}, calc = item.calc || {};
+    var aulas = item.aulas || { todas: [], teorica: [], pratica: [] };
+    var inst = (typeof fichaGeralDadosInstituicao === 'function') ? fichaGeralDadosInstituicao() : {};
+    var nome = p.nome || '—';
+    var cpf = ((typeof fgCPF === 'function' ? fgCPF(p.cpf) : String(p.cpf || '')) || '—');
+    var mat = p.credencial || p.matricula || ((typeof fgMatricula === 'function' ? fgMatricula(p.cpf) : '') || '—');
+    var projeto = p.projeto || p.curso || (Array.isArray(p.cursos) ? p.cursos[0] : '') || (ccAtual && ccAtual.nome) || '—';
+    var turma = p.turma || '—';
+    var telefone = p.telefone || p.fone || p.whatsapp || '';
+
+    var fotoHtml = fotoSrc
+        ? '<img src="' + ccEsc(fotoSrc) + '" alt="Foto 3x4" style="width:92px;height:122px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">'
+        : '<div id="cc-fg-foto-' + idx + '" style="width:92px;height:122px;border:2px dashed #94a3b8;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;text-align:center;padding:4px;box-sizing:border-box">Sem foto</div>';
+
+    /* 1) Dados da instituicao (configuracoes/instituicao) */
+    var contatos = (typeof fgChipContato === 'function')
+        ? ((inst.cnpj ? fgChipContato('fa-file-invoice', 'CNPJ', inst.cnpj) : '')
+            + (inst.fone ? fgChipContato('fa-phone', 'Telefone', inst.fone) : '')
+            + (inst.email ? fgChipContato('fa-envelope', 'E-mail', inst.email) : ''))
+        : '';
+    var instHtml = '<div style="border:1px solid #bae6fd;border-radius:12px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);padding:12px 16px;margin-bottom:14px">'
+        + '<div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">'
+        + (inst.logo
+            ? '<img data-fg-logo="1" alt="Logo da instituicao" style="width:54px;height:54px;border-radius:12px;object-fit:contain;background:#fff;border:1px solid #bae6fd;padding:2px;flex-shrink:0;display:none">'
+            : '<div style="width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;flex-shrink:0"><i class="fa-solid fa-building-columns"></i></div>')
+        + '<div style="flex:1;min-width:190px">'
+        + '<div style="font-size:9.5px;font-weight:800;color:#0284c7;text-transform:uppercase;letter-spacing:1.1px"><i class="fa-solid fa-building-columns" style="margin-right:4px"></i>Dados da Instituição</div>'
+        + '<div style="font-size:15px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.3px;margin-top:3px;line-height:1.25">' + ccEsc(inst.razaoSocial || 'FARN - FORÇA AUXILIAR DE RESGATE NACIONAL') + '</div>'
+        + (inst.nomeFantasia ? '<div style="font-size:12.5px;font-weight:700;color:#0ea5e9;margin-top:2px">' + ccEsc(inst.nomeFantasia) + '</div>' : '')
+        + '<div style="font-size:9.5px;font-weight:700;color:#475569;letter-spacing:.9px;margin-top:5px">FICHA DO CURSO</div>'
+        + '</div></div>'
+        + '<div style="border-top:1px dashed #7dd3fc;margin-top:10px;padding-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+        + (contatos || '<div style="font-size:10.5px;color:#64748b;font-style:italic">Dados da instituição não cadastrados no administrativo.</div>')
+        + '</div></div>';
+
+    /* 2) Projeto e turma do curso */
+    var projetoHtml = fgSecao('fa-layer-group', 'Projeto e Turma do Curso', fgGrid(
+        fgCampo('Curso', (ccAtual && ccAtual.nome) || '') +
+        fgCampo('Projeto', projeto) +
+        fgCampo('Turma', turma)
+    ));
+
+    /* 3) Foto 3x4 e matricula */
+    var fotoMatHtml = fgSecao('fa-id-card', 'Foto 3x4 e Matrícula',
+        '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">'
+        + '<div style="text-align:center">' + fotoHtml
+        + '<div style="font-size:9px;color:#94a3b8;margin-top:4px;font-weight:700;letter-spacing:.5px">FOTO 3X4</div></div>'
+        + '<div style="flex:1;min-width:180px">' + fgCampo('Matrícula', mat) + '</div>'
+        + '</div>');
+
+    /* 4) Nome em destaque + CPF, nascimento, estado civil, telefone e email */
+    var destaque = '<div style="border:1px solid #bae6fd;border-radius:10px;background:linear-gradient(135deg,#eff6ff,#f0f9ff);padding:10px 14px;margin-bottom:8px">'
+        + '<div style="font-size:9px;font-weight:800;color:#0284c7;text-transform:uppercase;letter-spacing:.9px">Nome Completo</div>'
+        + '<div style="font-size:20px;font-weight:900;color:#0f172a;line-height:1.2;margin-top:2px">' + ccEsc(nome) + '</div>'
+        + '<div style="font-size:11px;color:#475569;margin-top:3px">CPF <b style="color:#0f172a">' + ccEsc(cpf) + '</b></div>'
+        + '</div>';
+    var pessoalHtml = fgSecao('fa-user', 'Identificação do Aluno', destaque + fgGrid(
+        fgCampo('Data de Nascimento', (typeof fichaGeralData === 'function' ? fichaGeralData(p.nascimento) : p.nascimento)) +
+        fgCampo('Estado Civil', p.estadoCivil) +
+        fgCampo('Telefone', telefone) +
+        fgCampo('E-mail', p.email)
+    ));
+
+    /* 5) Lista de apontamento */
+    var apontamentoHtml = fgSecao('fa-list-check', 'Lista de Apontamento', ccFichaCursoApontamentoHTML(calc, aulas));
+
+    /* 6) Todos os dados da Secao de Avaliacao */
+    var avaliacaoHtml = fgSecao('fa-clipboard-check', 'Avaliação',
+        ccFichaCursoAvaliacoesHTML(p, calc, aulas, item.avs || [], item.calcAval || calc));
+
+    var assinaturas = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:22px">'
+        + '<div style="text-align:center;border-top:2px solid #94a3b8;padding-top:6px;font-size:11px;font-weight:700;color:#475569">ASSINATURA DO ALUNO</div>'
+        + '<div style="text-align:center;border-top:2px solid #94a3b8;padding-top:6px;font-size:11px;font-weight:700;color:#475569">ASSINATURA DA COORDENAÇÃO</div>'
+        + '</div>';
+    var rodape = '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;padding-top:10px;margin-top:12px;font-size:10px;color:#94a3b8">'
+        + '<span>Emitido em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' - Sistema FARN</span>'
+        + '<button class="fg-somente-tela btn-outline btn-sm" onclick="ccImprimirFichaCurso(' + idx + ')"><i class="fa-solid fa-print"></i> Imprimir</button>'
+        + '</div>';
+
+    return '<div class="fg-quebra" style="background:#fff;border-radius:14px;box-shadow:0 12px 34px rgba(2,6,23,.14);border:1px solid #e2e8f0;padding:24px 26px;max-width:800px;margin:0 auto;color:#0f172a;font-family:Inter,Arial,sans-serif">'
+        + instHtml
+        + projetoHtml
+        + fotoMatHtml
+        + pessoalHtml
+        + apontamentoHtml
+        + avaliacaoHtml
+        + assinaturas
+        + rodape
+        + '</div>';
 }
-function ccImprimirFichaCurso(i) {
+
+/* Apontamento em formato de lista: Presente, Falta e observacao da justificativa. */
+function ccFichaCursoApontamentoHTML(calc, aulas) {
+    var corPres = calc.pct >= 75 ? '#16a34a' : (calc.pct >= 50 ? '#d97706' : '#dc2626');
+    return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;background:#fff">'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+        + fgCampo('Aulas da Turma', (calc.totalAulas || 0) + ' aula(s)')
+        + fgCampo('Presente', calc.pres)
+        + fgCampo('Falta', calc.fal)
+        + fgCampo('Justificada', calc.just)
+        + fgCampo('Presença', (calc.pct || 0) + '%')
+        + '</div>'
+        + fgBarra(calc.pct || 0, corPres)
+        + '<div style="font-size:10px;color:#64748b;margin:-4px 0 6px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>O apontamento registra a presença e não gera nota na AV Final.</div>'
+        + (typeof fgTabelaApontamento === 'function' ? fgTabelaApontamento(aulas.todas, calc.presencasTurma) : '')
+        + '</div>';
+}
+
+/* Tabela de AV Teórica/Prática IDÊNTICA à da guia Seção de Avaliação:
+   Data, Descrição e a nota exatamente como foi lançada (m.nota ou notas[k]),
+   incluindo avaliações manuais/criadas na guia Criar Avaliação. */
+function ccFichaCursoNotasTabela(av, aulasTodas, avs, tipo) {
+    var pratica = tipo === 'pratica';
+    var notas = (pratica ? (av && av.notasPraticas) : (av && av.notasTeoricas)) || {};
+    var manuais = (pratica ? (av && av.avPraticaManual) : (av && av.avTeoricaManual)) || {};
+    var todas = aulasTodas || [];
+    var linhas = [], vistos = {}, soma = 0, qtd = 0;
+
+    Object.keys(notas).forEach(function (k) {
+        var m = manuais[k] || {};
+        var aulaRel = todas.find(function (x) { return String(x.aulaId || x._id) === String(k); }) || {};
+        var avRel = (avs || []).find(function (a) { return String(a.aulaId || a._id) === String(k); }) || {};
+        linhas.push({
+            rotulo: m.avaliacaoNome || avRel.nome || aulaRel.conteudo || aulaRel.disciplina
+                || ('Nota de AV ' + (pratica ? 'Prática' : 'Teórica')),
+            detalhe: aulaRel.data || avRel.data || '',
+            nota: m.nota != null ? m.nota : notas[k]
+        });
+        vistos[k] = true;
+        var n = parseFloat(notas[k]);
+        if (!isNaN(n) && n >= 0) { soma += n; qtd++; }
+    });
+    Object.keys(manuais).forEach(function (k) {
+        if (vistos[k]) return;
+        var m = manuais[k] || {};
+        if (m.nota == null) return;
+        linhas.push({ rotulo: m.avaliacaoNome || 'Avaliação', detalhe: '', nota: m.nota });
+    });
+    var media = qtd ? Math.round((soma / qtd) * 10) / 10 : 0;
+
+    var html = '<table style="width:100%;border-collapse:collapse">'
+        + '<thead><tr style="background:#f1f5f9">'
+        + '<th style="text-align:left;font-size:10px;text-transform:uppercase;color:#0f766e;padding:8px 10px;border-bottom:1px solid #e2e8f0">Data</th>'
+        + '<th style="text-align:left;font-size:10px;text-transform:uppercase;color:#0f766e;padding:8px 10px;border-bottom:1px solid #e2e8f0">Descrição</th>'
+        + '<th style="text-align:left;font-size:10px;text-transform:uppercase;color:#0f766e;padding:8px 10px;border-bottom:1px solid #e2e8f0">Nota (0 a 10)</th>'
+        + '</tr></thead><tbody>'
+        + (linhas.length ? linhas.map(function (l) {
+            return '<tr>'
+                + '<td style="padding:8px 10px;font-size:12px;color:#334155;border-bottom:1px solid #f1f5f9">' + ccEsc(ccDataAvFicha(l.detalhe) || '—') + '</td>'
+                + '<td style="padding:8px 10px;font-size:12px;color:#334155;border-bottom:1px solid #f1f5f9">' + ccEsc(l.rotulo) + '</td>'
+                + '<td style="padding:8px 10px;font-size:12px;font-weight:800;color:#0f766e;border-bottom:1px solid #f1f5f9">' + ccEsc(l.nota != null ? l.nota : '—') + '</td>'
+                + '</tr>';
+        }).join('') : '<tr><td colspan="3" style="padding:8px 10px;font-size:11px;color:#94a3b8">Nenhuma nota de AV '
+            + (pratica ? 'Prática' : 'Teórica') + ' registrada.</td></tr>')
+        + '</tbody></table>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 10px;background:#f0fdfa;border-radius:8px;font-size:12px">'
+        + '<span style="color:#0f766e;font-weight:700">Média ' + (pratica ? 'Prática' : 'Teórica') + '</span>'
+        + '<span style="font-size:18px;font-weight:800;color:#0f172a">' + ccAvalNum(media) + '</span>'
+        + '</div>';
+    return html;
+}
+
+/* Toda a Seção de Avaliação. Os numeros vem de ccAvalCalcular (a mesma
+   funcao da guia Seção de Avaliação), entao a ficha mostra os pontos certinhos
+   da guia. O detalhe de presenca ja aparece na lista de apontamento acima. */
+function ccFichaCursoAvaliacoesHTML(p, calcBase, aulas, avs, calcAval) {
+    var g = calcAval || {};
+    var b = calcBase || {};
+    /* ccAvalCalcular (guia) e fichaGeralCalcular (nucleo) usam nomes
+       diferentes para os mesmos numeros. Normaliza aqui para a ficha mostrar
+       exatamente os valores da guia, sem cair em zero por campo ausente. */
+    function escolhe(v1, v2) { return (v1 != null) ? v1 : v2; }
+    var r = {
+        av: g.av || b.av || {},
+        pct: escolhe(g.pct, b.pct),
+        pontosComp: escolhe(g.comp, b.pontosComp),
+        notaTeor: escolhe(g.teor, b.notaTeor),
+        notaPrat: escolhe(g.prat, b.notaPrat),
+        mT: escolhe(g.mT, b.mT),
+        mP: escolhe(g.mP, b.mP),
+        mediaFinal: escolhe(g.mediaFinal, b.mediaFinal),
+        foP: escolhe(g.foP, b.foP),
+        foN: escolhe(g.foN, b.foN),
+        avFinal: escolhe(g.avFinal, b.avFinal),
+        avFinalTeorica: escolhe(g.ft, b.avFinalTeorica),
+        avFinalPratica: escolhe(g.fp, b.avFinalPratica),
+        temFinal: escolhe(g.temFinal, b.temFinal),
+        fin: escolhe(g.fin, b.fin),
+        notaCertificadora: escolhe(g.notaCert, b.notaCertificadora),
+        notaSituacao: escolhe(g.notaCert, b.notaSituacao),
+        aprovado: escolhe(g.aprovado, b.aprovado)
+    };
+    var av = r.av;
+    var avFT = r.avFinalTeorica;
+    var avFP = r.avFinalPratica;
+    var notaSituacao = r.notaSituacao;
+    var notaCertificadora = r.notaCertificadora;
+    var corPres = r.pct >= 75 ? '#16a34a' : (r.pct >= 50 ? '#d97706' : '#dc2626');
+    var corComp = r.pontosComp >= 0 ? '#16a34a' : '#dc2626';
+    var corTeor = fichaGeralCorNota(r.notaTeor);
+    var corPrat = fichaGeralCorNota(r.notaPrat);
+    var corMF = fichaGeralCorNota(r.mediaFinal);
+    var corAV = fichaGeralCorNota(r.avFinal);
+    var corAprov = r.aprovado ? '#16a34a' : '#dc2626';
+
+    var html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+        + fgNotaPill('Presença', r.pct + '%', corPres)
+        + fgNotaPill('AV Comportamento', (r.pontosComp >= 0 ? '+' : '') + r.pontosComp + ' pts', corComp)
+        + fgNotaPill('AV Teórica', fichaGeralNum(r.notaTeor) + ' / 10,0', corTeor)
+        + fgNotaPill('AV Prática', fichaGeralNum(r.notaPrat) + ' / 10,0', corPrat)
+        + '</div>';
+
+    html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap"><i class="fa-solid fa-face-smile" style="color:#0ea5e9;font-size:12px"></i>'
+        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">Detalhe - AV Comportamento (FO+ / FO-)</span>'
+        + '<span style="font-size:9.5px;color:#94a3b8">a cada 10 FO+ soma 1 ponto; a cada 5 FO- tira 1 ponto da AV Final</span></div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+        + fgCampo('Total FO+', r.foP)
+        + fgCampo('Total FO-', r.foN)
+        + fgCampo('Pontos (10 FO+ = +1 / 5 FO- = -1)', (r.pontosComp >= 0 ? '+' : '') + r.pontosComp)
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + fgFOLista(av.foPositivos, true)
+        + fgFOLista(av.foNegativos, false)
+        + '</div></div>';
+
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">'
+        + '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;background:#fff">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fa-solid fa-book-open" style="color:#0ea5e9;font-size:12px"></i>'
+        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">AV Teórica - Média ' + fichaGeralNum(r.notaTeor) + '</span></div>'
+        + ccFichaCursoNotasTabela(av, aulas.todas, avs, 'teorica')
+        + '</div>'
+        + '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;background:#fff">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fa-solid fa-hammer" style="color:#0ea5e9;font-size:12px"></i>'
+        + '<span style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">AV Prática - Média ' + fichaGeralNum(r.notaPrat) + '</span></div>'
+        + ccFichaCursoNotasTabela(av, aulas.todas, avs, 'pratica')
+        + '</div></div>';
+
+    html += '<div style="border:1.5px solid #0ea5e9;border-radius:10px;padding:10px 12px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe)">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-medal" style="color:#0ea5e9;font-size:13px"></i>'
+        + '<span style="font-size:12px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px">AV Final</span></div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+        + fgCampo('Média Teórica (manual ou auto)', fichaGeralNum(r.mT != null ? r.mT : ''))
+        + fgCampo('Média Prática (manual ou auto)', fichaGeralNum(r.mP != null ? r.mP : ''))
+        + '</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+        + fgNotaPill('Média (T+P)/2', fichaGeralNum(r.mediaFinal), corMF)
+        + fgNotaPill('Comportamento', (r.pontosComp >= 0 ? '+' : '') + r.pontosComp + ' pts', corComp)
+        + fgNotaPill('AV Final', fichaGeralNum(r.avFinal) + ' / 10,0', corAV)
+        + '</div>'
+        + '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span style="font-size:10px;color:#475569">Situação Final pela Nota Certificadora (corte ' + fichaGeralNum(FG_AV_CORTE_APROVACAO) + '): ' + fichaGeralNum(notaSituacao) + ' / 10,0' + (r.temFinal ? '' : ' (provisória)') + '. A AV Final é a média (teórica+prática)/2 + comportamento.</span>'
+        + '<span style="background:' + corAprov + ';color:#fff;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:800">' + (r.aprovado ? 'APROVADO' : 'NÃO APROVADO') + '</span>'
+        + '</div>'
+        + '<div style="margin-top:10px;border-top:1px dashed #bae6fd;padding-top:8px">'
+        + '<div style="font-size:10px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Provas finais (nota certificadora)</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+        + fgNotaPill('AV Final Teórica', (avFT === '' || avFT == null) ? '—' : fichaGeralNum(avFT) + ' / 10,0', corComp)
+        + fgNotaPill('AV Final Prática', (avFP === '' || avFP == null) ? '—' : fichaGeralNum(avFP) + ' / 10,0', corComp)
+        + fgNotaPill('FIN (média das duas)', r.temFinal ? fichaGeralNum(r.fin) : '0,0', corMF)
+        + fgNotaPill('Nota Certificadora', fichaGeralNum(notaCertificadora) + ' / 10,0' + (r.temFinal ? '' : ' (provisória)'), corAV)
+        + '</div>'
+        + (function () {
+            var ft = (avFT === '' || avFT == null) ? '' : fichaGeralNum(avFT);
+            var necessario = fichaGeralPraticaNecessaria(r.mediaFinal, avFT);
+            var alvo = fichaGeralNum(FG_AV_CORTE_APROVACAO);
+            if (notaCertificadora >= FG_AV_CORTE_APROVACAO) {
+                return '<div style="margin-top:10px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px;text-align:center">'
+                    + '<div style="font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#166534">Alvo de aprovação (média ' + alvo + ')</div>'
+                    + '<div style="font-size:30px;font-weight:900;color:#16a34a;line-height:1.15;margin-top:2px">APROVADO</div>'
+                    + '<div style="font-size:10px;color:#166534;margin-top:2px">Nota certificadora ' + fichaGeralNum(notaCertificadora) + ' já atingiu o corte de ' + alvo + '.</div>'
+                    + '</div>';
+            }
+            if (necessario > 10) {
+                return '<div style="margin-top:10px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:12px;text-align:center">'
+                    + '<div style="font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#991b1b">Alvo de aprovação (média ' + alvo + ')</div>'
+                    + '<div style="font-size:30px;font-weight:900;color:#dc2626;line-height:1.15;margin-top:2px">NÃO ALCANÇA</div>'
+                    + '<div style="font-size:10px;color:#991b1b;margin-top:2px">Precisaria de ' + fichaGeralNum(necessario) + ' na AV Final Prática, mas o máximo é 10,0.</div>'
+                    + '<div style="font-size:11.5px;font-weight:600;color:#7f1d1d;line-height:1.55;margin-top:8px;background:#fff;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;text-align:left">'
+                    + fgEsc(FG_AV_DISPENSA_TEXTO) + '</div></div>';
+            }
+            return '<div style="margin-top:10px;background:#fefce8;border:1.5px solid #facc15;border-radius:10px;padding:12px;text-align:center">'
+                + '<div style="font-size:10px;font-weight:800;color:#a16207;text-transform:uppercase;letter-spacing:.4px">Pontos necessários na AV Final Prática para aprovação (média ' + alvo + ')</div>'
+                + '<div style="font-size:30px;font-weight:900;color:#ca8a04;line-height:1.15;margin-top:2px">' + fichaGeralNum(necessario) + '</div>'
+                + '<div style="font-size:10px;color:#713f12;margin-top:2px">AV Final Teórica considerada: ' + (ft === '' ? '0,0 (em branco)' : ft) + '.'
+                + ' FIN = (teórica + prática) / 2 e Certificadora = (média + FIN) / 2.'
+                + ((avFP === '' || avFP == null) ? '' : ' AV Final Prática já lançada: ' + fichaGeralNum(avFP) + '.')
+                + '</div></div>';
+        })()
+        + '<div style="font-size:10px;color:#475569;margin-top:6px">FIN = (AV Final Teórica + AV Final Prática) / 2. Nota Certificadora = (Média (T+P)/2 + FIN) / 2.</div>'
+        + '</div></div>';
+
+    html += '<div style="margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:8px">'
+        + '<div style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px"><i class="fa-solid fa-clock-rotate-left" style="color:#0ea5e9;margin-right:6px"></i>Histórico de Notas</div>'
+        + (typeof fgHistoricoNotas === 'function' ? fgHistoricoNotas(av, p) : '')
+        + '</div>';
+    return html;
+}
+
+async function ccImprimirFichaCurso(i) {
     var item = ccFichaCache[i]; if (!item) return;
-    var html = fichaGeralFolha(item.p, item.calc, null, i, item.aulas)
-        + ccRenderApontamentosFicha(item.apontamentos || []);
+    var foto = item.foto || null;
+    if (!foto && typeof getFoto === 'function') {
+        try { foto = await getFoto(item.p.cpf); } catch (e) { foto = null; }
+    }
+    var html = ccFichaCursoFolha(item, foto, i);
+    var titulo = 'FARN - Ficha do Curso - ' + (item.p.nome || '');
+    if (typeof fichaGeralAbrirImpressao === 'function') {
+        fichaGeralAbrirImpressao(titulo, html, true);
+        return;
+    }
     var w = window.open('', '_blank');
-    if (w) { w.document.write('<html><head><meta charset="utf-8"><title>Ficha Geral</title><link rel="stylesheet" href="style.css"></head><body>' + html + '</body></html>'); w.document.close(); setTimeout(function () { w.print(); }, 400); }
+    if (w) { w.document.write('<html><head><meta charset="utf-8"><title>' + ccEsc(titulo) + '</title><link rel="stylesheet" href="style.css"></head><body>' + html + '</body></html>'); w.document.close(); setTimeout(function () { w.print(); }, 400); }
 }
 
 /* ============ ABA SEÇÃO DE AVALIAÇÃO (POR CURSO) ============
@@ -2541,7 +2869,13 @@ async function ccAbrirFichaAvaliacao(cpf) {
             var avGlobal = dados.av || {}, avCurso = snapshot.av || {};
             dados.av = Object.assign({}, avGlobal, avCurso);
             ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
-                dados.av[k] = Object.assign({}, avGlobal[k] || {}, avCurso[k] || {});
+                var a = (avGlobal[k] && typeof avGlobal[k] === 'object') ? avGlobal[k] : {};
+                var b = (avCurso[k] && typeof avCurso[k] === 'object') ? avCurso[k] : {};
+                dados.av[k] = Object.assign({}, a, b);
+            });
+            ['foPositivos','foNegativos'].forEach(function (k) {
+                dados.av[k] = (Array.isArray(avCurso[k]) && avCurso[k].length)
+                    ? avCurso[k] : (Array.isArray(avGlobal[k]) ? avGlobal[k] : []);
             });
             var presencasCurso = [];
             resultado[2].forEach(function (d) {
@@ -2633,8 +2967,12 @@ function ccAvalSetAba(aba) {
     });
 }
 
-function ccAvalCalcular() {
-    var c = ccAvalCache, av = (c && c.dados && c.dados.av) || {};
+/* Calculo da guia Seção de Avaliação. Sem argumentos continua usando o
+   ccAvalCache do modal; com dados/aulas/avs serve tambem para a Ficha do
+   Curso, garantindo que os mesmos numeros aparecam nas duas telas. */
+function ccAvalCalcular(dados, aulas, avs) {
+    var c = (dados && aulas) ? { dados: dados, aulas: aulas, avs: avs || [] } : ccAvalCache;
+    var av = (c && c.dados && c.dados.av) || {};
     var notasT = av.notasTeoricas || {}, notasP = av.notasPraticas || {};
     var somaT = 0, qtdT = 0, somaP = 0, qtdP = 0;
     Object.keys(notasT).forEach(function (k) { var n = parseFloat(notasT[k]); if (!isNaN(n) && n >= 0) { somaT += n; qtdT++; } });

@@ -4118,7 +4118,7 @@
                             <button class="nav-item" id="cc-aba-projeto" onclick="ccSetAba('projeto')"><i class="fa-solid fa-handshake"></i> Projeto</button>
                             <button class="nav-item" id="cc-aba-preinscricao" onclick="ccSetAba('preinscricao')"><i class="fa-solid fa-user-clock"></i> Pré-Inscrição</button>
                             <button class="nav-item" id="cc-aba-apontamento" onclick="ccSetAba('apontamento')"><i class="fa-solid fa-clipboard-user"></i> Apontamentos</button>
-                            <button class="nav-item" id="cc-aba-ficha" onclick="ccSetAba('ficha')"><i class="fa-solid fa-file-lines"></i> Ficha Geral</button>
+                            <button class="nav-item" id="cc-aba-ficha" onclick="ccSetAba('ficha')"><i class="fa-solid fa-file-lines"></i> Ficha do Curso</button>
                             <button class="nav-item" id="cc-aba-certificado" onclick="ccSetAba('certificado')"><i class="fa-solid fa-award"></i> Certificados</button>
                             <button class="nav-item" id="cc-aba-secaoavaliacao" onclick="ccSetAba('secaoavaliacao')"><i class="fa-solid fa-clipboard-list"></i> Seção de Avaliação</button>
                             <button class="nav-item" id="cc-aba-permissoes" onclick="ccSetAba('permissoes')"><i class="fa-solid fa-shield-halved" style="color:#8b5cf6;margin-right:8px"></i> Permissões</button>
@@ -4346,14 +4346,14 @@
                                 <div class="card-body"><div id="cc-apt-historico"></div></div></div>
                         </div>
 
-                        <!-- ABA FICHA GERAL -->
+                        <!-- ABA FICHA DO CURSO -->
                         <div id="cc-tab-ficha" style="display:none">
                             <div style="padding:14px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:12px;margin-bottom:14px">
-                                <h3 style="margin:0;font-size:14px;color:#0c4a6e"><i class="fa-solid fa-file-lines" style="margin-right:8px"></i> Ficha Geral dos indivíduos deste curso</h3>
-                                <p style="font-size:11px;color:#075985;margin:6px 0 0">Mesma montagem da Ficha Geral do administrador, com notas, AVs e apontamentos de cada indivíduo. Os quadros <b>AV Teórica</b> e <b>AV Prática</b> exibem os registros criados na guia <b>Criar Avaliação</b>, com as notas de cada um.</p>
+                                <h3 style="margin:0;font-size:14px;color:#0c4a6e"><i class="fa-solid fa-file-lines" style="margin-right:8px"></i> Ficha do Curso dos indivíduos</h3>
+                                <p style="font-size:11px;color:#075985;margin:6px 0 0">Montagem limpa e própria deste curso: dados da instituição cadastrada em <b>Configurações</b>, projeto e turma, foto 3x4, matrícula, identificação do aluno, lista de apontamento e todos os dados da Seção de Avaliação.</p>
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
                                     <button class="btn-primary" onclick="ccImportarFicha()"><i class="fa-solid fa-file-import" style="margin-right:6px"></i> Importar Informações</button>
-                                    <button class="btn-outline" onclick="ccSincronizarFicha(false);ccInitFicha()"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Sincronizar Ficha Geral</button>
+                                    <button class="btn-outline" onclick="ccSincronizarFicha(false);ccInitFicha()"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Sincronizar Ficha do Curso</button>
                                     <button class="btn-outline" onclick="ccSincronizarApontamentosFicha()"><i class="fa-solid fa-clipboard-check" style="margin-right:6px"></i> Sincronizar Apontamentos</button>
                                 </div>
                             </div>
@@ -6422,7 +6422,7 @@
     <script src="farn-storage.js?v=2"></script>
     <script src="app.js?v=118"></script>
     <script src="recad-admin.js?v=1"></script>
-    <script src="cadastro-cursos.js?v=24"></script>
+    <script src="cadastro-cursos.js?v=27"></script>
     <script>
     /* Garante que o botao "Salvar permissoes" da aba Permissoes do admin funcione mesmo
        quando o cadastro-cursos.js carregado estiver desatualizado. */
