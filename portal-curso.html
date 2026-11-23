@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Portal do Curso</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="ficha-geral-compartilhar.js?v=31"></script>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        html, body { height:auto !important; min-height:100vh !important; overflow:visible !important; overflow-y:auto !important; }
+        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; }
+        ::-webkit-scrollbar { width:10px; height:10px; }
+        ::-webkit-scrollbar-track { background:#e2e8f0; }
+        ::-webkit-scrollbar-thumb { background:#94a3b8; border-radius:8px; border:2px solid #e2e8f0; }
+        .pc-estado { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; text-align:center; }
+        .pc-estado .pc-estado-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:32px; max-width:460px;
+            box-shadow:0 14px 40px rgba(2,6,23,.08); }
+        .pc-estado h2 { font-size:18px; color:#0f172a; margin-bottom:8px; }
+        .pc-estado p { font-size:13px; color:#64748b; line-height:1.6; margin-bottom:16px; }
+        .pc-topbar { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:13px 18px;
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .pc-topbar h1 { font-size:16px; line-height:1.3; }
+        .pc-topbar p { font-size:11px; opacity:.85; margin-top:2px; }
+        .pc-topbar .pc-spacer { margin-left:auto; }
+        .pc-topbar button { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); color:#fff;
+            border-radius:8px; padding:8px 11px; cursor:pointer; font-size:12px; font-weight:700; }
+        .pc-menu-btn { font-size:16px !important; }
+        .pc-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:40; }
+        .pc-drawer-overlay.aberto { display:block; }
+        .pc-drawer { position:fixed; top:0; left:0; bottom:0; width:268px; background:#fff; z-index:41;
+            transform:translateX(-100%); transition:transform .22s; box-shadow:6px 0 24px rgba(0,0,0,.18);
+            display:flex; flex-direction:column; }
+        .pc-drawer.aberto { transform:translateX(0); }
+        .pc-drawer-head { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:20px 18px; }
+        .pc-drawer-head h2 { font-size:15px; margin-top:8px; line-height:1.3; }
+        .pc-drawer-head p { font-size:11px; opacity:.85; margin-top:4px; }
+        .pc-drawer-nav { padding:12px 10px; flex:1; overflow-y:auto; }
+        .pc-drawer-nav button { width:100%; display:flex; align-items:center; gap:10px; padding:11px 12px;
+            border:none; background:transparent; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700;
+            color:#334155; text-align:left; margin-bottom:4px; }
+        .pc-drawer-nav button:hover { background:#f1f5f9; }
+        .pc-drawer-nav button.ativo { background:#e6fffa; color:#0f766e; }
+        .pc-drawer-foot { padding:12px 10px; border-top:1px solid #e2e8f0; }
+        .pc-drawer-foot button { width:100%; display:flex; align-items:center; gap:10px; padding:11px;
+            border:none; background:#fef2f2; color:#b91c1c; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700; }
+        .pc-container { max-width:1000px; margin:20px auto; padding:0 16px 40px; }
+        .pc-view { display:none; }
+        .pc-view.ativo { display:block; }
+        .pc-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px;
+            box-shadow:0 4px 14px rgba(2,6,23,.06); }
+        .pc-card h2 { font-size:15px; color:#0f172a; margin-bottom:12px; }
+        .pc-card h3 { font-size:12px; color:#475569; margin:16px 0 8px; text-transform:uppercase; letter-spacing:.5px; }
+        .pc-titulo { font-size:19px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+        .pc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+        .pc-tile { border:1px solid #e2e8f0; border-radius:10px; padding:12px; background:#f8fafc; }
+        .pc-tile span { display:block; font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .pc-tile b { display:block; font-size:15px; color:#0f172a; margin-top:4px; word-break:break-word; }
+        .pc-aviso { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px;
+            padding:12px 14px; font-size:12px; line-height:1.6; }
+        .pc-acoes { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+        .pc-badge { display:inline-block; padding:4px 9px; border-radius:20px; font-size:10px; font-weight:800;
+            letter-spacing:.3px; border:1px solid transparent; white-space:nowrap; }
+        .pc-badge.presente { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
+        .pc-badge.falta { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+        .pc-badge.justificada { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+        .pc-badge.sem { background:#dbeafe; color:#1e40af; border-color:#bfdbfe; }
+        .pc-badge.neutro { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
+        .pc-legenda { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+        table.pc-tabela { width:100%; border-collapse:collapse; }
+        .pc-tabela th { background:#f8fafc; padding:9px 8px; font-size:9.5px; text-transform:uppercase;
+            color:#64748b; letter-spacing:.4px; text-align:left; border-bottom:1px solid #e2e8f0; }
+        .pc-tabela td { padding:9px 8px; font-size:12px; color:#334155; border-bottom:1px solid #eef2f7; vertical-align:top; }
+        .pc-linha-aulas td { border-left:4px solid transparent; }
+        .pc-linha-aulas.presente td:first-child { border-left-color:#16a34a; }
+        .pc-linha-aulas.falta td:first-child { border-left-color:#dc2626; }
+        .pc-linha-aulas.justificada td:first-child { border-left-color:#eab308; }
+        .pc-linha-aulas.sem td:first-child { border-left-color:#3b82f6; }
+        .pc-item { border:1px solid #e2e8f0; border-radius:10px; padding:12px; margin-bottom:9px; background:#fff; }
+        .pc-item b { font-size:13px; color:#0f172a; }
+        .pc-item p { font-size:11px; color:#64748b; margin:4px 0 8px; }
+        .pc-modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:60;
+            align-items:center; justify-content:center; padding:18px; }
+        .pc-modal.aberto { display:flex; }
+        .pc-modal-card { background:#fff; border-radius:14px; width:100%; max-width:720px; max-height:88vh; overflow-y:auto; padding:20px; }
+        .pc-modal-card h2 { font-size:16px; color:#0f172a; margin-bottom:4px; }
+        .pc-modal-card .pc-modal-sub { font-size:11px; color:#64748b; margin-bottom:14px; }
+        .pc-questao { border:1px solid #e2e8f0; border-radius:10px; padding:11px; margin-bottom:10px; background:#f8fafc; }
+        .pc-questao p { font-size:12px; color:#0f172a; font-weight:600; margin-bottom:8px; line-height:1.5; }
+        .pc-opcao { display:block; font-size:12px; color:#334155; padding:5px 0; cursor:pointer; }
+        .pc-opcao input { margin-right:7px; }
+        .pc-modal-foot { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; flex-wrap:wrap; }
+        button.pc-btn, a.pc-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:9px 13px; border-radius:9px; border:1px solid #cbd5e1; background:#fff; color:#334155;
+            font-size:12px; font-weight:800; text-decoration:none; cursor:pointer; }
+        button.pc-btn.primary, a.pc-btn.primary { background:linear-gradient(135deg,#0f766e,#115e59); border-color:#0f766e; color:#fff; }
+        button.pc-btn:disabled { opacity:.6; cursor:not-allowed; }
+        @media print { .pc-topbar, .pc-drawer, .pc-drawer-overlay, .pc-acoes, .pc-modal { display:none !important; } body { background:#fff; } }
+    </style>
+</head>
+<body>
+    <div class="pc-estado" id="pc-loading">
+        <div class="pc-estado-card">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size:28px;color:#0f766e"></i>
+            <h2 style="margin-top:14px">Carregando seu curso...</h2>
+            <p>Aguarde enquanto os dados do curso são consultados.</p>
+        </div>
+    </div>
+
+    <div class="pc-estado" id="pc-invalido" style="display:none">
+        <div class="pc-estado-card">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size:30px;color:#b45309"></i>
+            <h2 style="margin-top:12px" id="pc-invalido-titulo">Não foi possível abrir o curso</h2>
+            <p id="pc-invalido-texto">Verifique se você está vinculado a este curso.</p>
+            <a class="pc-btn primary" href="portal-usuario.html"><i class="fa-solid fa-arrow-left"></i> Voltar ao Portal</a>
+        </div>
+    </div>
+
+    <div id="pc-app" style="display:none">
+        <header class="pc-topbar">
+            <button class="pc-menu-btn" onclick="pcAbrirMenu()" title="Menu"><i class="fa-solid fa-bars"></i></button>
+            <div>
+                <h1 id="pc-curso-nome">Curso</h1>
+                <p id="pc-aluno-nome"></p>
+            </div>
+            <div class="pc-spacer"></div>
+            <button onclick="pcVoltar()"><i class="fa-solid fa-arrow-left" style="margin-right:6px"></i> Portal</button>
+        </header>
+
+        <div class="pc-drawer-overlay" id="pc-overlay" onclick="pcFecharMenu()"></div>
+        <aside class="pc-drawer" id="pc-drawer">
+            <div class="pc-drawer-head">
+                <i class="fa-solid fa-graduation-cap" style="font-size:30px"></i>
+                <h2 id="pc-nome-menu">Aluno</h2>
+                <p id="pc-curso-menu">Curso</p>
+            </div>
+            <nav class="pc-drawer-nav">
+                <button id="pc-menu-inicio" class="ativo" onclick="pcSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
+                <button id="pc-menu-apontamento" onclick="pcSetView('apontamento')"><i class="fa-solid fa-clipboard-check"></i> Apontamento</button>
+                <button id="pc-menu-aulas" onclick="pcSetView('aulas')"><i class="fa-solid fa-chalkboard-user"></i> Aulas</button>
+                <button id="pc-menu-av-teorica" onclick="pcSetView('av-teorica')"><i class="fa-solid fa-brain"></i> Responder AV Teórica</button>
+                <button id="pc-menu-av-pratica" onclick="pcSetView('av-pratica')"><i class="fa-solid fa-hands"></i> Ver AV Prática</button>
+                <button id="pc-menu-apostilas" onclick="pcSetView('apostilas')"><i class="fa-solid fa-file-pdf"></i> Apostilas</button>
+            </nav>
+            <div class="pc-drawer-foot">
+                <button onclick="pcVoltar()"><i class="fa-solid fa-right-from-bracket"></i> Voltar ao Portal</button>
+            </div>
+        </aside>
+
+        <main class="pc-container">
+            <section class="pc-view ativo" id="pc-view-inicio">
+                <div class="pc-titulo"><i class="fa-solid fa-house" style="color:#0f766e;margin-right:8px"></i> Início</div>
+                <div id="pc-inicio-conteudo"></div>
+            </section>
+
+            <section class="pc-view" id="pc-view-apontamento">
+                <div class="pc-titulo"><i class="fa-solid fa-clipboard-check" style="color:#0f766e;margin-right:8px"></i> Apontamento</div>
+                <div class="pc-card"><h2>Aulas apontadas pelo docente</h2><div id="pc-apontamento-lista"></div></div>
+            </section>
+
+            <section class="pc-view" id="pc-view-aulas">
+                <div class="pc-titulo"><i class="fa-solid fa-chalkboard-user" style="color:#0f766e;margin-right:8px"></i> Aulas</div>
+                <div class="pc-card">
+                    <h2>Aulas do curso (Disciplinas e Aulas)</h2>
+                    <div class="pc-legenda" id="pc-legenda"></div>
+                    <div id="pc-aulas-lista"></div>
+                </div>
+            </section>
+
+            <section class="pc-view" id="pc-view-av-teorica">
+                <div class="pc-titulo"><i class="fa-solid fa-brain" style="color:#0f766e;margin-right:8px"></i> Responder AV Teórica</div>
+                <div class="pc-card"><h2>Avaliações liberadas pelo docente</h2><div id="pc-av-teorica-lista"></div></div>
+            </section>
+
+            <section class="pc-view" id="pc-view-av-pratica">
+                <div class="pc-titulo"><i class="fa-solid fa-hands" style="color:#0f766e;margin-right:8px"></i> Ver AV Prática</div>
+                <div class="pc-card"><h2>Pontuação e questões</h2><div id="pc-av-pratica-lista"></div></div>
+            </section>
+
+            <section class="pc-view" id="pc-view-apostilas">
+                <div class="pc-titulo"><i class="fa-solid fa-file-pdf" style="color:#0f766e;margin-right:8px"></i> Apostilas</div>
+                <div class="pc-card"><h2>Material anexado pela coordenação</h2><div id="pc-apostilas-lista"></div></div>
+            </section>
+        </main>
+    </div>
+
+    <div class="pc-modal" id="pc-modal">
+        <div class="pc-modal-card">
+            <h2 id="pc-modal-titulo">Avaliação</h2>
+            <div class="pc-modal-sub" id="pc-modal-sub"></div>
+            <div id="pc-modal-corpo"></div>
+            <div class="pc-modal-foot">
+                <button class="pc-btn" onclick="pcFecharModal()">Fechar</button>
+                <button class="pc-btn primary" id="pc-modal-enviar" style="display:none" onclick="pcEnviarResposta()"><i class="fa-solid fa-paper-plane"></i> Enviar respostas</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="farn-db.js?v=12"></script>
+    <script src="portal-curso.js?v=1"></script>
+</body>
+</html>

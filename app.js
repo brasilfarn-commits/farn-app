@@ -1665,21 +1665,25 @@ async function landingLoginUsuario(cpf, senha) {
             }
         } catch (e) { console.warn('Portal do Usuario: falha ao consultar ' + fonte.colecao, e); }
     }
-    /* Cursos concluidos (Cadastro de Cursos): alunos cadastrados nos individuos
-       dos cursos podem entrar no Portal do Usuario com CPF e senha do cadastro. */
+    /* Cadastro de Cursos: alunos de cursos CONCLUIDOS e EM ANDAMENTO tambem
+       entram no Portal do Usuario com CPF e senha do cadastro do curso. */
     try {
-        var cursosSnap = await dbFirestore.collection('cursosCadastro').where('status', '==', 'Concluido').get();
+        var cursosSnap = await dbFirestore.collection('cursosCadastro').get();
         for (var c = 0; c < cursosSnap.docs.length; c++) {
             var cursoDoc = cursosSnap.docs[c];
             var snapCursos = await dbFirestore.collection('cursosCadastro').doc(cursoDoc.id)
                 .collection('individuos').where('cpf', '==', cpf).limit(1).get();
             if (snapCursos.empty) continue;
-            var dCurso = snapCursos.docs[0].data();
+            var dCurso = snapCursos.docs[0].data() || {};
             if (dCurso.senha !== senha) continue;
+            /* Quem pediu baixa nao entra; rebaixado/inativo por falta continuam
+               podendo acompanhar o curso pelo portal. */
+            if (dCurso.pediuBaixa === true || String(dCurso.situacaoCurso || '') === 'Pediu Baixa') continue;
             var encontradoCursos = Object.assign({}, dCurso, {
                 _origem: 'cursosCadastro',
-                _rotulo: 'Curso: ' + String(cursoDoc.data().nome || ''),
-                _docId: snapCursos.docs[0].id
+                _rotulo: 'Curso: ' + String((cursoDoc.data() || {}).nome || ''),
+                _docId: snapCursos.docs[0].id,
+                _cursoId: cursoDoc.id
             });
             currentUserData = encontradoCursos;
             saveLastLogin(cpf);
@@ -1689,7 +1693,7 @@ async function landingLoginUsuario(cpf, senha) {
             location.href = 'portal-usuario.html';
             return true;
         }
-    } catch (e) { console.warn('Portal do Usuario: falha ao consultar cursos concluidos', e); }
+    } catch (e) { console.warn('Portal do Usuario: falha ao consultar cursos', e); }
     landingShowLoginError('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.');
     return false;
 }
@@ -1999,6 +2003,14 @@ function showAdminSection(sectionId, navEl) {
        sumiria do admin. Voltar para a Individual nao devolve: quem saiu e
        voltou reencontra a lista que estava vendo. */
     if (sectionId !== 'admin-individuo' && individuoEmprestado) individuoDevolver();
+    /* Saindo do Cadastro de Cursos, devolva o formulario de pre-inscricao
+       ao admin para ele nao ficar preso dentro da aba do curso. */
+    if (sectionId !== 'admin-cadastro-cursos' && typeof ccPreFormaAtiva !== 'undefined' && ccPreFormaAtiva && typeof ccPreVoltarForm === 'function') {
+        ccPreVoltarForm();
+    }
+    if (sectionId !== 'admin-cadastro-cursos' && typeof ccIndFormaAtiva !== 'undefined' && ccIndFormaAtiva && typeof ccIndVoltarForm === 'function') {
+        ccIndVoltarForm();
+    }
     document.querySelectorAll('#screen-admin .admin-section').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
     /* A pagina emprestada continua morando dentro da Individual, e o laco
@@ -2316,6 +2328,18 @@ function toggleAtualizarCadastro() {
 
 async function handleCandidatoSubmit(event) {
     event.preventDefault();
+    /* Cadastro de Cursos: a guia Pre-Inscricao usa este MESMO formulario,
+       mas grava em cursosCadastro/{id}/preInscricoes. Nada e escrito na
+       colecao global 'candidatos' do administrador. */
+    if (typeof ccPreFormaAtiva !== 'undefined' && ccPreFormaAtiva && typeof ccPreSalvarCandidato === 'function') {
+        return ccPreSalvarCandidato();
+    }
+    /* Cadastro de Cursos: a guia Individuos usa este MESMO formulario,
+       mas grava em cursosCadastro/{id}/individuos. Nada e escrito na
+       colecao global 'candidatos' do administrador. */
+    if (typeof ccIndFormaAtiva !== 'undefined' && ccIndFormaAtiva && typeof ccIndSalvarCandidato === 'function') {
+        return ccIndSalvarCandidato();
+    }
     /* Cadastro Geral: docente, coordenacao, usuario e CFF usam o mesmo
        formulario do formado, mas gravam na colecao de origem. */
     if (typeof cadastroGeralAlvo !== 'undefined' && cadastroGeralAlvo && cadastroGeralAlvo.origem !== 'candidato') {

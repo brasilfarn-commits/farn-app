@@ -192,6 +192,24 @@
         var modoEdicao = false;
         var candidatoEdicao = null;
         var ultimoCandidato = null;
+        /* Link gerado dentro do Cadastro de Cursos: dados ficam em
+           cursosCadastro/{curso}/... e nunca na colecao global do admin. */
+        var cursoAtual = getQueryParam('curso');
+
+        function preCandidatosRef(){
+            return cursoAtual
+                ? dbFirestore.collection('cursosCadastro').doc(cursoAtual).collection('preInscricoes')
+                : dbFirestore.collection('candidatos');
+        }
+        function preLinksRef(){
+            return cursoAtual
+                ? dbFirestore.collection('cursosCadastro').doc(cursoAtual).collection('linksPreInscricao')
+                : dbFirestore.collection('linksPreInscricao');
+        }
+        function urlComCurso(url){
+            if(!cursoAtual) return url;
+            return url+(url.indexOf('?')>=0?'&':'?')+'curso='+encodeURIComponent(cursoAtual);
+        }
 
         function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -259,7 +277,7 @@
 
         async function buscarCandidatoEdit(){
             try{
-                var res=await dbFirestore.collection('candidatos').where('editToken','==',editTokenAtual).limit(1).get();
+                var res=await preCandidatosRef().where('editToken','==',editTokenAtual).limit(1).get();
                 if(res.empty){
                     mostrarInvalido('Link de edição inválido','Não encontramos uma pré-inscrição para este link de edição. Verifique o endereço ou solicite um novo à equipe FARN.');
                     return;
@@ -294,7 +312,7 @@
                 return;
             }
             try{
-                var doc=await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).get();
+                var doc=await preLinksRef().doc(tokenAtual).get();
                 // Links coletivos não expiram após a primeira inscrição
                 if(!doc.exists || (doc.data().usado===true && doc.data().coletivo!==true)){
                     mostrarInvalido('Link inválido ou já utilizado','Este link de pré-inscrição não é mais válido. Ele pode ter sido utilizado ou expirado. Solicite um novo link à equipe FARN.');
@@ -408,12 +426,12 @@
         async function reservarLink(){
             if(!tokenAtual) return false;
             try{
-                var doc=await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).get();
+                var doc=await preLinksRef().doc(tokenAtual).get();
                 if(!doc.exists) return false;
                 // Links coletivos nunca são reservados/marcados como usados
                 if(doc.data().coletivo===true) return true;
                 if(doc.data().usado===true) return false;
-                await dbFirestore.collection('linksPreInscricao').doc(tokenAtual).update({
+                await preLinksRef().doc(tokenAtual).update({
                     usado:true,
                     usadoEm:firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -426,7 +444,7 @@
 
         async function validarCpfUnico(cpf, ignorarId){
             try{
-                var chk=await dbFirestore.collection('candidatos').where('cpf','==',cpf).get();
+                var chk=await preCandidatosRef().where('cpf','==',cpf).get();
                 if(chk.empty) return true;
                 if(ignorarId){
                     for(var i=0;i<chk.docs.length;i++){
@@ -465,7 +483,9 @@
 
             data.matricula=generateMatricula(data.cpf);
             data.tipoPessoa='A';
-            data.status='Acadêmico';
+            // Nas inscricoes de um curso, o admin avalia na propria aba:
+            // o registro entra como Pendente e pode ser editado depois.
+            data.status=cursoAtual?'Pendente':'Acadêmico';
             data.statusOriginal='Pendente';
             data.curso=preLinkCurso();
             data.projeto=preLinkCurso(); // compat legado
@@ -477,11 +497,15 @@
             data.origem='link-pre-inscricao';
             data.tokenLink=tokenAtual;
             data.linkColetivo=coletivo;
+            if(cursoAtual){
+                data.cursoId=cursoAtual;
+                data.cursoNome=linkValido.cursoNome||'';
+            }
             data.editToken=gerarEditToken();
             data.id=Date.now();
 
             try{
-                await dbFirestore.collection('candidatos').doc(String(data.id)).set(data);
+                await preCandidatosRef().doc(String(data.id)).set(data);
                 ultimoCandidato=data;
                 mostrarToast('Pré-inscrição registrada com sucesso!');
                 document.getElementById('area-formulario').style.display='none';
@@ -516,14 +540,14 @@
             }catch(e){ console.error(e); }
 
             var novoh=Object.assign({}, candidatoEdicao, data, {
-                status:'Acadêmico',
+                status:cursoAtual?'Pendente':'Acadêmico',
                 statusOriginal:'Pendente',
                 dataHoraEdicao:new Date().toLocaleString('pt-BR')
             });
             delete novoh.__id;
 
             try{
-                await dbFirestore.collection('candidatos').doc(candidatoEdicao.__id).set(novoh,{merge:true});
+                await preCandidatosRef().doc(candidatoEdicao.__id).set(novoh,{merge:true});
                 novoh.__id=candidatoEdicao.__id;
                 ultimoCandidato=novoh;
                 candidatoEdicao=novoh;
@@ -551,7 +575,7 @@
         }
 
         function montarSucesso(c,novo){
-            var editLink=location.origin+location.pathname+'?edittoken='+c.editToken;
+            var editLink=urlComCurso(location.origin+location.pathname+'?edittoken='+c.editToken);
             var coletivo=novo && linkValido && linkValido.coletivo;
             var html='<div class="success-box">'+
                 '<i class="fa-solid fa-circle-check"></i>'+
@@ -583,7 +607,7 @@
 
         function abrirEdicao(){
             if(!ultimoCandidato || !ultimoCandidato.editToken) return;
-            location.href=location.origin+location.pathname+'?edittoken='+ultimoCandidato.editToken;
+            location.href=urlComCurso(location.origin+location.pathname+'?edittoken='+ultimoCandidato.editToken);
         }
 
         function comprovanteTexto(c){

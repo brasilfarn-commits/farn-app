@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farn-v60';
+const CACHE_NAME = 'farn-v61';
 const OFFLINE_URLS = [
     './',
     './index.html',
@@ -6,7 +6,9 @@ const OFFLINE_URLS = [
     './app.js',
     './manifest.json',
     './logo-farn.png.png',
-    './consultar-regularidade.html'
+    './consultar-regularidade.html',
+    './portal-usuario.html',
+    './portal-curso.html'
 ];
 
 self.addEventListener('install', e => {

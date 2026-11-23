@@ -74,6 +74,17 @@
         .pu-view { display:none; }
         .pu-view.ativo { display:block; }
         .pu-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+        .pu-grupo-titulo { font-size:12px; font-weight:800; color:#475569; text-transform:uppercase;
+            letter-spacing:.6px; margin:16px 0 8px; display:flex; align-items:center; gap:7px; }
+        .pu-grupo-titulo:first-child { margin-top:0; }
+        .pu-curso-card { border:1px solid #e2e8f0; border-radius:11px; padding:13px; margin-bottom:10px; background:#fff; }
+        .pu-curso-card.concluido { border-left:4px solid #7c3aed; }
+        .pu-curso-card.andamento { border-left:4px solid #0f766e; }
+        .pu-curso-nome { font-size:14px; font-weight:800; color:#0f172a; }
+        .pu-selo { display:inline-block; padding:3px 8px; border-radius:20px; font-size:9.5px; font-weight:800;
+            letter-spacing:.4px; margin-left:6px; vertical-align:2px; }
+        .pu-selo.concluido { background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; }
+        .pu-selo.andamento { background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
         .pu-inicio-foto-wrap { text-align:center; margin-bottom:18px; }
         .pu-inicio-foto { width:110px; height:150px; object-fit:cover; border-radius:14px; border:2px solid #e2e8f0; display:block; margin:0 auto; }
     </style>
@@ -225,6 +236,28 @@
                     });
                     if (encontrado) break;
                 }
+                /* Cadastro de Cursos: alunos de cursos concluidos ou em andamento
+                   entram com CPF e senha gravados no cadastro do curso. */
+                if (!encontrado) {
+                    try {
+                        var cursosSnap = await dbFirestore.collection('cursosCadastro').get();
+                        for (var ci = 0; ci < cursosSnap.docs.length && !encontrado; ci++) {
+                            var cursoDoc = cursosSnap.docs[ci];
+                            var snapC = await dbFirestore.collection('cursosCadastro').doc(cursoDoc.id)
+                                .collection('individuos').where('cpf', '==', cpf).limit(1).get();
+                            if (snapC.empty) continue;
+                            var dC = snapC.docs[0].data() || {};
+                            if (dC.senha !== senha) continue;
+                            if (dC.pediuBaixa === true || String(dC.situacaoCurso || '') === 'Pediu Baixa') continue;
+                            encontrado = Object.assign({}, dC, {
+                                _origem: 'cursosCadastro',
+                                _rotulo: 'Curso: ' + String((cursoDoc.data() || {}).nome || ''),
+                                _docId: snapC.docs[0].id,
+                                _cursoId: cursoDoc.id
+                            });
+                        }
+                    } catch (eC) { console.warn('Portal: falha ao consultar cursos', eC); }
+                }
                 if (!encontrado) { puErro('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.'); }
                 else {
                     puUser = encontrado;
@@ -289,6 +322,13 @@
         /* GUIA DO CURSO: apostila e certificado dos cursos em que o CPF do
            usuario aparece na lista de individuos importados. */
         var puFichaCursaAberta = null; /* id do curso com a Ficha Germazena aberta na Seção Cursos */
+        function puCursoConcluido(c) {
+            return String((c && c.status) || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf('concluid') >= 0;
+        }
+        function puAbrirCursoDoPortal(cid) {
+            location.href = 'portal-curso.html?v=1&curso=' + encodeURIComponent(cid);
+        }
+
         async function puCarregarGuias() {
             var box = document.getElementById('pu-guias'); if (!box || !puUser) return;
             /* Mantém a Ficha Germazena aberta estável — não re-renderiza enquanto ela estiver aberta. */
@@ -305,44 +345,78 @@
             var cpf = puSoDigitos(puUser.cpf);
             if (!cpf) { box.innerHTML = '<div class="pu-aviso">CPF não informado no cadastro.</div>'; return; }
             try {
-                var snap = await dbFirestore.collection('cursosCadastro').orderBy('nome').get();
-                var cursos = [];
+                var snap = await dbFirestore.collection('cursosCadastro').get();
+                var concluidos = [], andamento = [];
                 for (var i = 0; i < snap.docs.length; i++) {
                     var doc = snap.docs[i];
                     var pessoa = await dbFirestore.collection('cursosCadastro').doc(doc.id)
                         .collection('individuos').where('cpf', '==', cpf).limit(1).get();
                     if (pessoa.empty) continue;
-                    /* Portal do Usuário exibe apenas os cursos vinculados ao aluno,
-                       conforme a guia de permissão de cada curso. */
-                    var cursoData = Object.assign({ _id: doc.id }, doc.data() || {});
-                    if (!cursoData.permCertificado && !cursoData.permFichaGeral) continue;
-                    cursos.push(cursoData);
+                    var dadosPessoa = pessoa.docs[0].data() || {};
+                    var cursoData = Object.assign({
+                        _id: doc.id,
+                        _projeto: dadosPessoa.projeto || '',
+                        _turma: dadosPessoa.turma || '',
+                        _situacao: dadosPessoa.situacaoCurso || ''
+                    }, doc.data() || {});
+                    /* O aluno do curso aparece sempre. A pagina do curso pode ser
+                       desativada pelo coordenador; certificado e ficha tem suas
+                       proprias permissoes. */
+                    if (puCursoConcluido(cursoData)) concluidos.push(cursoData);
+                    else if (cursoData.permPortalCurso !== false) andamento.push(cursoData);
                 }
-                if (!cursos.length) { box.innerHTML = '<div class="pu-aviso">Nenhum curso vinculado ao seu CPF.</div>'; return; }
+                if (!concluidos.length && !andamento.length) {
+                    box.innerHTML = '<div class="pu-aviso">Nenhum curso vinculado ao seu CPF.</div>'; return;
+                }
                 var html = '';
-                for (var j = 0; j < cursos.length; j++) {
-                    var c = cursos[j];
-                    var certSnap = await dbFirestore.collection('cursosCadastro').doc(c._id)
-                        .collection('certificados').where('ativo', '==', true).limit(1).get();
-                    var cert = certSnap.empty ? null : certSnap.docs[0].data();
+                function ordenar(a, b) { return String(a.nome || '').localeCompare(String(b.nome || '')); }
+                concluidos.sort(ordenar); andamento.sort(ordenar);
+
+                function cardConcluido(c) {
+                    var selo = '<span class="pu-selo concluido">CONCLUÍDO</span>';
                     var infoHtml = '';
                     if (c.permCertificado) infoHtml += '<span style="font-size:10px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:3px 9px;">Certificado</span>';
                     if (c.permFichaGeral) infoHtml += '<span style="font-size:10px;font-weight:700;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:3px 9px;">Ficha Geral</span>';
-                    html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;background:#fff">'
-                        + '<b style="font-size:13px;color:#0f172a">' + puEsc(c.nome) + '</b>'
-                        + (infoHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">' + infoHtml + '</div>' : '')
-                        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">';
+                    var s = '<div class="pu-curso-card concluido"><div class="pu-curso-nome">' + puEsc(c.nome) + selo + '</div>'
+                        + (infoHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">' + infoHtml + '</div>' : '')
+                        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px">';
                     var pdfUrl = c.apostilaPdfUrl || c.apostilaPdf;
-                    if (pdfUrl) html += '<a class="btn-outline btn-sm" href="' + pdfUrl + '" download="apostila.pdf" target="_blank"><i class="fa-solid fa-file-pdf" style="color:#dc2626;margin-right:5px"></i> Baixar apostila (PDF)</a>';
-                    if (c.apostilaUrl) html += '<a class="btn-outline btn-sm" href="' + puEsc(c.apostilaUrl) + '" target="_blank"><i class="fa-solid fa-link" style="color:#2563eb;margin-right:5px"></i> Abrir apostila (link)</a>';
+                    if (pdfUrl) s += '<a class="btn-outline btn-sm" href="' + puEsc(pdfUrl) + '" download="apostila.pdf" target="_blank"><i class="fa-solid fa-file-pdf" style="color:#dc2626;margin-right:5px"></i> Baixar apostila (PDF)</a>';
+                    if (c.apostilaUrl) s += '<a class="btn-outline btn-sm" href="' + puEsc(c.apostilaUrl) + '" target="_blank"><i class="fa-solid fa-link" style="color:#2563eb;margin-right:5px"></i> Abrir apostila (link)</a>';
                     if (c.permFichaGeral) {
-                        html += '<button class="btn-outline btn-sm" onclick="puVerFichaDoCurso(\'' + c._id + '\')"><i class="fa-solid fa-file-lines" style="color:#0ea5e9;margin-right:5px"></i> Ficha do Curso</button>';
-                        html += '<button class="btn-outline btn-sm" onclick="puRecolherFichaDoCurso(\'' + c._id + '\')" title="Recolher a Ficha Germazena"><i class="fa-solid fa-angle-up"></i> Recolher</button>';
-                        html += '<div id="pu-ficha-cursa-' + c._id + '" style="display:none;margin-top:10px;border:1px dashed #0ea5e9;border-radius:8px;padding:10px;background:#f0f9ff"></div>';
+                        s += '<button class="btn-outline btn-sm" onclick="puVerFichaDoCurso(\'' + c._id + '\')"><i class="fa-solid fa-file-lines" style="color:#0ea5e9;margin-right:5px"></i> Ficha do Curso</button>';
+                        s += '<button class="btn-outline btn-sm" onclick="puRecolherFichaDoCurso(\'' + c._id + '\')" title="Recolher a Ficha Germazena"><i class="fa-solid fa-angle-up"></i> Recolher</button>';
+                        s += '<div id="pu-ficha-cursa-' + c._id + '" style="display:none;margin-top:10px;border:1px dashed #0ea5e9;border-radius:8px;padding:10px;background:#f0f9ff"></div>';
                     }
-                    if (cert) html += '<button class="btn-outline btn-sm" onclick="puVerCertificado(\'' + c._id + '\')"><i class="fa-solid fa-award" style="color:#ca8a04;margin-right:5px"></i> Ver certificado</button>';
-                    if (!pdfUrl && !c.apostilaUrl && !cert) html += '<span style="font-size:11px;color:#94a3b8">Nenhuma apostila ou certificado disponível.</span>';
-                    html += '</div></div>';
+                    if (c._cert) s += '<button class="btn-outline btn-sm" onclick="puVerCertificado(\'' + c._id + '\')"><i class="fa-solid fa-award" style="color:#ca8a04;margin-right:5px"></i> Ver certificado</button>';
+                    if (!pdfUrl && !c.apostilaUrl && !c._cert) s += '<span style="font-size:11px;color:#94a3b8">Nenhuma apostila ou certificado disponível.</span>';
+                    return s + '</div></div>';
+                }
+
+                function cardAndamento(c) {
+                    var selo = '<span class="pu-selo andamento">EM ANDAMENTO</span>';
+                    var situacao = String(c._situacao || '').trim();
+                    var linha = [c._projeto, c._turma].filter(Boolean).map(puEsc).join(' • ');
+                    return '<div class="pu-curso-card andamento"><div class="pu-curso-nome">' + puEsc(c.nome) + selo + '</div>'
+                        + (linha || situacao ? '<div style="font-size:11px;color:#64748b;margin-top:4px">' + linha + (linha && situacao ? ' • ' : '') + (situacao ? puEsc(situacao) : '') + '</div>' : '')
+                        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px">'
+                        + '<button class="btn-primary btn-sm" onclick="puAbrirCursoDoPortal(\'' + c._id + '\')"><i class="fa-solid fa-arrow-right" style="margin-right:6px"></i> Entrar no curso</button>'
+                        + '</div></div>';
+                }
+
+                if (concluidos.length) {
+                    html += '<div class="pu-grupo-titulo"><i class="fa-solid fa-award" style="color:#7c3aed"></i> Cursos concluídos (' + concluidos.length + ')</div>';
+                    for (var j = 0; j < concluidos.length; j++) {
+                        var cc = concluidos[j];
+                        var certSnap = await dbFirestore.collection('cursosCadastro').doc(cc._id)
+                            .collection('certificados').where('ativo', '==', true).limit(1).get();
+                        cc._cert = !certSnap.empty;
+                        html += cardConcluido(cc);
+                    }
+                }
+                if (andamento.length) {
+                    html += '<div class="pu-grupo-titulo"><i class="fa-solid fa-book-open-reader" style="color:#0f766e"></i> Cursos em andamento (' + andamento.length + ')</div>';
+                    for (var k = 0; k < andamento.length; k++) html += cardAndamento(andamento[k]);
                 }
                 /* Preserva a Ficha Germazena aberta ao re-renderizar a Seção Cursos. */
                 var fichaAberta = puFichaCursaAberta;
@@ -384,31 +458,100 @@
             puFichaCursaAberta = null;
         }
 
+        /* Ficha do curso isolada: usa o snapshot gravado em
+           cursosCadastro/{id}/fichaAvaliacoes e as aulas/AVs do proprio curso,
+           e nao a montagem global por projeto/turma. */
+        function puDataAvFicha(v) {
+            if (!v) return '';
+            if (typeof v === 'object' && typeof v.toDate === 'function') {
+                try { return v.toDate().toLocaleDateString('pt-BR'); } catch (e) {}
+            }
+            if (v instanceof Date) return v.toLocaleDateString('pt-BR');
+            var s = String(v);
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+                var d = new Date(s);
+                if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR');
+            }
+            return s;
+        }
+        function puAulasDaFicha(avaliacoes, aulasReais) {
+            var todas = (aulasReais || []).slice();
+            function doTipo(tipo, flag) {
+                var lista = (avaliacoes || []).filter(function (a) { return String(a.tipo || 'teorica') === tipo; });
+                if (!lista.length) return (aulasReais || []).filter(function (a) { return a[flag] === 'Sim'; });
+                var vistos = {}, out = [];
+                lista.forEach(function (a) {
+                    var chave = String(a.aulaId || a._id);
+                    if (vistos[chave]) return;
+                    vistos[chave] = true;
+                    out.push({
+                        _id: chave, aulaId: a.aulaId || '',
+                        data: puDataAvFicha(a.data || a.dataAula || a.criadoEm),
+                        disciplina: a.disciplina || '',
+                        conteudo: a.nome || a.aula || 'Avaliação',
+                        avTeorica: tipo === 'teorica' ? 'Sim' : '',
+                        avPratica: tipo === 'pratica' ? 'Sim' : ''
+                    });
+                });
+                return out;
+            }
+            return { todas: todas, teorica: doTipo('teorica', 'avTeorica'), pratica: doTipo('pratica', 'avPratica') };
+        }
+
         async function puVerFichaDoCurso(cid) {
             var cont = document.getElementById('pu-ficha-cursa-' + cid);
             if (!cont || !puUser) return;
             puFichaCursaAberta = cid;
             try {
                 cont.style.display = '';
-                cont.innerHTML = '<div class="pu-aviso">Carregando Ficha Germazena...</div>';
-                var projeto = String(puUser.projeto || puUser.formadoProjeto || '').trim();
-                var turma = String(puUser.turma || puUser.formadoTurma || '').trim();
-                if (!projeto || !turma) {
-                    cont.innerHTML = '<div class="pu-aviso">Seu cadastro não possui projeto/turma vinculados para exibir a Ficha Germazena.</div>';
+                cont.innerHTML = '<div class="pu-aviso">Carregando Ficha do Curso...</div>';
+                var cpf = puSoDigitos(puUser.cpf);
+                var base = dbFirestore.collection('cursosCadastro').doc(cid);
+                var resultado = await Promise.all([
+                    base.get(),
+                    base.collection('individuos').where('cpf', '==', cpf).limit(1).get(),
+                    base.collection('fichaAvaliacoes').doc(cpf).get(),
+                    base.collection('aulas').orderBy('data').get(),
+                    base.collection('avaliacoes').get()
+                ]);
+                if (resultado[1].empty) {
+                    cont.innerHTML = '<div class="pu-aviso">Seu CPF não está vinculado aos indivíduos deste curso.</div>';
                     return;
                 }
+                var cursoDoc = resultado[0].exists ? (resultado[0].data() || {}) : {};
+                var pessoa = Object.assign({}, resultado[1].docs[0].data() || {}, { _id: resultado[1].docs[0].id });
+                if (!pessoa.nome) pessoa.nome = puUser.nome || '';
+                var fichaSnap = resultado[2].exists ? (resultado[2].data() || {}) : null;
+                var aulasReais = [], avsFicha = [];
+                resultado[3].forEach(function (d) { aulasReais.push(Object.assign({ _id: d.id }, d.data() || {})); });
+                resultado[4].forEach(function (d) { avsFicha.push(Object.assign({ _id: d.id }, d.data() || {})); });
+                var aulas = puAulasDaFicha(avsFicha, aulasReais);
                 if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
-                var aulas = await fichaGeralCarregarAulas(projeto, turma);
-                var dados = await fichaGeralDadosAluno(puUser);
-                var calc = fichaGeralCalcular(puUser, dados, aulas);
-                var foto = puUser.photoDataUrl || puUser.foto || puUser.fotoUrl || null;
-                if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
-                if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
-                cont.innerHTML = fichaGeralFolha(puUser, calc, foto, 0, aulas);
+                var dados = await fichaGeralDadosAluno(pessoa);
+                if (fichaSnap) {
+                    var avCurso = fichaSnap.av || fichaSnap;
+                    dados.av = Object.assign({}, dados.av || {}, avCurso);
+                    ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
+                        dados.av[k] = Object.assign({}, (dados.av && dados.av[k]) || {}, avCurso[k] || {});
+                    });
+                    function ajustar(reg) {
+                        return Object.assign({}, reg, {
+                            turma: pessoa.turma || reg.turma || '',
+                            projeto: pessoa.projeto || reg.projeto || ''
+                        });
+                    }
+                    if (fichaSnap.presencas && fichaSnap.presencas.length) dados.presencas = fichaSnap.presencas.map(ajustar);
+                    if (fichaSnap.apontamentos && fichaSnap.apontamentos.length) dados.apontamentos = fichaSnap.apontamentos.map(ajustar);
+                }
+                var calc = fichaGeralCalcular(pessoa, dados, aulas);
+                var foto = pessoa.photoDataUrl || pessoa.foto || pessoa.fotoUrl || puUser.foto || null;
+                if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = cursoDoc.nome || '';
+                if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = String(pessoa.turma || '');
+                cont.innerHTML = fichaGeralFolha(pessoa, calc, foto, 0, aulas);
                 if (typeof fichaGeralAplicarLogo === 'function') fichaGeralAplicarLogo(cont);
             } catch (e) {
-                console.error('Erro ao carregar Ficha Germazena do curso:', e);
-                cont.innerHTML = '<div class="pu-aviso">Não foi possível carregar a Ficha Germazena.</div>';
+                console.error('Erro ao carregar Ficha do Curso:', e);
+                cont.innerHTML = '<div class="pu-aviso">Não foi possível carregar a Ficha do Curso.</div>';
             }
         }
 

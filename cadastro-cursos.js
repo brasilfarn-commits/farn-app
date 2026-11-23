@@ -28,8 +28,9 @@ var ccAba = 'geral';
 var ccEditandoCursoId = null;
 var ccEditandoAvId = null;
 var ccQuestoesTemp = [];
-var ccImportSel = {};
-var ccImportFiltro = '';
+var ccIndFormaAtiva = false;
+var ccIndEditando = null;
+var ccIndFormGuardado = null;
 var ccScanner = null;
 var ccAptPresencas = {};
 var ccAptAlunos = [];
@@ -152,6 +153,10 @@ function ccMostrarWorkspace(mostrar) {
     var lista = document.getElementById('cc-lista');
     var ws = document.getElementById('cc-workspace');
     var btnNovo = document.getElementById('cc-btn-novo');
+    /* Ao voltar para a lista, nao deixe o formulario escondido dentro da
+       aba do curso (pre-inscricao ou individuos). */
+    if (!mostrar && ccPreFormaAtiva) ccPreVoltarForm();
+    if (!mostrar && ccIndFormaAtiva) ccIndVoltarForm();
     if (lista) lista.style.display = mostrar ? 'none' : '';
     if (ws) ws.style.display = mostrar ? '' : 'none';
     if (btnNovo) btnNovo.style.display = mostrar ? 'none' : '';
@@ -230,6 +235,9 @@ async function ccSalvarCurso() {
     dados.apostilaUrl = ((document.getElementById('cc-curso-apostila-url') || {}).value || '').trim();
     dados.permCertificado = !!((document.getElementById('cc-perm-certificado') || {}).checked);
     dados.permFichaGeral = !!((document.getElementById('cc-perm-ficha') || {}).checked);
+    /* Padrão é exibir: cursos antigos (sem o campo) continuam aparecendo. */
+    var ckPortal = document.getElementById('cc-perm-portal-curso');
+    dados.permPortalCurso = !ckPortal || ckPortal.checked !== false;
     var novoRef = ccEditandoCursoId ? null : ccDb().collection(CC_COLECAO).doc();
     var cursoId = ccEditandoCursoId || (novoRef && novoRef.id);
     try {
@@ -282,12 +290,660 @@ function ccAbrirCurso(id) {
     if (ic) ic.innerHTML = (ccAtual.iconeUrl || ccAtual.icone) ? '<img src="' + (ccAtual.iconeUrl || ccAtual.icone) + '" style="width:100%;height:100%;object-fit:contain">' : '<i class="fa-solid fa-book"></i>';
     var ckCert = document.getElementById('cc-perm-certificado'); if (ckCert) ckCert.checked = !!(ccAtual.permCertificado);
     var ckFicha = document.getElementById('cc-perm-ficha'); if (ckFicha) ckFicha.checked = !!(ccAtual.permFichaGeral);
+    var ckPortal = document.getElementById('cc-perm-portal-curso'); if (ckPortal) ckPortal.checked = ccAtual.permPortalCurso !== false;
     ccSetAba('geral');
+}
+
+/* ============ PROJETO E TURMA DO CURSO (ISOLADOS) ============
+   Tudo aqui vive em cursosCadastro/{id}/projetos, /turmas,
+   /preInscricoes e /linksPreInscricao. Nenhuma funcao deste bloco
+   escreve nas colecoes globais 'parceiros', 'turmas' ou 'candidatos'. */
+var ccProjetos = [];
+var ccTurmasCurso = [];
+var ccPreCandidatos = [];
+var ccPreFormaAtiva = false;   // lida tambem por handleCandidatoSubmit (app.js)
+var ccPreEditando = null;
+var ccPreFormGuardado = null;
+
+function ccCampoSet(id, valor) {
+    var el = document.getElementById(id);
+    if (el) el.value = valor == null ? '' : valor;
+}
+function ccMsg(id, texto, cor) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = texto || '';
+    el.style.color = cor || '#16a34a';
+    el.style.display = texto ? '' : 'none';
+}
+function ccIdadeCurto(nasc) {
+    if (typeof calcularIdade === 'function') {
+        var v = calcularIdade(String(nasc || ''));
+        return v ? v + ' anos' : '-';
+    }
+    return '-';
+}
+
+/* ---------- PROJETOS ---------- */
+async function ccCarregarProjetosTurmas() {
+    if (!ccAtual || !ccDb()) return;
+    try {
+        var projetos = [], turmas = [];
+        var sp = await ccRef('projetos').get();
+        sp.forEach(function (d) { projetos.push(Object.assign({ _id: d.id }, d.data() || {})); });
+        projetos.sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); });
+        var st = await ccRef('turmas').get();
+        st.forEach(function (d) { turmas.push(Object.assign({ _id: d.id }, d.data() || {})); });
+        turmas.sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); });
+        /* So troca o cache quando as duas leituras terminam bem: uma falha
+           de rede nao pode apagar o que ja estava carregado na tela. */
+        ccProjetos = projetos;
+        ccTurmasCurso = turmas;
+    } catch (e) {
+        console.error('Erro ao carregar projetos/turmas do curso:', e);
+        return;
+    }
+    ccRenderProjetos();
+    ccRenderTurmas();
+    ccPreencherSelectProjetos();
+    ccPreencherSelectTurmas(ccPreProjeto());
+}
+
+function ccRenderProjetos() {
+    var box = document.getElementById('cc-projetos-lista');
+    if (!box) return;
+    var cnt = document.getElementById('cc-proj-count');
+    if (cnt) cnt.textContent = ccProjetos.length;
+    if (!ccProjetos.length) {
+        box.innerHTML = '<p style="color:#94a3b8;font-size:12px">Nenhum projeto cadastrado neste curso.</p>';
+        return;
+    }
+    box.innerHTML = ccProjetos.map(function (p) {
+        var n = ccTurmasCurso.filter(function (t) { return t.projeto === p.nome; }).length;
+        return '<div style="border:1px solid #e2e8f0;border-radius:9px;padding:10px;margin-bottom:8px;background:#fff">'
+            + '<div style="font-weight:800;color:#0f172a;font-size:13px">' + ccEsc(p.nome) + '</div>'
+            + '<div style="font-size:11px;color:#64748b;margin-top:3px">' + ccEsc(p.responsavel || '—') + ' • ' + n + ' turma(s)</div>'
+            + '<div style="display:flex;gap:6px;margin-top:7px">'
+            + '<button class="btn-outline btn-sm" onclick="ccEditarProjeto(\'' + p._id + '\')"><i class="fa-solid fa-pen"></i> Editar</button>'
+            + '<button class="btn-danger btn-sm" onclick="ccExcluirProjeto(\'' + p._id + '\')"><i class="fa-solid fa-trash"></i> Excluir</button>'
+            + '</div></div>';
+    }).join('');
+}
+
+function ccRenderTurmas() {
+    var box = document.getElementById('cc-turmas-lista');
+    if (!box) return;
+    var cnt = document.getElementById('cc-turma-count');
+    if (cnt) cnt.textContent = ccTurmasCurso.length;
+    if (!ccTurmasCurso.length) {
+        box.innerHTML = '<p style="color:#94a3b8;font-size:12px">Nenhuma turma cadastrada neste curso.</p>';
+        return;
+    }
+    box.innerHTML = ccTurmasCurso.map(function (t) {
+        var concluida = t.status === 'Concluido';
+        return '<div style="border:1px solid #e2e8f0;border-radius:9px;padding:10px;margin-bottom:8px;background:#fff">'
+            + '<div style="font-weight:800;color:#0f172a;font-size:13px">' + ccEsc(t.nome) + ' '
+            + '<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;background:' + (concluida ? '#eff6ff;color:#1d4ed8' : '#dcfce7;color:#166534') + '">' + (concluida ? 'CONCLUÍDA' : 'EM ANDAMENTO') + '</span></div>'
+            + '<div style="font-size:11px;color:#64748b;margin-top:3px">Projeto: <b style="color:#ea580c">' + ccEsc(t.projeto || '—') + '</b>'
+            + (t.descricao ? ' • ' + ccEsc(t.descricao) : '') + '</div>'
+            + '<div style="font-size:10px;color:#94a3b8;margin-top:2px">' + ccEsc(t.inicio || '') + (t.previsao ? ' → ' + ccEsc(t.previsao) : '') + (t.horarios ? ' • ' + ccEsc(t.horarios) : '') + '</div>'
+            + '<div style="display:flex;gap:6px;margin-top:7px">'
+            + '<button class="btn-outline btn-sm" onclick="ccEditarTurma(\'' + t._id + '\')"><i class="fa-solid fa-pen"></i> Editar</button>'
+            + '<button class="btn-danger btn-sm" onclick="ccExcluirTurma(\'' + t._id + '\')"><i class="fa-solid fa-trash"></i> Excluir</button>'
+            + '</div></div>';
+    }).join('');
+}
+
+function ccPreencherSelectProjetos() {
+    var ids = ['cc-turma-projeto', 'cc-pre-projeto'];
+    ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var atual = el.value;
+        el.innerHTML = '<option value="">Selecione o projeto...</option>' + ccProjetos.map(function (p) {
+            return '<option value="' + ccEsc(p.nome) + '">' + ccEsc(p.nome) + '</option>';
+        }).join('');
+        if (atual && ccProjetos.some(function (p) { return p.nome === atual; })) el.value = atual;
+    });
+}
+
+function ccPreencherSelectTurmas(projeto) {
+    var lista = ccTurmasCurso.filter(function (t) { return !projeto || t.projeto === projeto; });
+    ['cc-pre-turma', 'cc-pre-link-turma'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var atual = el.value;
+        el.innerHTML = '<option value="">Selecione a turma...</option>' + lista.map(function (t) {
+            return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + (t.descricao ? ' - ' + ccEsc(t.descricao) : '') + '</option>';
+        }).join('');
+        if (atual && lista.some(function (t) { return t.nome === atual; })) el.value = atual;
+    });
+}
+
+function ccLimparFormProjeto() {
+    ['cc-proj-id', 'cc-proj-nome', 'cc-proj-responsavel', 'cc-proj-cnpj'].forEach(function (id) { ccCampoSet(id, ''); });
+    var tit = document.getElementById('cc-proj-form-titulo'); if (tit) tit.textContent = 'Novo Projeto';
+    ccMsg('cc-proj-msg', '');
+}
+
+async function ccSalvarProjeto() {
+    var nome = ((document.getElementById('cc-proj-nome') || {}).value || '').trim();
+    if (!nome) { alert('Informe o nome do projeto.'); return; }
+    var id = ((document.getElementById('cc-proj-id') || {}).value || '').trim();
+    var repetido = ccProjetos.some(function (p) { return p._id !== id && String(p.nome).toUpperCase() === nome.toUpperCase(); });
+    if (repetido) { alert('Já existe um projeto com esse nome neste curso.'); return; }
+    var agora = new Date().toISOString();
+    var dados = {
+        nome: nome,
+        responsavel: ((document.getElementById('cc-proj-responsavel') || {}).value || '').trim(),
+        cnpj: ((document.getElementById('cc-proj-cnpj') || {}).value || '').trim(),
+        cursoId: ccAtual._id,
+        atualizadoEm: agora
+    };
+    try {
+        if (id) await ccRef('projetos', id).update(dados);
+        else { dados.criadoEm = agora; await ccRef('projetos').add(dados); }
+        ccLimparFormProjeto();
+        await ccCarregarProjetosTurmas();
+        ccMsg('cc-proj-msg', 'Projeto salvo somente neste curso.');
+    } catch (e) { ccMsg('cc-proj-msg', 'Erro ao salvar: ' + e.message, '#dc2626'); }
+}
+
+function ccEditarProjeto(id) {
+    var p = ccProjetos.find(function (x) { return x._id === id; });
+    if (!p) return;
+    ccCampoSet('cc-proj-id', p._id);
+    ccCampoSet('cc-proj-nome', p.nome);
+    ccCampoSet('cc-proj-responsavel', p.responsavel);
+    ccCampoSet('cc-proj-cnpj', p.cnpj);
+    var tit = document.getElementById('cc-proj-form-titulo'); if (tit) tit.textContent = 'Editar Projeto';
+    ccMsg('cc-proj-msg', '');
+    var card = document.getElementById('cc-proj-nome'); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function ccExcluirProjeto(id) {
+    var p = ccProjetos.find(function (x) { return x._id === id; });
+    if (!p) return;
+    var qtd = ccTurmasCurso.filter(function (t) { return t.projeto === p.nome; }).length;
+    if (!confirm('Excluir o projeto "' + p.nome + '" e ' + qtd + ' turma(s) dele DESTE CURSO?\nOs pré-inscritos serão mantidos.')) return;
+    try {
+        var batch = ccDb().batch();
+        ccTurmasCurso.forEach(function (t) { if (t.projeto === p.nome) batch.delete(ccRef('turmas', t._id)); });
+        batch.delete(ccRef('projetos', id));
+        await batch.commit();
+        ccLimparFormProjeto();
+        await ccCarregarProjetosTurmas();
+    } catch (e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+/* ---------- TURMAS ---------- */
+function ccLimparFormTurma() {
+    ['cc-turma-id', 'cc-turma-nome', 'cc-turma-descricao', 'cc-turma-inicio', 'cc-turma-previsao', 'cc-turma-dias', 'cc-turma-horarios'].forEach(function (id) { ccCampoSet(id, ''); });
+    ccCampoSet('cc-turma-status', 'Em Andamento');
+    var tit = document.getElementById('cc-turma-form-titulo'); if (tit) tit.textContent = 'Nova Turma';
+    ccMsg('cc-turma-msg', '');
+}
+
+async function ccSalvarTurma() {
+    var nome = ((document.getElementById('cc-turma-nome') || {}).value || '').trim();
+    var projeto = ((document.getElementById('cc-turma-projeto') || {}).value || '').trim();
+    if (!projeto) { alert('Selecione o projeto deste curso.'); return; }
+    if (!nome) { alert('Informe o nome da turma.'); return; }
+    var id = ((document.getElementById('cc-turma-id') || {}).value || '').trim();
+    var repetido = ccTurmasCurso.some(function (t) { return t._id !== id && t.projeto === projeto && String(t.nome).toUpperCase() === nome.toUpperCase(); });
+    if (repetido) { alert('Já existe uma turma com esse nome neste projeto.'); return; }
+    var agora = new Date().toISOString();
+    var dados = {
+        nome: nome,
+        projeto: projeto,
+        descricao: ((document.getElementById('cc-turma-descricao') || {}).value || '').trim(),
+        status: ((document.getElementById('cc-turma-status') || {}).value || 'Em Andamento'),
+        inicio: ((document.getElementById('cc-turma-inicio') || {}).value || '').trim(),
+        previsao: ((document.getElementById('cc-turma-previsao') || {}).value || '').trim(),
+        dias: ((document.getElementById('cc-turma-dias') || {}).value || '').trim(),
+        horarios: ((document.getElementById('cc-turma-horarios') || {}).value || '').trim(),
+        cursoId: ccAtual._id,
+        atualizadoEm: agora
+    };
+    try {
+        if (id) await ccRef('turmas', id).update(dados);
+        else { dados.criadoEm = agora; await ccRef('turmas').add(dados); }
+        ccLimparFormTurma();
+        await ccCarregarProjetosTurmas();
+        ccMsg('cc-turma-msg', 'Turma salva somente neste curso.');
+    } catch (e) { ccMsg('cc-turma-msg', 'Erro ao salvar: ' + e.message, '#dc2626'); }
+}
+
+function ccEditarTurma(id) {
+    var t = ccTurmasCurso.find(function (x) { return x._id === id; });
+    if (!t) return;
+    ccCampoSet('cc-turma-id', t._id);
+    ccCampoSet('cc-turma-projeto', t.projeto);
+    ccCampoSet('cc-turma-nome', t.nome);
+    ccCampoSet('cc-turma-descricao', t.descricao);
+    ccCampoSet('cc-turma-status', t.status || 'Em Andamento');
+    ccCampoSet('cc-turma-inicio', t.inicio);
+    ccCampoSet('cc-turma-previsao', t.previsao);
+    ccCampoSet('cc-turma-dias', t.dias);
+    ccCampoSet('cc-turma-horarios', t.horarios);
+    var tit = document.getElementById('cc-turma-form-titulo'); if (tit) tit.textContent = 'Editar Turma';
+    ccMsg('cc-turma-msg', '');
+    var el = document.getElementById('cc-turma-nome'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function ccExcluirTurma(id) {
+    var t = ccTurmasCurso.find(function (x) { return x._id === id; });
+    if (!t) return;
+    if (!confirm('Excluir a turma "' + t.nome + '" DESTE CURSO?\nOs pré-inscritos serão mantidos.')) return;
+    try {
+        await ccRef('turmas', id).delete();
+        ccLimparFormTurma();
+        await ccCarregarProjetosTurmas();
+    } catch (e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+/* ---------- PRE-INSCRICAO DO CURSO ---------- */
+function ccPreProjeto() { return ((document.getElementById('cc-pre-projeto') || {}).value || '').trim(); }
+function ccPreTurma() { return ((document.getElementById('cc-pre-turma') || {}).value || '').trim(); }
+
+function ccPreOnProjetoChange() {
+    ccPreencherSelectTurmas(ccPreProjeto());
+    var cont = document.getElementById('cc-pre-conteudo');
+    if (cont) cont.style.display = 'none';
+    ccPreCandidatos = [];
+}
+function ccPreOnTurmaChange() {
+    var cont = document.getElementById('cc-pre-conteudo');
+    if (!cont) return;
+    if (!ccPreProjeto() || !ccPreTurma()) { cont.style.display = 'none'; ccPreCandidatos = []; return; }
+    cont.style.display = '';
+    ccInitPreInscricao();
+}
+
+async function ccInitPreInscricao() {
+    if (!ccAtual || !ccDb()) return;
+    var p = ccPreProjeto(), t = ccPreTurma();
+    if (!p || !t) return;
+    try {
+        var snap = await ccRef('preInscricoes').get();
+        var lista = [];
+        snap.forEach(function (d) {
+            var x = Object.assign({ _id: d.id }, d.data() || {});
+            if (x.projeto === p && x.turma === t) lista.push(x);
+        });
+        lista.sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); });
+        ccPreCandidatos = lista;
+        ccPreRenderLista();
+    } catch (e) {
+        var tb = document.getElementById('cc-pre-tbody');
+        if (tb) tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#dc2626;padding:24px">Erro ao carregar: ' + ccEsc(e.message) + '</td></tr>';
+    }
+}
+
+function ccPreRenderLista() {
+    var tb = document.getElementById('cc-pre-tbody');
+    if (!tb) return;
+    var busca = String(((document.getElementById('cc-pre-search') || {}).value || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    var status = ((document.getElementById('cc-pre-filter') || {}).value || '');
+    var lista = ccPreCandidatos.filter(function (c) {
+        if (status && c.status !== status) return false;
+        if (!busca) return true;
+        var nome = String(c.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        var cpf = String(c.cpf || '').replace(/\D/g, '');
+        var digits = busca.replace(/\D/g, '');
+        return nome.indexOf(busca) >= 0 || (digits.length >= 3 && cpf.indexOf(digits) >= 0);
+    });
+    var badge = document.getElementById('cc-pre-count-badge');
+    if (badge) {
+        var pend = ccPreCandidatos.filter(function (c) { return c.status === 'Pendente'; }).length;
+        badge.textContent = pend + ' pendente' + (pend !== 1 ? 's' : '');
+    }
+    if (!lista.length) {
+        tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:24px">Nenhum pré-inscrito nesta turma do curso.</td></tr>';
+        return;
+    }
+    tb.innerHTML = lista.map(function (c) {
+        var cor = c.status === 'Ativo' ? 'green' : c.status === 'Rejeitado' ? 'rejeitado' : 'pendente';
+        return '<tr>'
+            + '<td>' + ccEsc(c.nome || '-') + '</td>'
+            + '<td>' + ccEsc(c.cpf || '-') + '</td>'
+            + '<td>' + ccEsc(c.nascimento || '-') + '</td>'
+            + '<td>' + ccIdadeCurto(c.nascimento) + '</td>'
+            + '<td>' + ccEsc(c.genero || '-') + '</td>'
+            + '<td>' + ccEsc(c.turma || '-') + '</td>'
+            + '<td style="color:#ea580c;font-weight:600">' + ccEsc(c.projeto || '-') + '</td>'
+            + '<td><span class="badge ' + cor + '">' + ccEsc(c.status || 'Pendente') + '</span>'
+            + (c.individuoId ? ' <span class="badge green" title="Já está na lista de indivíduos deste curso">INDIVÍDUO</span>' : '') + '</td>'
+            + '<td style="color:#aaa;font-size:12px">' + ccEsc(c.cadastradoPor || '-') + '</td>'
+            + '<td><div class="actions-cell">'
+            + '<button class="btn-icon" title="Editar" onclick="ccPreEditar(\'' + c._id + '\')"><i class="fa-solid fa-pen"></i></button>'
+            + ((c.status !== 'Ativo' || !c.individuoId) ? '<button class="btn-icon btn-success" title="Aprovar e incluir nos indivíduos do curso" onclick="ccPreMudarStatus(\'' + c._id + '\',\'Ativo\')"><i class="fa-solid fa-check"></i></button>' : '')
+            + (c.status !== 'Rejeitado' ? '<button class="btn-icon" title="Rejeitar" onclick="ccPreMudarStatus(\'' + c._id + '\',\'Rejeitado\')"><i class="fa-solid fa-xmark"></i></button>' : '')
+            + '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="ccPreExcluir(\'' + c._id + '\')"><i class="fa-solid fa-trash"></i></button>'
+            + '</div></td></tr>';
+    }).join('');
+}
+
+/* O formulario e o MESMO do admin: so é movido para a guia e ligado ao
+   gravador do curso. Nao ha copia, portanto nao ha ids duplicados. */
+function ccPrePopularFormSelects(c) {
+    var projeto = c ? (c.projeto || '') : ccPreProjeto();
+    var turma = c ? (c.turma || '') : ccPreTurma();
+    var fp = document.getElementById('fc-projeto');
+    var ft = document.getElementById('fc-turma');
+    if (fp) {
+        fp.innerHTML = '<option value="">Selecione o projeto...</option>' + ccProjetos.map(function (p) {
+            return '<option value="' + ccEsc(p.nome) + '">' + ccEsc(p.nome) + '</option>';
+        }).join('');
+        if (projeto && !ccProjetos.some(function (p) { return p.nome === projeto; })) {
+            fp.innerHTML += '<option value="' + ccEsc(projeto) + '">' + ccEsc(projeto) + '</option>';
+        }
+        fp.value = projeto;
+        fp.setAttribute('onchange', 'ccPreFormProjetoChange()');
+    }
+    if (ft) {
+        var turmas = ccTurmasCurso.filter(function (t) { return t.projeto === projeto; });
+        ft.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function (t) {
+            return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
+        }).join('');
+        if (turma && !turmas.some(function (t) { return t.nome === turma; })) {
+            ft.innerHTML += '<option value="' + ccEsc(turma) + '">' + ccEsc(turma) + '</option>';
+        }
+        ft.value = turma;
+        ft.setAttribute('onchange', '');
+    }
+}
+function ccPreFormProjetoChange() {
+    var projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
+    var ft = document.getElementById('fc-turma');
+    if (!ft) return;
+    var turmas = ccTurmasCurso.filter(function (t) { return t.projeto === projeto; });
+    ft.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function (t) {
+        return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
+    }).join('');
+}
+
+function ccPreAbrirForm(id) {
+    var no = document.getElementById('admin-form-candidato');
+    var painel = document.getElementById('cc-pre-form-painel');
+    var lista = document.getElementById('cc-pre-lista-wrap');
+    if (!no || !painel) return;
+    var c = id ? ccPreCandidatos.find(function (x) { return x._id === id; }) : null;
+    if (id && !c) return;
+    if (!ccPreFormGuardado) {
+        ccPreFormGuardado = {
+            pai: no.parentNode,
+            proximo: no.nextSibling,
+            tinhaActive: no.classList.contains('active'),
+            onProjeto: (document.getElementById('fc-projeto') || {}).getAttribute ? document.getElementById('fc-projeto').getAttribute('onchange') : '',
+            onTurma: (document.getElementById('fc-turma') || {}).getAttribute ? document.getElementById('fc-turma').getAttribute('onchange') : ''
+        };
+    }
+    painel.appendChild(no);
+    no.classList.add('active');
+    painel.style.display = '';
+    if (lista) lista.style.display = 'none';
+    ccPreFormaAtiva = true;
+    ccPreEditando = c || null;
+
+    resetFormCandidato();
+    ccPrePopularFormSelects(c);
+    if (c && typeof formFields !== 'undefined') {
+        formFields.forEach(function (fid) {
+            var chave = fid.replace('fc-', '').replace(/-([a-z])/g, function (_, l) { return l.toUpperCase(); });
+            var el = document.getElementById(fid);
+            if (el) el.value = c[chave] == null ? '' : c[chave];
+        });
+        var radio = document.querySelector('input[name="fc-tipo-pessoa"][value="' + (c.tipoPessoa || 'A') + '"]');
+        if (radio) radio.checked = true;
+        if (typeof fcCursosCarregar === 'function') fcCursosCarregar(c.cursos || []);
+    }
+    if (typeof patentePopularSelects === 'function') patentePopularSelects({ fc: { codigo: (c && (c.patenteCodigo || c.patente)) || 'PRE' } });
+    if (typeof patenteIgnorarSugestao === 'function') patenteIgnorarSugestao();
+    fcFormularioModo('pre-inscricao', c ? (c.nome || '') : '', !c);
+    var voltar = document.getElementById('fc-voltar-btn'); if (voltar) voltar.setAttribute('onclick', 'ccPreVoltarForm()');
+    var cancelar = document.getElementById('fc-cancelar-btn'); if (cancelar) cancelar.setAttribute('onclick', 'ccPreVoltarForm()');
+    var att = document.getElementById('btn-atualizar-cadastro'); if (att) att.style.display = 'none';
+    no.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function ccPreNovo() { ccPreAbrirForm(null); }
+function ccPreEditar(id) { ccPreAbrirForm(id); }
+
+function ccPreVoltarForm() {
+    ccPreFormaAtiva = false;
+    ccPreEditando = null;
+    var no = document.getElementById('admin-form-candidato');
+    var painel = document.getElementById('cc-pre-form-painel');
+    var lista = document.getElementById('cc-pre-lista-wrap');
+    if (ccPreFormGuardado && no) {
+        var g = ccPreFormGuardado;
+        if (no.parentNode) g.pai.insertBefore(no, g.proximo);
+        no.classList.toggle('active', g.tinhaActive);
+        var fp = document.getElementById('fc-projeto'); if (fp && g.onProjeto) fp.setAttribute('onchange', g.onProjeto);
+        var ft = document.getElementById('fc-turma'); if (ft && g.onTurma) ft.setAttribute('onchange', g.onTurma);
+        ccPreFormGuardado = null;
+    }
+    if (painel) { painel.style.display = 'none'; painel.innerHTML = ''; }
+    if (lista) lista.style.display = '';
+}
+
+async function ccPreSalvarCandidato() {
+    var dados = ccPreEditando ? Object.assign({}, ccPreEditando) : {};
+    delete dados._id;
+    Object.assign(dados, fcCamposFormulario());
+    var tipo = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
+    dados.tipoPessoa = tipo ? tipo.value : 'A';
+    dados.cursos = typeof fcCursosColetar === 'function' ? fcCursosColetar() : [];
+    dados.projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
+    dados.turma = ((document.getElementById('fc-turma') || {}).value || '').trim();
+    if (!dados.projeto || !dados.turma) { alert('Selecione o projeto e a turma deste curso.'); return false; }
+    var agora = new Date().toISOString();
+    var hoje = new Date().toLocaleDateString('pt-BR');
+    dados.status = (ccPreEditando && ccPreEditando.status) || 'Pendente';
+    dados.statusOriginal = (ccPreEditando && ccPreEditando.statusOriginal) || 'Pendente';
+    if (!dados.matricula && typeof generateMatricula === 'function') dados.matricula = generateMatricula(dados.cpf);
+    dados.patente = (ccPreEditando && ccPreEditando.patente) || '';
+    if (typeof patenteGravarNoObjeto === 'function') dados = patenteGravarNoObjeto(dados, 'fc');
+    dados.cursoId = ccAtual._id;
+    dados.cursoNome = ccAtual.nome;
+    dados.dataCadastro = (ccPreEditando && ccPreEditando.dataCadastro) ? ccPreEditando.dataCadastro : hoje;
+    dados.cadastradoPor = (ccPreEditando && ccPreEditando.cadastradoPor)
+        ? ccPreEditando.cadastradoPor
+        : ((typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) || 'Cadastro de Cursos');
+    dados.atualizadoEm = agora;
+    try {
+        if (ccPreEditando && ccPreEditando._id) await ccRef('preInscricoes', ccPreEditando._id).update(dados);
+        else { dados.criadoEm = agora; dados.id = Date.now(); await ccRef('preInscricoes').add(dados); }
+        ccPreVoltarForm();
+        await ccInitPreInscricao();
+    } catch (e) { alert('Erro ao salvar pré-inscrição: ' + e.message); }
+    return false;
+}
+
+/* Aprovacao na Pre-Inscricao: o candidato entra na lista de individuos
+   deste curso. Nada e escrito na colecao global 'candidatos'. */
+async function ccPrePromoverIndividuo(c) {
+    if (!c || !ccAtual || !ccAtual._id) return null;
+    var cpf = String(c.cpf || '').replace(/\D/g, '');
+    var dados = Object.assign({}, c);
+    delete dados._id; delete dados.docKey; delete dados.individuoId; delete dados.promovidoEm;
+    Object.keys(dados).forEach(function (k) { if (dados[k] === undefined) delete dados[k]; });
+    dados.cpf = cpf;
+    dados.cursoId = ccAtual._id;
+    dados.cursoNome = ccAtual.nome || '';
+    dados.origem = 'pre-inscricao';
+    dados.preInscricaoId = c._id;
+    dados.promovidoEm = new Date().toISOString();
+    dados.projeto = c.projeto || ccPreProjeto();
+    dados.turma = c.turma || ccPreTurma();
+    dados.dataCadastro = c.dataCadastro || new Date().toLocaleDateString('pt-BR');
+    dados.cadastradoPor = c.cadastradoPor || ((typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) || 'Cadastro de Cursos');
+    dados.cursos = Array.isArray(c.cursos) ? c.cursos : [];
+    if (!dados.matricula && typeof generateMatricula === 'function') dados.matricula = generateMatricula(cpf);
+    if (!dados.senha && cpf) dados.senha = cpf.substring(0, 6);
+    /* Curso concluido: o aprovado entra como formado. */
+    ccIndAplicarSituacao(dados, ccCursoConcluido() ? 'Formado' : 'Ativo');
+    var snap = await ccRef('individuos').get();
+    var existente = null;
+    snap.forEach(function (d) {
+        var p = d.data() || {};
+        if (cpf && String(p.cpf || '').replace(/\D/g, '') === cpf) existente = { id: d.id, dados: p };
+    });
+    if (existente) {
+        var patch = Object.assign({}, existente.dados, dados);
+        delete patch._id; delete patch.docKey;
+        await ccRef('individuos', existente.id).update(patch);
+        return existente.id;
+    }
+    var ref = await ccRef('individuos').add(dados);
+    return ref.id;
+}
+async function ccPreMudarStatus(id, status) {
+    var c = ccPreCandidatos.find(function (x) { return x._id === id; });
+    if (!c) return;
+    var msg = status === 'Ativo'
+        ? 'Aprovar "' + (c.nome || '') + '" e incluir como indivíduo deste curso?'
+        : 'Alterar o status de "' + (c.nome || '') + '" para "' + status + '"?';
+    if (!confirm(msg)) return;
+    try {
+        var patch = { status: status, statusAtualizadoEm: new Date().toISOString() };
+        if (status === 'Ativo' && !c.individuoId) {
+            patch.individuoId = await ccPrePromoverIndividuo(c);
+            if (patch.individuoId) patch.promovidoEm = new Date().toISOString();
+        }
+        await ccRef('preInscricoes', id).update(patch);
+        await ccInitPreInscricao();
+        await ccLoadIndividuos();
+        ccIndRefreshVinculos();
+        if (status === 'Ativo') alert('Aprovado e incluído na lista de indivíduos deste curso.');
+    } catch (e) { alert('Erro ao alterar status: ' + e.message); }
+}
+async function ccPreExcluir(id) {
+    var c = ccPreCandidatos.find(function (x) { return x._id === id; });
+    if (!c || !confirm('Excluir a pré-inscrição de "' + (c.nome || '') + '" deste curso?')) return;
+    try { await ccRef('preInscricoes', id).delete(); await ccInitPreInscricao(); }
+    catch (e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+/* ---------- LINKS DE PRE-INSCRICAO DO CURSO ---------- */
+function ccPreAbrirLinks() {
+    var box = document.getElementById('cc-pre-link-box');
+    if (!box) return;
+    ccPreencherSelectTurmas(ccPreProjeto());
+    box.style.display = '';
+}
+async function ccPreGerarLink(modo) {
+    var turma = ((document.getElementById('cc-pre-link-turma') || {}).value || '').trim();
+    var projeto = ccPreProjeto();
+    if (!projeto || !turma) { alert('Selecione o projeto e a turma antes de gerar o link.'); return; }
+    var res = document.getElementById('cc-pre-link-resultado');
+    if (res) res.innerHTML = '<span style="font-size:12px;color:#7c3aed"><i class="fa-solid fa-spinner fa-spin"></i> Gerando...</span>';
+    try {
+        var token = 'PL' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        var base = (location.hostname.indexOf('github.io') >= 0 || location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'https://farn-app.web.app' : location.origin;
+        var link = base + '/pre-inscricao-via-link.html?v=24&curso=' + encodeURIComponent(ccAtual._id) + '&token=' + token;
+        await ccRef('linksPreInscricao', token).set({
+            token: token, projeto: projeto, turma: turma, curso: projeto,
+            coletivo: modo === 'coletivo', usado: false,
+            criadoEm: new Date().toISOString(),
+            criadoPor: (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) || 'Cadastro de Cursos',
+            cursoId: ccAtual._id, cursoNome: ccAtual.nome, link: link
+        });
+        var tipoLabel = modo === 'coletivo' ? 'Link coletivo (várias inscrições)' : 'Link único (1 inscrição)';
+        if (res) res.innerHTML = '<div style="padding:12px;border-radius:8px;background:#fff;border:1px solid #ddd6fe">'
+            + '<div style="font-size:12px;font-weight:800;color:#6d28d9;margin-bottom:6px"><i class="fa-solid fa-circle-check"></i> Link gerado para ESTE CURSO • ' + tipoLabel + '</div>'
+            + '<div style="font-size:11px;color:#475569;margin-bottom:8px">' + ccEsc(projeto) + ' / ' + ccEsc(turma) + '</div>'
+            + '<input type="text" id="cc-pre-link-copy" readonly value="' + ccEsc(link) + '" style="width:100%;padding:9px;border-radius:7px;border:1px solid #ddd6fe;font-size:11px;background:#fff;color:#1e293b">'
+            + '<button class="btn-primary btn-sm" style="margin-top:8px;background:#16a34a;border-color:#16a34a" onclick="ccPreCopiarLink()"><i class="fa-solid fa-copy"></i> Copiar link</button></div>';
+    } catch (e) {
+        if (res) res.innerHTML = '<span style="color:#dc2626;font-size:12px">Erro ao gerar link: ' + ccEsc(e.message) + '</span>';
+    }
+}
+function ccPreCopiarLink() {
+    var i = document.getElementById('cc-pre-link-copy');
+    if (!i) return;
+    i.select();
+    try { document.execCommand('copy'); alert('Link copiado!'); } catch (e) { alert('Selecione e copie o link manualmente.'); }
+}
+
+/* ---------- PLANILHA CSV ---------- */
+var CC_PRE_CSV_COLS = ['nome', 'cpf', 'nascimento', 'genero', 'whatsapp', 'email', 'mae', 'cidade', 'estado', 'projeto', 'turma', 'status'];
+function ccPreCsvBaixar(nomeArquivo, linhas) {
+    var csv = '\uFEFF' + linhas.map(function (l) {
+        return l.map(function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\r\n');
+    var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = nomeArquivo; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+function ccPreBaixarModelo() {
+    ccPreCsvBaixar('modelo-pre-inscricao-curso.csv', [CC_PRE_CSV_COLS]);
+}
+function ccPreExportar() {
+    var linhas = [CC_PRE_CSV_COLS];
+    ccPreCandidatos.forEach(function (c) {
+        linhas.push(CC_PRE_CSV_COLS.map(function (k) { return k === 'projeto' ? (c.projeto || ccPreProjeto()) : k === 'turma' ? (c.turma || ccPreTurma()) : c[k]; }));
+    });
+    ccPreCsvBaixar('pre-inscritos-curso.csv', linhas);
+}
+function ccPreParseCsv(texto) {
+    var linhas = [], linha = [], campo = '', dentro = false;
+    var s = String(texto || '').replace(/^\uFEFF/, '');
+    for (var i = 0; i < s.length; i++) {
+        var ch = s.charAt(i);
+        if (dentro) {
+            if (ch === '"' && s.charAt(i + 1) === '"') { campo += '"'; i++; }
+            else if (ch === '"') dentro = false;
+            else campo += ch;
+        } else if (ch === '"') dentro = true;
+        else if (ch === ',') { linha.push(campo); campo = ''; }
+        else if (ch === '\n') { linha.push(campo); linhas.push(linha); linha = []; campo = ''; }
+        else if (ch !== '\r') campo += ch;
+    }
+    if (campo !== '' || linha.length) { linha.push(campo); linhas.push(linha); }
+    return linhas.filter(function (l) { return l.some(function (c) { return String(c || '').trim() !== ''; }); });
+}
+async function ccPreImportar(ev) {
+    var arquivo = ev && ev.target && ev.target.files && ev.target.files[0];
+    if (!arquivo) return;
+    var projeto = ccPreProjeto(), turma = ccPreTurma();
+    if (!projeto || !turma) { alert('Selecione o projeto e a turma antes de importar.'); ev.target.value = ''; return; }
+    var texto = await arquivo.text();
+    var linhas = ccPreParseCsv(texto);
+    if (linhas.length < 2) { alert('Planilha vazia.'); ev.target.value = ''; return; }
+    var cab = linhas[0].map(function (h) { return String(h || '').trim().toLowerCase(); });
+    var indice = {};
+    CC_PRE_CSV_COLS.forEach(function (k) { indice[k] = cab.indexOf(k); });
+    var agora = new Date().toISOString(), gravados = 0;
+    try {
+        for (var i = 1; i < linhas.length; i++) {
+            var l = linhas[i];
+            var valor = function (k) { return indice[k] >= 0 ? String(l[indice[k]] || '').trim() : ''; };
+            var nome = valor('nome');
+            if (!nome) continue;
+            await ccRef('preInscricoes').add({
+                nome: nome, cpf: valor('cpf').replace(/\D/g, ''),
+                nascimento: valor('nascimento'), genero: valor('genero'),
+                whatsapp: valor('whatsapp'), email: valor('email'), mae: valor('mae'),
+                cidade: valor('cidade'), estado: valor('estado'),
+                projeto: projeto, turma: turma, status: valor('status') || 'Pendente',
+                statusOriginal: 'Pendente', cursoId: ccAtual._id, cursoNome: ccAtual.nome,
+                cadastradoPor: 'Importação de planilha (curso)', criadoEm: agora, id: Date.now() + i
+            });
+            gravados++;
+        }
+        await ccInitPreInscricao();
+        alert(gravados + ' pré-inscrição(ões) importada(s) para este curso.');
+    } catch (e) { alert('Erro ao importar: ' + e.message); }
+    ev.target.value = '';
 }
 
 function ccSetAba(aba) {
     ccAba = aba;
-    ['geral','avaliacao','disciplinas','individuos','apontamento','ficha','certificado','secaoavaliacao','permissoes'].forEach(function (a) {
+    if (aba !== 'preinscricao' && ccPreFormaAtiva) ccPreVoltarForm();
+    if (aba !== 'individuos' && ccIndFormaAtiva) ccIndVoltarForm();
+    ['geral','avaliacao','disciplinas','individuos','projeto','preinscricao','apontamento','ficha','certificado','secaoavaliacao','permissoes'].forEach(function (a) {
         var el = document.getElementById('cc-tab-' + a);
         if (el) el.style.display = (a === aba) ? '' : 'none';
         var btn = document.getElementById('cc-aba-' + a);
@@ -296,11 +952,12 @@ function ccSetAba(aba) {
     if (aba === 'geral') ccRenderGeral();
     if (aba === 'avaliacao') ccLoadAvaliacoes();
     if (aba === 'disciplinas') { ccLoadDisciplinas(); ccLoadAulas(); }
-    if (aba === 'individuos') { ccLoadIndividuos(); ccRenderImportar(); }
+    if (aba === 'individuos') ccLoadIndividuos();
     if (aba === 'apontamento') ccInitApontamento();
     if (aba === 'ficha') ccInitFicha();
     if (aba === 'certificado') ccInitCertificados();
     if (aba === 'secaoavaliacao') ccInitAvaliacao();
+    if (aba === 'projeto' || aba === 'preinscricao') ccCarregarProjetosTurmas();
 }
 
 /* ============ IMPORTAÇÃO DO ADMINISTRADOR ============
@@ -687,8 +1344,10 @@ async function ccEnviarAv(id) {
     if (!cpfs.length) { alert('Importe indivíduos para este curso antes de enviar.'); return; }
     if (!confirm('Enviar a avaliação "' + (av.nome || '') + '" para ' + cpfs.length + ' indivíduo(s) deste curso?')) return;
     try {
+        /* Enviar == liberar para resposta no Portal do Aluno. */
         await ccRef('avaliacoes', id).update({
             enviada: true, enviadaEm: new Date().toISOString(),
+            ativa: true, ativadaEm: new Date().toISOString(),
             alunosSelecionados: cpfs, cursoId: ccAtual._id
         });
         ccLoadAvaliacoes();
@@ -939,10 +1598,107 @@ function ccQrInicio(aulaId) {
     if (m) m.classList.remove('hidden');
 }
 
-/* ============ ABA INDIVIDUOS (IMPORTAR) ============ */
+/* ============ ABA INDIVIDUOS (LISTA ISOLADA DO CURSO) ============
+   Fonte unica: cursosCadastro/{id}/individuos.
+   - Os novos entram pela aprovacao na guia Pre-Inscricao.
+   - Quem ja estava cadastrado fica no curso, desvinculado do admin.
+   - Esta mesma lista alimenta Ficha, Secao de Avaliacao e Apontamento. */
 var ccIndividuosCache = [];
+
+var CC_SITUACOES_INDIVIDUO = [
+    { chave: 'Ativo',             rotulo: 'ALUNO ATIVO',       cor: '#dcfce7', texto: '#166534' },
+    { chave: 'Inativo por Falta', rotulo: 'INATIVO POR FALTA', cor: '#fef3c7', texto: '#92400e' },
+    { chave: 'Pediu Baixa',       rotulo: 'PEDIU BAIXA',       cor: '#fee2e2', texto: '#991b1b' },
+    { chave: 'Rebaixado',         rotulo: 'REBAIXADO',         cor: '#ede9fe', texto: '#5b21b6' },
+    { chave: 'Formado',           rotulo: 'FORMADO',           cor: '#dbeafe', texto: '#1e40af' }
+];
+function ccCursoConcluido() {
+    if (!ccAtual) return false;
+    var s = String(ccAtual.status || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    return s === 'CONCLUIDO';
+}
+function ccPerfilIndividuos() {
+    return ccCursoConcluido()
+        ? { chave: 'formado', lista: 'Formados do curso', selo: 'CONCLUÍDO', cor: '#eff6ff', corTexto: '#1d4ed8' }
+        : { chave: 'ativo', lista: 'Indivíduos do curso', selo: 'EM ANDAMENTO', cor: '#dcfce7', corTexto: '#166534' };
+}
+/* Situacao de cada pessoa, com compatibilidade para cadastros antigos. */
+function ccIndSituacao(c) {
+    if (c && c.situacaoCurso) {
+        var atual = CC_SITUACOES_INDIVIDUO.find(function (s) { return s.chave === c.situacaoCurso; });
+        if (atual) return atual;
+    }
+    if (c && c.pediuBaixa) return CC_SITUACOES_INDIVIDUO[2];
+    if (c && String(c.statusOriginal || '') === 'Inativo por Falta') return CC_SITUACOES_INDIVIDUO[1];
+    if (c && (c.rebaixado || c.status === 'Rebaixado')) return CC_SITUACOES_INDIVIDUO[3];
+    if (c && ((c.tipoPessoa || 'A') === 'F' || c.status === 'Formado')) return CC_SITUACOES_INDIVIDUO[4];
+    return CC_SITUACOES_INDIVIDUO[0];
+}
+/* Aplica a situacao escolhida sem mexer em nenhum cadastro do administrador. */
+function ccIndAplicarSituacao(d, chave) {
+    d.situacaoCurso = chave;
+    var agora = new Date().toISOString();
+    if (chave === 'Formado') {
+        d.tipoPessoa = 'F';
+        d.status = 'Formado';
+        d.statusOriginal = 'Ativo';
+        d.rebaixado = false;
+        d.pediuBaixa = false;
+        d.inativoPorFaltaEm = '';
+        d.formadoEm = d.formadoEm || agora;
+        d.formadoProjeto = d.formadoProjeto || d.projeto || '';
+        d.formadoTurma = d.formadoTurma || d.turma || '';
+        d.credencial = d.credencial || d.matricula || '';
+    } else {
+        d.tipoPessoa = 'A';
+        d.status = 'Acadêmico';
+        d.rebaixado = (chave === 'Rebaixado');
+        d.pediuBaixa = (chave === 'Pediu Baixa');
+        d.inativoPorFaltaEm = (chave === 'Inativo por Falta') ? (d.inativoPorFaltaEm || agora) : '';
+        d.pediuBaixaEm = (chave === 'Pediu Baixa') ? (d.pediuBaixaEm || agora) : '';
+        d.rebaixadoEm = (chave === 'Rebaixado') ? (d.rebaixadoEm || agora) : '';
+        d.statusOriginal = (chave === 'Ativo') ? 'Ativo' : chave;
+        if (!d.matricula && typeof generateMatricula === 'function') d.matricula = generateMatricula(d.cpf);
+    }
+    return d;
+}
+function ccAtualizarRotulosIndividuos() {
+    var p = ccPerfilIndividuos();
+    var tit = document.getElementById('cc-individuos-lista-titulo');
+    if (tit) tit.textContent = p.lista;
+    var dica = document.getElementById('cc-individuos-dica');
+    if (dica) dica.innerHTML = 'Os novos indivíduos vêm da aprovação na guia <b>Pré-Inscrição</b>. Quem já estava cadastrado permanece aqui, desvinculado do administrador e vinculado a todas as guias deste curso.';
+    var selo = document.getElementById('cc-individuos-perfil');
+    if (selo) {
+        selo.textContent = p.selo;
+        selo.style.background = p.cor;
+        selo.style.color = p.corTexto;
+    }
+}
+function ccIndPorId(id) {
+    return ccIndividuosCache.find(function (p) { return p._id === id; }) || null;
+}
+function ccIndPorCpf(cpf) {
+    var dig = String(cpf || '').replace(/\D/g, '');
+    if (!dig) return null;
+    return ccIndividuosCache.find(function (p) { return String(p.cpf || '').replace(/\D/g, '') === dig; }) || null;
+}
+/* Cache primeiro; se a guia ainda estiver carregando, le direto do curso. */
+async function ccIndBuscar(id) {
+    var p = ccIndPorId(id);
+    if (p) return p;
+    if (!ccDb() || !ccAtual || !id) return null;
+    try {
+        var d = await ccRef('individuos', id).get();
+        if (!d.exists) return null;
+        return Object.assign({ _id: d.id }, d.data() || {});
+    } catch (e) { return null; }
+}
+
 async function ccLoadIndividuos() {
-    var box = document.getElementById('cc-individuos-lista'); if (!box || !ccAtual) return;
+    if (!ccAtual || !ccDb()) return;
+    ccAtualizarRotulosIndividuos();
     try {
         var snap = await ccRef('individuos').get();
         ccIndividuosCache = [];
@@ -953,60 +1709,261 @@ async function ccLoadIndividuos() {
             if (p.cursoId && String(p.cursoId) !== String(ccAtual._id)) return;
             ccIndividuosCache.push(p);
         });
-        box.innerHTML = ccIndividuosCache.length ? '<div style="display:grid;gap:6px">' + ccIndividuosCache.map(function (p) {
-            return '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:9px;background:#fff;display:flex;align-items:center;gap:8px">'
-                + '<b style="font-size:13px;flex:1">' + ccEsc(p.nome) + '</b><span style="font-size:11px;color:#64748b">' + ccEsc(p.cpf || '') + '</span>'
-                + '<button class="btn-danger btn-sm" onclick="ccRemoverIndividuo(\'' + p._id + '\')"><i class="fa-solid fa-trash"></i></button></div>';
-        }).join('') + '</div>' : '<p style="color:#94a3b8;font-size:12px">Nenhum indivíduo importado.</p>';
-        var cnt = document.getElementById('cc-individuos-count'); if (cnt) cnt.textContent = ccIndividuosCache.length;
-    } catch (e) { box.innerHTML = '<p style="color:#dc2626">' + ccEsc(e.message) + '</p>'; }
+        ccIndividuosCache.sort(function (a, b) {
+            return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+        });
+        ccRenderIndividuos();
+    } catch (e) {
+        var tb = document.getElementById('cc-individuos-tbody');
+        if (tb) tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#dc2626;padding:24px">Erro ao carregar: ' + ccEsc(e.message) + '</td></tr>';
+    }
 }
-function ccRenderImportar() {
-    var box = document.getElementById('cc-importar-lista'); if (!box) return;
-    var f = ccImportFiltro.toLowerCase();
-    var lista = (typeof candidatos !== 'undefined' ? candidatos : []).filter(function (c) {
-        if (!f) return true;
-        return [c.nome, c.cpf, c.projeto, c.turma, c.matricula].some(function (v) { return String(v || '').toLowerCase().indexOf(f) >= 0; });
+function ccRenderIndividuos() {
+    var tb = document.getElementById('cc-individuos-tbody'); if (!tb) return;
+    ccAtualizarRotulosIndividuos();
+    var cnt = document.getElementById('cc-individuos-count');
+    if (cnt) cnt.textContent = ccIndividuosCache.length;
+    var busca = String(((document.getElementById('cc-ind-busca') || {}).value || ''))
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    var lista = ccIndividuosCache.filter(function (p) {
+        if (!busca) return true;
+        return [p.nome, p.cpf, p.matricula, p.projeto, p.turma].some(function (v) {
+            return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(busca) >= 0;
+        });
     });
-    box.innerHTML = '<label style="font-size:12px;color:#475569;display:block;margin-bottom:6px">Filtrar (nome, CPF, projeto, turma, matrícula)</label>'
-        + '<input id="cc-importar-filtro" class="config-input" value="' + ccEsc(ccImportFiltro) + '" oninput="ccImportFiltro=this.value;ccRenderImportar()" style="width:100%;margin-bottom:10px">'
-        + '<div style="max-height:300px;overflow:auto;border:1px solid #e2e8f0;border-radius:8px">'
-        + lista.map(function (c) {
-            var chave = String(c.cpf || c.id || '');
-            return '<label style="display:flex;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;cursor:pointer">'
-                + '<input type="checkbox" ' + (ccImportSel[chave] ? 'checked' : '') + ' onchange="ccImportSel[\'' + ccEsc(chave) + '\']=this.checked">'
-                + '<span style="flex:1">' + ccEsc(c.nome) + '</span><span style="color:#64748b;font-size:11px">' + ccEsc(c.projeto || '') + ' / ' + ccEsc(c.turma || '') + '</span></label>';
-        }).join('') + '</div>';
-}
-async function ccImportarSelecionados() {
-    var todos = (typeof candidatos !== 'undefined' ? candidatos : []);
-    var selecionados = todos.filter(function (c) { return ccImportSel[String(c.cpf || c.id || '')]; });
-    if (!selecionados.length) { alert('Marque pelo menos um indivíduo.'); return; }
-    if (!ccAtual || !ccAtual._id || ccAtual._id === 'undefined') {
-        alert('Este curso está com ID inválido (criado antes de uma correção). Recrie o curso antes de importar.');
+    if (!lista.length) {
+        tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">'
+            + (ccIndividuosCache.length ? 'Nenhum indivíduo corresponde à busca.' : 'Nenhum indivíduo neste curso. Aprove os pré-inscritos na guia Pré-Inscrição.')
+            + '</td></tr>';
         return;
     }
-    try {
-        var batch = ccDb().batch(); var n = 0;
-        selecionados.forEach(function (c) {
-            var dados = Object.assign({}, c);
-            delete dados.docKey; delete dados._id;
-            /* O Firestore nao aceita undefined em nenhum campo. */
-            Object.keys(dados).forEach(function (k) {
-                if (dados[k] === undefined) delete dados[k];
-            });
-            /* Marca o dono dos dados: nada compartilha com outro curso. */
-            dados.cursoId = ccAtual._id;
-            dados.cursoNome = ccAtual.nome || '';
-            dados.importadoEm = new Date().toISOString();
-            batch.set(ccRef('individuos').doc(), dados); n++;
-        });
-        await batch.commit();
-        ccImportSel = {}; ccLoadIndividuos(); ccRenderImportar();
-        alert(n + ' indivíduo(s) importado(s) como cópia.');
-    } catch (e) { alert(e.message); }
+    tb.innerHTML = lista.map(function (p) {
+        var sit = ccIndSituacao(p);
+        var opcoes = CC_SITUACOES_INDIVIDUO.map(function (s) {
+            return '<option value="' + ccEsc(s.chave) + '"' + (s.chave === sit.chave ? ' selected' : '') + '>' + s.rotulo + '</option>';
+        }).join('');
+        var cpfFmt = (typeof formatCPFDisplay === 'function') ? formatCPFDisplay(p.cpf) : (p.cpf || '-');
+        return '<tr style="border-bottom:1px solid #f1f5f9">'
+            + '<td style="padding:8px"><b>' + ccEsc(p.nome || '-') + '</b>'
+            + (p.origem === 'pre-inscricao' ? '<div style="font-size:9px;color:#16a34a">via Pré-Inscrição</div>' : '') + '</td>'
+            + '<td style="padding:8px;color:#475569">' + ccEsc(cpfFmt) + '</td>'
+            + '<td style="padding:8px;color:#ea580c;font-weight:600">' + ccEsc(p.matricula || p.credencial || '-') + '</td>'
+            + '<td style="padding:8px;color:#475569">' + ccEsc(p.projeto || '-') + '</td>'
+            + '<td style="padding:8px;color:#475569">' + ccEsc(p.turma || '-') + '</td>'
+            + '<td style="padding:8px"><select class="config-input" style="padding:4px 6px;font-size:10px;font-weight:800;background:' + sit.cor + ';color:' + sit.texto + ';border:1px solid ' + sit.cor + ';border-radius:8px" onchange="ccIndividuoMudarStatus(\'' + p._id + '\',this.value)">' + opcoes + '</select></td>'
+            + '<td style="padding:8px"><div class="actions-cell">'
+            + '<button class="btn-icon" title="Editar" onclick="ccIndEditar(\'' + p._id + '\')"><i class="fa-solid fa-pen"></i></button>'
+            + '<button class="btn-icon" title="Imprimir" onclick="ccIndImprimir(\'' + p._id + '\')"><i class="fa-solid fa-print"></i></button>'
+            + '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="ccIndExcluir(\'' + p._id + '\')"><i class="fa-solid fa-trash"></i></button>'
+            + '</div></td></tr>';
+    }).join('');
 }
-async function ccRemoverIndividuo(id) { if (!confirm('Remover indivíduo deste curso?')) return; try { await ccRef('individuos', id).delete(); ccLoadIndividuos(); } catch (e) { alert(e.message); } }
+async function ccIndividuoMudarStatus(id, chave) {
+    var p = await ccIndBuscar(id); if (!p) return;
+    if (!CC_SITUACOES_INDIVIDUO.some(function (s) { return s.chave === chave; })) return;
+    if (!confirm('Alterar o status de "' + (p.nome || '') + '" para ' + chave.toUpperCase() + '?')) { ccRenderIndividuos(); return; }
+    try {
+        var patch = ccIndAplicarSituacao(Object.assign({}, p), chave);
+        patch.statusAtualizadoEm = new Date().toISOString();
+        await ccRef('individuos', id).update(patch);
+        await ccLoadIndividuos();
+        ccIndRefreshVinculos();
+        alert('Status alterado para ' + chave.toUpperCase() + '.');
+    } catch (e) { alert('Erro ao alterar status: ' + e.message); ccRenderIndividuos(); }
+}
+/* A lista e a fonte unica: depois de qualquer alteracao, avisa as guias que
+   tambem consomem cursosCadastro/{id}/individuos. */
+function ccIndRefreshVinculos() {
+    if (ccAba === 'ficha' && typeof ccInitFicha === 'function') ccInitFicha();
+    if (ccAba === 'secaoavaliacao' && typeof ccInitAvaliacao === 'function') ccInitAvaliacao();
+    if (ccAba === 'apontamento') {
+        ccAptAlunos = ccAptCarregarIndividuos();
+        if (typeof ccRenderAptLista === 'function') ccRenderAptLista();
+    }
+}
+async function ccIndExcluir(id) {
+    var p = await ccIndBuscar(id); if (!p) return;
+    if (!confirm('Excluir "' + (p.nome || '') + '" deste curso?\n\nOs dados das outras guias deste curso que usam CPF também serão afetados.')) return;
+    try {
+        await ccRef('individuos', id).delete();
+        var cpfs = [];
+        try {
+            var aux = await ccRef('fichaAvaliacoes').get();
+            aux.forEach(function (d) { if (String((d.data() || {}).cpf) === String(p.cpf)) cpfs.push(d.id); });
+        } catch (e) {}
+        for (var i = 0; i < cpfs.length; i++) { try { await ccRef('fichaAvaliacoes', cpfs[i]).delete(); } catch (e) {} }
+        await ccLoadIndividuos();
+        ccIndRefreshVinculos();
+    } catch (e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+/* ---------- EDICAO DENTRO DA GUIA (mesmo formulario, sem duplicar IDs) ---------- */
+function ccIndPopularFormSelects(c) {
+    var projeto = c ? (c.projeto || '') : '';
+    var turma = c ? (c.turma || '') : '';
+    var fp = document.getElementById('fc-projeto');
+    var ft = document.getElementById('fc-turma');
+    if (fp) {
+        fp.innerHTML = '<option value="">Selecione o projeto...</option>' + ccProjetos.map(function (p) {
+            return '<option value="' + ccEsc(p.nome) + '">' + ccEsc(p.nome) + '</option>';
+        }).join('');
+        if (projeto && !ccProjetos.some(function (p) { return p.nome === projeto; })) {
+            fp.innerHTML += '<option value="' + ccEsc(projeto) + '">' + ccEsc(projeto) + '</option>';
+        }
+        fp.value = projeto;
+        fp.setAttribute('onchange', 'ccIndFormProjetoChange()');
+    }
+    if (ft) {
+        var turmas = ccTurmasCurso.filter(function (t) { return t.projeto === projeto; });
+        ft.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function (t) {
+            return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
+        }).join('');
+        if (turma && !turmas.some(function (t) { return t.nome === turma; })) {
+            ft.innerHTML += '<option value="' + ccEsc(turma) + '">' + ccEsc(turma) + '</option>';
+        }
+        ft.value = turma;
+        ft.setAttribute('onchange', '');
+    }
+}
+function ccIndFormProjetoChange() {
+    var projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
+    var ft = document.getElementById('fc-turma');
+    if (!ft) return;
+    ft.innerHTML = '<option value="">Selecione a turma...</option>' + ccTurmasCurso.filter(function (t) { return t.projeto === projeto; }).map(function (t) {
+        return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
+    }).join('');
+}
+async function ccIndAbrirForm(id) {
+    var no = document.getElementById('admin-form-candidato');
+    var painel = document.getElementById('cc-ind-form-painel');
+    var lista = document.getElementById('cc-ind-lista-wrap');
+    if (!no || !painel) return;
+    var p = id ? await ccIndBuscar(id) : null;
+    if (id && !p) return;
+    /* Nunca deixe o mesmo formulario preso em duas guias. */
+    if (typeof ccPreFormaAtiva !== 'undefined' && ccPreFormaAtiva && typeof ccPreVoltarForm === 'function') ccPreVoltarForm();
+    if (ccIndFormaAtiva) ccIndVoltarForm();
+    if (typeof ccCarregarProjetosTurmas === 'function') await ccCarregarProjetosTurmas();
+    if (!ccIndFormGuardado) {
+        var fp0 = document.getElementById('fc-projeto');
+        var ft0 = document.getElementById('fc-turma');
+        ccIndFormGuardado = {
+            pai: no.parentNode,
+            proximo: no.nextSibling,
+            tinhaActive: no.classList.contains('active'),
+            onProjeto: fp0 && fp0.getAttribute ? (fp0.getAttribute('onchange') || '') : '',
+            onTurma: ft0 && ft0.getAttribute ? (ft0.getAttribute('onchange') || '') : ''
+        };
+    }
+    painel.appendChild(no);
+    no.classList.add('active');
+    painel.style.display = '';
+    if (lista) lista.style.display = 'none';
+    ccIndFormaAtiva = true;
+    ccIndEditando = p;
+
+    resetFormCandidato();
+    ccIndPopularFormSelects(p);
+    if (p && typeof formFields !== 'undefined') {
+        formFields.forEach(function (fid) {
+            var chave = fid.replace('fc-', '').replace(/-([a-z])/g, function (_, l) { return l.toUpperCase(); });
+            var el = document.getElementById(fid);
+            if (el) el.value = p[chave] == null ? '' : p[chave];
+        });
+        var radio = document.querySelector('input[name="fc-tipo-pessoa"][value="' + (p.tipoPessoa || 'A') + '"]');
+        if (radio) radio.checked = true;
+        if (typeof fcCursosCarregar === 'function') fcCursosCarregar(p.cursos || []);
+    }
+    if (typeof patentePopularSelects === 'function') patentePopularSelects({ fc: { codigo: (p && (p.patenteCodigo || p.patente)) || 'ALU' } });
+    if (typeof patenteIgnorarSugestao === 'function') patenteIgnorarSugestao();
+    fcFormularioModo(ccIndSituacao(p).chave === 'Formado' ? 'formados' : 'alunos', p ? (p.nome || '') : '', false);
+    var voltar = document.getElementById('fc-voltar-btn'); if (voltar) voltar.setAttribute('onclick', 'ccIndVoltarForm()');
+    var cancelar = document.getElementById('fc-cancelar-btn'); if (cancelar) cancelar.setAttribute('onclick', 'ccIndVoltarForm()');
+    var att = document.getElementById('btn-atualizar-cadastro'); if (att) att.style.display = 'none';
+    no.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function ccIndEditar(id) { ccIndAbrirForm(id); }
+function ccIndVoltarForm() {
+    ccIndFormaAtiva = false;
+    ccIndEditando = null;
+    var no = document.getElementById('admin-form-candidato');
+    var painel = document.getElementById('cc-ind-form-painel');
+    var lista = document.getElementById('cc-ind-lista-wrap');
+    if (ccIndFormGuardado && no) {
+        var g = ccIndFormGuardado;
+        if (no.parentNode && g.pai) g.pai.insertBefore(no, g.proximo);
+        no.classList.toggle('active', g.tinhaActive);
+        var fp = document.getElementById('fc-projeto'); if (fp) fp.setAttribute('onchange', g.onProjeto || '');
+        var ft = document.getElementById('fc-turma'); if (ft) ft.setAttribute('onchange', g.onTurma || '');
+        ccIndFormGuardado = null;
+    }
+    if (painel) { painel.style.display = 'none'; painel.innerHTML = ''; }
+    if (lista) lista.style.display = '';
+}
+async function ccIndSalvarCandidato() {
+    var p = ccIndEditando; if (!p) return false;
+    var dados = Object.assign({}, p);
+    delete dados._id;
+    Object.assign(dados, fcCamposFormulario());
+    var tipo = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
+    dados.tipoPessoa = tipo ? tipo.value : 'A';
+    dados.cursos = typeof fcCursosColetar === 'function' ? fcCursosColetar() : [];
+    dados.projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
+    dados.turma = ((document.getElementById('fc-turma') || {}).value || '').trim();
+    if (!dados.projeto || !dados.turma) { alert('Selecione o projeto e a turma deste curso.'); return false; }
+    if (!dados.matricula && typeof generateMatricula === 'function') dados.matricula = generateMatricula(dados.cpf);
+    if (typeof patenteGravarNoObjeto === 'function') dados = patenteGravarNoObjeto(dados, 'fc');
+    dados.cursoId = ccAtual._id;
+    dados.cursoNome = ccAtual.nome || '';
+    dados.atualizadoEm = new Date().toISOString();
+    /* Mantem a situacao atual, a menos que o proprio formulario tenha mudado o tipo. */
+    var sit = ccIndSituacao(p).chave;
+    if (sit !== 'Formado' && dados.tipoPessoa === 'F') sit = 'Formado';
+    if (sit === 'Formado' && dados.tipoPessoa === 'A') sit = 'Ativo';
+    ccIndAplicarSituacao(dados, sit);
+    try {
+        await ccRef('individuos', p._id).update(dados);
+        ccIndVoltarForm();
+        await ccLoadIndividuos();
+        ccIndRefreshVinculos();
+        alert('Cadastro de "' + (dados.nome || '') + '" atualizado neste curso.');
+    } catch (e) { alert('Erro ao salvar: ' + e.message); }
+    return false;
+}
+
+/* ---------- IMPRESSAO DO INDIVIDUO DO CURSO ---------- */
+async function ccIndImprimir(id) {
+    var p = await ccIndBuscar(id); if (!p) return;
+    var foto = '';
+    try { if (typeof getFoto === 'function') foto = getFoto(p.cpf); } catch (e) {}
+    function abrir(src) {
+        var w = window.open('', '_blank'); if (!w) return;
+        var sit = ccIndSituacao(p);
+        var cpfFmt = (typeof formatCPFDisplay === 'function') ? formatCPFDisplay(p.cpf) : (p.cpf || '-');
+        var mat = p.credencial || p.matricula || '';
+        var html = '<html><head><meta charset="utf-8"><title>FARN - ' + ccEsc(p.nome || '') + '</title><style>'
+            + 'body{font-family:Arial,sans-serif;padding:36px;color:#222}h1{color:#1a237e;font-size:19px;margin:0}h2{font-size:14px;margin:20px 0 8px;border-bottom:2px solid #1a237e;padding-bottom:5px}'
+            + '.row{display:flex;gap:18px;margin-bottom:8px}.col{flex:1}.label{font-size:10px;color:#666;text-transform:uppercase}.val{font-size:13px;margin-top:2px}'
+            + '.topo{display:flex;gap:20px;align-items:flex-start;margin-bottom:14px}.foto{width:92px;height:120px;object-fit:cover;border:2px solid #1a237e;border-radius:6px}'
+            + '.sit{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;background:' + sit.cor + ';color:' + sit.texto + '}'
+            + '@media print{body{padding:18px}}</style></head><body><div class="topo">'
+            + (src ? '<img class="foto" src="' + ccEsc(src) + '" alt="Foto">' : '')
+            + '<div><h1>FARN - Força Auxiliar de Resgate Nacional</h1><p style="color:#666;margin:4px 0">Ficha do indivíduo — ' + ccEsc(ccAtual ? ccAtual.nome : '') + '</p>'
+            + '<span class="sit">' + sit.rotulo + '</span></div></div>'
+            + '<h2>Dados pessoais</h2>'
+            + '<div class="row"><div class="col"><div class="label">Nome</div><div class="val">' + ccEsc(p.nome || '-') + '</div></div></div>'
+            + '<div class="row"><div class="col"><div class="label">CPF</div><div class="val">' + ccEsc(cpfFmt) + '</div></div><div class="col"><div class="label">Nascimento</div><div class="val">' + ccEsc(p.nascimento || '-') + '</div></div></div>'
+            + '<div class="row"><div class="col"><div class="label">E-mail</div><div class="val">' + ccEsc(p.email || '-') + '</div></div><div class="col"><div class="label">WhatsApp</div><div class="val">' + ccEsc(p.whatsapp || '-') + '</div></div></div>'
+            + '<div class="row"><div class="col"><div class="label">Nome da mãe</div><div class="val">' + ccEsc(p.mae || '-') + '</div></div><div class="col"><div class="label">Nome do pai</div><div class="val">' + ccEsc(p.pai || '-') + '</div></div></div>'
+            + '<h2>Vínculo com o curso</h2>'
+            + '<div class="row"><div class="col"><div class="label">Projeto</div><div class="val">' + ccEsc(p.projeto || '-') + '</div></div><div class="col"><div class="label">Turma</div><div class="val">' + ccEsc(p.turma || '-') + '</div></div></div>'
+            + (mat ? '<div class="row"><div class="col"><div class="label">' + (sit.chave === 'Formado' ? 'Credencial' : 'Matrícula') + '</div><div class="val" style="font-size:17px;font-weight:800;color:#e65100">' + ccEsc(mat) + '</div></div></div>' : '')
+            + '<div class="row"><div class="col"><div class="label">Situação</div><div class="val">' + sit.rotulo + '</div></div><div class="col"><div class="label">Origem</div><div class="val">' + (p.origem === 'pre-inscricao' ? 'Pré-Inscrição deste curso' : 'Cadastro deste curso') + '</div></div></div>'
+            + '<script>window.onload=function(){window.print();}<\/script></body></html>';
+        w.document.write(html); w.document.close();
+    }
+    Promise.resolve(foto).then(abrir).catch(function () { abrir(''); });
+}
 
 /* ============ ABA APONTAMENTO ============ */
 function ccInitApontamento() {
@@ -1027,7 +1984,7 @@ async function ccAbrirApontamento() {
     ccAptAlunos.forEach(function (p) {
         ccAptPresencas[String(p.cpf)] = { cpf: p.cpf, nome: p.nome, matricula: p.matricula || '', status: 'Falta', obs: '', foP: 0, foN: 0, inicioPresente: false, inicioHora: '' };
     });
-    if (!ccAptAlunos.length) { alert('Importe indivíduos para este curso antes de apontar.'); return; }
+    if (!ccAptAlunos.length) { alert('Cadastre indivíduos neste curso (aprove pré-inscritos na guia Pré-Inscrição) antes de apontar.'); return; }
     ccRenderAptLista();
     var m = document.getElementById('cc-modal-apontamento'); if (m) m.classList.remove('hidden');
 }
@@ -1956,9 +2913,11 @@ async function ccSalvarPermissoes() {
     if (!ccAtual) { alert('Abra um curso antes de salvar as permissoes.'); return; }
     var ckCert = document.getElementById('cc-perm-certificado');
     var ckFicha = document.getElementById('cc-perm-ficha');
+    var ckPortal = document.getElementById('cc-perm-portal-curso');
     var dados = {
         permCertificado: !!(ckCert && ckCert.checked),
         permFichaGeral: !!(ckFicha && ckFicha.checked),
+        permPortalCurso: !ckPortal || ckPortal.checked !== false,
         atualizadoEm: new Date().toISOString()
     };
     try {

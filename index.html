@@ -4115,6 +4115,8 @@
                             <button class="nav-item" id="cc-aba-avaliacao" onclick="ccSetAba('avaliacao')"><i class="fa-solid fa-clipboard-check"></i> Criar Avaliação</button>
                             <button class="nav-item" id="cc-aba-disciplinas" onclick="ccSetAba('disciplinas')"><i class="fa-solid fa-chalkboard"></i> Disciplinas e Aulas</button>
                             <button class="nav-item" id="cc-aba-individuos" onclick="ccSetAba('individuos')"><i class="fa-solid fa-users"></i> Indivíduos</button>
+                            <button class="nav-item" id="cc-aba-projeto" onclick="ccSetAba('projeto')"><i class="fa-solid fa-handshake"></i> Projeto</button>
+                            <button class="nav-item" id="cc-aba-preinscricao" onclick="ccSetAba('preinscricao')"><i class="fa-solid fa-user-clock"></i> Pré-Inscrição</button>
                             <button class="nav-item" id="cc-aba-apontamento" onclick="ccSetAba('apontamento')"><i class="fa-solid fa-clipboard-user"></i> Apontamentos</button>
                             <button class="nav-item" id="cc-aba-ficha" onclick="ccSetAba('ficha')"><i class="fa-solid fa-file-lines"></i> Ficha Geral</button>
                             <button class="nav-item" id="cc-aba-certificado" onclick="ccSetAba('certificado')"><i class="fa-solid fa-award"></i> Certificados</button>
@@ -4165,18 +4167,167 @@
                             </div>
                         </div>
 
-                        <!-- ABA INDIVIDUOS -->
+                        <!-- ABA INDIVIDUOS: lista isolada do curso (sem importacao do admin) -->
                         <div id="cc-tab-individuos" style="display:none">
+                            <div style="padding:14px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:14px">
+                                <h3 style="margin:0;font-size:14px;color:#166534"><i class="fa-solid fa-users" style="margin-right:8px"></i> Indivíduos deste curso</h3>
+                                <p id="cc-individuos-dica" style="font-size:11px;color:#15803d;margin:6px 0 0">Os novos indivíduos vêm da aprovação na guia <b>Pré-Inscrição</b>. Quem já estava cadastrado permanece aqui, desvinculado do administrador e vinculado a todas as guias deste curso.</p>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fa-solid fa-users" style="color:#2563eb;margin-right:8px"></i> <span id="cc-individuos-lista-titulo">Indivíduos do curso</span></h3>
+                                    <span id="cc-individuos-perfil" style="margin-left:auto;font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:#dcfce7;color:#166534">EM ANDAMENTO</span>
+                                    <span id="cc-individuos-count" style="margin-left:8px;font-size:11px;color:#64748b">0</span>
+                                </div>
+                                <div class="card-body">
+                                    <div id="cc-ind-form-painel" style="display:none;margin-bottom:14px"></div>
+                                    <div id="cc-ind-lista-wrap">
+                                        <input id="cc-ind-busca" class="config-input" placeholder="Buscar por nome, CPF, matrícula, projeto ou turma..." oninput="ccRenderIndividuos()" style="width:100%;margin-bottom:10px">
+                                        <div style="overflow:auto">
+                                            <table style="width:100%;border-collapse:collapse;font-size:12px">
+                                                <thead><tr style="background:#f8fafc;color:#475569;text-align:left">
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">Nome</th>
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">CPF</th>
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">Matrícula</th>
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">Projeto</th>
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">Turma</th>
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">Status</th>
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">Ações</th>
+                                                </tr></thead>
+                                                <tbody id="cc-individuos-tbody"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ABA PROJETO: projetos e turmas EXCLUSIVOS deste curso -->
+                        <div id="cc-tab-projeto" style="display:none">
+                            <div style="padding:14px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:14px">
+                                <h3 style="margin:0;font-size:14px;color:#166534"><i class="fa-solid fa-handshake" style="margin-right:8px"></i> Projeto e Turma deste curso</h3>
+                                <p style="font-size:11px;color:#15803d;margin:6px 0 0">Projetos e turmas criados aqui pertencem <b>somente a este curso</b>. Nada é gravado na seção Projetos do administrador.</p>
+                            </div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-                                <div class="card"><div class="card-header"><h3><i class="fa-solid fa-file-import" style="color:#16a34a;margin-right:8px"></i> Importar indivíduos</h3>
-                                    <span id="cc-individuos-count" style="margin-left:auto;font-size:11px;color:#64748b">0</span></div>
+                                <div class="card">
+                                    <div class="card-header"><h3><i class="fa-solid fa-plus" style="color:#16a34a;margin-right:8px"></i> <span id="cc-proj-form-titulo">Novo Projeto</span></h3></div>
                                     <div class="card-body">
-                                        <p style="font-size:11px;color:#64748b;margin:0 0 10px">Selecione cadastros do sistema. Será criada uma cópia independente de projeto/turma.</p>
-                                        <div id="cc-importar-lista"></div>
-                                        <button class="btn-primary btn-sm" onclick="ccImportarSelecionados()" style="margin-top:10px"><i class="fa-solid fa-download"></i> Importar selecionados</button>
-                                    </div></div>
-                                <div class="card"><div class="card-header"><h3><i class="fa-solid fa-users" style="color:#2563eb;margin-right:8px"></i> Indivíduos do curso</h3></div>
-                                    <div class="card-body"><div id="cc-individuos-lista"></div></div></div>
+                                        <input type="hidden" id="cc-proj-id">
+                                        <div class="form-group" style="margin-bottom:8px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Nome do Projeto *</label>
+                                            <input id="cc-proj-nome" class="config-input" placeholder="Ex.: PREFEITURA DE BUENOS AIRES" style="width:100%"></div>
+                                        <div class="form-group" style="margin-bottom:8px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Responsável</label>
+                                            <input id="cc-proj-responsavel" class="config-input" placeholder="Nome do responsável" style="width:100%"></div>
+                                        <div class="form-group" style="margin-bottom:10px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">CNPJ</label>
+                                            <input id="cc-proj-cnpj" class="config-input" placeholder="Opcional" style="width:100%"></div>
+                                        <div style="display:flex;gap:8px">
+                                            <button class="btn-primary btn-sm" onclick="ccSalvarProjeto()"><i class="fa-solid fa-check"></i> Salvar projeto</button>
+                                            <button class="btn-outline btn-sm" onclick="ccLimparFormProjeto()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
+                                        </div>
+                                        <div id="cc-proj-msg" style="display:none;margin-top:8px;font-size:12px"></div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-header"><h3><i class="fa-solid fa-handshake" style="color:#16a34a;margin-right:8px"></i> Projetos do curso</h3>
+                                        <span id="cc-proj-count" style="margin-left:auto;font-size:11px;color:#64748b">0</span></div>
+                                    <div class="card-body"><div id="cc-projetos-lista"></div></div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top:16px">
+                                <div class="card-header"><h3><i class="fa-solid fa-users" style="color:#2563eb;margin-right:8px"></i> <span id="cc-turma-form-titulo">Nova Turma</span></h3></div>
+                                <div class="card-body">
+                                    <input type="hidden" id="cc-turma-id">
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Projeto *</label>
+                                            <select id="cc-turma-projeto" class="config-input" style="width:100%"><option value="">Selecione o projeto...</option></select></div>
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Nome da Turma *</label>
+                                            <input id="cc-turma-nome" class="config-input" placeholder="Ex.: TURMA A" style="width:100%"></div>
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Descrição</label>
+                                            <input id="cc-turma-descricao" class="config-input" placeholder="Opcional" style="width:100%"></div>
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Status</label>
+                                            <select id="cc-turma-status" class="config-input" style="width:100%"><option value="Em Andamento">Em Andamento</option><option value="Concluido">Concluído</option></select></div>
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Início</label>
+                                            <input type="date" id="cc-turma-inicio" class="config-input" style="width:100%"></div>
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Previsão</label>
+                                            <input type="date" id="cc-turma-previsao" class="config-input" style="width:100%"></div>
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Dias</label>
+                                            <input id="cc-turma-dias" class="config-input" placeholder="Seg, Qua, Sex" style="width:100%"></div>
+                                        <div class="form-group"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Horários</label>
+                                            <input id="cc-turma-horarios" class="config-input" placeholder="Ex.: 19:00 às 22:00" style="width:100%"></div>
+                                    </div>
+                                    <div style="display:flex;gap:8px;margin-top:10px">
+                                        <button class="btn-primary btn-sm" onclick="ccSalvarTurma()"><i class="fa-solid fa-check"></i> Salvar turma</button>
+                                        <button class="btn-outline btn-sm" onclick="ccLimparFormTurma()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
+                                    </div>
+                                    <div id="cc-turma-msg" style="display:none;margin-top:8px;font-size:12px"></div>
+                                </div>
+                            </div>
+                            <div class="card" style="margin-top:12px">
+                                <div class="card-header"><h3><i class="fa-solid fa-users" style="color:#2563eb;margin-right:8px"></i> Turmas do curso</h3>
+                                    <span id="cc-turma-count" style="margin-left:auto;font-size:11px;color:#64748b">0</span></div>
+                                <div class="card-body"><div id="cc-turmas-lista"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- ABA PRE-INSCRICAO: isolada por curso, mesma interface do admin -->
+                        <div id="cc-tab-preinscricao" style="display:none">
+                            <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:14px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                                    <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
+                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma <b>deste curso</b> para visualizar os pré-inscritos</span>
+                                </div>
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0"><label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
+                                        <select id="cc-pre-projeto" class="config-input" style="width:100%;border-color:#16a34a" onchange="ccPreOnProjetoChange()"><option value="">Selecione o projeto...</option></select></div>
+                                    <div class="form-group" style="flex:1;min-width:200px;margin:0"><label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
+                                        <select id="cc-pre-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="ccPreOnTurmaChange()"><option value="">Selecione a turma...</option></select></div>
+                                </div>
+                            </div>
+
+                            <div id="cc-pre-conteudo" style="display:none">
+                                <div id="cc-pre-lista-wrap">
+                                    <div class="card full-width">
+                                        <div class="card-header">
+                                            <h3><i class="fa-solid fa-file-pen" style="color:#16a34a;margin-right:8px"></i> Pré-Inscritos <span class="alunos-count" id="cc-pre-count-badge"></span></h3>
+                                            <div class="header-actions">
+                                                <button class="btn-primary" onclick="ccPreNovo()"><i class="fa-solid fa-plus"></i> Novo Pré-Cadastro</button>
+                                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="ccPreAbrirLinks()"><i class="fa-solid fa-link"></i> Gerar Link de Pré-Inscrição</button>
+                                                <button class="btn-outline btn-sm" onclick="ccPreBaixarModelo()"><i class="fa-solid fa-file-excel"></i> Gerar Planilha</button>
+                                                <button class="btn-outline btn-sm" onclick="document.getElementById('cc-pre-import').click()"><i class="fa-solid fa-file-import"></i> Importar Planilha</button>
+                                                <input type="file" id="cc-pre-import" accept=".csv,text/csv" class="hidden" onchange="ccPreImportar(event)">
+                                                <button class="btn-outline btn-sm" onclick="ccPreExportar()"><i class="fa-solid fa-download"></i> Exportar</button>
+                                                <button class="btn-outline btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir</button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="cc-pre-link-box" style="display:none;padding:14px;background:#f5f3ff;border:2px solid #7c3aed;border-radius:10px;margin-bottom:12px">
+                                                <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                                                    <div class="form-group" style="flex:1;min-width:200px;margin:0"><label style="font-size:11px;font-weight:700;color:#6d28d9;display:block;margin-bottom:4px">Turma do link *</label>
+                                                        <select id="cc-pre-link-turma" class="config-input" style="width:100%"></select></div>
+                                                    <button class="btn-primary btn-sm" style="background:#7c3aed;border-color:#7c3aed" onclick="ccPreGerarLink('unico')"><i class="fa-solid fa-link"></i> Link único</button>
+                                                    <button class="btn-primary btn-sm" style="background:#d97706;border-color:#d97706" onclick="ccPreGerarLink('coletivo')"><i class="fa-solid fa-users"></i> Link coletivo</button>
+                                                    <button class="btn-outline btn-sm" onclick="document.getElementById('cc-pre-link-box').style.display='none'"><i class="fa-solid fa-xmark"></i> Fechar</button>
+                                                </div>
+                                                <div id="cc-pre-link-resultado" style="margin-top:10px"></div>
+                                            </div>
+                                            <div class="users-search-bar">
+                                                <div class="input-wrapper" style="max-width:360px">
+                                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                                    <input type="text" id="cc-pre-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="ccPreRenderLista()">
+                                                </div>
+                                                <select id="cc-pre-filter" class="config-input" style="max-width:180px" onchange="ccPreRenderLista()">
+                                                    <option value="">Todos os status</option><option value="Pendente">Pendente</option><option value="Acadêmico">Acadêmico</option><option value="Ativo">Ativo</option><option value="Formado">Formado</option><option value="Rejeitado">Rejeitado</option>
+                                                </select>
+                                            </div>
+                                            <table class="data-table" id="cc-pre-table">
+                                                <thead><tr><th>Nome</th><th>CPF</th><th>Data Nasc.</th><th>Idade</th><th>Gen. Nasc.</th><th>Turma</th><th>Projeto</th><th>Status</th><th>Cadastrado por</th><th>Ações</th></tr></thead>
+                                                <tbody id="cc-pre-tbody"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- O formulario de candidato do admin e movido para ca (sem copiar) -->
+                                <div id="cc-pre-form-painel" style="display:none"></div>
                             </div>
                         </div>
 
@@ -4264,6 +4415,10 @@
                                 <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#334155;cursor:pointer">
                                     <input type="checkbox" id="cc-perm-ficha" class="config-input" style="width:18px;height:18px"> Exibir Ficha Geral no Portal do Usuário
                                 </label>
+                                <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#334155;cursor:pointer">
+                                    <input type="checkbox" id="cc-perm-portal-curso" class="config-input" style="width:18px;height:18px" checked> Exibir a página do curso (Aulas, Apontamento e AVs) para alunos em andamento
+                                </label>
+                                <p style="margin:6px 0 0 26px;font-size:10.5px;color:#64748b">Quando desmarcado, cursos em andamento ficam ocultos no portal. Cursos concluídos continuam exibindo certificado e ficha conforme as opções acima.</p>
                                 <div style="margin-top:14px">
                                     <button class="btn-primary btn-sm" onclick="ccSalvarPermissoes()"><i class="fa-solid fa-check" style="margin-right:6px"></i> Salvar permissões</button>
                                 </div>
@@ -6265,9 +6420,9 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=114"></script>
+    <script src="app.js?v=118"></script>
     <script src="recad-admin.js?v=1"></script>
-    <script src="cadastro-cursos.js?v=16"></script>
+    <script src="cadastro-cursos.js?v=24"></script>
     <script>
     /* Garante que o botao "Salvar permissoes" da aba Permissoes do admin funcione mesmo
        quando o cadastro-cursos.js carregado estiver desatualizado. */

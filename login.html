@@ -110,6 +110,28 @@
                     });
                     if (user) { encontrado = user; break; }
                 }
+                /* Cadastro de Cursos: alunos de cursos concluidos ou em andamento
+                   tambem entram no Portal com CPF e senha do cadastro do curso. */
+                if (!encontrado && dbFirestore) {
+                    try {
+                        var cursosSnap = await dbFirestore.collection('cursosCadastro').get();
+                        for (var ci = 0; ci < cursosSnap.docs.length && !encontrado; ci++) {
+                            var cursoDoc = cursosSnap.docs[ci];
+                            var snapC = await dbFirestore.collection('cursosCadastro').doc(cursoDoc.id)
+                                .collection('individuos').where('cpf', '==', cpf).limit(1).get();
+                            if (snapC.empty) continue;
+                            var dC = snapC.docs[0].data() || {};
+                            if (dC.senha !== senha) continue;
+                            if (dC.pediuBaixa === true || String(dC.situacaoCurso || '') === 'Pediu Baixa') continue;
+                            encontrado = Object.assign({}, dC, {
+                                _origem: 'cursosCadastro',
+                                _rotulo: 'Curso: ' + String((cursoDoc.data() || {}).nome || ''),
+                                _docId: snapC.docs[0].id,
+                                _cursoId: cursoDoc.id
+                            });
+                        }
+                    } catch (eC) { console.warn('Login: falha ao consultar cursos', eC); }
+                }
                 if (!encontrado) { erro('CPF/senha inválidos ou cadastro não está Ativo. (CPF lido: ' + cpf + ')'); }
                 else {
                     localStorage.setItem('pu_sessao', JSON.stringify(encontrado));
