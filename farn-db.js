@@ -11,8 +11,11 @@
   var KEY_CACHE = 'farn_db_cache_v1';
   var KEY_QUEUE = 'farn_db_queue_v1';
   var KEY_SINCE = 'farn_db_since_v1';
-  var URL_PADRAO = 'https://planets-linear-vbulletin-colin.trycloudflare.com';
-  var URL_TUNEL_ANTIGO = 'https://location-anthropology-martial-fares.trycloudflare.com';
+  var URL_PADRAO = 'https://howto-alliance-pest-contest.trycloudflare.com';
+  var URLS_TUNEIS_ANTIGOS = [
+    'https://planets-linear-vbulletin-colin.trycloudflare.com',
+    'https://location-anthropology-martial-fares.trycloudflare.com'
+  ];
 
   function FarnDB(baseUrl) {
     /* Servidor proprio: a configuracao salva em configurar-servidor.html
@@ -21,11 +24,14 @@
     var cfg = null;
     try { cfg = JSON.parse(localStorage.getItem('farn_api_config') || 'null'); } catch (e) {}
     /* Tunel rapido troca de endereco ao reiniciar. Migracao automatica:
-       navegadores que salvaram a URL antiga passam para a nova sem que o
-       usuario precise abrir a pagina de configuracao. */
-    if (cfg && String(cfg.url || '').replace(/\/$/, '') === URL_TUNEL_ANTIGO) {
-      cfg.url = URL_PADRAO;
-      try { localStorage.setItem('farn_api_config', JSON.stringify(cfg)); } catch (e) {}
+       navegadores que salvaram qualquer URL antiga passam para a nova sem
+       que o usuario precise abrir a pagina de configuracao. */
+    if (cfg) {
+      var urlSalva = String(cfg.url || '').replace(/\/$/, '');
+      if (URLS_TUNEIS_ANTIGOS.indexOf(urlSalva) >= 0) {
+        cfg.url = URL_PADRAO;
+        try { localStorage.setItem('farn_api_config', JSON.stringify(cfg)); } catch (e) {}
+      }
     }
     var escolhida = (typeof window !== 'undefined' && window.FARN_API_URL)
         || (cfg && cfg.url) || baseUrl || URL_PADRAO;

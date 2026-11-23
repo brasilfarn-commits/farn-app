@@ -28,7 +28,7 @@
     var carregandoLista = false;
 
     function banco() {
-        if (!db) db = (typeof dbFirestore !== 'undefined' && dbFirestore) ? dbFirestore : new FarnDB('https://planets-linear-vbulletin-colin.trycloudflare.com');
+        if (!db) db = (typeof dbFirestore !== 'undefined' && dbFirestore) ? dbFirestore : new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
         return db;
     }
 

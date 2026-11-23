@@ -208,7 +208,7 @@
         #pu-modal.aberto { transform:translateX(0) !important; }
         #pu-modal-overlay.aberto { display:block; }
     </style>
-<script src="farn-db.js?v=15"></script>
+<script src="farn-db.js?v=16"></script>
 <script src="portal-permissoes.js?v=3"></script>
 <script>
         function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
@@ -223,7 +223,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        var dbFirestore = new FarnDB('https://planets-linear-vbulletin-colin.trycloudflare.com');
+        var dbFirestore = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
 
         var puUser = null;
         var FONTES = [
