@@ -11,6 +11,8 @@
   var KEY_CACHE = 'farn_db_cache_v1';
   var KEY_QUEUE = 'farn_db_queue_v1';
   var KEY_SINCE = 'farn_db_since_v1';
+  var URL_PADRAO = 'https://planets-linear-vbulletin-colin.trycloudflare.com';
+  var URL_TUNEL_ANTIGO = 'https://location-anthropology-martial-fares.trycloudflare.com';
 
   function FarnDB(baseUrl) {
     /* Servidor proprio: a configuracao salva em configurar-servidor.html
@@ -18,9 +20,15 @@
        a URL do tunel em um unico lugar, sem editar os HTMLs. */
     var cfg = null;
     try { cfg = JSON.parse(localStorage.getItem('farn_api_config') || 'null'); } catch (e) {}
+    /* Tunel rapido troca de endereco ao reiniciar. Migracao automatica:
+       navegadores que salvaram a URL antiga passam para a nova sem que o
+       usuario precise abrir a pagina de configuracao. */
+    if (cfg && String(cfg.url || '').replace(/\/$/, '') === URL_TUNEL_ANTIGO) {
+      cfg.url = URL_PADRAO;
+      try { localStorage.setItem('farn_api_config', JSON.stringify(cfg)); } catch (e) {}
+    }
     var escolhida = (typeof window !== 'undefined' && window.FARN_API_URL)
-        || (cfg && cfg.url) || baseUrl
-        || 'https://location-anthropology-martial-fares.trycloudflare.com';
+        || (cfg && cfg.url) || baseUrl || URL_PADRAO;
     this.baseUrl = String(escolhida).replace(/\/$/, '');
     this.headers = { 'Content-Type': 'application/json' };
     if (cfg && cfg.token) this.headers['X-Farn-Token'] = String(cfg.token);

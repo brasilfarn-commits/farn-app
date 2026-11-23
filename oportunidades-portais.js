@@ -139,7 +139,7 @@
       setTimeout(aguardarFirebase, 100);
       return;
     }
-    db = new FarnDB('https://location-anthropology-martial-fares.trycloudflare.com');
+    db = new FarnDB('https://planets-linear-vbulletin-colin.trycloudflare.com');
     iniciar();
   }
 

@@ -357,7 +357,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="farn-db.js?v=14"></script>
+    <script src="farn-db.js?v=15"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -369,7 +369,7 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         firebase.initializeApp(firebaseConfig);
-        var dbFirestore = new FarnDB('https://location-anthropology-martial-fares.trycloudflare.com');
+        var dbFirestore = new FarnDB('https://planets-linear-vbulletin-colin.trycloudflare.com');
     </script>
     <script>
         if ('serviceWorker' in navigator) {
@@ -2831,7 +2831,7 @@
     <script>
     (function(){
         if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
-        new FarnDB('https://location-anthropology-martial-fares.trycloudflare.com').collection('configuracoes').doc('instituicao').get().then(function(doc){
+        new FarnDB('https://planets-linear-vbulletin-colin.trycloudflare.com').collection('configuracoes').doc('instituicao').get().then(function(doc){
             if(doc.exists && doc.data().logo){
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
             }
