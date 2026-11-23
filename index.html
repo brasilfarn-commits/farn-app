@@ -996,10 +996,7 @@
                          vez que um item entra no meio da lista, todos os
                          numeros abaixo passam a apontar para o item errado.
                          O data-secao e identidade e sobrevive a reordenacao. -->
-                    <a href="#" class="nav-item" data-secao="admin-individuo" onclick="showAdminSection('admin-individuo', this)">
-                        <i class="fa-solid fa-id-card"></i>
-                        <span>Individuo</span>
-                    </a>
+
                     <!-- Aluno ativo, pre-inscrito, docente e formado saem daqui
                          de proposito: as listas deles passaram a viver dentro
                          da secao Individuo, que fica logo acima. As secoes
@@ -1012,95 +1009,52 @@
                         <i class="fa-solid fa-award"></i>
                         <span>Condecoracoes</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-certificado" onclick="showAdminSection('admin-certificado', this); certInicializar()">
-                        <i class="fa-solid fa-certificate"></i>
-                        <span>Certificado</span>
-                    </a>
+
                     <a href="#" class="nav-item" data-secao="admin-relatorios" onclick="showAdminSection('admin-relatorios', this)">
                         <i class="fa-solid fa-chart-bar"></i>
                         <span>Relatorios</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-projetos" onclick="showAdminSection('admin-projetos', this); renderProjetosList()">
-                        <i class="fa-solid fa-handshake"></i>
-                        <span>Projetos</span>
-                    </a>
+
                     <a href="#" class="nav-item" data-secao="admin-config" onclick="showAdminSection('admin-config', this)">
                         <i class="fa-solid fa-gear"></i>
                         <span>Configuracoes</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-apontamento" onclick="showAdminSection('admin-apontamento', this); apontamentoInicializar()">
-                        <i class="fa-solid fa-clipboard-check"></i>
-                        <span>Apontamento</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-tfm" onclick="showAdminSection('admin-tfm', this); tfmInicializar()">
-                        <i class="fa-solid fa-dumbbell"></i>
-                        <span>TFM do Aluno</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-recadastramento" onclick="showAdminSection('admin-recadastramento', this); recadLoadAll()">
-                        <i class="fa-solid fa-rotate"></i>
-                        <span>Recadastramento</span>
-                    </a>
 
-                    <a href="#" class="nav-item" data-secao="admin-apostilas" onclick="showAdminSection('admin-apostilas', this); apostilasLoadList()">
-                        <i class="fa-solid fa-book-open"></i>
-                        <span>Apostilas</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-disciplinas" onclick="showAdminSection('admin-disciplinas', this); discLoadList(); aulaLoadList()">
-                        <i class="fa-solid fa-graduation-cap"></i>
-                        <span>Disciplinas</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-video-aula" onclick="showAdminSection('admin-video-aula', this); vaInicializar()">
-                        <i class="fa-solid fa-circle-play"></i>
-                        <span>Video Aula</span>
-                    </a>
+
+
+
+
+
+
                     <a href="#" class="nav-item" data-secao="admin-noticias" onclick="showAdminSection('admin-noticias', this); blogInicializar()">
                         <i class="fa-solid fa-newspaper"></i>
                         <span>Blog</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-galeria" onclick="showAdminSection('admin-galeria', this); galeriaAdminInicializar()">
-                        <i class="fa-solid fa-images"></i>
-                        <span>Galeria</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-atelie" onclick="showAdminSection('admin-atelie', this)">
-                        <i class="fa-solid fa-palette"></i>
-                        <span>Atelie</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-avaliacao" onclick="showAdminSection('admin-avaliacao', this)">
-                        <i class="fa-solid fa-clipboard-check"></i>
-                        <span>Seção de Avaliação</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-criar-avaliacao" onclick="showAdminSection('admin-criar-avaliacao', this); cavModo('lista'); cavEscolherTipo()">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>Criar Avaliação</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-whatfarn" onclick="showAdminSection('admin-whatfarn', this); wfIniciar('admin')">
-                        <i class="fa-brands fa-whatsapp"></i>
-                        <span>WhatFarn</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-cff" onclick="showAdminSection('admin-cff', this); cffListLoad()">
-                        <i class="fa-solid fa-chalkboard"></i>
-                        <span>CFF</span>
-                    </a>
-                    <a href="#" class="nav-item" data-secao="admin-ficha-geral" onclick="showAdminSection('admin-ficha-geral', this); fichaGeralInicializar()">
-                        <i class="fa-solid fa-folder-open"></i>
-                        <span>Ficha Geral</span>
-                    </a>
+
+
+
+
+
+
+
                     <a href="#" class="nav-item" data-secao="admin-patentes" onclick="showAdminSection('admin-patentes', this); patentesInicializar()">
                         <i class="fa-solid fa-medal"></i>
                         <span>Patentes</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-oportunidades" onclick="showAdminSection('admin-oportunidades', this); oportunidadesAdminInicializar()">
-                        <i class="fa-solid fa-briefcase"></i>
-                        <span>Oportunidade</span>
-                    </a>
+
                     <a href="#" class="nav-item" data-secao="admin-cadastro-cursos" onclick="showAdminSection('admin-cadastro-cursos', this); ccInicializar()">
                         <i class="fa-solid fa-book-open"></i>
                         <span>Cadastro de Cursos</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-premissao-portal-usuario" onclick="showAdminSection('admin-premissao-portal-usuario', this)">
-                        <i class="fa-solid fa-sliders"></i>
-                        <span>Premissão do Portal do Usuário</span>
+                    <a href="#" class="nav-item" data-secao="admin-coordenacao" onclick="showAdminSection('admin-coordenacao', this)">
+                        <i class="fa-solid fa-user-tie"></i>
+                        <span>Coordenação</span>
                     </a>
+                    <a href="#" class="nav-item" data-secao="admin-docente" onclick="showAdminSection('admin-docente', this)">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                        <span>Docente</span>
+                    </a>
+
                     <a href="configurar-servidor.html" class="nav-item" target="_blank">
                         <i class="fa-solid fa-server"></i>
                         <span>Servidor Próprio</span>
@@ -1154,63 +1108,30 @@
                             <div id="admin-home-email" style="font-size:12px;color:rgba(255,255,255,.7)"></div>
                         </div>
                         <div class="admin-home-grid">
-                            <div class="admin-home-card" onclick="showAdminSection('admin-individuo', document.querySelector('.nav-item[data-secao="admin-individuo"]'))">
-                                <i class="fa-solid fa-id-card"></i>
-                                <span>Individuo</span>
-                            </div>
+
                             <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item[data-secao="admin-relatorios"]')))">
                                 <i class="fa-solid fa-chart-bar"></i>
                                 <span>Relatórios</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-projetos', document.querySelector('.nav-item[data-secao="admin-projetos"]'))); renderProjetosList()">
-                                <i class="fa-solid fa-handshake"></i>
-                                <span>Projetos</span>
-                            </div>
+
                             <div class="admin-home-card admin-home-card-download" onclick="showDownloadModal()">
                                 <i class="fa-solid fa-mobile-screen-button"></i>
                                 <span>Baixar App Android</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-recadastramento', document.querySelector('.nav-item[data-secao="admin-recadastramento"]'))); recadLoadAll()">
-                                <i class="fa-solid fa-rotate"></i>
-                                <span>Recadastramento</span>
-                            </div>
 
-                            <div class="admin-home-card" onclick="showAdminSection('admin-apostilas', document.querySelector('.nav-item[data-secao="admin-apostilas"]'))); apostilasLoadList()">
-                                <i class="fa-solid fa-book-open"></i>
-                                <span>Apostilas</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-disciplinas', document.querySelector('.nav-item[data-secao="admin-disciplinas"]'))); discLoadList(); aulaLoadList()">>
-                                <i class="fa-solid fa-graduation-cap"></i>
-                                <span>Disciplinas</span>
-                            </div>
+
+
+
                             <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item[data-secao="admin-noticias"]'))); blogInicializar()">
                                 <i class="fa-solid fa-newspaper"></i>
                                 <span>Blog</span>
                             </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-atelie', document.querySelector('.nav-item[data-secao="admin-atelie"]')));">
-                                <i class="fa-solid fa-palette"></i>
-                                <span>Atelie</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-avaliacao', document.querySelector('.nav-item[data-secao="admin-avaliacao"]')));">
-                                <i class="fa-solid fa-clipboard-check"></i>
-                                <span>Seção de Avaliação</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-criar-avaliacao', document.querySelector('.nav-item[data-secao=admin-criar-avaliacao]')); cavModo('lista'); cavEscolherTipo()">
-                                <i class="fa-solid fa-list-check"></i>
-                                <span>Criar Avaliação</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-whatfarn', document.querySelector('.nav-item[data-secao="admin-whatfarn"]'))); wfIniciar('admin')">
-                                <i class="fa-brands fa-whatsapp"></i>
-                                <span>WhatFarn</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-cff', document.querySelector('.nav-item[data-secao="admin-cff"]'))); cffListLoad()">
-                                <i class="fa-solid fa-chalkboard"></i>
-                                <span>CFF</span>
-                            </div>
-                            <div class="admin-home-card" onclick="showAdminSection('admin-ficha-geral', document.querySelector('.nav-item[onclick*=&quot;admin-ficha-geral&quot;]')); fichaGeralInicializar()">
-                                <i class="fa-solid fa-folder-open"></i>
-                                <span>Ficha Geral</span>
-                            </div>
+
+
+
+
+
+
                         </div>
                     </div>
                 </div>
@@ -1357,63 +1278,9 @@
                 </div>
 
                 <!-- SECAO FICHA GERAL -->
-                <div id="admin-ficha-geral" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-folder-open" style="color:#0ea5e9;margin-right:8px"></i> Ficha Geral - Cadastro e Avaliacoes</h3>
-                            <small>Fichas completas dos cadastrados: todos os dados do formulario, foto 3x4 e todas as avaliacoes, com visual moderno de pagina PDF e botoes de impressao.</small>
-                        </div>
-                        <div class="card-body">
-                            <!-- Selecao Projeto + Turma -->
-                            <div style="padding:20px;background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);border:2px solid #0ea5e9;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                                    <i class="fa-solid fa-filter" style="color:#0ea5e9;font-size:16px"></i>
-                                    <span style="color:#0ea5e9;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para gerar as fichas</span>
-                                </div>
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Projeto *</label>
-                                        <select id="ficha-geral-selecao-curso" class="config-input" style="width:100%;border-color:#0ea5e9" onchange="fichaGeralOnCursoChange()">
-                                            <option value="">Selecione o projeto...</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#0ea5e9;margin-bottom:4px;display:block">Turma *</label>
-                                        <select id="ficha-geral-selecao-turma" class="config-input" style="width:100%;border-color:#0ea5e9" onchange="fichaGeralOnTurmaChange()">
-                                            <option value="">Selecione a turma...</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
-                            <div id="ficha-geral-conteudo" style="display:none">
-                                <div class="alunos-toolbar" style="flex-wrap:wrap;gap:8px">
-                                    <div style="font-size:13px;color:#0f172a;font-weight:700"><i class="fa-solid fa-folder-open" style="color:#0ea5e9;margin-right:6px"></i><span id="ficha-geral-count">0</span> ficha(s) gerada(s)</div>
-                                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                        <button class="btn-primary btn-sm" onclick="fichaGeralImprimirTodas()" style="background:#0ea5e9;border-color:#0ea5e9"><i class="fa-solid fa-print"></i> Imprimir Todas as Fichas</button>
-                                        <button class="btn-outline btn-sm" onclick="fichaGeralDownloadTodas()"><i class="fa-solid fa-file-pdf"></i> Visualizar PDF</button>
-                                    </div>
-                                </div>
-                                <div id="ficha-geral-lista" style="margin-top:16px;display:flex;flex-direction:column;gap:18px"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
                 <!-- SECAO OPORTUNIDADES -->
-                <div id="admin-oportunidades" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-briefcase" style="color:#16a34a;margin-right:8px"></i> Oportunidade</h3>
-                            <button class="btn-primary" onclick="oportunidadeAbrirForm()"><i class="fa-solid fa-plus"></i> Criar anúncio de oportunidade</button>
-                        </div>
-                        <div class="card-body">
-                            <p style="font-size:13px;color:#64748b;margin:0 0 16px;line-height:1.6">Cadastre oportunidades e escolha em quais portais elas serão exibidas na seção "Oportunidade".</p>
-                            <div id="oportunidade-lista">
-                                <div style="text-align:center;padding:30px;color:#94a3b8"><i class="fa-solid fa-spinner fa-spin" style="font-size:18px"></i><p style="margin-top:8px;font-size:13px">Carregando oportunidades...</p></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- MODAL OPORTUNIDADE -->
                 <div id="oportunidade-modal" class="modal-overlay hidden" onclick="if(event.target===this)oportunidadeFecharForm()">
@@ -1664,57 +1531,7 @@
                     </div>
                 </div>
 
-                <div id="admin-certificado" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-certificate" style="color:#1d4ed8;margin-right:8px"></i> Certificado</h3>
-                            <button class="btn-primary" onclick="certAbrirForm()" style="height:38px;background:#1d4ed8;border-color:#1d4ed8;white-space:nowrap">
-                                <i class="fa-solid fa-plus"></i> CRIAR CERTIFICADO
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div style="padding:16px;background:linear-gradient(135deg,#eff6ff 0%,#e0e7ff 55%,#dbeafe 100%);border:2px solid #1d4ed8;border-radius:12px;margin-bottom:18px">
-                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                                    <i class="fa-solid fa-scroll" style="color:#1d4ed8;font-size:16px"></i>
-                                    <span style="color:#1e3a8a;font-weight:700;font-size:14px">Modelos de certificado dos formados</span>
-                                    <span id="cert-count-badge" style="margin-left:auto;background:#1d4ed8;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px"></span>
-                                </div>
-                                <p style="font-size:12px;color:#1e40af;margin:0 0 12px;line-height:1.7">
-                                    <i class="fa-solid fa-circle-info" style="margin-right:4px"></i>
-                                    Cada certificado junta o <strong>curso</strong> cadastrado em Cursos, a <strong>declaracao</strong> que sai impressa,
-                                    os dados da <strong>instituicao</strong> de Configuracoes e o <strong>papel A4</strong> onde a frente e montada.
-                                    Ao salvar, o registro fica disponivel na secao <strong>Certificacoes</strong> do Portal do Formado.
-                                </p>
-                                <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-graduation-cap" style="color:#1d4ed8"></i> CURSO</span>
-                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-file-lines" style="color:#1d4ed8"></i> DECLARACAO</span>
-                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-building-columns" style="color:#1d4ed8"></i> INSTITUICAO</span>
-                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#1e3a8a"><i class="fa-solid fa-file-image" style="color:#1d4ed8"></i> PAPEL A4</span>
-                                    <span style="display:inline-flex;align-items:center;gap:6px;background:#1d4ed8;border:1px solid #1d4ed8;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff"><i class="fa-solid fa-user-graduate"></i> PORTAL DO FORMADO</span>
-                                </div>
-                            </div>
 
-                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
-                                <div class="form-group" style="margin:0;flex:1;min-width:240px">
-                                    <label style="font-size:11px;font-weight:600;color:#1e3a8a;margin-bottom:4px;display:block">Buscar</label>
-                                    <input type="text" id="cert-busca" class="config-input" style="width:100%;border-color:#1d4ed8" placeholder="Curso, declaracao ou instituicao..." oninput="certRender()">
-                                </div>
-                                <button type="button" class="btn-outline" onclick="certInicializar()" style="height:38px;border-color:#1d4ed8;color:#1d4ed8;white-space:nowrap">
-                                    <i class="fa-solid fa-rotate"></i> Atualizar lista
-                                </button>
-                            </div>
-
-                            <div id="cert-empty" class="empty-state" style="display:none;padding:40px">
-                                <i class="fa-solid fa-certificate" style="font-size:48px;color:#3b82f6;margin-bottom:12px"></i>
-                                <p style="color:#475569">Nenhum certificado criado ainda</p>
-                                <button class="btn-primary" onclick="certAbrirForm()" style="margin-top:14px;background:#1d4ed8;border-color:#1d4ed8">
-                                    <i class="fa-solid fa-plus"></i> CRIAR CERTIFICADO
-                                </button>
-                            </div>
-                            <div id="cert-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px"></div>
-                        </div>
-                    </div>
-                </div>
 
                 <div id="admin-relatorios" class="admin-section">
                     <div class="card full-width">
@@ -2066,130 +1883,9 @@
                     </div>
                 </div>
                 <!-- PARCEIROS LIST -->
-                <div id="admin-projetos" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-handshake" style="color:#16a34a;margin-right:8px"></i> Projetos</h3>
-                            <div class="header-actions">
-                                <button class="btn-outline" onclick="projetosMesclarDuplicatas()" title="Remove projetos repetidos e unifica as turmas"><i class="fa-solid fa-layer-group"></i> Mesclar duplicatas</button>
-                                <button class="btn-primary" onclick="openFormProjeto()">
-                                    <i class="fa-solid fa-plus"></i> Novo Projeto
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div id="projetos-empty" class="empty-state" style="display:none"><i class="fa-solid fa-handshake"></i><p>Nenhum projeto cadastrado</p></div>
-                            <div id="projetos-list" class="table-responsive"></div>
-                        </div>
-                    </div>
-                </div>
+
                 <!-- FORM PARCEIRO -->
-                <div id="admin-form-projeto" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3 id="projeto-form-title"><i class="fa-solid fa-handshake" style="color:#16a34a;margin-right:8px"></i> Novo Projeto</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-projetos')">
-                                <i class="fa-solid fa-arrow-left"></i> Voltar
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <form id="form-projeto" onsubmit="return handleProjetoSubmit(event)">
-                                <div class="form-grid">
-                                    <div class="form-group full">
-                                        <label>Nome do Projeto *</label>
-                                        <input type="text" id="pf-nome" class="config-input" required placeholder="Nome do projeto">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>CNPJ</label>
-                                        <input type="text" id="pf-cnpj" class="config-input" maxlength="18" placeholder="00.000.000/0000-00 (opcional)" oninput="formatCNPJ(this)">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Responsavel *</label>
-                                        <input type="text" id="pf-responsavel" class="config-input" required placeholder="Nome do responsavel">
-                                    </div>
-                                </div>
-                                <!-- TURMAS DO PROJETO -->
-                                <div style="margin-top:24px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
-                                    <div style="padding:12px 16px;background:#f0fdf4;border-bottom:1px solid #e2e8f0">
-                                        <h4 style="margin:0;color:#1e293b;font-size:14px"><i class="fa-solid fa-people-group" style="color:#16a34a;margin-right:8px"></i> Turmas do Projeto</h4>
-                                    </div>
-                                    <!-- Mini-formulário de turma -->
-                                    <div id="pf-turma-form" style="padding:16px;border-bottom:1px solid #222;background:#f8fafc">
-                                        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-                                            <div style="flex:2;min-width:200px">
-                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Turma *</label>
-                                                <input type="text" id="pf-turma-nome" class="config-input" placeholder="Ex: Turma 1" style="width:100%">
-                                            </div>
-                                            <div style="flex:2;min-width:200px">
-                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome do Curso</label>
-                                                <select id="pf-turma-curso" class="config-input" style="width:100%"><option value="">Selecione o curso...</option></select>
-                                            </div>
-                                            <div style="flex:2;min-width:200px">
-                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Descricao</label>
-                                                <input type="text" id="pf-turma-desc" class="config-input" placeholder="Descricao opcional" style="width:100%">
-                                            </div>
-                                            <div style="flex:1;min-width:160px">
-                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Inicio da Turma</label>
-                                                <input type="date" id="pf-turma-inicio" class="config-input" style="width:100%">
-                                            </div>
-                                            <div style="flex:1;min-width:160px">
-                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Previsao Final</label>
-                                                <input type="date" id="pf-turma-previsao" class="config-input" style="width:100%">
-                                            </div>
-                                            <div style="flex:1;min-width:160px">
-                                                <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Status da Turma *</label>
-                                                <select id="pf-turma-status" class="config-input" style="width:100%">
-                                                    <option value="Em Andamento">Em Andamento</option>
-                                                    <option value="Concluido">Concluido</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div style="margin-top:10px">
-                                            <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px;display:block">Dias da Semana</label>
-                                            <div style="display:flex;gap:6px;flex-wrap:wrap" id="pf-turma-dias">
-                                                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#1e293b;cursor:pointer;background:#fff;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;transition:all .2s"><input type="checkbox" value="Seg" onchange="pfTurmaToggleDia(this)"> Seg</label>
-                                                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#1e293b;cursor:pointer;background:#fff;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;transition:all .2s"><input type="checkbox" value="Ter" onchange="pfTurmaToggleDia(this)"> Ter</label>
-                                                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#1e293b;cursor:pointer;background:#fff;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;transition:all .2s"><input type="checkbox" value="Qua" onchange="pfTurmaToggleDia(this)"> Qua</label>
-                                                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#1e293b;cursor:pointer;background:#fff;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;transition:all .2s"><input type="checkbox" value="Qui" onchange="pfTurmaToggleDia(this)"> Qui</label>
-                                                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#1e293b;cursor:pointer;background:#fff;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;transition:all .2s"><input type="checkbox" value="Sex" onchange="pfTurmaToggleDia(this)"> Sex</label>
-                                                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#1e293b;cursor:pointer;background:#fff;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;transition:all .2s"><input type="checkbox" value="Sab" onchange="pfTurmaToggleDia(this)"> Sab</label>
-                                                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#1e293b;cursor:pointer;background:#fff;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;transition:all .2s"><input type="checkbox" value="Dom" onchange="pfTurmaToggleDia(this)"> Dom</label>
-                                            </div>
-                                        </div>
-                                        <div style="margin-top:10px" id="pf-turma-horarios-area" class="pf-turma-horarios-area">
-                                        </div>
-                                        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px">
-                                            <div style="min-width:120px">
-                                                <button type="button" class="btn-primary btn-sm" id="pf-turma-btn-add" onclick="projetoAdicionarTurma()" style="width:100%;white-space:nowrap">
-                                                    <i class="fa-solid fa-plus"></i> Adicionar
-                                                </button>
-                                                <button type="button" class="btn-primary btn-sm" id="pf-turma-btn-salvar" onclick="projetoSalvarTurma()" style="width:100%;white-space:nowrap;display:none;background:#16a34a">
-                                                    <i class="fa-solid fa-check"></i> Salvar
-                                                </button>
-                                            </div>
-                                            <div style="min-width:80px">
-                                                <button type="button" class="btn-outline btn-sm" id="pf-turma-btn-cancelar" onclick="projetoCancelarEdicaoTurma()" style="width:100%;display:none">
-                                                    <i class="fa-solid fa-xmark"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Lista de turmas -->
-                                    <div id="pf-turmas-lista">
-                                        <div id="pf-turmas-empty" style="text-align:center;padding:24px;color:#475569;font-size:13px">
-                                            <i class="fa-solid fa-people-group" style="font-size:28px;color:#334155;margin-bottom:8px;display:block"></i>
-                                            Nenhuma turma adicionada
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-actions" style="margin-top:20px">
-                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-projetos')"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Salvar Projeto</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+
                 <div id="admin-config" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
@@ -2254,370 +1950,8 @@
                         </div>
                     </div>
                 </div>
-                <div id="admin-apontamento" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-clipboard-check" style="color:#ca8a04;margin-right:8px"></i> Apontamento de Presenca</h3>
-                        </div>
-                        <div class="card-body">
-                            <!-- Selecao Projeto + Turma -->
-                            <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                                    <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                                    <span style="color:#16a34a;font-weight:700;font-size:14px">Selecione o Projeto e a Turma para continuar</span>
-                                </div>
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
-                                        <select id="apt-selecao-curso" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoCursoChange()">
-                                            <option value="">Selecione o projeto...</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
-                                        <select id="apt-selecao-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="apontamentoOnSelecaoChange()">
-                                            <option value="">Selecione a turma...</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Conteudo (oculto ate selecionar projeto+turma) -->
-                            <div id="apt-conteudo" style="display:none">
-                                <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
-                                    <button class="btn-primary" onclick="apontamentoAbrirModal()">
-                                        <i class="fa-solid fa-qrcode"></i> Apontar Aluno
-                                    </button>
-                                </div>
-                                <!-- Filtros -->
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#f0fdf4;border-radius:10px;border:1px solid #e2e8f0">
-                                    <div class="form-group" style="flex:1;min-width:140px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data Inicio</label>
-                                        <input type="date" id="apt-filtro-data-inicio" class="config-input" style="width:100%">
-                                    </div>
-                                    <div class="form-group" style="flex:1;min-width:140px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data Fim</label>
-                                        <input type="date" id="apt-filtro-data-fim" class="config-input" style="width:100%">
-                                    </div>
-                                    <div class="form-group" style="flex:1;min-width:160px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Matricula / Nome</label>
-                                        <input type="text" id="apt-filtro-matricula" class="config-input" style="width:100%" placeholder="Buscar...">
-                                    </div>
-                                    <button class="btn-primary" onclick="apontamentoFiltrar()" style="white-space:nowrap;margin:0">
-                                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
-                                    </button>
-                                    <button class="btn-outline" onclick="apontamentoLimparFiltros()" style="white-space:nowrap;margin:0">
-                                        <i class="fa-solid fa-eraser"></i> Limpar
-                                    </button>
-                                </div>
-                                <!-- Resumo -->
-                                <div id="apt-resumo" style="display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-                                    <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                        <div id="apt-resumo-registros" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
-                                        <div style="font-size:11px;color:#475569">Registros</div>
-                                    </div>
-                                    <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                        <div id="apt-resumo-presentes" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
-                                        <div style="font-size:11px;color:#475569">Presentes</div>
-                                    </div>
-                                    <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                        <div id="apt-resumo-faltas" style="font-size:22px;font-weight:800;color:#f44336">0</div>
-                                        <div style="font-size:11px;color:#475569">Faltas</div>
-                                    </div>
-                                    <div style="background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px">
-                                        <div id="apt-resumo-justificadas" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
-                                        <div style="font-size:11px;color:#475569">Justificadas</div>
-                                    </div>
-                                </div>
-                                <!-- Excluir Lista -->
-                                <div id="apt-excluir-area" style="display:none;margin-bottom:16px;padding:14px 16px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:10px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
-                                    <i class="fa-solid fa-trash" style="color:#dc2626;font-size:16px"></i>
-                                    <span style="font-size:13px;font-weight:600;color:#1e293b">Excluir lista de apontamento:</span>
-                                    <select id="apt-excluir-select" class="config-input" style="flex:1;min-width:250px;max-width:400px">
-                                        <option value="">Selecione a lista...</option>
-                                    </select>
-                                    <button class="btn-danger" onclick="apontamentoExcluirLista()" style="white-space:nowrap;margin:0">
-                                        <i class="fa-solid fa-trash"></i> Excluir
-                                    </button>
-                                </div>
-                                <!-- Lista -->
-                                <div id="apontamento-historico-empty" style="text-align:center;padding:60px 20px;color:#475569">
-                                    <i class="fa-solid fa-clipboard-check" style="font-size:48px;color:#64748b;margin-bottom:16px"></i>
-                                    <h3 style="color:#475569;margin-bottom:8px">Nenhum apontamento registrado</h3>
-                                    <p style="color:#475569">Clique em "Apontar Aluno" para iniciar ou use os filtros acima</p>
-                                </div>
-                                <div id="apontamento-historico-lista" style="display:none"></div>
-                                <!-- Inicios de Aula -->
-                                <div style="margin-top:18px;background:#f0fdf4;border:1px solid #16a34a;border-radius:12px;padding:14px 16px">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-                                        <h4 style="margin:0;font-size:14px;font-weight:700;color:#1e293b"><i class="fa-solid fa-play" style="color:#16a34a;margin-right:6px"></i> Inicios de Aula registrados (por turma selecionada)</h4>
-                                        <button class="btn-outline btn-sm" onclick="apontamentoCarregarInicios(aptTurmaSelecionada())"><i class="fa-solid fa-rotate"></i> Atualizar</button>
-                                    </div>
-                                    <div id="apt-inicios-lista" style="font-size:12px;color:#94a3b8">Seleciona uma turma acima para ver los inicios registrados.</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="admin-tfm" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-                            <h3><i class="fa-solid fa-dumbbell" style="color:#16a34a;margin-right:8px"></i> TFM do Aluno - Teste Fisico Motor</h3>
-                            <button class="btn-primary" onclick="tfmSincronizarDocente()" style="white-space:nowrap"><i class="fa-solid fa-rotate"></i> Sincronizar com Docente</button>
-                        </div>
-                        <div class="card-body">
-                            <!-- Protocolo dos testes -->
-                            <div style="padding:18px 20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-                                    <div style="display:flex;align-items:center;gap:8px">
-                                        <i class="fa-solid fa-stopwatch" style="color:#16a34a;font-size:16px"></i>
-                                        <span style="color:#16a34a;font-weight:700;font-size:14px">Protocolo de Avaliacao</span>
-                                    </div>
-                                    <button class="btn-outline" onclick="tfmAbrirEditarRegras()" style="white-space:nowrap"><i class="fa-solid fa-sliders"></i> editar regras tfm 1</button>
-                                </div>
-                                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
-                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
-                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">A) Flexao de Bracos (Solo)</div>
-                                        <div style="font-size:11px;color:#475569;line-height:1.5">Tempo de 1 minuto. Posicao padrao para homens e com joelhos no chao para mulheres.</div>
-                                    </div>
-                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
-                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">B) Abdominal Remador</div>
-                                        <div style="font-size:11px;color:#475569;line-height:1.5">Tempo de 1 minuto. Movimento completo estendendo bracos e pernas e flexionando-os juntos.</div>
-                                    </div>
-                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
-                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">C) Corrida de Resistencia</div>
-                                        <div style="font-size:11px;color:#475569;line-height:1.5">Tempo em segundos. Quanto menor o tempo, melhor o desempenho.</div>
-                                    </div>
-                                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
-                                        <div style="font-weight:700;color:#16a34a;font-size:12px;margin-bottom:6px">D) Deslocamento Operacional</div>
-                                        <div style="font-size:11px;color:#475569;line-height:1.5">Caminhar carregando uma carga de 20 kg por 50 metros sem correr ou derrubar.</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Lista de TFM Agendados -->
-                            <div id="tfm-lista-wrap" style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-                                    <div style="display:flex;align-items:center;gap:8px">
-                                        <i class="fa-solid fa-calendar-check" style="color:#16a34a;font-size:16px"></i>
-                                        <span style="color:#16a34a;font-weight:700;font-size:14px">TFM Agendados</span>
-                                    </div>
-                                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                                        <span id="tfm-lista-count" style="font-size:12px;color:#64748b;font-weight:600"></span>
-                                        <button class="btn-primary" onclick="tfmAbrirNovoAgendamento()"><i class="fa-solid fa-plus"></i> Novo Agendamento de TFM</button>
-                                    </div>
-                                </div>
-                                <input type="text" id="tfm-lista-filtro" class="config-input" style="width:100%;max-width:400px;margin-bottom:14px" placeholder="Filtrar por projeto, turma ou docente..." oninput="tfmFiltrarLista()">
-                                <div style="overflow-x:auto">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>Projeto</th>
-                                                <th>Turma</th>
-                                                <th>Data/Hora Agendada</th>
-                                                <th>Docente</th>
-                                                <th>Observacao</th>
-                                                <th>Acoes</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tfm-lista-body">
-                                            <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <!-- Relatorio do TFM por Data (consulta) -->
-                            <div id="tfm-relatorio-wrap" style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-                                    <div style="display:flex;align-items:center;gap:8px">
-                                        <i class="fa-solid fa-calendar-day" style="color:#2563eb;font-size:16px"></i>
-                                        <span style="color:#2563eb;font-weight:700;font-size:14px">Relatorio do TFM por Data</span>
-                                    </div>
-                                    <span id="tfm-rel-count" style="font-size:12px;color:#64748b;font-weight:600">0 registro(s)</span>
-                                </div>
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                                    <div class="form-group" style="flex:0 0 190px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Data do TFM *</label>
-                                        <input type="date" id="tfm-rel-data" class="config-input" style="width:100%;border-color:#2563eb">
-                                    </div>
-                                    <div class="form-group" style="flex:1;min-width:180px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Projeto (opcional)</label>
-                                        <select id="tfm-rel-projeto" class="config-input" style="width:100%;border-color:#2563eb">
-                                            <option value="">Todos os projetos</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group" style="flex:1;min-width:180px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Turma (opcional)</label>
-                                        <input type="text" id="tfm-rel-turma" class="config-input" style="width:100%;border-color:#2563eb" placeholder="Todas as turmas">
-                                    </div>
-                                    <button class="btn-primary" onclick="tfmGerarRelatorioPorData()" style="white-space:nowrap;margin:0">
-                                        <i class="fa-solid fa-magnifying-glass"></i> Gerar Relatorio
-                                    </button>
-                                    <button class="btn-outline" onclick="tfmExportarRelatorioCSV()" style="white-space:nowrap;margin:0">
-                                        <i class="fa-solid fa-file-csv"></i> Exportar CSV
-                                    </button>
-                                </div>
-                                <div style="overflow-x:auto;margin-top:14px">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Projeto</th>
-                                                <th>Turma</th>
-                                                <th>Aluno</th>
-                                                <th>Matricula</th>
-                                                <th>A) Flexoes (1min)</th>
-                                                <th>B) Abdominais (1min)</th>
-                                                <th>C) Corrida (seg)</th>
-                                                <th>D) Deslocamento</th>
-                                                <th>AV Pratica (nota)</th>
-                                                <th>Resultado</th>
-                                                <th>Data</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tfm-rel-body">
-                                            <tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Escolha a data e clique em Gerar Relatorio.</td></tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <!-- Selecao Projeto + Turma (avaliacao) -->
-                            <div id="tfm-selecao-wrap" style="display:none;padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:20px">
-                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-                                    <div style="display:flex;align-items:center;gap:8px">
-                                        <i class="fa-solid fa-filter" style="color:#16a34a;font-size:16px"></i>
-                                        <span style="color:#16a34a;font-weight:700;font-size:14px">Avaliacao da Turma Agendada</span>
-                                    </div>
-                                    <button class="btn-outline" onclick="tfmVoltarLista()" style="white-space:nowrap"><i class="fa-solid fa-arrow-left"></i> Voltar para lista</button>
-                                </div>
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Projeto *</label>
-                                        <select id="tfm-selecao-projeto" class="config-input" style="width:100%;border-color:#16a34a" onchange="tfmOnSelecaoProjetoChange()">
-                                            <option value="">Selecione o projeto...</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                        <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Turma *</label>
-                                        <select id="tfm-selecao-turma" class="config-input" style="width:100%;border-color:#16a34a" onchange="tfmOnSelecaoChange()">
-                                            <option value="">Selecione a turma...</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Conteudo -->
-                            <div id="tfm-conteudo" style="display:none">
-                                <!-- Agendamento do TFM por Turma -->
-                                <div style="padding:16px 18px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #16a34a;border-radius:12px;margin-bottom:16px">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-                                        <div style="display:flex;align-items:center;gap:8px">
-                                            <i class="fa-solid fa-calendar-check" style="color:#16a34a;font-size:16px"></i>
-                                            <span style="color:#16a34a;font-weight:700;font-size:14px">Agendamento do TFM da Turma</span>
-                                        </div>
-                                        <span id="tfm-agenda-status" style="font-size:12px;font-weight:600;color:#64748b;display:none"></span>
-                                    </div>
-                                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                                        <div class="form-group" style="flex:1;min-width:180px;margin:0">
-                                            <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Data e Hora do TFM *</label>
-                                            <input type="datetime-local" id="tfm-agenda-data" class="config-input" style="width:100%;border-color:#16a34a">
-                                        </div>
-                                        <div class="form-group" style="flex:1;min-width:180px;margin:0">
-                                            <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Docente Responsavel</label>
-                                            <select id="tfm-agenda-docente" class="config-input" style="width:100%;border-color:#16a34a">
-                                                <option value="">Selecione o docente...</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group" style="flex:2;min-width:220px;margin:0">
-                                            <label style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px;display:block">Observacao</label>
-                                            <input type="text" id="tfm-agenda-obs" class="config-input" style="width:100%;border-color:#16a34a" placeholder="Ex: Chegar 15 min antes, levar documento com foto...">
-                                        </div>
-                                        <button class="btn-primary" onclick="tfmSalvarAgendamentoTurma()" style="white-space:nowrap;margin:0">
-                                            <i class="fa-solid fa-calendar-check"></i> Salvar Agendamento
-                                        </button>
-                                        <button id="tfm-agenda-btn-cancelar" class="btn-outline" style="white-space:nowrap;margin:0;color:#dc2626;border-color:#fecaca;display:none" onclick="tfmCancelarAgendamentoTurma()">
-                                            <i class="fa-solid fa-ban"></i> Cancelar Agendamento
-                                        </button>
-                                    </div>
-                                    <div id="tfm-agenda-aviso" style="display:flex;align-items:center;gap:8px;background:#fef9c3;border:1px solid #fde047;color:#854d0e;padding:10px 12px;border-radius:8px;font-size:12px;margin-top:12px">
-                                        <i class="fa-solid fa-lock"></i> O <b>Teste Fisico TFM</b> (avaliacao de A, B, C e D) sera liberado somente apos salvar o agendamento da turma.
-                                    </div>
-                                </div>
 
-                                <!-- Teste Fisico (liberado apos agendar) -->
-                                <div id="tfm-teste-conteudo" style="display:none">
-                                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;padding:16px;background:#f0fdf4;border-radius:10px;border:1px solid #e2e8f0">
-                                        <div style="font-size:12px;font-weight:700;color:#16a34a;flex:1;min-width:220px"><i class="fa-solid fa-stopwatch"></i> Teste Fisico da Turma Agendada</div>
-                                        <button class="btn-primary" onclick="tfmSalvarTodos()" style="white-space:nowrap;margin:0">
-                                            <i class="fa-solid fa-floppy-disk"></i> Salvar Todos
-                                        </button>
-                                        <button class="btn-outline" onclick="tfmExportarCSV()" style="white-space:nowrap;margin:0">
-                                            <i class="fa-solid fa-file-csv"></i> Exportar CSV
-                                        </button>
-                                    </div>
-                                    <!-- Resumo -->
-                                    <div id="tfm-resumo" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-                                        <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
-                                            <div id="tfm-resumo-alunos" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
-                                            <div style="font-size:11px;color:#475569">Alunos</div>
-                                        </div>
-                                        <div style="background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
-                                            <div id="tfm-resumo-avaliados" style="font-size:22px;font-weight:800;color:#2563eb">0</div>
-                                            <div style="font-size:11px;color:#475569">Avaliados</div>
-                                        </div>
-                                        <div style="background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
-                                            <div id="tfm-resumo-aptos" style="font-size:22px;font-weight:800;color:#16a34a">0</div>
-                                            <div style="font-size:11px;color:#475569">Aptos</div>
-                                        </div>
-                                        <div style="background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:110px">
-                                            <div id="tfm-resumo-inaptos" style="font-size:22px;font-weight:800;color:#f44336">0</div>
-                                            <div style="font-size:11px;color:#475569">Inaptos</div>
-                                        </div>
-                                    </div>
-                                    <!-- Tabela -->
-                                    <div style="overflow-x:auto">
-                                        <table class="data-table" id="tfm-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Aluno</th>
-                                                    <th>A) Flexoes (1min)</th>
-                                                    <th>B) Abdominais (1min)</th>
-                                                    <th>C) Corrida (seg)</th>
-                                                    <th>D) Deslocamento (20kg / 50m) - Concluiu?</th>
-                                                    <th>Resultado</th>
-                                                    <th>Aptidao (auto)</th>
-                                                    <th>Acoes</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="tfm-table-body"></tbody>
-                                        </table>
-                                    </div>
 
-                                    <!-- TFM SALVOS -->
-                                    <div style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-top:16px">
-                                        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-                                            <h4 style="margin:0;font-size:15px;color:#1e293b"><i class="fa-solid fa-database" style="color:#16a34a;margin-right:8px"></i> TFM Salvos</h4>
-                                            <span id="tfm-salvos-count" style="font-size:12px;color:#64748b;font-weight:600">0 registro(s)</span>
-                                        </div>
-                                        <div style="overflow-x:auto">
-                                            <table class="data-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Aluno</th>
-                                                        <th>Matricula</th>
-                                                        <th>Resultado</th>
-                                                        <th>Data/Hora</th>
-                                                        <th>Acoes</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="tfm-salvos-body">
-                                                    <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">Agende o TFM da turma para visualizar os registros salvos.</td></tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <div id="admin-usuarios" class="admin-section">
                     <div class="card full-width">
                         <div class="card-header">
@@ -3233,336 +2567,21 @@
                 </div>
 
                 <!-- CAMPANHA RECADASTRAMENTO -->
-                <div id="admin-recadastramento" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-rotate" style="color:#16a34a;margin-right:8px"></i> Campanha de Recadastramento de Formados</h3>
-                            <div class="header-actions">
-                                <button class="btn-outline btn-sm" onclick="recadCopyLink()" title="Copiar link para compartilhar">
-                                    <i class="fa-solid fa-link"></i> Copiar Link
-                                </button>
-                                <button class="btn-outline btn-sm" onclick="recadOpenLink()" title="Abrir pagina de recadastramento">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Pagina
-                                </button>
-                                <button class="btn-outline btn-sm" onclick="recadExportExcel()">
-                                    <i class="fa-solid fa-download"></i> Exportar
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <!-- Estatisticas -->
-                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">
-                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(22,163,74,.2);border-radius:10px;padding:16px;text-align:center">
-                                    <div style="font-size:28px;font-weight:800;color:#16a34a" id="rc-total-count">0</div>
-                                    <div style="font-size:12px;color:#475569">Total</div>
-                                </div>
-                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(255,193,7,.3);border-radius:10px;padding:16px;text-align:center">
-                                    <div style="font-size:28px;font-weight:800;color:#ffc107" id="rc-pendente-count">0</div>
-                                    <div style="font-size:12px;color:#475569">Pendentes</div>
-                                </div>
-                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(76,175,80,.3);border-radius:10px;padding:16px;text-align:center">
-                                    <div style="font-size:28px;font-weight:800;color:#16a34a" id="rc-aprovado-count">0</div>
-                                    <div style="font-size:12px;color:#475569">Ativos</div>
-                                </div>
-                                <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid rgba(244,67,54,.3);border-radius:10px;padding:16px;text-align:center">
-                                    <div style="font-size:28px;font-weight:800;color:#f44336" id="rc-rejeitado-count">0</div>
-                                    <div style="font-size:12px;color:#475569">Rejeitados</div>
-                                </div>
-                            </div>
-                            <!-- Filtros -->
-                            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
-                                <div class="input-wrapper" style="max-width:360px;flex:1">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="rc-search" placeholder="Buscar por nome, CPF ou projeto..." class="config-input" style="padding-left:44px" oninput="recadFilter()">
-                                </div>
-                                <select id="rc-filter-status" class="config-input" style="max-width:180px" onchange="recadFilter()">
-                                    <option value="">Todos os status</option>
-                                    <option value="Pendente">Pendente</option>
-                                    <option value="Ativo">Ativo</option>
-                                    <option value="Rejeitado">Rejeitado</option>
-                                </select>
-                                <select id="rc-filter-projeto" class="config-input" style="max-width:200px" onchange="recadFilter()">
-                                    <option value="">Todos os projetos</option>
-                                </select>
-                            </div>
-                            <!-- Tabela -->
-                            <div style="overflow-x:auto">
-                                <table class="data-table" id="rc-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>CPF</th>
-                                            <th>Matricula</th>
-                                            <th>Projeto</th>
-                                            <th>Cidade/UF</th>
-                                            <th>Data Envio</th>
-                                            <th>Status</th>
-                                            <th>Acoes</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="rc-table-body"></tbody>
-                                </table>
-                            </div>
-                            <div id="rc-empty" style="display:none;text-align:center;padding:40px;color:#475569">
-                                <i class="fa-solid fa-inbox" style="font-size:40px;margin-bottom:10px;display:block;color:#334155"></i>
-                                <p>Nenhum recadastramento encontrado.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- DETALHE RECADASTRAMENTO -->
-                <div id="admin-recad-detalhe" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-user-check" style="color:#16a34a;margin-right:8px"></i> Detalhe do Recadastramento</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-recadastramento')">
-                                <i class="fa-solid fa-arrow-left"></i> Voltar
-                            </button>
-                        </div>
-                        <div class="card-body" id="rc-detalhe-body">
-                        </div>
-                    </div>
-                </div>
+
 
 
 
                 <!-- APOSTILAS -->
-                <div id="admin-apostilas" class="admin-section">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-book-open" style="color:#16a34a;margin-right:8px"></i> Apostilas por Disciplina</h3>
-                            <span style="font-size:12px;color:#64748b"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i> Clique em uma disciplina para cadastrar ou editar a apostila em PDF, observacao do conteudo, ferramentas e metodo de avaliacao.</span>
-                        </div>
-                        <div id="apost-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando disciplinas...</div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- DISCIPLINAS -->
-                <div id="admin-disciplinas" class="admin-section">
-                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #9c27b0;border-radius:12px;margin-bottom:20px">
-                        <h3 style="margin:0 0 14px;color:#ce93d8"><i class="fa-solid fa-graduation-cap" style="margin-right:8px"></i> Nova Disciplina</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Disciplina *</label>
-                                <input type="text" id="disc-nome" class="config-input" placeholder="Ex: AP OU E CT">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
-                                <select id="disc-projeto" class="config-input"><option value="">Selecione o projeto...</option></select>
-                            </div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma</label>
-                                <select id="disc-turma" class="config-input"><option value="">Todas as turmas</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Docente</label>
-                                <select id="disc-docente" class="config-input"><option value="">Selecione o docente...</option></select>
-                            </div>
-                        </div>
-                        <button class="btn-primary" id="disc-save-btn" onclick="discSave()" style="height:42px">
-                            <i class="fa-solid fa-check"></i> Cadastrar Disciplina
-                        </button>
-                        <div id="disc-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-graduation-cap" style="color:#ce93d8;margin-right:8px"></i> Disciplinas Cadastradas</h3>
-                        </div>
-                        <div id="disc-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
-                        </div>
-                    </div>
-
-                    <!-- AULAS -->
-                    <div style="padding:20px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #2188ff;border-radius:12px;margin-bottom:20px;margin-top:20px">
-                        <h3 style="margin:0 0 14px;color:#2188ff"><i class="fa-solid fa-chalkboard" style="margin-right:8px"></i> Nova Aula</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Disciplina *</label>
-                                <select id="aula-disciplina" class="config-input" onchange="aulaOnDisciplinaChange()"><option value="">Selecione a disciplina...</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
-                                <select id="aula-projeto" class="config-input" onchange="aulaOnProjetoChange()"><option value="">Selecione o projeto...</option></select>
-                            </div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Turma</label>
-                                <select id="aula-turma" class="config-input"><option value="">Todas as turmas</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Docente</label>
-                                <select id="aula-docente" class="config-input"><option value="">Selecione o docente...</option></select>
-                            </div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data da Aula *</label>
-                                <input type="date" id="aula-data" class="config-input">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Horario</label>
-                                <input type="text" id="aula-horario" class="config-input" placeholder="Ex: 14:00 as 17:00">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom:12px">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Conteudo / Assunto</label>
-                            <input type="text" id="aula-conteudo" class="config-input" placeholder="Breve descricao do conteudo da aula">
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Terá AV Teórica</label>
-                                <select id="aula-av-teorica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Terá AV Prática</label>
-                                <select id="aula-av-pratica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
-                            </div>
-                        </div>
-                        <button class="btn-primary" id="aula-save-btn" onclick="aulaSave()" style="height:42px">
-                            <i class="fa-solid fa-check"></i> Cadastrar Aula
-                        </button>
-                        <div id="aula-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas Cadastradas</h3>
-                        </div>
-                        <div id="aula-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- VIDEO AULA -->
-                <div id="admin-video-aula" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-circle-play" style="color:#7c3aed;margin-right:8px"></i> Video Aula</h3>
-                            <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="vaAbrirCriacao()"><i class="fa-solid fa-plus"></i> Criar Espaco de Video Aula</button>
-                        </div>
-                        <div class="card-body">
 
-                            <!-- A criacao so aparece depois do botao. Sem isso a
-                                 tela abriria com os tres passos e dois selects
-                                 vazios, e ninguem saberia de onde comecar. -->
-                            <div id="va-criacao" style="display:none">
-                                <div id="va-msg" style="display:none;border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6;margin-bottom:16px"></div>
-
-                                <!-- PASSO 1: de onde vem o individuo -->
-                                <div id="va-passo-origem" style="padding:18px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:2px solid #16a34a;border-radius:12px;margin-bottom:18px">
-                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                                        <i class="fa-solid fa-user-group" style="color:#16a34a;font-size:16px"></i>
-                                        <span style="color:#16a34a;font-weight:700;font-size:14px">Passo 1 - Escolha de onde vem o individuo</span>
-                                    </div>
-                                    <div id="va-origem-botoes" style="display:flex;gap:12px;flex-wrap:wrap">
-                                        <button type="button" class="individuo-opcao" data-origem="alunos" data-cor="#2563eb" onclick="vaEscolherOrigem('alunos')">
-                                            <i class="fa-solid fa-user-graduate" style="color:#2563eb"></i>
-                                            <span>Alunos Ativos<small>Candidatos com status Ativo</small></span>
-                                        </button>
-                                        <button type="button" class="individuo-opcao" data-origem="cff" data-cor="#7c3aed" onclick="vaEscolherOrigem('cff')">
-                                            <i class="fa-solid fa-chalkboard" style="color:#7c3aed"></i>
-                                            <span>Alunos CFF<small>Todos os inscritos no CFF</small></span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- PASSO 2: pesquisa por projeto e turma -->
-                                <div id="va-passo-busca" style="display:none;padding:18px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #2563eb;border-radius:12px;margin-bottom:18px">
-                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                                        <i class="fa-solid fa-filter" style="color:#2563eb;font-size:16px"></i>
-                                        <span style="color:#2563eb;font-weight:700;font-size:14px">Passo 2 - Pesquise o individuo por projeto e turma</span>
-                                    </div>
-                                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                                        <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                            <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Projeto *</label>
-                                            <select id="va-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="vaOnProjetoChange()">
-                                                <option value="">Selecione o projeto...</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                            <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Turma *</label>
-                                            <select id="va-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="vaOnTurmaChange()">
-                                                <option value="">Selecione a turma...</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group" style="flex:1;min-width:200px;margin:0">
-                                            <label style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:4px;display:block">Filtrar por nome ou CPF</label>
-                                            <input type="text" id="va-busca" class="config-input" style="width:100%;border-color:#2563eb" placeholder="Opcional" oninput="vaRenderIndiv()">
-                                        </div>
-                                    </div>
-                                    <div id="va-indiv-resumo" style="margin-top:12px;font-size:12.5px;color:#1e40af;line-height:1.6"></div>
-                                    <div id="va-indiv-lista" style="margin-top:10px;max-height:280px;overflow:auto"></div>
-                                </div>
-
-                                <!-- PASSO 3: formulario da Video Aula -->
-                                <div id="va-form-box" style="display:none;padding:20px;background:linear-gradient(135deg,#faf5ff 0%,#f3e8ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:18px">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-                                        <h3 style="margin:0;color:#5b21b6"><i class="fa-solid fa-circle-play" style="margin-right:8px"></i><span id="va-form-titulo">Nova Video Aula</span></h3>
-                                        <button class="btn-outline btn-sm" onclick="vaCancelar()"><i class="fa-solid fa-xmark"></i> Fechar formulario</button>
-                                    </div>
-
-                                    <!-- O grupo escolhido vem preenchido e travado: o
-                                         formulario cria o espaco DELE, e nao de outro. -->
-                                    <div id="va-contexto" style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.3);border-radius:10px;padding:11px 13px;font-size:12.5px;color:#5b21b6;line-height:1.7;margin-bottom:16px"></div>
-
-                                    <div class="form-group">
-                                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Video Aula *</label>
-                                        <input type="text" id="va-nome" class="config-input" placeholder="Ex:teija do fogo - partie 1">
-                                    </div>
-
-                                    <div class="form-group" style="margin-top:12px">
-                                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Pauta da Video Aula</label>
-                                        <textarea id="va-pauta" class="config-input" rows="4" placeholder="O que sera abandonado nesta video aula..."></textarea>
-                                    </div>
-
-                                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
-                                        <div class="form-group" style="flex:1;min-width:160px;margin:0">
-                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data *</label>
-                                            <input type="date" id="va-data" class="config-input" style="width:100%">
-                                        </div>
-                                        <div class="form-group" style="flex:1;min-width:160px;margin:0">
-                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Hora *</label>
-                                            <input type="time" id="va-hora" class="config-input" style="width:100%">
-                                        </div>
-                                        <div class="form-group" style="flex:1;min-width:160px;margin:0">
-                                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Avaliacao Video Aula *</label>
-                                            <select id="va-avaliacao" class="config-input" style="width:100%">
-                                                <option value="Sim">Sim</option>
-                                                <option value="Nao">Nao</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group" style="margin-top:12px">
-                                        <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Docente *</label>
-                                        <select id="va-docente" class="config-input" style="width:100%">
-                                            <option value="">Selecione o docente...</option>
-                                        </select>
-                                    </div>
-
-                                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
-                                        <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" id="va-save-btn" onclick="vaSalvar()"><i class="fa-solid fa-check"></i> Salvar Video Aula</button>
-                                        <button class="btn-outline" onclick="vaCancelar()">Cancelar</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- As Video Aulas ja criadas. Sem esta lista o que
-                                 foi salvo nao teria volta: o formulario so
-                                 existe para escrever, e ninguem veria. -->
-                            <div id="va-lista"></div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- NOTICIAS -->
                 <div id="admin-noticias" class="admin-section">
@@ -3731,27 +2750,7 @@
                 </div>
 
                 <!-- GALERIA -->
-                <div id="admin-galeria" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-images" style="color:#2563eb;margin-right:8px"></i> Galeria</h3>
-                            <button class="btn-primary" onclick="galeriaAbrirModalAlbum()"><i class="fa-solid fa-plus"></i> Criar Album</button>
-                        </div>
-                        <div class="card-body">
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-                                <select id="galeria-selecao-projeto" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminCarregar()">
-                                    <option value="">Filtrar por projeto...</option>
-                                </select>
-                                <select id="galeria-selecao-turma" class="config-input" style="width:100%;border-color:#2563eb" onchange="galeriaAdminCarregar()">
-                                    <option value="">Filtrar por turma...</option>
-                                </select>
-                            </div>
-                            <div id="galeria-lista-albuns" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
-                                <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;grid-column:1/-1">Nenhum album encontrado.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- MODAL CRIAR/EDITAR ALBUM -->
                 <div id="galeria-modal-album" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);overflow-y:auto;padding:20px" onclick="if(event.target===this)galeriaFecharModalAlbum()">
@@ -3800,193 +2799,13 @@
                 </div>
 
                 <!-- ATELIE -->
-                <div id="admin-atelie" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-palette" style="color:#dc2626;margin-right:8px"></i> Atelie - Loja de Vendas</h3>
-                            <small>Cadastre produtos do Mercado Livre com seu link de afiliado. Eles aparecem automaticamente na pagina publica do Atelie.</small>
-                        </div>
-                        <div class="card-body">
-                            <div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start">
-                                <i class="fa-solid fa-circle-info" style="color:#b45309;font-size:18px;margin-top:2px;flex-shrink:0"></i>
-                                <div style="font-size:13px;color:#78350f;line-height:1.55">
-                                    <strong>Como receber comissoes do Mercado Livre:</strong>
-                                    <ol style="margin:6px 0 0 18px;padding:0">
-                                        <li>Acesse <a href="https://www.mercadolivre.com.br/l/afiliados-home" target="_blank" rel="noopener" style="color:#b45309;font-weight:700">o portal de afiliados do Mercado Livre</a> e ative sua conta (voce recebe os ganhos na sua conta Mercado Pago).</li>
-                                        <li>No portal, use o <strong>"Gerador de Links"</strong>: cole o link do produto que deseja vender e clique em <strong>Gerar</strong>.</li>
-                                        <li>Copie o <strong>link de afiliado</strong> gerado e cole no campo "Link do produto" abaixo.</li>
-                                        <li>Quando alguem comprar pela sua vitrine, a comissao cai direto na sua conta Mercado Pago (minimo R$ 30, pago em ate 60 dias).</li>
-                                    </ol>
-                                </div>
-                            </div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
-                                <button class="btn-primary" onclick="atelieProdutoAbrirModal()"><i class="fa-solid fa-plus"></i> Novo Produto</button>
-                                <button class="btn-outline btn-sm" onclick="atelieLojaAbrirPreview()" title="Abrir a pagina publica do Atelie em nova aba"><i class="fa-solid fa-store"></i> Ver vitrine publica</button>
-                            </div>
-                            <div id="atelie-produtos-lista"><div class="empty-state" style="padding:40px 20px;text-align:center"><i class="fa-solid fa-spinner fa-spin" style="font-size:30px;color:#dc2626"></i><p style="color:#64748b;margin-top:10px">Carregando produtos...</p></div></div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- SECAO DE AVALIACAO -->
-                <div id="admin-avaliacao" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-clipboard-check" style="color:#16a34a;margin-right:8px"></i> Seção de Avaliação</h3>
-                            <small>Ficha de avaliação por aluno ativo: AV Apontamento, AV Comportamento (FO+/FO-), AV Teórica, AV Prática e AV Final.</small>
-                        </div>
-                        <div class="card-body" style="text-align:center;padding:40px 20px">
-                            <i class="fa-solid fa-file-circle-check" style="font-size:48px;color:#16a34a;margin-bottom:14px;display:block"></i>
-                            <p style="font-size:14px;color:#475569;margin-bottom:20px;line-height:1.6">A Seção de Avaliação abre em uma janela própria, onde você seleciona o projeto e a turma e avalia cada aluno ativo com as 5 avaliações.</p>
-                            <button class="btn-primary" onclick="window.open('secao-avaliacao.html?v=9','_blank')" style="padding:12px 24px;font-size:14px"><i class="fa-solid fa-external-link-alt"></i> Abrir Seção de Avaliação</button>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- SECAO CRIAR AVALIACAO -->
-                <div id="admin-criar-avaliacao" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-list-check" style="color:#16a34a;margin-right:8px"></i> Criar Avaliação</h3>
-                            <small>Monte avaliações com até 20 questões de múltipla escolha (letras A a D). Cada questão vale 0,5 ponto.</small>
-                        </div>
-                        <div class="card-body">
 
-                            <!-- Toolbar de avaliações salvas -->
-                            <div id="cav-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
-                                <button id="cav-nova-btn" class="btn-primary btn-sm" onclick="cavEscolherTipo()"><i class="fa-solid fa-plus"></i> Nova Avaliação</button>
-                                <button class="btn-outline btn-sm" onclick="cavLoadList()"><i class="fa-solid fa-rotate"></i> Atualizar Lista</button>
-                            </div>
-
-                            <!-- Area limpa do modo AV Final (sem lista) -->
-                            <div id="cav-final-menu" style="display:none;margin-bottom:24px">
-                                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px">
-                                    <h4 style="font-size:14px;color:#0f172a;margin:0 0 4px"><i class="fa-solid fa-graduation-cap" style="color:#7c3aed;margin-right:6px"></i> AV Final (nota certificadora)</h4>
-                                    <p style="font-size:12px;color:#64748b;margin:0 0 12px">Prova final por turma, sem vínculo com aula. Escolha o tipo para abrir o formulário abaixo:</p>
-                                    <div style="display:flex;gap:10px;flex-wrap:wrap">
-                                        <button onclick="cavEscolherTipoConfirmar('final_teorica')" style="background:#7c3aed;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><i class="fa-solid fa-plus"></i> Nova AV Final Teórica</button>
-                                        <button onclick="cavEscolherTipoConfirmar('final_pratica')" style="background:#0891b2;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><i class="fa-solid fa-plus"></i> Nova AV Final Prática</button>
-                                        <button class="btn-outline btn-sm" onclick="cavModo('lista')" style="margin-left:auto"><i class="fa-solid fa-arrow-left"></i> Voltar para a lista</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Filtro por projeto e turma (so projetos/turmas em andamento) -->
-                            <div id="cav-filtro" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px">
-                                <div>
-                                    <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block"><i class="fa-solid fa-folder-open" style="margin-right:4px"></i>Filtrar por Projeto</label>
-                                    <select id="cav-filtro-projeto" class="config-input" style="min-width:230px" onchange="cavOnFiltroProjetoChange()"><option value="">Todos os projetos</option></select>
-                                </div>
-                                <div>
-                                    <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block"><i class="fa-solid fa-users" style="margin-right:4px"></i>Filtrar por Turma</label>
-                                    <select id="cav-filtro-turma" class="config-input" style="min-width:210px" onchange="cavOnFiltroTurmaChange()"><option value="">Todas as turmas</option></select>
-                                </div>
-                                <button type="button" class="btn-outline btn-sm" onclick="cavLimparFiltro()" style="margin-bottom:1px"><i class="fa-solid fa-eraser"></i> Limpar filtro</button>
-                                <span id="cav-filtro-info" style="margin-left:auto;font-size:11px;font-weight:700;color:#64748b"></span>
-                            </div>
-
-                            <div id="cav-list" style="margin-bottom:24px">
-                                <div class="empty-state" style="text-align:center;padding:20px"><p style="color:#64748b">Carregando avaliações...</p></div>
-                            </div>
-
-                            <!-- Formulario / Construtor -->
-                            <div id="cav-form" style="display:none">
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-                                    <h3 style="font-size:16px;color:#0f172a;margin:0"><i class="fa-solid fa-pen-to-square" style="color:#16a34a;margin-right:6px"></i> <span id="cav-form-titulo">Nova Avaliação</span></h3>
-                                    <span id="cav-editing-badge" style="display:none"></span>
-                                </div>
-
-                                <!-- Dados da avaliacao -->
-                                <div class="form-section-card" style="margin-bottom:18px">
-                                    <div class="form-section-title"><i class="fa-solid fa-folder-open"></i><h3>Dados da Avaliação</h3></div>
-                                    <div class="form-section-body">
-                                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
-                                            <div id="cav-aula-wrap" style="grid-column:span 2">
-                                                <label id="cav-nome-label" style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Nome da Avaliação (selecione a aula com AV Teórica)</label>
-                                                <input type="text" id="cav-aula-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Selecione a turma para buscar as aulas com AV Teórica..." oninput="cavFiltrarAulas(this.value)" disabled>
-                                                <select id="cav-nome" class="config-input" style="width:100%" onchange="cavOnNomeChange()"><option value="">Selecione primeiro a turma...</option></select>
-                                            </div>
-                                            <div id="cav-nome-final-wrap" style="display:none;grid-column:span 2">
-                                                <label id="cav-nome-final-label" style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Nome da Prova Final</label>
-                                                <input type="text" id="cav-nome-final" class="config-input" style="width:100%" maxlength="120" placeholder="Ex.: AV Final Teórica - Nós e Amarras">
-                                            </div>
-                                            <div>
-                                                <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Projeto</label>
-                                                <select id="cav-projeto" class="config-input" style="width:100%" onchange="cavOnProjetoChange()"></select>
-                                            </div>
-                                            <div>
-                                                <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Turma</label>
-                                                <select id="cav-turma" class="config-input" style="width:100%" onchange="cavOnTurmaChange()"></select>
-                                            </div>
-                                            <div>
-                                                <label style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px;display:block">Docente</label>
-                                                <select id="cav-docente" class="config-input" style="width:100%"></select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Alunos que farao a AV (recuperacao) -->
-                                <div class="form-section-card" style="margin-bottom:18px" id="cav-alunos-card">
-                                    <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-                                        <h3 style="display:flex;align-items:center;gap:6px;margin:0"><i class="fa-solid fa-user-check"></i> Alunos que farão esta AV <span id="cav-alunos-count" style="font-size:12px;font-weight:700;color:#475569"></span></h3>
-                                    </div>
-                                    <div class="form-section-body">
-                                        <p style="font-size:12px;color:#64748b;margin:0 0 10px">Deixe <b>nenhum aluno marcado</b> para liberar a avaliação para a <b>turma inteira</b>. Ao marcar alunos, <b>somente os escolhidos</b> verão e responderão esta AV no Portal do Aluno (ideal para recuperação).</p>
-                                        <input type="text" id="cav-alunos-busca" class="config-input" style="width:100%;margin-bottom:8px" placeholder="Selecione a turma para listar os alunos..." oninput="cavFiltrarAlunos(this.value)" disabled>
-                                        <div id="cav-alunos-lista" style="max-height:230px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#f8fafc"><p style="font-size:12px;color:#94a3b8;margin:6px">Selecione projeto e turma acima.</p></div>
-                                        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                                            <button type="button" class="btn-outline btn-sm" onclick="cavAlunosMarcarTodos(true)"><i class="fa-solid fa-check-double"></i> Marcar todos</button>
-                                            <button type="button" class="btn-outline btn-sm" onclick="cavAlunosMarcarTodos(false)"><i class="fa-solid fa-eraser"></i> Limpar seleção</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Questoes -->
-                                <div class="form-section-card" style="margin-bottom:18px">
-                                    <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-                                        <h3 style="display:flex;align-items:center;gap:6px;margin:0"><i class="fa-solid fa-file-lines"></i> Questões (<span id="cav-q-count">0</span>/<span id="cav-q-max">20</span>)</h3>
-                                        <label style="font-size:12px;color:#475569;font-weight:600;display:flex;align-items:center;gap:6px">Limite:
-                                            <select id="cav-q-limite" class="config-input small" style="width:130px" onchange="cavMudarLimite(parseInt(this.value||'20',10))">
-                                                <option value="4">4 questões</option>
-                                                <option value="6">6 questões</option>
-                                                <option value="8">8 questões</option>
-                                                <option value="10">10 questões</option>
-                                                <option value="20" selected>20 questões</option>
-                                                <option value="40">40 questões</option>
-                                                <option value="60">60 questões</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="form-section-body">
-                                        <div id="cav-questoes"></div>
-                                        <button class="btn-outline btn-sm" onclick="cavAdicionarQuestao()" id="cav-add-q-btn"><i class="fa-solid fa-plus"></i> Adicionar Questão</button>
-                                    </div>
-                                </div>
-
-                                <!-- Acoes -->
-                                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                                    <button class="btn-primary" onclick="cavSalvar()"><i class="fa-solid fa-floppy-disk"></i> Salvar Avaliação</button>
-                                    <button class="btn-outline" onclick="cavExcluir()"><i class="fa-solid fa-trash"></i> Excluir</button>
-                                    <button class="btn-outline" onclick="cavEditar()"><i class="fa-solid fa-pen"></i> Editar</button>
-                                    <button class="btn-warning" onclick="cavImprimir()"><i class="fa-solid fa-print"></i> Imprimir Avaliação</button>
-                                    <button class="btn-outline" onclick="cavGerarGabarito()"><i class="fa-solid fa-clipboard-check"></i> Gerar Gabarito</button>
-                                    <button class="btn-warning" onclick="cavAbrirEnvio()"><i class="fa-solid fa-paper-plane"></i> Enviar Avaliação</button>
-                                </div>
-                            </div>
-
-                            <!-- Gabarito -->
-                            <div id="cav-gabarito" style="display:none;margin-top:20px;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:16px">
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
-                                    <h4 style="font-size:15px;color:#15803d;margin:0"><i class="fa-solid fa-clipboard-check"></i> Gabarito</h4>
-                                    <button class="btn-danger-icon" onclick="document.getElementById('cav-gabarito').style.display='none'" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
-                                </div>
-                                <div id="cav-gabarito-content" style="font-size:13px;color:#1e293b;line-height:1.9"></div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
 
                 <!-- MODAL LISTAR AVALIADOS -->
                 <div id="cav-listar-overlay" class="modal-overlay hidden" onclick="if(event.target===this)cavFecharListarAvaliados()">
@@ -4397,7 +3216,7 @@
                                 <h3 style="margin:0;font-size:14px;color:#5b21b6"><i class="fa-solid fa-clipboard-list" style="margin-right:8px"></i> Seção de Avaliação do curso</h3>
                                 <p style="font-size:11px;color:#6d28d9;margin:6px 0 0">Ficha de avaliação de cada indivíduo: apontamento, comportamento, AVs teórica/prática, provas finais e resultado.</p>
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-                                    <button class="btn-primary" onclick="ccImportarDadosAvaliacao()"><i class="fa-solid fa-file-import" style="margin-right:6px"></i> Importar dados da Seção de Avaliação</button>
+                                    <button class="btn-primary" onclick="ccImportarAvaliacoes()"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Sincronizar avaliações do curso</button>
                                     <button class="btn-outline" onclick="ccSincronizarNotasAvaliacao()"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Sincronizar notas</button>
                                 </div>
                             </div>
@@ -4428,10 +3247,28 @@
                 </div>
 
             <!-- PREMISSÃO DO PORTAL DO USUARIO -->
-                <div id="admin-premissao-portal-usuario" class="admin-section">
+
+
+            <!-- WHATFARN -->
+
+
+                <!-- CFF - CURSO DE FORMACAO DE FORMADORES -->
+
+
+                <!-- PROJETO E TURMA EXCLUSIVOS DO CFF -->
+
+
+                <!-- DISCIPLINAS E AULAS DO CFF -->
+
+
+                <!-- FORM CFF -->
+
+
+            <!-- COORDENAÇÃO -->
+                <div id="admin-coordenacao" class="admin-section">
                     <div class="card full-width" style="margin-bottom:16px">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-sliders" style="color:#7c3aed;margin-right:8px"></i> Premissão do Portal do Usuário</h3>
+                            <h3><i class="fa-solid fa-user-tie" style="color:#7c3aed;margin-right:8px"></i> Coordenação</h3>
                         </div>
                         <div class="card-body" style="text-align:center;padding:60px 20px">
                             <i class="fa-solid fa-hammer" style="font-size:54px;color:#cbd5e1;display:block;margin-bottom:16px"></i>
@@ -4441,390 +3278,16 @@
                     </div>
                 </div>
 
-            <!-- WHATFARN -->
-                <div id="admin-whatfarn" class="admin-section">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:16px;box-shadow:0 6px 20px rgba(22,163,74,.25)">
-                        <div style="display:flex;align-items:center;gap:12px">
-                            <i class="fa-brands fa-whatsapp" style="font-size:30px"></i>
-                            <div>
-                                <strong style="font-size:15px;display:block">Baixar APK WhatFarn</strong>
-                                <span style="font-size:12px;opacity:.9">Instale no celular e entre com o mesmo CPF e senha do cadastro.</span>
-                            </div>
-                        </div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap">
-                            <button onclick="wfDownloadAPK('WhatFarn.apk')" style="background:#fff;color:#15803d;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><i class="fa-solid fa-download"></i> Baixar APK</button>
-                            <button onclick="wfAbrirInstrucoesAdmin()" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><i class="fa-solid fa-circle-question"></i> Como instalar</button>
-                            <a href="whatfarn.html" target="_blank" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px"><i class="fa-solid fa-mobile-screen-button"></i> Abrir no celular</a>
-                        </div>
-                    </div>
-                    <div id="wf-root"></div>
-                </div>
-
-                <!-- CFF - CURSO DE FORMACAO DE FORMADORES -->
-                <div id="admin-cff" class="admin-section">
-                    <div class="card full-width">
+            <!-- DOCENTE -->
+                <div id="admin-docente" class="admin-section">
+                    <div class="card full-width" style="margin-bottom:16px">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-chalkboard" style="color:#7c3aed;margin-right:8px"></i> CFF - Curso de Formação de Formadores</h3>
-                            <div class="header-actions">
-                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffAbrirForm()"><i class="fa-solid fa-plus"></i> Novo CFF</button>
-                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffDisciplinasAbrirSecao()"><i class="fa-solid fa-graduation-cap"></i> DISCIPLINA CFF</button>
-                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="cffProjetosAbrirSecao()"><i class="fa-solid fa-handshake"></i> PROJETO E TURMA CFF</button>
-                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="window.open('criar-avaliacao-cff.html','_blank')"><i class="fa-solid fa-list-check"></i> CRIAR AVALIAÇÃO CFF</button>
-                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="window.open('secao-avaliacao-cff.html?v=6','_blank')"><i class="fa-solid fa-clipboard-check"></i> SEÇÃO DE AVALIAÇÃO CFF</button>
-                            </div>
+                            <h3><i class="fa-solid fa-chalkboard-user" style="color:#7c3aed;margin-right:8px"></i> Docente</h3>
                         </div>
-                        <div class="card-body">
-                            <div class="users-search-bar">
-                                <div class="input-wrapper" style="max-width:360px">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="cff-search" placeholder="Buscar por nome ou CPF..." class="config-input" style="padding-left:44px" oninput="cffListFiltrar()">
-                                </div>
-                                <span style="font-size:12px;color:#64748b" id="cff-count-badge"></span>
-                            </div>
-                            <div id="cff-empty" class="empty-state" style="display:none;padding:40px">
-                                <i class="fa-solid fa-chalkboard" style="font-size:48px;color:#334155;margin-bottom:12px"></i>
-                                <p style="color:#475569">Nenhuma inscrição no CFF</p>
-                                <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed;margin-top:12px" onclick="cffAbrirForm()"><i class="fa-solid fa-plus"></i> Novo CFF</button>
-                            </div>
-                            <div id="cff-lista" class="table-responsive" style="display:none">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>CPF</th>
-                                            <th>WhatsApp</th>
-                                            <th>Email</th>
-                                            <th>Cursos</th>
-                                            <th>Projeto / Turma</th>
-                                            <th>Data Cadastro</th>
-                                            <th>Acoes</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="cff-table-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PROJETO E TURMA EXCLUSIVOS DO CFF -->
-                <div id="admin-cff-projetos" class="admin-section">
-                    <div style="margin-bottom:16px">
-                        <a href="#" onclick="showAdminSection('admin-cff'); cffListLoad(); return false;" style="color:#7c3aed;font-size:13px;font-weight:700;text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Voltar para CFF</a>
-                    </div>
-                    <div style="padding:20px;background:linear-gradient(135deg,#f5f3ff 0%,#fdf4ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:20px">
-                        <h3 style="margin:0 0 6px;color:#7c3aed"><i class="fa-solid fa-handshake" style="margin-right:8px"></i> Novo Projeto CFF</h3>
-                        <p style="font-size:12px;color:#6d28d9;margin:0 0 14px;line-height:1.6"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i> Projetos e turmas criados aqui sao exclusivos do CFF e nao aparecem na secao Projetos nem no cadastro de alunos.</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome do Projeto *</label>
-                                <input type="text" id="cff-proj-nome" class="config-input" placeholder="Ex: FORMACAO DE FORMADORES 2026">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Responsavel</label>
-                                <input type="text" id="cff-proj-responsavel" class="config-input" placeholder="Nome do responsavel">
-                            </div>
-                        </div>
-                        <button class="btn-primary" id="cff-proj-save-btn" onclick="cffProjSave()" style="height:42px;background:#7c3aed;border-color:#7c3aed">
-                            <i class="fa-solid fa-check"></i> Cadastrar Projeto CFF
-                        </button>
-                        <div id="cff-proj-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
-
-                    <div class="card" style="margin-bottom:20px">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-handshake" style="color:#7c3aed;margin-right:8px"></i> Projetos CFF Cadastrados</h3>
-                        </div>
-                        <div id="cff-proj-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
-                        </div>
-                    </div>
-
-                    <div style="padding:20px;background:linear-gradient(135deg,#f5f3ff 0%,#fdf4ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:20px">
-                        <h3 style="margin:0 0 14px;color:#7c3aed"><i class="fa-solid fa-users" style="margin-right:8px"></i> Nova Turma CFF</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Projeto *</label>
-                                <select id="cff-turma-projeto" class="config-input"><option value="">Selecione o projeto...</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Turma *</label>
-                                <input type="text" id="cff-turma-nome" class="config-input" placeholder="Ex: CFF - TURMA A">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom:12px">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Descricao</label>
-                            <input type="text" id="cff-turma-desc" class="config-input" placeholder="Opcional">
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Inicio</label>
-                                <input type="date" id="cff-turma-inicio" class="config-input">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Previsao</label>
-                                <input type="date" id="cff-turma-previsao" class="config-input">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Dias</label>
-                                <input type="text" id="cff-turma-dias" class="config-input" placeholder="Seg, Qua, Sex">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom:12px">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Horarios</label>
-                            <input type="text" id="cff-turma-horarios" class="config-input" placeholder="Ex: 19:00 as 22:00">
-                        </div>
-                        <div style="display:flex;gap:8px">
-                            <button class="btn-primary" id="cff-turma-btn-add" onclick="cffTurmaSave()" style="height:42px;background:#7c3aed;border-color:#7c3aed">
-                                <i class="fa-solid fa-check"></i> Cadastrar Turma CFF
-                            </button>
-                            <button class="btn-outline" id="cff-turma-btn-salvar" onclick="cffTurmaSave()" style="display:none;height:42px">
-                                <i class="fa-solid fa-check"></i> Atualizar Turma CFF
-                            </button>
-                            <button class="btn-outline" onclick="cffTurmaLimparForm()" style="height:42px">Cancelar</button>
-                        </div>
-                        <div id="cff-turma-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-users" style="color:#7c3aed;margin-right:8px"></i> Turmas CFF Cadastradas</h3>
-                        </div>
-                        <div id="cff-turma-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- DISCIPLINAS E AULAS DO CFF -->
-                <div id="admin-cff-disciplinas" class="admin-section">
-                    <div style="margin-bottom:16px">
-                        <a href="#" onclick="showAdminSection('admin-cff'); cffListLoad(); return false;" style="color:#7c3aed;font-size:13px;font-weight:700;text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Voltar para CFF</a>
-                    </div>
-                    <div style="padding:20px;background:linear-gradient(135deg,#f5f3ff 0%,#fdf4ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:20px">
-                        <h3 style="margin:0 0 14px;color:#7c3aed"><i class="fa-solid fa-graduation-cap" style="margin-right:8px"></i> Nova Disciplina CFF</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Nome da Disciplina *</label>
-                                <input type="text" id="cff-disc-nome" class="config-input" placeholder="Ex: METODOLOGIA">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Docente</label>
-                                <select id="cff-disc-docente" class="config-input"><option value="">Selecione o docente...</option></select>
-                            </div>
-                        </div>
-                        <button class="btn-primary" id="cff-disc-save-btn" onclick="cffDiscSave()" style="height:42px;background:#7c3aed;border-color:#7c3aed">
-                            <i class="fa-solid fa-check"></i> Cadastrar Disciplina CFF
-                        </button>
-                        <div id="cff-disc-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-graduation-cap" style="color:#7c3aed;margin-right:8px"></i> Disciplinas CFF Cadastradas</h3>
-                        </div>
-                        <div id="cff-disc-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
-                        </div>
-                    </div>
-
-                    <!-- AULAS CFF -->
-                    <div style="padding:20px;background:linear-gradient(135deg,#f5f3ff 0%,#fdf4ff 100%);border:2px solid #7c3aed;border-radius:12px;margin-bottom:20px;margin-top:20px">
-                        <h3 style="margin:0 0 14px;color:#7c3aed"><i class="fa-solid fa-chalkboard" style="margin-right:8px"></i> Nova Aula CFF</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Disciplina *</label>
-                                <select id="cff-aula-disciplina" class="config-input" onchange="cffAulaOnDisciplinaChange()"><option value="">Selecione a disciplina...</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Docente</label>
-                                <select id="cff-aula-docente" class="config-input"><option value="">Selecione o docente...</option></select>
-                            </div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Data da Aula *</label>
-                                <input type="date" id="cff-aula-data" class="config-input">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Horario</label>
-                                <input type="text" id="cff-aula-horario" class="config-input" placeholder="Ex: 14:00 as 17:00">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom:12px">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Conteudo / Assunto</label>
-                            <input type="text" id="cff-aula-conteudo" class="config-input" placeholder="Breve descricao do conteudo da aula">
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Terá AV Teórica</label>
-                                <select id="cff-aula-av-teorica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Terá AV Prática</label>
-                                <select id="cff-aula-av-pratica" class="config-input"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
-                            </div>
-                        </div>
-                        <button class="btn-primary" id="cff-aula-save-btn" onclick="cffAulaSave()" style="height:42px;background:#7c3aed;border-color:#7c3aed">
-                            <i class="fa-solid fa-check"></i> Cadastrar Aula CFF
-                        </button>
-                        <div id="cff-aula-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-chalkboard" style="color:#7c3aed;margin-right:8px"></i> Aulas CFF Cadastradas</h3>
-                        </div>
-                        <div id="cff-aula-list" style="padding:16px">
-                            <div style="text-align:center;color:#475569;padding:30px"><i class="fa-solid fa-spinner fa-spin"></i><br>Carregando...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FORM CFF -->
-                <div id="admin-form-cff" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3 id="cff-form-title"><i class="fa-solid fa-user-plus" style="color:#7c3aed;margin-right:8px"></i> Novo CFF</h3>
-                            <button class="btn-outline" onclick="showAdminSection('admin-cff'); cffListLoad()">
-                                <i class="fa-solid fa-arrow-left"></i> Voltar
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <form id="form-cff" onsubmit="return cffSalvar(event)">
-
-                                <!-- DADOS PESSOAIS -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-user"></i><h3>Dados Pessoais</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-group full"><label>Nome Completo *</label><input type="text" id="cffc-nome" class="config-input" required></div>
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>CPF *</label><input type="text" id="cffc-cpf" class="config-input" maxlength="14" required oninput="formatCPF(this)"></div>
-                                            <div class="form-group"><label>Data de Nascimento *</label><input type="date" id="cffc-nascimento" class="config-input" required onchange="calcularIdadeCampo('cffc-nascimento','cffc-idade')"></div>
-                                            <div class="form-group"><label>Idade (auto)</label><input type="text" id="cffc-idade" class="config-input" placeholder="0 anos" readonly tabindex="-1"></div>
-                                            <div class="form-group"><label>Genero de Nascimento *</label>
-                                                <select id="cffc-genero" class="config-input" required>
-                                                    <option value="">Selecione...</option>
-                                                    <option value="Masculino">Masculino</option>
-                                                    <option value="Feminino">Feminino</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group"><label>Estado Civil *</label>
-                                                <select id="cffc-estado-civil" class="config-input" required>
-                                                    <option value="">Selecione...</option>
-                                                    <option value="Solteiro(a)">Solteiro(a)</option>
-                                                    <option value="Casado(a)">Casado(a)</option>
-                                                    <option value="Viuvo(a)">Viuvo(a)</option>
-                                                    <option value="Divorciado(a)">Divorciado(a)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Nacionalidade *</label><input type="text" id="cffc-nacionalidade" class="config-input" placeholder="Brasileira" required></div>
-                                            <div class="form-group"><label>Naturalidade *</label><input type="text" id="cffc-naturalidade" class="config-input" placeholder="Cidade/Estado" required></div>
-                                            <div class="form-group"><label>Profissao</label><input type="text" id="cffc-profissao" class="config-input" placeholder="Ex: Soldado"></div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Mae *</label><input type="text" id="cffc-mae" class="config-input" required></div>
-                                            <div class="form-group"><label>Pai</label><input type="text" id="cffc-pai" class="config-input"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CONTATO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-address-book"></i><h3>Contato</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Email *</label><input type="email" id="cffc-email" class="config-input" required></div>
-                                            <div class="form-group"><label>WhatsApp *</label><input type="tel" id="cffc-whatsapp" class="config-input" maxlength="15" required oninput="formatPhone(this)"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- ENDERECO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-location-dot"></i><h3>Endereco</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Endereco *</label><input type="text" id="cffc-endereco" class="config-input" required></div>
-                                            <div class="form-group"><label>Numero *</label><input type="text" id="cffc-numero" class="config-input" required></div>
-                                        </div>
-                                        <div class="form-row-3">
-                                            <div class="form-group"><label>Bairro *</label><input type="text" id="cffc-bairro" class="config-input" required></div>
-                                            <div class="form-group"><label>Cidade *</label><input type="text" id="cffc-cidade" class="config-input" required></div>
-                                            <div class="form-group"><label>Estado *</label>
-                                                <select id="cffc-estado" class="config-input" required>
-                                                    <option value="">UF</option>
-                                                    <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
-                                                    <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
-                                                    <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
-                                                    <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
-                                                    <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
-                                                    <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
-                                                    <option>SP</option><option>SE</option><option>TO</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- PROJETO E TURMA (VINCULADO AO PROJETO E TURMA DO CFF) -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-handshake" style="color:#7c3aed"></i><h3>Projeto e Turma</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Projeto</label><select id="cffc-projeto" class="config-input" onchange="cffProjetoOnTurmaChange()"><option value="">Selecione o projeto...</option></select></div>
-                                            <div class="form-group"><label>Turma</label><select id="cffc-turma" class="config-input" onchange="cffTurmaOnChange()"><option value="">Selecione a turma...</option></select></div>
-                                        </div>
-                                        <span id="cffc-projeto-hint" class="field-hint" style="color:#7c3aed;display:block"><i class="fa-solid fa-circle-info"></i> Escolha um projeto: a lista de turmas vem do cadastro <b>PROJETO E TURMA CFF</b>.</span>
-                                        <span class="field-hint" style="color:#7c3aed;display:block;margin-top:4px">
-                                            <a href="#" onclick="cffProjetosAbrirSecao(); return false;" style="color:#6d28d9;font-weight:600;text-decoration:underline">
-                                                <i class="fa-solid fa-plus" style="margin-right:3px"></i>Cadastrar novo projeto ou turma do CFF
-                                            </a>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- CURSOS (MULTIPLA ESCOLHA - VINCULADO A SECAO CURSOS DO ADMIN) -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-book-open" style="color:#7c3aed"></i><h3>Cursos (Multipla Escolha)</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-group full">
-                                            <label style="font-size:13px;font-weight:600;color:#475569;margin-bottom:5px;display:block">Cursos em que o aluno do CFF esta inscrito (selecione um ou mais)</label>
-                                            <div id="cff-cursos-checks" class="intr-check-list" style="border-color:#ddd6fe;background:#faf5ff">
-                                                <span style="color:#7c3aed;font-size:13px"><i class="fa-solid fa-spinner fa-spin"></i> Carregando cursos...</span>
-                                            </div>
-                                            <span class="field-hint" style="color:#7c3aed"><i class="fa-solid fa-circle-info"></i> Os cursos listados vem da secao "Cursos" do administrador.</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- ACESSO -->
-                                <div class="form-section-card">
-                                    <div class="form-section-title"><i class="fa-solid fa-key"></i><h3>Senha de Acesso ao Portal do Usuário</h3></div>
-                                    <div class="form-section-body">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Senha de Acesso *</label>
-                                                <div class="input-wrapper">
-                                                    <i class="fa-solid fa-lock"></i>
-                                                    <input type="password" id="cffc-senha" class="config-input" style="padding-left:44px;padding-right:44px" minlength="6" required>
-                                                    <button type="button" class="toggle-password" onclick="cffToggleSenha()">
-                                                        <i class="fa-solid fa-eye" id="cff-eye-icon"></i>
-                                                    </button>
-                                                </div>
-                                                <span class="field-hint">Minimo 6 caracteres. Sera usada junto com o CPF para acessar o Portal do Usuário.</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-submit-bar">
-                                    <button type="button" class="btn-outline" onclick="cffLimparForm()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
-                                    <button type="button" class="btn-outline" onclick="showAdminSection('admin-cff'); cffListLoad()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                                    <button type="submit" class="btn-primary" style="background:#7c3aed;border-color:#7c3aed"><i class="fa-solid fa-check"></i> Salvar Inscrição CFF</button>
-                                </div>
-                            </form>
+                        <div class="card-body" style="text-align:center;padding:60px 20px">
+                            <i class="fa-solid fa-hammer" style="font-size:54px;color:#cbd5e1;display:block;margin-bottom:16px"></i>
+                            <h2 style="font-size:20px;color:#0f172a;margin-bottom:8px">Em construção</h2>
+                            <p style="font-size:13px;color:#64748b">Esta seção está em construção.</p>
                         </div>
                     </div>
                 </div>
@@ -4853,79 +3316,7 @@
                 </div>
 
                 <!-- SECAO INDIVIDUO -->
-                <div id="admin-individuo" class="admin-section">
-                    <div class="card full-width">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-id-card" style="color:#0891b2;margin-right:8px"></i> Individuo</h3>
-                            <small>Escolha o tipo de individuo. A lista que abre abaixo e a pagina de origem, com os mesmos campos e os mesmos filtros. Ao escolher Aluno CFF, aparecem tambem as outras telas do CFF.</small>
-                        </div>
-                        <div class="card-body">
-                            <div id="individuo-botoes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px">
-                                <button type="button" class="individuo-opcao" data-tipo="pre" data-cor="#16a34a" onclick="individuoEscolher('pre')">
-                                    <i class="fa-solid fa-user-clock" style="color:#16a34a"></i>
-                                    <span>Pre-inscrito<small>Escolhe projeto e turma</small></span>
-                                </button>
-                                <button type="button" class="individuo-opcao" data-tipo="docente" data-cor="#f44336" onclick="individuoEscolher('docente')">
-                                    <i class="fa-solid fa-chalkboard-user" style="color:#f44336"></i>
-                                    <span>Docente<small>Lista dos docentes</small></span>
-                                </button>
-                                <button type="button" class="individuo-opcao" data-tipo="usuario" data-cor="#2563eb" onclick="individuoEscolher('usuario')">
-                                    <i class="fa-solid fa-users-gear" style="color:#2563eb"></i>
-                                    <span>Usuario<small>Usuarios cadastrados</small></span>
-                                </button>
-                                <button type="button" class="individuo-opcao" data-tipo="alunos" data-cor="#2563eb" onclick="individuoEscolher('alunos')">
-                                    <i class="fa-solid fa-user-graduate" style="color:#2563eb"></i>
-                                    <span>Alunos<small>Lista dos alunos ativos</small></span>
-                                </button>
-                                <button type="button" class="individuo-opcao" data-tipo="formados" data-cor="#2563eb" onclick="individuoEscolher('formados')">
-                                    <i class="fa-solid fa-user-graduate" style="color:#2563eb"></i>
-                                    <span>Formados<small>Lista dos formados</small></span>
-                                </button>
-                            </div>
-                            <div id="individuo-vazio" style="text-align:center;padding:50px 20px;color:#94a3b8">
-                                <i class="fa-solid fa-id-card" style="font-size:48px;display:block;margin-bottom:16px;color:#0891b2"></i>
-                                <h3 style="font-size:18px;color:#334155;margin-bottom:8px">Em Construcao</h3>
-                                <p style="font-size:13px;color:#94a3b8">Esta secao esta sendo desenvolvida e estara disponivel em breve.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- A pagina escolhida entra aqui INTEIRA: e a secao de
-                         origem que se desloca para ca, e nao uma copia dela.
-                         Copiar o HTML duplicaria os id (o select de projeto, o
-                         nome da lista) e o getElementById passaria a apontar
-                         para a copia, quebrando a secao de origem. -->
-                    <div id="individuo-painel"></div>
 
-                    <!-- Os outros botoes do CFF NAO ficam na grade de escolha:
-                         so aparecem depois que a lista de Aluno CFF abre, ao
-                         lado dela. Antes disso eles ficariam 11 botoes no
-                         chooser, que e o que nao foi pedido. -->
-                    <div id="individuo-cff-botoes" style="display:none;margin-top:12px">
-                        <small style="display:block;font-weight:800;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#7c3aed;margin-bottom:8px">CFF &mdash; outras telas</small>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px">
-                            <button type="button" class="individuo-opcao" data-tipo="cffNovo" data-cor="#7c3aed" onclick="individuoEscolher('cffNovo')">
-                                <i class="fa-solid fa-user-plus" style="color:#7c3aed"></i>
-                                <span>Novo CFF<small>Formulario de inscricao</small></span>
-                            </button>
-                            <button type="button" class="individuo-opcao" data-tipo="cffDisc" data-cor="#7c3aed" onclick="individuoEscolher('cffDisc')">
-                                <i class="fa-solid fa-graduation-cap" style="color:#7c3aed"></i>
-                                <span>Disciplina CFF<small>Disciplinas e aulas</small></span>
-                            </button>
-                            <button type="button" class="individuo-opcao" data-tipo="cffProj" data-cor="#7c3aed" onclick="individuoEscolher('cffProj')">
-                                <i class="fa-solid fa-handshake" style="color:#7c3aed"></i>
-                                <span>Projeto e Turma CFF<small>Projetos e turmas</small></span>
-                            </button>
-                            <button type="button" class="individuo-opcao" data-tipo="cffAval" data-cor="#7c3aed" onclick="individuoEscolher('cffAval')">
-                                <i class="fa-solid fa-list-check" style="color:#7c3aed"></i>
-                                <span>Criar Avaliacao CFF<small>Abre em outra aba</small></span>
-                            </button>
-                            <button type="button" class="individuo-opcao" data-tipo="cffSecAval" data-cor="#7c3aed" onclick="individuoEscolher('cffSecAval')">
-                                <i class="fa-solid fa-clipboard-check" style="color:#7c3aed"></i>
-                                <span>Secao de Avaliacao CFF<small>Abre em outra aba</small></span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- SECAO CADASTRO GERAL -->
                 <div id="admin-cadastro-geral" class="admin-section">
@@ -6412,7 +4803,7 @@
         </div>
     </div>
 
-    <script src="ficha-geral-compartilhar.js?v=31"></script>
+    <script src="cadastro-cursos-nucleo.js?v=1"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
@@ -6420,35 +4811,10 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=118"></script>
+    <script src="app.js?v=120"></script>
     <script src="recad-admin.js?v=1"></script>
-    <script src="cadastro-cursos.js?v=27"></script>
-    <script>
-    /* Garante que o botao "Salvar permissoes" da aba Permissoes do admin funcione mesmo
-       quando o cadastro-cursos.js carregado estiver desatualizado. */
-    function ccSalvarPermissoes() {
-        var ckCert = document.getElementById('cc-perm-certificado');
-        var ckFicha = document.getElementById('cc-perm-ficha');
-        var dados = {
-            permCertificado: !!(ckCert && ckCert.checked),
-            permFichaGeral: !!(ckFicha && ckFicha.checked),
-            atualizadoEm: new Date().toISOString()
-        };
-        try {
-            if (typeof CC_COLECAO === 'undefined' || typeof dbFirestore === 'undefined'
-                || typeof ccAtual === 'undefined' || !ccAtual || !ccAtual._id) {
-                alert('Nao foi possivel salvar as permissoes: abra um curso pelo menu Cadastro de Cursos.');
-                return;
-            }
-            dbFirestore.collection(CC_COLECAO).doc(ccAtual._id).update(dados);
-            if (ckCert) ckCert.checked = dados.permCertificado;
-            if (ckFicha) ckFicha.checked = dados.permFichaGeral;
-            alert('Permissoes do curso salvas.');
-        } catch (e) {
-            alert('Erro ao salvar as permissoes: ' + e.message);
-        }
-    }
-    </script>
+    <script src="cadastro-cursos.js?v=28"></script>
+
     <script src="noticias-slider.js?v=1"></script>
     <script src="whatfarn.js?v=18"></script>
     <script>

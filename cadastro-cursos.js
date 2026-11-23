@@ -45,6 +45,34 @@ function ccEsc(v) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 function ccId() { return String(Date.now()) + Math.random().toString(36).slice(2, 8); }
+
+/* Helpers proprios: o Cadastro de Cursos nao usa funcoes do app.js. */
+function ccFormatCPF(v) {
+    var c = String(v == null ? '' : v).replace(/\D/g, '');
+    if (c.length !== 11) return v == null ? '' : String(v);
+    return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+function ccMatriculaGerar(v) {
+    var d = String(v == null ? '' : v).replace(/\D/g, '');
+    if (d.length < 5) return '';
+    return 'ACD' + d.slice(-5);
+}
+function ccIdadeCalcular(nasc) {
+    if (!nasc) return 0;
+    var d = new Date(String(nasc).slice(0, 10));
+    if (isNaN(d.getTime())) return 0;
+    var hoje = new Date(), idade = hoje.getFullYear() - d.getFullYear();
+    var m = hoje.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < d.getDate())) idade--;
+    return idade > 0 ? idade : 0;
+}
+function ccUsuarioAtual() {
+    try {
+        var u = JSON.parse(localStorage.getItem('usuarioLogado') || localStorage.getItem('adminUsuario') || 'null');
+        if (u && u.nome) return String(u.nome);
+    } catch (e) {}
+    return 'Cadastro de Cursos';
+}
 function ccRef(sub, docId) {
     var base = ccDb().collection(CC_COLECAO).doc(ccAtual._id).collection(sub);
     return docId ? base.doc(String(docId)) : base;
@@ -265,10 +293,14 @@ async function ccSalvarCurso() {
 }
 
 async function ccExcluirCurso(id) {
-    if (!confirm('Excluir este curso e TODOS os seus dados (avaliacoes, disciplinas, aulas, individuos e apontamentos)?')) return;
+    if (!confirm('Excluir este curso e TODOS os seus dados (projetos, turmas, inscrições, indivíduos, avaliações, fichas e certificados)?')) return;
     try {
         var base = ccDb().collection(CC_COLECAO).doc(id);
-        var subs = ['avaliacoes','respostas','disciplinas','aulas','individuos','apontamentos','presencas','inicios'];
+        var subs = [
+            'projetos','turmas','preInscricoes','linksPreInscricao',
+            'individuos','disciplinas','aulas','apontamentos','presencas','inicios',
+            'avaliacoes','respostas','fichaAvaliacoes','certificados'
+        ];
         for (var s = 0; s < subs.length; s++) {
             var snap = await base.collection(subs[s]).get();
             var batch = ccDb().batch(); var n = 0;
@@ -301,7 +333,7 @@ function ccAbrirCurso(id) {
 var ccProjetos = [];
 var ccTurmasCurso = [];
 var ccPreCandidatos = [];
-var ccPreFormaAtiva = false;   // lida tambem por handleCandidatoSubmit (app.js)
+var ccPreFormaAtiva = false;
 var ccPreEditando = null;
 var ccPreFormGuardado = null;
 
@@ -317,11 +349,8 @@ function ccMsg(id, texto, cor) {
     el.style.display = texto ? '' : 'none';
 }
 function ccIdadeCurto(nasc) {
-    if (typeof calcularIdade === 'function') {
-        var v = calcularIdade(String(nasc || ''));
-        return v ? v + ' anos' : '-';
-    }
-    return '-';
+    var v = ccIdadeCalcular(nasc);
+    return v ? v + ' anos' : '-';
 }
 
 /* ---------- PROJETOS ---------- */
@@ -624,105 +653,108 @@ function ccPreRenderLista() {
     }).join('');
 }
 
-/* O formulario e o MESMO do admin: so é movido para a guia e ligado ao
-   gravador do curso. Nao ha copia, portanto nao ha ids duplicados. */
-function ccPrePopularFormSelects(c) {
-    var projeto = c ? (c.projeto || '') : ccPreProjeto();
-    var turma = c ? (c.turma || '') : ccPreTurma();
-    var fp = document.getElementById('fc-projeto');
-    var ft = document.getElementById('fc-turma');
-    if (fp) {
-        fp.innerHTML = '<option value="">Selecione o projeto...</option>' + ccProjetos.map(function (p) {
-            return '<option value="' + ccEsc(p.nome) + '">' + ccEsc(p.nome) + '</option>';
-        }).join('');
-        if (projeto && !ccProjetos.some(function (p) { return p.nome === projeto; })) {
-            fp.innerHTML += '<option value="' + ccEsc(projeto) + '">' + ccEsc(projeto) + '</option>';
-        }
-        fp.value = projeto;
-        fp.setAttribute('onchange', 'ccPreFormProjetoChange()');
-    }
-    if (ft) {
-        var turmas = ccTurmasCurso.filter(function (t) { return t.projeto === projeto; });
-        ft.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function (t) {
-            return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
-        }).join('');
-        if (turma && !turmas.some(function (t) { return t.nome === turma; })) {
-            ft.innerHTML += '<option value="' + ccEsc(turma) + '">' + ccEsc(turma) + '</option>';
-        }
-        ft.value = turma;
-        ft.setAttribute('onchange', '');
-    }
+/* ---------- FORMULARIO PROPRIO DO CADASTRO DE CURSOS ----------
+   Nao usa #admin-form-candidato, fcCamposFormulario() nem funcoes de
+   patente do app.js. Cada guia tem seu proprio painel com ids prefixados. */
+var CC_PESSOA_CAMPOS = [
+    ['nome','Nome Completo','text'], ['cpf','CPF','text'],
+    ['nascimento','Data de Nascimento','date'], ['estadoCivil','Estado Civil','text'],
+    ['telefone','Telefone / WhatsApp','text'], ['email','E-mail','text'],
+    ['genero','Gênero','text'], ['mae','Nome da mãe','text'],
+    ['pai','Nome do pai','text'], ['nacionalidade','Nacionalidade','text'],
+    ['naturalidade','Naturalidade','text'], ['profissao','Profissão','text'],
+    ['cidade','Cidade','text'], ['estado','Estado','text'],
+    ['matricula','Matrícula','text'], ['senha','Senha do Portal','text'],
+    ['fotoUrl','URL da foto 3x4','text'], ['observacoes','Observações','textarea']
+];
+function ccFormCampo(prefixo, chave, rotulo, tipo, valor) {
+    var id = prefixo + '-' + chave;
+    var v = ccEsc(valor == null ? '' : valor);
+    var input = tipo === 'textarea'
+        ? '<textarea id="' + id + '" class="config-input" rows="2">' + v + '</textarea>'
+        : '<input type="' + tipo + '" id="' + id + '" class="config-input" value="' + v + '">';
+    return '<div class="form-group"><label>' + ccEsc(rotulo) + '</label>' + input + '</div>';
 }
-function ccPreFormProjetoChange() {
-    var projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
-    var ft = document.getElementById('fc-turma');
-    if (!ft) return;
+function ccFormPessoaHTML(prefixo, titulo, c, salvarFn, voltarFn) {
+    var p = c || {};
+    var projetos = ccProjetos.map(function (x) { return ccEsc(x.nome); });
+    var projetoAtual = p.projeto || ccPreProjeto();
+    var turmaAtual = p.turma || ccPreTurma();
+    if (projetoAtual && projetos.indexOf(ccEsc(projetoAtual)) < 0) projetos.push(ccEsc(projetoAtual));
+    var turmas = ccTurmasCurso.filter(function (t) { return !projetoAtual || t.projeto === projetoAtual; })
+        .map(function (t) { return ccEsc(t.nome); });
+    if (turmaAtual && turmas.indexOf(ccEsc(turmaAtual)) < 0) turmas.push(ccEsc(turmaAtual));
+    var campos = CC_PESSOA_CAMPOS.map(function (x) {
+        return ccFormCampo(prefixo, x[0], x[1], x[2], p[x[0]]);
+    }).join('');
+    return '<div class="card full-width">'
+        + '<div class="card-header"><h3><i class="fa-solid fa-user-pen" style="color:#7c3aed;margin-right:8px"></i>' + ccEsc(titulo) + '</h3></div>'
+        + '<div class="card-body">'
+        + '<div class="form-row">'
+        + '<div class="form-group"><label>Projeto *</label><select id="' + prefixo + '-projeto" class="config-input" onchange="ccFormProjetoChange(\'' + prefixo + '\')">'
+        + '<option value="">Selecione...</option>' + projetos.map(function (n) { return '<option value="' + n + '"' + (n === ccEsc(projetoAtual) ? ' selected' : '') + '>' + n + '</option>'; }).join('')
+        + '</select></div>'
+        + '<div class="form-group"><label>Turma *</label><select id="' + prefixo + '-turma" class="config-input">'
+        + '<option value="">Selecione...</option>' + turmas.map(function (n) { return '<option value="' + n + '"' + (n === ccEsc(turmaAtual) ? ' selected' : '') + '>' + n + '</option>'; }).join('')
+        + '</select></div>'
+        + '<div class="form-group"><label>Tipo</label><select id="' + prefixo + '-tipoPessoa" class="config-input">'
+        + '<option value="A"' + ((p.tipoPessoa || 'A') === 'A' ? ' selected' : '') + '>Acadêmico</option>'
+        + '<option value="F"' + (p.tipoPessoa === 'F' ? ' selected' : '') + '>Formado</option>'
+        + '</select></div>'
+        + '</div>'
+        + '<div class="form-row">' + campos + '</div>'
+        + '<div style="display:flex;gap:8px;margin-top:14px">'
+        + '<button type="button" class="btn-primary" onclick="' + salvarFn + '"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>'
+        + '<button type="button" class="btn-outline" onclick="' + voltarFn + '"><i class="fa-solid fa-arrow-left"></i> Cancelar</button>'
+        + '</div></div></div>';
+}
+function ccFormProjetoChange(prefixo) {
+    var projeto = ((document.getElementById(prefixo + '-projeto') || {}).value || '').trim();
+    var sel = document.getElementById(prefixo + '-turma');
+    if (!sel) return;
     var turmas = ccTurmasCurso.filter(function (t) { return t.projeto === projeto; });
-    ft.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function (t) {
+    sel.innerHTML = '<option value="">Selecione...</option>' + turmas.map(function (t) {
         return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
     }).join('');
 }
+function ccFormPessoaValores(prefixo) {
+    var dados = {};
+    CC_PESSOA_CAMPOS.forEach(function (x) {
+        var el = document.getElementById(prefixo + '-' + x[0]);
+        dados[x[0]] = el ? String(el.value || '').trim() : '';
+    });
+    dados.whatsapp = dados.telefone;
+    dados.tipoPessoa = ((document.getElementById(prefixo + '-tipoPessoa') || {}).value || 'A');
+    dados.projeto = ((document.getElementById(prefixo + '-projeto') || {}).value || '').trim();
+    dados.turma = ((document.getElementById(prefixo + '-turma') || {}).value || '').trim();
+    return dados;
+}
 
-function ccPreAbrirForm(id) {
-    var no = document.getElementById('admin-form-candidato');
+function ccPrePopularFormSelects() { /* formulario proprio ja vem preenchido */ }
+function ccPreFormProjetoChange() { ccFormProjetoChange('ccpf'); }
+async function ccPreAbrirForm(id) {
     var painel = document.getElementById('cc-pre-form-painel');
     var lista = document.getElementById('cc-pre-lista-wrap');
-    if (!no || !painel) return;
+    if (!painel) return;
+    if (ccPreFormaAtiva) ccPreVoltarForm();
+    if (ccIndFormaAtiva) ccIndVoltarForm();
+    await ccCarregarProjetosTurmas();
     var c = id ? ccPreCandidatos.find(function (x) { return x._id === id; }) : null;
     if (id && !c) return;
-    if (!ccPreFormGuardado) {
-        ccPreFormGuardado = {
-            pai: no.parentNode,
-            proximo: no.nextSibling,
-            tinhaActive: no.classList.contains('active'),
-            onProjeto: (document.getElementById('fc-projeto') || {}).getAttribute ? document.getElementById('fc-projeto').getAttribute('onchange') : '',
-            onTurma: (document.getElementById('fc-turma') || {}).getAttribute ? document.getElementById('fc-turma').getAttribute('onchange') : ''
-        };
-    }
-    painel.appendChild(no);
-    no.classList.add('active');
+    painel.innerHTML = ccFormPessoaHTML('ccpf', c ? 'Editar pré-inscrição' : 'Nova pré-inscrição', c, 'ccPreSalvarCandidato()', 'ccPreVoltarForm()');
     painel.style.display = '';
     if (lista) lista.style.display = 'none';
     ccPreFormaAtiva = true;
     ccPreEditando = c || null;
-
-    resetFormCandidato();
-    ccPrePopularFormSelects(c);
-    if (c && typeof formFields !== 'undefined') {
-        formFields.forEach(function (fid) {
-            var chave = fid.replace('fc-', '').replace(/-([a-z])/g, function (_, l) { return l.toUpperCase(); });
-            var el = document.getElementById(fid);
-            if (el) el.value = c[chave] == null ? '' : c[chave];
-        });
-        var radio = document.querySelector('input[name="fc-tipo-pessoa"][value="' + (c.tipoPessoa || 'A') + '"]');
-        if (radio) radio.checked = true;
-        if (typeof fcCursosCarregar === 'function') fcCursosCarregar(c.cursos || []);
-    }
-    if (typeof patentePopularSelects === 'function') patentePopularSelects({ fc: { codigo: (c && (c.patenteCodigo || c.patente)) || 'PRE' } });
-    if (typeof patenteIgnorarSugestao === 'function') patenteIgnorarSugestao();
-    fcFormularioModo('pre-inscricao', c ? (c.nome || '') : '', !c);
-    var voltar = document.getElementById('fc-voltar-btn'); if (voltar) voltar.setAttribute('onclick', 'ccPreVoltarForm()');
-    var cancelar = document.getElementById('fc-cancelar-btn'); if (cancelar) cancelar.setAttribute('onclick', 'ccPreVoltarForm()');
-    var att = document.getElementById('btn-atualizar-cadastro'); if (att) att.style.display = 'none';
-    no.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function ccPreNovo() { ccPreAbrirForm(null); }
 function ccPreEditar(id) { ccPreAbrirForm(id); }
-
 function ccPreVoltarForm() {
     ccPreFormaAtiva = false;
     ccPreEditando = null;
-    var no = document.getElementById('admin-form-candidato');
     var painel = document.getElementById('cc-pre-form-painel');
     var lista = document.getElementById('cc-pre-lista-wrap');
-    if (ccPreFormGuardado && no) {
-        var g = ccPreFormGuardado;
-        if (no.parentNode) g.pai.insertBefore(no, g.proximo);
-        no.classList.toggle('active', g.tinhaActive);
-        var fp = document.getElementById('fc-projeto'); if (fp && g.onProjeto) fp.setAttribute('onchange', g.onProjeto);
-        var ft = document.getElementById('fc-turma'); if (ft && g.onTurma) ft.setAttribute('onchange', g.onTurma);
-        ccPreFormGuardado = null;
-    }
     if (painel) { painel.style.display = 'none'; painel.innerHTML = ''; }
     if (lista) lista.style.display = '';
 }
@@ -730,26 +762,18 @@ function ccPreVoltarForm() {
 async function ccPreSalvarCandidato() {
     var dados = ccPreEditando ? Object.assign({}, ccPreEditando) : {};
     delete dados._id;
-    Object.assign(dados, fcCamposFormulario());
-    var tipo = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
-    dados.tipoPessoa = tipo ? tipo.value : 'A';
-    dados.cursos = typeof fcCursosColetar === 'function' ? fcCursosColetar() : [];
-    dados.projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
-    dados.turma = ((document.getElementById('fc-turma') || {}).value || '').trim();
+    Object.assign(dados, ccFormPessoaValores('ccpf'));
     if (!dados.projeto || !dados.turma) { alert('Selecione o projeto e a turma deste curso.'); return false; }
     var agora = new Date().toISOString();
     var hoje = new Date().toLocaleDateString('pt-BR');
     dados.status = (ccPreEditando && ccPreEditando.status) || 'Pendente';
     dados.statusOriginal = (ccPreEditando && ccPreEditando.statusOriginal) || 'Pendente';
-    if (!dados.matricula && typeof generateMatricula === 'function') dados.matricula = generateMatricula(dados.cpf);
-    dados.patente = (ccPreEditando && ccPreEditando.patente) || '';
-    if (typeof patenteGravarNoObjeto === 'function') dados = patenteGravarNoObjeto(dados, 'fc');
+    if (!dados.matricula) dados.matricula = ccMatriculaGerar(dados.cpf);
+    dados.cursos = [];
     dados.cursoId = ccAtual._id;
     dados.cursoNome = ccAtual.nome;
     dados.dataCadastro = (ccPreEditando && ccPreEditando.dataCadastro) ? ccPreEditando.dataCadastro : hoje;
-    dados.cadastradoPor = (ccPreEditando && ccPreEditando.cadastradoPor)
-        ? ccPreEditando.cadastradoPor
-        : ((typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) || 'Cadastro de Cursos');
+    dados.cadastradoPor = (ccPreEditando && ccPreEditando.cadastradoPor) ? ccPreEditando.cadastradoPor : ccUsuarioAtual();
     dados.atualizadoEm = agora;
     try {
         if (ccPreEditando && ccPreEditando._id) await ccRef('preInscricoes', ccPreEditando._id).update(dados);
@@ -777,9 +801,9 @@ async function ccPrePromoverIndividuo(c) {
     dados.projeto = c.projeto || ccPreProjeto();
     dados.turma = c.turma || ccPreTurma();
     dados.dataCadastro = c.dataCadastro || new Date().toLocaleDateString('pt-BR');
-    dados.cadastradoPor = c.cadastradoPor || ((typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) || 'Cadastro de Cursos');
+    dados.cadastradoPor = c.cadastradoPor || ccUsuarioAtual();
     dados.cursos = Array.isArray(c.cursos) ? c.cursos : [];
-    if (!dados.matricula && typeof generateMatricula === 'function') dados.matricula = generateMatricula(cpf);
+    if (!dados.matricula) dados.matricula = ccMatriculaGerar(cpf);
     if (!dados.senha && cpf) dados.senha = cpf.substring(0, 6);
     /* Curso concluido: o aprovado entra como formado. */
     ccIndAplicarSituacao(dados, ccCursoConcluido() ? 'Formado' : 'Ativo');
@@ -846,7 +870,7 @@ async function ccPreGerarLink(modo) {
             token: token, projeto: projeto, turma: turma, curso: projeto,
             coletivo: modo === 'coletivo', usado: false,
             criadoEm: new Date().toISOString(),
-            criadoPor: (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) || 'Cadastro de Cursos',
+            criadoPor: ccUsuarioAtual(),
             cursoId: ccAtual._id, cursoNome: ccAtual.nome, link: link
         });
         var tipoLabel = modo === 'coletivo' ? 'Link coletivo (várias inscrições)' : 'Link único (1 inscrição)';
@@ -960,25 +984,24 @@ function ccSetAba(aba) {
     if (aba === 'projeto' || aba === 'preinscricao') ccCarregarProjetosTurmas();
 }
 
-/* ============ IMPORTAÇÃO DO ADMINISTRADOR ============
-   Traz para o curso os dados do administrador gerados para uma turma. */
+/* ============ DADOS INTERNOS DO CURSO ============
+   Nenhuma funcao abaixo le colecao global do administrador. O seletor de
+   "turma" usa somente as turmas criadas dentro deste proprio curso. */
 var ccTurmasAdmin = [];
 async function ccPopularTurmasAdmin() {
     var sel = document.getElementById('cc-turma-admin');
     if (!sel) return;
-    var atual = sel.value;
-    if (typeof turmas !== 'undefined' && turmas && turmas.length) {
-        ccTurmasAdmin = turmas.slice();
-    } else {
-        try {
-            var snap = await ccDb().collection('turmas').orderBy('nome').get();
-            ccTurmasAdmin = [];
-            snap.forEach(function (d) { ccTurmasAdmin.push(Object.assign({ nome: d.id }, d.data() || {})); });
-        } catch (e) { ccTurmasAdmin = []; }
-    }
-    var nomes = [];
-    ccTurmasAdmin.forEach(function (t) { if (t.nome && nomes.indexOf(t.nome) < 0) nomes.push(t.nome); });
+    var atual = sel.value, nomes = [];
+    (ccTurmasCurso || []).forEach(function (t) { if (t.nome && nomes.indexOf(t.nome) < 0) nomes.push(t.nome); });
+    try {
+        var snap = await ccRef('preInscricoes').get();
+        snap.forEach(function (d) {
+            var t = (d.data() || {}).turma;
+            if (t && nomes.indexOf(t) < 0) nomes.push(t);
+        });
+    } catch (e) {}
     nomes.sort(function (a, b) { return String(a).localeCompare(String(b), 'pt-BR'); });
+    ccTurmasAdmin = nomes.map(function (n) { return { nome: n }; });
     sel.innerHTML = '<option value="">Selecione a turma...</option>' + nomes.map(function (n) {
         return '<option value="' + ccEsc(n) + '">' + ccEsc(n) + '</option>';
     }).join('');
@@ -987,7 +1010,7 @@ async function ccPopularTurmasAdmin() {
 function ccTurmaOrigem() { return ((document.getElementById('cc-turma-admin') || {}).value || '').trim(); }
 function ccExigirTurma() {
     var t = ccTurmaOrigem();
-    if (!t) { alert('Selecione a turma do administrador no topo da página.'); return null; }
+    if (!t) { alert('Selecione a turma deste curso no topo da página.'); return null; }
     return t;
 }
 async function ccGravarLote(sub, documentos) {
@@ -1017,135 +1040,28 @@ async function ccGravarLoteExclusao(snap) {
     }
     return refs.length;
 }
+
+/* Antes estas funcoes copiavam dados das telas do administrador. Agora o
+   Cadastro de Cursos e a unica fonte: elas apenas consolidam o que ja esta
+   nas subcolecoes do curso dentro do snapshot da Ficha do Curso. */
 async function ccImportarFicha() {
-    var turma = ccExigirTurma(); if (!turma) return;
-    var pessoas = (typeof candidatos !== 'undefined' ? candidatos : []).filter(function (c) { return c.turma === turma; });
-    if (!pessoas.length) { alert('Nenhum indivíduo encontrado nesta turma no administrador.'); return; }
-    if (!confirm('Importar ' + pessoas.length + ' indivíduo(s) da turma ' + turma + ' para a Ficha do Curso?')) return;
-    try {
-        var snapshot = {};
-        for (var i = 0; i < pessoas.length; i++) {
-            var p = pessoas[i];
-            try {
-                var av = await ccDb().collection('avaliacoesAlunos').doc(String(p.cpf)).get();
-                if (av.exists) snapshot[String(p.cpf)] = av.data() || {};
-            } catch (e) {}
-        }
-        await ccLimparSub('individuos');
-        await ccLimparSub('fichaAvaliacoes');
-        var docs = pessoas.map(function (p) {
-            var copia = Object.assign({}, p);
-            delete copia.docKey; delete copia._id;
-            Object.keys(copia).forEach(function (k) { if (copia[k] === undefined) delete copia[k]; });
-            copia.cursoId = ccAtual._id; copia.importadoEm = new Date().toISOString(); copia.turmaOrigem = turma;
-            return copia;
-        });
-        var n = await ccGravarLote('individuos', docs);
-        var avDocs = Object.keys(snapshot).map(function (cpf) { return Object.assign({ cpf: cpf }, snapshot[cpf]); });
-        if (avDocs.length) await ccGravarLote('fichaAvaliacoes', avDocs);
-        ccLoadIndividuos(); ccInitFicha();
-        alert(n + ' indivíduo(s) e ' + avDocs.length + ' ficha(s) de avaliação importados.');
-    } catch (e) { alert('Erro ao importar fichas: ' + e.message); }
+    var n = await ccSincronizarFicha(true);
+    ccLoadIndividuos(); ccInitFicha();
+    alert(n + ' indivíduo(s) sincronizado(s) com a Ficha do Curso.');
 }
 async function ccImportarApontamentos() {
-    var turma = ccExigirTurma(); if (!turma) return;
-    try {
-        var snap = await ccDb().collection('apontamentos').where('turma', '==', turma).get();
-        if (snap.empty) { alert('Nenhum apontamento encontrado para esta turma.'); return; }
-        if (!confirm('Importar ' + snap.size + ' apontamento(s) da turma ' + turma + '?')) return;
-        var ids = [], copias = [];
-        snap.forEach(function (d) {
-            var copia = Object.assign({}, d.data() || {});
-            delete copia.docKey; delete copia._id;
-            Object.keys(copia).forEach(function (k) { if (copia[k] === undefined) delete copia[k]; });
-            copia.turmaOrigem = turma; copia.cursoId = ccAtual._id; copia.importadoEm = new Date().toISOString();
-            var ref = ccRef('apontamentos').doc();
-            ids.push({ antigo: d.id, novo: ref.id });
-            copias.push({ ref: ref, dados: copia });
-        });
-        await ccLimparSub('apontamentos'); await ccLimparSub('presencas');
-        var batch = ccDb().batch();
-        copias.forEach(function (c) { batch.set(c.ref, c.dados); });
-        await batch.commit();
-        var mapa = {}; ids.forEach(function (x) { mapa[x.antigo] = x.novo; });
-        var pres = await ccDb().collection('presencasAlunos').where('turma', '==', turma).get();
-        var pDocs = [];
-        pres.forEach(function (d) {
-            var p = Object.assign({}, d.data() || {});
-            delete p.docKey; delete p._id;
-            Object.keys(p).forEach(function (k) { if (p[k] === undefined) delete p[k]; });
-            p.apontamentoId = mapa[p.apontamentoId] || p.apontamentoId || '';
-            p.cursoId = ccAtual._id; p.importadoEm = new Date().toISOString();
-            pDocs.push(p);
-        });
-        if (pDocs.length) await ccGravarLote('presencas', pDocs);
-        ccCarregarHistorico(); ccLoadAulas();
-        alert(copias.length + ' apontamento(s) e ' + pDocs.length + ' presença(s) importados.');
-    } catch (e) { alert('Erro ao importar apontamentos: ' + e.message); }
+    await ccSincronizarFicha(true);
+    ccCarregarHistorico(); ccLoadAulas();
+    alert('Apontamentos e presenças deste curso vinculados à Ficha do Curso.');
 }
 async function ccImportarDisciplinasAulas() {
-    var turma = ccExigirTurma(); if (!turma) return;
-    try {
-        var dSnap = await ccDb().collection('disciplinas').where('turma', '==', turma).get();
-        var aSnap = await ccDb().collection('aulas').where('turma', '==', turma).get();
-        if (dSnap.empty && aSnap.empty) { alert('Nenhuma disciplina/aula encontrada para esta turma.'); return; }
-        if (!confirm('Importar ' + dSnap.size + ' disciplina(s) e ' + aSnap.size + ' aula(s) da turma ' + turma + '?')) return;
-        await ccLimparSub('disciplinas'); await ccLimparSub('aulas');
-        function copiar(snap) {
-            var out = [];
-            snap.forEach(function (d) {
-                var o = Object.assign({}, d.data() || {});
-                delete o.docKey; delete o._id;
-                Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
-                o.turmaOrigem = turma; o.cursoId = ccAtual._id; o.importadoEm = new Date().toISOString();
-                out.push(o);
-            });
-            return out;
-        }
-        var nd = await ccGravarLote('disciplinas', copiar(dSnap));
-        var na = await ccGravarLote('aulas', copiar(aSnap));
-        ccLoadDisciplinas(); ccLoadAulas();
-        alert(nd + ' disciplina(s) e ' + na + ' aula(s) importadas.');
-    } catch (e) { alert('Erro ao importar disciplinas/aulas: ' + e.message); }
+    ccLoadDisciplinas(); ccLoadAulas();
+    alert('Disciplinas e aulas são gerenciadas dentro deste curso. Nada a importar do administrador.');
 }
 async function ccImportarAvaliacoes() {
-    var turma = ccExigirTurma(); if (!turma) return;
-    try {
-        var snap = await ccDb().collection('avaliacoes').where('turma', '==', turma).get();
-        if (snap.empty) { alert('Nenhuma avaliação encontrada para esta turma.'); return; }
-        if (!confirm('Importar ' + snap.size + ' avaliação(ões) da turma ' + turma + '?')) return;
-        var ids = [], copias = [];
-        snap.forEach(function (d) {
-            var o = Object.assign({}, d.data() || {});
-            delete o.docKey; delete o._id;
-            Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
-            o.turmaOrigem = turma; o.cursoId = ccAtual._id; o.importadoEm = new Date().toISOString();
-            var ref = ccRef('avaliacoes').doc();
-            ids.push({ antigo: d.id, novo: ref.id });
-            copias.push({ ref: ref, dados: o });
-        });
-        await ccLimparSub('avaliacoes'); await ccLimparSub('respostas');
-        var batch = ccDb().batch(); copias.forEach(function (c) { batch.set(c.ref, c.dados); }); await batch.commit();
-        var mapa = {}; ids.forEach(function (x) { mapa[x.antigo] = x.novo; });
-        /* Nem toda resposta tem o campo turma preenchido: busca todas e
-           filtra pelo ID da avaliacao importada. */
-        var rSnap = await ccDb().collection('avaliacoesRespostas').get();
-        var rDocs = [];
-        rSnap.forEach(function (d) {
-            var r = d.data() || {};
-            var destino = mapa[String(r.avaliacaoId || '')];
-            if (!destino) return;
-            var copia = Object.assign({}, r);
-            delete copia.docKey; delete copia._id;
-            Object.keys(copia).forEach(function (k) { if (copia[k] === undefined) delete copia[k]; });
-            copia.avaliacaoId = destino;
-            copia.cursoId = ccAtual._id; copia.importadoEm = new Date().toISOString();
-            rDocs.push(copia);
-        });
-        if (rDocs.length) await ccGravarLote('respostas', rDocs);
-        ccLoadAvaliacoes();
-        alert(copias.length + ' avaliação(ões) e ' + rDocs.length + ' resposta(s) importadas.');
-    } catch (e) { alert('Erro ao importar avaliações: ' + e.message); }
+    await ccSincronizarFicha(true);
+    ccLoadAvaliacoes();
+    alert('Avaliações e respostas deste curso sincronizadas com a Ficha do Curso.');
 }
 
 /* ============ ABA VISÃO GERAL ============ */
@@ -1659,7 +1575,7 @@ function ccIndAplicarSituacao(d, chave) {
         d.pediuBaixaEm = (chave === 'Pediu Baixa') ? (d.pediuBaixaEm || agora) : '';
         d.rebaixadoEm = (chave === 'Rebaixado') ? (d.rebaixadoEm || agora) : '';
         d.statusOriginal = (chave === 'Ativo') ? 'Ativo' : chave;
-        if (!d.matricula && typeof generateMatricula === 'function') d.matricula = generateMatricula(d.cpf);
+        if (!d.matricula) d.matricula = ccMatriculaGerar(d.cpf);
     }
     return d;
 }
@@ -1742,7 +1658,7 @@ function ccRenderIndividuos() {
         var opcoes = CC_SITUACOES_INDIVIDUO.map(function (s) {
             return '<option value="' + ccEsc(s.chave) + '"' + (s.chave === sit.chave ? ' selected' : '') + '>' + s.rotulo + '</option>';
         }).join('');
-        var cpfFmt = (typeof formatCPFDisplay === 'function') ? formatCPFDisplay(p.cpf) : (p.cpf || '-');
+        var cpfFmt = ccFormatCPF(p.cpf) || '-';
         return '<tr style="border-bottom:1px solid #f1f5f9">'
             + '<td style="padding:8px"><b>' + ccEsc(p.nome || '-') + '</b>'
             + (p.origem === 'pre-inscricao' ? '<div style="font-size:9px;color:#16a34a">via Pré-Inscrição</div>' : '') + '</td>'
@@ -1797,106 +1713,31 @@ async function ccIndExcluir(id) {
     } catch (e) { alert('Erro ao excluir: ' + e.message); }
 }
 
-/* ---------- EDICAO DENTRO DA GUIA (mesmo formulario, sem duplicar IDs) ---------- */
-function ccIndPopularFormSelects(c) {
-    var projeto = c ? (c.projeto || '') : '';
-    var turma = c ? (c.turma || '') : '';
-    var fp = document.getElementById('fc-projeto');
-    var ft = document.getElementById('fc-turma');
-    if (fp) {
-        fp.innerHTML = '<option value="">Selecione o projeto...</option>' + ccProjetos.map(function (p) {
-            return '<option value="' + ccEsc(p.nome) + '">' + ccEsc(p.nome) + '</option>';
-        }).join('');
-        if (projeto && !ccProjetos.some(function (p) { return p.nome === projeto; })) {
-            fp.innerHTML += '<option value="' + ccEsc(projeto) + '">' + ccEsc(projeto) + '</option>';
-        }
-        fp.value = projeto;
-        fp.setAttribute('onchange', 'ccIndFormProjetoChange()');
-    }
-    if (ft) {
-        var turmas = ccTurmasCurso.filter(function (t) { return t.projeto === projeto; });
-        ft.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function (t) {
-            return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
-        }).join('');
-        if (turma && !turmas.some(function (t) { return t.nome === turma; })) {
-            ft.innerHTML += '<option value="' + ccEsc(turma) + '">' + ccEsc(turma) + '</option>';
-        }
-        ft.value = turma;
-        ft.setAttribute('onchange', '');
-    }
-}
-function ccIndFormProjetoChange() {
-    var projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
-    var ft = document.getElementById('fc-turma');
-    if (!ft) return;
-    ft.innerHTML = '<option value="">Selecione a turma...</option>' + ccTurmasCurso.filter(function (t) { return t.projeto === projeto; }).map(function (t) {
-        return '<option value="' + ccEsc(t.nome) + '">' + ccEsc(t.nome) + '</option>';
-    }).join('');
-}
+/* ---------- EDICAO DENTRO DA GUIA (formulario proprio) ---------- */
+function ccIndPopularFormSelects() { /* formulario proprio ja vem preenchido */ }
+function ccIndFormProjetoChange() { ccFormProjetoChange('ccif'); }
 async function ccIndAbrirForm(id) {
-    var no = document.getElementById('admin-form-candidato');
     var painel = document.getElementById('cc-ind-form-painel');
     var lista = document.getElementById('cc-ind-lista-wrap');
-    if (!no || !painel) return;
+    if (!painel) return;
+    if (ccPreFormaAtiva) ccPreVoltarForm();
+    if (ccIndFormaAtiva) ccIndVoltarForm();
+    await ccCarregarProjetosTurmas();
     var p = id ? await ccIndBuscar(id) : null;
     if (id && !p) return;
-    /* Nunca deixe o mesmo formulario preso em duas guias. */
-    if (typeof ccPreFormaAtiva !== 'undefined' && ccPreFormaAtiva && typeof ccPreVoltarForm === 'function') ccPreVoltarForm();
-    if (ccIndFormaAtiva) ccIndVoltarForm();
-    if (typeof ccCarregarProjetosTurmas === 'function') await ccCarregarProjetosTurmas();
-    if (!ccIndFormGuardado) {
-        var fp0 = document.getElementById('fc-projeto');
-        var ft0 = document.getElementById('fc-turma');
-        ccIndFormGuardado = {
-            pai: no.parentNode,
-            proximo: no.nextSibling,
-            tinhaActive: no.classList.contains('active'),
-            onProjeto: fp0 && fp0.getAttribute ? (fp0.getAttribute('onchange') || '') : '',
-            onTurma: ft0 && ft0.getAttribute ? (ft0.getAttribute('onchange') || '') : ''
-        };
-    }
-    painel.appendChild(no);
-    no.classList.add('active');
+    painel.innerHTML = ccFormPessoaHTML('ccif', p ? 'Editar indivíduo' : 'Novo indivíduo', p, 'ccIndSalvarCandidato()', 'ccIndVoltarForm()');
     painel.style.display = '';
     if (lista) lista.style.display = 'none';
     ccIndFormaAtiva = true;
     ccIndEditando = p;
-
-    resetFormCandidato();
-    ccIndPopularFormSelects(p);
-    if (p && typeof formFields !== 'undefined') {
-        formFields.forEach(function (fid) {
-            var chave = fid.replace('fc-', '').replace(/-([a-z])/g, function (_, l) { return l.toUpperCase(); });
-            var el = document.getElementById(fid);
-            if (el) el.value = p[chave] == null ? '' : p[chave];
-        });
-        var radio = document.querySelector('input[name="fc-tipo-pessoa"][value="' + (p.tipoPessoa || 'A') + '"]');
-        if (radio) radio.checked = true;
-        if (typeof fcCursosCarregar === 'function') fcCursosCarregar(p.cursos || []);
-    }
-    if (typeof patentePopularSelects === 'function') patentePopularSelects({ fc: { codigo: (p && (p.patenteCodigo || p.patente)) || 'ALU' } });
-    if (typeof patenteIgnorarSugestao === 'function') patenteIgnorarSugestao();
-    fcFormularioModo(ccIndSituacao(p).chave === 'Formado' ? 'formados' : 'alunos', p ? (p.nome || '') : '', false);
-    var voltar = document.getElementById('fc-voltar-btn'); if (voltar) voltar.setAttribute('onclick', 'ccIndVoltarForm()');
-    var cancelar = document.getElementById('fc-cancelar-btn'); if (cancelar) cancelar.setAttribute('onclick', 'ccIndVoltarForm()');
-    var att = document.getElementById('btn-atualizar-cadastro'); if (att) att.style.display = 'none';
-    no.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function ccIndEditar(id) { ccIndAbrirForm(id); }
 function ccIndVoltarForm() {
     ccIndFormaAtiva = false;
     ccIndEditando = null;
-    var no = document.getElementById('admin-form-candidato');
     var painel = document.getElementById('cc-ind-form-painel');
     var lista = document.getElementById('cc-ind-lista-wrap');
-    if (ccIndFormGuardado && no) {
-        var g = ccIndFormGuardado;
-        if (no.parentNode && g.pai) g.pai.insertBefore(no, g.proximo);
-        no.classList.toggle('active', g.tinhaActive);
-        var fp = document.getElementById('fc-projeto'); if (fp) fp.setAttribute('onchange', g.onProjeto || '');
-        var ft = document.getElementById('fc-turma'); if (ft) ft.setAttribute('onchange', g.onTurma || '');
-        ccIndFormGuardado = null;
-    }
     if (painel) { painel.style.display = 'none'; painel.innerHTML = ''; }
     if (lista) lista.style.display = '';
 }
@@ -1904,19 +1745,12 @@ async function ccIndSalvarCandidato() {
     var p = ccIndEditando; if (!p) return false;
     var dados = Object.assign({}, p);
     delete dados._id;
-    Object.assign(dados, fcCamposFormulario());
-    var tipo = document.querySelector('input[name="fc-tipo-pessoa"]:checked');
-    dados.tipoPessoa = tipo ? tipo.value : 'A';
-    dados.cursos = typeof fcCursosColetar === 'function' ? fcCursosColetar() : [];
-    dados.projeto = ((document.getElementById('fc-projeto') || {}).value || '').trim();
-    dados.turma = ((document.getElementById('fc-turma') || {}).value || '').trim();
+    Object.assign(dados, ccFormPessoaValores('ccif'));
     if (!dados.projeto || !dados.turma) { alert('Selecione o projeto e a turma deste curso.'); return false; }
-    if (!dados.matricula && typeof generateMatricula === 'function') dados.matricula = generateMatricula(dados.cpf);
-    if (typeof patenteGravarNoObjeto === 'function') dados = patenteGravarNoObjeto(dados, 'fc');
+    if (!dados.matricula) dados.matricula = ccMatriculaGerar(dados.cpf);
     dados.cursoId = ccAtual._id;
     dados.cursoNome = ccAtual.nome || '';
     dados.atualizadoEm = new Date().toISOString();
-    /* Mantem a situacao atual, a menos que o proprio formulario tenha mudado o tipo. */
     var sit = ccIndSituacao(p).chave;
     if (sit !== 'Formado' && dados.tipoPessoa === 'F') sit = 'Formado';
     if (sit === 'Formado' && dados.tipoPessoa === 'A') sit = 'Ativo';
@@ -1935,11 +1769,11 @@ async function ccIndSalvarCandidato() {
 async function ccIndImprimir(id) {
     var p = await ccIndBuscar(id); if (!p) return;
     var foto = '';
-    try { if (typeof getFoto === 'function') foto = getFoto(p.cpf); } catch (e) {}
+    try { foto = await ccFotoCurso(p.cpf, p); } catch (e) {}
     function abrir(src) {
         var w = window.open('', '_blank'); if (!w) return;
         var sit = ccIndSituacao(p);
-        var cpfFmt = (typeof formatCPFDisplay === 'function') ? formatCPFDisplay(p.cpf) : (p.cpf || '-');
+        var cpfFmt = ccFormatCPF(p.cpf) || '-';
         var mat = p.credencial || p.matricula || '';
         var html = '<html><head><meta charset="utf-8"><title>FARN - ' + ccEsc(p.nome || '') + '</title><style>'
             + 'body{font-family:Arial,sans-serif;padding:36px;color:#222}h1{color:#1a237e;font-size:19px;margin:0}h2{font-size:14px;margin:20px 0 8px;border-bottom:2px solid #1a237e;padding-bottom:5px}'
@@ -2115,31 +1949,33 @@ async function ccExcluirApt(id) {
 }
 
 /* ============ SINCRONIZAÇÃO CANÔNICA DA FICHA DO CURSO ============
-   Fonte única de verdade: avaliacoesAlunos do administrador (notas T/P,
-   provas finais, FO+/- e médias manuais) + respostas das avaliações criadas
-   no proprio curso. Tudo gravado em fichaAvaliacoes no MESMO formato:
-   { cpf, av: {...}, presencas: [...] }. */
+   Fonte única de verdade: os proprios dados do curso (individuos, avaliacoes,
+   respostas, presencas, apontamentos e aulas) mais o snapshot ja gravado em
+   fichaAvaliacoes, que guarda as notas lancadas manualmente. Nenhuma colecao
+   global do administrador e consultada. Formato preservado:
+   { cpf, av: {...}, presencas: [...], apontamentos: [...] }. */
 async function ccSincronizarFicha(silent) {
     if (!ccAtual || !ccAtual._id) return 0;
     try {
-        var [indSnap, avSnap, respSnap, presSnap, aptSnap, aulaSnap, adminSnap] = await Promise.all([
+        var [indSnap, avSnap, respSnap, presSnap, aptSnap, aulaSnap, fichaSnap] = await Promise.all([
             ccRef('individuos').get(),
             ccRef('avaliacoes').get(),
             ccRef('respostas').get(),
             ccRef('presencas').get(),
             ccRef('apontamentos').get(),
             ccRef('aulas').get(),
-            ccDb().collection('avaliacoesAlunos').get()
+            ccRef('fichaAvaliacoes').get()
         ]);
         var aulasCurso = [];
         aulaSnap.forEach(function (d) { aulasCurso.push(Object.assign({ _id: d.id }, d.data() || {})); });
 
-        /* Indexa a ficha do administrador por CPF: é ela que tem as notas
-           teóricas/práticas e as provas finais já lançadas. */
-        var avAdmin = {};
-        adminSnap.forEach(function (d) {
-            var a = d.data() || {};
-            if (a.cpf) avAdmin[String(a.cpf)] = a;
+        /* Indexa o snapshot do proprio curso por CPF: é ele que guarda as
+           notas teóricas/práticas, provas finais, FO+/- e médias manuais já
+           lançadas nesta Ficha do Curso. */
+        var avGravado = {};
+        fichaSnap.forEach(function (d) {
+            var f = d.data() || {};
+            if (f.cpf) avGravado[String(f.cpf)] = f;
         });
 
         var avs = {};
@@ -2230,20 +2066,20 @@ async function ccSincronizarFicha(silent) {
             if (!cpf) continue;
             var atual = await ccRef('fichaAvaliacoes', cpf).get();
             var base = (atual.exists && atual.data()) ? atual.data() : {};
-            /* Começa pela ficha completa do administrador e só acrescenta/
-               sobrescreve com as notas das avaliações do proprio curso.
-               IMPORTANTE: um mapa VAZIO no snapshot do curso NAO pode apagar
-               as notas que já existem na ficha global do administrador. */
-            var avAdm = avAdmin[cpf] || {}, avBase = base.av || {};
-            var av = Object.assign({}, avAdm, avBase);
+            /* Começa pelo snapshot gravado neste proprio curso e só
+               acrescenta/sobrescreve com as respostas das avaliações do curso.
+               IMPORTANTE: um mapa VAZIO nas avaliações NAO pode apagar notas
+               lançadas manualmente e ja salvas em fichaAvaliacoes. */
+            var gravado = avGravado[cpf] || {}, avBase = base.av || gravado.av || {};
+            var av = Object.assign({}, gravado.av || {}, avBase);
             ['notasTeoricas','notasPraticas','avTeoricaManual','avPraticaManual'].forEach(function (k) {
-                var a = (avAdm[k] && typeof avAdm[k] === 'object') ? avAdm[k] : {};
+                var a = (gravado.av && gravado.av[k] && typeof gravado.av[k] === 'object') ? gravado.av[k] : {};
                 var b = (avBase[k] && typeof avBase[k] === 'object') ? avBase[k] : {};
                 av[k] = Object.assign({}, a, b);
             });
             ['foPositivos','foNegativos'].forEach(function (k) {
                 av[k] = (Array.isArray(avBase[k]) && avBase[k].length)
-                    ? avBase[k] : (Array.isArray(avAdm[k]) ? avAdm[k] : []);
+                    ? avBase[k] : (Array.isArray(gravado.av && gravado.av[k]) ? gravado.av[k] : []);
             });
             (respostasPorCpf[cpf] || []).forEach(function (r) {
                 var avDoc = avs[String(r.avaliacaoId || '')];
@@ -2474,7 +2310,7 @@ async function ccInitFicha() {
                 : null;
             var inicial = pessoa.fotoUrl || pessoa.photoDataUrl || local;
             if (inicial) aplicar(inicial);
-            else if (typeof getFoto === 'function') getFoto(pessoa.cpf).then(aplicar).catch(function () {});
+            else ccFotoCurso(pessoa.cpf, pessoa).then(aplicar).catch(function () {});
         });
     } catch (e) { box.innerHTML = '<p style="color:#dc2626">' + ccEsc(e.message) + '</p>'; }
 }
@@ -2784,8 +2620,8 @@ function ccFichaCursoAvaliacoesHTML(p, calcBase, aulas, avs, calcAval) {
 async function ccImprimirFichaCurso(i) {
     var item = ccFichaCache[i]; if (!item) return;
     var foto = item.foto || null;
-    if (!foto && typeof getFoto === 'function') {
-        try { foto = await getFoto(item.p.cpf); } catch (e) { foto = null; }
+    if (!foto) {
+        try { foto = await ccFotoCurso(item.p.cpf, item.p); } catch (e) { foto = null; }
     }
     var html = ccFichaCursoFolha(item, foto, i);
     var titulo = 'FARN - Ficha do Curso - ' + (item.p.nome || '');
@@ -3104,35 +2940,9 @@ function ccAvalRenderAba() {
     return html;
 }
 
-/* Importa da Seção de Avaliação do administrador os dados ligados a turma. */
-async function ccImportarDadosAvaliacao() {
-    var turma = ccExigirTurma(); if (!turma) return;
-    try {
-        var snapCand = await ccDb().collection('candidatos').where('turma', '==', turma).get();
-        if (snapCand.empty) { alert('Nenhum indivíduo encontrado nesta turma no administrador.'); return; }
-        if (!confirm('Importar os dados da Seção de Avaliação da turma ' + turma + ' para este curso?')) return;
-        var cpfs = [];
-        snapCand.forEach(function (d) { var c = d.data() || {}; if (c.cpf) cpfs.push(String(c.cpf)); });
-        var ok = 0;
-        for (var i = 0; i < cpfs.length; i++) {
-            var cpf = cpfs[i];
-            var avDoc = await ccDb().collection('avaliacoesAlunos').doc(cpf).get();
-            var pres = await ccDb().collection('presencasAlunos').where('cpf', '==', cpf).get();
-            var presencas = [];
-            pres.forEach(function (d) { presencas.push(Object.assign({ _id: d.id }, d.data() || {})); });
-            if (!avDoc.exists && !presencas.length) continue;
-            var av = avDoc.exists ? (avDoc.data() || {}) : {};
-            await ccRef('fichaAvaliacoes', cpf).set({
-                cpf: cpf, av: av, presencas: presencas,
-                turmaOrigem: turma, cursoId: ccAtual._id, importadoEm: new Date().toISOString()
-            });
-            ok++;
-        }
-        await ccSincronizarFicha(true);
-        ccInitAvaliacao();
-        alert(ok + ' avaliação(ões) importada(s) da turma ' + turma + '.');
-    } catch (e) { alert('Erro ao importar avaliações: ' + e.message); }
-}
+/* As notas e presenças da Ficha do Curso vem somente deste curso. A antiga
+   importação da Seção de Avaliação do administrador foi removida junto com
+   essa seção; use "Sincronizar" na guia da Ficha do Curso. */
 
 /* ============ ABA CERTIFICADOS DO CURSO ============ */
 var ccCertsCache = [];
