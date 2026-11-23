@@ -6,9 +6,9 @@
    Cursos (pre-inscricao e individuo), CFF e pre-inscricao via link.
 
    Regras:
-   - Foto 3x4: recorte 300x400 em JPEG, comprimido ate 320 KB antes de
-     gravar. Isso evita estourar o limite do espelho local (~4 MB) e o
-     limite de 1 MiB por documento do Firestore.
+   - Foto 3x4: recorte 300x400 em JPEG, com editor de zoom/arraste e
+     compressao final com teto de 1 MB antes de gravar. Isso evita estourar
+     o limite de 1 MiB por documento do Firestore.
    - QR Code: o CONTEUDO do QR e exatamente a credencial/matricula da
      pessoa (sem URL, sem JSON e sem prefixo). Os leitores de apontamento
      comparam o texto lido diretamente com `matricula`,Entao qualquer
