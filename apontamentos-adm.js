@@ -782,6 +782,8 @@
                 capturadaEm: localAtual.capturadaEm || new Date().toISOString()
             } : null,
             localizacaoStatus: (localAtual && typeof localAtual.latitude === 'number') ? 'capturado' : 'indisponivel',
+            status: regSalvo.apontadoEm ? 'Apontado' : 'Pendente',
+            apontado: !!regSalvo.apontadoEm,
             atualizadoEm: new Date().toISOString()
         };
         if (!editando) {
@@ -903,9 +905,13 @@
             return Object.assign({}, s, { cpf: s.cpf || p.cpf || '', nome: s.nome || p.nome || '', matricula: s.matricula || p.matricula || '' });
         });
         try {
+            var apontadoEm = new Date().toISOString();
             await db().collection(COLECAO).doc(apontando._id).update({
                 alunos: lista, presentes: presentes, faltas: faltas, justificadas: just,
-                apontadoEm: new Date().toISOString()
+                apontadoEm: apontadoEm,
+                status: 'Apontado',
+                apontado: true,
+                atualizadoEm: apontadoEm
             });
             fecharApontamento();
             await carregarTudo();
