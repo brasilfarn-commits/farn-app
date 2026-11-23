@@ -816,7 +816,11 @@ function ccFormPessoaHTML(prefixo, titulo, c, salvarFn, voltarFn) {
         + '<div class="form-row">' + campos + '</div>'
         /* Foto 3x4 + QR Code em pre-inscricao e individuo do curso. */
         + '<div style="margin:8px 0 4px">'
-        + (typeof FarnPessoaCampos !== 'undefined' ? FarnPessoaCampos.html(prefixo, p, {}) : '')
+        /* Na guia Indivíduos o campo Foto 3x4 tem editor de zoom/recorte e
+           teto de 1 MB; a pré-inscrição continua com o bloco padrão. */
+        + (typeof FarnPessoaCampos !== 'undefined'
+            ? FarnPessoaCampos.html(prefixo, p, prefixo === 'ccif' ? { editor: true, limiteKb: 1000 } : {})
+            : '')
         + '</div>'
         + '<div style="display:flex;gap:8px;margin-top:14px">'
         + '<button type="button" class="btn-primary" onclick="' + salvarFn + '"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>'

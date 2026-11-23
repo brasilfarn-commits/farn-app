@@ -18,8 +18,12 @@
 (function (global) {
     'use strict';
 
-    var LIMITE_FOTO_KB = 320;
+    /* Teto da foto gravada: 1 MB (1000 KB). O recorte 3x4 em JPEG normalmente
+       fica bem menor, mas "Usar sem ajuste" e imagens muito detalhadas podem
+       passar disso. Por isso a compressao final sempre e conferida. */
+    var LIMITE_FOTO_KB = 1000;
     var QR_API = 'https://api.qrserver.com/v1/create-qr-code/';
+    var opcoesPorPrefixo = {};
 
     function digitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
     function esc(v) {
@@ -62,6 +66,8 @@
        (fc, uf, intr, coord, doc, ccpf, ccif, cffc, f). */
     function html(prefixo, reg, opcoes) {
         var r = reg || {}, o = opcoes || {};
+        opcoesPorPrefixo[prefixo] = o;
+        var limiteKb = Number(o.limiteKb) || LIMITE_FOTO_KB;
         /* So grava no campo novo o que ja era foto3x4 (ou um dataUrl antigo em
            fotoUrl). photoDataUrl so serve de preview: copia-lo para foto3x4
            duplicaria imagens grandes e estouraria o limite do documento. */
@@ -90,11 +96,16 @@
                 + '<input type="hidden" id="' + prefixo + '-foto3x4" value="' + esc(foto) + '">'
                 + '<input type="file" id="' + prefixo + '-foto3x4-file" accept="image/*" style="display:none" onchange="FarnPessoaCampos.arquivo(\'' + prefixo + '\', this.files)">'
                 + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-                + '<button type="button" class="btn-outline btn-sm" onclick="document.getElementById(\'' + prefixo + '-foto3x4-file\').click()"><i class="fa-solid fa-paperclip"></i> ANEXAR FOTO</button>'
+                + '<button type="button" class="btn-outline btn-sm" onclick="document.getElementById(\'' + prefixo + '-foto3x4-file\').click()"><i class="fa-solid fa-paperclip"></i> ANEXAR / TROCAR FOTO</button>'
                 + '<button type="button" class="btn-outline btn-sm" onclick="FarnPessoaCampos.remover(\'' + prefixo + '\')"><i class="fa-solid fa-trash"></i> REMOVER</button>'
+                 + (o.editor && (foto || preview)
+                    ? '<button type="button" class="btn-outline btn-sm" onclick="FarnPessoaCampos.editar(\'' + prefixo + '\')"><i class="fa-solid fa-crop"></i> EDITAR ZOOM / RECORTE</button>'
+                    : '')
                 + '</div>'
                 + '<div id="' + prefixo + '-foto3x4-status" style="font-size:10px;color:#64748b;margin-top:5px">'
-                + (foto ? 'Foto cadastrada (' + kb(foto) + ' KB).' : 'JPG/PNG — ajustada para 3x4 e reduzida antes de gravar.')
+                + (foto
+                    ? 'Foto cadastrada (' + kb(foto) + ' KB). Teto: ' + limiteKb + ' KB (1 MB).'
+                    : 'JPG/PNG — o editor permite ampliar, arrastar e recortar em 3x4. Teto: ' + limiteKb + ' KB (1 MB).')
                 + '</div></div></div></div>');
         }
 
@@ -131,19 +142,29 @@
         }
     }
 
-    /* Recorte 3x4 com o editor compartilhado quando ele estiver disponivel.
-       Sem editor (paginas que nao carregam foto3x4-editor.js), usa o
-       recorte central simples — o resultado e identico em tamanho/limite. */
+    /* Recorte 3x4 com o editor compartilhado (zoom + arrastar). Mesmo quando
+       o usuario escolhe "Usar sem ajuste" a imagem passa pela compressao
+       final, para nunca gravar um dataUrl maior que o teto de 1 MB. */
     function aplicarRecorte(prefixo, fonte, arquivo, nome) {
         var status = document.getElementById(prefixo + '-foto3x4-status');
-        function concluir(dataUrl) {
+        var limiteKb = Number((opcoesPorPrefixo[prefixo] || {}).limiteKb) || LIMITE_FOTO_KB;
+
+        function gravar(dataUrl) {
             var hidden = document.getElementById(prefixo + '-foto3x4');
             var prev = document.getElementById(prefixo + '-foto3x4-preview');
             if (hidden) hidden.value = dataUrl;
             if (prev) prev.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">';
-            if (status) { status.textContent = 'Foto anexada (' + kb(dataUrl) + ' KB). Clique em Salvar para gravar.'; status.style.color = '#16a34a'; }
+            if (status) {
+                status.textContent = 'Foto ajustada (' + kb(dataUrl) + ' KB / teto ' + limiteKb + ' KB). Clique em Salvar para gravar.';
+                status.style.color = '#16a34a';
+            }
         }
-        function simples() {
+        function concluir(dataUrl) {
+            if (!dataUrl) return;
+            if (kb(dataUrl) > limiteKb) { comprimir(dataUrl, gravar); return; }
+            gravar(dataUrl);
+        }
+        function comprimir(origem, cb) {
             var img = new Image();
             img.onerror = function () { if (status) { status.textContent = 'Não foi possível ler a imagem.'; status.style.color = '#dc2626'; } };
             img.onload = function () {
@@ -155,24 +176,29 @@
                 var ctx = canvas.getContext('2d');
                 ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, alvoW, alvoH);
                 ctx.drawImage(img, Math.round((alvoW - w) / 2), Math.round((alvoH - h) / 2), w, h);
-                var qualidades = [0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
+                var qualidades = [0.92, 0.85, 0.75, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1];
                 var saida = canvas.toDataURL('image/jpeg', 0.1);
                 for (var i = 0; i < qualidades.length; i++) {
                     var tentativa = canvas.toDataURL('image/jpeg', qualidades[i]);
-                    if (kb(tentativa) <= LIMITE_FOTO_KB) { saida = tentativa; break; }
+                    if (kb(tentativa) <= limiteKb) { saida = tentativa; break; }
                 }
-                concluir(saida);
+                cb(saida);
             };
-            img.src = fonte;
+            img.src = origem;
         }
         if (global.Foto3x4Editor && typeof global.Foto3x4Editor.abrir === 'function') {
             global.Foto3x4Editor.abrir({
                 nome: nome || 'Pessoa', fonte: fonte, largura: 300, altura: 400,
-                limiteKb: LIMITE_FOTO_KB,
-                aoConcluir: function (dataUrl) { if (dataUrl) concluir(dataUrl); }
+                limiteKb: limiteKb,
+                aoConcluir: function (dataUrl, recortado) {
+                    if (!dataUrl) return;
+                    /* "Usar sem ajuste" devolve a original; comprime antes de gravar. */
+                    if (!recortado) { comprimir(dataUrl, gravar); return; }
+                    concluir(dataUrl);
+                }
             });
         } else {
-            simples();
+            comprimir(fonte, gravar);
         }
     }
 
@@ -190,6 +216,24 @@
         leitor.onload = function (ev) { aplicarRecorte(prefixo, ev.target.result, arquivo, nome); };
         leitor.onerror = function () { if (status) { status.textContent = 'Não foi possível ler o arquivo.'; status.style.color = '#dc2626'; } };
         leitor.readAsDataURL(arquivo);
+    }
+
+    /* Reabre o enquadramento de uma foto ja anexa: o usuario pode dar zoom,
+       arrastar para a posicao que quiser e salvar um novo recorte 3x4. */
+    function editar(prefixo) {
+        var hidden = document.getElementById(prefixo + '-foto3x4');
+        var prev = document.getElementById(prefixo + '-foto3x4-preview');
+        var img = prev ? prev.querySelector('img') : null;
+        var fonte = hidden && String(hidden.value || '').indexOf('data:') === 0
+            ? String(hidden.value) : (img ? img.src : '');
+        if (!fonte) { alert('Anexe uma foto antes de editar o enquadramento.'); return; }
+        if (!global.Foto3x4Editor || typeof global.Foto3x4Editor.abrir !== 'function') {
+            alert('Editor de foto indisponível nesta página.'); return;
+        }
+        var nomeEl = document.getElementById(prefixo + '-nome')
+            || document.getElementById(prefixo + '-edit-nome');
+        var nome = nomeEl ? nomeEl.value.trim() : '';
+        aplicarRecorte(prefixo, fonte, null, nome);
     }
 
     function remover(prefixo) {
@@ -211,6 +255,11 @@
         var foto = hiddenFoto ? String(hiddenFoto.value || '').trim() : '';
         if (!foto) foto = String(r.foto3x4 || '').trim();
         if (!foto) foto = null;
+        /* Ultima barreira: nada acima de 1 MB pode entrar no documento. */
+        if (foto && kb(foto) > LIMITE_FOTO_KB) {
+            alert('A foto passou de 1 MB e não foi gravada. Anexe a imagem novamente para ajustar o recorte.');
+            foto = null;
+        }
         return { foto3x4: foto, qrCode: qrValor(r) };
     }
 
@@ -221,6 +270,7 @@
         montar: montar,
         atualizarQr: atualizarQr,
         arquivo: arquivo,
+        editar: editar,
         remover: remover,
         coletar: coletar,
         kb: kb
