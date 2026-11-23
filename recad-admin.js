@@ -308,12 +308,13 @@ async function recadMoverParaFormados(docId, r, matricula) {
         }
 
         var novoFormado = {};
-        var campos = ['nome','cpf','rg','nascimento','idade','genero','estadoCivil','nacionalidade','naturalidade','mae','pai','profissao','titulo','email','whatsapp','endereco','numero','bairro','cidade','estado','altura','peso','fatorRh','hipertensao','diabetes','deficiencia','tatuagem','cirurgia','alcool','medicamento','cansaco','calca','camisa','calcado','tamanhoUniforme','dataCertificado','certificadoFrente','certificadoVerso','senha','projeto','turma','dataHoraCadastro'];
+        var campos = ['nome','cpf','rg','nascimento','idade','genero','estadoCivil','nacionalidade','naturalidade','mae','pai','profissao','titulo','email','whatsapp','endereco','numero','bairro','cidade','estado','altura','peso','fatorRh','hipertensao','diabetes','deficiencia','tatuagem','cirurgia','alcool','medicamento','cansaco','calca','camisa','calcado','tamanhoUniforme','dataCertificado','certificadoFrente','certificadoVerso','senha','projeto','turma','dataHoraCadastro','foto3x4','qrCode'];
         campos.forEach(function(c) {
             if (r[c] !== undefined && r[c] !== null && r[c] !== '') novoFormado[c] = r[c];
         });
         novoFormado.cpf = cpf;
         novoFormado.matricula = matricula || r.matricula || '';
+        if (typeof FarnPessoaCampos !== 'undefined') novoFormado.qrCode = FarnPessoaCampos.qrValor(novoFormado);
         novoFormado.tipoPessoa = 'F';
         novoFormado.status = 'Ativo';
         novoFormado.origem = 'recadastramento';
@@ -809,12 +810,15 @@ function recadEditInline(docId) {
         '<button class="btn-outline btn-sm" onclick="document.getElementById(\'rc-edit-foto-input\').click()"><i class="fa-solid fa-camera"></i> ' + (r.certificadoFrente ? 'Trocar Foto' : 'Adicionar Foto') + '</button></div>' +
         '</div></div>';
 
+    html += '<div id="rc-foto-qr-box" style="margin:16px 0;padding:14px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff"></div>';
+
     html += '<div style="margin-top:12px;display:flex;gap:8px">' +
         '<button class="btn-primary" onclick="recadSaveEditInline(\'' + docId + '\')" style="background:#4caf50"><i class="fa-solid fa-check"></i> Salvar Alteracoes</button>' +
         '<button class="btn-outline" onclick="recadViewDetail(\'' + docId + '\')"><i class="fa-solid fa-xmark"></i> Cancelar</button>' +
         '</div>';
 
     body.innerHTML = html;
+    if (typeof FarnPessoaCampos !== 'undefined') FarnPessoaCampos.montar('rc', 'rc-foto-qr-box', r);
 }
 
 var recadEditPhotoFile = null;
@@ -856,6 +860,16 @@ async function recadSaveEditInline(docId) {
         var el = document.getElementById('rc-edit-' + f);
         if (el) updates[f] = el.value.trim();
     });
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var rAtual = recadData.find(function(x) { return x._docId === docId; }) || {};
+        var rcExtra = FarnPessoaCampos.coletar('rc', {
+            matricula: updates.matricula || rAtual.matricula,
+            cpf: updates.cpf || rAtual.cpf,
+            foto3x4: rAtual.foto3x4
+        });
+        updates.foto3x4 = rcExtra.foto3x4;
+        updates.qrCode = rcExtra.qrCode;
+    }
 
     try {
         if (recadEditPhotoRemoved) {

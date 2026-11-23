@@ -1397,6 +1397,7 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div id="uf-foto-qr-box" class="form-section-card" style="margin:16px 0;padding:14px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff"></div>
                                 <div class="form-section" style="margin-top:20px">
                                     <label style="font-weight:600;color:#1e293b;margin-bottom:12px;display:block"><i class="fa-solid fa-lock" style="color:#16a34a;margin-right:6px"></i> Permissoes de Acesso</label>
                                     <label class="permissao-item" style="margin-bottom:12px">
@@ -1679,6 +1680,9 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- FOTO 3X4 + QR CODE -->
+                                <div id="fc-foto-qr-box" class="form-section-card" style="margin-top:14px;padding:14px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff"></div>
 
                                 <!-- DADOS PESSOAIS -->
                                 <div class="form-section-card">
@@ -2253,6 +2257,8 @@
                 <form id="form-docente" onsubmit="return docenteSalvar(event)">
                     <input type="hidden" id="intr-id">
                     <input type="hidden" id="intr-origem">
+                    <!-- QR CODE (a foto 3x4 do docente ja tem bloco proprio no app.js) -->
+                    <div id="intr-qr-box" class="form-section-card" style="margin-bottom:14px;padding:14px;border:1px solid #dcfce7;border-radius:10px;background:#f8fdf9"></div>
                     <div id="intr-aviso-remanejamento" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:8px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.25);color:#1d4ed8;font-size:12px;font-weight:600">
                         <i class="fa-solid fa-arrows-rotate"></i> Formado em remanejamento para o corpo de docentes. Confira os dados e salve para ativar.
                     </div>
@@ -2815,8 +2821,11 @@
     </div>
 
     <script src="noticias-feed.js?v=6"></script>
-    <script src="app.js?v=125"></script>
-    <script src="recad-admin.js?v=1"></script>
+    <script src="foto3x4-editor.js?v=4"></script>
+    <script src="farn-storage.js?v=2"></script>
+    <script src="campos-pessoa-comuns.js?v=1"></script>
+    <script src="app.js?v=126"></script>
+    <script src="recad-admin.js?v=2"></script>
 
     <script src="noticias-slider.js?v=1"></script>
     <script>

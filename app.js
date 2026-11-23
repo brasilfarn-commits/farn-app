@@ -2366,6 +2366,7 @@ async function editCandidato(index, origem) {
     document.getElementById('fc-nome').value = c.nome || '';
     document.getElementById('fc-cpf').value = formatCPFDisplay(c.cpf || '');
     updateMatricula(formatCPFDisplay(c.cpf || ''));
+    if (typeof FarnPessoaCampos !== 'undefined') FarnPessoaCampos.montar('fc', 'fc-foto-qr-box', c);
     document.getElementById('fc-nascimento').value = c.nascimento || '';
     calcularIdadeCampo('fc-nascimento', 'fc-idade');
     document.getElementById('fc-data-inscricao').value = c.dataInscricao || '';
@@ -2492,6 +2493,7 @@ function resetFormCandidato() {
        gerar o rotulo e guardar o historico. */
     patentePopularSelects({ fc: { codigo: '' } });
     patenteIgnorarSugestao();
+    if (typeof FarnPessoaCampos !== 'undefined') FarnPessoaCampos.montar('fc', 'fc-foto-qr-box', {});
     uploadedFiles = [];
     renderFilesList();
 }
@@ -2575,6 +2577,12 @@ async function handleCandidatoSubmit(event) {
         data.formadoEm = '';
         data.formadoProjeto = '';
         data.formadoTurma = '';
+    }
+    /* Foto 3x4 e QR Code: o QR usa ja a credencial/matricula calculada acima. */
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var fcExtra = FarnPessoaCampos.coletar('fc', data);
+        data.foto3x4 = fcExtra.foto3x4;
+        data.qrCode = fcExtra.qrCode;
     }
 
     if (anterior) {
@@ -7688,6 +7696,10 @@ function openUsuarioForm(docId) {
         document.getElementById('usuario-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#2563eb;margin-right:8px"></i> Novo Usuario';
         patentePopularSelects({ uf: { codigo: '' } });
     }
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var ufReg = (docId && usuarios.find(function (x) { return x.docId === docId; })) || {};
+        FarnPessoaCampos.montar('uf', 'uf-foto-qr-box', ufReg);
+    }
     showAdminSection('admin-form-usuario', null);
 }
 
@@ -7708,6 +7720,12 @@ async function handleSaveUsuario(event) {
     document.querySelectorAll('.uf-perm-check:checked').forEach(cb => permissoes.push(cb.value));
     if (permissoes.length === 0) { alert('Selecione pelo menos uma permissao.'); return false; }
     const userData = { nome, cpf, senha, tipo, permissoes, ativo: true };
+    /* Foto 3x4 e QR Code do usuario. */
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var ufExtra = FarnPessoaCampos.coletar('uf', userData);
+        userData.foto3x4 = ufExtra.foto3x4;
+        userData.qrCode = ufExtra.qrCode;
+    }
     /* Patente: carrega a anterior para registrar a troca, depois grava a da tela. */
     const usuarioAnterior = editingUsuarioDocId ? usuarios.find(u => u.docId === editingUsuarioDocId) : null;
     userData.patente = usuarioAnterior ? (usuarioAnterior.patente || '') : '';
@@ -11491,7 +11509,7 @@ var docenteFotoPendente = { dataUrl: null, remover: false };
 var docenteFotoAtual = null;
 
 function docenteFotoCampos() {
-    return ['photoDataUrl', 'hasPhoto', 'fotoVersao', 'fotoAtualizadaEm', 'fotoAtualizadaPor'];
+    return ['photoDataUrl', 'foto3x4', 'hasPhoto', 'fotoVersao', 'fotoAtualizadaEm', 'fotoAtualizadaPor'];
 }
 
 /* Mostra (ou limpa) a previa do formulario. */
@@ -11752,6 +11770,10 @@ function docenteAbrirModal(id) {
         docentePopulateDisciplinas([]);
         docentePopulateCursos([]);
         patentePopularSelects({ intr: { codigo: '' } });
+    }
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var intrReg = id ? (docentes.find(function (x) { return x.id === id; }) || {}) : {};
+        FarnPessoaCampos.montar('intr', 'intr-qr-box', intrReg, { soQr: true });
     }
     document.getElementById('modal-docente-overlay').classList.remove('hidden');
 }
@@ -12244,6 +12266,16 @@ async function docenteSalvar(e) {
     var fotoDados = docenteFotoCamposParaGravar();
     if (fotoDados) {
         for (var chaveFoto in fotoDados) dados[chaveFoto] = fotoDados[chaveFoto];
+    }
+    /* Foto 3x4 e QR Code tambem nos campos padrao de todas as pessoas.
+       O anexo antigo do docente continua gravando em photoDataUrl; aqui so
+       preservamos o foto3x4 ja normalizado e calculamos o QR puro. */
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var intrExtra = FarnPessoaCampos.coletar('intr', dados);
+        if (intrExtra.foto3x4 && !(docenteFotoPendente && docenteFotoPendente.remover)) {
+            dados.foto3x4 = intrExtra.foto3x4;
+        }
+        dados.qrCode = intrExtra.qrCode;
     }
     var origemCandidato = document.getElementById('intr-origem').value;
     /* Patente: carrega a anterior para registrar a troca, depois grava a da tela. */
@@ -16406,6 +16438,7 @@ function cffFormPreparar() {
     editingCffId = null;
     cffLimparForm();
     document.getElementById('cff-form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#7c3aed;margin-right:8px"></i> Novo CFF';
+    if (typeof FarnPessoaCampos !== 'undefined') FarnPessoaCampos.montar('cffc', 'cffc-foto-qr-box', {});
 }
 
 function cffLimparForm() {
@@ -16527,6 +16560,7 @@ function cffEditar(id) {
     /* Projeto e turma vem do Firestore: reaplicados depois que os selects carregam */
     cffProjetosCarregar(item.d.projeto || '', item.d.turma || '');
     document.getElementById('cff-form-title').innerHTML = '<i class="fa-solid fa-user-pen" style="color:#7c3aed;margin-right:8px"></i> Editar Inscrição CFF';
+    if (typeof FarnPessoaCampos !== 'undefined') FarnPessoaCampos.montar('cffc', 'cffc-foto-qr-box', item.d || {});
     showAdminSection('admin-form-cff');
 }
 
@@ -16542,6 +16576,12 @@ async function cffSalvar(event) {
     });
     /* Cursos vinculados (multipla escolha, secao Cursos do administrador) */
     data.cursos = cffGetSelectedCursos();
+    /* Foto 3x4 e QR Code tambem no cadastro do CFF. */
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var cffExtra = FarnPessoaCampos.coletar('cffc', data);
+        data.foto3x4 = cffExtra.foto3x4;
+        data.qrCode = cffExtra.qrCode;
+    }
     if (!data.cpf || data.cpf.length < 11) { alert('Informe um CPF válido.'); return false; }
     if (!data.senha || data.senha.length < 6) { alert('A senha de acesso deve ter no mínimo 6 caracteres.'); return false; }
     try {
@@ -19447,6 +19487,7 @@ function cadastroGeralPreencherForm(dados) {
     set('fc-calcado', d.calcado);
     set('fc-data-final', cgDataIso(d.dataFinal));
     set('fc-matricula-manual', d.credencial || d.matricula || '');
+    if (typeof FarnPessoaCampos !== 'undefined') FarnPessoaCampos.montar('fc', 'fc-foto-qr-box', d);
 
     var proj = cgPrimeiro(d.projeto || d.formadoProjeto);
     var tur = cgPrimeiro(d.turma || d.formadoTurma);
@@ -19566,6 +19607,17 @@ async function cadastroGeralSalvarExterno(event) {
         update[k] = (k === 'cpf') ? cgSoDigitos(data[k]) : data[k];
     });
     if (manual) update.matricula = manual;
+    /* Foto 3x4 e QR Code tambem gravados na colecao de origem. */
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var cgExtra = FarnPessoaCampos.coletar('fc', {
+            credencial: manual || atual.credencial,
+            matricula: manual || atual.matricula,
+            cpf: data.cpf,
+            foto3x4: atual.foto3x4
+        });
+        update.foto3x4 = cgExtra.foto3x4;
+        update.qrCode = cgExtra.qrCode;
+    }
     if (alvo.origem === 'docente' && data.whatsapp) update.fone = data.whatsapp;
     if (alvo.origem === 'docente' || alvo.origem === 'cff') {
         try { update.cursos = fcCursosColetar(); } catch (e) {}

@@ -168,6 +168,9 @@
                     </div>
                 </div>
 
+                <!-- FOTO 3X4 + QR CODE -->
+                <div id="f-foto-qr-box" style="margin:16px 0;padding:14px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff"></div>
+
                 <div class="submit-bar">
                     <button type="button" class="btn" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0" onclick="confirmarLimpar()">Limpar</button>
                     <button type="submit" class="btn btn-primary" id="btn-enviar"><i class="fa-solid fa-paper-plane"></i> Enviar Pré-Inscrição</button>
@@ -181,6 +184,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="farn-db.js?v=14"></script>
+    <script src="campos-pessoa-comuns.js?v=1"></script>
     <script>
         var firebaseConfig={apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",authDomain:"farn-app.firebaseapp.com",databaseURL:"https://farn-app-default-rtdb.firebaseio.com",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app",messagingSenderId:"16254677061",appId:"1:16254677061:web:3d42c64edfe5cdbffcf32c"};
         if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
@@ -259,6 +263,7 @@
             form.reset();
             document.getElementById('f-nacionalidade').value='Brasileira';
             preencherCursoTurma();
+            if(typeof FarnPessoaCampos!=='undefined') FarnPessoaCampos.montar('f','f-foto-qr-box',{});
         }
 
         function mostrarInvalido(titulo, texto){
@@ -322,6 +327,7 @@
                 preencherCursoTurma();
                 load.style.display='none';
                 document.getElementById('area-formulario').style.display='block';
+                if(typeof FarnPessoaCampos!=='undefined') FarnPessoaCampos.montar('f','f-foto-qr-box',{});
                 if(linkValido.coletivo){
                     mostrarToast('Link coletivo: outras pessoas também podem se inscrever pelo mesmo link.');
                 }
@@ -373,6 +379,7 @@
             setVal('f-calcado',c.calcado);
             setVal('f-pre-projeto',c.projeto);
             setVal('f-pre-turma',c.turma);
+            if(typeof FarnPessoaCampos!=='undefined') FarnPessoaCampos.montar('f','f-foto-qr-box',c);
         }
 
         function coletarFormData(){
@@ -410,6 +417,11 @@
                 camisa:document.getElementById('f-camisa').value||'',
                 calcado:document.getElementById('f-calcado').value||''
             };
+            if(typeof FarnPessoaCampos!=='undefined'){
+                var extra=FarnPessoaCampos.coletar('f',data);
+                data.foto3x4=extra.foto3x4;
+                data.qrCode=extra.qrCode;
+            }
             return data;
         }
 
@@ -482,6 +494,7 @@
             }
 
             data.matricula=generateMatricula(data.cpf);
+            if(typeof FarnPessoaCampos!=='undefined') data.qrCode=FarnPessoaCampos.qrValor(data);
             data.tipoPessoa='A';
             // Nas inscricoes de um curso, o admin avalia na propria aba:
             // o registro entra como Pendente e pode ser editado depois.
@@ -539,6 +552,7 @@
                 }
             }catch(e){ console.error(e); }
 
+            if(typeof FarnPessoaCampos!=='undefined') data.qrCode=FarnPessoaCampos.qrValor(data);
             var novoh=Object.assign({}, candidatoEdicao, data, {
                 status:cursoAtual?'Pendente':'Acadêmico',
                 statusOriginal:'Pendente',

@@ -350,6 +350,12 @@ function criarCadastroAdminPessoa(cfg) {
             + '</select></div>'
             + '</div>'
             + '<div class="form-row">' + campos + '</div>'
+            /* Foto 3x4 + QR Code em TODOS os cadastros. No Docente o formulario
+               ja tem o anexo de foto proprio; aqui entra somente o QR. */
+            + '<div style="margin:8px 0 4px">'
+            + (typeof FarnPessoaCampos !== 'undefined'
+                ? FarnPessoaCampos.html(P, p, { soQr: P === 'doc' }) : '')
+            + '</div>'
             + '<div style="display:flex;gap:8px;margin-top:14px">'
             + '<button type="button" class="btn-primary" onclick="' + P + 'Salvar()"><i class="fa-solid fa-floppy-disk"></i> Salvar ' + admEsc(rotulo) + '</button>'
             + '<button type="button" class="btn-outline" onclick="' + P + 'VoltarForm()"><i class="fa-solid fa-arrow-left"></i> Cancelar</button>'
@@ -374,6 +380,15 @@ function criarCadastroAdminPessoa(cfg) {
         if (cfg.prefixo === 'doc') {
             var gerada = admDocMatricula(dados.cpf, dados.nascimento);
             if (gerada) dados.matricula = gerada;
+        }
+        /* Foto 3x4 e QR Code com o mesmo padrao dos demais cadastros. */
+        if (typeof FarnPessoaCampos !== 'undefined') {
+            /* No Docente o bloco de foto e o antigo (doc-fotoUrl); preserva
+               o que ja estava gravado quando o admin so edita outros campos. */
+            var baseExtra = Object.assign({}, editando || {}, dados);
+            var extra = FarnPessoaCampos.coletar(P, baseExtra);
+            dados.foto3x4 = extra.foto3x4;
+            dados.qrCode = extra.qrCode;
         }
         return dados;
     }

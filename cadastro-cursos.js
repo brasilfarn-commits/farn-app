@@ -814,6 +814,10 @@ function ccFormPessoaHTML(prefixo, titulo, c, salvarFn, voltarFn) {
         + '</select></div>'
         + '</div>'
         + '<div class="form-row">' + campos + '</div>'
+        /* Foto 3x4 + QR Code em pre-inscricao e individuo do curso. */
+        + '<div style="margin:8px 0 4px">'
+        + (typeof FarnPessoaCampos !== 'undefined' ? FarnPessoaCampos.html(prefixo, p, {}) : '')
+        + '</div>'
         + '<div style="display:flex;gap:8px;margin-top:14px">'
         + '<button type="button" class="btn-primary" onclick="' + salvarFn + '"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>'
         + '<button type="button" class="btn-outline" onclick="' + voltarFn + '"><i class="fa-solid fa-arrow-left"></i> Cancelar</button>'
@@ -838,6 +842,11 @@ function ccFormPessoaValores(prefixo) {
     dados.tipoPessoa = ((document.getElementById(prefixo + '-tipoPessoa') || {}).value || 'A');
     dados.projeto = ((document.getElementById(prefixo + '-projeto') || {}).value || '').trim();
     dados.turma = ((document.getElementById(prefixo + '-turma') || {}).value || '').trim();
+    if (typeof FarnPessoaCampos !== 'undefined') {
+        var extra = FarnPessoaCampos.coletar(prefixo, dados);
+        dados.foto3x4 = extra.foto3x4;
+        dados.qrCode = extra.qrCode;
+    }
     return dados;
 }
 
@@ -880,6 +889,7 @@ async function ccPreSalvarCandidato() {
     dados.status = (ccPreEditando && ccPreEditando.status) || 'Pendente';
     dados.statusOriginal = (ccPreEditando && ccPreEditando.statusOriginal) || 'Pendente';
     if (!dados.matricula) dados.matricula = ccMatriculaGerar(dados.cpf);
+    if (typeof FarnPessoaCampos !== 'undefined') dados.qrCode = FarnPessoaCampos.qrValor(dados);
     dados.cursos = [];
     dados.cursoId = ccAtual._id;
     dados.cursoNome = ccAtual.nome;
@@ -1863,6 +1873,7 @@ async function ccIndSalvarCandidato() {
     Object.assign(dados, ccFormPessoaValores('ccif'));
     if (!dados.projeto || !dados.turma) { alert('Selecione o projeto e a turma deste curso.'); return false; }
     if (!dados.matricula) dados.matricula = ccMatriculaGerar(dados.cpf);
+    if (typeof FarnPessoaCampos !== 'undefined') dados.qrCode = FarnPessoaCampos.qrValor(dados);
     dados.cursoId = ccAtual._id;
     dados.cursoNome = ccAtual.nome || '';
     dados.atualizadoEm = new Date().toISOString();
