@@ -83,7 +83,7 @@ function usarNuvem() {
 function voltar() { location.href = 'index.html'; }
 async function verificar() {
   var c = ler();
-  var base = c.url || 'https://farn-api.farn-api-farn.workers.dev';
+  var base = c.url || 'https://location-anthropology-martial-fares.trycloudflare.com';
   var headers = { 'Content-Type': 'application/json' };
   if (c.token) headers['X-Farn-Token'] = c.token;
   var box = document.getElementById('status');

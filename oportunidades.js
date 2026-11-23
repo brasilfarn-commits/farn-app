@@ -1,7 +1,7 @@
 (function(){
   if (typeof firebase === 'undefined') return;
 
-  var db = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
+  var db = new FarnDB('https://location-anthropology-martial-fares.trycloudflare.com');
   var storage = null;
   try { if (firebase.storage) storage = firebase.storage(); } catch(e) {}
   var _pendingFile = null;

@@ -28,7 +28,7 @@
     var carregandoLista = false;
 
     function banco() {
-        if (!db) db = (typeof dbFirestore !== 'undefined' && dbFirestore) ? dbFirestore : new FarnDB('https://farn-api.farn-api-farn.workers.dev');
+        if (!db) db = (typeof dbFirestore !== 'undefined' && dbFirestore) ? dbFirestore : new FarnDB('https://location-anthropology-martial-fares.trycloudflare.com');
         return db;
     }
 

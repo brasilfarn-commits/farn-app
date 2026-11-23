@@ -20,7 +20,7 @@
     try { cfg = JSON.parse(localStorage.getItem('farn_api_config') || 'null'); } catch (e) {}
     var escolhida = (typeof window !== 'undefined' && window.FARN_API_URL)
         || (cfg && cfg.url) || baseUrl
-        || 'https://farn-api.farn-api-farn.workers.dev';
+        || 'https://location-anthropology-martial-fares.trycloudflare.com';
     this.baseUrl = String(escolhida).replace(/\/$/, '');
     this.headers = { 'Content-Type': 'application/json' };
     if (cfg && cfg.token) this.headers['X-Farn-Token'] = String(cfg.token);
@@ -43,7 +43,15 @@
   }
 
   /* ---------- persistencia local (offline) ---------- */
+  /* O espelho completo passa de 7 MB neste projeto e nao cabe no
+     localStorage (~5 MB). Por isso a fila (pequena) eh salva primeiro e as
+     gravacoes pendentes sao reaplicadas ao carregar: assim o ultimo cadastro
+     sobrevive a recarga mesmo quando o espelho grande nao coube. */
+  var LIMITE_CACHE = 4000000;
+  var COLECOES_PROTEGIDAS = { docentesAdmin: true, coordenacao: true };
+
   FarnDB.prototype._carregarLocal = function () {
+    var self = this;
     try {
       var c = JSON.parse(localStorage.getItem(KEY_CACHE) || 'null');
       if (c && typeof c === 'object') this.cache = c;
@@ -51,12 +59,42 @@
       if (s) this.since = s;
       var q = JSON.parse(localStorage.getItem(KEY_QUEUE) || '[]');
       if (Array.isArray(q)) this.fila = q;
+      var cols = {};
+      this.fila.forEach(function (op) { cols[op.col] = true; });
+      Object.keys(cols).forEach(function (col) {
+        if (!self.cache[col]) self.cache[col] = {};
+        self._reaplicarPendentes(col, self.cache[col]);
+      });
     } catch (e) {}
   };
   FarnDB.prototype._salvarLocal = function () {
-    try { localStorage.setItem(KEY_CACHE, JSON.stringify(this.cache)); } catch (e) {}
     try { localStorage.setItem(KEY_SINCE, String(this.since)); } catch (e) {}
     try { localStorage.setItem(KEY_QUEUE, JSON.stringify(this.fila)); } catch (e) {}
+    var json = '';
+    try { json = JSON.stringify(this.cache); } catch (e) { return; }
+    var espelho = this.cache;
+    if (json.length > LIMITE_CACHE) {
+      var copia = {};
+      Object.keys(espelho).forEach(function (k) { copia[k] = espelho[k]; });
+      var pesos = Object.keys(copia).filter(function (k) { return !COLECOES_PROTEGIDAS[k]; })
+        .map(function (k) { return { k: k, n: JSON.stringify(copia[k] || {}).length }; })
+        .sort(function (a, b) { return b.n - a.n; });
+      for (var i = 0; i < pesos.length && json.length > LIMITE_CACHE; i++) {
+        delete copia[pesos[i].k];
+        json = JSON.stringify(copia);
+      }
+      espelho = copia;
+    }
+    try { localStorage.setItem(KEY_CACHE, json); }
+    catch (e) {
+      try {
+        var minimo = {};
+        Object.keys(COLECOES_PROTEGIDAS).forEach(function (k) {
+          if (espelho[k]) minimo[k] = espelho[k];
+        });
+        localStorage.setItem(KEY_CACHE, JSON.stringify(minimo));
+      } catch (e2) {}
+    }
   };
   FarnDB.prototype._enfileirar = function (op) {
     this.fila.push(op);

@@ -139,7 +139,7 @@
       setTimeout(aguardarFirebase, 100);
       return;
     }
-    db = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
+    db = new FarnDB('https://location-anthropology-martial-fares.trycloudflare.com');
     iniciar();
   }
 

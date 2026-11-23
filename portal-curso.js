@@ -14,7 +14,7 @@ const firebaseConfig = {
     appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
 };
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
+const dbFirestore = new FarnDB('https://location-anthropology-martial-fares.trycloudflare.com');
 
 var pcCursoId = '', pcCurso = {}, pcAluno = {}, pcCpf = '';
 var pcAulas = [], pcApontamentos = [], pcAvs = [], pcRespostas = [], pcFicha = {};
