@@ -189,6 +189,9 @@ var ADM_PERM_FIXO = [
         { chave: 'aptadm:edicao', rotulo: 'Editar apontamentos', acao: true },
         { chave: 'aptadm:exclusao', rotulo: 'Excluir apontamentos', acao: true },
         { chave: 'aptadm:impressao', rotulo: 'Imprimir apontamentos', acao: true }
+    ]},
+    { titulo: 'ESTATISTICA', itens: [
+        { chave: 'sec:estatistica', rotulo: 'Acessar Estatistica' }
     ]}
 ];
 

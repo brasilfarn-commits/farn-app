@@ -402,7 +402,46 @@ function puModalFechar() {
     PU_AV.atual = null;
 }
 
+/* =====================================================================
+   SECOES DO MENU HAMBURGUER - SIM/NAO configurado no Cadastro de Cursos
+   ---------------------------------------------------------------------
+   O admin grava configuracoes/portalMenu { itens: { inicio:true, ... } }.
+   Aqui o portal aplica o mapa, escondendo botao e tela das secoes NÃO.
+   Sem configuracao salva, todas as secoes continuam visiveis.
+   ===================================================================== */
+var PU_MENU_PORTAL_ITENS = ['inicio','dados','cursos','av','relatorios','apontar','libav','aulasdoc'];
+async function puCarregarMenuPortalPermissoes() {
+    var mapa = {};
+    PU_MENU_PORTAL_ITENS.forEach(function (k) { mapa[k] = true; });
+    try {
+        if (typeof dbFirestore === 'undefined' || !dbFirestore) return mapa;
+        var snap = await dbFirestore.collection('configuracoes').doc('portalMenu').get();
+        var d = (snap && snap.exists) ? (snap.data() || {}) : {};
+        var salvo = d.itens || d;
+        PU_MENU_PORTAL_ITENS.forEach(function (k) {
+            if (salvo[k] !== undefined) mapa[k] = salvo[k] !== false && salvo[k] !== 'nao';
+        });
+    } catch (e) { /* sem configuracao: mantem o padrao (tudo visivel) */ }
+    return mapa;
+}
+async function puAplicarMenuPortal() {
+    var mapa = await puCarregarMenuPortalPermissoes();
+    PU_MENU_PORTAL_ITENS.forEach(function (k) {
+        var btn = document.getElementById('pu-menu-' + k);
+        if (btn) btn.style.display = mapa[k] ? '' : 'none';
+        var view = document.getElementById('pu-view-' + k);
+        if (view) view.setAttribute('data-portal-menu-visivel', mapa[k] ? '1' : '0');
+    });
+    var ativo = document.querySelector('#pu-tela-app .pu-view.ativo');
+    if (ativo && ativo.getAttribute('data-portal-menu-visivel') === '0') {
+        var primeiro = PU_MENU_PORTAL_ITENS.filter(function (k) { return mapa[k]; })[0];
+        if (primeiro && typeof puSetView === 'function') puSetView(primeiro);
+    }
+    return mapa;
+}
+
 /* Exposto para os scripts inline do portal. */
+window.puAplicarMenuPortal = puAplicarMenuPortal;
 window.puCatalogoPermissoes = puCatalogoPermissoes;
 window.puPermissoesPadrao = puPermissoesPadrao;
 window.puRegistrarRelatorios = puRegistrarRelatorios;

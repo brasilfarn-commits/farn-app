@@ -34,7 +34,7 @@
             }
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -1085,6 +1085,10 @@
                     <a href="#" class="nav-item" data-secao="admin-apontamentos-adm" onclick="showAdminSection('admin-apontamentos-adm', this); apontAdmInicializar()">
                         <i class="fa-solid fa-location-dot"></i>
                         <span>Apontamentos ADM</span>
+                    </a>
+                    <a href="#" class="nav-item" data-secao="admin-estatistica" onclick="showAdminSection('admin-estatistica', this); estatInicializar()">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Estatistica</span>
                     </a>
                     <a href="#" class="nav-item" data-secao="admin-docente" onclick="showAdminSection('admin-docente', this); docenteAdminInicializar()">
                         <i class="fa-solid fa-chalkboard-user"></i>
@@ -3271,19 +3275,22 @@
                         <div id="cc-tab-permissoes" style="display:none">
                             <div style="padding:16px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;margin-bottom:16px">
                                 <h3 style="margin:0 0 4px;color:#1e293b;font-size:14px;font-weight:800">Permissões - Portal do Usuário</h3>
-                                <p style="margin:0 0 12px;font-size:11px;color:#64748b">Marque o que do curso será exibido no Portal do Usuário.</p>
-                                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#334155;cursor:pointer">
-                                    <input type="checkbox" id="cc-perm-certificado" class="config-input" style="width:18px;height:18px"> Exibir Certificado no Portal do Usuário
-                                </label>
-                                <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#334155;cursor:pointer">
-                                    <input type="checkbox" id="cc-perm-ficha" class="config-input" style="width:18px;height:18px"> Exibir Ficha Geral no Portal do Usuário
-                                </label>
-                                <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#334155;cursor:pointer">
-                                    <input type="checkbox" id="cc-perm-portal-curso" class="config-input" style="width:18px;height:18px" checked> Exibir a página do curso (Aulas, Apontamento e AVs) para alunos em andamento
-                                </label>
-                                <p style="margin:6px 0 0 26px;font-size:10.5px;color:#64748b">Quando desmarcado, cursos em andamento ficam ocultos no portal. Cursos concluídos continuam exibindo certificado e ficha conforme as opções acima.</p>
-                                <div style="margin-top:14px">
+                                <p style="margin:0 0 12px;font-size:11px;color:#64748b">Todas as seções do menu hambúrguer do Portal do Usuário. Marque <b>SIM</b> para exibir ou <b>NÃO</b> para ocultar a seção no portal.</p>
+                                <div class="cc-pmenu-lista">
+                                    <div class="cc-pmenu-head"><span>SEÇÃO DO MENU</span><span>EXIBIR?</span></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-house"></i> Início</span><select id="cc-pmenu-inicio" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-id-card"></i> Meus Dados</span><select id="cc-pmenu-dados" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-book-open"></i> Cursos</span><select id="cc-pmenu-cursos" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-file-pen"></i> Responder AV Teórica</span><select id="cc-pmenu-av" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-chart-column"></i> Relatórios</span><select id="cc-pmenu-relatorios" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-user-check"></i> Apontar alunos</span><select id="cc-pmenu-apontar" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-paper-plane"></i> Liberar AV Teórica</span><select id="cc-pmenu-libav" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-calendar-days"></i> Minhas aulas</span><select id="cc-pmenu-aulasdoc" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
+                                </div>
+                                <p style="margin:10px 0 0;font-size:10.5px;color:#64748b">A configuração vale para todos os usuários do portal. Se uma seção for ocultada, o portal abre automaticamente na primeira seção ainda visível.</p>
+                                <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
                                     <button class="btn-primary btn-sm" onclick="ccSalvarPermissoes()"><i class="fa-solid fa-check" style="margin-right:6px"></i> Salvar permissões</button>
+                                    <button class="btn-outline btn-sm" onclick="ccCarregarMenuPortalPermissoes(true)"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Recarregar</button>
                                 </div>
                             </div>
                         </div>
@@ -3434,6 +3441,51 @@
                                     </thead>
                                     <tbody id="aptadm-tbody"></tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECAO ESTATISTICA - somente leitura, atualiza a cada segundo -->
+                <div id="admin-estatistica" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-pie" style="color:#0f766e;margin-right:8px"></i> Estatistica</h3>
+                            <small>Painel somente de leitura. Os números são recalculados a cada segundo a partir dos dados atuais do sistema; alterações feitas nas outras seções aparecem aqui sem recarregar a página.</small>
+                            <div class="header-actions">
+                                <span class="estat-live" title="Atualização a cada segundo"><i></i> AO VIVO</span>
+                                <select id="estat-curso" class="config-input" style="width:auto;min-width:190px" onchange="estatFiltroChange()">
+                                    <option value="">Todos os cursos</option>
+                                </select>
+                                <button class="btn-outline btn-sm" onclick="estatAtualizar()" title="Forçar nova leitura">
+                                    <i class="fa-solid fa-rotate"></i> Atualizar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="estat-erro" class="estat-erro" style="display:none"></div>
+                            <div class="estat-topo">
+                                <div><span>Última leitura:</span> <b id="estat-hora">--:--:--</b></div>
+                                <div><span>Cursos:</span> <b id="estat-total-cursos">0</b></div>
+                                <div><span>Alunos:</span> <b id="estat-total-alunos">0</b></div>
+                                <div><span>Apontamentos ADM:</span> <b id="estat-total-apontamentos">0</b></div>
+                            </div>
+                            <div class="estat-grid">
+                                <section class="estat-box">
+                                    <h4><i class="fa-solid fa-user-graduate"></i> Alunos por curso</h4>
+                                    <p>Quantidade por curso, presença e falta por dia, comportamento (FO+/FO-) e expectativa positiva de passar.</p>
+                                    <div id="estat-alunos"></div>
+                                </section>
+                                <section class="estat-box">
+                                    <h4><i class="fa-solid fa-chalkboard-user"></i> Docentes</h4>
+                                    <p>Apontamento conferido com o horário da aula cadastrada (tolerância de ±15 min) e nota de satisfação dos alunos.</p>
+                                    <div id="estat-docentes"></div>
+                                </section>
+                                <section class="estat-box">
+                                    <h4><i class="fa-solid fa-file-circle-check"></i> Entrega de material</h4>
+                                    <p>Confirmação de entrega aos alunos conforme o apontamento de material e as apostilas cadastradas no curso.</p>
+                                    <div id="estat-material"></div>
+                                </section>
                             </div>
                         </div>
                     </div>
@@ -4989,8 +5041,8 @@
 
     <script src="cadastro-cursos-nucleo.js?v=1"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
-    <script src="portal-permissoes.js?v=2"></script>
-    <script src="coordenacao.js?v=9"></script>
+    <script src="portal-permissoes.js?v=3"></script>
+    <script src="coordenacao.js?v=10"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
@@ -4998,10 +5050,11 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=126"></script>
+    <script src="app.js?v=127"></script>
     <script src="recad-admin.js?v=2"></script>
-    <script src="cadastro-cursos.js?v=35"></script>
+    <script src="cadastro-cursos.js?v=36"></script>
     <script src="apontamentos-adm.js?v=4"></script>
+    <script src="estatistica.js?v=1"></script>
 
     <script src="noticias-slider.js?v=1"></script>
     <script src="whatfarn.js?v=18"></script>

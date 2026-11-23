@@ -103,6 +103,7 @@ function ccInicializar() {
         if (lb) lb.innerHTML = '<p style="color:#dc2626">Erro ao carregar cursos: ' + ccEsc(e && e.message ? e.message : e) + '</p>';
     });
     ccPopularTurmasAdmin();
+    ccCarregarMenuPortalPermissoes();
     ccMostrarWorkspace(false);
 }
 
@@ -315,8 +316,7 @@ function ccAbrirFormCurso(id) {
     if (prevA) prevA.innerHTML = curso && (curso.apostilaPdfUrl || curso.apostilaPdf) ? '<i class="fa-solid fa-file-pdf" style="color:#dc2626"></i> PDF anexado ao curso'
         : (curso && curso.apostilaUrl ? '<i class="fa-solid fa-link" style="color:#2563eb"></i> Link configurado' : 'Nenhuma apostila anexada');
     var modal = document.getElementById('cc-modal-curso'); if (modal) modal.classList.remove('hidden');
-    var ckCert = document.getElementById('cc-perm-certificado'); if (ckCert) ckCert.checked = !!(curso && curso.permCertificado);
-    var ckFicha = document.getElementById('cc-perm-ficha'); if (ckFicha) ckFicha.checked = !!(curso && curso.permFichaGeral);
+    ccCarregarMenuPortalPermissoes();
 }
 
 function ccFecharFormCurso() {
@@ -369,11 +369,8 @@ async function ccSalvarCurso() {
     dados.docenteResponsavelNome = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-nome') || opDoc.textContent.split(' — ')[0]) : '';
     dados.docenteResponsavelMatricula = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-matricula') || '') : '';
     dados.apostilaUrl = ((document.getElementById('cc-curso-apostila-url') || {}).value || '').trim();
-    dados.permCertificado = !!((document.getElementById('cc-perm-certificado') || {}).checked);
-    dados.permFichaGeral = !!((document.getElementById('cc-perm-ficha') || {}).checked);
-    /* Padrão é exibir: cursos antigos (sem o campo) continuam aparecendo. */
-    var ckPortal = document.getElementById('cc-perm-portal-curso');
-    dados.permPortalCurso = !ckPortal || ckPortal.checked !== false;
+    /* As permissões de exibição no portal ficam na guia Permissões e são
+       configuradas globalmente; não sobrescreva os campos antigos aqui. */
     var novoRef = ccEditandoCursoId ? null : ccDb().collection(CC_COLECAO).doc();
     var cursoId = ccEditandoCursoId || (novoRef && novoRef.id);
     try {
@@ -431,9 +428,7 @@ function ccAbrirCurso(id) {
     if (tit) tit.textContent = ccAtual.nome;
     var ic = document.getElementById('cc-workspace-icone');
     if (ic) ic.innerHTML = (ccAtual.iconeUrl || ccAtual.icone) ? '<img src="' + (ccAtual.iconeUrl || ccAtual.icone) + '" style="width:100%;height:100%;object-fit:contain">' : '<i class="fa-solid fa-book"></i>';
-    var ckCert = document.getElementById('cc-perm-certificado'); if (ckCert) ckCert.checked = !!(ccAtual.permCertificado);
-    var ckFicha = document.getElementById('cc-perm-ficha'); if (ckFicha) ckFicha.checked = !!(ccAtual.permFichaGeral);
-    var ckPortal = document.getElementById('cc-perm-portal-curso'); if (ckPortal) ckPortal.checked = ccAtual.permPortalCurso !== false;
+    ccCarregarMenuPortalPermissoes();
     ccSetAba('geral');
 }
 
@@ -3336,23 +3331,60 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btn) btn.addEventListener('click', function () { ccAbrirFormCurso(null); });
 });
 
-/* Salva as permissoes (Portal do Usuario) do curso aberto na aba Permissoes. */
-async function ccSalvarPermissoes() {
-    if (!ccAtual) { alert('Abra um curso antes de salvar as permissoes.'); return; }
-    var ckCert = document.getElementById('cc-perm-certificado');
-    var ckFicha = document.getElementById('cc-perm-ficha');
-    var ckPortal = document.getElementById('cc-perm-portal-curso');
-    var dados = {
-        permCertificado: !!(ckCert && ckCert.checked),
-        permFichaGeral: !!(ckFicha && ckFicha.checked),
-        permPortalCurso: !ckPortal || ckPortal.checked !== false,
-        atualizadoEm: new Date().toISOString()
-    };
+/* =====================================================================
+   GUIA PERMISSOES - SECOES DO MENU HAMBURGUER DO PORTAL DO USUARIO
+   ---------------------------------------------------------------------
+   A guia nao trata mais certificado/ficha/pagina do curso. Ela lista
+   exatamente as secoes do menu lateral do portal, cada uma com SIM/NAO.
+   A configuracao fica em configuracoes/portalMenu e vale para todos os
+   usuarios; o portal le esse documento no login e oculta as secoes NAO.
+   ===================================================================== */
+var CC_MENU_PORTAL_ITENS = [
+    { chave: 'inicio', id: 'cc-pmenu-inicio', rotulo: 'Início' },
+    { chave: 'dados', id: 'cc-pmenu-dados', rotulo: 'Meus Dados' },
+    { chave: 'cursos', id: 'cc-pmenu-cursos', rotulo: 'Cursos' },
+    { chave: 'av', id: 'cc-pmenu-av', rotulo: 'Responder AV Teórica' },
+    { chave: 'relatorios', id: 'cc-pmenu-relatorios', rotulo: 'Relatórios' },
+    { chave: 'apontar', id: 'cc-pmenu-apontar', rotulo: 'Apontar alunos' },
+    { chave: 'libav', id: 'cc-pmenu-libav', rotulo: 'Liberar AV Teórica' },
+    { chave: 'aulasdoc', id: 'cc-pmenu-aulasdoc', rotulo: 'Minhas aulas' }
+];
+function ccMenuPortalPadrao() {
+    var mapa = {};
+    CC_MENU_PORTAL_ITENS.forEach(function (i) { mapa[i.chave] = true; });
+    return mapa;
+}
+async function ccCarregarMenuPortalPermissoes(forcar) {
+    if (!ccDb()) return;
+    var mapa = ccMenuPortalPadrao();
     try {
-        await dbFirestore.collection(CC_COLECAO).doc(ccAtual._id).update(dados);
-        alert('Permissoes do curso salvas.');
+        var snap = await ccDb().collection('configuracoes').doc('portalMenu').get();
+        var d = (snap && snap.exists) ? (snap.data() || {}) : {};
+        var salvo = d.itens || d;
+        CC_MENU_PORTAL_ITENS.forEach(function (i) {
+            if (salvo[i.chave] !== undefined) mapa[i.chave] = salvo[i.chave] !== false && salvo[i.chave] !== 'nao';
+        });
     } catch (e) {
-        alert('Erro a salvar as permissoes: ' + e.message);
+        if (forcar) alert('Não foi possível carregar as permissões do portal: ' + e.message);
+    }
+    CC_MENU_PORTAL_ITENS.forEach(function (i) {
+        var sel = document.getElementById(i.id);
+        if (sel) sel.value = mapa[i.chave] ? 'sim' : 'nao';
+    });
+}
+async function ccSalvarPermissoes() {
+    var itens = {};
+    CC_MENU_PORTAL_ITENS.forEach(function (i) {
+        var el = document.getElementById(i.id);
+        itens[i.chave] = !el || el.value !== 'nao';
+    });
+    try {
+        await ccDb().collection('configuracoes').doc('portalMenu').set({
+            itens: itens, atualizadoEm: new Date().toISOString()
+        });
+        alert('Permissões do menu do Portal do Usuário salvas.');
+    } catch (e) {
+        alert('Erro ao salvar as permissões: ' + e.message);
     }
 }
 

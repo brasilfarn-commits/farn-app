@@ -1384,6 +1384,10 @@ function applyUserPermissions() {
             || p.includes('disciplinas') || p.includes('avaliacao') || p.includes('apontamento'),
         'admin-apontamentos-adm': p.includes('admin') || isGeral
             || p.includes('apontamento') || p.includes('docentes'),
+        /* Estatistica e somente leitura: aparece para quem ja ve relatorios,
+           apontamentos ou o admin inteiro. */
+        'admin-estatistica': p.includes('admin') || isGeral
+            || p.includes('relatorios') || p.includes('apontamento'),
         'admin-premissao-portal-usuario': p.includes('admin') || isGeral || p.includes('portal-usuario')
     };
     /* Coordenador: o quadro salvo no cadastro dele manda em tudo o que aparece. */
@@ -1393,6 +1397,7 @@ function applyUserPermissions() {
             'admin-relatorios': pode('sec:relatorios', 'ver'),
             'admin-cadastro-cursos': pode('sec:cadastroCursos', 'ver'),
             'admin-apontamentos-adm': pode('sec:apontamentosAdm', 'ver'),
+            'admin-estatistica': pode('sec:estatistica', 'ver'),
             'admin-docente': pode('sec:docente', 'ver')
         };
         document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
@@ -2199,6 +2204,8 @@ function showAdminSection(sectionId, navEl) {
        sumiria do admin. Voltar para a Individual nao devolve: quem saiu e
        voltou reencontra a lista que estava vendo. */
     if (sectionId !== 'admin-individuo' && individuoEmprestado) individuoDevolver();
+    /* Estatistica manten um timer de 1s somente enquanto a secao esta aberta. */
+    if (sectionId !== 'admin-estatistica' && typeof estatParar === 'function') estatParar();
     document.querySelectorAll('#screen-admin .admin-section').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
     /* A pagina emprestada continua morando dentro da Individual, e o laco
@@ -2210,7 +2217,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes', 'admin-cadastro-cursos': 'Cadastro de Cursos', 'admin-coordenacao': 'Coordenação', 'admin-docente': 'Docente', 'admin-apontamentos-adm': 'APONTAMENTOS ADM', 'admin-premissao-portal-usuario': 'Premissão do Portal do Usuário' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes', 'admin-cadastro-cursos': 'Cadastro de Cursos', 'admin-coordenacao': 'Coordenação', 'admin-docente': 'Docente', 'admin-apontamentos-adm': 'APONTAMENTOS ADM', 'admin-estatistica': 'ESTATISTICA', 'admin-premissao-portal-usuario': 'Premissão do Portal do Usuário' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
     if (sectionId === 'admin-cadastro-cursos' && typeof ccAplicarPermissoesCoord === 'function') {

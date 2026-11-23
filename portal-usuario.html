@@ -209,7 +209,7 @@
         #pu-modal-overlay.aberto { display:block; }
     </style>
 <script src="farn-db.js?v=14"></script>
-<script src="portal-permissoes.js?v=2"></script>
+<script src="portal-permissoes.js?v=3"></script>
 <script>
         function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
 
@@ -257,6 +257,14 @@
         }
         var PU_VIEWS = ['inicio','dados','cursos','av','relatorios','apontar','libav','aulasdoc'];
         function puSetView(view) {
+            var alvo = document.getElementById('pu-view-' + view);
+            if (alvo && alvo.getAttribute('data-portal-menu-visivel') === '0') {
+                var visivel = PU_VIEWS.filter(function (v) {
+                    var el = document.getElementById('pu-view-' + v);
+                    return el && el.getAttribute('data-portal-menu-visivel') !== '0';
+                })[0];
+                if (visivel) view = visivel;
+            }
             PU_VIEWS.forEach(function (v) {
                 var el = document.getElementById('pu-view-' + v); if (el) el.className = 'pu-view' + (v === view ? ' ativo' : '');
                 var btn = document.getElementById('pu-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
@@ -348,7 +356,7 @@
             puCarregarFicha();
         }
 
-        function puMostrarApp() {
+        async function puMostrarApp() {
             /* Registra relatorios novos para o quadro PERMISSOES do admin. */
             if (typeof puRegistrarRelatorios === 'function') puRegistrarRelatorios();
             document.getElementById('pu-tela-login').style.display='none';
@@ -362,6 +370,8 @@
             if (boas) boas.textContent = (puUser.nome || puUser.nomeCompleto || 'usuário').split(' ')[0];
             /* Permissões do docente (quarto Ver/Editar salvo no cadastro dele). */
             if (typeof puAplicarPermissoes === 'function') puAplicarPermissoes();
+            /* SIM/NÃO das seções do menu, configurado no Cadastro de Cursos. */
+            if (typeof puAplicarMenuPortal === 'function') await puAplicarMenuPortal();
             /* A tela inicial mostra só as boas-vindas; as outras abas carregam
                seus dados apenas quando o usuario abrir cada uma. */
             puInicioCarregar();
