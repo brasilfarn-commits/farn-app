@@ -23,6 +23,11 @@
   .cartao{border:1px solid #e2e8f0;border-radius:10px;padding:12px;background:#f8fafc}
   .cartao b{display:block;font-size:20px;color:#0f766e}
   .cartao span{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:800}
+  .limites{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;font-size:12px;color:#78350f;line-height:1.7}
+  .limites b{color:#92400e}
+  .barra{height:8px;background:#fde68a;border-radius:8px;overflow:hidden;margin:6px 0}
+  .barra i{display:block;height:100%;background:#d97706;width:0}
+  .resposta{background:#0f172a;color:#a7f3d0;border-radius:8px;padding:10px;margin-top:8px;font:11px/1.5 Consolas,monospace;white-space:pre-wrap;word-break:break-all;display:none}
 </style>
 </head>
 <body>
@@ -51,10 +56,26 @@
     <code>servidor\2-INICIAR-TUNEL.bat</code>. Copie a URL <code>https://...trycloudflare.com</code>
     que aparecer, cole acima e salve. Se o PC reiniciar, a URL muda — basta atualizar aqui.
   </div>
+
+  <h2>3. Padrão e limites</h2>
+  <div class="limites">
+    <b>Servidor padrão do sistema (quando o campo acima está vazio):</b><br>
+    <code id="padrao-url">—</code>
+    <p style="margin:8px 0 0"><b>Nuvem antiga (Worker/D1):</b> tem <b>limite diário de leitura</b> no plano gratuito.
+    Quando o limite estoura, ela responde HTTP 500 com <code>D1_ERROR: exceeded D1's free tier daily row read limit</code>
+    e o app para de salvar. Por isso ela <b>não é mais usada como padrão</b>.</p>
+    <button class="volt" style="margin-top:8px" onclick="testarLimiteNuvem()">Testar limite da nuvem antiga</button>
+    <div class="resposta" id="limite-nuvem"></div>
+    <p style="margin:12px 0 0"><b>Espelho local (localStorage):</b> limite de ~5 MB por navegador.
+    Uso atual: <b id="uso-local">—</b>. O app remove coleções grandes sozinho para não perder cadastros.</p>
+    <div class="barra"><i id="barra-uso"></i></div>
+  </div>
 </div>
 
 <script>
 var CHAVE = 'farn_api_config';
+var URL_PADRAO = 'https://location-anthropology-martial-fares.trycloudflare.com';
+var URL_NUVEM_ANTIGA = 'https://farn-api.farn-api-farn.workers.dev';
 function ler() {
   try { return JSON.parse(localStorage.getItem(CHAVE) || '{}'); } catch (e) { return {}; }
 }
@@ -83,7 +104,7 @@ function usarNuvem() {
 function voltar() { location.href = 'index.html'; }
 async function verificar() {
   var c = ler();
-  var base = c.url || 'https://location-anthropology-martial-fares.trycloudflare.com';
+  var base = c.url || URL_PADRAO;
   var headers = { 'Content-Type': 'application/json' };
   if (c.token) headers['X-Farn-Token'] = c.token;
   var box = document.getElementById('status');
@@ -101,7 +122,30 @@ async function verificar() {
     box.innerHTML = '<div class="cartao" style="border-color:#fecaca;background:#fef2f2"><b style="color:#991b1b">OFFLINE</b><span>' + e.message + '</span></div>';
   }
 }
-carregar(); verificar();
+function mostrarLimites() {
+  document.getElementById('padrao-url').textContent = URL_PADRAO;
+  var bytes = 0;
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      bytes += String(k).length + String(localStorage.getItem(k) || '').length;
+    }
+  } catch (e) {}
+  var pct = Math.min(100, Math.round(bytes / (5 * 1024 * 1024) * 100));
+  document.getElementById('uso-local').textContent = (bytes / 1048576).toFixed(2) + ' MB de ~5 MB (' + pct + '%)';
+  document.getElementById('barra-uso').style.width = pct + '%';
+}
+async function testarLimiteNuvem() {
+  var box = document.getElementById('limite-nuvem');
+  box.style.display = 'block';
+  box.textContent = 'Consultando ' + URL_NUVEM_ANTIGA + ' ...';
+  try {
+    var r = await fetch(URL_NUVEM_ANTIGA + '/api/all?col=configuracoes');
+    var txt = await r.text();
+    box.textContent = 'HTTP ' + r.status + '\n' + txt.slice(0, 500);
+  } catch (e) { box.textContent = 'Erro: ' + e.message; }
+}
+carregar(); verificar(); mostrarLimites();
 </script>
 </body>
 </html>
