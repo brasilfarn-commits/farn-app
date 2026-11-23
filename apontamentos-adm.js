@@ -21,8 +21,7 @@
     var editando = null;
     var localAtual = null;
     var apontando = null;
-    var presencas = {};
-    var alunos = [];
+    var presencaDocente = null;
     var verAtual = null;
     var localAtualRegistro = null;
     var carregando = false;
@@ -199,7 +198,7 @@
             var acoes = ''
                 + '<button class="btn-icon btn-info" title="Visualizar registro" onclick="apontAdmVer(\'' + id + '\')"><i class="fa-solid fa-eye"></i></button>'
                 + '<button class="btn-icon" title="REGISTRO DE LOCAL" style="color:#16a34a;border-color:#16a34a" onclick="apontAdmVerLocal(\'' + id + '\')"><i class="fa-solid fa-map-location-dot"></i></button>'
-                + '<button class="btn-outline btn-sm" title="Apontar alunos" onclick="apontAdmAbrirApontamento(\'' + id + '\')"><i class="fa-solid fa-clipboard-check"></i> APONTAR</button>'
+                + '<button class="btn-outline btn-sm" title="Apontar presença do docente" onclick="apontAdmAbrirApontamento(\'' + id + '\')"><i class="fa-solid fa-clipboard-check"></i> APONTAR</button>'
                 + (podeEditar ? '<button class="btn-icon" title="Editar" onclick="apontAdmEditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>' : '')
                 + (podeImprimir ? '<button class="btn-icon" title="Imprimir" onclick="apontAdmImprimir(\'' + id + '\')"><i class="fa-solid fa-print"></i></button>' : '')
                 + (podeExcluir ? '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="apontAdmExcluir(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>' : '');
@@ -789,12 +788,7 @@
         if (!editando) {
             dados.criadoEm = new Date().toISOString();
             dados.criadoPor = (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) ? currentUserData.nome : 'Administrador';
-            dados.alunos = []; dados.presentes = 0; dados.faltas = 0; dados.justificadas = 0;
         } else {
-            dados.alunos = regSalvo.alunos || [];
-            dados.presentes = regSalvo.presentes || 0;
-            dados.faltas = regSalvo.faltas || 0;
-            dados.justificadas = regSalvo.justificadas || 0;
             dados.apontadoEm = regSalvo.apontadoEm || null;
         }
         if (!dados.localizacao && !confirm('O GPS não foi capturado. Salvar o apontamento sem registro de localização?')) return;
@@ -816,7 +810,7 @@
         } catch (e) { alert('Erro ao excluir: ' + (e && e.message ? e.message : e)); }
     }
 
-    /* --------------------- APONTAR ALUNOS (como no CADASTRO DE CURSOS) --- */
+    /* ------------------ APONTAR PRESENCA DO DOCENTE (P / F / J) ---------- */
 
     function garantirModalApontamento() {
         var m = document.getElementById('aptadm-apt-modal');
@@ -824,8 +818,8 @@
         m = document.createElement('div');
         m.id = 'aptadm-apt-modal';
         m.className = 'modal-overlay hidden';
-        m.innerHTML = '<div class="modal-content" onclick="event.stopPropagation()" style="max-width:900px;max-height:92vh;overflow-y:auto">'
-            + '<div class="modal-header"><h3><i class="fa-solid fa-clipboard-check" style="color:#16a34a;margin-right:8px"></i> Apontar alunos</h3>'
+        m.innerHTML = '<div class="modal-content" onclick="event.stopPropagation()" style="max-width:640px;max-height:92vh;overflow-y:auto">'
+            + '<div class="modal-header"><h3><i class="fa-solid fa-clipboard-check" style="color:#16a34a;margin-right:8px"></i> Apontar presença do docente</h3>'
             + '<button class="modal-close" onclick="apontAdmFecharApontamento()"><i class="fa-solid fa-xmark"></i></button></div>'
             + '<div class="modal-body"><div id="aptadm-apt-info" style="font-size:12px;color:#475569;margin-bottom:10px"></div>'
             + '<div id="aptadm-apt-lista"></div></div>'
@@ -847,67 +841,55 @@
         if (info) info.innerHTML = '<b>' + esc(dona(reg)) + '</b> • ' + esc(reg.disciplina || '') + ' • '
             + esc(reg.aula || reg.aulaId || '') + ' • ' + esc(reg.dataAula || '');
         m.classList.remove('hidden');
-        try {
-            var snap = await db().collection('cursosCadastro').doc(reg.cursoId).collection('individuos').get();
-            alunos = [];
-            snap.forEach(function (x) { alunos.push(Object.assign({ _id: x.id }, x.data() || {})); });
-        } catch (e) { alunos = []; }
-        if (!alunos.length) {
-            document.getElementById('aptadm-apt-lista').innerHTML = '<p style="color:#b45309">Este curso não tem indivíduos cadastrados. Cadre indivíduos no Cadastro de Cursos antes de apontar.</p>';
-            return;
-        }
-        var anteriores = reg.alunos || [];
-        presencas = {};
-        alunos.forEach(function (p) {
-            var ant = anteriores.find(function (a) { return String(a.cpf) === String(p.cpf); }) || {};
-            presencas[String(p.cpf)] = Object.assign({
-                cpf: p.cpf || '', nome: p.nome || '', matricula: p.matricula || '',
-                status: 'Falta', obs: '', foP: 0, foN: 0, inicioPresente: false, inicioHora: ''
-            }, ant);
-        });
+        /* O apontamento ADM é de presença do DOCENTE, não dos indivíduos
+           cadastrados no curso. Não consultar a subcoleção "individuos". */
+        var ant = reg.presencaDocente || {};
+        presencaDocente = Object.assign({
+            docenteId: reg.docenteId || '', docenteNome: dona(reg) || '',
+            docenteCpf: reg.docenteCpf || '', docenteMatricula: reg.docenteMatricula || '',
+            status: 'Presente', obs: ''
+        }, ant);
         apontando = reg;
         renderListaApontamento();
     }
     function renderListaApontamento() {
         var box = document.getElementById('aptadm-apt-lista'); if (!box) return;
+        var s = presencaDocente || {};
         box.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f1f5f9">'
-            + '<th style="padding:6px;text-align:left;font-size:10px">Matrícula</th><th style="padding:6px;text-align:left;font-size:10px">Nome</th>'
+            + '<th style="padding:6px;text-align:left;font-size:10px">Docente</th>'
+            + '<th style="padding:6px;text-align:left;font-size:10px">CPF / Matrícula</th>'
             + '<th style="padding:6px;font-size:10px">P / F / J</th><th style="padding:6px;text-align:left;font-size:10px">Obs</th></tr></thead><tbody>'
-            + alunos.map(function (p) {
-                var s = presencas[String(p.cpf)] || {};
-                return '<tr style="border-bottom:1px solid #eef2f7">'
-                    + '<td style="padding:6px;font-size:11px">' + esc(s.matricula || '-') + '</td>'
-                    + '<td style="padding:6px;font-size:12px">' + esc(s.nome || p.nome || '') + '</td>'
-                    + '<td style="padding:6px;text-align:center">'
-                    + ['Presente', 'Falta', 'Justificada'].map(function (st) {
-                        var lbl = st === 'Presente' ? 'P' : (st === 'Falta' ? 'F' : 'J');
-                        var cor = s.status === st ? (st === 'Presente' ? '#16a34a' : (st === 'Falta' ? '#dc2626' : '#d97706')) : '#94a3b8';
-                        return '<button onclick="apontAdmSetStatus(\'' + esc(String(p.cpf)) + '\',\'' + st + '\')" '
-                            + 'style="border:1px solid ' + cor + ';color:' + cor + ';background:' + (s.status === st ? cor + '22' : 'transparent') + ';border-radius:5px;padding:2px 7px;margin:0 1px;font-size:10px;font-weight:800">' + lbl + '</button>';
-                    }).join('') + '</td>'
-                    + '<td style="padding:6px"><input value="' + esc(s.obs || '') + '" onchange="apontAdmSetObs(\'' + esc(String(p.cpf)) + '\',this.value)" '
-                    + 'style="width:100%;padding:4px;border:1px solid #cbd5e1;border-radius:5px;font-size:11px"></td>'
-                    + '</tr>';
-            }).join('') + '</tbody></table>';
+            + '<tr style="border-bottom:1px solid #eef2f7">'
+            + '<td style="padding:6px;font-size:12px">' + esc(s.docenteNome || '-') + '</td>'
+            + '<td style="padding:6px;font-size:11px">' + esc(s.docenteCpf || '-') + (s.docenteMatricula ? ' / ' + esc(s.docenteMatricula) : '') + '</td>'
+            + '<td style="padding:6px;text-align:center">'
+            + ['Presente', 'Falta', 'Justificada'].map(function (st) {
+                var lbl = st === 'Presente' ? 'P' : (st === 'Falta' ? 'F' : 'J');
+                var cor = s.status === st ? (st === 'Presente' ? '#16a34a' : (st === 'Falta' ? '#dc2626' : '#d97706')) : '#94a3b8';
+                return '<button onclick="apontAdmSetStatus(\'' + st + '\')" '
+                    + 'style="border:1px solid ' + cor + ';color:' + cor + ';background:' + (s.status === st ? cor + '22' : 'transparent') + ';border-radius:5px;padding:2px 7px;margin:0 1px;font-size:10px;font-weight:800">' + lbl + '</button>';
+            }).join('') + '</td>'
+            + '<td style="padding:6px"><input value="' + esc(s.obs || '') + '" onchange="apontAdmSetObs(this.value)" '
+            + 'style="width:100%;padding:4px;border:1px solid #cbd5e1;border-radius:5px;font-size:11px"></td>'
+            + '</tr></tbody></table>';
     }
-    function setStatus(cpf, st) { if (presencas[cpf]) { presencas[cpf].status = st; renderListaApontamento(); } }
-    function setObs(cpf, v) { if (presencas[cpf]) presencas[cpf].obs = v; }
+    function setStatus(st) { if (presencaDocente) { presencaDocente.status = st; renderListaApontamento(); } }
+    function setObs(v) { if (presencaDocente) presencaDocente.obs = v; }
     function fecharApontamento() {
         var m = document.getElementById('aptadm-apt-modal'); if (m) m.classList.add('hidden');
-        apontando = null; presencas = {}; alunos = [];
+        apontando = null; presencaDocente = null;
     }
     async function salvarApontamento() {
-        if (!apontando) return;
-        var presentes = 0, faltas = 0, just = 0;
-        var lista = alunos.map(function (p) {
-            var s = presencas[String(p.cpf)] || {};
-            if (s.status === 'Presente') presentes++; else if (s.status === 'Justificada') just++; else faltas++;
-            return Object.assign({}, s, { cpf: s.cpf || p.cpf || '', nome: s.nome || p.nome || '', matricula: s.matricula || p.matricula || '' });
-        });
+        if (!apontando || !presencaDocente) return;
+        var st = presencaDocente.status;
+        var presentes = st === 'Presente' ? 1 : 0;
+        var faltas = st === 'Falta' ? 1 : 0;
+        var just = st === 'Justificada' ? 1 : 0;
         try {
             var apontadoEm = new Date().toISOString();
             await db().collection(COLECAO).doc(apontando._id).update({
-                alunos: lista, presentes: presentes, faltas: faltas, justificadas: just,
+                presencaDocente: Object.assign({}, presencaDocente, { apontadoEm: apontadoEm }),
+                presentes: presentes, faltas: faltas, justificadas: just,
                 apontadoEm: apontadoEm,
                 status: 'Apontado',
                 apontado: true,
@@ -915,7 +897,7 @@
             });
             fecharApontamento();
             await carregarTudo();
-            alert('Apontamento salvo: ' + presentes + ' presente(s), ' + faltas + ' falta(s), ' + just + ' justificada(s).');
+            alert('Apontamento do docente salvo: ' + (st === 'Presente' ? 'Presente' : (st === 'Falta' ? 'Falta' : 'Justificada')) + '.');
         } catch (e) { alert('Erro ao salvar: ' + (e && e.message ? e.message : e)); }
     }
 
@@ -938,7 +920,9 @@
                     + ';padding:2px 6px;border-radius:8px">' + (r.apontadoEm ? 'Apontado' : 'Pendente') + '</span>'
                     + (r.enviadoEm ? '<br><b>Enviada em:</b> ' + fmtData(r.enviadoEm) + ' por ' + esc(r.enviadoPor || '-') : '')
                 : 'Apontamento manual') + '</p>'
-            + '<p><b>Presença:</b> ' + (r.presentes || 0) + ' presente(s), ' + (r.faltas || 0) + ' falta(s), ' + (r.justificadas || 0) + ' justificada(s)</p>'
+            + '<p><b>Presença do docente:</b> ' + (r.presencaDocente
+                ? esc(r.presencaDocente.status || '-') + (r.presencaDocente.obs ? ' — ' + esc(r.presencaDocente.obs) : '')
+                : '<span style="color:#94a3b8">não apontada</span>') + '</p>'
             + '<p><b>Localização:</b> ' + (temLocal(r) ? esc(coords(r)) : '<span style="color:#dc2626">Não capturada</span>')
             + '<br><b>Precisão:</b> ' + (l.precisao ? Math.round(l.precisao) + ' m' : '-')
             + '<br><b>Capturada em:</b> ' + fmtData(l.capturadaEm) + '</p>'
@@ -949,12 +933,6 @@
                     + '<br><b>Capturado em:</b> ' + fmtData(r.qrAula.capturadaEm)
                     + '<br><b>Capturado por:</b> ' + esc(r.qrAula.capturadaPor || '-')
                 : '<span style="color:#94a3b8">Não capturado</span>') + '</p>'
-            + (r.alunos && r.alunos.length ? '<p><b>Alunos:</b></p><table style="width:100%;border-collapse:collapse;font-size:11px">'
-                + r.alunos.map(function (a) {
-                    return '<tr><td style="padding:4px;border-bottom:1px solid #eef2f7">' + esc(a.nome || '') + '</td>'
-                        + '<td style="padding:4px;border-bottom:1px solid #eef2f7">' + esc(a.status || '-') + '</td>'
-                        + '<td style="padding:4px;border-bottom:1px solid #eef2f7">' + esc(a.obs || '') + '</td></tr>';
-                }).join('') + '</table>' : '')
             + '</div>';
     }
     function ver(id) {

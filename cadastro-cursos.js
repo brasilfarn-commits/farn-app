@@ -1664,10 +1664,7 @@ async function ccEnviarAulaParaApontamento(aula, aulaId) {
         dados.criadoEm = agora;
         dados.criadoPor = ccUsuarioAtual();
         dados.apontadoEm = null;
-        dados.alunos = [];
-        dados.presentes = 0;
-        dados.faltas = 0;
-        dados.justificadas = 0;
+        dados.presencaDocente = null;
         dados.localizacao = null;
         dados.localizacaoStatus = 'indisponivel';
         dados.qrCode = '';

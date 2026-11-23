@@ -8,7 +8,7 @@
    Fontes (nenhuma colecao nova):
    - cursosCadastro (cursos) e seus subcollections individuos,
      fichaAvaliacoes, aulas e apontamentos;
-   - apontamentosAdm (apontamento do docente, GPS/QR, horario e alunos);
+   - apontamentosAdm (apontamento de presenca do docente, GPS/QR e horario);
    - docentesAdmin (quadro de docentes);
    - apostilasAlunos (material cadastrado).
 
