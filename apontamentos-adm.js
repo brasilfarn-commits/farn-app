@@ -4,7 +4,8 @@
    Campos espelham o "criar disciplina e aula" do Cadastro de Cursos.
    Cada registro guarda o docente (docentesAdmin), o curso, a aula e a
    localização capturada pelo GPS do navegador. Nada é gravado dentro de
-   cursosCadastro: a aula existente apenas é referenciada pelo aulaId.
+   cursosCadastro: a aula existente é referenciada pelo aulaId. O QR de início
+   da aula, quando lido pela Coordenação, também fica no registro.
    ===================================================================== */
 (function () {
     'use strict';
@@ -25,6 +26,12 @@
     var verAtual = null;
     var localAtualRegistro = null;
     var carregando = false;
+    var coordenadoresCpfs = [];
+    var qrAtual = null;
+    var qrScanner = null;
+    var qrEscaneando = false;
+    var aulaIndex = {};
+    var aulasEmCarga = {};
 
     function db() {
         if (typeof dbFirestore !== 'undefined' && dbFirestore) return dbFirestore;
@@ -42,6 +49,17 @@
         if (typeof admPermItem === 'function') return admPermItem(chave, acao || 'ver');
         return true;
     }
+    function digitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+    function ehCoordenador() {
+        var u = (typeof currentUserData !== 'undefined') ? currentUserData : null;
+        if (!u) return false;
+        if (u._origem === 'coordenacao') return true;
+        var cpf = digitos(u.cpf);
+        return !!(cpf && coordenadoresCpfs.indexOf(cpf) >= 0);
+    }
+    /* A leitura do QR de início de aula é uma ação de conferência da
+       Coordenação. Docente e demais perfis não recebem o botão ativo. */
+    function podeCapturarQr() { return ehCoordenador(); }
     function fmtData(v) {
         if (!v) return '-';
         try { return new Date(v).toLocaleString('pt-BR'); } catch (e) { return String(v); }
@@ -52,6 +70,22 @@
     }
     function norm(v) {
         return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    }
+    function nomeDocente(docenteId) {
+        var d = docentes.find(function (x) { return String(x.id) === String(docenteId || ''); });
+        return d ? d.nome : '';
+    }
+    function aulaEhDoDocente(a, docenteId) {
+        if (!a) return false;
+        if (docenteId && String(a.docenteId || '') === String(docenteId)) return true;
+        var nome = norm(nomeDocente(docenteId));
+        return !!(nome && norm(a.docente || a.docenteNome || '') === nome);
+    }
+    function disciplinaEhDoDocente(x, docenteId) {
+        if (!x) return false;
+        if (docenteId && String(x.docenteId || '') === String(docenteId)) return true;
+        var nome = norm(nomeDocente(docenteId));
+        return !!(nome && norm(x.docente || x.docenteNome || '') === nome);
     }
     function dona(reg) {
         return (reg && (reg.docenteNome || reg.docente)) || 'Docente não informado';
@@ -101,6 +135,22 @@
                 cursos.push({ id: x.id, nome: v.nome || x.id, docenteId: String(v.docenteResponsavelId || '') });
             });
             cursos.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
+
+            try {
+                var snapCoord = await d.collection('coordenacao').get();
+                coordenadoresCpfs = [];
+                snapCoord.forEach(function (x) {
+                    var cpf = digitos((x.data() || {}).cpf);
+                    if (cpf) coordenadoresCpfs.push(cpf);
+                });
+            } catch (e) {
+                coordenadoresCpfs = [];
+            }
+
+            /* Carrega disciplinas e aulas subordinadas aos cursos para que o
+               select de Apontamento ADM mostre também as aulas cujo docente é
+               o selecionado na guia Disciplina e Aulas do Cadastro de Cursos. */
+            await carregarTodasAulas();
 
             var snapR = await d.collection(COLECAO).orderBy('criadoEm', 'desc').limit(300).get();
             cache = [];
@@ -156,11 +206,14 @@
             return '<tr>'
                 + '<td><b style="font-size:12px">' + esc(dona(r)) + '</b><br><span style="font-size:10px;color:#64748b">' + esc(r.docenteCpf || r.docenteMatricula || '') + '</span></td>'
                 + '<td><span style="font-size:12px">' + esc(disciplina) + '</span><br><span style="font-size:11px;color:#64748b">' + esc(aula) + '</span>'
-                + (r.origem === 'manual-admin' ? '<br><span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Manual</span>' : '') + '</td>'
+                + (r.origem === 'manual-admin' ? '<br><span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Manual</span>' : '')
+                + (r.aulaId ? '<br><span style="font-size:9px;background:#e0e7ff;color:#3730a3;padding:2px 6px;border-radius:8px">Aula vinculada</span>' : '')
+                + (r.qrAula ? '<br><span style="font-size:9px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px">QR capturado</span>' : '') + '</td>'
                 + '<td style="font-size:12px">' + esc(r.dataAula || '-') + '<br><span style="font-size:10px;color:#64748b">' + esc(r.horaAula || '') + '</span></td>'
                 + '<td style="font-size:11px">' + (temLocal(r)
                     ? '<span style="color:#16a34a;font-weight:700">GPS capturado</span><br>' + esc(coords(r))
-                    : '<span style="color:#dc2626">Sem localização</span>') + '</td>'
+                    : '<span style="color:#dc2626">Sem localização</span>')
+                + (r.qrAula ? '<br><span style="color:#92400e;font-size:9px">QR: ' + esc(r.qrAula.aulaDescricao || r.qrAula.aulaId || 'capturado') + '</span>' : '') + '</td>'
                 + '<td><div class="actions-cell" style="display:flex;gap:5px;flex-wrap:wrap">' + acoes + '</div></td>'
                 + '</tr>';
         }).join('');
@@ -176,57 +229,112 @@
         }).join('');
     }
     function cursosDoDocente(docenteId) {
-        return cursos.filter(function (c) { return String(c.docenteId || '') === String(docenteId || ''); });
+        if (!docenteId) return cursos.slice();
+        return cursos.filter(function (c) {
+            if (String(c.docenteId || '') === String(docenteId)) return true;
+            var cid = String(c.id || '');
+            return (aulasCache[cid] || []).some(function (a) { return aulaEhDoDocente(a, docenteId); })
+                || (discCache[cid] || []).some(function (x) { return disciplinaEhDoDocente(x, docenteId); });
+        });
     }
     function opcoesCursos(docenteId, selecionado) {
         var lista = cursosDoDocente(docenteId);
         return '<option value="">— Selecione o curso —</option>' + lista.map(function (c) {
             return '<option value="' + esc(c.id) + '"' + (String(selecionado || '') === c.id ? ' selected' : '') + '>' + esc(c.nome) + '</option>';
-        }).join('') + (lista.length ? '' : '<option value="" disabled>Nenhum curso vinculado a este docente</option>');
+        }).join('') + (lista.length ? '' : '<option value="" disabled>Nenhuma aula/curso vinculado a este docente</option>');
     }
 
     async function carregarAulasCurso(cursoId, selecionado) {
         var chave = String(cursoId || '');
         if (!chave) { aulasCache[chave] = []; discCache[chave] = []; return; }
-        if (aulasCache[chave]) return;
-        var d = db();
-        try {
-            var base = d.collection('cursosCadastro').doc(chave);
-            var sa = await base.collection('aulas').orderBy('data', 'desc').get();
-            aulasCache[chave] = [];
-            sa.forEach(function (x) { aulasCache[chave].push(Object.assign({ _id: x.id }, x.data() || {})); });
-            var sd = await base.collection('disciplinas').get();
-            discCache[chave] = [];
-            sd.forEach(function (x) { discCache[chave].push(Object.assign({ _id: x.id }, x.data() || {})); });
-        } catch (e) {
-            aulasCache[chave] = []; discCache[chave] = [];
-            console.warn('apontAdm: não foi possível ler aulas do curso', e);
+        if (aulasCache[chave]) {
+            if (selecionado) preencherAula(selecionado);
+            return;
         }
+        if (aulasEmCarga[chave]) {
+            await aulasEmCarga[chave];
+            if (selecionado) preencherAula(selecionado);
+            return;
+        }
+        var d = db();
+        aulasEmCarga[chave] = (async function () {
+            try {
+                var base = d.collection('cursosCadastro').doc(chave);
+                var sa = await base.collection('aulas').orderBy('data', 'desc').get();
+                aulasCache[chave] = [];
+                sa.forEach(function (x) {
+                    var aula = Object.assign({ _id: x.id }, x.data() || {});
+                    aulasCache[chave].push(aula);
+                    aulaIndex[String(aula._id)] = Object.assign({ cursoId: chave }, aula);
+                });
+                var sd = await base.collection('disciplinas').get();
+                discCache[chave] = [];
+                sd.forEach(function (x) { discCache[chave].push(Object.assign({ _id: x.id }, x.data() || {})); });
+            } catch (e) {
+                aulasCache[chave] = []; discCache[chave] = [];
+                console.warn('apontAdm: não foi possível ler aulas do curso', e);
+            }
+        })();
+        try { await aulasEmCarga[chave]; } finally { delete aulasEmCarga[chave]; }
         if (selecionado) preencherAula(selecionado);
     }
 
-    function opcoesDisciplinas(cursoId, selecionado) {
+    async function carregarTodasAulas() {
+        if (!cursos.length) return;
+        await Promise.all(cursos.map(function (c) {
+            return carregarAulasCurso(c.id, '').catch(function () {});
+        }));
+    }
+
+    function aulasDoDocente(cursoId, docenteId) {
+        var lista = aulasCache[String(cursoId || '')] || [];
+        if (!docenteId) return lista;
+        return lista.filter(function (a) { return aulaEhDoDocente(a, docenteId); });
+    }
+    function disciplinasDoDocente(cursoId, docenteId) {
         var lista = discCache[String(cursoId || '')] || [];
+        if (!docenteId) return lista;
+        return lista.filter(function (x) { return disciplinaEhDoDocente(x, docenteId); });
+    }
+    function opcoesDisciplinas(cursoId, selecionado, docenteId) {
+        var cid = String(cursoId || '');
         var nomes = [];
-        lista.forEach(function (x) { var n = x.nome || x.disciplina || ''; if (n && nomes.indexOf(n) < 0) nomes.push(n); });
-        (aulasCache[String(cursoId || '')] || []).forEach(function (a) { if (a.disciplina && nomes.indexOf(a.disciplina) < 0) nomes.push(a.disciplina); });
+        disciplinasDoDocente(cid, docenteId).forEach(function (x) {
+            var n = x.nome || x.disciplina || '';
+            if (n && nomes.indexOf(n) < 0) nomes.push(n);
+        });
+        aulasDoDocente(cid, docenteId).forEach(function (a) {
+            if (a.disciplina && nomes.indexOf(a.disciplina) < 0) nomes.push(a.disciplina);
+        });
+        if (selecionado && selecionado !== '__nova__' && nomes.indexOf(selecionado) < 0) nomes.unshift(selecionado);
         return '<option value="">— Selecione a disciplina —</option>' + nomes.map(function (n) {
             return '<option value="' + esc(n) + '"' + (String(selecionado || '') === n ? ' selected' : '') + '>' + esc(n) + '</option>';
         }).join('') + '<option value="__nova__"' + (selecionado === '__nova__' ? ' selected' : '') + '>Nova disciplina...</option>';
     }
-    function opcoesAulas(cursoId, selecionado) {
-        var lista = aulasCache[String(cursoId || '')] || [];
+    function opcoesAulas(cursoId, selecionado, docenteId) {
+        var cid = String(cursoId || '');
+        var lista = aulasDoDocente(cid, docenteId).slice();
+        var atual = lista.find(function (a) { return String(a._id) === String(selecionado || ''); });
+        if (!atual && selecionado && selecionado !== '__nova__' && aulaIndex[String(selecionado)]) {
+            lista.unshift(Object.assign({ cursoId: cid }, aulaIndex[String(selecionado)]));
+        }
+        lista.sort(function (a, b) { return String(b.data || '').localeCompare(String(a.data || '')); });
         return '<option value="">— Selecione a aula —</option>' + lista.map(function (a) {
-            var lbl = (a.data || '') + ' - ' + (a.conteudo || a.disciplina || a._id);
-            return '<option value="' + esc(a._id) + '"' + (String(selecionado || '') === a._id ? ' selected' : '') + '>' + esc(lbl) + '</option>';
+            var lbl = (a.data ? a.data + ' - ' : '') + (a.conteudo || a.disciplina || a._id)
+                + (a.conteudo && a.disciplina ? ' (' + a.disciplina + ')' : '');
+            return '<option value="' + esc(a._id) + '"' + (String(selecionado || '') === String(a._id) ? ' selected' : '') + '>' + esc(lbl) + '</option>';
         }).join('') + '<option value="__nova__"' + (selecionado === '__nova__' ? ' selected' : '') + '>Nova aula (informar abaixo)...</option>';
     }
 
     function preencherAula(aulaId) {
         var cursoId = (el('curso') || {}).value || '';
-        var aula = ((aulasCache[String(cursoId)] || []).find(function (a) { return a._id === aulaId; })) || null;
+        var aula = ((aulasCache[String(cursoId)] || []).find(function (a) { return String(a._id) === String(aulaId || ''); })) || null;
         function set(id, v) { var x = el(id); if (x) x.value = v || ''; }
         if (aula) {
+            var ds = el('disciplina');
+            if (ds && aula.disciplina && !existeOpcao(ds, aula.disciplina)) {
+                ds.insertBefore(new Option(aula.disciplina, aula.disciplina), ds.options[1] || null);
+            }
             set('disciplina', aula.disciplina || '');
             set('data', aula.data || '');
             set('horario', aula.horario || '');
@@ -237,6 +345,13 @@
             set('data', ''); set('horario', ''); set('conteudo', '');
             set('av-teorica', ''); set('av-pratica', '');
         }
+    }
+    function existeOpcao(sel, valor) {
+        if (!sel) return false;
+        for (var i = 0; i < sel.options.length; i++) {
+            if (String(sel.options[i].value) === String(valor || '')) return true;
+        }
+        return false;
     }
 
     function formHtml(reg) {
@@ -250,7 +365,7 @@
         return '<div class="card full-width">'
             + '<div class="card-header"><h3><i class="fa-solid fa-clipboard-user" style="color:#16a34a;margin-right:8px"></i> '
             + (reg ? 'Editar apontamento manual' : 'Criar apontamento manual') + '</h3>'
-            + '<small>Disciplina e aula vinculadas ao docente selecionado. O apontamento pertence apenas a ele e registra o local pelo GPS.</small></div>'
+            + '<small>Disciplina e aula vinculadas ao docente selecionado, exatamente como cadastradas em Disciplina e Aulas. O apontamento registra o local pelo GPS e, quando capturado pela Coordenação, o QR de início da aula.</small></div>'
             + '<div class="card-body">'
             + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px">'
             + '<div><label style="font-size:11px;font-weight:700;color:#166534;display:block;margin-bottom:4px">Docente *</label>'
@@ -260,11 +375,11 @@
             + '</div>'
             + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:10px">'
             + '<div><label style="font-size:11px;font-weight:700;color:#166534;display:block;margin-bottom:4px">Disciplina *</label>'
-            + '<select id="aptadm-disciplina" class="config-input" style="width:100%" onchange="apontAdmDisciplinaChange()">' + opcoesDisciplinas(cursoId, disciplina) + '</select></div>'
+            + '<select id="aptadm-disciplina" class="config-input" style="width:100%" onchange="apontAdmDisciplinaChange()">' + opcoesDisciplinas(cursoId, disciplina, docenteId) + '</select></div>'
             + '<div><label style="font-size:11px;font-weight:700;color:#166534;display:block;margin-bottom:4px">Nova disciplina</label>'
             + '<input id="aptadm-disciplina-nova" class="config-input" style="width:100%" placeholder="Nome da disciplina" value="' + (temDisciplina ? '' : esc(p.disciplinaNova || '')) + '"></div>'
             + '<div><label style="font-size:11px;font-weight:700;color:#166534;display:block;margin-bottom:4px">Aula do docente *</label>'
-            + '<select id="aptadm-aula" class="config-input" style="width:100%" onchange="apontAdmAulaChange()">' + opcoesAulas(cursoId, aulaId) + '</select></div>'
+            + '<select id="aptadm-aula" class="config-input" style="width:100%" onchange="apontAdmAulaChange()">' + opcoesAulas(cursoId, aulaId, docenteId) + '</select></div>'
             + '</div>'
             + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px">'
             + '<div><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Data *</label>'
@@ -283,9 +398,18 @@
             + '<div style="margin-top:12px;padding:12px;border:1px solid #86efac;background:#f0fdf4;border-radius:10px">'
             + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
             + '<button type="button" class="btn-outline btn-sm" onclick="apontAdmCapturarGps()"><i class="fa-solid fa-location-crosshairs"></i> Capturar GPS</button>'
+            + '<button type="button" class="btn-outline btn-sm" id="aptadm-qr-btn" onclick="apontAdmCapturarQr()"'
+            + (podeCapturarQr() ? '' : ' disabled title="Somente o Coordenador pode capturar o QR Code da aula"')
+            + '><i class="fa-solid fa-qrcode"></i> Capturar QR Code</button>'
             + '<span id="aptadm-gps-status" style="font-size:12px;color:#166534;font-weight:700">Localização não capturada.</span></div>'
             + '<div id="aptadm-gps-detalhe" style="font-size:11px;color:#15803d;margin-top:6px"></div>'
-            + '</div>'
+            + '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #86efac">'
+            + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+            + '<span id="aptadm-qr-status" style="font-size:12px;font-weight:700"></span>'
+            + '<button type="button" class="btn-outline btn-sm" id="aptadm-qr-parar" style="display:none" onclick="apontAdmPararQr()"><i class="fa-solid fa-stop"></i> Parar leitura</button></div>'
+            + '<div id="aptadm-qr-detalhe" style="font-size:11px;color:#15803d;margin-top:6px"></div>'
+            + '<div id="aptadm-qr-reader" style="display:none;width:100%;min-height:180px;background:#fff;border-radius:8px;margin-top:8px"></div>'
+            + '</div></div>'
             + '<div style="display:flex;gap:8px;margin-top:14px">'
             + '<button type="button" class="btn-primary" onclick="apontAdmSalvar()"><i class="fa-solid fa-floppy-disk"></i> Salvar apontamento</button>'
             + '<button type="button" class="btn-outline" onclick="apontAdmVoltarForm()"><i class="fa-solid fa-arrow-left"></i> Cancelar</button>'
@@ -305,9 +429,28 @@
         if (id && !reg) { alert('Registro não encontrado.'); return; }
         editando = reg || null;
         localAtual = (reg && reg.localizacao) ? Object.assign({}, reg.localizacao) : null;
+        qrAtual = null;
+        if (reg && reg.qrAula && reg.qrAula.aulaId) {
+            qrAtual = Object.assign({}, reg.qrAula);
+        } else if (reg && reg.qrCode) {
+            var infoQr = aulaIndex[String(extrairAulaId(reg.qrCode) || '')];
+            if (infoQr) {
+                qrAtual = {
+                    valor: reg.qrCode,
+                    aulaId: String(infoQr._id),
+                    cursoId: String(infoQr.cursoId),
+                    docenteId: String(infoQr.docenteId || ''),
+                    aulaDescricao: infoQr.conteudo || infoQr.disciplina || infoQr._id,
+                    capturadaEm: (reg.qrAula && reg.qrAula.capturadaEm) || reg.atualizadoEm || '',
+                    capturadaPor: (reg.qrAula && reg.qrAula.capturadaPor) || ''
+                };
+            }
+        }
         var painel = el('form-painel'); if (!painel) return;
+        pararQr();
         painel.innerHTML = formHtml(reg);
         painel.style.display = 'block';
+        renderQr();
         var docSel = el('docente');
         if (reg && reg.docenteId && docSel && !docSel.value) {
             /* Docente removido do cadastro: mantém o nome visível no formulário. */
@@ -321,20 +464,24 @@
             el('curso').insertBefore(opc, el('curso').options[1] || null); el('curso').value = reg.cursoId;
         }
         var cursoId = (el('curso') || {}).value || '';
+        var docenteIdAtual = (el('docente') || {}).value || '';
         carregarAulasCurso(cursoId, reg ? reg.aulaId : '').then(function () {
-            if (cursoId) {
-                var dsel = el('disciplina');
-                if (dsel && reg && reg.disciplina && !dsel.value) {
-                    dsel.insertBefore(new Option(reg.disciplina, reg.disciplina), dsel.options[1] || null);
-                    dsel.value = reg.disciplina;
-                }
-                var asel = el('aula');
-                if (asel && reg && reg.aulaId && !asel.value) {
-                    asel.insertBefore(new Option((reg.dataAula || '') + ' - ' + (reg.aula || reg.aulaId), reg.aulaId), asel.options[1] || null);
-                    asel.value = reg.aulaId;
-                }
+            var dsel = el('disciplina'), asel = el('aula');
+            if (dsel && reg && reg.disciplina && !existeOpcao(dsel, reg.disciplina)) {
+                dsel.insertBefore(new Option(reg.disciplina, reg.disciplina), dsel.options[1] || null);
             }
-            renderGps();
+            if (asel && reg && reg.aulaId && !existeOpcao(asel, reg.aulaId)) {
+                asel.insertBefore(new Option((reg.dataAula || '') + ' - ' + (reg.aula || reg.aulaId), reg.aulaId), asel.options[1] || null);
+            }
+            if (dsel) {
+                var valorDisc = dsel.value;
+                dsel.innerHTML = opcoesDisciplinas(cursoId, valorDisc, docenteIdAtual);
+            }
+            if (asel) {
+                var valorAula = asel.value;
+                asel.innerHTML = opcoesAulas(cursoId, valorAula, docenteIdAtual);
+            }
+            renderGps(); renderQr();
         });
         if (typeof window.scrollTo === 'function') window.scrollTo({ top: painel.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
         if (navigator.geolocation) capturarGps(true);
@@ -343,25 +490,26 @@
     function novo() { abrirForm(null); }
     function editar(id) { abrirForm(id); }
     function voltarForm() {
-        editando = null; localAtual = null;
+        pararQr();
+        editando = null; localAtual = null; qrAtual = null;
         var painel = el('form-painel'); if (painel) { painel.innerHTML = ''; painel.style.display = 'none'; }
     }
 
     function docenteChange() {
         var sel = el('curso'); if (!sel) return;
-        sel.innerHTML = opcoesCursos((el('docente') || {}).value || '', '');
-        var ds = el('disciplina'); if (ds) ds.innerHTML = opcoesDisciplinas('', '');
-        var as = el('aula'); if (as) as.innerHTML = opcoesAulas('', '');
-        aulasCache = {}; discCache = {};
+        var docenteId = (el('docente') || {}).value || '';
+        sel.innerHTML = opcoesCursos(docenteId, '');
+        var ds = el('disciplina'); if (ds) ds.innerHTML = opcoesDisciplinas('', '', docenteId);
+        var as = el('aula'); if (as) as.innerHTML = opcoesAulas('', '', docenteId);
     }
-    function cursoChange() {
+    async function cursoChange() {
         var cursoId = (el('curso') || {}).value || '';
-        var ds = el('disciplina'); if (ds) ds.innerHTML = opcoesDisciplinas(cursoId, '');
-        var as = el('aula'); if (as) as.innerHTML = opcoesAulas(cursoId, '');
-        carregarAulasCurso(cursoId, '').then(function () {
-            var ds2 = el('disciplina'); if (ds2) ds2.innerHTML = opcoesDisciplinas(cursoId, '');
-            var as2 = el('aula'); if (as2) as2.innerHTML = opcoesAulas(cursoId, '');
-        });
+        var docenteId = (el('docente') || {}).value || '';
+        var ds = el('disciplina'); if (ds) ds.innerHTML = opcoesDisciplinas(cursoId, '', docenteId);
+        var as = el('aula'); if (as) as.innerHTML = opcoesAulas(cursoId, '', docenteId);
+        await carregarAulasCurso(cursoId, '');
+        var ds2 = el('disciplina'); if (ds2) ds2.innerHTML = opcoesDisciplinas(cursoId, '', docenteId);
+        var as2 = el('aula'); if (as2) as2.innerHTML = opcoesAulas(cursoId, '', docenteId);
     }
     function disciplinaChange() {
         var nova = (el('disciplina') || {}).value === '__nova__';
@@ -412,6 +560,161 @@
         }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     }
 
+    /* --------------------------- QR DA AULA ------------------------------ */
+
+    /* O QR gerado em Cadastro de Cursos contém FARN-INICIO:<aulaId>.
+       Também aceita URLs que carreguem o mesmo conteúdo, para não depender
+       de mudança no leitor caso o QR seja repassado por link. */
+    function extrairAulaId(texto) {
+        var s = String(texto == null ? '' : texto).trim();
+        if (!s) return '';
+        var m = s.match(/^FARN-INICIO\s*:\s*(.+)$/i);
+        if (m) return m[1].trim();
+        try {
+            var dec = decodeURIComponent(s);
+            if (dec !== s) return extrairAulaId(dec);
+        } catch (e) { /* texto com % inválido */ }
+        try {
+            var u = new URL(s);
+            var p = u.searchParams.get('aula') || u.searchParams.get('aulaId') || u.searchParams.get('id') || '';
+            if (p) return p.trim();
+            var hash = decodeURIComponent(u.hash.replace(/^#/, ''));
+            var mh = hash.match(/FARN-INICIO\s*:\s*(.+)$/i);
+            if (mh) return mh[1].trim();
+        } catch (e) { /* texto não é URL */ }
+        return aulaIndex[s] ? s : '';
+    }
+    function renderQr() {
+        var st = el('qr-status'), dt = el('qr-detalhe');
+        if (!st) return;
+        if (!podeCapturarQr()) {
+            st.textContent = 'Leitura de QR restrita à Coordenação.';
+            st.style.color = '#64748b';
+            if (dt) dt.textContent = '';
+            return;
+        }
+        if (qrEscaneando) {
+            st.textContent = 'Lendo QR Code...'; st.style.color = '#2563eb';
+            if (dt) dt.textContent = 'Aponte a câmera para o QR de início exibido no Cadastro de Cursos.';
+            return;
+        }
+        if (qrAtual) {
+            st.textContent = 'QR da aula capturado ✓';
+            st.style.color = '#15803d';
+            if (dt) dt.innerHTML = '<b>Aula:</b> ' + esc(qrAtual.aulaDescricao || qrAtual.aulaId)
+                + ' &nbsp; <b>Capturada em:</b> ' + fmtData(qrAtual.capturadaEm)
+                + '<br><b>Capturada por:</b> ' + esc(qrAtual.capturadaPor || 'Coordenação')
+                + '<br><b>Conteúdo:</b> ' + esc(qrAtual.valor);
+        } else {
+            st.textContent = 'QR da aula não capturado.';
+            st.style.color = '#b45309';
+            if (dt) dt.textContent = '';
+        }
+    }
+    function pararQr() {
+        if (qrScanner && qrEscaneando) {
+            try {
+                var p = qrScanner.stop();
+                if (p && typeof p.catch === 'function') p.catch(function () {});
+            } catch (e) { /* câmera já encerrada */ }
+        }
+        qrScanner = null; qrEscaneando = false;
+        var rd = el('qr-reader'), btn = el('qr-parar');
+        if (rd) { rd.innerHTML = ''; rd.style.display = 'none'; }
+        if (btn) btn.style.display = 'none';
+    }
+    async function capturarQr() {
+        if (!podeCapturarQr()) {
+            alert('Somente o Coordenador pode capturar o QR Code da aula.'); return;
+        }
+        if (qrEscaneando) { pararQr(); renderQr(); return; }
+        if (typeof Html5Qrcode === 'undefined') {
+            alert('Biblioteca de leitura de QR não carregada.'); return;
+        }
+        var rd = el('qr-reader'); if (!rd) return;
+        rd.innerHTML = ''; rd.style.display = 'block';
+        var btn = el('qr-parar'); if (btn) btn.style.display = '';
+        renderQr();
+        try {
+            qrScanner = new Html5Qrcode('aptadm-qr-reader');
+            qrEscaneando = true;
+            await qrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, function (texto) {
+                if (!qrEscaneando) return;
+                var id = extrairAulaId(texto);
+                if (!id) return;
+                var info = aulaIndex[String(id)];
+                if (!info) {
+                    alert('QR lido, mas esta aula não foi encontrada no Cadastro de Cursos.');
+                    return;
+                }
+                pararQr();
+                aplicarQrAula(String(texto).trim(), info);
+            }, function () { /* quadro de leitura: ignora falhas isoladas */ });
+        } catch (e) {
+            pararQr(); renderQr();
+            alert('Não foi possível iniciar a câmera: ' + (e && e.message ? e.message : e));
+        }
+    }
+    function nomeCurso(cursoId) {
+        var c = cursos.find(function (x) { return String(x.id) === String(cursoId || ''); });
+        return c ? c.nome : 'Curso do QR';
+    }
+    async function aplicarQrAula(texto, info) {
+        var docenteId = info.docenteId ? String(info.docenteId) : '';
+        var curso = cursos.find(function (c) { return String(c.id) === String(info.cursoId || ''); });
+        if (!docenteId && curso) docenteId = String(curso.docenteId || '');
+
+        var docSel = el('docente');
+        if (docSel) {
+            if (docenteId && !existeOpcao(docSel, docenteId)) {
+                var op = document.createElement('option');
+                op.value = docenteId;
+                op.textContent = (info.docente || nomeDocente(docenteId) || 'Docente da aula') + ' (do QR)';
+                docSel.insertBefore(op, docSel.options[1] || null);
+            }
+            docSel.value = docenteId;
+        }
+        docenteChange();
+
+        var cursoSel = el('curso');
+        if (cursoSel) {
+            if (info.cursoId && !existeOpcao(cursoSel, info.cursoId)) {
+                var opc = document.createElement('option');
+                opc.value = info.cursoId; opc.textContent = nomeCurso(info.cursoId) + ' (do QR)';
+                cursoSel.insertBefore(opc, cursoSel.options[1] || null);
+            }
+            cursoSel.value = String(info.cursoId || '');
+        }
+        await cursoChange();
+
+        var aulaSel = el('aula');
+        if (aulaSel) {
+            if (!existeOpcao(aulaSel, info._id)) {
+                aulaSel.insertBefore(new Option((info.data || '') + ' - ' + (info.conteudo || info.disciplina || info._id), info._id), aulaSel.options[1] || null);
+            }
+            aulaSel.value = String(info._id);
+        }
+        aulaChange();
+        function set(id, v) { var x = el(id); if (x) x.value = v || ''; }
+        set('data', info.data || '');
+        set('horario', info.horario || '');
+        set('conteudo', info.conteudo || '');
+        set('av-teorica', info.avTeorica || '');
+        set('av-pratica', info.avPratica || '');
+
+        qrAtual = {
+            valor: String(texto || '').trim(),
+            aulaId: String(info._id),
+            cursoId: String(info.cursoId || ''),
+            docenteId: docenteId,
+            aulaDescricao: info.conteudo || info.disciplina || info._id,
+            capturadaEm: new Date().toISOString(),
+            capturadaPor: (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) ? currentUserData.nome : 'Coordenação'
+        };
+        renderQr();
+        alert('Aula identificada pelo QR: ' + (info.conteudo || info.disciplina || info._id) + '. Docente, curso e aula foram preenchidos.');
+    }
+
     /* ------------------------------- SALVAR ----------------------------- */
 
     async function salvar() {
@@ -447,6 +750,17 @@
             disciplina: disciplina,
             disciplinaId: (discSel && discSel.selectedIndex >= 0 && discSel.options[discSel.selectedIndex].getAttribute('data-id')) || regSalvo.disciplinaId || '',
             aulaId: aulaId,
+            aulaVinculada: !!aulaId,
+            qrCode: qrAtual ? qrAtual.valor : '',
+            qrAula: qrAtual ? {
+                valor: qrAtual.valor,
+                aulaId: qrAtual.aulaId,
+                cursoId: qrAtual.cursoId,
+                docenteId: qrAtual.docenteId,
+                aulaDescricao: qrAtual.aulaDescricao,
+                capturadaEm: qrAtual.capturadaEm,
+                capturadaPor: qrAtual.capturadaPor
+            } : null,
             aula: ((el('conteudo') || {}).value || '').trim(),
             dataAula: dataAula,
             horaAula: ((el('horario') || {}).value || '').trim(),
@@ -598,6 +912,7 @@
             + '<p><b>Docente:</b> ' + esc(dona(r)) + '<br><b>CPF:</b> ' + esc(r.docenteCpf || '-')
             + '<br><b>Curso:</b> ' + esc(r.cursoNome || '-') + '</p>'
             + '<p><b>Disciplina:</b> ' + esc(r.disciplina || '-') + '<br><b>Aula:</b> ' + esc(r.aula || r.aulaId || '-')
+            + (r.aulaId ? ' <span style="font-size:9px;background:#e0e7ff;color:#3730a3;padding:2px 6px;border-radius:8px">Vinculada ao Cadastro de Cursos</span>' : '')
             + '<br><b>Data:</b> ' + esc(r.dataAula || '-') + ' <b>Horário:</b> ' + esc(r.horaAula || '-')
             + '<br><b>AV Teórica:</b> ' + esc(r.avTeorica || '-') + ' <b>AV Prática:</b> ' + esc(r.avPratica || '-') + '</p>'
             + '<p><b>Criado em:</b> ' + fmtData(r.criadoEm) + ' por ' + esc(r.criadoPor || '-')
@@ -606,6 +921,13 @@
             + '<p><b>Localização:</b> ' + (temLocal(r) ? esc(coords(r)) : '<span style="color:#dc2626">Não capturada</span>')
             + '<br><b>Precisão:</b> ' + (l.precisao ? Math.round(l.precisao) + ' m' : '-')
             + '<br><b>Capturada em:</b> ' + fmtData(l.capturadaEm) + '</p>'
+            + '<p><b>QR da aula:</b> ' + (r.qrAula
+                ? esc(r.qrAula.aulaDescricao || r.qrAula.aulaId || 'capturado')
+                    + ' <span style="font-size:9px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px">Capturado pela Coordenação</span>'
+                    + '<br><b>Conteúdo:</b> ' + esc(r.qrAula.valor || r.qrCode || '-')
+                    + '<br><b>Capturado em:</b> ' + fmtData(r.qrAula.capturadaEm)
+                    + '<br><b>Capturado por:</b> ' + esc(r.qrAula.capturadaPor || '-')
+                : '<span style="color:#94a3b8">Não capturado</span>') + '</p>'
             + (r.alunos && r.alunos.length ? '<p><b>Alunos:</b></p><table style="width:100%;border-collapse:collapse;font-size:11px">'
                 + r.alunos.map(function (a) {
                     return '<tr><td style="padding:4px;border-bottom:1px solid #eef2f7">' + esc(a.nome || '') + '</td>'
@@ -668,6 +990,8 @@
     window.apontAdmDisciplinaChange = disciplinaChange;
     window.apontAdmAulaChange = aulaChange;
     window.apontAdmCapturarGps = capturarGps;
+    window.apontAdmCapturarQr = capturarQr;
+    window.apontAdmPararQr = pararQr;
     window.apontAdmSalvar = salvar;
     window.apontAdmExcluir = excluir;
     window.apontAdmAbrirApontamento = abrirApontamento;
