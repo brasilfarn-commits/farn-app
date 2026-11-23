@@ -1692,6 +1692,7 @@ async function landingLoginAdmin(cpf, senha) {
 async function landingLoginUsuario(cpf, senha) {
     var fontes = [
         { colecao: 'candidatos', rotulo: 'Aluno/Formado' },
+        { colecao: 'docentesAdmin', rotulo: 'Docente' },
         { colecao: 'docentes', rotulo: 'Docente' },
         { colecao: 'usuarios', rotulo: 'Usuario' },
         { colecao: 'cffAlunos', rotulo: 'CFF' }

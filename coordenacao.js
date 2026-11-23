@@ -471,9 +471,13 @@ function criarCadastroAdminPessoa(cfg) {
         if (!dados.matricula) dados.matricula = admMatricula(dados.cpf);
         dados.tipo = cfg.tipoRegistro;
         dados.situacao = (editando && editando.situacao) || 'Ativo';
-        dados.permAdmin = (editando && editando.permAdmin && editando.permAdmin.itens)
-            ? editando.permAdmin
-            : { itens: admPermissoesPadrao(), atualizadoEm: agora };
+        /* O login do Portal consulta "status"; sem ele o cadastro cairia no
+           fallback e poderia ser recusado em telas que exigem Ativo. */
+        if (cfg.prefixo === 'doc') dados.status = (editando && editando.status) || 'Ativo';
+        var campoNovo = cfg.prefixo === 'doc' ? 'permPortal' : 'permAdmin';
+        dados[campoNovo] = (editando && editando[campoNovo] && editando[campoNovo].itens)
+            ? editando[campoNovo]
+            : { itens: (cfg.prefixo === 'doc' ? padraoPerm() : admPermissoesPadrao()), atualizadoEm: agora };
         dados.atualizadoEm = agora;
         try {
             if (editando && editando._id) {
@@ -483,9 +487,21 @@ function criarCadastroAdminPessoa(cfg) {
                 dados.cadastradoPor = admUsuarioAtual();
                 await ref().add(dados);
             }
+            /* Confere se o adaptador conseguiu enviar ao servidor antes de
+               confirmar. O cache local pode conter o registro mesmo quando o
+               envio falhou; nesse caso o dado some ao recarregar a pagina. */
+            var status = null;
+            try {
+                await new Promise(function (r) { setTimeout(r, 400); });
+                var banco = db();
+                if (banco && typeof banco.status === 'function') status = banco.status();
+            } catch (e2) {}
+            var pendente = status && (status.online === false || status.pendentes > 0);
             voltarForm();
             await inicializar(true);
-            alert(rotulo.charAt(0).toUpperCase() + rotulo.slice(1) + ' salvo na tabela própria "' + Colecao + '".');
+            var msg = rotulo.charAt(0).toUpperCase() + rotulo.slice(1) + ' salvo na tabela própria "' + Colecao + '".';
+            if (pendente) msg += '\n\nATENÇÃO: o servidor não confirmou a gravação. O registro pode desaparecer ao recarregar. Verifique a conexão com o servidor próprio e tente novamente.';
+            alert(msg);
         } catch (e) { alert('Erro ao salvar ' + rotulo + ': ' + e.message); }
         return false;
     }
@@ -559,13 +575,28 @@ function criarCadastroAdminPessoa(cfg) {
         w.document.close();
     }
 
-    /* ---------- PERMISSOES (somente Coordenação) ---------- */
+    /* ---------- PERMISSOES ----------
+       Coordenação: permAdmin (painel administrativo).
+       Docente: permPortal (Portal do Usuário). */
+    function campoPerm() { return cfg.prefixo === 'doc' ? 'permPortal' : 'permAdmin'; }
+    function modalPermId() { return cfg.prefixo === 'doc' ? 'doc-perm-modal' : 'adm-perm-modal'; }
+    function catalogoPerm() {
+        return cfg.prefixo === 'doc'
+            ? ((typeof puCatalogoPermissoes === 'function') ? puCatalogoPermissoes() : [])
+            : admCatalogoPermissoes();
+    }
+    function padraoPerm() {
+        return cfg.prefixo === 'doc'
+            ? ((typeof puPermissoesPadrao === 'function') ? puPermissoesPadrao() : {})
+            : admPermissoesPadrao();
+    }
     function abrirPermissoes(id) {
         var r = registros.find(function (x) { return x._id === id; }) || null;
         if (!r) return;
-        var itens = admPermissoesPadrao();
-        if (r.permAdmin && r.permAdmin.itens) Object.assign(itens, r.permAdmin.itens);
-        var catalogo = admCatalogoPermissoes();
+        var campo = campoPerm();
+        var itens = padraoPerm();
+        if (r[campo] && r[campo].itens) Object.assign(itens, r[campo].itens);
+        var catalogo = catalogoPerm();
         var idx = 0;
         var linhas = catalogo.map(function (g) {
             return '<div style="margin-bottom:18px">'
@@ -587,47 +618,53 @@ function criarCadastroAdminPessoa(cfg) {
                 }).join('')
                 + '</tbody></table></div>';
         }).join('');
-        var html = '<div class="modal-overlay" id="adm-perm-modal" onclick="if(event.target===this)coordFecharPermissoes()">'
+        var mid = modalPermId();
+        var fechar = P + 'FecharPermissoes';
+        var salvar = P + 'SalvarPermissoes';
+        var html = '<div class="modal-overlay" id="' + mid + '" onclick="if(event.target===this)' + fechar + '()">'
             + '<div class="modal-content" style="max-width:820px;width:95%">'
             + '<div class="modal-header"><h3><i class="fa-solid fa-shield-halved" style="color:#7c3aed;margin-right:8px"></i> Permissões — ' + admEsc(r.nome) + '</h3>'
-            + '<button class="modal-close" onclick="coordFecharPermissoes()"><i class="fa-solid fa-xmark"></i></button></div>'
+            + '<button class="modal-close" onclick="' + fechar + '()"><i class="fa-solid fa-xmark"></i></button></div>'
             + '<div class="modal-body">'
             + '<p style="font-size:12px;color:#475569;margin:0 0 12px">Marque <b>Ver</b> para liberar a tela/aba e <b>Editar</b> para permitir alterações. Itens novos entram marcados apenas para visualização.</p>'
             + linhas
             + '</div>'
             + '<div style="display:flex;gap:8px;justify-content:flex-end;padding:14px;border-top:1px solid #e2e8f0">'
-            + '<button class="btn-outline" onclick="coordFecharPermissoes()">Cancelar</button>'
-            + '<button class="btn-primary" onclick="coordSalvarPermissoes(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-floppy-disk"></i> Salvar e aplicar no login</button>'
+            + '<button class="btn-outline" onclick="' + fechar + '()">Cancelar</button>'
+            + '<button class="btn-primary" onclick="' + salvar + '(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-floppy-disk"></i> Salvar e aplicar no login</button>'
             + '</div></div></div>';
-        var antigo = document.getElementById('adm-perm-modal');
+        var antigo = document.getElementById(mid);
         if (antigo) antigo.remove();
         document.body.insertAdjacentHTML('beforeend', html);
     }
     function fecharPermissoes() {
-        var m = document.getElementById('adm-perm-modal');
+        var m = document.getElementById(modalPermId());
         if (m) m.remove();
     }
     async function salvarPermissoes(id) {
         var itens = {};
-        document.querySelectorAll('#adm-perm-modal .admperm-check').forEach(function (cb) {
+        document.querySelectorAll('#' + modalPermId() + ' .admperm-check').forEach(function (cb) {
             var chave = cb.getAttribute('data-chave');
             var acao = cb.getAttribute('data-acao');
             if (!itens[chave]) itens[chave] = { ver: false, editar: false };
             itens[chave][acao] = cb.checked;
         });
+        var campo = campoPerm();
         try {
-            await ref(id).update({
-                permAdmin: { itens: itens, atualizadoEm: new Date().toISOString() }
-            });
+            var dados = {};
+            dados[campo] = { itens: itens, atualizadoEm: new Date().toISOString() };
+            await ref(id).update(dados);
             fecharPermissoes();
             await inicializar(true);
             var r = registros.find(function (x) { return x._id === id; }) || {};
-            if (admEhCoordenador() && currentUserData && currentUserData._docId === id) {
-                currentUserData.permAdmin = { itens: itens };
-                if (typeof applyUserPermissions === 'function') applyUserPermissions();
-                if (typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
+            var u = (typeof currentUserData !== 'undefined') ? currentUserData : null;
+            if (u && u._docId === id) {
+                u[campo] = { itens: itens };
+                if (cfg.prefixo === 'coord' && typeof applyUserPermissions === 'function') applyUserPermissions();
+                if (cfg.prefixo === 'coord' && typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
+                if (cfg.prefixo === 'doc' && typeof puAplicarPermissoes === 'function') puAplicarPermissoes();
             }
-            alert('Permissões salvas para ' + (r.nome || 'o coordenador') + '.');
+            alert('Permissões salvas para ' + (r.nome || ('o ' + rotulo)) + '.');
         } catch (e) { alert('Erro ao salvar permissões: ' + e.message); }
     }
 
@@ -688,9 +725,7 @@ function criarCadastroAdminPessoa(cfg) {
                 + '<td style="padding:8px;color:#475569;font-size:11px">' + admEsc(contato) + '</td>'
                 + '<td style="padding:8px"><span class="badge" style="background:#f1f5f9;color:#475569">' + admEsc(r.situacao || 'Ativo') + '</span></td>'
                 + '<td style="padding:8px"><div class="actions-cell">'
-                + (cfg.prefixo === 'coord'
-                    ? '<button class="btn-outline btn-sm" title="PERMISSÕES" onclick="coordPermissoes(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-shield-halved"></i> PERMISSÕES</button>'
-                    : '')
+                + '<button class="btn-outline btn-sm" title="PERMISSÕES" onclick="' + P + 'Permissoes(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-shield-halved"></i> PERMISSÕES</button>'
                 + (podeEditar
                     ? '<button class="btn-icon" title="Editar" onclick="' + P + 'Editar(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-pen"></i></button>'
                     : '')
@@ -723,6 +758,9 @@ function criarCadastroAdminPessoa(cfg) {
     if (cfg.prefixo === 'doc') {
         window.docFotoArquivo = docFotoArquivo;
         window.docFotoRemover = docFotoRemover;
+        window.docPermissoes = abrirPermissoes;
+        window.docSalvarPermissoes = salvarPermissoes;
+        window.docFecharPermissoes = fecharPermissoes;
     }
 }
 

@@ -116,6 +116,11 @@
             <button id="pu-menu-inicio" class="ativo" onclick="puSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
             <button id="pu-menu-dados" onclick="puSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
             <button id="pu-menu-cursos" onclick="puSetView('cursos')"><i class="fa-solid fa-book-open"></i> Cursos</button>
+            <button id="pu-menu-av" onclick="puSetView('av')"><i class="fa-solid fa-file-pen"></i> Responder AV Teórica</button>
+            <button id="pu-menu-relatorios" onclick="puSetView('relatorios')"><i class="fa-solid fa-chart-column"></i> Relatórios</button>
+            <button id="pu-menu-apontar" onclick="puSetView('apontar')"><i class="fa-solid fa-user-check"></i> Apontar alunos</button>
+            <button id="pu-menu-libav" onclick="puSetView('libav')"><i class="fa-solid fa-paper-plane"></i> Liberar AV Teórica</button>
+            <button id="pu-menu-aulasdoc" onclick="puSetView('aulasdoc')"><i class="fa-solid fa-calendar-days"></i> Minhas aulas</button>
         </nav>
         <div class="pu-drawer-foot">
             <button onclick="puLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
@@ -154,9 +159,57 @@
                 <div class="pu-card"><h2><i class="fa-solid fa-book" style="color:#2563eb;margin-right:8px"></i> Guia do Curso</h2>
                     <div id="pu-guias"><div class="pu-aviso">Carregando seus cursos...</div></div></div>
             </div>
+            <!-- RESPONDER AV TEORICA (ALUNO) -->
+            <div class="pu-view" id="pu-view-av">
+                <div class="pu-secao-titulo"><i class="fa-solid fa-file-pen" style="color:#0f766e;margin-right:8px"></i> Responder AV Teórica</div>
+                <div class="pu-card"><h2>Escolha o curso em andamento</h2>
+                    <select id="pu-av-curso" class="config-input" style="width:100%;max-width:520px" onchange="puAvAbrirLista(this.value)"><option value="">— Selecione —</option></select>
+                </div>
+                <div class="pu-card"><h2>Avaliações teóricas</h2><div id="pu-av-lista"><div class="pu-aviso">Selecione um curso para ver as avaliações.</div></div></div>
+            </div>
+            <!-- RELATORIOS -->
+            <div class="pu-view" id="pu-view-relatorios">
+                <div class="pu-secao-titulo"><i class="fa-solid fa-chart-column" style="color:#0f766e;margin-right:8px"></i> Relatórios</div>
+                <div class="pu-card"><div class="pu-grid" id="pu-relatorios-lista"><div class="pu-aviso">Nenhum relatório disponível no momento.</div></div></div>
+            </div>
+            <!-- ACOES DO DOCENTE -->
+            <div class="pu-view" id="pu-view-apontar">
+                <div class="pu-secao-titulo"><i class="fa-solid fa-user-check" style="color:#0f766e;margin-right:8px"></i> Apontar alunos</div>
+                <div class="pu-card"><h2>Seus cursos vinculados</h2><div id="pu-apontar-cursos"></div></div>
+                <div class="pu-card"><h2>Apontamentos das aulas</h2><div id="pu-apontar-lista"><div class="pu-aviso">Carregando...</div></div></div>
+            </div>
+            <div class="pu-view" id="pu-view-libav">
+                <div class="pu-secao-titulo"><i class="fa-solid fa-paper-plane" style="color:#0f766e;margin-right:8px"></i> Liberar AV Teórica</div>
+                <div class="pu-card"><h2>Seus cursos vinculados</h2><div id="pu-libav-cursos"></div></div>
+                <div class="pu-card"><h2>AV Teórica cadastrada</h2><div id="pu-libav-lista"><div class="pu-aviso">Carregando...</div></div></div>
+            </div>
+            <div class="pu-view" id="pu-view-aulasdoc">
+                <div class="pu-secao-titulo"><i class="fa-solid fa-calendar-days" style="color:#0f766e;margin-right:8px"></i> Minhas aulas</div>
+                <div class="pu-card"><h2>Seus cursos vinculados</h2><div id="pu-aulasdoc-cursos"></div></div>
+                <div class="pu-card"><h2>Aulas</h2><div id="pu-aulasdoc-lista"><div class="pu-aviso">Carregando...</div></div></div>
+            </div>
         </div>
     </div>
+
+    <!-- MODAL GENÉRICO (AV / APONTAMENTO) -->
+    <div class="pu-drawer-overlay" id="pu-modal-overlay" onclick="puModalFechar()"></div>
+    <div class="pu-drawer" id="pu-modal" style="left:auto;right:0;width:min(520px,96vw);transform:translateX(105%);border-radius:14px 0 0 14px;padding:18px;overflow:auto">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+            <div style="flex:1"><h2 id="pu-modal-titulo" style="font-size:15px;color:#0f172a"></h2><div id="pu-modal-sub" style="font-size:11px;color:#64748b;margin-top:3px"></div></div>
+            <button class="btn-outline btn-sm" onclick="puModalFechar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="pu-modal-corpo" style="font-size:12px;color:#334155"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;border-top:1px solid #e2e8f0;padding-top:12px">
+            <button class="btn-outline" onclick="puModalFechar()">Cancelar</button>
+            <button class="btn-primary" id="pu-modal-enviar">Salvar</button>
+        </div>
+    </div>
+    <style>
+        #pu-modal.aberto { transform:translateX(0) !important; }
+        #pu-modal-overlay.aberto { display:block; }
+    </style>
 <script src="farn-db.js?v=12"></script>
+<script src="portal-permissoes.js?v=2"></script>
 <script>
         function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
 
@@ -170,11 +223,12 @@
             appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
+        var dbFirestore = new FarnDB('https://farn-api.farn-api-farn.workers.dev');
 
         var puUser = null;
         var FONTES = [
             { colecao:'candidatos', rotulo:'Aluno / Formado' },
+            { colecao:'docentesAdmin', rotulo:'Docente' },
             { colecao:'docentes', rotulo:'Docente' },
             { colecao:'usuarios', rotulo:'Usuário' },
             { colecao:'cffAlunos', rotulo:'CFF' }
@@ -201,14 +255,19 @@
             var d = document.getElementById('pu-drawer'); var o = document.getElementById('pu-overlay');
             if (d) d.classList.remove('aberto'); if (o) o.classList.remove('aberto');
         }
+        var PU_VIEWS = ['inicio','dados','cursos','av','relatorios','apontar','libav','aulasdoc'];
         function puSetView(view) {
-            ['inicio','dados','cursos'].forEach(function (v) {
+            PU_VIEWS.forEach(function (v) {
                 var el = document.getElementById('pu-view-' + v); if (el) el.className = 'pu-view' + (v === view ? ' ativo' : '');
                 var btn = document.getElementById('pu-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
             });
             puFecharMenu();
             if (view === 'dados') puCarregarDados();
             if (view === 'cursos') puCarregarGuias();
+            if (view === 'av') puAvPreencherCursos();
+            if (view === 'apontar' && typeof puDocCarregarApontamentos === 'function') puDocCarregarApontamentos();
+            if (view === 'libav' && typeof puDocCarregarLibAv === 'function') puDocCarregarLibAv();
+            if (view === 'aulasdoc' && typeof puDocCarregarAulas === 'function') puDocCarregarAulas();
         }
 
         async function puLogin(ev) {
@@ -290,6 +349,8 @@
         }
 
         function puMostrarApp() {
+            /* Registra relatorios novos para o quadro PERMISSOES do admin. */
+            if (typeof puRegistrarRelatorios === 'function') puRegistrarRelatorios();
             document.getElementById('pu-tela-login').style.display='none';
             var app = document.getElementById('pu-tela-app'); if (app) app.style.display='block';
             var nome = puUser.nome || puUser.nomeCompleto || 'Usuário';
@@ -299,6 +360,8 @@
             var vinMenu = document.getElementById('pu-vinculo-menu'); if (vinMenu) vinMenu.textContent = puUser._rotulo || 'Usuário';
             var boas = document.getElementById('pu-boas-vindas-nome');
             if (boas) boas.textContent = (puUser.nome || puUser.nomeCompleto || 'usuário').split(' ')[0];
+            /* Permissões do docente (quarto Ver/Editar salvo no cadastro dele). */
+            if (typeof puAplicarPermissoes === 'function') puAplicarPermissoes();
             /* A tela inicial mostra só as boas-vindas; as outras abas carregam
                seus dados apenas quando o usuario abrir cada uma. */
             puInicioCarregar();
@@ -317,6 +380,31 @@
             if (!foto) foto = puUser.photoDataUrl || puUser.foto || puUser.fotoUrl || null;
             if (foto) { img.src = foto; img.style.display = ''; }
             else { img.style.display = 'none'; }
+        }
+
+        /* Preenche o seletor da aba "Responder AV Teórica" com os cursos
+           EM ANDAMENTO vinculados ao CPF do usuario logado. */
+        var PU_AV_CURSOS = [];
+        async function puAvPreencherCursos() {
+            var sel = document.getElementById('pu-av-curso'); if (!sel || !puUser) return;
+            var cpf = puSoDigitos(puUser.cpf); if (!cpf) return;
+            try {
+                var snap = await dbFirestore.collection('cursosCadastro').get();
+                var lista = [];
+                for (var i = 0; i < snap.docs.length; i++) {
+                    var d = snap.docs[i], dados = d.data() || {};
+                    if (puCursoConcluido(dados) || dados.permPortalCurso === false) continue;
+                    var p = await dbFirestore.collection('cursosCadastro').doc(d.id)
+                        .collection('individuos').where('cpf', '==', cpf).limit(1).get();
+                    if (!p.empty) lista.push(Object.assign({ _id: d.id }, dados));
+                }
+                lista.sort(function (a, b) { return String(a.nome || '').localeCompare(String(b.nome || '')); });
+                PU_AV_CURSOS = lista;
+                sel.innerHTML = '<option value="">— Selecione um curso —</option>'
+                    + lista.map(function (c) { return '<option value="' + puEsc(c._id) + '">' + puEsc(c.nome) + '</option>'; }).join('');
+            } catch (e) {
+                sel.innerHTML = '<option value="">Erro ao carregar cursos</option>';
+            }
         }
 
         /* GUIA DO CURSO: apostila e certificado dos cursos em que o CPF do
@@ -347,18 +435,27 @@
             try {
                 var snap = await dbFirestore.collection('cursosCadastro').get();
                 var concluidos = [], andamento = [];
+                var ehDoc = (typeof puEhDocente === 'function') && puEhDocente();
+                var docId = String(puUser._docId || '');
                 for (var i = 0; i < snap.docs.length; i++) {
-                    var doc = snap.docs[i];
-                    var pessoa = await dbFirestore.collection('cursosCadastro').doc(doc.id)
-                        .collection('individuos').where('cpf', '==', cpf).limit(1).get();
-                    if (pessoa.empty) continue;
-                    var dadosPessoa = pessoa.docs[0].data() || {};
+                    var doc = snap.docs[i], dadosCurso = doc.data() || {};
+                    var dadosPessoa = {};
+                    if (ehDoc) {
+                        /* Docente: somente cursos onde ele e o Docente responsavel. */
+                        if (String(dadosCurso.docenteResponsavelId || '') !== docId) continue;
+                    } else {
+                        var pessoa = await dbFirestore.collection('cursosCadastro').doc(doc.id)
+                            .collection('individuos').where('cpf', '==', cpf).limit(1).get();
+                        if (pessoa.empty) continue;
+                        dadosPessoa = pessoa.docs[0].data() || {};
+                    }
                     var cursoData = Object.assign({
                         _id: doc.id,
                         _projeto: dadosPessoa.projeto || '',
                         _turma: dadosPessoa.turma || '',
                         _situacao: dadosPessoa.situacaoCurso || ''
-                    }, doc.data() || {});
+                    }, dadosCurso);
+                    if (ehDoc) { andamento.push(cursoData); continue; }
                     /* O aluno do curso aparece sempre. A pagina do curso pode ser
                        desativada pelo coordenador; certificado e ficha tem suas
                        proprias permissoes. */
@@ -397,10 +494,17 @@
                     var selo = '<span class="pu-selo andamento">EM ANDAMENTO</span>';
                     var situacao = String(c._situacao || '').trim();
                     var linha = [c._projeto, c._turma].filter(Boolean).map(puEsc).join(' • ');
+                    var responder = '';
+                    var ehDoc = (typeof puEhDocente === 'function') && puEhDocente();
+                    var podeAv = (typeof puPermItem !== 'function') || puPermItem('pu:responderAv', 'ver');
+                    if (!ehDoc && podeAv) {
+                        responder = '<button class="btn-outline btn-sm" onclick="puAvSelecionarCurso(\'' + c._id + '\')"><i class="fa-solid fa-file-pen" style="color:#7c3aed;margin-right:5px"></i> RESPONDER AV TEÓRICA</button>';
+                    }
                     return '<div class="pu-curso-card andamento"><div class="pu-curso-nome">' + puEsc(c.nome) + selo + '</div>'
                         + (linha || situacao ? '<div style="font-size:11px;color:#64748b;margin-top:4px">' + linha + (linha && situacao ? ' • ' : '') + (situacao ? puEsc(situacao) : '') + '</div>' : '')
                         + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px">'
                         + '<button class="btn-primary btn-sm" onclick="puAbrirCursoDoPortal(\'' + c._id + '\')"><i class="fa-solid fa-arrow-right" style="margin-right:6px"></i> Entrar no curso</button>'
+                        + responder
                         + '</div></div>';
                 }
 
@@ -577,6 +681,14 @@
                 console.error('Erro ao carregar ficha:', e);
                 box.innerHTML = '<div class="pu-aviso">Não foi possível carregar a Ficha Geral. Tente novamente mais tarde.</div>';
             }
+        }
+
+        /* Abre a aba de AV Teórica já com o curso escolhido no card. */
+        function puAvSelecionarCurso(cid) {
+            var sel = document.getElementById('pu-av-curso');
+            if (sel) sel.value = cid;
+            puSetView('av');
+            if (typeof puAvAbrirLista === 'function') puAvAbrirLista(cid);
         }
 
         function puLogout() {
