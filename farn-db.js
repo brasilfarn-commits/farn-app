@@ -402,6 +402,24 @@
     var mapa = await this._db._todos(this._col);
     return new DocSnap(this._db, this._col, this.id, mapa[this.id]);
   };
+  /* onSnapshot de um documento unico, igual ao Firestore. Sem isso o portal
+     so descobria mudancas de permissoes depois de relogar. */
+  DocRef.prototype.onSnapshot = function (cb, errCb) {
+    var self = this, ultima = null;
+    var listener = {
+      emitir: async function () {
+        try {
+          var snap = await self.get();
+          var chave = JSON.stringify(snap.data() === undefined ? null : snap.data());
+          if (chave !== ultima) { ultima = chave; cb(snap); }
+        } catch (e) { if (errCb) errCb(e); }
+      }
+    };
+    this._db.listeners.push(listener);
+    listener.emitir();
+    var db = this._db;
+    return function () { db.listeners = db.listeners.filter(function (l) { return l !== listener; }); };
+  };
   DocRef.prototype.set = function (data, opts) {
     var merge = !!(opts && opts.merge);
     var limpo = limpar(data, merge);

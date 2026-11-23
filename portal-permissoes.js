@@ -105,20 +105,25 @@ function puPermItem(chave, acao) {
     }
     return acao === 'ver';
 }
+var PU_PERM_MENU_DOCENTE = {
+    inicio: 'pu:inicio',
+    relatorios: 'pu:relatorios',
+    apontar: 'pu:apontarAlunos',
+    libav: 'pu:liberarAv',
+    aulasdoc: 'pu:minhasAulas',
+    av: 'pu:responderAv'
+};
+function puPermMenuDocente(chave) {
+    if (!puEhDocente()) return true;
+    var permissao = PU_PERM_MENU_DOCENTE[chave];
+    if (!permissao) return true;
+    return puPermItem(permissao, 'ver') !== false;
+}
 function puAplicarPermissoes() {
-    if (!puEhDocente()) return;
-    var mapa = {
-        'pu-menu-inicio': 'pu:inicio',
-        'pu-menu-relatorios': 'pu:relatorios',
-        'pu-menu-apontar': 'pu:apontarAlunos',
-        'pu-menu-libav': 'pu:liberarAv',
-        'pu-menu-aulasdoc': 'pu:minhasAulas',
-        'pu-menu-av': 'pu:responderAv'
-    };
-    Object.keys(mapa).forEach(function (id) {
-        var btn = document.getElementById(id);
-        if (btn) btn.style.display = puPermItem(mapa[id], 'ver') ? '' : 'none';
-    });
+    /* Os botoes do menu sao tratados por puAplicarMenuPortal(), que cruza o
+       SIM/NAO global com a permissao individual do docente. Se este funcao
+       tambem escrevesse style.display, uma das duas regras sobrescreveria a
+       outra e as marcadores pareceriam nao responder. */
     document.querySelectorAll('#pu-view-relatorios [data-rel]').forEach(function (node) {
         node.style.display = puPermItem('rel:' + node.getAttribute('data-rel'), 'ver') ? '' : 'none';
     });
@@ -426,19 +431,38 @@ async function puCarregarMenuPortalPermissoes() {
 }
 async function puAplicarMenuPortal() {
     var mapa = await puCarregarMenuPortalPermissoes();
+    var final = {};
     PU_MENU_PORTAL_ITENS.forEach(function (k) {
+        /* SIM/NAO do Cadastro de Cursos e permissao Ver do docente:
+           a secao aparece apenas se as duas estiverem liberadas. */
+        final[k] = mapa[k] !== false && puPermMenuDocente(k);
         var btn = document.getElementById('pu-menu-' + k);
-        if (btn) btn.style.display = mapa[k] ? '' : 'none';
+        if (btn) btn.style.display = final[k] ? '' : 'none';
         var view = document.getElementById('pu-view-' + k);
-        if (view) view.setAttribute('data-portal-menu-visivel', mapa[k] ? '1' : '0');
+        if (view) view.setAttribute('data-portal-menu-visivel', final[k] ? '1' : '0');
     });
     var ativo = document.querySelector('#pu-tela-app .pu-view.ativo');
     if (ativo && ativo.getAttribute('data-portal-menu-visivel') === '0') {
-        var primeiro = PU_MENU_PORTAL_ITENS.filter(function (k) { return mapa[k]; })[0];
+        var primeiro = PU_MENU_PORTAL_ITENS.filter(function (k) { return final[k]; })[0];
         if (primeiro && typeof puSetView === 'function') puSetView(primeiro);
     }
-    return mapa;
+    return final;
 }
+
+/* Reage imediatamente quando o admin salva/altera o SIM/NAO, sem exigir
+   recarregar a pagina ou entrar de novo no portal. */
+var PU_OBS_MENU_PORTAL = false;
+function puObservarMenuPortal() {
+    if (PU_OBS_MENU_PORTAL) return;
+    if (typeof dbFirestore === 'undefined' || !dbFirestore) return;
+    PU_OBS_MENU_PORTAL = true;
+    try {
+        dbFirestore.collection('configuracoes').doc('portalMenu').onSnapshot(function () {
+            puAplicarMenuPortal().catch(function () {});
+        });
+    } catch (e) { PU_OBS_MENU_PORTAL = false; }
+}
+puObservarMenuPortal();
 
 /* Exposto para os scripts inline do portal. */
 window.puAplicarMenuPortal = puAplicarMenuPortal;
