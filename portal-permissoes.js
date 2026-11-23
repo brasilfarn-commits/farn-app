@@ -416,6 +416,10 @@ function puModalFechar() {
    ===================================================================== */
 var PU_MENU_PORTAL_ITENS = ['inicio','dados','cursos','av','relatorios','apontar','libav','aulasdoc'];
 async function puCarregarMenuPortalPermissoes() {
+    /* O dbFirestore e criado pelo script inline da pagina, que roda depois
+       deste arquivo. Registra o observador na primeira leitura, quando o
+       banco ja existe. */
+    puObservarMenuPortal();
     var mapa = {};
     PU_MENU_PORTAL_ITENS.forEach(function (k) { mapa[k] = true; });
     try {
@@ -466,6 +470,7 @@ puObservarMenuPortal();
 
 /* Exposto para os scripts inline do portal. */
 window.puAplicarMenuPortal = puAplicarMenuPortal;
+window.puObservarMenuPortal = puObservarMenuPortal;
 window.puCatalogoPermissoes = puCatalogoPermissoes;
 window.puPermissoesPadrao = puPermissoesPadrao;
 window.puRegistrarRelatorios = puRegistrarRelatorios;
