@@ -1082,6 +1082,10 @@
                         <i class="fa-solid fa-user-tie"></i>
                         <span>Coordenação</span>
                     </a>
+                    <a href="#" class="nav-item" data-secao="admin-apontamentos-adm" onclick="showAdminSection('admin-apontamentos-adm', this); apontAdmInicializar()">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>Apontamentos ADM</span>
+                    </a>
                     <a href="#" class="nav-item" data-secao="admin-docente" onclick="showAdminSection('admin-docente', this); docenteAdminInicializar()">
                         <i class="fa-solid fa-chalkboard-user"></i>
                         <span>Docente</span>
@@ -3386,6 +3390,76 @@
                     </div>
                 </div>
 
+                <!-- SECAO APONTAMENTOS ADM -->
+                <div id="admin-apontamentos-adm" class="admin-section">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-location-dot" style="color:#16a34a;margin-right:8px"></i> Apontamentos ADM</h3>
+                            <small>Apontamento manual de presença do docente na aula em que ele está cadastrado. Cada registro pertence somente ao docente selecionado e guarda a localização capturada no navegador.</small>
+                            <div class="header-actions">
+                                <button class="btn-outline btn-sm" onclick="apontAdmInicializar()" title="Recarregar a lista">
+                                    <i class="fa-solid fa-rotate"></i> Atualizar
+                                </button>
+                                <button class="btn-primary" onclick="apontAdmNovo()" title="Criar apontamento manual">
+                                    <i class="fa-solid fa-plus"></i> CRIAR APONTAMENTO MANUAL
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="aptadm-form-painel" style="display:none;margin-bottom:14px"></div>
+                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+                                <input id="aptadm-busca" class="config-input" placeholder="Buscar por docente, disciplina, aula, data ou local..." oninput="apontAdmRender()" style="width:100%;max-width:560px">
+                                <span id="aptadm-count" style="font-size:11px;color:#64748b;font-weight:700">0</span>
+                            </div>
+                            <div style="overflow:auto">
+                                <table class="data-table" id="aptadm-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Docente</th>
+                                            <th>Disciplina / Aula</th>
+                                            <th>Data</th>
+                                            <th>Local</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="aptadm-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL APONTAMENTOS ADM - VISUALIZAR REGISTRO -->
+                <div id="aptadm-ver-overlay" class="modal-overlay hidden" onclick="if(event.target===this)apontAdmFecharVer()">
+                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:860px;max-height:92vh;overflow-y:auto">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-file-lines" style="color:#16a34a;margin-right:8px"></i> Registro do apontamento</h3>
+                            <button class="modal-close" onclick="apontAdmFecharVer()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body" id="aptadm-ver-body"></div>
+                        <div class="modal-header" style="border-top:1px solid #e2e8f0;border-bottom:none;justify-content:flex-end;gap:10px;padding:14px 20px">
+                            <button type="button" class="btn-icon" onclick="apontAdmFecharVer()">Fechar</button>
+                            <button type="button" class="btn-icon" onclick="apontAdmImprimir()" style="background:#16a34a;color:#fff;border-color:#16a34a">
+                                <i class="fa-solid fa-print"></i> Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL APONTAMENTOS ADM - REGISTRO DE LOCAL -->
+                <div id="aptadm-local-overlay" class="modal-overlay hidden" onclick="if(event.target===this)apontAdmFecharLocal()">
+                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:900px;max-height:92vh;overflow-y:auto">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-map-location-dot" style="color:#16a34a;margin-right:8px"></i> Registro de Local</h3>
+                            <button class="modal-close" onclick="apontAdmFecharLocal()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body" id="aptadm-local-body"></div>
+                        <div class="modal-header" style="border-top:1px solid #e2e8f0;border-bottom:none;justify-content:flex-end;gap:10px;padding:14px 20px">
+                            <button type="button" class="btn-icon" onclick="apontAdmFecharLocal()">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SECAO PATENTES -->
                 <div id="admin-patentes" class="admin-section">
                     <div class="card full-width">
@@ -4902,7 +4976,7 @@
 
     <script src="cadastro-cursos-nucleo.js?v=1"></script>
     <script src="portal-permissoes.js?v=2"></script>
-    <script src="coordenacao.js?v=7"></script>
+    <script src="coordenacao.js?v=8"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
@@ -4910,9 +4984,10 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=123"></script>
+    <script src="app.js?v=124"></script>
     <script src="recad-admin.js?v=1"></script>
     <script src="cadastro-cursos.js?v=30"></script>
+    <script src="apontamentos-adm.js?v=1"></script>
 
     <script src="noticias-slider.js?v=1"></script>
     <script src="whatfarn.js?v=18"></script>

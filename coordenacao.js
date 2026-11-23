@@ -182,6 +182,13 @@ var ADM_PERM_FIXO = [
         { chave: 'doc:edicao', rotulo: 'Edição de Docentes', acao: true },
         { chave: 'doc:exclusao', rotulo: 'Exclusão de Docentes', acao: true },
         { chave: 'doc:impressao', rotulo: 'Impressão de Docentes', acao: true }
+    ]},
+    { titulo: 'APONTAMENTOS ADM', itens: [
+        { chave: 'sec:apontamentosAdm', rotulo: 'Acessar Apontamentos ADM' },
+        { chave: 'aptadm:criar', rotulo: 'Criar apontamento manual / apontar alunos', acao: true },
+        { chave: 'aptadm:edicao', rotulo: 'Editar apontamentos', acao: true },
+        { chave: 'aptadm:exclusao', rotulo: 'Excluir apontamentos', acao: true },
+        { chave: 'aptadm:impressao', rotulo: 'Imprimir apontamentos', acao: true }
     ]}
 ];
 
