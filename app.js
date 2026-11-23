@@ -1587,6 +1587,158 @@ function landingCloseMenu() {
     document.body.style.overflow = '';
 }
 
+/* =====================================================================
+   LOGIN COM ESCOLHA DA FONTE DE DADOS
+   Um mesmo CPF puede estar em varios cadastros. Quando ha mais de uma
+   origem valida, o usuario escolhe com qual perfil quer entrar, pois cada
+   origem carrega permissoes diferentes (admin, coordenacao, docente, etc).
+   ===================================================================== */
+var LANDING_ORIGENS = [];
+var LANDING_CPF_ATUAL = '';
+
+function landingEhConcluido(txt) {
+    return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().indexOf('concluid') >= 0
+        || String(txt || '').toLowerCase().indexOf('formado') >= 0;
+}
+
+/* Consulta todas as fontes e devolve apenas os vinculos validos para CPF+senha. */
+async function landingDescobrirOrigens(cpf, senha) {
+    var opcoes = [];
+    if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
+        opcoes.push({
+            id: 'admin', rotulo: 'ADMINISTRADOR',
+            detalhe: 'Acesso total ao painel administrativo',
+            destino: 'admin',
+            user: { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] }
+        });
+    }
+    var fontes = [
+        { id: 'coordenacao', colecao: 'coordenacao', rotulo: 'COORDENAÇÃO', detalhe: 'Painel administrativo com permissões próprias', destino: 'admin' },
+        { id: 'docentesAdmin', colecao: 'docentesAdmin', rotulo: 'DOCENTE', detalhe: 'Cadastro de Docentes — Portal do Usuário', destino: 'usuario' },
+        { id: 'docentes', colecao: 'docentes', rotulo: 'DOCENTE', detalhe: 'Cadastro Geral de Docentes — Portal do Usuário', destino: 'usuario' },
+        { id: 'candidatos', colecao: 'candidatos', rotulo: 'ALUNO/FORMADO', detalhe: 'Cadastro Geral de Indivíduos', destino: 'usuario' },
+        { id: 'usuarios', colecao: 'usuarios', rotulo: 'USUÁRIO', detalhe: 'Usuário do sistema', destino: 'usuario' },
+        { id: 'cffAlunos', colecao: 'cffAlunos', rotulo: 'CFF', detalhe: 'Aluno do CFF', destino: 'usuario' }
+    ];
+    if (dbFirestore) {
+        for (var i = 0; i < fontes.length; i++) {
+            var f = fontes[i];
+            try {
+                var snap = await dbFirestore.collection(f.colecao).where('cpf', '==', cpf).get();
+                snap.forEach(function (doc) {
+                    var d = doc.data() || {};
+                    if (d.senha !== senha) return;
+                    if (f.id === 'coordenacao') {
+                        if (String(d.situacao || 'Ativo').toLowerCase() === 'inativo') return;
+                    } else {
+                        var st = d.status;
+                        if (!st && f.colecao === 'usuarios') st = (d.ativo === false ? 'Inativo' : 'Acadêmico');
+                        if (!st) st = 'Ativo';
+                        if (!fgStatusAtivo(st)) return;
+                    }
+                    var rotulo = f.rotulo, detalhe = f.detalhe;
+                    if (f.colecao === 'candidatos') {
+                        rotulo = landingEhConcluido(d.status || d.situacao) ? 'FORMADO CONCLUIDO' : 'ALUNO EM ANDAMENTO';
+                    }
+                    var user = Object.assign({}, d, {
+                        _origem: f.colecao,
+                        _rotulo: f.rotulo,
+                        _docId: doc.id
+                    });
+                    if (f.id === 'coordenacao') {
+                        user.nome = d.nome || 'Coordenador';
+                        user.cpf = cpf;
+                        user.permissoes = d.permissoes || [];
+                    }
+                    opcoes.push({ id: f.id, rotulo: rotulo, detalhe: detalhe, destino: f.destino, user: user });
+                });
+            } catch (e) { console.warn('Login: falha ao consultar ' + f.colecao, e); }
+        }
+        /* Alunos tambem podem estar vinculados apenas dentro dos cursos. */
+        try {
+            var cursosSnap = await dbFirestore.collection('cursosCadastro').get();
+            for (var c = 0; c < cursosSnap.docs.length; c++) {
+                var cursoDoc = cursosSnap.docs[c];
+                var ind = await dbFirestore.collection('cursosCadastro').doc(cursoDoc.id)
+                    .collection('individuos').where('cpf', '==', cpf).limit(1).get();
+                if (ind.empty) continue;
+                var dCurso = ind.docs[0].data() || {};
+                if (dCurso.senha !== senha) continue;
+                if (dCurso.pediuBaixa === true || String(dCurso.situacaoCurso || '') === 'Pediu Baixa') continue;
+                var dadosCurso = cursoDoc.data() || {};
+                var concluido = landingEhConcluido(dadosCurso.status) || landingEhConcluido(dCurso.situacaoCurso);
+                opcoes.push({
+                    id: 'curso:' + cursoDoc.id,
+                    rotulo: concluido ? 'FORMADO CONCLUIDO' : 'ALUNO EM ANDAMENTO',
+                    detalhe: 'Curso: ' + (dadosCurso.nome || ''),
+                    destino: 'usuario',
+                    user: Object.assign({}, dCurso, {
+                        _origem: 'cursosCadastro',
+                        _rotulo: 'Curso: ' + String(dadosCurso.nome || ''),
+                        _docId: ind.docs[0].id,
+                        _cursoId: cursoDoc.id
+                    })
+                });
+            }
+        } catch (e) { console.warn('Login: falha ao consultar cursos', e); }
+    }
+    return opcoes;
+}
+
+function landingMostrarOrigens(opcoes, cpf) {
+    LANDING_ORIGENS = opcoes;
+    LANDING_CPF_ATUAL = cpf;
+    var box = document.getElementById('landing-origem-opcoes');
+    var msg = document.getElementById('landing-origem-msg');
+    if (!box) return;
+    if (msg) msg.textContent = '';
+    box.innerHTML = opcoes.map(function (o, i) {
+        return '<label class="landing-origem-op">'
+            + '<input type="radio" name="landing-origem" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>'
+            + '<span><b>' + landingEsc(o.rotulo) + '</b><small>' + landingEsc(o.detalhe || '') + '</small></span>'
+            + '</label>';
+    }).join('');
+    var modal = document.getElementById('landing-origem-modal');
+    if (modal) modal.classList.add('aberto');
+}
+function landingFecharOrigens() {
+    var modal = document.getElementById('landing-origem-modal');
+    if (modal) modal.classList.remove('aberto');
+    var btn = document.getElementById('landing-login-btn');
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+}
+async function landingConfirmarOrigem() {
+    var sel = document.querySelector('input[name="landing-origem"]:checked');
+    if (!sel) {
+        var msg = document.getElementById('landing-origem-msg');
+        if (msg) msg.textContent = 'Selecione uma das origens acima.';
+        return;
+    }
+    var opcao = LANDING_ORIGENS[Number(sel.value)];
+    if (!opcao) return;
+    await landingAplicarOrigem(opcao, LANDING_CPF_ATUAL);
+}
+async function landingAplicarOrigem(opcao, cpf) {
+    currentUserData = opcao.user;
+    saveLastLogin(cpf || opcao.user.cpf);
+    saveLoginState();
+    try { localStorage.setItem('farn_user_data', JSON.stringify(currentUserData)); } catch (e) {}
+    try { localStorage.setItem('farn_last_cpf', currentUserData.cpf || cpf); } catch (e) {}
+    landingFecharOrigens();
+    if (opcao.destino === 'admin') {
+        enterAdminPanel();
+    } else {
+        try { localStorage.setItem('pu_sessao', JSON.stringify(currentUserData)); } catch (e) {}
+        location.href = 'portal-usuario.html';
+    }
+}
+function landingEsc(txt) {
+    return String(txt == null ? '' : txt).replace(/[&<>"']/g, function (c) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+}
+
 async function landingLogin(event) {
     if (event) event.preventDefault();
     var cpf = document.getElementById('landing-login-cpf').value.replace(/\D/g, '');
@@ -1595,39 +1747,17 @@ async function landingLogin(event) {
     if (!cpf || !senha) { landingShowLoginError('Informe o CPF e a senha.'); return false; }
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
-        // Painel administrativo: so o CPF ADMIN_CPF + senha ADMIN_SENHA abrem o painel
-        var adminUser = null;
-        if (cpf === ADMIN_CPF && senha === ADMIN_SENHA) {
-            adminUser = { nome: 'Administrador Geral', cpf: ADMIN_CPF, permissoes: ['admin', 'pre-inscricao', 'docente', 'usuarios'] };
-        }
-
-        // Se é admin, tem acesso a TUDO
-        if (adminUser) {
-            currentUserData = adminUser;
-            saveLastLogin(cpf);
-            var portal = document.getElementById('landing-login-portal').value;
-            saveLoginState(); // salva farn_login = 'admin' e farn_user_data
-            if (portal === 'admin') {
-                enterAdminPanel();
-            } else if (portal === 'usuario') {
-                location.href = 'portal-usuario.html';
-            }
+        var opcoes = await landingDescobrirOrigens(cpf, senha);
+        if (!opcoes.length) {
+            landingShowLoginError('CPF ou senha inválidos, ou cadastro não está Ativo.');
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-            return true;
+            return false;
         }
-
-        // Não é admin - verifica se é usuário do sistema com permissão de acesso ao portal
-        var portal = document.getElementById('landing-login-portal').value;
-        var ok = false;
-        if (portal !== 'admin') {
-            ok = await landingLoginPortalPerm(cpf, senha, portal);
-        }
-        if (!ok) {
-            if (portal === 'admin') ok = await landingLoginAdmin(cpf, senha);
-            else if (portal === 'usuario') ok = await landingLoginUsuario(cpf, senha);
-        }
-        if (!ok) {
-            if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+        if (opcoes.length === 1) {
+            await landingAplicarOrigem(opcoes[0], cpf);
+        } else {
+            /* Mais de um vínculo: o usuário decide qual perfil usar. */
+            landingMostrarOrigens(opcoes, cpf);
         }
     } catch (e) {
         console.error('Erro no login:', e);
