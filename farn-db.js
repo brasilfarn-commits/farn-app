@@ -274,11 +274,18 @@
     var sinceAntes = this.since;
     var r = await this._req('/api/changes?since=' + this.since);
     var mudou = false;
+    var menorPulado = Infinity;
     (r.docs || []).forEach(function (d) {
       if (!self.cache[d.col]) self.cache[d.col] = {};
       /* Nunca deixa uma versao antiga do servidor sobrescrever uma
-         gravacao local que ainda aguarda confirmacao. */
-      if (self._temPendente(d.col, d.id)) return;
+         gravacao local que ainda aguarda confirmacao. Mas nao pode avancar
+         o since: a mudanca pulada precisa ser relida depois que a fila
+         esvaziar, senao o SIM/NAO alterado em outra maquina se perde. */
+      if (self._temPendente(d.col, d.id)) {
+        var ts = Number(d.updated_at);
+        if (isFinite(ts)) menorPulado = Math.min(menorPulado, ts);
+        return;
+      }
       if (d.data && d.data.__farnDelete) {
         if (Object.prototype.hasOwnProperty.call(self.cache[d.col], d.id)) {
           delete self.cache[d.col][d.id];
@@ -289,7 +296,9 @@
       self.cache[d.col][d.id] = d.data;
       mudou = true;
     });
-    this.since = r.since || this.since;
+    var novoSince = r.since || this.since;
+    if (menorPulado < Infinity && novoSince >= menorPulado) novoSince = menorPulado - 1;
+    this.since = novoSince;
     if (mudou || this.since !== sinceAntes) this._salvarLocal();
     if (mudou) this._avisarTodos();
   };
