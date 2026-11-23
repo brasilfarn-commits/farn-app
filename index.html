@@ -3021,7 +3021,10 @@
                                             <select id="cc-aula-av-teorica" class="config-input"><option value="">AV Teórica</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
                                             <select id="cc-aula-av-pratica" class="config-input"><option value="">AV Prática</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
                                         </div>
-                                        <button class="btn-primary btn-sm" onclick="ccSalvarAula()"><i class="fa-solid fa-plus"></i> Cadastrar aula</button>
+                                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                            <button id="cc-aula-salvar" class="btn-primary btn-sm" onclick="ccSalvarAula()"><i class="fa-solid fa-plus"></i> Cadastrar aula</button>
+                                            <button id="cc-aula-cancelar" class="btn-outline btn-sm" style="display:none" onclick="ccCancelarEdicaoAula()"><i class="fa-solid fa-xmark"></i> Cancelar edição</button>
+                                        </div>
                                         <div id="cc-aula-lista" style="margin-top:12px"></div>
                                     </div></div>
                             </div>
@@ -4997,8 +5000,8 @@
     <script src="farn-storage.js?v=2"></script>
     <script src="app.js?v=126"></script>
     <script src="recad-admin.js?v=2"></script>
-    <script src="cadastro-cursos.js?v=34"></script>
-    <script src="apontamentos-adm.js?v=2"></script>
+    <script src="cadastro-cursos.js?v=35"></script>
+    <script src="apontamentos-adm.js?v=3"></script>
 
     <script src="noticias-slider.js?v=1"></script>
     <script src="whatfarn.js?v=18"></script>

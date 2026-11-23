@@ -261,7 +261,7 @@ async function ccCarregarSelectDocentes() {
             var lista = [];
             snap.forEach(function (d) {
                 var x = d.data() || {};
-                lista.push({ id: d.id, nome: x.nome || '', matricula: x.matricula || '' });
+                lista.push({ id: d.id, nome: x.nome || '', matricula: x.matricula || '', cpf: x.cpf || '' });
             });
             lista.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
             ccDocentesSelectCache = lista;
@@ -1546,6 +1546,7 @@ function ccFecharGenerico() { var m = document.getElementById('cc-modal-generico
 
 /* ============ ABA DISCIPLINAS E AULAS ============ */
 var ccDiscCache = [], ccAulasCache = [];
+var ccEditandoAulaId = null;
 async function ccLoadDisciplinas() {
     var box = document.getElementById('cc-disc-lista'); if (!box || !ccAtual) return;
     await ccCarregarSelectDocentes();
@@ -1598,12 +1599,21 @@ async function ccLoadAulas() {
         var snap = await ccRef('aulas').orderBy('data', 'desc').get();
         ccAulasCache = []; snap.forEach(function (d) { ccAulasCache.push(Object.assign({ _id: d.id }, d.data() || {})); });
         box.innerHTML = ccAulasCache.length ? ccAulasCache.map(function (a) {
+            var id = ccEsc(a._id);
             return '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:9px;margin-bottom:6px;background:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-                + '<b style="font-size:13px;color:#0f172a">' + ccEsc(a.conteudo || a.disciplina) + '</b>'
+                + '<div style="flex:1;min-width:200px">'
+                + '<b style="font-size:13px;color:#0f172a">' + ccEsc(a.conteudo || a.disciplina) + '</b><br>'
                 + '<span style="font-size:11px;color:#64748b">' + ccEsc(a.data || '') + ' ' + ccEsc(a.horario || '') + '</span>'
-                + (a.apontada ? '<span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Apontada</span>' : '')
-                + '<button class="btn-outline btn-sm" style="margin-left:auto" onclick="ccQrInicio(\'' + a._id + '\')" title="QR de início"><i class="fa-solid fa-qrcode"></i></button>'
-                + '<button class="btn-danger btn-sm" onclick="ccExcluirAula(\'' + a._id + '\')"><i class="fa-solid fa-trash"></i></button></div>';
+                + (a.docente ? ' · <span style="font-size:10px;color:#64748b">Docente: ' + ccEsc(a.docente) + '</span>' : '')
+                + (a.enviadoApontamentoAdm ? '<br><span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Enviada ao Apontamento ADM</span>' : '')
+                + (a.apontada ? ' <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:8px">Apontada</span>' : '')
+                + '</div>'
+                + '<div class="actions-cell" style="display:flex;gap:5px;flex-wrap:wrap">'
+                + '<button class="btn-icon" title="Editar aula" onclick="ccEditarAula(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>'
+                + '<button class="btn-outline btn-sm" title="Enviar/atualizar no Apontamento ADM" onclick="ccEnviarAulaApontamento(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> ADM</button>'
+                + '<button class="btn-icon" title="QR de início" onclick="ccQrInicio(\'' + id + '\')"><i class="fa-solid fa-qrcode"></i></button>'
+                + '<button class="btn-icon btn-danger-icon" title="Excluir aula" onclick="ccExcluirAula(\'' + id + '\')"><i class="fa-solid fa-trash"></i></button>'
+                + '</div></div>';
         }).join('') : '<p style="color:#94a3b8;font-size:12px">Nenhuma aula cadastrada.</p>';
         var sa = document.getElementById('cc-av-aula');
         if (sa) sa.innerHTML = '<option value="">Selecione...</option>' + ccAulasCache.map(function (a) { return '<option value="' + ccEsc(a.conteudo) + '">' + ccEsc(a.conteudo || '') + '</option>'; }).join('');
@@ -1611,27 +1621,167 @@ async function ccLoadAulas() {
         if (spa) spa.innerHTML = '<option value="">Selecione a aula...</option>' + ccAulasCache.map(function (a) { return '<option value="' + a._id + '">' + ccEsc((a.data || '') + ' - ' + (a.conteudo || '')) + '</option>'; }).join('');
     } catch (e) { box.innerHTML = '<p style="color:#dc2626">' + ccEsc(e.message) + '</p>'; }
 }
+/* A aula cadastrada para um docente e enviada para a colecao
+   apontamentosAdm como pendente. O registro usa um id previsivel
+   (aula-<id>) para atualizar a mesma aula nas edicoes e nao duplicar. */
+async function ccEnviarAulaParaApontamento(aula, aulaId) {
+    if (!ccDb() || !aulaId) return;
+    var docenteId = String(aula.docenteId || '');
+    var docenteNome = String(aula.docente || '');
+    var docenteCpf = '', docenteMatricula = '';
+    var info = (ccDocentesSelectCache || []).find(function (x) {
+        return (docenteId && String(x.id) === docenteId) || (!docenteId && String(x.nome) === docenteNome);
+    });
+    if (info) {
+        docenteNome = info.nome || docenteNome;
+        docenteMatricula = info.matricula || '';
+        docenteCpf = info.cpf || '';
+    }
+    var agora = new Date().toISOString();
+    var docId = 'aula-' + String(aulaId).replace(/[^A-Za-z0-9_-]/g, '_');
+    var ref = ccDb().collection('apontamentosAdm').doc(docId);
+    var snap = await ref.get();
+    var atual = snap && snap.exists ? (snap.data() || {}) : null;
+    var dados = {
+        origem: 'aula-cadastro-cursos',
+        status: (atual && atual.apontadoEm) ? 'Apontado' : 'Pendente',
+        apontado: !!(atual && atual.apontadoEm),
+        docenteId: docenteId,
+        docenteNome: docenteNome,
+        docenteCpf: docenteCpf,
+        docenteMatricula: docenteMatricula,
+        cursoId: String(aula.cursoId || (ccAtual && ccAtual._id) || ''),
+        cursoNome: String(aula.cursoNome || (ccAtual && ccAtual.nome) || ''),
+        disciplina: String(aula.disciplina || ''),
+        aulaId: String(aulaId),
+        aulaVinculada: true,
+        aula: String(aula.conteudo || ''),
+        dataAula: String(aula.data || ''),
+        horaAula: String(aula.horario || ''),
+        avTeorica: aula.avTeorica || '',
+        avPratica: aula.avPratica || '',
+        enviadoEm: agora,
+        enviadoPor: ccUsuarioAtual(),
+        atualizadoEm: agora,
+        aulaExcluida: false
+    };
+    if (!atual) {
+        dados.criadoEm = agora;
+        dados.criadoPor = ccUsuarioAtual();
+        dados.apontadoEm = null;
+        dados.alunos = [];
+        dados.presentes = 0;
+        dados.faltas = 0;
+        dados.justificadas = 0;
+        dados.localizacao = null;
+        dados.localizacaoStatus = 'indisponivel';
+        dados.qrCode = '';
+        dados.qrAula = null;
+    }
+    await ref.set(dados, { merge: true });
+    /* Marca na aula que a sincronizacao aconteceu (nao grava nada dentro de
+       apontamentosAdm alem do proprio registro de apontamento). */
+    try { await ccRef('aulas', aulaId).update({ enviadoApontamentoAdm: true, apontamentoId: docId }); }
+    catch (e) { console.warn('ccEnviarAulaParaApontamento: marcação na aula falhou', e); }
+}
+
+async function ccEnviarAulaApontamento(id) {
+    var a = ccAulasCache.find(function (x) { return x._id === id; });
+    if (!a) { alert('Aula não encontrada.'); return; }
+    try {
+        await ccEnviarAulaParaApontamento(a, a._id);
+        await ccLoadAulas();
+        alert('Aula "' + (a.conteudo || a.data || '') + '" enviada/atualizada no Apontamento ADM, vinculada ao docente ' + (a.docente || 'não informado') + '.');
+    } catch (e) { alert('Erro ao enviar aula para o Apontamento ADM: ' + (e && e.message ? e.message : e)); }
+}
+
+function ccLimparFormAula() {
+    ccEditandoAulaId = null;
+    ['cc-aula-disciplina','cc-aula-docente','cc-aula-data','cc-aula-horario','cc-aula-conteudo','cc-aula-av-teorica','cc-aula-av-pratica'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+    });
+    var btn = document.getElementById('cc-aula-salvar');
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-plus"></i> Cadastrar aula';
+    var cancelar = document.getElementById('cc-aula-cancelar');
+    if (cancelar) cancelar.style.display = 'none';
+}
+function ccCancelarEdicaoAula() { ccLimparFormAula(); }
+
+async function ccEditarAula(id) {
+    var a = ccAulasCache.find(function (x) { return x._id === id; });
+    if (!a) return;
+    await ccCarregarSelectDocentes();
+    var disc = document.getElementById('cc-aula-disciplina');
+    if (disc && a.disciplina && !Array.prototype.some.call(disc.options, function (o) { return o.value === a.disciplina; })) {
+        disc.insertBefore(new Option(a.disciplina, a.disciplina), disc.options[1] || null);
+    }
+    var doc = document.getElementById('cc-aula-docente');
+    if (doc && a.docente && !Array.prototype.some.call(doc.options, function (o) { return o.value === a.docente; })) {
+        var op = new Option(a.docente + (a.docenteId ? ' (docente do cadastro)' : ''), a.docente);
+        if (a.docenteId) op.setAttribute('data-id', a.docenteId);
+        doc.insertBefore(op, doc.options[1] || null);
+    }
+    function set(id, v) { var el = document.getElementById(id); if (el) el.value = v == null ? '' : v; }
+    set('cc-aula-disciplina', a.disciplina || '');
+    set('cc-aula-docente', a.docente || '');
+    set('cc-aula-data', a.data || '');
+    set('cc-aula-horario', a.horario || '');
+    set('cc-aula-conteudo', a.conteudo || '');
+    set('cc-aula-av-teorica', a.avTeorica || '');
+    set('cc-aula-av-pratica', a.avPratica || '');
+    ccEditandoAulaId = a._id;
+    var btn = document.getElementById('cc-aula-salvar');
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Atualizar aula';
+    var cancelar = document.getElementById('cc-aula-cancelar');
+    if (cancelar) cancelar.style.display = '';
+    var alvo = document.getElementById('cc-aula-disciplina');
+    if (alvo && typeof alvo.scrollIntoView === 'function') alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 async function ccSalvarAula() {
     var disc = ((document.getElementById('cc-aula-disciplina') || {}).value || '').trim();
     var data = ((document.getElementById('cc-aula-data') || {}).value || '').trim();
     if (!disc || !data) { alert('Informe disciplina e data da aula.'); return; }
+    var eraEdicao = !!ccEditandoAulaId;
+    var agora = new Date().toISOString();
+    var dados = {
+        disciplina: disc,
+        docente: ((document.getElementById('cc-aula-docente') || {}).value || '').trim(),
+        docenteId: ccDocenteIdDoSelect('cc-aula-docente'),
+        data: data,
+        horario: ((document.getElementById('cc-aula-horario') || {}).value || '').trim(),
+        conteudo: ((document.getElementById('cc-aula-conteudo') || {}).value || '').trim(),
+        avTeorica: ((document.getElementById('cc-aula-av-teorica') || {}).value || ''),
+        avPratica: ((document.getElementById('cc-aula-av-pratica') || {}).value || ''),
+        atualizadoEm: agora
+    };
+    if (ccAtual && ccAtual._id) { dados.cursoId = ccAtual._id; dados.cursoNome = ccAtual.nome || ''; }
     try {
-        await ccRef('aulas').add({
-            disciplina: disc,
-            docente: ((document.getElementById('cc-aula-docente') || {}).value || '').trim(),
-            docenteId: ccDocenteIdDoSelect('cc-aula-docente'),
-            data: data,
-            horario: ((document.getElementById('cc-aula-horario') || {}).value || '').trim(),
-            conteudo: ((document.getElementById('cc-aula-conteudo') || {}).value || '').trim(),
-            avTeorica: ((document.getElementById('cc-aula-av-teorica') || {}).value || ''),
-            avPratica: ((document.getElementById('cc-aula-av-pratica') || {}).value || ''),
-            criadoEm: new Date().toISOString()
-        });
-        ['cc-aula-data','cc-aula-horario','cc-aula-conteudo'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
-        ccLoadAulas();
-    } catch (e) { alert(e.message); }
+        var aulaId = ccEditandoAulaId;
+        if (aulaId) await ccRef('aulas', aulaId).update(dados);
+        else { dados.criadoEm = agora; var ref = await ccRef('aulas').add(dados); aulaId = ref.id; }
+        await ccEnviarAulaParaApontamento(Object.assign({ _id: aulaId }, dados), aulaId);
+        ccLimparFormAula();
+        await ccLoadAulas();
+        alert(eraEdicao ? 'Aula atualizada e reenviada ao Apontamento ADM.' : 'Aula cadastrada e enviada ao Apontamento ADM.');
+    } catch (e) { alert('Erro ao salvar aula: ' + (e && e.message ? e.message : e)); }
 }
-async function ccExcluirAula(id) { if (!confirm('Excluir aula?')) return; try { await ccRef('aulas', id).delete(); ccLoadAulas(); } catch (e) { alert(e.message); } }
+
+async function ccExcluirAula(id) {
+    if (!confirm('Excluir aula? O apontamento pendente no Apontamento ADM também será removido.')) return;
+    try {
+        var docId = 'aula-' + String(id).replace(/[^A-Za-z0-9_-]/g, '_');
+        var ref = ccDb().collection('apontamentosAdm').doc(docId);
+        var snap = await ref.get();
+        if (snap && snap.exists) {
+            var reg = snap.data() || {};
+            if (!reg.apontadoEm) await ref.delete();
+            else await ref.update({ aulaExcluida: true, atualizadoEm: new Date().toISOString() });
+        }
+        await ccRef('aulas', id).delete();
+        await ccLoadAulas();
+    } catch (e) { alert('Erro ao excluir aula: ' + (e && e.message ? e.message : e)); }
+}
 
 function ccQrInicio(aulaId) {
     var aula = ccAulasCache.find(function (a) { return a._id === aulaId; });

@@ -207,6 +207,13 @@
                 + '<td><b style="font-size:12px">' + esc(dona(r)) + '</b><br><span style="font-size:10px;color:#64748b">' + esc(r.docenteCpf || r.docenteMatricula || '') + '</span></td>'
                 + '<td><span style="font-size:12px">' + esc(disciplina) + '</span><br><span style="font-size:11px;color:#64748b">' + esc(aula) + '</span>'
                 + (r.origem === 'manual-admin' ? '<br><span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Manual</span>' : '')
+                + (r.origem === 'aula-cadastro-cursos'
+                    ? '<br><span style="font-size:9px;background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:8px">Aula enviada pelo Cadastro de Cursos</span>'
+                        + (r.apontadoEm
+                            ? '<br><span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Apontado</span>'
+                            : '<br><span style="font-size:9px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px">Pendente</span>')
+                    : '')
+                + (r.aulaExcluida ? '<br><span style="font-size:9px;background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:8px">Aula excluída</span>' : '')
                 + (r.aulaId ? '<br><span style="font-size:9px;background:#e0e7ff;color:#3730a3;padding:2px 6px;border-radius:8px">Aula vinculada</span>' : '')
                 + (r.qrAula ? '<br><span style="font-size:9px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px">QR capturado</span>' : '') + '</td>'
                 + '<td style="font-size:12px">' + esc(r.dataAula || '-') + '<br><span style="font-size:10px;color:#64748b">' + esc(r.horaAula || '') + '</span></td>'
@@ -740,7 +747,9 @@
 
         var regSalvo = editando || {};
         var dados = {
-            origem: 'manual-admin',
+            /* Registros vindos das aulas do Cadastro de Cursos mantem a origem
+               para continuarem identificados como pendentes/enviados. */
+            origem: regSalvo.origem === 'aula-cadastro-cursos' ? regSalvo.origem : 'manual-admin',
             docenteId: docenteId,
             docenteNome: docOp ? (docOp.getAttribute('data-nome') || docOp.textContent.split(' — ')[0]) : (regSalvo.docenteNome || ''),
             docenteCpf: docOp ? (docOp.getAttribute('data-cpf') || '') : (regSalvo.docenteCpf || ''),
@@ -917,6 +926,12 @@
             + '<br><b>AV Teórica:</b> ' + esc(r.avTeorica || '-') + ' <b>AV Prática:</b> ' + esc(r.avPratica || '-') + '</p>'
             + '<p><b>Criado em:</b> ' + fmtData(r.criadoEm) + ' por ' + esc(r.criadoPor || '-')
             + '<br><b>Apontado em:</b> ' + fmtData(r.apontadoEm) + '</p>'
+            + '<p><b>Origem:</b> ' + (r.origem === 'aula-cadastro-cursos'
+                ? 'Aula do Cadastro de Cursos' + (r.aulaExcluida ? ' (aula excluída)' : '')
+                    + ' <span style="font-size:9px;background:' + (r.apontadoEm ? '#dcfce7;color:#166534' : '#fef3c7;color:#92400e')
+                    + ';padding:2px 6px;border-radius:8px">' + (r.apontadoEm ? 'Apontado' : 'Pendente') + '</span>'
+                    + (r.enviadoEm ? '<br><b>Enviada em:</b> ' + fmtData(r.enviadoEm) + ' por ' + esc(r.enviadoPor || '-') : '')
+                : 'Apontamento manual') + '</p>'
             + '<p><b>Presença:</b> ' + (r.presentes || 0) + ' presente(s), ' + (r.faltas || 0) + ' falta(s), ' + (r.justificadas || 0) + ' justificada(s)</p>'
             + '<p><b>Localização:</b> ' + (temLocal(r) ? esc(coords(r)) : '<span style="color:#dc2626">Não capturada</span>')
             + '<br><b>Precisão:</b> ' + (l.precisao ? Math.round(l.precisao) + ' m' : '-')
