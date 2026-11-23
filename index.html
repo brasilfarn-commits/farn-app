@@ -1046,11 +1046,11 @@
                         <i class="fa-solid fa-book-open"></i>
                         <span>Cadastro de Cursos</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-coordenacao" onclick="showAdminSection('admin-coordenacao', this)">
+                    <a href="#" class="nav-item" data-secao="admin-coordenacao" onclick="showAdminSection('admin-coordenacao', this); coordenacaoInicializar()">
                         <i class="fa-solid fa-user-tie"></i>
                         <span>Coordenação</span>
                     </a>
-                    <a href="#" class="nav-item" data-secao="admin-docente" onclick="showAdminSection('admin-docente', this)">
+                    <a href="#" class="nav-item" data-secao="admin-docente" onclick="showAdminSection('admin-docente', this); docenteAdminInicializar()">
                         <i class="fa-solid fa-chalkboard-user"></i>
                         <span>Docente</span>
                     </a>
@@ -3266,28 +3266,90 @@
 
             <!-- COORDENAÇÃO -->
                 <div id="admin-coordenacao" class="admin-section">
-                    <div class="card full-width" style="margin-bottom:16px">
+                    <div class="card full-width">
                         <div class="card-header">
                             <h3><i class="fa-solid fa-user-tie" style="color:#7c3aed;margin-right:8px"></i> Coordenação</h3>
+                            <div class="header-actions">
+                                <button class="btn-outline btn-sm" onclick="coordenacaoInicializar()" title="Recarregar a lista">
+                                    <i class="fa-solid fa-rotate"></i> Atualizar
+                                </button>
+                                <button class="btn-primary" onclick="coordNovo()" title="Cadastrar novo coordenador">
+                                    <i class="fa-solid fa-plus"></i> NOVO CORD.
+                                </button>
+                            </div>
                         </div>
-                        <div class="card-body" style="text-align:center;padding:60px 20px">
-                            <i class="fa-solid fa-hammer" style="font-size:54px;color:#cbd5e1;display:block;margin-bottom:16px"></i>
-                            <h2 style="font-size:20px;color:#0f172a;margin-bottom:8px">Em construção</h2>
-                            <p style="font-size:13px;color:#64748b">Esta seção está em construção.</p>
+                        <div class="card-body">
+                            <p style="font-size:12px;color:#475569;margin:0 0 14px">
+                                Cadastro independente: os coordenadores ficam na tabela própria <code style="background:#f3e8ff;color:#7e22ce;padding:1px 5px;border-radius:4px">coordenacao</code>.
+                                Formulário igual ao de Formados do Cadastro de Cursos, sem os campos Projeto e Turma.
+                            </p>
+                            <div id="coord-form-painel" style="display:none;margin-bottom:14px"></div>
+                            <div id="coord-lista-wrap">
+                                <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+                                    <input id="coord-busca" class="config-input" placeholder="Buscar por nome, CPF, credencial ou e-mail..." oninput="coordRender()" style="width:100%;max-width:520px">
+                                    <span id="coord-count" style="font-size:11px;color:#64748b;font-weight:700">0</span>
+                                </div>
+                                <div style="overflow:auto">
+                                    <table class="data-table" id="coord-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>CPF</th>
+                                                <th>Matrícula / Credencial</th>
+                                                <th>Contato</th>
+                                                <th>Situação</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="coord-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
             <!-- DOCENTE -->
                 <div id="admin-docente" class="admin-section">
-                    <div class="card full-width" style="margin-bottom:16px">
+                    <div class="card full-width">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-chalkboard-user" style="color:#7c3aed;margin-right:8px"></i> Docente</h3>
+                            <h3><i class="fa-solid fa-chalkboard-user" style="color:#0d9488;margin-right:8px"></i> Docente</h3>
+                            <div class="header-actions">
+                                <button class="btn-outline btn-sm" onclick="docenteAdminInicializar()" title="Recarregar a lista">
+                                    <i class="fa-solid fa-rotate"></i> Atualizar
+                                </button>
+                                <button class="btn-primary" onclick="docNovo()" title="Cadastrar novo docente">
+                                    <i class="fa-solid fa-plus"></i> NOVO DOCENTE
+                                </button>
+                            </div>
                         </div>
-                        <div class="card-body" style="text-align:center;padding:60px 20px">
-                            <i class="fa-solid fa-hammer" style="font-size:54px;color:#cbd5e1;display:block;margin-bottom:16px"></i>
-                            <h2 style="font-size:20px;color:#0f172a;margin-bottom:8px">Em construção</h2>
-                            <p style="font-size:13px;color:#64748b">Esta seção está em construção.</p>
+                        <div class="card-body">
+                            <p style="font-size:12px;color:#475569;margin:0 0 14px">
+                                Cadastro independente: os docentes ficam na tabela própria <code style="background:#ccfbf1;color:#0f766e;padding:1px 5px;border-radius:4px">docentesAdmin</code>.
+                                Formulário igual ao de Formados do Cadastro de Cursos, sem os campos Projeto e Turma.
+                            </p>
+                            <div id="doc-form-painel" style="display:none;margin-bottom:14px"></div>
+                            <div id="doc-lista-wrap">
+                                <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+                                    <input id="doc-busca" class="config-input" placeholder="Buscar por nome, CPF, matrícula ou e-mail..." oninput="docRender()" style="width:100%;max-width:520px">
+                                    <span id="doc-count" style="font-size:11px;color:#64748b;font-weight:700">0</span>
+                                </div>
+                                <div style="overflow:auto">
+                                    <table class="data-table" id="doc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>CPF</th>
+                                                <th>Matrícula / Credencial</th>
+                                                <th>Contato</th>
+                                                <th>Situação</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="doc-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -4804,6 +4866,7 @@
     </div>
 
     <script src="cadastro-cursos-nucleo.js?v=1"></script>
+    <script src="coordenacao.js?v=2"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
