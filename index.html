@@ -892,37 +892,6 @@
                     <span class="landing-login-error" id="landing-login-error"></span>
                 </form>
 
-                <!-- ESCOLHA DA FONTE DE DADOS QUANDO O CPF ESTA EM MAIS DE UM CADASTRO -->
-                <style>
-                    .landing-origem-overlay{position:fixed;inset:0;background:rgba(3,14,34,.74);backdrop-filter:blur(4px);z-index:2147483000;display:none;align-items:center;justify-content:center;padding:16px}
-                    .landing-origem-overlay.aberto{display:flex}
-                    .landing-origem-card{background:#fff;border-radius:16px;width:min(540px,100%);max-height:88vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.4);border:1px solid rgba(212,175,55,.35)}
-                    .landing-origem-head{padding:18px 20px 14px;border-bottom:1px solid #e2e8f0}
-                    .landing-origem-head h3{margin:0;font-size:16px;color:#0f172a}
-                    .landing-origem-head p{margin:6px 0 0;font-size:12px;color:#64748b;line-height:1.5}
-                    .landing-origem-opcoes{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
-                    .landing-origem-op{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:.15s;background:#fff}
-                    .landing-origem-op:hover{border-color:#0d9488;background:#f0fdfa}
-                    .landing-origem-op input{margin-top:3px;accent-color:#0d9488;width:16px;height:16px;flex:none}
-                    .landing-origem-op b{display:block;font-size:12px;letter-spacing:.04em;color:#0f172a}
-                    .landing-origem-op small{display:block;margin-top:3px;font-size:11px;color:#64748b;line-height:1.4}
-                    .landing-origem-foot{padding:14px 20px 18px;border-top:1px solid #e2e8f0;display:flex;gap:8px;justify-content:flex-end;align-items:center}
-                    .landing-origem-msg{font-size:11px;color:#dc2626;margin-right:auto}
-                </style>
-                <div class="landing-origem-overlay" id="landing-origem-modal" onclick="if(event.target===this)landingFecharOrigens()">
-                    <div class="landing-origem-card">
-                        <div class="landing-origem-head">
-                            <h3><i class="fa-solid fa-right-to-bracket" style="color:#0d9488;margin-right:8px"></i> Escolha o tipo de acesso</h3>
-                            <p>Seu CPF está vinculado a mais de um cadastro. Selecione com qual fonte de dados você deseja entrar, pois cada acesso tem permissões diferentes.</p>
-                        </div>
-                        <div class="landing-origem-opcoes" id="landing-origem-opcoes"></div>
-                        <div class="landing-origem-foot">
-                            <span class="landing-origem-msg" id="landing-origem-msg"></span>
-                            <button type="button" class="btn-outline btn-sm" onclick="landingFecharOrigens()">Cancelar</button>
-                            <button type="button" class="btn-primary btn-sm" onclick="landingConfirmarOrigem()"><i class="fa-solid fa-check" style="margin-right:6px"></i> Entrar com este acesso</button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </header>
 
@@ -5050,7 +5019,7 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=127"></script>
+    <script src="app.js?v=128"></script>
     <script src="recad-admin.js?v=2"></script>
     <script src="cadastro-cursos.js?v=36"></script>
     <script src="apontamentos-adm.js?v=5"></script>

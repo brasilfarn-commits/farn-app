@@ -1597,14 +1597,12 @@ function landingCloseMenu() {
 }
 
 /* =====================================================================
-   LOGIN COM ESCOLHA DA FONTE DE DADOS
-   Um mesmo CPF puede estar em varios cadastros. Quando ha mais de uma
-   origem valida, o usuario escolhe com qual perfil quer entrar, pois cada
-   origem carrega permissoes diferentes (admin, coordenacao, docente, etc).
+   LOGIN DO INDEX
+   O tipo de acesso e definido pelo seletor Administrador / Portal do
+   Usuario do proprio formulario. Quando o CPF aparece em mais de um
+   cadastro, a origem e escolhida automaticamente conforme esse seletor,
+   sem pedir ao usuario que escolha a fonte de dados.
    ===================================================================== */
-var LANDING_ORIGENS = [];
-var LANDING_CPF_ATUAL = '';
-
 function landingEhConcluido(txt) {
     return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .toLowerCase().indexOf('concluid') >= 0
@@ -1695,46 +1693,12 @@ async function landingDescobrirOrigens(cpf, senha) {
     return opcoes;
 }
 
-function landingMostrarOrigens(opcoes, cpf) {
-    LANDING_ORIGENS = opcoes;
-    LANDING_CPF_ATUAL = cpf;
-    var box = document.getElementById('landing-origem-opcoes');
-    var msg = document.getElementById('landing-origem-msg');
-    if (!box) return;
-    if (msg) msg.textContent = '';
-    box.innerHTML = opcoes.map(function (o, i) {
-        return '<label class="landing-origem-op">'
-            + '<input type="radio" name="landing-origem" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>'
-            + '<span><b>' + landingEsc(o.rotulo) + '</b><small>' + landingEsc(o.detalhe || '') + '</small></span>'
-            + '</label>';
-    }).join('');
-    var modal = document.getElementById('landing-origem-modal');
-    if (modal) modal.classList.add('aberto');
-}
-function landingFecharOrigens() {
-    var modal = document.getElementById('landing-origem-modal');
-    if (modal) modal.classList.remove('aberto');
-    var btn = document.getElementById('landing-login-btn');
-    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-}
-async function landingConfirmarOrigem() {
-    var sel = document.querySelector('input[name="landing-origem"]:checked');
-    if (!sel) {
-        var msg = document.getElementById('landing-origem-msg');
-        if (msg) msg.textContent = 'Selecione uma das origens acima.';
-        return;
-    }
-    var opcao = LANDING_ORIGENS[Number(sel.value)];
-    if (!opcao) return;
-    await landingAplicarOrigem(opcao, LANDING_CPF_ATUAL);
-}
 async function landingAplicarOrigem(opcao, cpf) {
     currentUserData = opcao.user;
     saveLastLogin(cpf || opcao.user.cpf);
     saveLoginState();
     try { localStorage.setItem('farn_user_data', JSON.stringify(currentUserData)); } catch (e) {}
     try { localStorage.setItem('farn_last_cpf', currentUserData.cpf || cpf); } catch (e) {}
-    landingFecharOrigens();
     if (opcao.destino === 'admin') {
         enterAdminPanel();
     } else {
@@ -1742,12 +1706,6 @@ async function landingAplicarOrigem(opcao, cpf) {
         location.href = 'portal-usuario.html';
     }
 }
-function landingEsc(txt) {
-    return String(txt == null ? '' : txt).replace(/[&<>"']/g, function (c) {
-        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
-    });
-}
-
 async function landingLogin(event) {
     if (event) event.preventDefault();
     var cpf = document.getElementById('landing-login-cpf').value.replace(/\D/g, '');
@@ -1756,18 +1714,26 @@ async function landingLogin(event) {
     if (!cpf || !senha) { landingShowLoginError('Informe o CPF e a senha.'); return false; }
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
+        var portalSel = document.getElementById('landing-login-portal');
+        var destino = portalSel && portalSel.value === 'usuario' ? 'usuario' : 'admin';
         var opcoes = await landingDescobrirOrigens(cpf, senha);
         if (!opcoes.length) {
             landingShowLoginError('CPF ou senha inválidos, ou cadastro não está Ativo.');
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return false;
         }
-        if (opcoes.length === 1) {
-            await landingAplicarOrigem(opcoes[0], cpf);
-        } else {
-            /* Mais de um vínculo: o usuário decide qual perfil usar. */
-            landingMostrarOrigens(opcoes, cpf);
+        var opcao = null;
+        for (var i = 0; i < opcoes.length; i++) {
+            if (opcoes[i].destino === destino) { opcao = opcoes[i]; break; }
         }
+        if (!opcao) {
+            landingShowLoginError(destino === 'admin'
+                ? 'Este CPF não tem acesso administrativo. Selecione Portal do Usuário.'
+                : 'Este CPF não tem acesso ao Portal do Usuário. Selecione Administrador.');
+            if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+            return false;
+        }
+        await landingAplicarOrigem(opcao, cpf);
     } catch (e) {
         console.error('Erro no login:', e);
         landingShowLoginError('Falha de conexão. Tente novamente.');
