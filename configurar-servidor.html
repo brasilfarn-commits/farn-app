@@ -90,8 +90,21 @@
 var CHAVE = 'farn_api_config';
 var URL_PADRAO = 'https://howto-alliance-pest-contest.trycloudflare.com';
 var URL_NUVEM_ANTIGA = 'https://farn-api.farn-api-farn.workers.dev';
+var URLS_TUNEIS_ANTIGOS = [
+  'https://planets-linear-vbulletin-colin.trycloudflare.com',
+  'https://location-anthropology-martial-fares.trycloudflare.com'
+];
 function ler() {
-  try { return JSON.parse(localStorage.getItem(CHAVE) || '{}'); } catch (e) { return {}; }
+  var c;
+  try { c = JSON.parse(localStorage.getItem(CHAVE) || '{}') || {}; } catch (e) { c = {}; }
+  /* Esta pagina nao carrega o farn-db.js, entao a migracao precisa acontecer
+     aqui tambem, senao um tune antigo salvo continua mostrando OFFLINE. */
+  var url = String(c.url || '').replace(/\/$/, '');
+  if (URLS_TUNEIS_ANTIGOS.indexOf(url) >= 0) {
+    c.url = URL_PADRAO;
+    try { localStorage.setItem(CHAVE, JSON.stringify(c)); } catch (e) {}
+  }
+  return c;
 }
 function carregar() {
   var c = ler();
