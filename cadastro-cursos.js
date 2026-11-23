@@ -127,6 +127,7 @@ function ccRenderLista() {
                 + '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + ccEsc(c.nome) + '</div>'
                 + '<div style="font-size:11px;color:#64748b;margin-top:3px">'
                 + (c.criadoEm ? new Date(c.criadoEm).toLocaleDateString('pt-BR') : '')
+                + (c.docenteResponsavelNome ? ' · <i class="fa-solid fa-chalkboard-user" style="color:#0d9488"></i> ' + ccEsc(c.docenteResponsavelNome) : '')
                 + '</div></div>'
                 + '<button class="btn-outline btn-sm" onclick="ccAlternarStatusCurso(\'' + c._id + '\')" title="Alternar status do curso" style="color:' + cor + ';border-color:' + cor + '"><i class="fa-solid fa-circle-check" style="margin-right:4px"></i>' + status + '</button>'
                 + '<button class="btn-primary btn-sm" onclick="ccAbrirCurso(\'' + c._id + '\')"><i class="fa-solid fa-door-open"></i> Abrir</button>'
@@ -195,6 +196,54 @@ function ccMostrarWorkspace(mostrar) {
 }
 
 /* ============ CRIAR / EDITAR CURSO ============ */
+/* O campo "Docente responsável" é escolhido entre os docentes cadastrados
+   na seção Docente do admin (tabela docentesAdmin). Nada é gravado na tabela
+   antiga 'docentes'. */
+async function ccCarregarDocentesResponsavel(curso) {
+    var sel = document.getElementById('cc-curso-docente');
+    if (!sel) return;
+    var info = document.getElementById('cc-curso-docente-info');
+    var atual = curso && (curso.docenteResponsavelId || '') ? String(curso.docenteResponsavelId) : '';
+    sel.innerHTML = '<option value="">— Selecione um docente —</option>';
+    if (!ccDb()) {
+        if (info) { info.textContent = 'Firebase não conectado. Recarregue a página.'; info.style.color = '#dc2626'; }
+        return;
+    }
+    try {
+        var snap = await ccDb().collection('docentesAdmin').get();
+        var lista = [];
+        snap.forEach(function (d) {
+            var x = d.data() || {};
+            lista.push({ id: d.id, nome: x.nome || 'Docente sem nome', matricula: x.matricula || '', cpf: x.cpf || '' });
+        });
+        lista.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
+        var existeAtual = false;
+        lista.forEach(function (x) {
+            if (x.id === atual) existeAtual = true;
+            var op = document.createElement('option');
+            op.value = x.id;
+            op.textContent = x.nome + (x.matricula ? ' — ' + x.matricula : '');
+            op.setAttribute('data-nome', x.nome);
+            op.setAttribute('data-matricula', x.matricula);
+            sel.appendChild(op);
+        });
+        /* Curso antigo pode apontar para um docente removido: mantém a escolha
+           visível até o administrador trocar. */
+        if (atual && !existeAtual) {
+            var opAntigo = document.createElement('option');
+            opAntigo.value = atual;
+            opAntigo.textContent = (curso.docenteResponsavelNome || 'Docente removido') + ' (não cadastrado)';
+            opAntigo.setAttribute('data-nome', curso.docenteResponsavelNome || 'Docente removido');
+            opAntigo.setAttribute('data-matricula', curso.docenteResponsavelMatricula || '');
+            sel.appendChild(opAntigo);
+        }
+        if (atual) sel.value = atual;
+        if (info) { info.textContent = lista.length + ' docente(s) cadastrado(s) na seção Docente.'; info.style.color = '#64748b'; }
+    } catch (e) {
+        if (info) { info.textContent = 'Não foi possível carregar os docentes: ' + (e && e.message ? e.message : e); info.style.color = '#dc2626'; }
+    }
+}
+
 function ccAbrirFormCurso(id) {
     if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
         alert('Seu perfil não permite editar cursos.'); return;
@@ -208,6 +257,7 @@ function ccAbrirFormCurso(id) {
     var curso = id ? ccCursos.find(function (c) { return c._id === id; }) : null;
     if (titulo) titulo.textContent = curso ? 'Editar curso' : 'Criar novo curso';
     if (nome) nome.value = curso ? (curso.nome || '') : '';
+    ccCarregarDocentesResponsavel(curso);
     if (prev) prev.innerHTML = curso && (curso.iconeUrl || curso.icone)
         ? '<img src="' + (curso.iconeUrl || curso.icone) + '" style="max-width:120px;max-height:120px;object-fit:contain">'
         : '<i class="fa-solid fa-image" style="font-size:32px;color:#94a3b8"></i>';
@@ -267,6 +317,11 @@ async function ccSalvarCurso() {
     var nome = ((document.getElementById('cc-curso-nome') || {}).value || '').trim();
     if (!nome) { alert('Informe o nome do curso.'); return; }
     var dados = { nome: nome, atualizadoEm: new Date().toISOString() };
+    var selDoc = document.getElementById('cc-curso-docente');
+    var opDoc = selDoc && selDoc.selectedIndex >= 0 ? selDoc.options[selDoc.selectedIndex] : null;
+    dados.docenteResponsavelId = selDoc && selDoc.value ? String(selDoc.value) : '';
+    dados.docenteResponsavelNome = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-nome') || opDoc.textContent.split(' — ')[0]) : '';
+    dados.docenteResponsavelMatricula = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-matricula') || '') : '';
     dados.apostilaUrl = ((document.getElementById('cc-curso-apostila-url') || {}).value || '').trim();
     dados.permCertificado = !!((document.getElementById('cc-perm-certificado') || {}).checked);
     dados.permFichaGeral = !!((document.getElementById('cc-perm-ficha') || {}).checked);
