@@ -613,7 +613,7 @@
             const sel = document.getElementById('cav-docente');
             if (!sel) return;
             sel.innerHTML = '<option value="">Selecione o docente...</option>';
-            db.collection('docentes').orderBy('nome').get().then(snap => {
+            db.collection('docentesAdmin').orderBy('nome').get().then(snap => {
                 sel.innerHTML = '<option value="">Selecione o docente...</option>';
                 snap.forEach(doc => {
                     const d = doc.data();

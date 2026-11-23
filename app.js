@@ -946,7 +946,8 @@ async function initFirebaseListeners() {
             checkReady();
         });
 
-        dbFirestore.collection('docentes').onSnapshot((snap) => {
+        /* Fonte unica de docentes: o cadastro da secao Docente do admin. */
+        dbFirestore.collection('docentesAdmin').onSnapshot((snap) => {
             const result = [];
             snap.forEach(doc => {
                 if (doc.id !== '_index') {
@@ -10385,7 +10386,7 @@ async function discLoadDocentes() {
     var sel = document.getElementById('disc-docente');
     if (!sel) return;
     try {
-        var snap = await dbFirestore.collection('docentes').orderBy('nome').get();
+        var snap = await dbFirestore.collection('docentesAdmin').orderBy('nome').get();
         sel.innerHTML = '<option value="">Selecione o docente...</option>';
         snap.forEach(function(doc) {
             var i = doc.data();
@@ -10593,7 +10594,7 @@ async function aulaLoadDocentes() {
     var sel = document.getElementById('aula-docente');
     if (!sel) return;
     try {
-        var snap = await dbFirestore.collection('docentes').orderBy('nome').get();
+        var snap = await dbFirestore.collection('docentesAdmin').orderBy('nome').get();
         sel.innerHTML = '<option value="">Selecione o docente...</option>';
         snap.forEach(function(doc) {
             var i = doc.data();
@@ -10804,7 +10805,7 @@ function cffDiscMsg(msg, type) {
 async function cffCarregarDocentes(selectIds) {
     var ids = Array.isArray(selectIds) ? selectIds : [selectIds];
     try {
-        var snap = await dbFirestore.collection('docentes').orderBy('nome').get();
+        var snap = await dbFirestore.collection('docentesAdmin').orderBy('nome').get();
         ids.forEach(function(id) {
             var sel = document.getElementById(id);
             if (!sel) return;
@@ -12396,7 +12397,7 @@ async function docentesInicializar() {
         return;
     }
     try {
-        var snap = await dbFirestore.collection('docentes').get();
+        var snap = await dbFirestore.collection('docentesAdmin').get();
         docentes = [];
         snap.forEach(function(doc) {
             var data = doc.data();
@@ -14888,7 +14889,7 @@ function cavPopulateDocentes(value) {
     const sel = document.getElementById('cav-docente');
     if (!sel) return;
     sel.innerHTML = '<option value="">Selecione o docente...</option>';
-    dbFirestore.collection('docentes').orderBy('nome').get().then(snap => {
+    dbFirestore.collection('docentesAdmin').orderBy('nome').get().then(snap => {
         sel.innerHTML = '<option value="">Selecione o docente...</option>';
         snap.forEach(doc => {
             const d = doc.data();
@@ -15851,7 +15852,7 @@ async function cursoGerenciar(id) {
 async function cgCarregarDocentes() {
     var sels = [document.getElementById('cg-disc-docente'), document.getElementById('cg-aula-docente')];
     try {
-        var snap = await dbFirestore.collection('docentes').orderBy('nome').get();
+        var snap = await dbFirestore.collection('docentesAdmin').orderBy('nome').get();
         sels.forEach(function(sel){
             if (!sel) return;
             sel.innerHTML = '<option value="">Selecione o docente...</option>';
@@ -20162,7 +20163,7 @@ function vaCarregarDocentes(forcar) {
     }
     var anterior = sel.value;
     sel.innerHTML = '<option value="">Carregando docentes...</option>';
-    return dbFirestore.collection('docentes').orderBy('nome').get().then(function (snap) {
+    return dbFirestore.collection('docentesAdmin').orderBy('nome').get().then(function (snap) {
         var lista = [];
         snap.forEach(function (doc) {
             var d = doc.data() || {};
@@ -20213,7 +20214,7 @@ function vaDocenteEscolhido() {
    tratar a ambiguidade. */
 function vaDocentesPorNome(nome) {
     if (!nome) return Promise.resolve([]);
-    return dbFirestore.collection('docentes').where('nome', '==', nome).get().then(function (snap) {
+    return dbFirestore.collection('docentesAdmin').where('nome', '==', nome).get().then(function (snap) {
         var lista = [];
         snap.forEach(function (doc) {
             var d = doc.data() || {};

@@ -3001,14 +3001,14 @@
                                     <button class="btn-outline btn-sm" onclick="ccImportarDisciplinasAulas()" title="Importar disciplinas e aulas do administrador"><i class="fa-solid fa-file-import"></i> Importar</button></div>
                                     <div class="card-body">
                                         <input id="cc-disc-nome" class="config-input" placeholder="Nome da disciplina" style="width:100%;margin-bottom:8px">
-                                        <input id="cc-disc-docente" class="config-input" placeholder="Docente" style="width:100%;margin-bottom:8px">
+                                        <select id="cc-disc-docente" class="config-input" style="width:100%;margin-bottom:8px"><option value="">Selecione o docente...</option></select>
                                         <button class="btn-primary btn-sm" onclick="ccSalvarDisc()"><i class="fa-solid fa-plus"></i> Cadastrar disciplina</button>
                                         <div id="cc-disc-lista" style="margin-top:12px"></div>
                                     </div></div>
                                 <div class="card"><div class="card-header"><h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas</h3></div>
                                     <div class="card-body">
                                         <select id="cc-aula-disciplina" class="config-input" style="width:100%;margin-bottom:8px"><option value="">Selecione a disciplina...</option></select>
-                                        <input id="cc-aula-docente" class="config-input" placeholder="Docente" style="width:100%;margin-bottom:8px">
+                                        <select id="cc-aula-docente" class="config-input" style="width:100%;margin-bottom:8px"><option value="">Selecione o docente...</option></select>
                                         <input type="date" id="cc-aula-data" class="config-input" style="width:100%;margin-bottom:8px">
                                         <input id="cc-aula-horario" class="config-input" placeholder="Horário (ex.: 14:00 às 17:00)" style="width:100%;margin-bottom:8px">
                                         <input id="cc-aula-conteudo" class="config-input" placeholder="Conteúdo / nome da aula" style="width:100%;margin-bottom:8px">
@@ -4984,9 +4984,9 @@
     <script src="oportunidades.js?v=5"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-storage.js?v=2"></script>
-    <script src="app.js?v=124"></script>
+    <script src="app.js?v=125"></script>
     <script src="recad-admin.js?v=1"></script>
-    <script src="cadastro-cursos.js?v=30"></script>
+    <script src="cadastro-cursos.js?v=31"></script>
     <script src="apontamentos-adm.js?v=1"></script>
 
     <script src="noticias-slider.js?v=1"></script>

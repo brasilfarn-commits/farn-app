@@ -244,6 +244,52 @@ async function ccCarregarDocentesResponsavel(curso) {
     }
 }
 
+/* =====================================================================
+   CAMPO DOCENTE DE DISCIPLINAS E AULAS
+   Fonte unica: docentesAdmin (secao Docente do admin). O value continua
+   sendo o nome, para nao quebrar registros antigos que so guardavam texto;
+   o id do cadastro vai junto em data-id e tambem e salvo no registro.
+   ===================================================================== */
+var ccDocentesSelectCache = null;
+async function ccCarregarSelectDocentes() {
+    var ids = ['cc-disc-docente', 'cc-aula-docente'];
+    var atuais = {};
+    ids.forEach(function (id) { var s = document.getElementById(id); if (s) atuais[id] = s.value; });
+    try {
+        if (!ccDocentesSelectCache) {
+            var snap = await ccDb().collection('docentesAdmin').get();
+            var lista = [];
+            snap.forEach(function (d) {
+                var x = d.data() || {};
+                lista.push({ id: d.id, nome: x.nome || '', matricula: x.matricula || '' });
+            });
+            lista.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
+            ccDocentesSelectCache = lista;
+        }
+        ids.forEach(function (id) {
+            var sel = document.getElementById(id); if (!sel) return;
+            var atual = atuais[id] || sel.value || '';
+            sel.innerHTML = '<option value="">Selecione o docente...</option>' + ccDocentesSelectCache.map(function (d) {
+                return '<option value="' + ccEsc(d.nome) + '" data-id="' + ccEsc(d.id) + '">'
+                    + ccEsc(d.nome) + (d.matricula ? ' — ' + ccEsc(d.matricula) : '') + '</option>';
+            }).join('');
+            if (atual) {
+                var achou = false;
+                for (var i = 0; i < sel.options.length; i++) if (sel.options[i].value === atual) achou = true;
+                if (!achou) sel.innerHTML += '<option value="' + ccEsc(atual) + '">' + ccEsc(atual) + ' (fora do cadastro)</option>';
+                sel.value = atual;
+            }
+        });
+    } catch (e) {
+        console.warn('ccCarregarSelectDocentes', e);
+    }
+}
+function ccDocenteIdDoSelect(id) {
+    var sel = document.getElementById(id);
+    if (!sel || !sel.value || sel.selectedIndex < 0) return '';
+    return sel.options[sel.selectedIndex].getAttribute('data-id') || '';
+}
+
 function ccAbrirFormCurso(id) {
     if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
         alert('Seu perfil não permite editar cursos.'); return;
@@ -1488,6 +1534,7 @@ function ccFecharGenerico() { var m = document.getElementById('cc-modal-generico
 var ccDiscCache = [], ccAulasCache = [];
 async function ccLoadDisciplinas() {
     var box = document.getElementById('cc-disc-lista'); if (!box || !ccAtual) return;
+    await ccCarregarSelectDocentes();
     try {
         var snap = await ccRef('disciplinas').orderBy('nome').get();
         ccDiscCache = []; snap.forEach(function (d) { ccDiscCache.push(Object.assign({ _id: d.id }, d.data() || {})); });
@@ -1515,6 +1562,7 @@ async function ccSalvarDisc() {
             .collection('disciplinas').add({
                 nome: nome,
                 docente: docente,
+                docenteId: ccDocenteIdDoSelect('cc-disc-docente'),
                 cursoId: ccAtual._id,
                 criadoEm: new Date().toISOString()
             });
@@ -1531,6 +1579,7 @@ async function ccExcluirDisc(id) { if (!confirm('Excluir disciplina?')) return; 
 
 async function ccLoadAulas() {
     var box = document.getElementById('cc-aula-lista'); if (!box || !ccAtual) return;
+    await ccCarregarSelectDocentes();
     try {
         var snap = await ccRef('aulas').orderBy('data', 'desc').get();
         ccAulasCache = []; snap.forEach(function (d) { ccAulasCache.push(Object.assign({ _id: d.id }, d.data() || {})); });
@@ -1556,6 +1605,7 @@ async function ccSalvarAula() {
         await ccRef('aulas').add({
             disciplina: disc,
             docente: ((document.getElementById('cc-aula-docente') || {}).value || '').trim(),
+            docenteId: ccDocenteIdDoSelect('cc-aula-docente'),
             data: data,
             horario: ((document.getElementById('cc-aula-horario') || {}).value || '').trim(),
             conteudo: ((document.getElementById('cc-aula-conteudo') || {}).value || '').trim(),
