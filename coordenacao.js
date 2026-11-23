@@ -498,6 +498,9 @@ function criarCadastroAdminPessoa(cfg) {
             } catch (e2) {}
             var pendente = status && (status.online === false || status.pendentes > 0);
             voltarForm();
+            /* Um filtro de busca ativo pode esconder o registro recem-salvo. */
+            var campoBusca = el('busca');
+            if (campoBusca) campoBusca.value = '';
             await inicializar(true);
             var msg = rotulo.charAt(0).toUpperCase() + rotulo.slice(1) + ' salvo na tabela própria "' + Colecao + '".';
             if (pendente) msg += '\n\nATENÇÃO: o servidor não confirmou a gravação. O registro pode desaparecer ao recarregar. Verifique a conexão com o servidor próprio e tente novamente.';

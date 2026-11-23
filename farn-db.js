@@ -92,11 +92,28 @@
     return dados;
   };
 
+  /* Reaplica gravacoes que ainda estao na fila depois de Receber dados do
+     servidor. Sem isso, um /api/all que ainda nao contem a ultima escrita
+     apaga o registro local e o cadastro some da lista ao recarregar. */
+  FarnDB.prototype._reaplicarPendentes = function (col, mapa) {
+    this.fila.forEach(function (op) {
+      if (op.col !== col) return;
+      if (op.type === 'delete') { delete mapa[op.id]; return; }
+      var atual = mapa[op.id] || {};
+      mapa[op.id] = op.merge ? Object.assign({}, atual, op.data) : Object.assign({}, op.data);
+    });
+    return mapa;
+  };
+  FarnDB.prototype._temPendente = function (col, id) {
+    return this.fila.some(function (op) { return op.col === col && op.id === id; });
+  };
+
   FarnDB.prototype._buscarColecao = async function (col) {
     try {
       var r = await this._req('/api/all?col=' + encodeURIComponent(col));
       var mapa = {};
       (r.docs || []).forEach(function (d) { mapa[d.id] = d.data; });
+      this._reaplicarPendentes(col, mapa);
       this.cache[col] = mapa;
       this._salvarLocal();
       this.online = true;
@@ -134,6 +151,9 @@
       var mudou = false;
       (r.docs || []).forEach(function (d) {
         if (!self.cache[d.col]) self.cache[d.col] = {};
+        /* Nunca deixa uma versao antiga do servidor sobrescrever uma
+           gravegacao local que ainda aguarda confirmacao. */
+        if (self._temPendente(d.col, d.id)) return;
         self.cache[d.col][d.id] = d.data;
         mudou = true;
       });
