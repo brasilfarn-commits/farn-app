@@ -44,7 +44,7 @@
   <h2>2. Status da conexão</h2>
   <div class="status" id="status"><div class="cartao"><b>—</b><span>Consultando...</span></div></div>
   <button onclick="verificar()">Atualizar status</button>
-  <button class="volt" onclick="usarNuvem()">Voltar para a nuvem (Worker/D1)</button>
+  <button class="volt" onclick="usarNuvem()">Usar o servidor padrão do sistema</button>
 
   <div class="aviso">
     <b>Como funciona:</b> rode <code>servidor\1-INICIAR-SERVIDOR.bat</code> e depois
@@ -78,7 +78,7 @@ function usarNuvem() {
   try { localStorage.removeItem(CHAVE); } catch (e) {}
   document.getElementById('url').value = '';
   document.getElementById('token').value = '';
-  var ok = document.getElementById('ok'); ok.textContent = 'Voltou para a nuvem. Recarregue as páginas.'; ok.style.display = 'block';
+  var ok = document.getElementById('ok'); ok.textContent = 'Voltou para o servidor padrão (seu Ubuntu). Recarregue as páginas.'; ok.style.display = 'block';
 }
 function voltar() { location.href = 'index.html'; }
 async function verificar() {
@@ -96,7 +96,7 @@ async function verificar() {
     box.innerHTML = '<div class="cartao"><b>' + (j.ok ? 'ONLINE' : '?') + '</b><span>Servidor</span></div>'
       + '<div class="cartao"><b>' + docs + '</b><span>Documentos</span></div>'
       + '<div class="cartao"><b>' + (stats && stats.colecoes ? stats.colecoes.length : '—') + '</b><span>Coleções</span></div>'
-      + '<div class="cartao"><b>' + (c.url ? 'PRÓPRIO' : 'NUVEM') + '</b><span>Modo atual</span></div>';
+      + '<div class="cartao"><b>' + (c.url ? 'CONFIGURADO' : 'PADRÃO') + '</b><span>Modo atual</span></div>';
   } catch (e) {
     box.innerHTML = '<div class="cartao" style="border-color:#fecaca;background:#fef2f2"><b style="color:#991b1b">OFFLINE</b><span>' + e.message + '</span></div>';
   }
