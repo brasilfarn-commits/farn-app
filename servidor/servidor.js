@@ -106,7 +106,14 @@ function mesclar(col, id, dados, merge) {
     d = Object.assign({}, anterior, d);
     for (const k of Object.keys(d)) if (d[k] && d[k].__farnDelete) delete d[k];
   }
+  /* Reativar um documento excluido: a lapide nunca pode sobreviver a uma
+     gravacao nova, senao o registro continuaria invisivel no /api/all. */
+  delete d.__farnDelete;
   return d;
+}
+function lapide(col, id) {
+  const t = agora();
+  sqlGravar.run(col, String(id), JSON.stringify({ __farnDelete: true, deletadoEm: t }), t);
 }
 
 const servidor = http.createServer(async (req, res) => {
@@ -126,8 +133,14 @@ const servidor = http.createServer(async (req, res) => {
 
     /* Estatisticas (usadas pela pagina de configuracao) */
     if (p === '/api/stats') {
-      const linhas = db.prepare('SELECT col, COUNT(*) AS n FROM docs GROUP BY col ORDER BY col').all();
-      return json(res, { docs: Number(sqlContar.get().n), colecoes: linhas.map(x => ({ col: x.col, n: Number(x.n) })) });
+      const linhas = db.prepare('SELECT col, id, data FROM docs').all();
+      const visiveis = linhas.filter(x => {
+        try { return !(JSON.parse(x.data) || {}).__farnDelete; } catch (e) { return true; }
+      });
+      const porCol = {};
+      visiveis.forEach(x => { porCol[x.col] = (porCol[x.col] || 0) + 1; });
+      const colecoes = Object.keys(porCol).sort().map(col => ({ col, n: porCol[col] }));
+      return json(res, { docs: visiveis.length, colecoes });
     }
 
     /* capacidade do Ubuntu, memoria e tamanho do banco SQLite */
@@ -157,7 +170,9 @@ const servidor = http.createServer(async (req, res) => {
       const col = url.searchParams.get('col');
       if (!col) return json(res, { error: 'col obrigatoria' }, 400);
       if (cache.has(col)) return json(res, { docs: cache.get(col) });
-      const docs = sqlTudo.all(col).map(x => ({ id: x.id, data: JSON.parse(x.data) }));
+      const docs = sqlTudo.all(col)
+        .map(x => ({ id: x.id, data: JSON.parse(x.data) }))
+        .filter(x => !(x.data && x.data.__farnDelete));
       cache.set(col, docs);
       return json(res, { docs });
     }
@@ -185,7 +200,9 @@ const servidor = http.createServer(async (req, res) => {
     if (p === '/api/delete' && req.method === 'POST') {
       const b = await lerCorpo(req);
       if (!b.col || !b.id) return json(res, { error: 'col e id obrigatorios' }, 400);
-      sqlApagar.run(b.col, String(b.id));
+      /* Exclusao vira lapide: o /api/changes propaga para os navegadores
+         offline. O /api/all esconde a lapide, entao o usuario nao a ve. */
+      lapide(b.col, String(b.id));
       cacheLimpar();
       return json(res, { ok: true });
     }
@@ -197,7 +214,7 @@ const servidor = http.createServer(async (req, res) => {
       try {
         for (const op of ops) {
           const id = idOuNovo(op.id);
-          if (op.type === 'delete') sqlApagar.run(op.col, String(id));
+          if (op.type === 'delete') lapide(op.col, String(id));
           else sqlGravar.run(op.col, String(id), JSON.stringify(mesclar(op.col, id, op.data || {}, op.merge)), agora());
         }
         db.exec('COMMIT');

@@ -49,6 +49,7 @@
   <h2>2. Status da conexão</h2>
   <div class="status" id="status"><div class="cartao"><b>—</b><span>Consultando...</span></div></div>
   <button onclick="verificar()">Atualizar status</button>
+  <button onclick="sincronizarAgora()">Sincronizar agora</button>
   <button class="volt" onclick="usarNuvem()">Usar o servidor padrão do sistema</button>
 
   <div class="aviso">
@@ -86,6 +87,7 @@
   </div>
 </div>
 
+<script src="farn-db.js?v=17"></script>
 <script>
 var CHAVE = 'farn_api_config';
 var URL_PADRAO = 'https://howto-alliance-pest-contest.trycloudflare.com';
@@ -129,6 +131,32 @@ function usarNuvem() {
   var ok = document.getElementById('ok'); ok.textContent = 'Voltou para o servidor padrão (seu Ubuntu). Recarregue as páginas.'; ok.style.display = 'block';
 }
 function voltar() { location.href = 'index.html'; }
+function cartaoSincronizacao() {
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem('farn_db_sync_v1') || 'null'); } catch (e) {}
+  if (!s || !s.em) {
+    return '<div class="cartao"><b>—</b><span>Sincronização</span></div>';
+  }
+  var hora = new Date(s.em).toLocaleTimeString('pt-BR');
+  var pend = Number(s.pendentes || 0);
+  var rotulo = s.erro ? 'COM ERRO' : (pend ? pend + ' PENDENTE(S)' : 'EM DIA');
+  var cor = s.erro || pend ? '#991b1b' : '#166534';
+  return '<div class="cartao"><b style="color:' + cor + '">' + rotulo + '</b><span>Última sincronização: ' + hora + '</span></div>';
+}
+async function sincronizarAgora() {
+  var ok = document.getElementById('ok');
+  try {
+    var db = new FarnDB();
+    await db.sincronizar();
+    ok.textContent = 'Sincronização concluída. Atualizando status...';
+    ok.style.display = 'block';
+    await verificar();
+  } catch (e) {
+    var erro = document.getElementById('erro');
+    erro.textContent = 'Falha ao sincronizar: ' + e.message;
+    erro.style.display = 'block';
+  }
+}
 async function verificar() {
   var c = ler();
   var base = c.url || URL_PADRAO;
@@ -144,9 +172,11 @@ async function verificar() {
     box.innerHTML = '<div class="cartao"><b>' + (j.ok ? 'ONLINE' : '?') + '</b><span>Servidor</span></div>'
       + '<div class="cartao"><b>' + docs + '</b><span>Documentos</span></div>'
       + '<div class="cartao"><b>' + (stats && stats.colecoes ? stats.colecoes.length : '—') + '</b><span>Coleções</span></div>'
-      + '<div class="cartao"><b>' + (c.url ? 'CONFIGURADO' : 'PADRÃO') + '</b><span>Modo atual</span></div>';
+      + '<div class="cartao"><b>' + (c.url ? 'CONFIGURADO' : 'PADRÃO') + '</b><span>Modo atual</span></div>'
+      + cartaoSincronizacao();
   } catch (e) {
-    box.innerHTML = '<div class="cartao" style="border-color:#fecaca;background:#fef2f2"><b style="color:#991b1b">OFFLINE</b><span>' + e.message + '</span></div>';
+    box.innerHTML = '<div class="cartao" style="border-color:#fecaca;background:#fef2f2"><b style="color:#991b1b">OFFLINE</b><span>' + e.message + '</span></div>'
+      + cartaoSincronizacao();
   }
 }
 function mostrarLimites() {

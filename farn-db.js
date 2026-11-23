@@ -11,6 +11,7 @@
   var KEY_CACHE = 'farn_db_cache_v1';
   var KEY_QUEUE = 'farn_db_queue_v1';
   var KEY_SINCE = 'farn_db_since_v1';
+  var KEY_SYNC = 'farn_db_sync_v1';
   var URL_PADRAO = 'https://howto-alliance-pest-contest.trycloudflare.com';
   var URLS_TUNEIS_ANTIGOS = [
     'https://planets-linear-vbulletin-colin.trycloudflare.com',
@@ -45,15 +46,18 @@
     this.online = true;
     this.fila = [];
     this._carregadas = {};
+    this._flushPromise = null;
+    this.ultimaSincronizacao = null;
+    this.erroSincronizacao = null;
     this._carregarLocal();
-    /* Sempre reconcilia desde o inicio: um since antigo com cache vazio
-       deixaria o sistema sem dados mesmo com o banco cheio. */
-    this.since = 0;
+    /* Se existe espelho local, o since salvo ainda serve e evita baixar o
+       historico inteiro a cada abertura. Com cache vazio, volta ao inicio. */
+    if (!Object.keys(this.cache).length) this.since = 0;
     var self = this;
-    window.addEventListener('online', function () { self.online = true; self._flush(); self._poll(); });
+    window.addEventListener('online', function () { self.online = true; self.sincronizar(); });
     window.addEventListener('offline', function () { self.online = false; });
     this._iniciarPolling();
-    this._flush();
+    this.sincronizar();
   }
 
   /* ---------- persistencia local (offline) ---------- */
@@ -113,24 +117,44 @@
   FarnDB.prototype._enfileirar = function (op) {
     this.fila.push(op);
     this._salvarLocal();
-    this._flush();
+    /* Nao await: a interface nao pode travar esperando a rede. A fila fica
+       salva e o proximo ciclo de sincronizacao tenta de novo. */
+    this._flush().catch(function () {});
   };
-  FarnDB.prototype._flush = async function () {
-    if (!this.fila.length || !navigator.onLine) return;
+  /* Envia LOCAL -> SERVIDOR. Uma unica promessa por vez evita que o mesmo
+     lote seja enviado duas vezes quando ha varias gravacoes em sequencia. */
+  FarnDB.prototype._flush = function () {
+    if (this._flushPromise) return this._flushPromise;
+    if (!this.fila.length || !navigator.onLine) return Promise.resolve();
+    var self = this;
     var lote = this.fila.slice();
-    try {
-      await this._req('/api/batch', { method: 'POST', body: JSON.stringify({ ops: lote }) });
-      this.fila = this.fila.filter(function (op) { return lote.indexOf(op) < 0; });
-      this._salvarLocal();
-      this.online = true;
-      this._avisarTodos();
-    } catch (e) { this.online = false; }
+    this._flushPromise = (async function () {
+      try {
+        await self._req('/api/batch', { method: 'POST', body: JSON.stringify({ ops: lote }) });
+        self.fila = self.fila.filter(function (op) { return lote.indexOf(op) < 0; });
+        self._salvarLocal();
+        self.online = true;
+        self._avisarTodos();
+      } catch (e) {
+        self.online = false;
+        throw e;
+      }
+    })();
+    var promessa = this._flushPromise;
+    var limpar = function () { if (self._flushPromise === promessa) self._flushPromise = null; };
+    promessa.then(limpar, limpar);
+    return promessa;
   };
   FarnDB.prototype._avisarTodos = function () {
     this.listeners.slice().forEach(function (l) { l.emitir(); });
   };
   FarnDB.prototype.status = function () {
-    return { online: this.online && navigator.onLine !== false, pendentes: this.fila.length };
+    return {
+      online: this.online && navigator.onLine !== false,
+      pendentes: this.fila.length,
+      ultimaSincronizacao: this.ultimaSincronizacao,
+      erro: this.erroSincronizacao
+    };
   };
 
   FarnDB.prototype._req = async function (path, opts) {
@@ -164,7 +188,10 @@
     try {
       var r = await this._req('/api/all?col=' + encodeURIComponent(col));
       var mapa = {};
-      (r.docs || []).forEach(function (d) { mapa[d.id] = d.data; });
+      (r.docs || []).forEach(function (d) {
+        if (d.data && d.data.__farnDelete) return;
+        mapa[d.id] = d.data;
+      });
       this._reaplicarPendentes(col, mapa);
       this.cache[col] = mapa;
       this._salvarLocal();
@@ -193,30 +220,59 @@
   FarnDB.prototype._iniciarPolling = function () {
     var self = this;
     if (self.timer) clearInterval(self.timer);
-    self.timer = setInterval(function () { self._poll(); }, 5000);
+    self.timer = setInterval(function () { self.sincronizar(); }, 5000);
   };
 
-  FarnDB.prototype._poll = async function () {
-    if (!this.listeners.length && this.since === 0) return;
+  /* Ciclo completo: envia o que foi gravado offline e depois traz o que
+     mudou no servidor. Roda a cada 5 s e tambem ao voltar a conexao. */
+  FarnDB.prototype.sincronizar = async function () {
+    if (!navigator.onLine) { this.online = false; return; }
+    var EstadoAntes = this.online;
+    try { await this._flush(); } catch (e) { this.online = false; }
     try {
-      var r = await this._req('/api/changes?since=' + this.since);
-      var mudou = false;
-      (r.docs || []).forEach(function (d) {
-        if (!self.cache[d.col]) self.cache[d.col] = {};
-        /* Nunca deixa uma versao antiga do servidor sobrescrever uma
-           gravegacao local que ainda aguarda confirmacao. */
-        if (self._temPendente(d.col, d.id)) return;
-        self.cache[d.col][d.id] = d.data;
-        mudou = true;
-      });
-      this.since = r.since || this.since;
+      await this._poll();
       this.online = true;
-      this._salvarLocal();
-      if (mudou) this._avisarTodos();
-      if (this.fila.length) this._flush();
+      this.erroSincronizacao = null;
+      this.ultimaSincronizacao = new Date().toISOString();
     } catch (e) {
       this.online = false;
+      this.erroSincronizacao = String((e && e.message) || e);
     }
+    try {
+      localStorage.setItem(KEY_SYNC, JSON.stringify({
+        em: this.ultimaSincronizacao,
+        pendentes: this.fila.length,
+        online: this.online,
+        erro: this.erroSincronizacao
+      }));
+    } catch (e) {}
+    if (EstadoAntes !== this.online) this._avisarTodos();
+  };
+
+  /* Recebe SERVIDOR -> LOCAL. Exclusoes chegam como lapide (__farnDelete). */
+  FarnDB.prototype._poll = async function () {
+    var self = this;
+    var sinceAntes = this.since;
+    var r = await this._req('/api/changes?since=' + this.since);
+    var mudou = false;
+    (r.docs || []).forEach(function (d) {
+      if (!self.cache[d.col]) self.cache[d.col] = {};
+      /* Nunca deixa uma versao antiga do servidor sobrescrever uma
+         gravacao local que ainda aguarda confirmacao. */
+      if (self._temPendente(d.col, d.id)) return;
+      if (d.data && d.data.__farnDelete) {
+        if (Object.prototype.hasOwnProperty.call(self.cache[d.col], d.id)) {
+          delete self.cache[d.col][d.id];
+          mudou = true;
+        }
+        return;
+      }
+      self.cache[d.col][d.id] = d.data;
+      mudou = true;
+    });
+    this.since = r.since || this.since;
+    if (mudou || this.since !== sinceAntes) this._salvarLocal();
+    if (mudou) this._avisarTodos();
   };
 
   /* ---------- snippets ---------- */
@@ -376,7 +432,7 @@
     self._ops.forEach(function (op) { self._db.fila.push(op); });
     self._db._salvarLocal();
     self._db._avisarTodos();
-    self._db._flush();
+    self._db._flush().catch(function () {});
     return Promise.resolve();
   };
 
@@ -403,6 +459,12 @@
     return new DocRef(this, col, id);
   };
   FarnDB.prototype.batch = function () { return new Batch(this); };
+
+  /* Utilitario: forca um ciclo completo local -> servidor -> local. */
+  global.farnSincronizarAgora = function () {
+    if (!global.dbFirestore) return Promise.resolve(null);
+    return global.dbFirestore.sincronizar();
+  };
 
   /* Utilitario: descarta o espelho local e volta a ler tudo do servidor. */
   global.farnLimparCache = function () {
