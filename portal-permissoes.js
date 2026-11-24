@@ -426,11 +426,34 @@ function puItensParaMapa(salvo) {
     });
     return mapa;
 }
+/* Procura em qual(is) curso(s) o CPF consta como individuo. O login confere
+   candidatos/usuarios ANTES do cadastro de cursos, entao quem esta nas duas
+   partes loga pela colecao geral e nunca ganhava o _cursoId — e as
+   permissoes do curso nao eram aplicadas. */
+async function puVincularCursosPorCpf(cpf) {
+    var c = String(cpf || '').replace(/\D/g, '');
+    if (!c || typeof dbFirestore === 'undefined' || !dbFirestore) return [];
+    var ids = [];
+    try {
+        var snap = await dbFirestore.collection('cursosCadastro').get();
+        var cursos = snap.docs || [];
+        /* Teto de 30 cursos para nao travar o login em base grande. */
+        for (var i = 0; i < cursos.length && i < 30; i++) {
+            try {
+                var ind = await dbFirestore.collection('cursosCadastro').doc(cursos[i].id)
+                    .collection('individuos').where('cpf', '==', c).limit(1).get();
+                if (!ind.empty) ids.push(cursos[i].id);
+            } catch (e) {}
+        }
+    } catch (e) {}
+    return ids;
+}
 /* Cursos vinculados ao usuario logado. Aluno que entrou pelo curso tem
    _cursoId; docenteResponsavel e encontrado pelo docenteResponsavelId. */
 async function puCursosDoUsuario() {
     var u = puUserAtual();
     if (!u || typeof dbFirestore === 'undefined' || !dbFirestore) return [];
+    if (u._cursoIds && u._cursoIds.length) return u._cursoIds.map(String);
     if (u._cursoId) return [String(u._cursoId)];
     if (puEhDocente() && u._docId) {
         try {
@@ -537,6 +560,8 @@ puObservarMenuPortal();
 /* Exposto para os scripts inline do portal. */
 window.puAplicarMenuPortal = puAplicarMenuPortal;
 window.puObservarMenuPortal = puObservarMenuPortal;
+window.puVincularCursosPorCpf = puVincularCursosPorCpf;
+window.puCursosDoUsuario = puCursosDoUsuario;
 window.puCatalogoPermissoes = puCatalogoPermissoes;
 window.puPermissoesPadrao = puPermissoesPadrao;
 window.puRegistrarRelatorios = puRegistrarRelatorios;

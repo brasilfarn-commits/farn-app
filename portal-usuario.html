@@ -209,7 +209,7 @@
         #pu-modal-overlay.aberto { display:block; }
     </style>
 <script src="farn-db.js?v=20"></script>
-<script src="portal-permissoes.js?v=6"></script>
+<script src="portal-permissoes.js?v=7"></script>
 <script>
         function fgStatusAtivo(st) { return st === 'Ativo' || st === 'Formado' || st === 'Acadêmico'; }
 
@@ -329,6 +329,23 @@
                 }
                 if (!encontrado) { puErro('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.'); }
                 else {
+                    /* Vincula aos cursos onde o CPF consta como individuo,
+                       mesmo quando o login veio de candidatos/usuarios.
+                       Sem isso as permissoes por curso do Cadastro de
+                       Cursos nao eram aplicadas neste usuario. */
+                    if (!encontrado._cursoId && typeof puVincularCursosPorCpf === 'function') {
+                        try {
+                            var idsVinculo = await puVincularCursosPorCpf(cpf);
+                            if (idsVinculo.length) {
+                                encontrado._cursoIds = idsVinculo;
+                                encontrado._cursoId = idsVinculo[0];
+                            } else {
+                                encontrado._cursoIds = [];
+                            }
+                        } catch (eV) {}
+                    } else if (!encontrado._cursoIds) {
+                        encontrado._cursoIds = encontrado._cursoId ? [encontrado._cursoId] : [];
+                    }
                     puUser = encontrado;
                     try { localStorage.setItem('pu_sessao', JSON.stringify(encontrado)); } catch(e){}
                     puMostrarApp();
@@ -713,7 +730,21 @@
         window.addEventListener('DOMContentLoaded', function () {
             var salvo = null;
             try { salvo = JSON.parse(localStorage.getItem('pu_sessao') || 'null'); } catch(e){}
-            if (salvo && salvo.cpf) { puUser = salvo; puMostrarApp(); }
+            if (!salvo || !salvo.cpf) return;
+            puUser = salvo;
+            puMostrarApp();
+            /* Sessoes gravadas antes do vinculo por CPF: resolve o curso e
+               reaplica o menu na hora em que a busca terminar. */
+            if ((!puUser._cursoIds || !puUser._cursoIds.length) && !puUser._cursoId
+                && typeof puVincularCursosPorCpf === 'function') {
+                puVincularCursosPorCpf(puUser.cpf).then(function (ids) {
+                    if (!ids.length || !puUser) return;
+                    puUser._cursoIds = ids;
+                    if (!puUser._cursoId) puUser._cursoId = ids[0];
+                    try { localStorage.setItem('pu_sessao', JSON.stringify(puUser)); } catch (e) {}
+                    puAplicarMenuPortal();
+                }).catch(function () {});
+            }
         });
     </script>
 </body>
