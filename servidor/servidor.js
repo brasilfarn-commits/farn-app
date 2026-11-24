@@ -20,6 +20,147 @@ const DIR_DADOS = path.join(__dirname, 'dados');
 const ARQ_DB = path.join(DIR_DADOS, 'farn.db');
 const TOKEN = String(process.env.FARN_TOKEN || '');
 
+/* Pasta com os arquivos do site (HTML/JS/IMG). Quando existe, o servidor
+   tambem publica o app — assim o Ubuntu hospeda site + API no mesmo lugar,
+   sem depender do Firebase Hosting. */
+const DIR_SITE = path.resolve(process.env.DIR_SITE || path.join(__dirname, 'public'));
+
+/* Arquivos enviados pelo app (videos, insignias, fotos, apostilas):
+   substituem o Firebase Storage. */
+const DIR_ARQUIVOS = path.resolve(process.env.DIR_ARQUIVOS || path.join(__dirname, 'arquivos'));
+const LIMITE_UPLOAD = 512 * 1024 * 1024; /* 512 MB por arquivo */
+if (!fs.existsSync(DIR_ARQUIVOS)) fs.mkdirSync(DIR_ARQUIVOS, { recursive: true });
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8', '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
+  '.svg': 'image/svg+xml', '.webp': 'image/webp', '.avif': 'image/avif', '.ico': 'image/x-icon',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf',
+  '.mp4': 'video/mp4', '.webm': 'video/webm', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg',
+  '.pdf': 'application/pdf', '.txt': 'text/plain; charset=utf-8',
+  '.md': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
+  '.wasm': 'application/wasm', '.zip': 'application/zip'
+};
+
+/* Resolve um caminho da URL dentro de DIR_SITE, barrando ".." e nulos. */
+function siteArquivo(p) {
+  let rel;
+  try { rel = decodeURIComponent(p); } catch (e) { return null; }
+  if (rel.indexOf('\0') >= 0) return null;
+  if (rel === '/' || rel === '') rel = '/index.html';
+  const abs = path.normalize(path.join(DIR_SITE, rel));
+  if (abs !== DIR_SITE && abs.indexOf(DIR_SITE + path.sep) !== 0) return null;
+  try {
+    let st = fs.statSync(abs);
+    if (st.isDirectory()) {
+      abs = path.join(abs, 'index.html');
+      st = fs.statSync(abs);
+      if (!st.isFile()) return null;
+    }
+    if (!st.isFile()) return null;
+    return { arq: abs, st };
+  } catch (e) { return null; }
+}
+
+function enviarSite(res, req, p) {
+  const alvo = siteArquivo(p);
+  if (!alvo) return false;
+  const ext = path.extname(alvo.arq).toLowerCase();
+  /* HTML/JS/CSS nunca ficam guardados: publicou, ja aparece. */
+  const cache = (ext === '.html' || ext === '.htm' || ext === '.js' || ext === '.mjs'
+    || ext === '.css' || ext === '.json' || ext === '.webmanifest')
+    ? 'no-cache, max-age=0, must-revalidate'
+    : 'public, max-age=3600';
+  res.writeHead(200, {
+    'Content-Type': MIME[ext] || 'application/octet-stream',
+    'Content-Length': alvo.st.size,
+    'Cache-Control': cache
+  });
+  if (req.method === 'HEAD') { res.end(); return true; }
+  fs.createReadStream(alvo.arq).pipe(res);
+  return true;
+}
+
+/* ---------- arquivos enviados pelo app (no lugar do Firebase Storage) ---------- */
+
+/* Caminho seguro dentro de DIR_ARQUIVOS: barrada ".." e nulos. */
+function arquivoSeguro(p) {
+  let rel = String(p || '');
+  try { rel = decodeURIComponent(rel); } catch (e) { /* caminho ja veio decodificado */ }
+  if (!rel || rel.indexOf('\0') >= 0) return null;
+  rel = rel.replace(/^\/+/, '');
+  const abs = path.normalize(path.join(DIR_ARQUIVOS, rel));
+  if (abs.indexOf(DIR_ARQUIVOS + path.sep) !== 0) return null;
+  return abs;
+}
+
+function urlPublicaArquivo(req, caminho) {
+  const proto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
+  const partes = String(caminho).split('/').map(encodeURIComponent).join('/');
+  return proto + '://' + req.headers.host + '/api/arquivo/' + partes;
+}
+
+/* Grava o corpo da requisicao em disco (streaming, sem carregar na memoria). */
+function receberUpload(req, caminho) {
+  const abs = arquivoSeguro(caminho);
+  if (!abs) return Promise.reject(new Error('caminho invalido'));
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  const tmp = abs + '.parcial';
+  return new Promise((resolve, reject) => {
+    const ws = fs.createWriteStream(tmp);
+    let bytes = 0;
+    let falhou = false;
+    const erro = (e) => {
+      if (falhou) return;
+      falhou = true;
+      try { ws.destroy(); } catch (e2) {}
+      try { fs.unlinkSync(tmp); } catch (e2) {}
+      reject(e);
+    };
+    req.on('data', (c) => {
+      bytes += c.length;
+      if (bytes > LIMITE_UPLOAD) erro(new Error('Arquivo maior que 512 MB'));
+    });
+    req.on('error', erro);
+    ws.on('error', erro);
+    ws.on('finish', () => {
+      if (falhou) return;
+      try {
+        fs.renameSync(tmp, abs);
+        resolve({ abs, bytes });
+      } catch (e) { erro(e); }
+    });
+    req.pipe(ws);
+  });
+}
+
+/* Apaga arquivo ou todos os de uma pasta (ex.: ao excluir conversa). */
+function apagarArquivo(abs) {
+  try { fs.unlinkSync(abs); return true; } catch (e) { return false; }
+}
+function apagarPasta(prefixo) {
+  const base = arquivoSeguro(prefixo);
+  if (!base) return 0;
+  let n = 0;
+  const varrer = (dir) => {
+    let itens = [];
+    try { itens = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    itens.forEach((it) => {
+      const caminho = path.join(dir, it.name);
+      if (it.isDirectory()) varrer(caminho);
+      else if (apagarArquivo(caminho)) n++;
+    });
+  };
+  try {
+    if (fs.statSync(base).isDirectory()) varrer(base);
+    else if (apagarArquivo(base)) n = 1;
+  } catch (e) {}
+  return n;
+}
+
 if (!fs.existsSync(DIR_DADOS)) fs.mkdirSync(DIR_DADOS, { recursive: true });
 
 const db = new DatabaseSync(ARQ_DB);
@@ -119,12 +260,16 @@ function lapide(col, id) {
 const servidor = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204, CORS); res.end(); return; }
 
-  if (TOKEN && req.headers['x-farn-token'] !== TOKEN) {
-    return json(res, { error: 'Token invalido' }, 401);
-  }
-
   const url = new URL(req.url, 'http://localhost');
   const p = url.pathname;
+
+  /* Token protege a API. Downloads de arquivo ficam abertos para o <img>/
+     <video> conseguir abrir a URL direto. As paginas do site tambem. */
+  if (TOKEN && p.indexOf('/api/') === 0
+      && !(req.method === 'GET' && p.indexOf('/api/arquivo/') === 0)
+      && req.headers['x-farn-token'] !== TOKEN) {
+    return json(res, { error: 'Token invalido' }, 401);
+  }
 
   try {
     if (p === '/api/ping') {
@@ -239,12 +384,70 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, { ok: true, importados: n });
     }
 
-    if (p === '/' || p === '/status') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<!doctype html><meta charset="utf-8"><title>FARN Servidor Local</title>'
-        + '<h2 style="font-family:Arial;color:#0f766e">FARN - Servidor local ativo</h2>'
-        + '<p style="font-family:Arial">Banco: ' + ARQ_DB + '</p>'
-        + '<p style="font-family:Arial">Documentos: ' + Number(sqlContar.get().n) + '</p>');
+    /* ---------- arquivos (substituem o Firebase Storage) ---------- */
+
+    if (p === '/api/upload' && (req.method === 'POST' || req.method === 'PUT')) {
+      const caminho = url.searchParams.get('caminho');
+      if (!caminho) return json(res, { error: 'caminho obrigatorio' }, 400);
+      if (!arquivoSeguro(caminho)) return json(res, { error: 'caminho invalido' }, 400);
+      const r = await receberUpload(req, caminho);
+      return json(res, { ok: true, url: urlPublicaArquivo(req, caminho), bytes: r.bytes });
+    }
+
+    if (p.indexOf('/api/arquivo/') === 0 && req.method === 'GET') {
+      const abs = arquivoSeguro(p.slice('/api/arquivo/'.length));
+      let st = null;
+      try { st = abs ? fs.statSync(abs) : null; } catch (e) {}
+      if (!st || !st.isFile()) return json(res, { error: 'Arquivo nao encontrado' }, 404);
+      const ext = path.extname(abs).toLowerCase();
+      res.writeHead(200, {
+        'Content-Type': MIME[ext] || 'application/octet-stream',
+        'Content-Length': st.size,
+        /* Fotos tem o mesmo caminho quando atualizadas: sem cache longo,
+           senao a foto antiga continua aparecendo por um dia. */
+        'Cache-Control': 'no-cache, max-age=0, must-revalidate',
+        'Access-Control-Allow-Origin': '*'
+      });
+      if (req.method === 'HEAD') { res.end(); return; }
+      return fs.createReadStream(abs).pipe(res);
+    }
+
+    if (p === '/api/arquivo/excluir' && req.method === 'POST') {
+      const b = await lerCorpo(req);
+      let caminho = String(b.caminho || '');
+      if (!caminho && b.url) {
+        const u = String(b.url);
+        const i = u.indexOf('/api/arquivo/');
+        if (i >= 0) caminho = u.slice(i + '/api/arquivo/'.length);
+      }
+      if (b.prefixo) {
+        return json(res, { ok: true, apagados: apagarPasta(String(b.prefixo)) });
+      }
+      if (!caminho) return json(res, { error: 'caminho ou prefixo obrigatorio' }, 400);
+      const abs = arquivoSeguro(caminho);
+      if (!abs) return json(res, { error: 'caminho invalido' }, 400);
+      return json(res, { ok: true, apagado: apagarArquivo(abs) });
+    }
+
+    /* Site estatico: o Ubuntu hospeda o app inteiro. GET/HEAD apenas. */
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      if (enviarSite(res, req, p)) return;
+
+      if (p === '/' || p === '/status') {
+        /* Sem pasta public ainda, mostra o painel do servidor. */
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        return res.end('<!doctype html><meta charset="utf-8"><title>FARN Servidor Local</title>'
+          + '<h2 style="font-family:Arial;color:#0f766e">FARN - Servidor local ativo</h2>'
+          + '<p style="font-family:Arial">Banco: ' + ARQ_DB + '</p>'
+          + '<p style="font-family:Arial">Documentos: ' + Number(sqlContar.get().n) + '</p>');
+      }
+
+      if (p.indexOf('/api/') !== 0) {
+        res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+        return res.end('<!doctype html><meta charset="utf-8"><title>404</title>'
+          + '<h1 style="font-family:Arial">404 - arquivo nao encontrado</h1>'
+          + '<p style="font-family:Arial"><a href="/">Voltar para o inicio</a></p>');
+      }
     }
 
     return json(res, { error: 'Rota nao encontrada', path: p }, 404);
@@ -256,8 +459,10 @@ const servidor = http.createServer(async (req, res) => {
 
 servidor.listen(PORT, '0.0.0.0', () => {
   console.log('FARN Servidor Local');
-  console.log('  API:  http://localhost:' + PORT);
-  console.log('  Banco:' + ARQ_DB);
-  console.log('  Docs: ' + Number(sqlContar.get().n));
-  if (TOKEN) console.log('  Token: exigido');
+  console.log('  API:     http://localhost:' + PORT);
+  console.log('  Banco:   ' + ARQ_DB);
+  console.log('  Site:    ' + DIR_SITE + (fs.existsSync(path.join(DIR_SITE, 'index.html')) ? ' (publicado)' : ' (sem publicar ainda)'));
+  console.log('  Arquivos:' + DIR_ARQUIVOS);
+  console.log('  Docs:    ' + Number(sqlContar.get().n));
+  if (TOKEN) console.log('  Token:   exigido');
 });

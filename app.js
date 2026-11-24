@@ -12775,7 +12775,8 @@ async function noticiasSalvarImagens(coluna) {
     var pend = noticiasPendentes[coluna] || [];
     if (!pend.length) { alert('Selecione imagens ou vídeos primeiro.'); return; }
     var temVideo = pend.some(function(it) { return it.tipo === 'video'; });
-    if (temVideo && (!firebase || !firebase.storage)) { alert('Armazenamento de vídeos não configurado. Habilite o Firebase Storage no console do projeto.'); return; }
+    var temArquivoProprio = (typeof FarnArquivo !== 'undefined' && FarnArquivo.disponivel());
+    if (temVideo && !temArquivoProprio && (!firebase || !firebase.storage)) { alert('Armazenamento de arquivos não configurado. Publique o site no servidor próprio ou habilite o Firebase Storage.'); return; }
     var n = pend.length;
     var txtEl = document.getElementById('noticias-texto-' + coluna);
     var texto = txtEl ? txtEl.value.trim() : '';
@@ -12797,9 +12798,15 @@ async function noticiasSalvarImagens(coluna) {
         if (item.tipo === 'video') {
             var nomeOriginal = item.nomeArquivo || item.file.name || 'video.mp4';
             var ext = (item.file.type === 'video/webm' || (item.file.type || '').indexOf('webm') !== -1) ? 'webm' : (nomeOriginal.split('.').pop() || 'mp4');
-            var ref = firebase.storage().ref('noticias/' + Date.now() + '_' + i + '.' + ext);
-            await ref.put(item.file);
-            var url = await ref.getDownloadURL();
+            var caminhoVideo = 'noticias/' + Date.now() + '_' + i + '.' + ext;
+            var url = null;
+            if (temArquivoProprio) {
+                url = await FarnArquivo.upload(caminhoVideo, item.file, item.file.type || 'video/mp4');
+            } else {
+                var ref = firebase.storage().ref(caminhoVideo);
+                await ref.put(item.file);
+                url = await ref.getDownloadURL();
+            }
             dados.videoUrl = url;
             dados.imagem = item.thumb || '';
             dados.nomeArquivo = nomeOriginal;
@@ -13076,6 +13083,11 @@ function blogComTimeout(promise, ms, mensagem) {
 var blogStorageCache = null;
 function blogStorageDisponivel() {
     if (blogStorageCache !== null) return Promise.resolve(blogStorageCache);
+    /* Servidor proprio (Ubuntu) hospeda os arquivos: sempre disponivel. */
+    if (typeof FarnArquivo !== 'undefined' && FarnArquivo.disponivel()) {
+        blogStorageCache = true;
+        return Promise.resolve(true);
+    }
     return new Promise(function(resolve) {
         var bucket = (firebase.app().options || {}).storageBucket || '';
         if (!bucket || !firebase.storage) { blogStorageCache = false; resolve(false); return; }
@@ -13144,7 +13156,13 @@ async function blogUploadImagem(file) {
     try {
         var blob = await blogDataUrlParaBlob(dataUrl);
         var nome = (file.name || 'imagem').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
-        var ref = firebase.storage().ref('blog/' + Date.now() + '_' + nome + '.jpg');
+        var caminho = 'blog/' + Date.now() + '_' + nome + '.jpg';
+        if (typeof FarnArquivo !== 'undefined' && FarnArquivo.disponivel()) {
+            var urlPropria = await blogComTimeout(FarnArquivo.upload(caminho, blob, 'image/jpeg'), 20000,
+                'Tempo esgotado ao enviar a imagem.');
+            return urlPropria || dataUrl;
+        }
+        var ref = firebase.storage().ref(caminho);
         task = ref.put(blob, { contentType: 'image/jpeg' });
         await blogComTimeout(task, 15000, 'Tempo esgotado ao enviar a imagem.');
         return await blogComTimeout(ref.getDownloadURL(), 8000, 'Tempo esgotado ao obter a imagem.');
@@ -13157,7 +13175,7 @@ async function blogUploadImagem(file) {
 
 async function blogUploadVideo(file) {
     if (!(await blogStorageDisponivel())) {
-        throw new Error('O envio de arquivo de video nao esta disponivel porque o Firebase Storage nao esta ativado neste projeto. Use um link do YouTube ou um link .mp4, ou remova o video para salvar a noticia.');
+        throw new Error('O envio de arquivo de video nao esta disponivel porque nao ha armazenamento configurado. Publique o site no servidor proprio, use um link do YouTube ou um link .mp4, ou remova o video para salvar a noticia.');
     }
     var meta = await blogComTimeout(noticiasValidarVideo(file), 15000, 'Nao foi possivel ler o video. Verifique se o formato e compativel.');
     var poster = '';
@@ -13172,9 +13190,21 @@ async function blogUploadVideo(file) {
         var limiteCompressao = Math.min(240000, Math.max(60000, (meta.dur || 60) * 1000 + 45000));
         blob = await blogComTimeout(noticiasComprimirVideo(file, meta.w, meta.h), limiteCompressao, 'Tempo esgotado ao otimizar o video.');
     }
-    if (!firebase || !firebase.storage) throw new Error('Firebase Storage nao esta configurado.');
     var ext = ((blob.type || '').indexOf('webm') !== -1) ? 'webm' : ((file.name || 'video.mp4').split('.').pop() || 'mp4');
-    var ref = firebase.storage().ref('blog/' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.' + ext);
+    var caminhoVideo = 'blog/' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.' + ext;
+    if (typeof FarnArquivo !== 'undefined' && FarnArquivo.disponivel()) {
+        var urlVideo = null;
+        try {
+            urlVideo = await blogComTimeout(FarnArquivo.upload(caminhoVideo, blob, blob.type || 'video/mp4'),
+                180000, 'Tempo esgotado ao enviar o video. Tente um arquivo menor ou use um link.');
+        } catch (e) {
+            throw new Error('Nao foi possivel enviar o video. Use um link do YouTube ou .mp4, ou remova o video.');
+        }
+        if (!urlVideo) throw new Error('Nao foi possivel enviar o video. Use um link do YouTube ou .mp4, ou remova o video.');
+        return { url: urlVideo, poster: poster };
+    }
+    if (!firebase || !firebase.storage) throw new Error('Armazenamento de arquivos nao esta configurado.');
+    var ref = firebase.storage().ref(caminhoVideo);
     var task = ref.put(blob, { contentType: blob.type || 'video/mp4' });
     try {
         await blogComTimeout(task, 180000, 'Tempo esgotado ao enviar o video. Tente um arquivo menor ou use um link.');
@@ -18760,17 +18790,24 @@ function patenteComPrazo(promessa, ms) {
 async function patenteInsigniaSubir(dataUrl, codigo) {
     const embutida = await patenteComprimir(dataUrl, PATENTES_INSIGNIA_LADO, PATENTE_INSIGNIA_BYTES);
     if (!embutida) return '';
-    if (typeof firebase === 'undefined' || !firebase.storage) return embutida;
+    const temServidor = (typeof FarnArquivo !== 'undefined' && FarnArquivo.disponivel());
+    if (!temServidor && (typeof firebase === 'undefined' || !firebase.storage)) return embutida;
     try {
         const blob = await patenteDataUrlParaBlob(embutida);
         const ext = (blob.type.indexOf('png') >= 0) ? 'png' : 'jpg';
-        const ref = firebase.storage().ref('patentes/insignias/' + codigo + '_' + Date.now() + '.' + ext);
-        const url = await patenteComPrazo(ref.put(blob).then(function () { return ref.getDownloadURL(); }),
-            PATENTE_UPLOAD_MS);
-        if (url && typeof url === 'string' && url.indexOf('http') === 0) return url;
+        const caminho = 'patentes/insignias/' + codigo + '_' + Date.now() + '.' + ext;
+        let url = '';
+        if (temServidor) {
+            url = await patenteComPrazo(FarnArquivo.upload(caminho, blob, blob.type), PATENTE_UPLOAD_MS);
+        } else {
+            const ref = firebase.storage().ref(caminho);
+            url = await patenteComPrazo(ref.put(blob).then(function () { return ref.getDownloadURL(); }),
+                PATENTE_UPLOAD_MS);
+        }
+        if (url && typeof url === 'string' && (url.indexOf('http') === 0 || url.indexOf('/api/arquivo/') === 0)) return url;
         console.warn('Upload da insignia nao devolveu URL; a insignia vai embutida no documento.');
     } catch (e) {
-        console.warn('Nao foi possivel subir a insignia para o Storage:', e && e.message);
+        console.warn('Nao foi possivel subir a insignia para o armazenamento:', e && e.message);
     }
     return embutida;
 }
@@ -18876,11 +18913,15 @@ async function patentesExcluir(codigo) {
 
     try {
         await dbFirestore.collection(PATENTES_COL).doc(r.codigo).delete();
-        /* a insignia vai junto, quando ela estiver no Storage */
-        if (r.insigniaUrl && typeof firebase !== 'undefined' && firebase.storage) {
+        /* a insignia vai junto, quando ela estiver num armazenamento */
+        if (r.insigniaUrl) {
             try {
-                const ref = firebase.storage().refFromURL(r.insigniaUrl);
-                await ref.delete();
+                if (typeof FarnArquivo !== 'undefined' && FarnArquivo.caminhoDaUrl(r.insigniaUrl)) {
+                    await FarnArquivo.excluir(r.insigniaUrl);
+                } else if (typeof firebase !== 'undefined' && firebase.storage) {
+                    const ref = firebase.storage().refFromURL(r.insigniaUrl);
+                    await ref.delete();
+                }
             } catch (e) {
                 /* a insignia ja saiu do registro; arquivo orfao nao e problema */
             }

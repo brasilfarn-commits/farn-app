@@ -77,17 +77,19 @@
 
   <h2>5. Publicação do app/site</h2>
   <div class="aviso">
-    <b>Site:</b> Firebase Hosting, plano gratuito (Spark) — cerca de <b>10 GB de armazenamento</b> e
-    <b>360 MB de transferência por dia</b>. Confira sempre no console do Firebase.<br>
-    <b>Código:</b> GitHub <code>brasilfarn-commits/farn-app</code> — publicado com
-    <code>firebase.cmd deploy --only hosting --project farn-app</code>.<br>
-    <b>Banco de dados:</b> SQLite local em <code>servidor/dados/farn.db</code> —
+    <b>Site:</b> publicado no próprio servidor Ubuntu, na mesma origem da API —
+    abra a URL do túnel no navegador. Não depende mais do Firebase Hosting.<br>
+    <b>Código:</b> GitHub <code>brasilfarn-commits/farn-app</code> — publicado no Ubuntu com
+    <code>PUBLICAR-NO-UBUNTU.bat</code> (duplo clique).<br>
+    <b>Banco de dados:</b> SQLite local em <code>/opt/farn/servidor/dados/farn.db</code> —
     <b>sem limite de leitura</b>; o limite é o disco do Ubuntu (acima).<br>
-    <b>Acesso externo:</b> Cloudflare Tunnel (túnel rápido). Se a URL mudar, atualize no campo 1.
+    <b>Arquivos:</b> fotos, vídeos e apostilas em <code>/opt/farn/servidor/arquivos</code>.<br>
+    <b>Acesso externo:</b> Cloudflare Tunnel (túnel rápido). Se a URL mudar, é só abrir a nova —
+    o site e os arquivos acompanham a origem automaticamente.
   </div>
 </div>
 
-<script src="farn-db.js?v=21"></script>
+<script src="farn-db.js?v=22"></script>
 <script>
 var CHAVE = 'farn_api_config';
 var URL_PADRAO = 'https://howto-alliance-pest-contest.trycloudflare.com';
@@ -99,8 +101,8 @@ var URLS_TUNEIS_ANTIGOS = [
 function ler() {
   var c;
   try { c = JSON.parse(localStorage.getItem(CHAVE) || '{}') || {}; } catch (e) { c = {}; }
-  /* Esta pagina nao carrega o farn-db.js, entao a migracao precisa acontecer
-     aqui tambem, senao um tune antigo salvo continua mostrando OFFLINE. */
+  /* Algumas paginas antigas nao carregavam o farn-db.js; a migracao fica
+     aqui tambem para um tunel antigo salvo nao continuar mostrando OFFLINE. */
   var url = String(c.url || '').replace(/\/$/, '');
   if (URLS_TUNEIS_ANTIGOS.indexOf(url) >= 0) {
     c.url = URL_PADRAO;

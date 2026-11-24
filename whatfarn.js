@@ -1075,6 +1075,10 @@ function wfExcluirConversa(convId) {
         wfRenderLista();
     };
     try {
+        /* arquivos da conversa no servidor proprio */
+        if (typeof FarnArquivo !== 'undefined') {
+            FarnArquivo.excluirPasta('whatfarn/' + convId).catch(function () {});
+        }
         if (firebase && firebase.storage) {
             firebase.storage().ref('whatfarn/' + convId).listAll().then(function (res) {
                 var items = res.items.slice();

@@ -1,75 +1,83 @@
-# FARN — Servidor próprio em casa (leitura ilimitada)
+# FARN — tudo no servidor Ubuntu (site + dados + arquivos)
 
-Este modo troca o Cloudflare D1 por um **banco SQLite no seu computador**. Não há limite diário de leituras nem de escritas. O Firebase Hosting continua hospedando o site (estático) normalmente.
-
-## Como funciona
+O servidor próprio publica **o app inteiro**: páginas, JavaScript, imagens, banco SQLite e os arquivos enviados pelo app (fotos, vídeos, apostilas, insignias). O Firebase Hosting não é mais necessário — isso também resolve a cota estourada do Hosting.
 
 ```
-Navegador (farn-app.web.app)
-        |  HTTPS
-        v
-Túnel Cloudflare (trycloudflare.com)
-        |  http://localhost:8787
-        v
-servidor.js  ->  servidor/dados/farn.db  (SQLite)
+Navegador  --->  https://xxxx.trycloudflare.com  (túnel HTTPS)
+                          |
+                          v
+                 servidor.js (porta 8787)
+                    |         |          |
+              /public      /dados    /arquivos
+              (site)     (SQLite)   (uploads)
 ```
 
-- `servidor/servidor.js` replica **exatamente** a API do Worker (`/api/all`, `/api/changes`, `/api/set`, `/api/delete`, `/api/batch`, `/api/import`, `/api/ping`) e acrescenta `/api/stats`.
-- `farn-db.js` passou a usar a URL salva no navegador. Todo o resto do app continua igual.
-- O servidor mantém um **cache em memória** das coleções: leituras repetidas nem consultam o SQLite.
+## Publicar (no PC, quando quiser atualizar o Ubuntu)
 
-## Instalação (uma vez)
+1. Dê **duplo clique em `PUBLICAR-NO-UBUNTU.bat`** (na raiz do projeto).
+2. Digite a senha SSH do usuário `farn` quando o `scp`/`ssh` pedir (pode pedir 2 ou 3 vezes).
+3. O script envia os arquivos, reinicia `farn-server` e mostra no final a **URL do túnel**.
+4. Abra essa URL no navegador. Não precisa mais abrir `farn-app.web.app`.
 
-1. Instale o **Node.js 22.5+** (recomendado 24): https://nodejs.org
-   - O `node:sqlite` já vem embutido — **não precisa instalar nada**.
-2. Rode a migração (copia os dados do D1 para o seu PC):
-   ```
-   node servidor\servidor.js
-   ```
-   Em outra janela:
-   ```
-   node servidor\migrar-d1.js
-   ```
-   > Se der erro de limite diário do D1, espere as **00:00 UTC (21:00 em Brasília)** e rode o comando de novo. Ele retoma de onde parou.
-3. Para expor na internet, baixe o **cloudflared**:
-   https://github.com/cloudflare/cloudflared/releases/latest
-   Baixe `cloudflared-windows-amd64.exe`, renomeie para `cloudflared.exe` e coloque dentro da pasta `servidor`.
+Se quiser enviar só o `servidor.js` (sem o site todo):
+```
+powershell -ExecutionPolicy Bypass -File servidor\publicar-site.ps1 -SoServidor
+```
 
-## Uso diário
+Para outro servidor/porta:
+```
+powershell -ExecutionPolicy Bypass -File servidor\publicar-site.ps1 -Destino farn@192.168.1.6 -Porta 22
+```
 
-1. Rode `servidor\1-INICIAR-SERVIDOR.bat` — deixe a janela aberta.
-2. Rode `servidor\2-INICIAR-TUNEL.bat` — deixe a janela aberta.
-3. Copie a URL `https://xxxx.trycloudflare.com` que aparecer.
-4. No administrador, abra **Servidor Próprio** (menu lateral), cole a URL e clique em **Salvar e usar servidor próprio**.
-5. Recarregue o app com **Ctrl+F5**.
+## O que muda para os usuários
 
-Se o PC reiniciar, a URL do túnel muda — atualize novamente no passo 4.
+- A URL do túnel passa a ser o **site**, não só a API. Site e API ficam na mesma origem — sem CORS, sem configuração manual em cada navegador.
+- Os arquivos novos vão para `/opt/farn/servidor/arquivos/` e as URLs gravadas no banco são `https://<túnel>/api/arquivo/...`.
+- **Arquivos antigos do Firebase Storage continuam abrindo** normalmente (as URLs antigas seguem válidas). O app só deixa de enviar arquivos novos para lá.
+- Se o túnel reiniciar e mudar de endereço, basta abrir a nova URL: as URLs de arquivo antigas mudam de host, mas o app continua funcionando porque os caminhos são relativos à origem atual. (Se algum registro tiver URL antiga gravada, ela é identificada pelo `/api/arquivo/` e reescrita para a origem atual.)
 
-## Voltar para a nuvem
+## Estrutura no Ubuntu
 
-Em **Servidor Próprio**, clique em **Voltar para a nuvem (Worker/D1)**. O app volta a usar `https://farn-api.farn-api-farn.workers.dev` imediatamente.
+| Caminho | Conteúdo |
+|---|---|
+| `/opt/farn/servidor/servidor.js` | API + servidor de arquivos + site |
+| `/opt/farn/servidor/public/` | site publicado (HTML/JS/CSS/imagens) |
+| `/opt/farn/servidor/arquivos/` | uploads (fotos, vídeos, insignias, apostilas) |
+| `/opt/farn/servidor/dados/farn.db` | banco SQLite com todos os cadastros |
+| `/opt/farn/backups/` | backup diário do banco (7 dias) |
 
-## Segurança
+## Instalação inicial (se precisar reinstalar)
 
-- O túnel **não abre portas** no roteador e já sai com HTTPS válido.
-- A URL do `trycloudflare.com` é aleatória e não indexada — trate-a como senha.
-- Para exigir token, inicie o servidor com:
-  ```
-  set FARN_TOKEN=seu_token_aqui
-  node servidor\servidor.js
-  ```
-  e informe o mesmo token na página de configuração.
+O pacote `servidor/linux-autoinstall` instala Node 24, cloudflared, os serviços e faz a migração do D1. Depois rode o `PUBLICAR-NO-UBUNTU.bat` para subir o site.
+
+Usuário SSH inicial: `farn` · senha padrão: `Farn@2026Servidor` (troque com `passwd farn`).
+
+## Serviços
+
+```bash
+systemctl status farn-server farn-tunel
+journalctl -u farn-server -f          # logs da API/site
+journalctl -u farn-tunel -f           # pegar a URL https do túnel
+curl http://localhost:8787/api/ping
+curl http://localhost:8787/api/sistema
+```
 
 ## Backup
 
-O banco é um único arquivo: `servidor\dados\farn.db`. Copie esse arquivo para outro disco/nuvem regularmente — ele contém **todos** os cadastros, notas, apontamentos e cursos.
+Copie para outro disco/nuvem, com regularidade:
+
+```bash
+tar czf backup-farn-$(date +%Y%m%d).tgz \
+  /opt/farn/servidor/dados/farn.db \
+  /opt/farn/servidor/arquivos
+```
 
 ## Solução de problemas
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
-| `OFFLINE` na página de configuração | Servidor ou túnel desligado | Rodar os dois `.bat` |
-| Dados antigos aparecendo | Cache do navegador | Ctrl+F5 |
-| Erro `Token invalido` | Token diferente no servidor e no navegador | Conferir o campo Token |
-| `node:sqlite` não encontrado | Node < 22.5 | Atualizar o Node.js |
-| D1 `exceeded free tier` na migração | Cota diária | Rodar de novo após 00:00 UTC |
+| Site não abre na URL do túnel | `farn-server` parado | `sudo systemctl restart farn-server` |
+| `403/404` em imagem antiga | URL do Firebase expirou | reenviar a imagem pelo app |
+| Página velha após publicar | cache do navegador/service worker | Ctrl+F5 |
+| `upload FALHOU` no script | disco cheio ou permissão | ver `journalctl -u farn-server -n 50` |
+| Túnel mudou de endereço | reinício do `farn-tunel` | pegar a nova URL em `journalctl -u farn-tunel -f` |

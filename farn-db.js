@@ -34,8 +34,29 @@
         try { localStorage.setItem('farn_api_config', JSON.stringify(cfg)); } catch (e) {}
       }
     }
-    var escolhida = (typeof window !== 'undefined' && window.FARN_API_URL)
-        || (cfg && cfg.url) || baseUrl || URL_PADRAO;
+    var escolhida = (typeof window !== 'undefined' && window.FARN_API_URL) || '';
+    /* Pagina servida pelo proprio servidor Ubuntu (nao e file:// nem o
+       Firebase Hosting): a API esta na mesma origem. Vale mais que a URL
+       salva, que costuma ser um tunel rapido antigo. */
+    var origemPropria = '';
+    try {
+      if (typeof location !== 'undefined' && location.protocol
+          && location.protocol !== 'file:' && location.origin
+          && location.origin.indexOf('http') === 0) {
+        var host = location.hostname || '';
+        if (!/\.web\.app$|\.firebaseapp\.com$|\.firebaseio\.com$/.test(host)) {
+          origemPropria = location.origin;
+        }
+      }
+    } catch (e) {}
+    if (!escolhida && origemPropria) {
+      var urlSalva2 = (cfg && cfg.url) ? String(cfg.url).replace(/\/$/, '') : '';
+      var tunelSalvo = !urlSalva2
+        || /trycloudflare\.com$/.test(urlSalva2)
+        || URLS_TUNEIS_ANTIGOS.indexOf(urlSalva2) >= 0;
+      if (tunelSalvo || urlSalva2 === origemPropria) escolhida = origemPropria;
+    }
+    escolhida = escolhida || (cfg && cfg.url) || baseUrl || URL_PADRAO;
     this.baseUrl = String(escolhida).replace(/\/$/, '');
     this.headers = { 'Content-Type': 'application/json' };
     if (cfg && cfg.token) this.headers['X-Farn-Token'] = String(cfg.token);

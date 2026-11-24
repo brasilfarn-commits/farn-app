@@ -328,6 +328,12 @@
   async function uploadImagem(file){
     if (!file) return '';
     var dataUrl = await oppComprimirImagem(file);
+    /* Preferencia: servidor proprio (Ubuntu). */
+    if (typeof FarnArquivo !== 'undefined' && FarnArquivo.disponivel()){
+      var caminho = 'oportunidades/' + Date.now() + '_' + Math.random().toString(36).substr(2,8) + '.jpg';
+      var urlPropria = await FarnArquivo.uploadDataUrl(caminho, dataUrl);
+      if (urlPropria) return urlPropria;
+    }
     if (!storage && typeof firebase !== 'undefined' && firebase.storage){
       try { storage = firebase.storage(); } catch(e) {}
     }

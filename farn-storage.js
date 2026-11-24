@@ -21,6 +21,12 @@ function fsDataUrlToBlob(dataUrl) {
 }
 
 async function fsUpload(caminho, dataUrl) {
+    /* Preferencia: servidor proprio (Ubuntu). Sem servidor, cai no Firebase
+       Storage como antes. */
+    if (typeof FarnArquivo !== 'undefined' && FarnArquivo.disponivel()) {
+        var urlPropria = await FarnArquivo.uploadDataUrl(caminho, dataUrl);
+        if (urlPropria) return urlPropria;
+    }
     var st = fsStorage();
     if (!st) return null;
     var blob = fsDataUrlToBlob(dataUrl);
