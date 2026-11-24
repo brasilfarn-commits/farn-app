@@ -410,11 +410,48 @@ function puModalFechar() {
 /* =====================================================================
    SECOES DO MENU HAMBURGUER - SIM/NAO configurado no Cadastro de Cursos
    ---------------------------------------------------------------------
-   O admin grava configuracoes/portalMenu { itens: { inicio:true, ... } }.
-   Aqui o portal aplica o mapa, escondendo botao e tela das secoes NÃO.
-   Sem configuracao salva, todas as secoes continuam visiveis.
+   O admin grava por CURSO em cursosCadastro/{id}.permissoesPortal
+   { itens: { inicio:true, ... } } — cada curso e independente.
+   configuracoes/portalMenu continua como padrao geral.
+   Aqui o portal aplica o mapa do curso do usuario, escondendo botao e
+   tela das secoes NAO. Sem configuracao, todas ficam visiveis.
    ===================================================================== */
 var PU_MENU_PORTAL_ITENS = ['inicio','dados','cursos','av','relatorios','apontar','libav','aulasdoc'];
+function puItensParaMapa(salvo) {
+    var mapa = {};
+    PU_MENU_PORTAL_ITENS.forEach(function (k) {
+        if (salvo && salvo[k] !== undefined) {
+            mapa[k] = salvo[k] !== false && salvo[k] !== 'nao';
+        }
+    });
+    return mapa;
+}
+/* Cursos vinculados ao usuario logado. Aluno que entrou pelo curso tem
+   _cursoId; docenteResponsavel e encontrado pelo docenteResponsavelId. */
+async function puCursosDoUsuario() {
+    var u = puUserAtual();
+    if (!u || typeof dbFirestore === 'undefined' || !dbFirestore) return [];
+    if (u._cursoId) return [String(u._cursoId)];
+    if (puEhDocente() && u._docId) {
+        try {
+            var snap = await dbFirestore.collection('cursosCadastro')
+                .where('docenteResponsavelId', '==', u._docId).get();
+            return (snap.docs || []).map(function (d) { return d.id; });
+        } catch (e) { return []; }
+    }
+    return [];
+}
+/* Configuracao individual do curso (cursosCadastro/{id}.permissoesPortal).
+   Devolve null quando o curso ainda nao tem guia propria. */
+async function puPermissoesDoCurso(cursoId) {
+    try {
+        var snap = await dbFirestore.collection('cursosCadastro').doc(cursoId).get();
+        if (!snap || !snap.exists) return null;
+        var cfg = (snap.data() || {}).permissoesPortal;
+        if (!cfg) return null;
+        return puItensParaMapa(cfg.itens || cfg);
+    } catch (e) { return null; }
+}
 async function puCarregarMenuPortalPermissoes() {
     /* O dbFirestore e criado pelo script inline da pagina, que roda depois
        deste arquivo. Registra o observador na primeira leitura, quando o
@@ -424,13 +461,31 @@ async function puCarregarMenuPortalPermissoes() {
     PU_MENU_PORTAL_ITENS.forEach(function (k) { mapa[k] = true; });
     try {
         if (typeof dbFirestore === 'undefined' || !dbFirestore) return mapa;
+        /* Padrao geral: serve a usuarios sem vinculo com curso e a cursos
+           ainda sem configuracao propria. */
         var snap = await dbFirestore.collection('configuracoes').doc('portalMenu').get();
         var d = (snap && snap.exists) ? (snap.data() || {}) : {};
-        var salvo = d.itens || d;
-        PU_MENU_PORTAL_ITENS.forEach(function (k) {
-            if (salvo[k] !== undefined) mapa[k] = salvo[k] !== false && salvo[k] !== 'nao';
-        });
+        Object.assign(mapa, puItensParaMapa(d.itens || d));
     } catch (e) { /* sem configuracao: mantem o padrao (tudo visivel) */ }
+    /* Permissoes INDIVIDUAIS do curso do usuario sobrescrevem o padrao. */
+    try {
+        var ids = await puCursosDoUsuario();
+        var configs = [];
+        for (var i = 0; i < ids.length; i++) {
+            var mc = await puPermissoesDoCurso(ids[i]);
+            if (mc) configs.push(mc);
+        }
+        if (configs.length === 1) {
+            Object.assign(mapa, configs[0]);
+        } else if (configs.length > 1) {
+            /* Varios cursos: a secao aparece apenas se todos liberarem. */
+            PU_MENU_PORTAL_ITENS.forEach(function (k) {
+                var libera = true;
+                configs.forEach(function (c) { if (c[k] === false) libera = false; });
+                mapa[k] = libera;
+            });
+        }
+    } catch (e) { /* sem vinculo de curso: mantem o padrao */ }
     return mapa;
 }
 async function puAplicarMenuPortal() {
@@ -454,17 +509,28 @@ async function puAplicarMenuPortal() {
 }
 
 /* Reage imediatamente quando o admin salva/altera o SIM/NAO, sem exigir
-   recarregar a pagina ou entrar de novo no portal. */
+   recarregar a pagina ou entrar de novo no portal. Observa tanto o padrao
+   geral quanto o documento do curso, ja que a guia agora e por curso. */
 var PU_OBS_MENU_PORTAL = false;
+var PU_OBS_CURSOS_MENU = false;
 function puObservarMenuPortal() {
-    if (PU_OBS_MENU_PORTAL) return;
     if (typeof dbFirestore === 'undefined' || !dbFirestore) return;
-    PU_OBS_MENU_PORTAL = true;
-    try {
-        dbFirestore.collection('configuracoes').doc('portalMenu').onSnapshot(function () {
-            puAplicarMenuPortal().catch(function () {});
-        });
-    } catch (e) { PU_OBS_MENU_PORTAL = false; }
+    if (!PU_OBS_MENU_PORTAL) {
+        PU_OBS_MENU_PORTAL = true;
+        try {
+            dbFirestore.collection('configuracoes').doc('portalMenu').onSnapshot(function () {
+                puAplicarMenuPortal().catch(function () {});
+            });
+        } catch (e) { PU_OBS_MENU_PORTAL = false; }
+    }
+    if (!PU_OBS_CURSOS_MENU) {
+        PU_OBS_CURSOS_MENU = true;
+        try {
+            dbFirestore.collection('cursosCadastro').onSnapshot(function () {
+                if (puUserAtual()) puAplicarMenuPortal().catch(function () {});
+            });
+        } catch (e) { PU_OBS_CURSOS_MENU = false; }
+    }
 }
 puObservarMenuPortal();
 

@@ -3244,7 +3244,7 @@
                         <div id="cc-tab-permissoes" style="display:none">
                             <div style="padding:16px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;margin-bottom:16px">
                                 <h3 style="margin:0 0 4px;color:#1e293b;font-size:14px;font-weight:800">Permissões - Portal do Usuário</h3>
-                                <p style="margin:0 0 12px;font-size:11px;color:#64748b">Todas as seções do menu hambúrguer do Portal do Usuário. Marque <b>SIM</b> para exibir ou <b>NÃO</b> para ocultar a seção no portal.</p>
+                                <p style="margin:0 0 12px;font-size:11px;color:#64748b">Seções do menu hambúrguer do Portal do Usuário. Marque <b>SIM</b> para exibir ou <b>NÃO</b> para ocultar a seção. Estas opções valem <b>somente para este curso</b>.</p>
                                 <div class="cc-pmenu-lista">
                                     <div class="cc-pmenu-head"><span>SEÇÃO DO MENU</span><span>EXIBIR?</span></div>
                                     <div class="cc-pmenu-linha"><span><i class="fa-solid fa-house"></i> Início</span><select id="cc-pmenu-inicio" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
@@ -3256,7 +3256,7 @@
                                     <div class="cc-pmenu-linha"><span><i class="fa-solid fa-paper-plane"></i> Liberar AV Teórica</span><select id="cc-pmenu-libav" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
                                     <div class="cc-pmenu-linha"><span><i class="fa-solid fa-calendar-days"></i> Minhas aulas</span><select id="cc-pmenu-aulasdoc" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
                                 </div>
-                                <p style="margin:10px 0 0;font-size:10.5px;color:#64748b">A configuração vale para todos os usuários do portal. Se uma seção for ocultada, o portal abre automaticamente na primeira seção ainda visível.</p>
+                                <p id="cc-pmenu-escopo" style="margin:10px 0 0;font-size:10.5px;color:#64748b">Estas opções valem somente para este curso. Cada curso tem a sua própria guia Permissões. Se uma seção for ocultada, o portal abre automaticamente na primeira seção ainda visível.</p>
                                 <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
                                     <button class="btn-primary btn-sm" onclick="ccSalvarPermissoes()"><i class="fa-solid fa-check" style="margin-right:6px"></i> Salvar permissões</button>
                                     <button class="btn-outline btn-sm" onclick="ccCarregarMenuPortalPermissoes(true)"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Recarregar</button>
@@ -5010,7 +5010,7 @@
 
     <script src="cadastro-cursos-nucleo.js?v=1"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
-    <script src="portal-permissoes.js?v=5"></script>
+    <script src="portal-permissoes.js?v=6"></script>
     <script src="coordenacao.js?v=10"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
@@ -5021,7 +5021,7 @@
     <script src="farn-storage.js?v=2"></script>
     <script src="app.js?v=128"></script>
     <script src="recad-admin.js?v=2"></script>
-    <script src="cadastro-cursos.js?v=36"></script>
+    <script src="cadastro-cursos.js?v=37"></script>
     <script src="apontamentos-adm.js?v=5"></script>
     <script src="estatistica.js?v=1"></script>
 

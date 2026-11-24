@@ -191,6 +191,9 @@ function ccMostrarWorkspace(mostrar) {
        aba do curso (pre-inscricao ou individuos). */
     if (!mostrar && ccPreFormaAtiva) ccPreVoltarForm();
     if (!mostrar && ccIndFormaAtiva) ccIndVoltarForm();
+    /* Ao voltar para a lista nao ha curso aberto: a guia Permissoes fica
+       sem contexto de curso e passa a mostrar o padrao geral. */
+    if (!mostrar) { ccAtual = null; ccEditandoCursoId = null; }
     if (lista) lista.style.display = mostrar ? 'none' : '';
     if (ws) ws.style.display = mostrar ? '' : 'none';
     if (btnNovo) btnNovo.style.display = mostrar ? 'none' : '';
@@ -321,6 +324,9 @@ function ccAbrirFormCurso(id) {
 
 function ccFecharFormCurso() {
     var modal = document.getElementById('cc-modal-curso'); if (modal) modal.classList.add('hidden');
+    /* Limpa o contexto de edicao: sem isso a guia Permissoes continuaria
+       apontando para o ultimo curso editado. */
+    ccEditandoCursoId = null;
 }
 
 /* APOSTILA: PDF anexado (dataURL) ou link externo. */
@@ -369,8 +375,8 @@ async function ccSalvarCurso() {
     dados.docenteResponsavelNome = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-nome') || opDoc.textContent.split(' — ')[0]) : '';
     dados.docenteResponsavelMatricula = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-matricula') || '') : '';
     dados.apostilaUrl = ((document.getElementById('cc-curso-apostila-url') || {}).value || '').trim();
-    /* As permissões de exibição no portal ficam na guia Permissões e são
-       configuradas globalmente; não sobrescreva os campos antigos aqui. */
+    /* As permissoes de exibicao no portal ficam na guia Permissoes, gravadas
+       em permissoesPortal deste curso; nao mexa nelas aqui. */
     var novoRef = ccEditandoCursoId ? null : ccDb().collection(CC_COLECAO).doc();
     var cursoId = ccEditandoCursoId || (novoRef && novoRef.id);
     try {
@@ -423,6 +429,7 @@ async function ccExcluirCurso(id) {
 function ccAbrirCurso(id) {
     ccAtual = ccCursos.find(function (c) { return c._id === id; }) || null;
     if (!ccAtual) return;
+    ccEditandoCursoId = null;
     ccMostrarWorkspace(true);
     var tit = document.getElementById('cc-workspace-titulo');
     if (tit) tit.textContent = ccAtual.nome;
@@ -1102,6 +1109,8 @@ function ccSetAba(aba) {
     if (aba === 'certificado') ccInitCertificados();
     if (aba === 'secaoavaliacao') ccInitAvaliacao();
     if (aba === 'projeto' || aba === 'preinscricao') ccCarregarProjetosTurmas();
+    /* Recarrega ao entrar: cada curso tem a sua propria configuracao. */
+    if (aba === 'permissoes') ccCarregarMenuPortalPermissoes();
 }
 
 /* ============ DADOS INTERNOS DO CURSO ============
@@ -3331,10 +3340,12 @@ document.addEventListener('DOMContentLoaded', function () {
 /* =====================================================================
    GUIA PERMISSOES - SECOES DO MENU HAMBURGUER DO PORTAL DO USUARIO
    ---------------------------------------------------------------------
-   A guia nao trata mais certificado/ficha/pagina do curso. Ela lista
-   exatamente as secoes do menu lateral do portal, cada uma com SIM/NAO.
-   A configuracao fica em configuracoes/portalMenu e vale para todos os
-   usuarios; o portal le esse documento no login e oculta as secoes NAO.
+   Cada curso tem a SUA propria guia Permissoes, gravada no proprio
+   documento do curso: cursosCadastro/{id}.permissoesPortal = { itens }.
+   Assim, alterar um curso nao mexe nos demais.
+   A configuracao global (configuracoes/portalMenu) continua existindo
+   apenas como PADRAO para cursos ainda sem configuracao individual e
+   para usuarios sem vinculo com curso.
    ===================================================================== */
 var CC_MENU_PORTAL_ITENS = [
     { chave: 'inicio', id: 'cc-pmenu-inicio', rotulo: 'Início' },
@@ -3351,23 +3362,61 @@ function ccMenuPortalPadrao() {
     CC_MENU_PORTAL_ITENS.forEach(function (i) { mapa[i.chave] = true; });
     return mapa;
 }
-async function ccCarregarMenuPortalPermissoes(forcar) {
-    if (!ccDb()) return;
+/* Curso dono da guia: o formulario aberto (editar) tem prioridade sobre o
+   curso aberto no workspace. */
+function ccCursoDaGuiaPermissoes() {
+    if (ccEditandoCursoId) return ccEditandoCursoId;
+    if (ccAtual && ccAtual._id) return ccAtual._id;
+    return '';
+}
+function ccItensParaMapa(salvo) {
+    var mapa = {};
+    CC_MENU_PORTAL_ITENS.forEach(function (i) {
+        if (salvo && salvo[i.chave] !== undefined) {
+            mapa[i.chave] = salvo[i.chave] !== false && salvo[i.chave] !== 'nao';
+        }
+    });
+    return mapa;
+}
+/* Padrao geral: usado por cursos ainda sem configuracao propria. */
+async function ccLerPermissoesGerais() {
     var mapa = ccMenuPortalPadrao();
     try {
         var snap = await ccDb().collection('configuracoes').doc('portalMenu').get();
         var d = (snap && snap.exists) ? (snap.data() || {}) : {};
-        var salvo = d.itens || d;
-        CC_MENU_PORTAL_ITENS.forEach(function (i) {
-            if (salvo[i.chave] !== undefined) mapa[i.chave] = salvo[i.chave] !== false && salvo[i.chave] !== 'nao';
-        });
-    } catch (e) {
-        if (forcar) alert('Não foi possível carregar as permissões do portal: ' + e.message);
-    }
+        Object.assign(mapa, ccItensParaMapa(d.itens || d));
+    } catch (e) {}
+    return mapa;
+}
+/* Configuracao individual do curso. Devolve null quando o curso ainda nao
+   tem guia propria (ai vale o padrao geral). */
+async function ccLerPermissoesCurso(cursoId) {
+    if (!cursoId) return null;
+    try {
+        var snap = await ccDb().collection(CC_COLECAO).doc(cursoId).get();
+        if (!snap || !snap.exists) return null;
+        var curso = snap.data() || {};
+        var cfg = curso.permissoesPortal;
+        if (!cfg) return null;
+        return ccItensParaMapa(cfg.itens || cfg);
+    } catch (e) { return null; }
+}
+async function ccCarregarMenuPortalPermissoes(forcar) {
+    if (!ccDb()) return;
+    var mapa = await ccLerPermissoesGerais();
+    var cursoId = ccCursoDaGuiaPermissoes();
+    var doCurso = await ccLerPermissoesCurso(cursoId);
+    if (doCurso) Object.assign(mapa, doCurso);
     CC_MENU_PORTAL_ITENS.forEach(function (i) {
         var sel = document.getElementById(i.id);
         if (sel) sel.value = mapa[i.chave] ? 'sim' : 'nao';
     });
+    var escopo = document.getElementById('cc-pmenu-escopo');
+    if (escopo) {
+        escopo.textContent = cursoId
+            ? 'Estas opções valem somente para este curso. Cada curso tem a sua própria guia Permissões.'
+            : 'Padrão geral dos cursos. Abra um curso para configurar as permissões dele.';
+    }
 }
 async function ccSalvarPermissoes() {
     var itens = {};
@@ -3375,11 +3424,17 @@ async function ccSalvarPermissoes() {
         var el = document.getElementById(i.id);
         itens[i.chave] = !el || el.value !== 'nao';
     });
+    var cursoId = ccCursoDaGuiaPermissoes();
+    var cfg = { itens: itens, atualizadoEm: new Date().toISOString() };
     try {
-        await ccDb().collection('configuracoes').doc('portalMenu').set({
-            itens: itens, atualizadoEm: new Date().toISOString()
-        });
-        alert('Permissões do menu do Portal do Usuário salvas.');
+        if (cursoId) {
+            await ccDb().collection(CC_COLECAO).doc(cursoId).update({ permissoesPortal: cfg });
+            var nome = (ccAtual && ccAtual._id === cursoId) ? ccAtual.nome : '';
+            alert('Permissões salvas apenas para o curso' + (nome ? ' "' + nome + '"' : '') + '.');
+        } else {
+            await ccDb().collection('configuracoes').doc('portalMenu').set(cfg);
+            alert('Permissões gerais (padrão dos cursos) salvas.');
+        }
     } catch (e) {
         alert('Erro ao salvar as permissões: ' + e.message);
     }
