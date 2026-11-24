@@ -1800,6 +1800,7 @@ function ccQrInicio(aulaId) {
    - Quem ja estava cadastrado fica no curso, desvinculado do admin.
    - Esta mesma lista alimenta Ficha, Secao de Avaliacao e Apontamento. */
 var ccIndividuosCache = [];
+var ccIndStatusFiltro = '';
 
 var CC_SITUACOES_INDIVIDUO = [
     { chave: 'Ativo',             rotulo: 'ALUNO ATIVO',       cor: '#dcfce7', texto: '#166534' },
@@ -1872,6 +1873,37 @@ function ccAtualizarRotulosIndividuos() {
         selo.style.color = p.corTexto;
     }
 }
+/* Guias de status acima da lista: cada guia mostra quantos indivíduos
+   estao naquela situacao e filtra a tabela ao ser clicada. */
+function ccRenderStatusGuias() {
+    var box = document.getElementById('cc-ind-status-guias');
+    if (!box) return;
+    var contagens = {};
+    ccIndividuosCache.forEach(function (p) {
+        var k = ccIndSituacao(p).chave;
+        contagens[k] = (contagens[k] || 0) + 1;
+    });
+    function guia(chave, rotulo, cor, texto, total, ativa) {
+        var valor = chave ? "'" + ccEsc(chave) + "'" : "''";
+        var fundo = ativa ? cor : '#f8fafc';
+        var corTexto = ativa ? texto : '#475569';
+        var borda = ativa ? texto : '#e2e8f0';
+        return '<button type="button" onclick="ccIndFiltrarStatus(' + valor + ')" '
+            + 'style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:8px;'
+            + 'border:1px solid ' + borda + ';background:' + fundo + ';color:' + corTexto + ';'
+            + 'font-size:10px;font-weight:800;cursor:pointer">'
+            + ccEsc(rotulo) + '<b style="font-size:10px;opacity:.8">(' + total + ')</b></button>';
+    }
+    var html = guia('', 'TODOS', '#e2e8f0', '#334155', ccIndividuosCache.length, !ccIndStatusFiltro);
+    CC_SITUACOES_INDIVIDUO.forEach(function (s) {
+        html += guia(s.chave, s.rotulo, s.cor, s.texto, contagens[s.chave] || 0, ccIndStatusFiltro === s.chave);
+    });
+    box.innerHTML = html;
+}
+function ccIndFiltrarStatus(chave) {
+    ccIndStatusFiltro = chave || '';
+    ccRenderIndividuos();
+}
 function ccIndPorId(id) {
     return ccIndividuosCache.find(function (p) { return p._id === id; }) || null;
 }
@@ -1917,19 +1949,25 @@ async function ccLoadIndividuos() {
 function ccRenderIndividuos() {
     var tb = document.getElementById('cc-individuos-tbody'); if (!tb) return;
     ccAtualizarRotulosIndividuos();
-    var cnt = document.getElementById('cc-individuos-count');
-    if (cnt) cnt.textContent = ccIndividuosCache.length;
+    ccRenderStatusGuias();
     var busca = String(((document.getElementById('cc-ind-busca') || {}).value || ''))
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     var lista = ccIndividuosCache.filter(function (p) {
+        if (ccIndStatusFiltro && ccIndSituacao(p).chave !== ccIndStatusFiltro) return false;
         if (!busca) return true;
         return [p.nome, p.cpf, p.matricula, p.projeto, p.turma].some(function (v) {
             return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(busca) >= 0;
         });
     });
+    var cnt = document.getElementById('cc-individuos-count');
+    if (cnt) cnt.textContent = (busca || ccIndStatusFiltro)
+        ? lista.length + '/' + ccIndividuosCache.length
+        : String(ccIndividuosCache.length);
     if (!lista.length) {
         tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">'
-            + (ccIndividuosCache.length ? 'Nenhum indivíduo corresponde à busca.' : 'Nenhum indivíduo neste curso. Aprove os pré-inscritos na guia Pré-Inscrição.')
+            + (ccIndStatusFiltro ? 'Nenhum indivíduo nesta guia de status.'
+                : (ccIndividuosCache.length ? 'Nenhum indivíduo corresponde à busca.'
+                    : 'Nenhum indivíduo neste curso. Aprove os pré-inscritos na guia Pré-Inscrição.'))
             + '</td></tr>';
         return;
     }
