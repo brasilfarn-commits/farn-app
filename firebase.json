@@ -28,6 +28,13 @@
         ]
       }
     ],
+    "redirects": [
+      {
+        "source": "/**",
+        "destination": "https://howto-alliance-pest-contest.trycloudflare.com",
+        "type": 302
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
