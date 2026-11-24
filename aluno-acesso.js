@@ -15,6 +15,12 @@
             .toLowerCase().trim();
     }
 
+    /* Nomes de turma variam: o individuo grava "ARA - 01" e a guia de
+       turmas grava "ARA-01". Compara so letras e numeros. */
+    function chaveTurma(txt) {
+        return normalizar(txt).replace(/[^a-z0-9]/g, '');
+    }
+
     /* Status gravado no cadastro e "Em Andamento". Documentos antigos sem
        status sao tratados como andamento, mesmo criterio usado no app. */
     function turmaEmAndamento(status) {
@@ -46,7 +52,7 @@
             var turmaValida = null;
             for (var t = 0; t < turmas.docs.length; t++) {
                 var turma = turmas.docs[t].data() || {};
-                if (normalizar(turma.nome) !== normalizar(nomeTurma)) continue;
+                if (chaveTurma(turma.nome) !== chaveTurma(nomeTurma)) continue;
                 if (!turmaEmAndamento(turma.status || turma.situacao)) continue;
                 turmaValida = turma;
                 break;
@@ -71,5 +77,6 @@
 
     global.farnAlunoLocalizar = farnAlunoLocalizar;
     global.farnAlunoNormalizar = normalizar;
+    global.farnAlunoChaveTurma = chaveTurma;
     global.farnAlunoTurmaEmAndamento = turmaEmAndamento;
 })(window);
