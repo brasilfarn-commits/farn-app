@@ -50,7 +50,7 @@ powershell -ExecutionPolicy Bypass -File servidor\publicar-site.ps1 -Destino far
 
 O pacote `servidor/linux-autoinstall` instala Node 24, cloudflared, os serviços e faz a migração do D1. Depois rode o `PUBLICAR-NO-UBUNTU.bat` para subir o site.
 
-Usuário SSH inicial: `farn` · senha padrão: `Farn@2026Servidor` (troque com `passwd farn`).
+Usuário SSH usado pelo script: `brandserv16041984@192.168.1.6` (configured no parâmetro `-Destino`). Senha padrão do guia de instalação: `Farn@2026Servidor` (troque com `passwd`).
 
 ## Serviços
 

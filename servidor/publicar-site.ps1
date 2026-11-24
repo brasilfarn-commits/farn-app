@@ -7,7 +7,7 @@
 #  Senha SSH: a do usuario farn (digite quando o scp/ssh pedir).
 # =====================================================================
 param(
-    [string]$Destino = 'farn@192.168.1.6',
+    [string]$Destino = 'brandserv16041984@192.168.1.6',
     [int]$Porta = 22,
     [string]$PastaRemota = '/opt/farn',
     [switch]$SoServidor
