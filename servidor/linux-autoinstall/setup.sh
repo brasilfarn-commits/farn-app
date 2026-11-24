@@ -47,6 +47,9 @@ if [ ! -f /opt/farn/servidor/servidor.js ]; then
   fi
 fi
 chown -R farn:farn /opt/farn
+# Site estatico e uploads (o servidor.js cria e usa essas pastas por padrao)
+mkdir -p /opt/farn/servidor/public /opt/farn/servidor/arquivos
+chown -R farn:farn /opt/farn/servidor/public /opt/farn/servidor/arquivos
 
 # Servico da API
 cat > /etc/systemd/system/farn-server.service <<'SERVICO'
