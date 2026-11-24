@@ -131,6 +131,9 @@
                 <div class="pa-card"><h2><i class="fa-solid fa-book-open" style="color:#0f766e;margin-right:8px"></i> Meu curso</h2>
                     <div class="pa-grid" id="pa-inicio-curso"></div>
                 </div>
+                <div class="pa-card"><h2 id="pa-sobre-titulo"><i class="fa-solid fa-circle-info" style="color:#0f766e;margin-right:8px"></i> Sobre a turma</h2>
+                    <div class="pa-grid" id="pa-sobre-turma"></div>
+                </div>
             </div>
             <div class="pa-view" id="pa-view-dados">
                 <div class="pa-secao-titulo"><i class="fa-solid fa-id-card" style="color:#0f766e;margin-right:8px"></i> Meus Dados</div>
@@ -143,7 +146,7 @@
     </div>
 
     <script src="farn-db.js?v=22"></script>
-    <script src="aluno-acesso.js?v=2"></script>
+    <script src="aluno-acesso.js?v=3"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -208,6 +211,36 @@
             var ini = document.getElementById('pa-inicio-foto');
             if (ini) { if (foto) { ini.src = foto; ini.style.display = ''; } else { ini.style.display = 'none'; } }
         }
+        function paCampoSe(rotulo, valor) {
+            var v = String(valor == null ? '' : valor).trim();
+            return v ? paCampo(rotulo, v) : '';
+        }
+        /* Mostra exatamente o que esta cadastrado na guia Projetos e Turmas. */
+        function paAtualizarCards() {
+            var box = document.getElementById('pa-inicio-curso');
+            if (box) {
+                box.innerHTML = paCampo('Curso', paUser._cursoNome) +
+                    paCampo('Projeto', paUser._projeto) +
+                    paCampo('Turma', paUser._turma) +
+                    '<div class="pa-campo"><span>Status da turma</span><b><span class="pa-badge">EM ANDAMENTO</span></b></div>';
+            }
+            var titulo = document.getElementById('pa-sobre-titulo');
+            if (titulo) titulo.innerHTML = '<i class="fa-solid fa-circle-info" style="color:#0f766e;margin-right:8px"></i> Sobre a turma ' + paEsc(paUser._turma || '');
+            var sobre = document.getElementById('pa-sobre-turma');
+            if (!sobre) return;
+            var turma = paUser._turmaDados || {};
+            var projeto = paUser._projetoDados || {};
+            var html = paCampoSe('Projeto', turma.projeto || projeto.nome || paUser._projeto) +
+                paCampoSe('Descrição', turma.descricao) +
+                (turma.status ? '<div class="pa-campo"><span>Status</span><b><span class="pa-badge">' + paEsc(turma.status) + '</span></b></div>' : '') +
+                paCampoSe('Início', turma.inicio) +
+                paCampoSe('Previsão', turma.previsao) +
+                paCampoSe('Dias', turma.dias) +
+                paCampoSe('Horários', turma.horarios) +
+                paCampoSe('Responsável', projeto.responsavel) +
+                paCampoSe('CNPJ', projeto.cnpj);
+            sobre.innerHTML = html || '<div class="pa-aviso">Os dados da turma não estão disponíveis no cadastro.</div>';
+        }
         function paMostrarApp() {
             document.getElementById('pa-tela-login').style.display = 'none';
             document.getElementById('pa-tela-app').style.display = 'block';
@@ -217,13 +250,7 @@
             el = document.getElementById('pa-nome-menu'); if (el) el.textContent = nome;
             el = document.getElementById('pa-turma-menu'); if (el) el.textContent = paUser._turma || '—';
             el = document.getElementById('pa-boas-vindas-nome'); if (el) el.textContent = nome.split(' ')[0];
-            var box = document.getElementById('pa-inicio-curso');
-            if (box) {
-                box.innerHTML = paCampo('Curso', paUser._cursoNome) +
-                    paCampo('Projeto', paUser._projeto) +
-                    paCampo('Turma', paUser._turma) +
-                    '<div class="pa-campo"><span>Status da turma</span><b><span class="pa-badge">EM ANDAMENTO</span></b></div>';
-            }
+            paAtualizarCards();
             paAplicarFoto();
             paSetView('inicio');
         }
@@ -275,7 +302,14 @@
             if (!paUser || !paUser.senha || typeof farnAlunoLocalizar !== 'function') return;
             try {
                 var ainda = await farnAlunoLocalizar(dbFirestore, paUser.cpf, paUser.senha);
-                if (!ainda) paEncerrar('Seu acesso foi encerrado: não há turma EM ANDAMENTO vinculada ao seu CPF.');
+                if (!ainda) {
+                    paEncerrar('Seu acesso foi encerrado: não há turma EM ANDAMENTO vinculada ao seu CPF.');
+                    return;
+                }
+                paUser = ainda;
+                try { localStorage.setItem(PA_CHAVE, JSON.stringify(ainda)); } catch (e) {}
+                paAtualizarCards();
+                paAplicarFoto();
             } catch (e) { console.warn('Validação da sessão do aluno:', e); }
         }
         async function paLogin(ev) {

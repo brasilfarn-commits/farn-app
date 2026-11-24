@@ -59,6 +59,22 @@
             }
             if (!turmaValida) continue;
 
+            /* Le tambem o projeto cadastrado na mesma guia "Projetos e Turmas"
+               para o portal do aluno mostrar os dados oficiais da turma. */
+            var projetoValido = null;
+            try {
+                var projetos = await db.collection('cursosCadastro').doc(cursoDoc.id)
+                    .collection('projetos').get();
+                var chaveProjeto = chaveTurma(turmaValida.projeto || dados.projeto || '');
+                for (var p = 0; p < projetos.docs.length; p++) {
+                    var proj = projetos.docs[p].data() || {};
+                    if (!chaveProjeto || chaveTurma(proj.nome) === chaveProjeto) {
+                        projetoValido = proj;
+                        break;
+                    }
+                }
+            } catch (e) {}
+
             return Object.assign({}, dados, {
                 _origem: 'cursosCadastro',
                 _tipo: 'aluno',
@@ -69,7 +85,9 @@
                 _cursoNome: String(curso.nome || ''),
                 _turma: nomeTurma,
                 _projeto: String(dados.projeto || ''),
-                _turmaStatus: turmaValida.status || 'Em Andamento'
+                _turmaStatus: turmaValida.status || 'Em Andamento',
+                _turmaDados: Object.assign({}, turmaValida),
+                _projetoDados: projetoValido ? Object.assign({}, projetoValido) : null
             });
         }
         return null;
