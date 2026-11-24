@@ -46,6 +46,7 @@
     this.online = true;
     this.fila = [];
     this._carregadas = {};
+    this._falhaBusca = {};
     this._flushPromise = null;
     this.ultimaSincronizacao = null;
     this.erroSincronizacao = null;
@@ -190,6 +191,9 @@
     return this.fila.some(function (op) { return op.col === col && op.id === id; });
   };
 
+  /* Devolve true so quando a rede respondeu. Uma falha nao pode ser tratada
+     como "colecao vazia": senao o login procura CPF em candidatos/usuarios,
+     nao acha nada e o vinculo com o curso se perde. */
   FarnDB.prototype._buscarColecao = async function (col) {
     try {
       var r = await this._req('/api/all?col=' + encodeURIComponent(col));
@@ -200,24 +204,37 @@
       });
       this._reaplicarPendentes(col, mapa);
       this.cache[col] = mapa;
+      this._falhaBusca[col] = 0;
       this._salvarLocal();
       this.online = true;
       this._avisarTodos();
+      return true;
     } catch (e) {
       this.online = false;
+      this._falhaBusca[col] = Date.now();
+      return false;
     }
   };
 
+  /* Evita martelar o servidor quando o tunel esta fora: no maximo uma
+     tentativa nova por colecao a cada 10 segundos. */
+  FarnDB.prototype._podeTentarBusca = function (col) {
+    var f = this._falhaBusca[col] || 0;
+    return !f || (Date.now() - f) > 10000;
+  };
+
   FarnDB.prototype._todos = async function (col) {
+    var temLocal = !!(this.cache[col] && Object.keys(this.cache[col]).length);
     if (!this._carregadas[col]) {
-      this._carregadas[col] = true;
-      var temLocal = !!(this.cache[col] && Object.keys(this.cache[col]).length);
       if (temLocal) {
         /* Mostra o cache na hora e atualiza em segundo plano. */
-        this._buscarColecao(col).catch(function () {});
-      } else {
-        await this._buscarColecao(col);
+        this._carregadas[col] = true;
+        if (this._podeTentarBusca(col)) this._buscarColecao(col).catch(function () {});
+      } else if (this._podeTentarBusca(col)) {
+        var ok = await this._buscarColecao(col);
         if (!this.cache[col]) this.cache[col] = {};
+        /* So marca como carregada se a busca deu certo. */
+        this._carregadas[col] = !!ok;
       }
     }
     return this.cache[col] || {};
