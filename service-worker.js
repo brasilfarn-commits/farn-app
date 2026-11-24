@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farn-v103';
+const CACHE_NAME = 'farn-v104';
 const OFFLINE_URLS = [
     './',
     './index.html',
@@ -13,11 +13,13 @@ const OFFLINE_URLS = [
     './apontamentos-adm.js',
     './estatistica.js',
     './portal-permissoes.js',
+    './aluno-acesso.js',
     './manifest.json',
     './logo-farn.png.png',
     './consultar-regularidade.html',
     './configurar-servidor.html',
     './portal-usuario.html',
+    './portal-aluno.html',
     './portal-curso.html'
 ];
 

@@ -1706,6 +1706,32 @@ async function landingAplicarOrigem(opcao, cpf) {
         location.href = 'portal-usuario.html';
     }
 }
+/* Portal do ALUNO: so entra quem esta nos individuos de algum curso do
+   Cadastro de Cursos com a turma EM ANDAMENTO. Sessao separada do Portal
+   do Usuario, para nao dar acesso a Cursos/AV/apontamentos. */
+async function landingLoginAluno(cpf, senha) {
+    if (!dbFirestore || typeof farnAlunoLocalizar !== 'function') {
+        landingShowLoginError('Acesso do aluno indisponível no momento.');
+        return false;
+    }
+    try {
+        var aluno = await farnAlunoLocalizar(dbFirestore, cpf, senha);
+        if (!aluno) {
+            landingShowLoginError('CPF/senha inválidos ou nenhuma turma EM ANDAMENTO encontrada para este CPF.');
+            return false;
+        }
+        currentUserData = aluno;
+        saveLastLogin(cpf);
+        try { localStorage.setItem('aluno_sessao', JSON.stringify(aluno)); } catch (e) {}
+        location.href = 'portal-aluno.html';
+        return true;
+    } catch (e) {
+        console.error('Erro no login do aluno:', e);
+        landingShowLoginError('Falha de conexão. Tente novamente.');
+        return false;
+    }
+}
+
 async function landingLogin(event) {
     if (event) event.preventDefault();
     var cpf = document.getElementById('landing-login-cpf').value.replace(/\D/g, '');
@@ -1715,7 +1741,18 @@ async function landingLogin(event) {
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
         var portalSel = document.getElementById('landing-login-portal');
-        var destino = portalSel && portalSel.value === 'usuario' ? 'usuario' : 'admin';
+        var portal = portalSel ? portalSel.value : 'admin';
+        if (portal === 'aluno') {
+            var entrouComoAluno = false;
+            try { entrouComoAluno = await landingLoginAluno(cpf, senha); }
+            catch (eAluno) {
+                console.error('Login ALUNO:', eAluno);
+                landingShowLoginError('Falha de conexão. Tente novamente.');
+            }
+            if (!entrouComoAluno && btn) { btn.disabled = false; btn.classList.remove('loading'); }
+            return false;
+        }
+        var destino = portal === 'usuario' ? 'usuario' : 'admin';
         var opcoes = await landingDescobrirOrigens(cpf, senha);
         if (!opcoes.length) {
             landingShowLoginError('CPF ou senha inválidos, ou cadastro não está Ativo.');

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Portal do Aluno</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="ficha-geral-compartilhar.js?v=31"></script>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        html, body { height:auto !important; min-height:100vh !important; overflow:visible !important; overflow-y:auto !important; }
+        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; -webkit-overflow-scrolling:touch; }
+        .pa-login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+            background:linear-gradient(135deg,#0f766e,#115e59 45%,#0f172a); }
+        .pa-login-card { width:100%; max-width:400px; background:#fff; border-radius:18px; padding:30px;
+            box-shadow:0 18px 50px rgba(0,0,0,.28); }
+        .pa-login-card h1 { font-size:20px; color:#0f172a; margin-bottom:4px; }
+        .pa-login-card p { font-size:12px; color:#64748b; margin-bottom:22px; line-height:1.6; }
+        .pa-login-card label { display:block; font-size:11px; font-weight:700; color:#475569; margin:12px 0 4px; }
+        .pa-login-card input { width:100%; padding:11px 12px; border:1px solid #cbd5e1; border-radius:9px; font-size:14px; }
+        .pa-login-card button { width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px;
+            background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; font-weight:800; font-size:14px; cursor:pointer; }
+        .pa-login-card button:disabled { opacity:.6; cursor:not-allowed; }
+        .pa-erro { color:#dc2626; font-size:12px; margin-top:12px; display:none; line-height:1.5; }
+        .pa-app { display:none; }
+        .pa-topbar { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:12px 18px;
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .pa-topbar h1 { font-size:16px; white-space:nowrap; }
+        .pa-menu-btn { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); color:#fff;
+            border-radius:8px; padding:8px 11px; cursor:pointer; font-size:16px; line-height:1; }
+        .pa-topo-usuario { margin-left:auto; display:flex; align-items:center; gap:10px; text-align:right; }
+        #pa-foto-topo { width:38px; height:50px; object-fit:cover; border-radius:7px; border:2px solid rgba(255,255,255,.7); background:#fff; }
+        #pa-foto-topo.pa-sem-foto { display:none; }
+        .pa-topo-nome { font-size:13px; font-weight:800; line-height:1.3; }
+        .pa-topo-matricula { font-size:11px; opacity:.85; margin-top:2px; }
+        .pa-container { max-width:900px; margin:20px auto; padding:0 16px; }
+        .pa-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:18px;
+            box-shadow:0 4px 14px rgba(2,6,23,.06); }
+        .pa-card h2 { font-size:16px; color:#0f172a; margin-bottom:14px; }
+        .pa-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
+        .pa-campo { border:1px solid #e2e8f0; border-radius:9px; padding:10px 12px; background:#f8fafc; }
+        .pa-campo span { display:block; font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .pa-campo b { display:block; font-size:13px; color:#0f172a; margin-top:3px; word-break:break-word; }
+        .pa-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:800;
+            background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+        .pa-aviso { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px;
+            padding:12px 14px; font-size:12px; line-height:1.6; }
+        .pa-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:40; }
+        .pa-drawer-overlay.aberto { display:block; }
+        .pa-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#fff; z-index:41;
+            transform:translateX(-100%); transition:transform .22s; box-shadow:6px 0 24px rgba(0,0,0,.18);
+            display:flex; flex-direction:column; }
+        .pa-drawer.aberto { transform:translateX(0); }
+        .pa-drawer-head { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:20px 18px; }
+        .pa-drawer-head h2 { font-size:16px; margin-top:8px; line-height:1.3; }
+        .pa-drawer-head p { font-size:11px; opacity:.85; margin-top:3px; }
+        .pa-drawer-nav { padding:12px 10px; flex:1; }
+        .pa-drawer-nav button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:transparent; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700;
+            color:#334155; text-align:left; margin-bottom:4px; }
+        .pa-drawer-nav button:hover { background:#f1f5f9; }
+        .pa-drawer-nav button.ativo { background:#e6fffa; color:#0f766e; }
+        .pa-drawer-foot { padding:12px 10px; border-top:1px solid #e2e8f0; }
+        .pa-drawer-foot button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:#fef2f2; color:#b91c1c; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700; }
+        .pa-view { display:none; }
+        .pa-view.ativo { display:block; }
+        .pa-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+        .pa-inicio-foto { width:110px; height:150px; object-fit:cover; border-radius:14px; border:2px solid #e2e8f0; }
+        .pa-inicio-topo { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+        @media (max-width:520px) { .pa-topbar h1 { font-size:14px; } .pa-topo-usuario { margin-left:0; width:100%; justify-content:flex-start; text-align:left; } }
+    </style>
+</head>
+<body>
+    <div class="pa-login-wrap" id="pa-tela-login">
+        <form class="pa-login-card" onsubmit="paLogin(event)" autocomplete="off">
+            <h1><i class="fa-solid fa-user-graduate" style="color:#0f766e;margin-right:8px"></i> Portal do Aluno</h1>
+            <p>Acesso exclusivo a alunos cadastrados no Cadastro de Cursos cuja turma esteja <b>EM ANDAMENTO</b>.</p>
+            <label for="pa-cpf">CPF</label>
+            <input type="text" id="pa-cpf" placeholder="000.000.000-00" maxlength="14" oninput="paFormatCpf(this)">
+            <label for="pa-senha">Senha</label>
+            <input type="password" id="pa-senha" placeholder="Sua senha" autocomplete="current-password">
+            <button type="submit" id="pa-btn-login"><i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar</button>
+            <div class="pa-erro" id="pa-erro"></div>
+        </form>
+    </div>
+
+    <div class="pa-drawer-overlay" id="pa-overlay" onclick="paFecharMenu()"></div>
+    <aside class="pa-drawer" id="pa-drawer">
+        <div class="pa-drawer-head">
+            <i class="fa-solid fa-user-graduate" style="font-size:30px"></i>
+            <h2 id="pa-nome-menu">Aluno</h2>
+            <p id="pa-turma-menu">—</p>
+        </div>
+        <nav class="pa-drawer-nav">
+            <button id="pa-menu-inicio" class="ativo" onclick="paSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
+            <button id="pa-menu-dados" onclick="paSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
+        </nav>
+        <div class="pa-drawer-foot">
+            <button onclick="paLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        </div>
+    </aside>
+
+    <div class="pa-app" id="pa-tela-app">
+        <div class="pa-topbar">
+            <button class="pa-menu-btn" onclick="paAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+            <h1>Portal do Aluno</h1>
+            <div class="pa-topo-usuario">
+                <img id="pa-foto-topo" class="pa-sem-foto" src="" alt="Foto 3x4 do aluno">
+                <div>
+                    <div class="pa-topo-nome" id="pa-nome-topo">—</div>
+                    <div class="pa-topo-matricula" id="pa-matricula-topo">Matrícula: —</div>
+                </div>
+            </div>
+        </div>
+        <div class="pa-container">
+            <div class="pa-view ativo" id="pa-view-inicio">
+                <div class="pa-card">
+                    <div class="pa-inicio-topo">
+                        <img id="pa-inicio-foto" class="pa-inicio-foto" src="" alt="Foto 3x4 do aluno" style="display:none">
+                        <div>
+                            <h2>Bem-vindo, <span id="pa-boas-vindas-nome">aluno</span>!</h2>
+                            <p style="font-size:13px;color:#64748b;margin-top:6px">Acompanhe seus dados e sua turma em andamento.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="pa-card"><h2><i class="fa-solid fa-book-open" style="color:#0f766e;margin-right:8px"></i> Meu curso</h2>
+                    <div class="pa-grid" id="pa-inicio-curso"></div>
+                </div>
+            </div>
+            <div class="pa-view" id="pa-view-dados">
+                <div class="pa-secao-titulo"><i class="fa-solid fa-id-card" style="color:#0f766e;margin-right:8px"></i> Meus Dados</div>
+                <div class="pa-card"><h2>Cadastro</h2><div class="pa-grid" id="pa-dados"></div></div>
+                <div class="pa-card"><h2><i class="fa-solid fa-file-lines" style="color:#0f766e;margin-right:8px"></i> Ficha Geral</h2>
+                    <div id="pa-ficha"><div class="pa-aviso">Carregando sua ficha...</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="farn-db.js?v=22"></script>
+    <script src="aluno-acesso.js?v=1"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
+            authDomain: "farn-app.firebaseapp.com",
+            databaseURL: "https://farn-app-default-rtdb.firebaseio.com",
+            projectId: "farn-app",
+            storageBucket: "farn-app.firebasestorage.app",
+            messagingSenderId: "16254677061",
+            appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
+        };
+        if (window.firebase && firebase.apps && !firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        var dbFirestore = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+        var paUser = null;
+        var PA_CHAVE = 'aluno_sessao';
+
+        function paSoDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+        function paFmtCpf(v) { v = paSoDigitos(v); return v.length === 11 ? v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : v; }
+        function paFormatCpf(el) {
+            var v = paSoDigitos(el.value).slice(0, 11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            el.value = v;
+        }
+        function paEsc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function paErro(msg) { var e = document.getElementById('pa-erro'); if (e) { e.textContent = msg; e.style.display = 'block'; } }
+        function paCampo(rotulo, valor) { return '<div class="pa-campo"><span>' + paEsc(rotulo) + '</span><b>' + (valor ? paEsc(valor) : '—') + '</b></div>'; }
+        function paNome() { return (paUser && (paUser.nome || paUser.nomeCompleto)) || 'Aluno'; }
+        function paMatricula() {
+            var m = (paUser && (paUser.matricula || paUser.credencial)) || '';
+            return m || ('ACD' + paSoDigitos(paUser && paUser.cpf).slice(-5));
+        }
+        function paAbrirMenu() {
+            document.getElementById('pa-drawer').classList.add('aberto');
+            document.getElementById('pa-overlay').classList.add('aberto');
+        }
+        function paFecharMenu() {
+            document.getElementById('pa-drawer').classList.remove('aberto');
+            document.getElementById('pa-overlay').classList.remove('aberto');
+        }
+        function paSetView(view) {
+            ['inicio', 'dados'].forEach(function (v) {
+                var box = document.getElementById('pa-view-' + v); if (box) box.className = 'pa-view' + (v === view ? ' ativo' : '');
+                var btn = document.getElementById('pa-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
+            });
+            paFecharMenu();
+            if (view === 'dados') paCarregarDados();
+        }
+        function paFoto() {
+            if (!paUser) return null;
+            var cpf = paSoDigitos(paUser.cpf), foto = null;
+            try { foto = localStorage.getItem('farn_photo_' + cpf) || localStorage.getItem('foto3x4_' + cpf); } catch (e) {}
+            return paUser.foto3x4 || paUser.photoDataUrl || paUser.foto || paUser.fotoUrl || foto || null;
+        }
+        function paAplicarFoto() {
+            var foto = paFoto();
+            var topo = document.getElementById('pa-foto-topo');
+            if (topo) {
+                if (foto) { topo.src = foto; topo.classList.remove('pa-sem-foto'); }
+                else { topo.classList.add('pa-sem-foto'); }
+            }
+            var ini = document.getElementById('pa-inicio-foto');
+            if (ini) { if (foto) { ini.src = foto; ini.style.display = ''; } else { ini.style.display = 'none'; } }
+        }
+        function paMostrarApp() {
+            document.getElementById('pa-tela-login').style.display = 'none';
+            document.getElementById('pa-tela-app').style.display = 'block';
+            var nome = paNome();
+            var el = document.getElementById('pa-nome-topo'); if (el) el.textContent = nome;
+            el = document.getElementById('pa-matricula-topo'); if (el) el.textContent = 'Matrícula: ' + paMatricula();
+            el = document.getElementById('pa-nome-menu'); if (el) el.textContent = nome;
+            el = document.getElementById('pa-turma-menu'); if (el) el.textContent = paUser._turma || '—';
+            el = document.getElementById('pa-boas-vindas-nome'); if (el) el.textContent = nome.split(' ')[0];
+            var box = document.getElementById('pa-inicio-curso');
+            if (box) {
+                box.innerHTML = paCampo('Curso', paUser._cursoNome) +
+                    paCampo('Projeto', paUser._projeto) +
+                    paCampo('Turma', paUser._turma) +
+                    '<div class="pa-campo"><span>Status da turma</span><b><span class="pa-badge">EM ANDAMENTO</span></b></div>';
+            }
+            paAplicarFoto();
+            paSetView('inicio');
+        }
+        async function paCarregarDados() {
+            if (!paUser) return;
+            var box = document.getElementById('pa-dados');
+            if (box) {
+                box.innerHTML = paCampo('Nome completo', paNome()) +
+                    paCampo('CPF', paFmtCpf(paUser.cpf)) +
+                    paCampo('Matrícula / Credencial', paMatricula()) +
+                    paCampo('Curso', paUser._cursoNome) +
+                    paCampo('Projeto', paUser._projeto) +
+                    paCampo('Turma', paUser._turma) +
+                    paCampo('E-mail', paUser.email) +
+                    paCampo('WhatsApp', paUser.whatsapp);
+            }
+            await paCarregarFicha();
+        }
+        async function paCarregarFicha() {
+            var box = document.getElementById('pa-ficha'); if (!box || !paUser) return;
+            var projeto = String(paUser._projeto || paUser.projeto || '').trim();
+            var turma = String(paUser._turma || paUser.turma || '').trim();
+            if (!projeto || !turma || typeof fichaGeralFolha !== 'function') {
+                box.innerHTML = '<div class="pa-aviso">Sua ficha será exibida quando o cadastro possuir projeto e turma vinculados.</div>';
+                return;
+            }
+            try {
+                if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
+                var aulas = typeof fichaGeralCarregarAulas === 'function' ? await fichaGeralCarregarAulas(projeto, turma) : [];
+                var dados = typeof fichaGeralDadosAluno === 'function' ? await fichaGeralDadosAluno(paUser) : {};
+                var calc = typeof fichaGeralCalcular === 'function' ? fichaGeralCalcular(paUser, dados, aulas) : dados;
+                if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
+                if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
+                box.innerHTML = fichaGeralFolha(paUser, calc, paFoto(), 0, aulas);
+                if (typeof fichaGeralAplicarLogo === 'function') fichaGeralAplicarLogo(box);
+            } catch (e) {
+                console.warn('Ficha do aluno:', e);
+                box.innerHTML = '<div class="pa-aviso">Não foi possível carregar a Ficha Geral neste momento.</div>';
+            }
+        }
+        function paEncerrar(msg) {
+            paUser = null;
+            try { localStorage.removeItem(PA_CHAVE); } catch (e) {}
+            document.getElementById('pa-tela-app').style.display = 'none';
+            document.getElementById('pa-tela-login').style.display = 'flex';
+            paErro(msg);
+        }
+        async function paValidarSessao() {
+            if (!paUser || !paUser.senha || typeof farnAlunoLocalizar !== 'function') return;
+            try {
+                var ainda = await farnAlunoLocalizar(dbFirestore, paUser.cpf, paUser.senha);
+                if (!ainda) paEncerrar('Seu acesso foi encerrado: não há turma EM ANDAMENTO vinculada ao seu CPF.');
+            } catch (e) { console.warn('Validação da sessão do aluno:', e); }
+        }
+        async function paLogin(ev) {
+            if (ev) ev.preventDefault();
+            var cpf = paSoDigitos((document.getElementById('pa-cpf') || {}).value);
+            var senha = (document.getElementById('pa-senha') || {}).value || '';
+            var erro = document.getElementById('pa-erro'); if (erro) erro.style.display = 'none';
+            var btn = document.getElementById('pa-btn-login');
+            if (cpf.length !== 11 || !senha) { paErro('Informe CPF e senha.'); return false; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...'; }
+            try {
+                var aluno = typeof farnAlunoLocalizar === 'function'
+                    ? await farnAlunoLocalizar(dbFirestore, cpf, senha) : null;
+                if (!aluno) {
+                    paErro('CPF/senha inválidos ou nenhuma turma EM ANDAMENTO encontrada para este CPF.');
+                } else {
+                    paUser = aluno;
+                    try { localStorage.setItem(PA_CHAVE, JSON.stringify(aluno)); } catch (e) {}
+                    paMostrarApp();
+                }
+            } catch (e) {
+                console.error('Login do aluno:', e);
+                paErro('Falha de conexão. Tente novamente.');
+            }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar'; }
+            return false;
+        }
+        function paLogout() {
+            paUser = null;
+            try { localStorage.removeItem(PA_CHAVE); } catch (e) {}
+            location.href = 'index.html';
+        }
+        window.addEventListener('DOMContentLoaded', function () {
+            var salvo = null;
+            try { salvo = JSON.parse(localStorage.getItem(PA_CHAVE) || 'null'); } catch (e) {}
+            if (!salvo || !salvo.cpf) return;
+            paUser = salvo;
+            paMostrarApp();
+            paValidarSessao();
+        });
+    </script>
+</body>
+</html>
