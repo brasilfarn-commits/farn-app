@@ -12,8 +12,8 @@
    A unica leitura externa permitida e configuracoes/instituicao, exigida
    desde a primeira versao da ficha para o cabecalho institucional.
 
-   O Portal do Usuario NAO carrega este arquivo: ele continua usando o
-   nucleo compartilhado original, intacto.
+   O Portal do Docente NAO carrega este arquivo: ele consulta somente as
+   aulas e os individuos do curso.
    ========================================================================== */
 
 /* Contexto do filtro do administrador (vazio no portal do aluno: a ficha usa

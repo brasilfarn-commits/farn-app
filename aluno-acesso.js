@@ -4,7 +4,7 @@
    Regra unica de liberacao usada pelo index (login) e pelo portal-aluno:
    so entra quem esta como individuo em algum curso do Cadastro de Cursos
    cuja turma da guia "Projetos e Turmas" esteja EM ANDAMENTO.
-   Nao mexe nas permissoes do Portal do Usuario nem do Portal do Curso.
+   Nao mexe nas permissoes do Portal do Docente nem do Portal do Curso.
 
    Alem do login, este arquivo tambem fornece a lista completa de cursos
    do aluno para a secao "Cursos" do portal, sem aplicar filtros de status

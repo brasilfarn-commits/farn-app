@@ -4,7 +4,7 @@
    Este arquivo e a unica fonte da montagem da Ficha Geral e do calculo das
    avaliacoes. E carregado por:
      - index.html         (administrador, secao Ficha Geral)
-     - portal-usuario.html e portal-formado.html
+     - portal-aluno.html, portal-curso.html e portal-formado.html
    Assim, qualquer ajuste na ficha vale para as duas telas ao mesmo tempo.
 
    Dependencias opcionais do host (usa as funcoes do host quando existirem,

@@ -1,9 +1,9 @@
 /* =====================================================================
-   PORTAL DO USUARIO - permissoes por DOCENTE e acoes de docente/aluno
+   PORTAL DO DOCENTE - permissoes por DOCENTE e acoes de docente/aluno
    ---------------------------------------------------------------------
-   Carregado por index.html (admin) e portal-usuario.html (portal).
-   O catálogo abaixo e usado pelo quadro PERMISSÕES dos registros de
-   Docente (tabela docentesAdmin). Todo item novo entra automaticamente
+   Carregado por index.html (admin). O catalogo abaixo e usado pelo quadro
+   PERMISSÕES dos registros de Docente (tabela docentesAdmin).
+   Todo item novo entra automaticamente
    com "Ver" ligado e "Editar" desligado.
    ===================================================================== */
 

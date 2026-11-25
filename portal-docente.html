@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Portal do Docente</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        html, body { height:auto !important; min-height:100vh !important; overflow:visible !important; overflow-y:auto !important; }
+        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; -webkit-overflow-scrolling:touch; }
+        .pd-login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+            background:linear-gradient(135deg,#1d4ed8,#1e40af 45%,#0f172a); }
+        .pd-login-card { width:100%; max-width:400px; background:#fff; border-radius:18px; padding:30px;
+            box-shadow:0 18px 50px rgba(0,0,0,.28); }
+        .pd-login-card h1 { font-size:20px; color:#0f172a; margin-bottom:4px; }
+        .pd-login-card p { font-size:12px; color:#64748b; margin-bottom:22px; line-height:1.6; }
+        .pd-login-card label { display:block; font-size:11px; font-weight:700; color:#475569; margin:12px 0 4px; }
+        .pd-login-card input { width:100%; padding:11px 12px; border:1px solid #cbd5e1; border-radius:9px; font-size:14px; }
+        .pd-login-card button { width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px;
+            background:linear-gradient(135deg,#1d4ed8,#1e40af); color:#fff; font-weight:800; font-size:14px; cursor:pointer; }
+        .pd-login-card button:disabled { opacity:.6; cursor:not-allowed; }
+        .pd-erro { color:#dc2626; font-size:12px; margin-top:12px; display:none; line-height:1.5; }
+        .pd-app { display:none; }
+        .pd-topbar { background:linear-gradient(135deg,#1d4ed8,#1e40af); color:#fff; padding:12px 18px;
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .pd-topbar h1 { font-size:16px; white-space:nowrap; }
+        .pd-menu-btn { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); color:#fff;
+            border-radius:8px; padding:8px 11px; cursor:pointer; font-size:16px; line-height:1; }
+        .pd-topo-usuario { margin-left:auto; display:flex; align-items:center; gap:10px; text-align:right; }
+        #pd-foto-topo { width:38px; height:50px; object-fit:cover; border-radius:7px; border:2px solid rgba(255,255,255,.7); background:#fff; }
+        #pd-foto-topo.pd-sem-foto { display:none; }
+        .pd-topo-nome { font-size:13px; font-weight:800; line-height:1.3; }
+        .pd-topo-matricula { font-size:11px; opacity:.85; margin-top:2px; }
+        .pd-container { max-width:980px; margin:20px auto; padding:0 16px; }
+        .pd-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:18px;
+            box-shadow:0 4px 14px rgba(2,6,23,.06); }
+        .pd-card h2 { font-size:16px; color:#0f172a; margin-bottom:14px; }
+        .pd-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
+        .pd-campo { border:1px solid #e2e8f0; border-radius:9px; padding:10px 12px; background:#f8fafc; }
+        .pd-campo span { display:block; font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .pd-campo b { display:block; font-size:13px; color:#0f172a; margin-top:3px; word-break:break-word; }
+        .pd-aviso { background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:10px;
+            padding:12px 14px; font-size:12px; line-height:1.6; }
+        .pd-ok { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+        .pd-erro-box { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+        .pd-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:40; }
+        .pd-drawer-overlay.aberto { display:block; }
+        .pd-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#fff; z-index:41;
+            transform:translateX(-100%); transition:transform .22s; box-shadow:6px 0 24px rgba(0,0,0,.18);
+            display:flex; flex-direction:column; }
+        .pd-drawer.aberto { transform:translateX(0); }
+        .pd-drawer-head { background:linear-gradient(135deg,#1d4ed8,#1e40af); color:#fff; padding:20px 18px; }
+        .pd-drawer-head h2 { font-size:16px; margin-top:8px; line-height:1.3; }
+        .pd-drawer-head p { font-size:11px; opacity:.85; margin-top:3px; }
+        .pd-drawer-nav { padding:12px 10px; flex:1; }
+        .pd-drawer-nav button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:transparent; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700;
+            color:#334155; text-align:left; margin-bottom:4px; }
+        .pd-drawer-nav button:hover { background:#f1f5f9; }
+        .pd-drawer-nav button.ativo { background:#dbeafe; color:#1d4ed8; }
+        .pd-drawer-foot { padding:12px 10px; border-top:1px solid #e2e8f0; }
+        .pd-drawer-foot button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:#fef2f2; color:#b91c1c; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700; }
+        .pd-view { display:none; }
+        .pd-view.ativo { display:block; }
+        .pd-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+        .pd-inicio-foto { width:110px; height:150px; object-fit:cover; border-radius:14px; border:2px solid #e2e8f0; }
+        .pd-inicio-topo { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+        .pd-filtros { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+        .pd-filtros label { display:block; font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:5px; }
+        .pd-filtros select { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; background:#fff; }
+        .pd-btn { border:none; border-radius:9px; padding:10px 14px; font-size:12px; font-weight:800; cursor:pointer; }
+        .pd-btn-primary { background:linear-gradient(135deg,#1d4ed8,#1e40af); color:#fff; }
+        .pd-btn-success { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; }
+        .pd-btn-warn { background:#fffbeb; color:#92400e; border:1px solid #fde68a; }
+        .pd-btn:disabled { opacity:.55; cursor:not-allowed; }
+        .pd-acoes { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:14px; }
+        .pd-aula-box { display:none; margin-top:16px; border-top:1px solid #e2e8f0; padding-top:16px; }
+        .pd-aula-box.aberto { display:block; }
+        .pd-qr-card { border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px; padding:14px; margin-bottom:14px; }
+        #pd-qr-reader { width:100%; min-height:220px; background:#0f172a; border-radius:10px; overflow:hidden; }
+        #pd-qr-reader img, #pd-qr-reader video { max-width:100%; }
+        .pd-qr-status { font-size:13px; font-weight:800; margin-top:10px; min-height:18px; }
+        .pd-tabela-wrap { overflow-x:auto; }
+        .pd-tabela { width:100%; border-collapse:collapse; }
+        .pd-tabela th { background:#f1f5f9; font-size:10px; text-transform:uppercase; color:#64748b; padding:8px; text-align:left; }
+        .pd-tabela td { border-bottom:1px solid #eef2f7; padding:8px; font-size:12px; }
+        .pd-selo { font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; }
+        .pd-selo-presente { background:#dcfce7; color:#166534; }
+        .pd-selo-falta { background:#fee2e2; color:#991b1b; }
+        .pd-linha-presente { background:#f0fdf4; }
+        .pd-hist-item { border:1px solid #e2e8f0; border-left:6px solid #1d4ed8; border-radius:9px;
+            background:#f8fafc; padding:10px 12px; margin-bottom:7px; font-size:12px; }
+        .pd-hist-item b { color:#0f172a; }
+        @media (max-width:520px) { .pd-topbar h1 { font-size:14px; } .pd-topo-usuario { margin-left:0; width:100%; justify-content:flex-start; text-align:left; } }
+    </style>
+</head>
+<body>
+    <div class="pd-login-wrap" id="pd-tela-login">
+        <form class="pd-login-card" onsubmit="pdLogin(event)" autocomplete="off">
+            <h1><i class="fa-solid fa-chalkboard-user" style="color:#1d4ed8;margin-right:8px"></i> Portal do Docente</h1>
+            <p>Acesso exclusivo aos docentes cadastrados na seção <b>Docente</b> do administrador.</p>
+            <label for="pd-cpf">CPF</label>
+            <input type="text" id="pd-cpf" placeholder="000.000.000-00" maxlength="14" oninput="pdFormatCpf(this)">
+            <label for="pd-senha">Senha</label>
+            <input type="password" id="pd-senha" placeholder="Sua senha" autocomplete="current-password">
+            <button type="submit" id="pd-btn-login"><i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar</button>
+            <div class="pd-erro" id="pd-erro"></div>
+        </form>
+    </div>
+
+    <div class="pd-drawer-overlay" id="pd-overlay" onclick="pdFecharMenu()"></div>
+    <aside class="pd-drawer" id="pd-drawer">
+        <div class="pd-drawer-head">
+            <i class="fa-solid fa-chalkboard-user" style="font-size:30px"></i>
+            <h2 id="pd-nome-menu">Docente</h2>
+            <p id="pd-matricula-menu">—</p>
+        </div>
+        <nav class="pd-drawer-nav">
+            <button id="pd-menu-inicio" class="ativo" onclick="pdSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
+            <button id="pd-menu-dados" onclick="pdSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
+            <button id="pd-menu-apontar" onclick="pdSetView('apontar')"><i class="fa-solid fa-qrcode"></i> Apontar Aluno</button>
+        </nav>
+        <div class="pd-drawer-foot">
+            <button onclick="pdLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        </div>
+    </aside>
+
+    <div class="pd-app" id="pd-tela-app">
+        <div class="pd-topbar">
+            <button class="pd-menu-btn" onclick="pdAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+            <h1>FARN · Portal do Docente</h1>
+            <div class="pd-topo-usuario">
+                <img id="pd-foto-topo" class="pd-sem-foto" src="" alt="Foto do docente">
+                <div>
+                    <div class="pd-topo-nome" id="pd-nome-topo">Docente</div>
+                    <div class="pd-topo-matricula" id="pd-matricula-topo">Matrícula: —</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pd-container">
+            <section class="pd-view ativo" id="pd-view-inicio">
+                <h2 class="pd-secao-titulo">Início</h2>
+                <div class="pd-card">
+                    <div class="pd-inicio-topo">
+                        <img id="pd-inicio-foto" class="pd-inicio-foto" src="" alt="Foto 3x4 do docente" style="display:none">
+                        <div style="flex:1;min-width:220px">
+                            <div style="font-size:18px;font-weight:800;color:#0f172a" id="pd-inicio-nome">Docente</div>
+                            <div style="font-size:12px;color:#64748b;margin-top:4px" id="pd-inicio-guerra">—</div>
+                            <div style="margin-top:10px" id="pd-inicio-badges"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pd-card">
+                    <h2><i class="fa-solid fa-book-open" style="color:#1d4ed8;margin-right:8px"></i> Meus cursos e turmas</h2>
+                    <div class="pd-grid" id="pd-inicio-vinculos"></div>
+                </div>
+                <div class="pd-card">
+                    <h2><i class="fa-solid fa-circle-info" style="color:#1d4ed8;margin-right:8px"></i> Como apontar</h2>
+                    <div class="pd-aviso">Abra <b>Apontar Aluno</b>, escolha o curso, a turma e a aula. O QR Code lido deve ser o mesmo exibido no portal do aluno (matrícula, credencial ou CPF). Cada leitura válida confirma a presença, emite um bip e o leitor continua pronto para o próximo aluno. Ao final, toque em <b>Salvar Apontamento</b>.</div>
+                </div>
+            </section>
+
+            <section class="pd-view" id="pd-view-dados">
+                <h2 class="pd-secao-titulo">Meus Dados</h2>
+                <div class="pd-card">
+                    <div class="pd-grid" id="pd-dados-grid"></div>
+                </div>
+            </section>
+
+            <section class="pd-view" id="pd-view-apontar">
+                <h2 class="pd-secao-titulo">Apontar Aluno</h2>
+                <div class="pd-card">
+                    <div class="pd-aviso" id="pd-apt-aviso">Carregando suas aulas...</div>
+                    <div class="pd-filtros" style="margin-top:14px">
+                        <div><label for="pd-curso">Curso</label><select id="pd-curso" onchange="pdOnCursoChange()"></select></div>
+                        <div><label for="pd-turma">Turma</label><select id="pd-turma" onchange="pdOnTurmaChange()"></select></div>
+                        <div><label for="pd-aula">Aula</label><select id="pd-aula"></select></div>
+                    </div>
+                    <div class="pd-acoes">
+                        <button class="pd-btn pd-btn-primary" id="pd-btn-abrir" onclick="pdAbrirAula()"><i class="fa-solid fa-door-open" style="margin-right:6px"></i> Abrir aula</button>
+                        <span id="pd-aula-info" style="font-size:11px;color:#64748b"></span>
+                    </div>
+
+                    <div class="pd-aula-box" id="pd-aula-box">
+                        <div class="pd-qr-card">
+                            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                                <button class="pd-btn pd-btn-success" id="pd-btn-qr" onclick="pdAlternarQr()"><i class="fa-solid fa-qrcode" style="margin-right:6px"></i> Abrir leitor de QR Code</button>
+                                <button class="pd-btn pd-btn-warn" onclick="pdPararQr()"><i class="fa-solid fa-power-off" style="margin-right:6px"></i> Parar leitor</button>
+                            </div>
+                            <div id="pd-qr-reader" style="display:none;margin-top:12px"></div>
+                            <div class="pd-qr-status" id="pd-qr-status"></div>
+                            <div style="font-size:11px;color:#64748b" id="pd-qr-detalhe">Aponte a câmera para o QR Code do aluno.</div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+                            <b style="font-size:13px">Alunos da turma</b>
+                            <span style="font-size:11px;color:#64748b">Confirmados: <b id="pd-contador">0</b></span>
+                        </div>
+                        <div class="pd-tabela-wrap" id="pd-lista-alunos"></div>
+                        <div class="pd-acoes">
+                            <button class="pd-btn pd-btn-success" id="pd-btn-salvar" onclick="pdSalvarApontamento()"><i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i> Salvar Apontamento</button>
+                            <button class="pd-btn pd-btn-warn" onclick="pdFecharAula()"><i class="fa-solid fa-xmark" style="margin-right:6px"></i> Encerrar aula</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="pd-card">
+                    <h2><i class="fa-solid fa-clock-rotate-left" style="color:#1d4ed8;margin-right:8px"></i> Minhas aulas apontadas</h2>
+                    <div id="pd-historico"><div class="pd-aviso">Carregando histórico...</div></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="farn-db.js?v=22"></script>
+    <script src="campos-pessoa-comuns.js?v=3"></script>
+    <script src="portal-docente.js?v=1"></script>
+</body>
+</html>

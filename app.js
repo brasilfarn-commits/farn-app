@@ -1384,7 +1384,7 @@ function applyUserPermissions() {
            apontamentos ou o admin inteiro. */
         'admin-estatistica': p.includes('admin') || isGeral
             || p.includes('relatorios') || p.includes('apontamento'),
-        'admin-premissao-portal-usuario': p.includes('admin') || isGeral || p.includes('portal-usuario')
+        'admin-premissao-portal-usuario': p.includes('admin') || isGeral || p.includes('portal-docente') || p.includes('portal-usuario')
     };
     /* Coordenador: o quadro salvo no cadastro dele manda em tudo o que aparece. */
     if (ehCoord) {
@@ -1593,8 +1593,8 @@ function landingCloseMenu() {
 
 /* =====================================================================
    LOGIN DO INDEX
-   O tipo de acesso e definido pelo seletor Administrador / Portal do
-   Usuario do proprio formulario. Quando o CPF aparece em mais de um
+   O tipo de acesso e definido pelo seletor Administrador / DOCENTE /
+   ALUNO do proprio formulario. Quando o CPF aparece em mais de um
    cadastro, a origem e escolhida automaticamente conforme esse seletor,
    sem pedir ao usuario que escolha a fonte de dados.
    ===================================================================== */
@@ -1617,8 +1617,8 @@ async function landingDescobrirOrigens(cpf, senha) {
     }
     var fontes = [
         { id: 'coordenacao', colecao: 'coordenacao', rotulo: 'COORDENAÇÃO', detalhe: 'Painel administrativo com permissões próprias', destino: 'admin' },
-        { id: 'docentesAdmin', colecao: 'docentesAdmin', rotulo: 'DOCENTE', detalhe: 'Cadastro de Docentes — Portal do Usuário', destino: 'usuario' },
-        { id: 'docentes', colecao: 'docentes', rotulo: 'DOCENTE', detalhe: 'Cadastro Geral de Docentes — Portal do Usuário', destino: 'usuario' },
+        { id: 'docentesAdmin', colecao: 'docentesAdmin', rotulo: 'DOCENTE', detalhe: 'Cadastro de Docentes — Portal do Docente', destino: 'docente' },
+        { id: 'docentes', colecao: 'docentes', rotulo: 'DOCENTE', detalhe: 'Cadastro Geral de Docentes — Portal do Docente', destino: 'docente' },
         { id: 'candidatos', colecao: 'candidatos', rotulo: 'ALUNO/FORMADO', detalhe: 'Cadastro Geral de Indivíduos', destino: 'usuario' },
         { id: 'usuarios', colecao: 'usuarios', rotulo: 'USUÁRIO', detalhe: 'Usuário do sistema', destino: 'usuario' },
         { id: 'cffAlunos', colecao: 'cffAlunos', rotulo: 'CFF', detalhe: 'Aluno do CFF', destino: 'usuario' }
@@ -1696,6 +1696,48 @@ async function landingAplicarOrigem(opcao, cpf) {
     try { localStorage.setItem('farn_last_cpf', currentUserData.cpf || cpf); } catch (e) {}
     if (opcao.destino === 'admin') {
         enterAdminPanel();
+    } else if (opcao.destino === 'docente') {
+        try { localStorage.setItem('docente_sessao', JSON.stringify(currentUserData)); } catch (e) {}
+        location.href = 'portal-docente.html';
+    }
+}
+/* Portal do DOCENTE: fonte unica e a secao Docente do administrador
+   (docentesAdmin). So entra com CPF e senha gravados nesse cadastro. */
+async function landingLoginDocente(cpf, senha) {
+    if (!dbFirestore) {
+        landingShowLoginError('Acesso do docente indisponível no momento.');
+        return false;
+    }
+    try {
+        var snap = await dbFirestore.collection('docentesAdmin').where('cpf', '==', cpf).limit(1).get();
+        var docente = null;
+        snap.forEach(function (doc) {
+            if (docente) return;
+            var d = doc.data() || {};
+            if (d.senha !== senha) return;
+            if (d.status && typeof fgStatusAtivo === 'function' && !fgStatusAtivo(d.status)) return;
+            if (String(d.situacao || '').toLowerCase() === 'inativo') return;
+            docente = Object.assign({}, d, {
+                _origem: 'docentesAdmin',
+                _docId: doc.id,
+                cpf: cpf
+            });
+        });
+        if (!docente) {
+            landingShowLoginError('CPF/senha inválidos ou docente não cadastrado na seção Docente do administrador.');
+            return false;
+        }
+        currentUserData = docente;
+        saveLastLogin(cpf);
+        saveLoginState();
+        try { localStorage.setItem('farn_user_data', JSON.stringify(docente)); } catch (e) {}
+        try { localStorage.setItem('docente_sessao', JSON.stringify(docente)); } catch (e) {}
+        location.href = 'portal-docente.html';
+        return true;
+    } catch (e) {
+        console.error('Erro no login do docente:', e);
+        landingShowLoginError('Falha de conexão. Tente novamente.');
+        return false;
     }
 }
 /* Portal do ALUNO: so entra quem esta nos individuos de algum curso do
@@ -1733,15 +1775,19 @@ async function landingLogin(event) {
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
         var portalSel = document.getElementById('landing-login-portal');
-        var portal = portalSel && portalSel.value === 'aluno' ? 'aluno' : 'admin';
-        if (portal === 'aluno') {
-            var entrouComoAluno = false;
-            try { entrouComoAluno = await landingLoginAluno(cpf, senha); }
-            catch (eAluno) {
-                console.error('Login ALUNO:', eAluno);
+        var portalTipo = portalSel ? String(portalSel.value || '') : '';
+        var portal = portalTipo === 'aluno' || portalTipo === 'docente' ? portalTipo : 'admin';
+        if (portal === 'aluno' || portal === 'docente') {
+            var entrou = false;
+            try {
+                entrou = portal === 'aluno'
+                    ? await landingLoginAluno(cpf, senha)
+                    : await landingLoginDocente(cpf, senha);
+            } catch (ePortal) {
+                console.error('Login ' + portal + ':', ePortal);
                 landingShowLoginError('Falha de conexão. Tente novamente.');
             }
-            if (!entrouComoAluno && btn) { btn.disabled = false; btn.classList.remove('loading'); }
+            if (!entrou && btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return false;
         }
         var destino = 'admin';
@@ -2120,7 +2166,7 @@ function showAdminSection(sectionId, navEl) {
     document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
     const fcRotuloOrigem = (FC_ORIGENS[editingOrigem] || FC_ORIGENS['pre-inscricao']).rotulo;
-    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes', 'admin-cadastro-cursos': 'Cadastro de Cursos', 'admin-coordenacao': 'Coordenação', 'admin-docente': 'Docente', 'admin-apontamentos-adm': 'APONTAMENTOS ADM', 'admin-estatistica': 'ESTATISTICA', 'admin-premissao-portal-usuario': 'Premissão do Portal do Usuário' };
+    const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes', 'admin-cadastro-cursos': 'Cadastro de Cursos', 'admin-coordenacao': 'Coordenação', 'admin-docente': 'Docente', 'admin-apontamentos-adm': 'APONTAMENTOS ADM', 'admin-estatistica': 'ESTATISTICA', 'admin-premissao-portal-usuario': 'Permissões do Portal do Docente' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
 }
@@ -12799,7 +12845,6 @@ var blogRemoverVideoFlag = false;
 
 var BLOG_PORTAIS = [
     { id: 'index', nome: 'Index - Notícias' },
-    { id: 'usuario', nome: 'Portal do Usuário' },
     { id: 'formado', nome: 'Portal do Formado' }
 ];
 
@@ -18944,7 +18989,7 @@ async function patentesGravarProposta() {
 var INDIVIDUO_SECOES = {
     geral:   { id: 'admin-cadastro-geral', rotulo: 'Cadastro Geral', iniciar: 'cadastroGeralInicializar' },
     pre:     { id: 'admin-pre-inscricao', rotulo: 'Pre-inscrito', iniciar: 'preInicializar' },
-    docente: { id: 'admin-docentes',      rotulo: 'Docente',      iniciar: 'docentesInicializar' },
+    docente: { id: 'admin-docente',       rotulo: 'Docente',      iniciar: 'docenteAdminInicializar' },
     usuario: { id: 'admin-usuarios',      rotulo: 'Usuario',      iniciar: 'renderUsuariosList' },
     alunos:   { id: 'admin-alunos',   rotulo: 'Alunos',   iniciar: 'alunosInicializar' },
     formados: { id: 'admin-formados', rotulo: 'Formados', iniciar: 'formadosInicializar' },

@@ -876,6 +876,7 @@
                         <i class="fa-solid fa-globe"></i>
                         <select id="landing-login-portal" aria-label="Escolha o portal">
                             <option value="admin">Administrador</option>
+                            <option value="docente">DOCENTE</option>
                             <option value="aluno">ALUNO</option>
                         </select>
                     </div>
@@ -2132,11 +2133,11 @@
                                             </div>
                                         </label>
                                         <label class="permissao-item">
-                                            <input type="checkbox" class="uf-perm-check" value="portal-usuario">
+                                            <input type="checkbox" class="uf-perm-check" value="portal-docente">
                                             <div class="permissao-card">
-                                                <i class="fa-solid fa-user"></i>
-                                                <span>Portal do Usuário</span>
-                                                <small>Acessar o portal do usuário</small>
+                                                <i class="fa-solid fa-chalkboard-user"></i>
+                                                <span>Portal do Docente</span>
+                                                <small>Acessar o portal do docente</small>
                                             </div>
                                         </label>
                                         <label class="permissao-item">
@@ -2709,7 +2710,6 @@
                                     <label class="blog-label">Compartilhar em</label>
                                     <div class="blog-portais" id="blog-form-portais">
                                         <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="index"> Index - Notícias</label>
-                                        <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="usuario"> Portal do Usuário</label>
                                         <label class="blog-portal"><input type="checkbox" class="blog-portal-check" value="formado"> Portal do Formado</label>
                                     </div>
                                     <small>Ao ativar, a postagem aparece nos locais marcados acima.</small>
@@ -3219,7 +3219,7 @@
                                     <img id="cc-cert-verso-img" style="display:none;width:80px;height:112px;object-fit:contain;margin-top:6px;border:1px solid #cbd5e1;border-radius:6px"></div>
                                 <div class="form-group" style="margin-top:10px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Declaração</label>
                                     <textarea id="cc-cert-declaracao" class="config-input" rows="4" style="width:100%"></textarea></div>
-                                <label style="font-size:12px;color:#475569;margin-top:10px;display:block"><input type="checkbox" id="cc-cert-ativo" checked> Ativo (visível no Portal do Usuário)</label>
+                                <label style="font-size:12px;color:#475569;margin-top:10px;display:block"><input type="checkbox" id="cc-cert-ativo" checked> Ativo (disponível no cadastro)</label>
                                 <div style="display:flex;gap:10px;margin-top:14px">
                                     <button class="btn-outline" onclick="ccFecharFormCert()" style="flex:1"><i class="fa-solid fa-xmark"></i> Cancelar</button>
                                     <button class="btn-primary" onclick="ccSalvarCertificado()" style="flex:1"><i class="fa-solid fa-check"></i> Salvar certificado</button>
@@ -4986,10 +4986,10 @@
         </div>
     </div>
 
-    <script src="cadastro-cursos-nucleo.js?v=1"></script>
+    <script src="cadastro-cursos-nucleo.js?v=2"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
-    <script src="portal-permissoes.js?v=8"></script>
-    <script src="coordenacao.js?v=11"></script>
+    <script src="portal-permissoes.js?v=9"></script>
+    <script src="coordenacao.js?v=13"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
@@ -4998,8 +4998,8 @@
     <script src="certificados.js?v=4"></script>
     <script src="farn-arquivo.js?v=1"></script>
     <script src="farn-storage.js?v=3"></script>
-    <script src="aluno-acesso.js?v=6"></script>
-    <script src="app.js?v=132"></script>
+    <script src="aluno-acesso.js?v=7"></script>
+    <script src="app.js?v=133"></script>
     <script src="recad-admin.js?v=2"></script>
     <script src="cadastro-cursos.js?v=40"></script>
     <script src="apontamentos-adm.js?v=5"></script>

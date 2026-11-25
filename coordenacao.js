@@ -15,7 +15,8 @@
 var COORD_COLECAO = 'coordenacao';
 var DOC_COLECAO = 'docentesAdmin';
 
-/* Mesmos campos de CC_PESSOA_CAMPOS, sem projeto/turma. */
+/* Pessoas comuns, sem os vinculos multiplos de projeto/turma do candidato.
+   O Docente tem seus vinculos em campos de texto proprio (ver ADM_DOC_CAMPOS). */
 var ADM_PESSOA_CAMPOS = [
     ['nome','Nome Completo','text'], ['cpf','CPF','text'],
     ['nascimento','Data de Nascimento','date'], ['estadoCivil','Estado Civil','text'],
@@ -95,6 +96,10 @@ var ADM_DOC_CAMPOS = [
     ['nacionalidade', 'Nacionalidade', 'text'], ['naturalidade', 'Naturalidade', 'text'],
     ['profissao', 'Profissão', 'text'], ['cidade', 'Cidade', 'text'], ['estado', 'Estado', 'text'],
     ['matricula', 'Matrícula (gerada pelo CPF + nascimento)', 'matricula'],
+    ['cursos', 'Cursos em que atua (separar por vírgula)', 'text'],
+    ['turma', 'Turmas em que atua (separar por vírgula)', 'text'],
+    ['projeto', 'Projetos (separar por vírgula)', 'text'],
+    ['disciplinas', 'Disciplinas (separar por vírgula)', 'text'],
     ['senha', 'Senha do Portal', 'text'],
     ['fotoUrl', 'Foto 3x4', 'foto'],
     ['fatorRh', 'Fator RH', 'select', ADM_DOC_FATOR_RH]
@@ -580,7 +585,7 @@ function criarCadastroAdminPessoa(cfg) {
 
     /* ---------- PERMISSOES ----------
        Coordenação: permAdmin (painel administrativo).
-       Docente: permPortal (Portal do Usuário). */
+       Docente: permPortal (Portal do Docente). */
     function campoPerm() { return cfg.prefixo === 'doc' ? 'permPortal' : 'permAdmin'; }
     function modalPermId() { return cfg.prefixo === 'doc' ? 'doc-perm-modal' : 'adm-perm-modal'; }
     function catalogoPerm() {
