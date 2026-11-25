@@ -36,13 +36,18 @@ Write-Host '======================================================'
 
 if (!(Get-Command scp -ErrorAction SilentlyContinue)) { throw 'scp nao encontrado.' }
 
+$caminhos = @()
 foreach ($nome in $arquivos) {
     $caminho = Join-Path $origem $nome
     if (!(Test-Path $caminho)) { throw "Arquivo nao encontrado: $nome" }
     Write-Host "-> $nome"
-    & scp -P "$Porta" -o 'StrictHostKeyChecking=no' $caminho $remoto
-    if ($LASTEXITCODE -ne 0) { throw "Falha ao enviar $nome (codigo $LASTEXITCODE)" }
+    $caminhos += $caminho
 }
+
+# Uma unica conexao SCP: pede a senha uma vez e envia tudo junto.
+$argsLista = @('-P', "$Porta", '-o', 'StrictHostKeyChecking=no') + $caminhos + @($remoto)
+& scp @argsLista
+if ($LASTEXITCODE -ne 0) { throw "Falha ao enviar arquivos (codigo $LASTEXITCODE)" }
 
 Write-Host ''
 Write-Host 'Arquivos enviados. O servidor le do disco em cada requisicao;'
