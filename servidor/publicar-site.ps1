@@ -47,6 +47,14 @@ if (-not $SudoSenha) {
 
 $sshArgs = @('-p', "$Porta", '-o', 'StrictHostKeyChecking=no', $Destino)
 
+# Valida a credencial sudo ANTES de montar/enviar o pacote (145 MB).
+Write-Host 'Validando senha sudo no servidor...'
+try {
+    ExecutarRemoto 'echo "[sudo OK] credencial validada"'
+} catch {
+    throw 'Senha sudo invalida. Use a senha do usuario para sudo (pode ser diferente da senha SSH) ou defina FARN_SUDO_SENHA com a senha correta.'
+}
+
 if ($SoServidor) {
     Write-Host 'Enviando apenas servidor.js...'
     Executar 'scp' @('-P', "$Porta", (Join-Path $origem 'servidor\servidor.js'), "$Destino`:/tmp/farn-server-novo.js")
@@ -82,6 +90,8 @@ if ($SoServidor) {
 
 $cmd = @"
 set -e
+trap 'echo "[ERRO REMOTO] linha `$LINENO: comando falhou" >&2' ERR
+echo "[1/6] Preparando pastas..."
 cd $PastaRemota/servidor
 mkdir -p public arquivos dados
 "@
@@ -89,6 +99,7 @@ if (!$SoServidor) {
     $cmd += @"
 
 if [ -f /tmp/farn-site.tgz ]; then
+  echo "[2/6] Extraindo site..."
   cp -a public public.antigo 2>/dev/null || true
   rm -rf public
   mkdir -p public
@@ -101,14 +112,17 @@ fi
 $cmd += @"
 
 if [ -f /tmp/farn-server-novo.js ]; then
+  echo "[3/6] Atualizando servidor.js..."
   cp /tmp/farn-server-novo.js servidor.js
   rm -f /tmp/farn-server-novo.js
 fi
+echo "[4/6] Verificando sintaxe..."
 node --check servidor.js
+echo "[5/6] Reiniciando farn-server..."
 systemctl restart farn-server
 sleep 4
 
-echo '--- verificacao ---'
+echo "[6/6] Verificacao"
 curl -fsS http://localhost:8787/api/ping
 echo
 printf 'Site: '
