@@ -103,7 +103,6 @@ function ccInicializar() {
         if (lb) lb.innerHTML = '<p style="color:#dc2626">Erro ao carregar cursos: ' + ccEsc(e && e.message ? e.message : e) + '</p>';
     });
     ccPopularTurmasAdmin();
-    ccCarregarMenuPortalPermissoes();
     ccMostrarWorkspace(false);
 }
 
@@ -135,14 +134,10 @@ function ccRenderLista() {
                 + '<button class="btn-danger btn-sm" onclick="ccExcluirCurso(\'' + c._id + '\')" title="Excluir curso"><i class="fa-solid fa-trash"></i></button>'
                 + '</div>';
         }).join('') + '</div>';
-        if (typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
 }
 
 /* Alterna o status do curso entre Em Andamento e Concluido. */
 async function ccAlternarStatusCurso(id) {
-    if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
-        alert('Seu perfil não permite editar cursos.'); return;
-    }
     var c = (ccCursos || []).find(function (x) { return String(x._id) === String(id); });
     if (!c) { alert('Curso não encontrado.'); return; }
     var novo = c.status === 'Concluido' ? 'Em Andamento' : 'Concluido';
@@ -191,8 +186,6 @@ function ccMostrarWorkspace(mostrar) {
        aba do curso (pre-inscricao ou individuos). */
     if (!mostrar && ccPreFormaAtiva) ccPreVoltarForm();
     if (!mostrar && ccIndFormaAtiva) ccIndVoltarForm();
-    /* Ao voltar para a lista nao ha curso aberto: a guia Permissoes fica
-       sem contexto de curso e passa a mostrar o padrao geral. */
     if (!mostrar) { ccAtual = null; ccEditandoCursoId = null; }
     if (lista) lista.style.display = mostrar ? 'none' : '';
     if (ws) ws.style.display = mostrar ? '' : 'none';
@@ -295,9 +288,6 @@ function ccDocenteIdDoSelect(id) {
 }
 
 function ccAbrirFormCurso(id) {
-    if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
-        alert('Seu perfil não permite editar cursos.'); return;
-    }
     ccEditandoCursoId = id || null;
     window._ccIconeDataUrl = null;
     window._ccApostilaDataUrl = null;
@@ -319,13 +309,10 @@ function ccAbrirFormCurso(id) {
     if (prevA) prevA.innerHTML = curso && (curso.apostilaPdfUrl || curso.apostilaPdf) ? '<i class="fa-solid fa-file-pdf" style="color:#dc2626"></i> PDF anexado ao curso'
         : (curso && curso.apostilaUrl ? '<i class="fa-solid fa-link" style="color:#2563eb"></i> Link configurado' : 'Nenhuma apostila anexada');
     var modal = document.getElementById('cc-modal-curso'); if (modal) modal.classList.remove('hidden');
-    ccCarregarMenuPortalPermissoes();
 }
 
 function ccFecharFormCurso() {
     var modal = document.getElementById('cc-modal-curso'); if (modal) modal.classList.add('hidden');
-    /* Limpa o contexto de edicao: sem isso a guia Permissoes continuaria
-       apontando para o ultimo curso editado. */
     ccEditandoCursoId = null;
 }
 
@@ -375,8 +362,6 @@ async function ccSalvarCurso() {
     dados.docenteResponsavelNome = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-nome') || opDoc.textContent.split(' — ')[0]) : '';
     dados.docenteResponsavelMatricula = opDoc && dados.docenteResponsavelId ? (opDoc.getAttribute('data-matricula') || '') : '';
     dados.apostilaUrl = ((document.getElementById('cc-curso-apostila-url') || {}).value || '').trim();
-    /* As permissoes de exibicao no portal ficam na guia Permissoes, gravadas
-       em permissoesPortal deste curso; nao mexa nelas aqui. */
     var novoRef = ccEditandoCursoId ? null : ccDb().collection(CC_COLECAO).doc();
     var cursoId = ccEditandoCursoId || (novoRef && novoRef.id);
     try {
@@ -404,9 +389,6 @@ async function ccSalvarCurso() {
 }
 
 async function ccExcluirCurso(id) {
-    if (typeof ccPodeEditarCursos === 'function' && !ccPodeEditarCursos()) {
-        alert('Seu perfil não permite editar cursos.'); return;
-    }
     if (!confirm('Excluir este curso e TODOS os seus dados (projetos, turmas, inscrições, indivíduos, avaliações, fichas e certificados)?')) return;
     try {
         var base = ccDb().collection(CC_COLECAO).doc(id);
@@ -435,7 +417,6 @@ function ccAbrirCurso(id) {
     if (tit) tit.textContent = ccAtual.nome;
     var ic = document.getElementById('cc-workspace-icone');
     if (ic) ic.innerHTML = (ccAtual.iconeUrl || ccAtual.icone) ? '<img src="' + (ccAtual.iconeUrl || ccAtual.icone) + '" style="width:100%;height:100%;object-fit:contain">' : '<i class="fa-solid fa-book"></i>';
-    ccCarregarMenuPortalPermissoes();
     ccSetAba('geral');
 }
 
@@ -788,6 +769,37 @@ function ccFormCampo(prefixo, chave, rotulo, tipo, valor) {
         : '<input type="' + tipo + '" id="' + id + '" class="config-input" value="' + v + '">';
     return '<div class="form-group"><label>' + ccEsc(rotulo) + '</label>' + input + '</div>';
 }
+/* Campo exclusivo da guia Indivíduos: em quais cursos esta pessoa participa.
+   O curso atual fica sempre marcado e nao pode ser desmarcado aqui. */
+function ccFormCursosParticipaHTML(p) {
+    var atual = String((ccAtual || {})._id || '');
+    var ids = ccParticipaIds(p);
+    var cursos = (ccCursos || []).slice().sort(function (a, b) {
+        return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+    });
+    var checks = cursos.map(function (c) {
+        var cid = String(c._id);
+        var marcado = ids.indexOf(cid) >= 0;
+        var ehAtual = cid === atual;
+        var fundo = marcado ? '#f0fdfa' : '#fff';
+        var borda = marcado ? '#5eead4' : '#e2e8f0';
+        var cor = marcado ? '#0f766e' : '#475569';
+        return '<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid ' + borda
+            + ';border-radius:8px;background:' + fundo + ';color:' + cor + ';font-size:11px;font-weight:700;cursor:pointer">'
+            + '<input type="checkbox" class="cc-participa-curso" value="' + ccEsc(cid) + '"'
+            + (marcado ? ' checked' : '') + (ehAtual ? ' disabled' : '') + '> '
+            + ccEsc(c.nome || 'Curso')
+            + (ehAtual ? ' <span style="font-size:9px;opacity:.75">(atual)</span>' : '')
+            + '</label>';
+    }).join('');
+    return '<div class="form-group" style="margin:10px 0 4px">'
+        + '<label>Cursos em que participa</label>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+        + (checks || '<span style="font-size:11px;color:#94a3b8">Nenhum curso cadastrado.</span>')
+        + '</div>'
+        + '<div style="font-size:10px;color:#64748b;margin-top:5px">O curso atual fica sempre marcado. Para incluir esta pessoa em outros cursos, use <b>Enviar indivíduo</b> na lista.</div>'
+        + '</div>';
+}
 function ccFormPessoaHTML(prefixo, titulo, c, salvarFn, voltarFn) {
     var p = c || {};
     var projetos = ccProjetos.map(function (x) { return ccEsc(x.nome); });
@@ -816,6 +828,7 @@ function ccFormPessoaHTML(prefixo, titulo, c, salvarFn, voltarFn) {
         + '</select></div>'
         + '</div>'
         + '<div class="form-row">' + campos + '</div>'
+        + (prefixo === 'ccif' ? ccFormCursosParticipaHTML(p) : '')
         /* Foto 3x4 + QR Code em pre-inscricao e individuo do curso. */
         + '<div style="margin:8px 0 4px">'
         /* Na guia Indivíduos o campo Foto 3x4 tem editor de zoom/recorte e
@@ -848,6 +861,16 @@ function ccFormPessoaValores(prefixo) {
     dados.tipoPessoa = ((document.getElementById(prefixo + '-tipoPessoa') || {}).value || 'A');
     dados.projeto = ((document.getElementById(prefixo + '-projeto') || {}).value || '').trim();
     dados.turma = ((document.getElementById(prefixo + '-turma') || {}).value || '').trim();
+    if (prefixo === 'ccif') {
+        var ids = Array.prototype.slice.call(document.querySelectorAll('.cc-participa-curso:checked'))
+            .map(function (el) { return String(el.value || ''); })
+            .filter(Boolean);
+        var atual = String((ccAtual || {})._id || '');
+        if (atual && ids.indexOf(atual) < 0) ids.push(atual);
+        ids = ids.filter(function (v, i) { return ids.indexOf(v) === i; });
+        dados.cursosParticipaIds = ids;
+        dados.cursosParticipa = ccParticipaNomes(ids);
+    }
     if (typeof FarnPessoaCampos !== 'undefined') {
         var extra = FarnPessoaCampos.coletar(prefixo, dados);
         dados.foto3x4 = extra.foto3x4;
@@ -1094,7 +1117,7 @@ function ccSetAba(aba) {
     ccAba = aba;
     if (aba !== 'preinscricao' && ccPreFormaAtiva) ccPreVoltarForm();
     if (aba !== 'individuos' && ccIndFormaAtiva) ccIndVoltarForm();
-    ['geral','avaliacao','disciplinas','individuos','projeto','preinscricao','apontamento','ficha','certificado','secaoavaliacao','permissoes'].forEach(function (a) {
+    ['geral','avaliacao','disciplinas','individuos','projeto','preinscricao','apontamento','ficha','certificado','secaoavaliacao'].forEach(function (a) {
         var el = document.getElementById('cc-tab-' + a);
         if (el) el.style.display = (a === aba) ? '' : 'none';
         var btn = document.getElementById('cc-aba-' + a);
@@ -1109,8 +1132,6 @@ function ccSetAba(aba) {
     if (aba === 'certificado') ccInitCertificados();
     if (aba === 'secaoavaliacao') ccInitAvaliacao();
     if (aba === 'projeto' || aba === 'preinscricao') ccCarregarProjetosTurmas();
-    /* Recarrega ao entrar: cada curso tem a sua propria configuracao. */
-    if (aba === 'permissoes') ccCarregarMenuPortalPermissoes();
 }
 
 /* ============ DADOS INTERNOS DO CURSO ============
@@ -1924,6 +1945,40 @@ async function ccIndBuscar(id) {
     } catch (e) { return null; }
 }
 
+/* ---------- CURSOS QUE O INDIVIDUO PARTICIPA ----------
+   Guardamos os IDs (fonte unica) e os nomes (para exibicao e cadastros
+   antigos). Aceita tambem lista de nomes, usada antes deste campo existir. */
+function ccParticipaIds(p) {
+    var raw = p && (p.cursosParticipaIds || p.cursosParticipa);
+    var ids = [];
+    function add(txt) {
+        var v = String(txt == null ? '' : txt).trim();
+        if (!v) return;
+        var achado = (ccCursos || []).find(function (c) {
+            return String(c._id) === v || String(c.nome || '') === v;
+        });
+        var id = achado ? String(achado._id) : v;
+        if (ids.indexOf(id) < 0) ids.push(id);
+    }
+    if (Array.isArray(raw)) {
+        raw.forEach(function (item) {
+            if (item && typeof item === 'object') add(item.id || item._id || item.cursoId);
+            else add(item);
+        });
+    } else if (typeof raw === 'string') {
+        raw.split(/[;,]/).forEach(add);
+    }
+    var atual = (ccAtual || {})._id;
+    if (atual && ids.indexOf(String(atual)) < 0) ids.push(String(atual));
+    return ids;
+}
+function ccParticipaNomes(ids) {
+    return (ids || []).map(function (id) {
+        var c = (ccCursos || []).find(function (x) { return String(x._id) === String(id); });
+        return c ? String(c.nome || '') : String(id || '');
+    }).filter(Boolean);
+}
+
 async function ccLoadIndividuos() {
     if (!ccAtual || !ccDb()) return;
     ccAtualizarRotulosIndividuos();
@@ -1943,7 +1998,7 @@ async function ccLoadIndividuos() {
         ccRenderIndividuos();
     } catch (e) {
         var tb = document.getElementById('cc-individuos-tbody');
-        if (tb) tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#dc2626;padding:24px">Erro ao carregar: ' + ccEsc(e.message) + '</td></tr>';
+        if (tb) tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:24px">Erro ao carregar: ' + ccEsc(e.message) + '</td></tr>';
     }
 }
 function ccRenderIndividuos() {
@@ -1955,7 +2010,9 @@ function ccRenderIndividuos() {
     var lista = ccIndividuosCache.filter(function (p) {
         if (ccIndStatusFiltro && ccIndSituacao(p).chave !== ccIndStatusFiltro) return false;
         if (!busca) return true;
-        return [p.nome, p.cpf, p.matricula, p.projeto, p.turma].some(function (v) {
+        var campos = [p.nome, p.cpf, p.matricula, p.projeto, p.turma]
+            .concat(ccParticipaNomes(ccParticipaIds(p)));
+        return campos.some(function (v) {
             return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(busca) >= 0;
         });
     });
@@ -1964,7 +2021,7 @@ function ccRenderIndividuos() {
         ? lista.length + '/' + ccIndividuosCache.length
         : String(ccIndividuosCache.length);
     if (!lista.length) {
-        tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">'
+        tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:24px">'
             + (ccIndStatusFiltro ? 'Nenhum indivíduo nesta guia de status.'
                 : (ccIndividuosCache.length ? 'Nenhum indivíduo corresponde à busca.'
                     : 'Nenhum indivíduo neste curso. Aprove os pré-inscritos na guia Pré-Inscrição.'))
@@ -1977,6 +2034,8 @@ function ccRenderIndividuos() {
             return '<option value="' + ccEsc(s.chave) + '"' + (s.chave === sit.chave ? ' selected' : '') + '>' + s.rotulo + '</option>';
         }).join('');
         var cpfFmt = ccFormatCPF(p.cpf) || '-';
+        var nomesCursos = ccParticipaNomes(ccParticipaIds(p));
+        var cursosTxt = nomesCursos.length ? nomesCursos.join(' • ') : '-';
         return '<tr style="border-bottom:1px solid #f1f5f9">'
             + '<td style="padding:8px"><b>' + ccEsc(p.nome || '-') + '</b>'
             + (p.origem === 'pre-inscricao' ? '<div style="font-size:9px;color:#16a34a">via Pré-Inscrição</div>' : '') + '</td>'
@@ -1984,8 +2043,10 @@ function ccRenderIndividuos() {
             + '<td style="padding:8px;color:#ea580c;font-weight:600">' + ccEsc(p.matricula || p.credencial || '-') + '</td>'
             + '<td style="padding:8px;color:#475569">' + ccEsc(p.projeto || '-') + '</td>'
             + '<td style="padding:8px;color:#475569">' + ccEsc(p.turma || '-') + '</td>'
+            + '<td style="padding:8px;color:#475569;max-width:240px;font-size:11px" title="' + ccEsc(cursosTxt) + '">' + ccEsc(cursosTxt) + '</td>'
             + '<td style="padding:8px"><select class="config-input" style="padding:4px 6px;font-size:10px;font-weight:800;background:' + sit.cor + ';color:' + sit.texto + ';border:1px solid ' + sit.cor + ';border-radius:8px" onchange="ccIndividuoMudarStatus(\'' + p._id + '\',this.value)">' + opcoes + '</select></td>'
-            + '<td style="padding:8px"><div class="actions-cell">'
+            + '<td style="padding:8px"><div class="actions-cell" style="flex-wrap:wrap">'
+            + '<button class="btn-outline btn-sm" title="Enviar cópia deste indivíduo para outros cursos" style="font-size:10px;padding:5px 8px;white-space:nowrap" onclick="ccIndAbrirEnviar(\'' + p._id + '\')"><i class="fa-solid fa-paper-plane" style="margin-right:4px"></i> Enviar indivíduo</button>'
             + '<button class="btn-icon" title="Editar" onclick="ccIndEditar(\'' + p._id + '\')"><i class="fa-solid fa-pen"></i></button>'
             + '<button class="btn-icon" title="Imprimir" onclick="ccIndImprimir(\'' + p._id + '\')"><i class="fa-solid fa-print"></i></button>'
             + '<button class="btn-icon btn-danger-icon" title="Excluir" onclick="ccIndExcluir(\'' + p._id + '\')"><i class="fa-solid fa-trash"></i></button>'
@@ -2029,6 +2090,105 @@ async function ccIndExcluir(id) {
         await ccLoadIndividuos();
         ccIndRefreshVinculos();
     } catch (e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+/* ---------- ENVIAR COPIA DO INDIVIDUO PARA OUTROS CURSOS ----------
+   A pessoa continua no curso de origem; o envio apenas grava uma copia
+   do cadastro nos cursos marcados e atualiza o campo de participacao. */
+function ccIndAbrirEnviar(id) {
+    var p = ccIndPorId(id);
+    if (!p) { alert('Indivíduo não encontrado.'); return; }
+    var cursos = (ccCursos || []).slice().sort(function (a, b) {
+        return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+    });
+    var tit = document.getElementById('cc-generico-titulo');
+    var body = document.getElementById('cc-generico-body');
+    var m = document.getElementById('cc-modal-generico');
+    if (!tit || !body || !m) { alert('Janela de envio indisponível.'); return; }
+    var jaParticipa = ccParticipaIds(p);
+    var linhas = cursos.map(function (c) {
+        var cid = String(c._id);
+        var atual = cid === String((ccAtual || {})._id);
+        var concluido = String(c.status || '') === 'Concluido';
+        var vinculado = jaParticipa.indexOf(cid) >= 0;
+        return '<label style="display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid ' + (atual ? '#cbd5e1' : '#e2e8f0') + ';border-radius:9px;margin-bottom:6px;cursor:' + (atual ? 'not-allowed' : 'pointer') + ';background:' + (atual ? '#f8fafc' : '#fff') + '">'
+            + '<input type="checkbox" class="cc-enviar-curso" value="' + ccEsc(cid) + '" style="width:16px;height:16px"' + (atual ? ' disabled' : '') + '>'
+            + '<span style="flex:1;font-weight:700;color:' + (atual ? '#94a3b8' : '#0f172a') + '">' + ccEsc(c.nome || 'Curso') + '</span>'
+            + (atual ? '<span style="font-size:9px;font-weight:800;color:#475569;background:#e2e8f0;padding:2px 7px;border-radius:8px">CURSO ATUAL</span>' : '')
+            + (concluido ? '<span style="font-size:9px;font-weight:800;color:#1d4ed8;background:#dbeafe;padding:2px 7px;border-radius:8px">CONCLUÍDO</span>' : '')
+            + (!atual && vinculado ? '<span style="font-size:9px;font-weight:800;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:8px">JÁ PARTICIPA</span>' : '')
+            + '</label>';
+    }).join('');
+    tit.textContent = 'Enviar indivíduo — ' + (p.nome || '');
+    body.innerHTML = '<p style="font-size:12px;color:#475569;margin-bottom:12px">'
+        + 'Selecione os cursos que receberão uma <b>cópia</b> do cadastro de <b>' + ccEsc(p.nome || '') + '</b> '
+        + '(CPF ' + ccEsc(ccFormatCPF(p.cpf) || '-') + '). O indivíduo permanece neste curso.</p>'
+        + '<div style="max-height:44vh;overflow:auto">' + (linhas || '<p style="color:#94a3b8;font-size:12px">Nenhum outro curso cadastrado.</p>') + '</div>'
+        + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">'
+        + '<button type="button" class="btn-outline" onclick="ccFecharGenerico()">Cancelar</button>'
+        + '<button type="button" class="btn-primary" onclick="ccIndEnviarCopia(\'' + p._id + '\')"><i class="fa-solid fa-paper-plane" style="margin-right:6px"></i> Enviar</button>'
+        + '</div>';
+    m.classList.remove('hidden');
+}
+async function ccIndEnviarCopia(id) {
+    var p = await ccIndBuscar(id);
+    if (!p) { alert('Indivíduo não encontrado.'); return; }
+    var selecionados = Array.prototype.slice.call(document.querySelectorAll('.cc-enviar-curso:checked'))
+        .map(function (el) { return String(el.value || ''); })
+        .filter(function (v) { return v && v !== String((ccAtual || {})._id); });
+    if (!selecionados.length) { alert('Selecione pelo menos um curso de destino.'); return; }
+    if (!ccDb()) { alert('Banco de dados não conectado.'); return; }
+
+    var todosIds = ccParticipaIds(p);
+    selecionados.forEach(function (cid) { if (todosIds.indexOf(cid) < 0) todosIds.push(cid); });
+    var nomes = ccParticipaNomes(todosIds);
+    var cpfDig = String(p.cpf || '').replace(/\D/g, '');
+    var enviados = [], erros = [];
+
+    for (var i = 0; i < selecionados.length; i++) {
+        var cid = selecionados[i];
+        var curso = (ccCursos || []).find(function (c) { return String(c._id) === cid; });
+        if (!curso) { erros.push('Curso de destino não encontrado.'); continue; }
+        try {
+            var copia = Object.assign({}, p);
+            delete copia._id;
+            copia.cursoId = cid;
+            copia.cursoNome = curso.nome || '';
+            copia.copiadoDeId = String((ccAtual || {})._id || '');
+            copia.copiadoDeNome = (ccAtual || {}).nome || '';
+            copia.copiadoEm = new Date().toISOString();
+            copia.cursosParticipaIds = todosIds.slice();
+            copia.cursosParticipa = nomes.slice();
+            copia.atualizadoEm = new Date().toISOString();
+
+            var destino = ccDb().collection('cursosCadastro').doc(cid).collection('individuos');
+            var snap = await destino.get();
+            var existente = null;
+            snap.forEach(function (d) {
+                var dados = d.data() || {};
+                if (cpfDig && String(dados.cpf || '').replace(/\D/g, '') === cpfDig) existente = d;
+            });
+            if (existente) await destino.doc(existente.id).update(copia);
+            else await destino.add(copia);
+            enviados.push(curso.nome || 'Curso');
+        } catch (e) {
+            erros.push((curso.nome || 'Curso') + ': ' + (e && e.message ? e.message : e));
+        }
+    }
+    /* O cadastro de origem tambem passa a conhecer todos os cursos vinculados. */
+    try {
+        await ccRef('individuos', id).update({
+            cursosParticipaIds: todosIds,
+            cursosParticipa: nomes,
+            atualizadoEm: new Date().toISOString()
+        });
+    } catch (e) { erros.push('Atualização do cadastro de origem: ' + e.message); }
+
+    ccFecharGenerico();
+    await ccLoadIndividuos();
+    var msg = enviados.length ? 'Cópia enviada para: ' + enviados.join(', ') + '.' : 'Nenhuma cópia foi enviada.';
+    if (erros.length) msg += '\n\nFalhas:\n' + erros.join('\n');
+    alert(msg);
 }
 
 /* ---------- EDICAO DENTRO DA GUIA (formulario proprio) ---------- */
@@ -3375,194 +3535,4 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btn) btn.addEventListener('click', function () { ccAbrirFormCurso(null); });
 });
 
-/* =====================================================================
-   GUIA PERMISSOES - SECOES DO MENU HAMBURGUER DO PORTAL DO USUARIO
-   ---------------------------------------------------------------------
-   Cada curso tem a SUA propria guia Permissoes, gravada no proprio
-   documento do curso: cursosCadastro/{id}.permissoesPortal = { itens }.
-   Assim, alterar um curso nao mexe nos demais.
-   A configuracao global (configuracoes/portalMenu) continua existindo
-   apenas como PADRAO para cursos ainda sem configuracao individual e
-   para usuarios sem vinculo com curso.
-   ===================================================================== */
-var CC_MENU_PORTAL_ITENS = [
-    { chave: 'inicio', id: 'cc-pmenu-inicio', rotulo: 'Início' },
-    { chave: 'dados', id: 'cc-pmenu-dados', rotulo: 'Meus Dados' },
-    { chave: 'cursos', id: 'cc-pmenu-cursos', rotulo: 'Cursos' },
-    { chave: 'av', id: 'cc-pmenu-av', rotulo: 'Responder AV Teórica' },
-    { chave: 'relatorios', id: 'cc-pmenu-relatorios', rotulo: 'Relatórios' },
-    { chave: 'apontar', id: 'cc-pmenu-apontar', rotulo: 'Apontar alunos' },
-    { chave: 'libav', id: 'cc-pmenu-libav', rotulo: 'Liberar AV Teórica' },
-    { chave: 'aulasdoc', id: 'cc-pmenu-aulasdoc', rotulo: 'Minhas aulas' }
-];
-function ccMenuPortalPadrao() {
-    var mapa = {};
-    CC_MENU_PORTAL_ITENS.forEach(function (i) { mapa[i.chave] = true; });
-    return mapa;
-}
-/* Curso dono da guia: o formulario aberto (editar) tem prioridade sobre o
-   curso aberto no workspace. */
-function ccCursoDaGuiaPermissoes() {
-    if (ccEditandoCursoId) return ccEditandoCursoId;
-    if (ccAtual && ccAtual._id) return ccAtual._id;
-    return '';
-}
-function ccItensParaMapa(salvo) {
-    var mapa = {};
-    CC_MENU_PORTAL_ITENS.forEach(function (i) {
-        if (salvo && salvo[i.chave] !== undefined) {
-            mapa[i.chave] = salvo[i.chave] !== false && salvo[i.chave] !== 'nao';
-        }
-    });
-    return mapa;
-}
-/* Padrao geral: usado por cursos ainda sem configuracao propria. */
-async function ccLerPermissoesGerais() {
-    var mapa = ccMenuPortalPadrao();
-    try {
-        var snap = await ccDb().collection('configuracoes').doc('portalMenu').get();
-        var d = (snap && snap.exists) ? (snap.data() || {}) : {};
-        Object.assign(mapa, ccItensParaMapa(d.itens || d));
-    } catch (e) {}
-    return mapa;
-}
-/* Configuracao individual do curso. Devolve null quando o curso ainda nao
-   tem guia propria (ai vale o padrao geral). */
-async function ccLerPermissoesCurso(cursoId) {
-    if (!cursoId) return null;
-    try {
-        var snap = await ccDb().collection(CC_COLECAO).doc(cursoId).get();
-        if (!snap || !snap.exists) return null;
-        var curso = snap.data() || {};
-        var cfg = curso.permissoesPortal;
-        if (!cfg) return null;
-        return ccItensParaMapa(cfg.itens || cfg);
-    } catch (e) { return null; }
-}
-async function ccCarregarMenuPortalPermissoes(forcar) {
-    if (!ccDb()) return;
-    var mapa = await ccLerPermissoesGerais();
-    var cursoId = ccCursoDaGuiaPermissoes();
-    var doCurso = await ccLerPermissoesCurso(cursoId);
-    if (doCurso) Object.assign(mapa, doCurso);
-    CC_MENU_PORTAL_ITENS.forEach(function (i) {
-        var sel = document.getElementById(i.id);
-        if (sel) sel.value = mapa[i.chave] ? 'sim' : 'nao';
-    });
-    var escopo = document.getElementById('cc-pmenu-escopo');
-    if (escopo) {
-        escopo.textContent = cursoId
-            ? 'Estas opções valem somente para este curso. Cada curso tem a sua própria guia Permissões.'
-            : 'Padrão geral dos cursos. Abra um curso para configurar as permissões dele.';
-    }
-}
-async function ccSalvarPermissoes() {
-    var itens = {};
-    CC_MENU_PORTAL_ITENS.forEach(function (i) {
-        var el = document.getElementById(i.id);
-        itens[i.chave] = !el || el.value !== 'nao';
-    });
-    var cursoId = ccCursoDaGuiaPermissoes();
-    var cfg = { itens: itens, atualizadoEm: new Date().toISOString() };
-    try {
-        if (cursoId) {
-            await ccDb().collection(CC_COLECAO).doc(cursoId).update({ permissoesPortal: cfg });
-            var nome = (ccAtual && ccAtual._id === cursoId) ? ccAtual.nome : '';
-            alert('Permissões salvas apenas para o curso' + (nome ? ' "' + nome + '"' : '') + '.');
-        } else {
-            await ccDb().collection('configuracoes').doc('portalMenu').set(cfg);
-            alert('Permissões gerais (padrão dos cursos) salvas.');
-        }
-    } catch (e) {
-        alert('Erro ao salvar as permissões: ' + e.message);
-    }
-}
 
-/* =====================================================================
-   PERMISSOES DO COORDENADOR LOGADO NO ADMIN
-   O quadro gravado no cadastro de Coordenacao define o que aparece aqui.
-   Admin geral e outros perfis continuam com acesso completo.
-   ===================================================================== */
-function ccPermCoord(chave, acao) {
-    if (typeof admPermItem !== 'function') return true;
-    if (typeof admEhCoordenador !== 'function' || !admEhCoordenador()) return true;
-    return admPermItem(chave, acao || 'ver');
-}
-function ccPodeEditarCursos() { return ccPermCoord('cc:editarCursos', 'editar'); }
-var CC_ABAS_PERM = {
-    geral: 'cc:guiasVisaoGeral',
-    avaliacao: 'cc:criarAvaliacao',
-    disciplinas: 'cc:disciplinasAulas',
-    individuos: 'cc:individuos',
-    projeto: 'cc:projeto',
-    preinscricao: 'cc:preInscricao',
-    apontamento: 'cc:apontamento',
-    ficha: 'cc:fichaCurso',
-    certificado: 'cc:certificados',
-    secaoavaliacao: 'cc:secaoAvaliacao',
-    permissoes: 'cc:permissoes'
-};
-function ccAplicarPermissoesCoord() {
-    var umaVisivel = null;
-    Object.keys(CC_ABAS_PERM).forEach(function (aba) {
-        var permitido = ccPermCoord(CC_ABAS_PERM[aba], 'ver');
-        var btn = document.getElementById('cc-aba-' + aba);
-        var tab = document.getElementById('cc-tab-' + aba);
-        if (btn) {
-            btn.style.display = permitido ? '' : 'none';
-            if (permitido && !umaVisivel) umaVisivel = aba;
-        }
-        if (tab) {
-            tab.style.display = permitido ? '' : 'none';
-            if (permitido) {
-                tab.setAttribute('data-cc-somente-leitura', ccPermCoord(CC_ABAS_PERM[aba], 'editar') ? '0' : '1');
-            }
-        }
-    });
-    var edicao = ccPermCoord('cc:editarCursos', 'ver'); // botões aparecem; ações exigem "Editar"
-    ['cc-btn-novo', 'cc-restaurar-cursos'].forEach(function (id) {
-        var b = document.getElementById(id);
-        if (b) b.style.display = edicao ? '' : 'none';
-    });
-    document.querySelectorAll('#cc-lista button[onclick*="ccAlternarStatusCurso"], #cc-lista button[onclick*="ccExcluirCurso"]').forEach(function (b) {
-        b.style.display = edicao ? '' : 'none';
-    });
-    if (!ccPermCoord('cc:cursosAndamento', 'ver')) {
-        document.querySelectorAll('#cc-lista > div > div').forEach(function (card) {
-            if (card.textContent.indexOf('Em Andamento') >= 0) card.style.display = 'none';
-        });
-    }
-    if (!ccPermCoord('cc:cursosConcluidos', 'ver')) {
-        document.querySelectorAll('#cc-lista > div > div').forEach(function (card) {
-            if (card.textContent.indexOf('Concluido') >= 0) card.style.display = 'none';
-        });
-    }
-    /* Se a aba atual foi escondida, mostra a primeira liberada. */
-    if (ccAtual && ccAba && Object.prototype.hasOwnProperty.call(CC_ABAS_PERM, ccAba)) {
-        if (!ccPermCoord(CC_ABAS_PERM[ccAba], 'ver') && umaVisivel) ccSetAba(umaVisivel);
-    }
-}
-/* Bloqueia ações de alteração nas abas em que o coordenador tem só "Ver". */
-if (!window._ccPermClickInstalado) {
-    window._ccPermClickInstalado = true;
-    document.addEventListener('click', function (ev) {
-        if (typeof admEhCoordenador !== 'function' || !admEhCoordenador()) return;
-        var alvo = ev.target;
-        while (alvo && alvo !== document.body) {
-            if (alvo.getAttribute && alvo.getAttribute('data-cc-somente-leitura') === '1') {
-                var botao = ev.target.closest('button, a, input[type="submit"]');
-                if (!botao) return;
-                var texto = ((botonTexto(botao)) + ' ' + (botao.getAttribute('onclick') || '')).toLowerCase();
-                if (/(salvar|excluir|novo|nova|criar|adicionar|editar|importar|enviar|remover|gerar|aprovar|reprovar)/.test(texto)) {
-                    ev.preventDefault();
-                    ev.stopImmediatePropagation();
-                    alert('Seu perfil tem apenas visualização nesta área. Marque "Editar" nas permissões do coordenador.');
-                }
-                return;
-            }
-            alvo = alvo.parentElement;
-        }
-    }, true);
-    function botonTexto(el) { return (el.textContent || el.value || '').trim(); }
-}
-window.ccAplicarPermissoesCoord = ccAplicarPermissoesCoord;

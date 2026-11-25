@@ -1412,7 +1412,6 @@ function applyUserPermissions() {
             const m = (card.getAttribute('onclick') || '').match(/^\s*([A-Za-z_$][\w$]*)/);
             if (m) card.style.display = pode('rel:' + m[1], 'ver') ? '' : 'none';
         });
-        if (typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
         return;
     }
     document.querySelectorAll('#screen-admin .sidebar-nav .nav-item').forEach(item => {
@@ -2223,9 +2222,6 @@ function showAdminSection(sectionId, navEl) {
     const titles = { 'admin-home': 'Inicio', 'admin-pre-inscricao': 'Pre-Inscricao', 'admin-form-candidato': editingIndex !== null ? 'Editar ' + fcRotuloOrigem : 'Novo Pre-Cadastro', 'admin-alunos': 'Alunos', 'admin-foto3x4': 'Foto 3x4', 'admin-docentes': 'Docentes', 'admin-formados': 'Formados', 'admin-relatorios': 'Relatorios', 'admin-projetos': 'Projetos', 'admin-form-projeto': editingProjetoIndex !== null ? 'Editar Projeto' : 'Novo Projeto', 'admin-config': 'Configuracoes', 'admin-usuarios': 'Usuarios', 'admin-form-usuario': 'Novo Usuario', 'admin-recadastramento': 'Campanha de Recadastramento', 'admin-recad-detalhe': 'Detalhe do Recadastramento',  'admin-apostilas': 'Apostilas dos Alunos', 'admin-disciplinas': 'Disciplinas e Aulas', 'admin-tfm': 'TFM do Aluno', 'admin-video-aula': 'Video Aula', 'admin-noticias': 'Notícias', 'admin-atelie': 'Atelie', 'admin-avaliacao': 'Seção de Avaliação', 'admin-criar-avaliacao': 'Criar Avaliação', 'admin-cursos': 'Cursos', 'admin-whatfarn': 'WhatFarn', 'admin-cff': 'CFF - Curso de Formação de Formadores', 'admin-cff-disciplinas': 'Disciplinas e Aulas do CFF', 'admin-cff-projetos': 'Projeto e Turma do CFF', 'admin-form-cff': editingCffId !== null ? 'Editar Inscrição CFF' : 'Novo CFF', 'admin-ficha-geral': 'Ficha Geral', 'admin-individuo': 'Individuo', 'admin-cadastro-geral': 'Cadastro Geral', 'admin-certificado': 'Certificado', 'admin-patentes': 'Patentes', 'admin-cadastro-cursos': 'Cadastro de Cursos', 'admin-coordenacao': 'Coordenação', 'admin-docente': 'Docente', 'admin-apontamentos-adm': 'APONTAMENTOS ADM', 'admin-estatistica': 'ESTATISTICA', 'admin-premissao-portal-usuario': 'Premissão do Portal do Usuário' };
     document.getElementById('admin-page-title').textContent = titles[sectionId] || 'Admin';
     closeAdminSidebar();
-    if (sectionId === 'admin-cadastro-cursos' && typeof ccAplicarPermissoesCoord === 'function') {
-        ccAplicarPermissoesCoord();
-    }
 }
 
 function toggleAdminSidebar() {

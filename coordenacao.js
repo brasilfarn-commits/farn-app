@@ -159,23 +159,6 @@ var ADM_PERM_FIXO = [
         { chave: 'sec:inicio', rotulo: 'Seção Início liberada' },
         { chave: 'sec:relatorios', rotulo: 'Seção Relatórios' }
     ]},
-    { titulo: 'CADASTRO DE CURSOS', itens: [
-        { chave: 'sec:cadastroCursos', rotulo: 'Acessar Cadastro de Cursos' },
-        { chave: 'cc:cursosAndamento', rotulo: 'Cursos em andamento' },
-        { chave: 'cc:cursosConcluidos', rotulo: 'Cursos concluídos' },
-        { chave: 'cc:guiasVisaoGeral', rotulo: 'Guias / Visão Geral' },
-        { chave: 'cc:criarAvaliacao', rotulo: 'Criar Avaliação' },
-        { chave: 'cc:disciplinasAulas', rotulo: 'Disciplinas e Aulas' },
-        { chave: 'cc:individuos', rotulo: 'Indivíduos' },
-        { chave: 'cc:projeto', rotulo: 'Projeto' },
-        { chave: 'cc:preInscricao', rotulo: 'Pré-Inscrição' },
-        { chave: 'cc:apontamento', rotulo: 'Apontamento' },
-        { chave: 'cc:fichaCurso', rotulo: 'Ficha do Curso' },
-        { chave: 'cc:certificados', rotulo: 'Certificados' },
-        { chave: 'cc:secaoAvaliacao', rotulo: 'Seção de Avaliação' },
-        { chave: 'cc:permissoes', rotulo: 'Permissões (aba do curso)' },
-        { chave: 'cc:editarCursos', rotulo: 'Editar cursos (criar, status, excluir)', acao: true }
-    ]},
     { titulo: 'SEÇÃO DOCENTE', itens: [
         { chave: 'sec:docente', rotulo: 'Acessar Seção Docente' },
         { chave: 'doc:listaDocentes', rotulo: 'Lista de Docentes' },
@@ -211,14 +194,6 @@ function admItensDinamicos() {
             add('rel:' + m[1], span ? span.textContent.trim() : m[1]);
         });
     }
-    var chavesFixas = {};
-    ADM_PERM_FIXO.forEach(function (g) {
-        g.itens.forEach(function (i) { chavesFixas[i.chave] = true; });
-    });
-    document.querySelectorAll('#admin-cadastro-cursos .nav-item[id^="cc-aba-"]').forEach(function (btn) {
-        var chave = 'cc:' + btn.id.replace('cc-aba-', '');
-        if (!chavesFixas[chave]) add(chave, btn.textContent.trim());
-    });
     return out;
 }
 function admCatalogoPermissoes() {
@@ -689,7 +664,6 @@ function criarCadastroAdminPessoa(cfg) {
             if (u && u._docId === id) {
                 u[campo] = { itens: itens };
                 if (cfg.prefixo === 'coord' && typeof applyUserPermissions === 'function') applyUserPermissions();
-                if (cfg.prefixo === 'coord' && typeof ccAplicarPermissoesCoord === 'function') ccAplicarPermissoesCoord();
                 if (cfg.prefixo === 'doc' && typeof puAplicarPermissoes === 'function') puAplicarPermissoes();
             }
             alert('Permissões salvas para ' + (r.nome || ('o ' + rotulo)) + '.');

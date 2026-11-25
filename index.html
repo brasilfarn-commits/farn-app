@@ -34,7 +34,7 @@
             }
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -2955,7 +2955,6 @@
                             <button class="nav-item" id="cc-aba-ficha" onclick="ccSetAba('ficha')"><i class="fa-solid fa-file-lines"></i> Ficha do Curso</button>
                             <button class="nav-item" id="cc-aba-certificado" onclick="ccSetAba('certificado')"><i class="fa-solid fa-award"></i> Certificados</button>
                             <button class="nav-item" id="cc-aba-secaoavaliacao" onclick="ccSetAba('secaoavaliacao')"><i class="fa-solid fa-clipboard-list"></i> Seção de Avaliação</button>
-                            <button class="nav-item" id="cc-aba-permissoes" onclick="ccSetAba('permissoes')"><i class="fa-solid fa-shield-halved" style="color:#8b5cf6;margin-right:8px"></i> Permissões</button>
                         </div>
 
                         <!-- ABA GERAL -->
@@ -3029,6 +3028,7 @@
                                                     <th style="padding:8px;border-bottom:2px solid #e2e8f0">Matrícula</th>
                                                     <th style="padding:8px;border-bottom:2px solid #e2e8f0">Projeto</th>
                                                     <th style="padding:8px;border-bottom:2px solid #e2e8f0">Turma</th>
+                                                    <th style="padding:8px;border-bottom:2px solid #e2e8f0">Cursos em que participa</th>
                                                     <th style="padding:8px;border-bottom:2px solid #e2e8f0">Status</th>
                                                     <th style="padding:8px;border-bottom:2px solid #e2e8f0">Ações</th>
                                                 </tr></thead>
@@ -3242,29 +3242,6 @@
                             <div id="cc-avaliacao-lista"></div>
                         </div>
 
-                        <!-- ABA PERMISSÕES -->
-                        <div id="cc-tab-permissoes" style="display:none">
-                            <div style="padding:16px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;margin-bottom:16px">
-                                <h3 style="margin:0 0 4px;color:#1e293b;font-size:14px;font-weight:800">Permissões - Portal do Usuário</h3>
-                                <p style="margin:0 0 12px;font-size:11px;color:#64748b">Seções do menu hambúrguer do Portal do Usuário. Marque <b>SIM</b> para exibir ou <b>NÃO</b> para ocultar a seção. Estas opções valem <b>somente para este curso</b>.</p>
-                                <div class="cc-pmenu-lista">
-                                    <div class="cc-pmenu-head"><span>SEÇÃO DO MENU</span><span>EXIBIR?</span></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-house"></i> Início</span><select id="cc-pmenu-inicio" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-id-card"></i> Meus Dados</span><select id="cc-pmenu-dados" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-book-open"></i> Cursos</span><select id="cc-pmenu-cursos" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-file-pen"></i> Responder AV Teórica</span><select id="cc-pmenu-av" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-chart-column"></i> Relatórios</span><select id="cc-pmenu-relatorios" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-user-check"></i> Apontar alunos</span><select id="cc-pmenu-apontar" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-paper-plane"></i> Liberar AV Teórica</span><select id="cc-pmenu-libav" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                    <div class="cc-pmenu-linha"><span><i class="fa-solid fa-calendar-days"></i> Minhas aulas</span><select id="cc-pmenu-aulasdoc" class="config-input"><option value="sim">SIM</option><option value="nao">NÃO</option></select></div>
-                                </div>
-                                <p id="cc-pmenu-escopo" style="margin:10px 0 0;font-size:10.5px;color:#64748b">Estas opções valem somente para este curso. Cada curso tem a sua própria guia Permissões. Se uma seção for ocultada, o portal abre automaticamente na primeira seção ainda visível.</p>
-                                <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-                                    <button class="btn-primary btn-sm" onclick="ccSalvarPermissoes()"><i class="fa-solid fa-check" style="margin-right:6px"></i> Salvar permissões</button>
-                                    <button class="btn-outline btn-sm" onclick="ccCarregarMenuPortalPermissoes(true)"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Recarregar</button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -5012,8 +4989,8 @@
 
     <script src="cadastro-cursos-nucleo.js?v=1"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
-    <script src="portal-permissoes.js?v=7"></script>
-    <script src="coordenacao.js?v=10"></script>
+    <script src="portal-permissoes.js?v=8"></script>
+    <script src="coordenacao.js?v=11"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
@@ -5022,10 +4999,10 @@
     <script src="certificados.js?v=4"></script>
     <script src="farn-arquivo.js?v=1"></script>
     <script src="farn-storage.js?v=3"></script>
-    <script src="aluno-acesso.js?v=3"></script>
-    <script src="app.js?v=130"></script>
+    <script src="aluno-acesso.js?v=6"></script>
+    <script src="app.js?v=131"></script>
     <script src="recad-admin.js?v=2"></script>
-    <script src="cadastro-cursos.js?v=38"></script>
+    <script src="cadastro-cursos.js?v=40"></script>
     <script src="apontamentos-adm.js?v=5"></script>
     <script src="estatistica.js?v=1"></script>
 

@@ -120,10 +120,9 @@ function puPermMenuDocente(chave) {
     return puPermItem(permissao, 'ver') !== false;
 }
 function puAplicarPermissoes() {
-    /* Os botoes do menu sao tratados por puAplicarMenuPortal(), que cruza o
-       SIM/NAO global com a permissao individual do docente. Se este funcao
-       tambem escrevesse style.display, uma das duas regras sobrescreveria a
-       outra e as marcadores pareceriam nao responder. */
+    /* Os botoes do menu sao tratados por puAplicarMenuPortal(), que aplica a
+       permissao individual do docente. Se esta funcao tambem escrevesse
+       style.display, uma das duas regras sobrescreveria a outra. */
     document.querySelectorAll('#pu-view-relatorios [data-rel]').forEach(function (node) {
         node.style.display = puPermItem('rel:' + node.getAttribute('data-rel'), 'ver') ? '' : 'none';
     });
@@ -408,24 +407,13 @@ function puModalFechar() {
 }
 
 /* =====================================================================
-   SECOES DO MENU HAMBURGUER - SIM/NAO configurado no Cadastro de Cursos
+   SECOES DO MENU HAMBURGUER DO PORTAL DO USUARIO
    ---------------------------------------------------------------------
-   O admin grava por CURSO em cursosCadastro/{id}.permissoesPortal
-   { itens: { inicio:true, ... } } — cada curso e independente.
-   configuracoes/portalMenu continua como padrao geral.
-   Aqui o portal aplica o mapa do curso do usuario, escondendo botao e
-   tela das secoes NAO. Sem configuracao, todas ficam visiveis.
+   A visibilidade das secoes e definida apenas pelas permissoes do docente
+   (permPortal). As regras SIM/NAO por curso do Cadastro de Cursos foram
+   removidas: nenhuma configuracao permissoesPortal e mais lida.
    ===================================================================== */
 var PU_MENU_PORTAL_ITENS = ['inicio','dados','cursos','av','relatorios','apontar','libav','aulasdoc'];
-function puItensParaMapa(salvo) {
-    var mapa = {};
-    PU_MENU_PORTAL_ITENS.forEach(function (k) {
-        if (salvo && salvo[k] !== undefined) {
-            mapa[k] = salvo[k] !== false && salvo[k] !== 'nao';
-        }
-    });
-    return mapa;
-}
 /* Procura em qual(is) curso(s) o CPF consta como individuo. O login confere
    candidatos/usuarios ANTES do cadastro de cursos, entao quem esta nas duas
    partes loga pela colecao geral e nunca ganhava o _cursoId — e as
@@ -464,60 +452,16 @@ async function puCursosDoUsuario() {
     }
     return [];
 }
-/* Configuracao individual do curso (cursosCadastro/{id}.permissoesPortal).
-   Devolve null quando o curso ainda nao tem guia propria. */
-async function puPermissoesDoCurso(cursoId) {
-    try {
-        var snap = await dbFirestore.collection('cursosCadastro').doc(cursoId).get();
-        if (!snap || !snap.exists) return null;
-        var cfg = (snap.data() || {}).permissoesPortal;
-        if (!cfg) return null;
-        return puItensParaMapa(cfg.itens || cfg);
-    } catch (e) { return null; }
-}
 async function puCarregarMenuPortalPermissoes() {
-    /* O dbFirestore e criado pelo script inline da pagina, que roda depois
-       deste arquivo. Registra o observador na primeira leitura, quando o
-       banco ja existe. */
-    puObservarMenuPortal();
-    var mapa = {};
-    PU_MENU_PORTAL_ITENS.forEach(function (k) { mapa[k] = true; });
-    try {
-        if (typeof dbFirestore === 'undefined' || !dbFirestore) return mapa;
-        /* Padrao geral: serve a usuarios sem vinculo com curso e a cursos
-           ainda sem configuracao propria. */
-        var snap = await dbFirestore.collection('configuracoes').doc('portalMenu').get();
-        var d = (snap && snap.exists) ? (snap.data() || {}) : {};
-        Object.assign(mapa, puItensParaMapa(d.itens || d));
-    } catch (e) { /* sem configuracao: mantem o padrao (tudo visivel) */ }
-    /* Permissoes INDIVIDUAIS do curso do usuario sobrescrevem o padrao. */
-    try {
-        var ids = await puCursosDoUsuario();
-        var configs = [];
-        for (var i = 0; i < ids.length; i++) {
-            var mc = await puPermissoesDoCurso(ids[i]);
-            if (mc) configs.push(mc);
-        }
-        if (configs.length === 1) {
-            Object.assign(mapa, configs[0]);
-        } else if (configs.length > 1) {
-            /* Varios cursos: a secao aparece apenas se todos liberarem. */
-            PU_MENU_PORTAL_ITENS.forEach(function (k) {
-                var libera = true;
-                configs.forEach(function (c) { if (c[k] === false) libera = false; });
-                mapa[k] = libera;
-            });
-        }
-    } catch (e) { /* sem vinculo de curso: mantem o padrao */ }
-    return mapa;
-}
-async function puAplicarMenuPortal() {
-    var mapa = await puCarregarMenuPortalPermissoes();
     var final = {};
     PU_MENU_PORTAL_ITENS.forEach(function (k) {
-        /* SIM/NAO do Cadastro de Cursos e permissao Ver do docente:
-           a secao aparece apenas se as duas estiverem liberadas. */
-        final[k] = mapa[k] !== false && puPermMenuDocente(k);
+        final[k] = puPermMenuDocente(k) !== false;
+    });
+    return final;
+}
+async function puAplicarMenuPortal() {
+    var final = await puCarregarMenuPortalPermissoes();
+    PU_MENU_PORTAL_ITENS.forEach(function (k) {
         var btn = document.getElementById('pu-menu-' + k);
         if (btn) btn.style.display = final[k] ? '' : 'none';
         var view = document.getElementById('pu-view-' + k);
@@ -530,32 +474,8 @@ async function puAplicarMenuPortal() {
     }
     return final;
 }
-
-/* Reage imediatamente quando o admin salva/altera o SIM/NAO, sem exigir
-   recarregar a pagina ou entrar de novo no portal. Observa tanto o padrao
-   geral quanto o documento do curso, ja que a guia agora e por curso. */
-var PU_OBS_MENU_PORTAL = false;
-var PU_OBS_CURSOS_MENU = false;
-function puObservarMenuPortal() {
-    if (typeof dbFirestore === 'undefined' || !dbFirestore) return;
-    if (!PU_OBS_MENU_PORTAL) {
-        PU_OBS_MENU_PORTAL = true;
-        try {
-            dbFirestore.collection('configuracoes').doc('portalMenu').onSnapshot(function () {
-                puAplicarMenuPortal().catch(function () {});
-            });
-        } catch (e) { PU_OBS_MENU_PORTAL = false; }
-    }
-    if (!PU_OBS_CURSOS_MENU) {
-        PU_OBS_CURSOS_MENU = true;
-        try {
-            dbFirestore.collection('cursosCadastro').onSnapshot(function () {
-                if (puUserAtual()) puAplicarMenuPortal().catch(function () {});
-            });
-        } catch (e) { PU_OBS_CURSOS_MENU = false; }
-    }
-}
-puObservarMenuPortal();
+/* Mantido para compatibilidade com chamadas antigas: nao ha mais observador. */
+function puObservarMenuPortal() {}
 
 /* Exposto para os scripts inline do portal. */
 window.puAplicarMenuPortal = puAplicarMenuPortal;

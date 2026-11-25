@@ -71,6 +71,27 @@
         .pa-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
         .pa-inicio-foto { width:110px; height:150px; object-fit:cover; border-radius:14px; border:2px solid #e2e8f0; }
         .pa-inicio-topo { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+        .pa-curso-lista { display:flex; flex-direction:column; gap:12px; }
+        .pa-curso-item { border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; background:#f8fafc; }
+        .pa-curso-item h3 { font-size:14px; color:#0f172a; display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+        .pa-qr-card { display:flex; align-items:center; gap:18px; flex-wrap:wrap; background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:14px; }
+        .pa-qr-img { width:96px; height:96px; padding:5px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; }
+        .pa-qr-dados { display:flex; flex-direction:column; gap:4px; }
+        .pa-apt-curso { border:1px solid #e2e8f0; border-radius:12px; padding:14px; background:#f8fafc; margin-bottom:12px; }
+        .pa-apt-curso h3 { font-size:14px; color:#0f172a; margin-bottom:10px; }
+        .pa-apt-linha { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:9px 11px; border:1px solid #e2e8f0; border-left-width:6px; border-radius:9px; background:#fff; margin-bottom:6px; }
+        .pa-apt-linha .pa-apt-info { flex:1; min-width:180px; }
+        .pa-apt-linha .pa-apt-info b { font-size:12px; color:#0f172a; }
+        .pa-apt-linha .pa-apt-info span { display:block; font-size:10.5px; color:#64748b; margin-top:2px; }
+        .pa-apt-selo { font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+        .pa-apt-azul { border-left-color:#2563eb; background:#eff6ff; }
+        .pa-apt-verde { border-left-color:#16a34a; background:#f0fdf4; }
+        .pa-apt-vermelho { border-left-color:#dc2626; background:#fef2f2; }
+        .pa-apt-amarelo { border-left-color:#d97706; background:#fffbeb; }
+        .pa-apt-azul .pa-apt-selo { background:#dbeafe; color:#1d4ed8; }
+        .pa-apt-verde .pa-apt-selo { background:#dcfce7; color:#166534; }
+        .pa-apt-vermelho .pa-apt-selo { background:#fee2e2; color:#991b1b; }
+        .pa-apt-amarelo .pa-apt-selo { background:#fef3c7; color:#92400e; }
         @media (max-width:520px) { .pa-topbar h1 { font-size:14px; } .pa-topo-usuario { margin-left:0; width:100%; justify-content:flex-start; text-align:left; } }
     </style>
 </head>
@@ -97,6 +118,8 @@
         </div>
         <nav class="pa-drawer-nav">
             <button id="pa-menu-inicio" class="ativo" onclick="paSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
+            <button id="pa-menu-cursos" onclick="paSetView('cursos')"><i class="fa-solid fa-book-open"></i> Cursos</button>
+            <button id="pa-menu-apontamento" onclick="paSetView('apontamento')"><i class="fa-solid fa-clipboard-check"></i> Apontamento</button>
             <button id="pa-menu-dados" onclick="paSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
         </nav>
         <div class="pa-drawer-foot">
@@ -134,6 +157,18 @@
                     <div class="pa-grid" id="pa-sobre-turma"></div>
                 </div>
             </div>
+            <div class="pa-view" id="pa-view-cursos">
+                <div class="pa-secao-titulo"><i class="fa-solid fa-book-open" style="color:#0f766e;margin-right:8px"></i> Cursos</div>
+                <div class="pa-card"><h2>Meus cursos cadastrados</h2>
+                    <div id="pa-lista-cursos"></div>
+                </div>
+            </div>
+            <div class="pa-view" id="pa-view-apontamento">
+                <div class="pa-secao-titulo"><i class="fa-solid fa-clipboard-check" style="color:#0f766e;margin-right:8px"></i> Apontamento</div>
+                <div class="pa-card"><h2>Meus apontamentos por curso</h2>
+                    <div id="pa-lista-apontamentos"></div>
+                </div>
+            </div>
             <div class="pa-view" id="pa-view-dados">
                 <div class="pa-secao-titulo"><i class="fa-solid fa-id-card" style="color:#0f766e;margin-right:8px"></i> Meus Dados</div>
                 <div class="pa-card"><h2>Cadastro</h2><div class="pa-grid" id="pa-dados"></div></div>
@@ -142,7 +177,7 @@
     </div>
 
     <script src="farn-db.js?v=22"></script>
-    <script src="aluno-acesso.js?v=3"></script>
+    <script src="aluno-acesso.js?v=6"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -156,6 +191,8 @@
         if (window.firebase && firebase.apps && !firebase.apps.length) firebase.initializeApp(firebaseConfig);
         var dbFirestore = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
         var paUser = null;
+        var paCursos = [];
+        var paApontamentos = [];
         var PA_CHAVE = 'aluno_sessao';
 
         function paSoDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
@@ -184,12 +221,14 @@
             document.getElementById('pa-overlay').classList.remove('aberto');
         }
         function paSetView(view) {
-            ['inicio', 'dados'].forEach(function (v) {
+            ['inicio', 'cursos', 'apontamento', 'dados'].forEach(function (v) {
                 var box = document.getElementById('pa-view-' + v); if (box) box.className = 'pa-view' + (v === view ? ' ativo' : '');
                 var btn = document.getElementById('pa-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
             });
             paFecharMenu();
             if (view === 'dados') paCarregarDados();
+            if (view === 'cursos') paCarregarCursos();
+            if (view === 'apontamento') paCarregarApontamentos();
         }
         function paFoto() {
             if (!paUser) return null;
@@ -264,8 +303,198 @@
                     paCampo('WhatsApp', paUser.whatsapp);
             }
         }
+        /* Busca todos os cursos do Cadastro de Cursos em que o aluno logado
+           consta como individuo ou que estao marcados no campo "Cursos em
+           que participa", sem filtrar status nem permissoes. */
+        async function paCarregarCursos() {
+            var box = document.getElementById('pa-lista-cursos');
+            if (!box) return;
+            if (!paUser) { box.innerHTML = '<div class="pa-aviso">Entre novamente para ver seus cursos.</div>'; return; }
+            box.innerHTML = '<div class="pa-aviso">Carregando seus cursos...</div>';
+            try {
+                var lista = typeof farnAlunoListarCursos === 'function'
+                    ? await farnAlunoListarCursos(dbFirestore, paUser.cpf, paUser.senha, { incluirParticipacao: true }) : [];
+                paCursos = Array.isArray(lista) ? lista.slice() : [];
+            } catch (e) {
+                console.warn('Erro ao carregar cursos do aluno:', e);
+                paCursos = [];
+                box.innerHTML = '<div class="pa-aviso">Não foi possível carregar seus cursos. Tente novamente mais tarde.</div>';
+                return;
+            }
+            /* Ordena somente para exibicao; o login continua usando a primeira
+               turma encontrada na ordem do cadastro. */
+            paCursos.sort(function (a, b) {
+                return String(a._cursoNome || '').localeCompare(String(b._cursoNome || ''), 'pt-BR', { numeric: true });
+            });
+            paRenderCursos();
+        }
+        function paRenderCursos() {
+            var box = document.getElementById('pa-lista-cursos');
+            if (!box) return;
+            if (!paCursos.length) {
+                box.innerHTML = '<div class="pa-aviso">Nenhum curso encontrado para o seu cadastro.</div>';
+                return;
+            }
+            box.innerHTML = '<div class="pa-curso-lista">' + paCursos.map(function (c) {
+                return '<div class="pa-curso-item">'
+                    + '<h3><i class="fa-solid fa-book-open" style="color:#0f766e"></i> ' + paEsc(c._cursoNome || 'Curso')
+                    + ' <span class="pa-badge" title="Status registrado no Cadastro de Cursos">' + paEsc(c._cursoStatus || 'Em Andamento') + '</span></h3>'
+                    + '<div class="pa-grid">'
+                    + paCampo('Turma', c._turma)
+                    + paCampo('Status da turma', c._turmaStatus)
+                    + paCampo('Projeto', c._projeto)
+                    + paCampo('Situação no curso', c._participacaoIndireta ? '—' : (c.situacaoCurso || c.status || 'Ativo'))
+                    + paCampo('Vínculo', c._participacaoIndireta ? 'Campo Cursos em que participa' : 'Cadastro de Cursos')
+                    + '</div></div>';
+            }).join('') + '</div>';
+        }
+
+        /* ===== APONTAMENTO =====
+           Fonte: subcolecoes "aulas" e "apontamentos" de cada curso do
+           Cadastro de Cursos (guia Apontamento). Aula sem apontamento
+           gravado fica azul; apontamento gravado usa o status do aluno:
+           verde (Presente), vermelho (Falta), amarelo (Justificada). */
+        function paFmtDataCurto(v) {
+            if (!v) return '';
+            try { return new Date(v).toLocaleDateString('pt-BR'); } catch (e) { return String(v); }
+        }
+        function paQrValor() {
+            var u = paUser || {};
+            var v = String(u.qrCode || '').trim();
+            if (!v) v = String(u.credencial || '').trim();
+            if (!v) v = String(u.matricula || '').trim();
+            if (!v) v = paSoDigitos(u.cpf);
+            return v;
+        }
+        function paQrUrl() {
+            var v = paQrValor();
+            return v ? 'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(v) + '&size=96x96&margin=2' : '';
+        }
+        function paLinhaApontamento(apt, cpf) {
+            var alunos = Array.isArray(apt.alunos) ? apt.alunos : [];
+            var registro = null;
+            for (var i = 0; i < alunos.length; i++) {
+                if (paSoDigitos(alunos[i] && alunos[i].cpf) === cpf) { registro = alunos[i]; break; }
+            }
+            var st = String((registro && registro.status) || '').trim().toLowerCase();
+            var cls = 'pa-apt-azul', selo = 'Sem registro de presença';
+            if (st === 'p' || st.indexOf('presente') >= 0) { cls = 'pa-apt-verde'; selo = 'Presente'; }
+            else if (st === 'j' || st.indexOf('justific') >= 0) { cls = 'pa-apt-amarelo'; selo = 'Justificada'; }
+            else if (st === 'f' || st.indexOf('falta') >= 0) { cls = 'pa-apt-vermelho'; selo = 'Falta'; }
+            var detalhe = [paFmtDataCurto(apt.dataAula || apt.criadoEm), apt.horaAula].filter(Boolean).join(' • ');
+            return {
+                cls: cls,
+                selo: selo,
+                titulo: apt.aula || apt.disciplina || 'Apontamento',
+                detalhe: detalhe || 'Apontamento registrado',
+                obs: (registro && registro.obs) || ''
+            };
+        }
+        function paOrdenarData(a, b) {
+            var da = String(a.data || a.dataAula || a.criadoEm || '');
+            var db = String(b.data || b.dataAula || b.criadoEm || '');
+            return db.localeCompare(da);
+        }
+        async function paCarregarApontamentos() {
+            var box = document.getElementById('pa-lista-apontamentos');
+            if (!box) return;
+            if (!paUser) { box.innerHTML = '<div class="pa-aviso">Entre novamente para ver seus apontamentos.</div>'; return; }
+            box.innerHTML = '<div class="pa-aviso">Carregando apontamentos...</div>';
+            try {
+                if (!paCursos.length && typeof farnAlunoListarCursos === 'function') {
+                    paCursos = await farnAlunoListarCursos(dbFirestore, paUser.cpf, paUser.senha, { incluirParticipacao: true });
+                }
+                var cursos = (paCursos || []).slice().sort(function (a, b) {
+                    return String(a._cursoNome || '').localeCompare(String(b._cursoNome || ''), 'pt-BR', { numeric: true });
+                });
+                var cpf = paSoDigitos(paUser.cpf);
+                var porCurso = [];
+                for (var i = 0; i < cursos.length; i++) {
+                    var curso = cursos[i];
+                    var cid = curso._cursoId || curso.cursoId;
+                    if (!cid) continue;
+                    var nome = curso._cursoNome || curso.cursoNome || 'Curso';
+                    try {
+                        var base = dbFirestore.collection('cursosCadastro').doc(cid);
+                        var resultado = await Promise.all([
+                            base.collection('aulas').get(),
+                            base.collection('apontamentos').get()
+                        ]);
+                        var aulas = [];
+                        resultado[0].forEach(function (d) { aulas.push(Object.assign({ _id: d.id }, d.data() || {})); });
+                        var apontamentos = [];
+                        resultado[1].forEach(function (d) { apontamentos.push(Object.assign({ _id: d.id }, d.data() || {})); });
+                        aulas.sort(paOrdenarData);
+                        var porAula = {};
+                        apontamentos.forEach(function (apt) {
+                            var chave = String(apt.aulaId || '');
+                            if (chave && !porAula[chave]) porAula[chave] = apt;
+                        });
+                        var linhas = aulas.map(function (aula) {
+                            var apt = porAula[String(aula._id)];
+                            if (!apt) {
+                                return {
+                                    cls: 'pa-apt-azul', selo: 'Ainda não apontado',
+                                    titulo: aula.conteudo || aula.nome || aula.disciplina || 'Aula',
+                                    detalhe: [paFmtDataCurto(aula.data || aula.dataAula || aula.criadoEm), aula.horario].filter(Boolean).join(' • ') || 'Aula cadastrada',
+                                    obs: ''
+                                };
+                            }
+                            return paLinhaApontamento(apt, cpf);
+                        });
+                        /* Apontamentos cuja aula foi excluida continuam aparecendo. */
+                        apontamentos.forEach(function (apt) {
+                            var achou = aulas.some(function (aula) { return String(aula._id) === String(apt.aulaId); });
+                            if (!achou) linhas.push(paLinhaApontamento(apt, cpf));
+                        });
+                        porCurso.push({ nome: nome, linhas: linhas, erro: false });
+                    } catch (e) {
+                        console.warn('Erro ao carregar apontamentos do curso ' + cid + ':', e);
+                        porCurso.push({ nome: nome, linhas: [], erro: true });
+                    }
+                }
+                paApontamentos = porCurso;
+                paRenderApontamentos();
+            } catch (e) {
+                console.warn('Erro ao carregar apontamentos:', e);
+                box.innerHTML = '<div class="pa-aviso">Não foi possível carregar seus apontamentos. Tente novamente mais tarde.</div>';
+            }
+        }
+        function paRenderLinhaApontamento(l) {
+            return '<div class="pa-apt-linha ' + l.cls + '">'
+                + '<div class="pa-apt-info"><b>' + paEsc(l.titulo) + '</b>'
+                + '<span>' + paEsc(l.detalhe || '—') + (l.obs ? ' • Obs: ' + paEsc(l.obs) : '') + '</span></div>'
+                + '<span class="pa-apt-selo">' + paEsc(l.selo) + '</span></div>';
+        }
+        function paRenderApontamentos() {
+            var box = document.getElementById('pa-lista-apontamentos');
+            if (!box) return;
+            var qr = paQrUrl();
+            var cabecalho = '<div class="pa-qr-card">'
+                + (qr ? '<img class="pa-qr-img" src="' + paEsc(qr) + '" alt="QR Code do aluno">' : '')
+                + '<div class="pa-qr-dados">'
+                + '<div style="font-size:10px;font-weight:800;letter-spacing:.05em;color:#0f766e">QR CODE DO ALUNO</div>'
+                + '<div style="font-size:16px;font-weight:800;color:#0f172a">' + paEsc(paNome()) + '</div>'
+                + '<div style="font-size:12px;color:#475569">Matrícula: <b>' + paEsc(paMatricula()) + '</b></div>'
+                + '</div></div>';
+            if (!paApontamentos.length) {
+                box.innerHTML = cabecalho + '<div class="pa-aviso">Nenhum curso cadastrado para o seu CPF.</div>';
+                return;
+            }
+            box.innerHTML = cabecalho + paApontamentos.map(function (c) {
+                var conteudo = c.erro
+                    ? '<div class="pa-aviso">Não foi possível carregar os apontamentos deste curso.</div>'
+                    : (c.linhas.length
+                        ? c.linhas.map(paRenderLinhaApontamento).join('')
+                        : '<div class="pa-aviso">Nenhuma aula cadastrada neste curso.</div>');
+                return '<div class="pa-apt-curso"><h3><i class="fa-solid fa-book-open" style="color:#0f766e;margin-right:8px"></i>'
+                    + paEsc(c.nome) + '</h3>' + conteudo + '</div>';
+            }).join('');
+        }
         function paEncerrar(msg) {
             paUser = null;
+            paCursos = [];
+            paApontamentos = [];
             try { localStorage.removeItem(PA_CHAVE); } catch (e) {}
             document.getElementById('pa-tela-app').style.display = 'none';
             document.getElementById('pa-tela-login').style.display = 'flex';
