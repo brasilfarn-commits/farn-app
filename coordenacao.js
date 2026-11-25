@@ -169,7 +169,8 @@ var ADM_PERM_FIXO = [
         { chave: 'doc:listaDocentes', rotulo: 'Lista de Docentes' },
         { chave: 'doc:edicao', rotulo: 'Edição de Docentes', acao: true },
         { chave: 'doc:exclusao', rotulo: 'Exclusão de Docentes', acao: true },
-        { chave: 'doc:impressao', rotulo: 'Impressão de Docentes', acao: true }
+        { chave: 'doc:impressao', rotulo: 'Impressão de Docentes', acao: true },
+        { chave: 'doc:relatorioAulas', rotulo: 'Relatório de Aulas do Docente', acao: true }
     ]},
     { titulo: 'APONTAMENTOS ADM', itens: [
         { chave: 'sec:apontamentosAdm', rotulo: 'Acessar Apontamentos ADM' },
@@ -722,6 +723,7 @@ function criarCadastroAdminPessoa(cfg) {
         var podeEditar = admPermItem('doc:edicao', 'ver');
         var podeExcluir = admPermItem('doc:exclusao', 'ver');
         var podeImprimir = admPermItem('doc:impressao', 'ver');
+        var podeRelatorioAulas = admPermItem('doc:relatorioAulas', 'ver');
         tb.innerHTML = lista.map(function (r) {
             var contato = [r.whatsapp || r.telefone, r.email].filter(Boolean).join(' · ') || '-';
             return '<tr style="border-bottom:1px solid #f1f5f9">'
@@ -733,6 +735,9 @@ function criarCadastroAdminPessoa(cfg) {
                 + '<td style="padding:8px"><span class="badge" style="background:#f1f5f9;color:#475569">' + admEsc(r.situacao || 'Ativo') + '</span></td>'
                 + '<td style="padding:8px"><div class="actions-cell">'
                 + '<button class="btn-outline btn-sm" title="PERMISSÕES" onclick="' + P + 'Permissoes(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-shield-halved"></i> PERMISSÕES</button>'
+                + (cfg.prefixo === 'doc' && podeRelatorioAulas
+                    ? '<button class="btn-outline btn-sm" title="Relatório de Aulas" onclick="docRelatorioAulas(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-file-lines"></i> RELATÓRIO DE AULAS</button>'
+                    : '')
                 + (podeEditar
                     ? '<button class="btn-icon" title="Editar" onclick="' + P + 'Editar(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-pen"></i></button>'
                     : '')
@@ -768,7 +773,222 @@ function criarCadastroAdminPessoa(cfg) {
         window.docPermissoes = abrirPermissoes;
         window.docSalvarPermissoes = salvarPermissoes;
         window.docFecharPermissoes = fecharPermissoes;
+        window.docRelatorioAulas = function (id) { abrirRelatorioAulas(id); };
+        window.docRelatorioAulasEditar = editarAulaNoRelatorio;
+        window.docRelatorioAulasExcluir = excluirAulaDoRelatorio;
+        window.docRelatorioAulasSalvar = salvarAulaDoRelatorio;
+        window.docRelatorioAulasImprimir = imprimirRelatorioAulas;
+        window.docRelatorioAulasFechar = fecharRelatorioAulas;
     }
+}
+
+/* ---------- RELATORIO DE AULAS DO DOCENTE ----------
+   Varre cursosCadastro/{curso}/aulas (guia Disciplina/Aulas do admin) e
+   separa por curso/turma as aulas cadastradas para o docente escolhido.
+   O relatorio permite editar, excluir, imprimir e salvar cada aula. */
+var docRelAulasCache = [];
+var docRelDocenteId = '';
+var docRelDocenteNome = '';
+
+function docRelEsc(v) { return admEsc(v); }
+function docRelDocenteDoRegistro(a) {
+    if (!a) return false;
+    var id = String(a.docenteId || '');
+    if (id && id === docRelDocenteId) return true;
+    var nome = admNormalizar(a.docente || '');
+    var alvo = admNormalizar(docRelDocenteNome);
+    return !!nome && !!alvo && (nome === alvo || nome.indexOf(alvo) >= 0);
+}
+function docRelCarregar() {
+    var dbLocal = admDb();
+    if (!dbLocal) { alert('Banco de dados indisponível.'); return Promise.resolve([]); }
+    docRelAulasCache = [];
+    return dbLocal.collection('cursosCadastro').get().then(function (cursosSnap) {
+        var tarefas = [];
+        cursosSnap.forEach(function (cursoDoc) {
+            tarefas.push(dbLocal.collection('cursosCadastro').doc(cursoDoc.id).collection('aulas').get()
+                .then(function (snap) {
+                    var dadosCurso = cursoDoc.data() || {};
+                    snap.forEach(function (doc) {
+                        var a = Object.assign({ _id: doc.id }, doc.data() || {});
+                        if (!docRelDocenteDoRegistro(a)) return;
+                        a.cursoId = String(a.cursoId || cursoDoc.id);
+                        a.cursoNome = String(a.cursoNome || dadosCurso.nome || 'Curso');
+                        a.turmaIndividuo = String(a.turma || '');
+                        a.turma = String(a.turma || dadosCurso.turma || '');
+                        docRelAulasCache.push(a);
+                    });
+                })
+                .catch(function (e) { console.warn('Relatorio de aulas do curso ' + cursoDoc.id, e); }));
+        });
+        return Promise.all(tarefas);
+    }).then(function () {
+        docRelAulasCache.sort(function (a, b) {
+            var c = String(a.cursoNome).localeCompare(String(b.cursoNome), 'pt-BR');
+            if (c) return c;
+            var t = String(a.turma).localeCompare(String(b.turma), 'pt-BR', { numeric: true });
+            if (t) return t;
+            return String(b.data || '').localeCompare(String(a.data || ''));
+        });
+        return docRelAulasCache;
+    });
+}
+function docRelGrupo() {
+    var grupos = {};
+    docRelAulasCache.forEach(function (a) {
+        var turmaDoIndividuo = String(a.turma || a.turmaIndividuo || '');
+        var chave = String(a.cursoNome || 'Curso') + '|' + (turmaDoIndividuo || 'Sem turma');
+        if (!grupos[chave]) grupos[chave] = {
+            curso: a.cursoNome || 'Curso',
+            turma: turmaDoIndividuo || 'Sem turma',
+            aulas: []
+        };
+        grupos[chave].aulas.push(a);
+    });
+    return Object.keys(grupos).map(function (k) { return grupos[k]; });
+}
+function docRelRender() {
+    var box = document.getElementById('doc-rel-aulas-lista');
+    if (!box) return;
+    var grupos = docRelGrupo();
+    if (!grupos.length) {
+        box.innerHTML = '<div style="font-size:12px;color:#64748b;padding:18px;text-align:center">Nenhuma aula cadastrada para este docente no Cadastro de Cursos.</div>';
+        return;
+    }
+    box.innerHTML = grupos.map(function (g) {
+        return '<div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:12px;overflow:hidden">'
+            + '<div style="background:#f1f5f9;padding:8px 10px;font-size:12px;font-weight:800;color:#0f172a">'
+            + docRelEsc(g.curso) + (g.turma !== 'Sem turma' ? ' · ' + docRelEsc(g.turma) : '')
+            + ' <span style="font-size:10px;color:#64748b">(' + g.aulas.length + ' aula(s))</span></div>'
+            + '<div style="padding:6px 10px">'
+            + g.aulas.map(function (a) {
+                var cor = a.apontada ? '#15803d' : '#1d4ed8';
+                var fundo = a.apontada ? '#dcfce7' : '#dbeafe';
+                var lbl = a.apontada ? 'Encerrada / apontada' : 'Ainda não apontada';
+                return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #f1f5f9;padding:7px 0">'
+                    + '<div style="flex:1;min-width:180px;font-size:12px"><b>' + docRelEsc(a.conteudo || a.disciplina || 'Aula') + '</b>'
+                    + '<div style="font-size:10px;color:#64748b">' + docRelEsc(a.data || '') + ' ' + docRelEsc(a.horario || '')
+                    + (a.instrutorQueMinistrou || a.docenteOriginalNome ? ' · Ministrada por ' + docRelEsc(a.instrutorQueMinistrou || a.docenteOriginalNome) : '')
+                    + (a.repassadaDeDocenteNome ? ' · <span style="color:#b91c1c">Repassada por ' + docRelEsc(a.repassadaDeDocenteNome) + '</span>' : '')
+                    + '</div></div>'
+                    + '<span style="font-size:10px;font-weight:800;background:' + fundo + ';color:' + cor + ';padding:3px 8px;border-radius:12px">' + lbl + '</span>'
+                    + '<button class="btn-outline btn-sm" title="Editar aula" onclick="docRelatorioAulasEditar(\'' + docRelEsc(a._id) + '\')"><i class="fa-solid fa-pen"></i> Editar</button>'
+                    + '<button class="btn-outline btn-sm" title="Excluir aula" onclick="docRelatorioAulasExcluir(\'' + docRelEsc(a._id) + '\')"><i class="fa-solid fa-trash"></i> Excluir</button>'
+                    + '<button class="btn-outline btn-sm" title="Imprimir aula" onclick="docRelatorioAulasImprimir(\'' + docRelEsc(a._id) + '\')"><i class="fa-solid fa-print"></i> Imprimir</button>'
+                    + '<button class="btn-primary btn-sm" title="Salvar aula" onclick="docRelatorioAulasSalvar(\'' + docRelEsc(a._id) + '\')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>'
+                    + '</div>';
+            }).join('')
+            + '</div></div>';
+    }).join('');
+}
+function abrirRelatorioAulas(id) {
+    var dbLocal = admDb();
+    if (!dbLocal) { alert('Banco de dados indisponível.'); return; }
+    dbLocal.collection(DOC_COLECAO).doc(id).get().then(function (doc) {
+        if (!doc || !doc.exists) { alert('Docente não encontrado.'); return; }
+        var d = doc.data() || {};
+        docRelDocenteId = String(id);
+        docRelDocenteNome = d.nome || '';
+        var m = document.getElementById('doc-rel-aulas-modal');
+        var tit = document.getElementById('doc-rel-aulas-titulo');
+        var box = document.getElementById('doc-rel-aulas-lista');
+        if (tit) tit.textContent = 'Relatório de Aulas — ' + docRelDocenteNome;
+        if (box) box.innerHTML = '<div style="font-size:12px;color:#64748b;padding:18px;text-align:center">Carregando aulas...</div>';
+        if (m) m.classList.remove('hidden');
+        return docRelCarregar().then(function () {
+            docRelRender();
+            if (typeof window.ccInicializar === 'function' && !(window.ccCursos || []).length) window.ccInicializar();
+        });
+    }).catch(function (e) { alert('Erro ao abrir relatório: ' + (e && e.message ? e.message : e)); });
+}
+function fecharRelatorioAulas() {
+    var m = document.getElementById('doc-rel-aulas-modal');
+    if (m) m.classList.add('hidden');
+}
+function docRelAula(id) { return docRelAulasCache.find(function (a) { return String(a._id) === String(id); }) || null; }
+function editarAulaNoRelatorio(id) {
+    var a = docRelAula(id);
+    if (!a) return;
+    var janela = window.open('index.html', '_blank');
+    var tentativas = 0;
+    var timer = setInterval(function () {
+        tentativas++;
+        if (!janela || tentativas > 40) { clearInterval(timer); return; }
+        try {
+            if (!janela.document || !janela.document.getElementById('cc-aula-conteudo')) return;
+            clearInterval(timer);
+            if (typeof janela.ccAbrirCurso === 'function') janela.ccAbrirCurso(a.cursoId);
+            var espera = 0;
+            var t2 = setInterval(function () {
+                espera++;
+                if (!janela.document.getElementById('cc-aula-lista') || espera > 40) { clearInterval(t2); return; }
+                if (typeof janela.ccSetAba === 'function') janela.ccSetAba('disciplinas');
+                var t3 = setInterval(function () {
+                    if (typeof janela.ccEditarAula === 'function' && janela.document.getElementById('cc-aula-conteudo')) {
+                        clearInterval(t3); clearInterval(t2);
+                        janela.ccEditarAula(id);
+                    }
+                }, 200);
+            }, 200);
+        } catch (e) {}
+    }, 200);
+}
+async function excluirAulaDoRelatorio(id) {
+    var a = docRelAula(id);
+    if (!a) return;
+    if (!confirm('Excluir a aula "' + (a.conteudo || a.disciplina || '') + '"? Os apontamentos vinculados também serão removidos.')) return;
+    var dbLocal = admDb();
+    try {
+        var docId = 'aula-' + String(id).replace(/[^A-Za-z0-9_-]/g, '_');
+        var ref = dbLocal.collection('apontamentosAdm').doc(docId);
+        var snap = await ref.get();
+        if (snap && snap.exists) {
+            var reg = snap.data() || {};
+            if (!reg.apontadoEm) await ref.delete();
+            else await ref.update({ aulaExcluida: true, atualizadoEm: new Date().toISOString() });
+        }
+        var apontSnap = await dbLocal.collection('cursosCadastro').doc(a.cursoId).collection('apontamentos')
+            .where('aulaId', '==', String(id)).get();
+        var apontTarefas = [];
+        apontSnap.forEach(function (d) {
+            apontTarefas.push(dbLocal.collection('cursosCadastro').doc(a.cursoId).collection('apontamentos')
+                .doc(d.id).delete().catch(function (e) { console.warn('Exclusao do apontamento da aula:', e); }));
+        });
+        await Promise.all(apontTarefas);
+        await dbLocal.collection('cursosCadastro').doc(a.cursoId).collection('aulas').doc(id).delete();
+        await docRelCarregar();
+        docRelRender();
+        if (typeof window.ccLoadAulas === 'function') window.ccLoadAulas();
+        alert('Aula excluída.');
+    } catch (e) { alert('Erro ao excluir aula: ' + (e && e.message ? e.message : e)); }
+}
+async function salvarAulaDoRelatorio(id) {
+    editarAulaNoRelatorio(id);
+    alert('A aula foi aberta para edição no Cadastro de Cursos. Ajuste os campos e clique em "Atualizar aula" para salvar. O relatório será atualizado quando você voltar a esta tela.');
+}
+function imprimirRelatorioAulas(id) {
+    var a = docRelAula(id);
+    if (!a) return;
+    var grupos = docRelGrupo();
+    var w = window.open('', '_blank');
+    if (!w) { alert('Permita pop-ups para imprimir.'); return; }
+    var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório de Aulas — ' + docRelEsc(docRelDocenteNome) + '</title>'
+        + '<style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{font-size:18px}h2{font-size:14px;margin-top:20px;border-bottom:2px solid #1d4ed8;padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #cbd5e1;padding:6px;font-size:11px;text-align:left}th{background:#f1f5f9}.verde{color:#15803d;font-weight:700}.azul{color:#1d4ed8;font-weight:700}</style></head><body>'
+        + '<h1>FARN — Relatório de Aulas</h1><p><b>Docente:</b> ' + docRelEsc(docRelDocenteNome) + '</p>'
+        + grupos.map(function (g) {
+            return '<h2>' + docRelEsc(g.curso) + (g.turma !== 'Sem turma' ? ' · ' + docRelEsc(g.turma) : '') + '</h2>'
+                + '<table><thead><tr><th>Data</th><th>Horário</th><th>Disciplina/Aula</th><th>Status</th><th>Repasse</th></tr></thead><tbody>'
+                + g.aulas.map(function (x) {
+                    return '<tr><td>' + docRelEsc(x.data || '') + '</td><td>' + docRelEsc(x.horario || '') + '</td>'
+                        + '<td>' + docRelEsc(x.conteudo || x.disciplina || '') + '</td>'
+                        + '<td class="' + (x.apontada ? 'verde' : 'azul') + '">' + (x.apontada ? 'Encerrada / apontada' : 'Ainda não apontada') + '</td>'
+                        + '<td>' + (x.instrutorQueMinistrou || x.docenteOriginalNome ? 'Ministrada por ' + docRelEsc(x.instrutorQueMinistrou || x.docenteOriginalNome) : '-')
+                        + (x.repassadaDeDocenteNome ? '<br>Repassada por ' + docRelEsc(x.repassadaDeDocenteNome) : '') + '</td></tr>';
+                }).join('') + '</tbody></table>';
+        }).join('')
+        + '</body></html>';
+    w.document.open(); w.document.write(html); w.document.close();
+    setTimeout(function () { try { w.focus(); w.print(); } catch (e) {} }, 300);
 }
 
 /* Helpers globais usados por app.js e cadastro-cursos.js. */

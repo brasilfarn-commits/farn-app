@@ -1632,8 +1632,15 @@ async function ccLoadAulas() {
                 + (a.docente ? ' · <span style="font-size:10px;color:#64748b">Docente: ' + ccEsc(a.docente) + '</span>' : '')
                 + (a.enviadoApontamentoAdm ? '<br><span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Enviada ao Apontamento ADM</span>' : '')
                 + (a.apontada ? ' <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:8px">Apontada</span>' : '')
+                + (a.repassadaDeDocenteNome
+                    ? '<br><span style="font-size:10px;background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:8px">Repassada por: ' + ccEsc(a.repassadaDeDocenteNome) + '</span>'
+                    : '')
+                + (a.instrutorQueMinistrou || a.docenteOriginalNome
+                    ? '<br><span style="font-size:10px;color:#0f766e">Ministrada por: ' + ccEsc(a.instrutorQueMinistrou || a.docenteOriginalNome) + '</span>'
+                    : '')
                 + '</div>'
                 + '<div class="actions-cell" style="display:flex;gap:5px;flex-wrap:wrap">'
+                + '<button class="btn-outline btn-sm" title="Repassar aula para outro docente" onclick="ccAbrirRepassarAula(\'' + id + '\')"><i class="fa-solid fa-arrow-right-arrow-left"></i> Repassar aula</button>'
                 + '<button class="btn-icon" title="Editar aula" onclick="ccEditarAula(\'' + id + '\')"><i class="fa-solid fa-pen"></i></button>'
                 + '<button class="btn-outline btn-sm" title="Enviar/atualizar no Apontamento ADM" onclick="ccEnviarAulaApontamento(\'' + id + '\')"><i class="fa-solid fa-paper-plane"></i> ADM</button>'
                 + '<button class="btn-icon" title="QR de início" onclick="ccQrInicio(\'' + id + '\')"><i class="fa-solid fa-qrcode"></i></button>'
@@ -1675,6 +1682,7 @@ async function ccEnviarAulaParaApontamento(aula, aulaId) {
         docenteNome: docenteNome,
         docenteCpf: docenteCpf,
         docenteMatricula: docenteMatricula,
+        instrutorQueMinistrou: String(aula.docenteOriginalNome || aula.repassadaDeDocenteNome || ''),
         cursoId: String(aula.cursoId || (ccAtual && ccAtual._id) || ''),
         cursoNome: String(aula.cursoNome || (ccAtual && ccAtual.nome) || ''),
         disciplina: String(aula.disciplina || ''),
@@ -1688,7 +1696,9 @@ async function ccEnviarAulaParaApontamento(aula, aulaId) {
         enviadoEm: agora,
         enviadoPor: ccUsuarioAtual(),
         atualizadoEm: agora,
-        aulaExcluida: false
+        aulaExcluida: false,
+        repassadaDeDocenteId: String(aula.repassadaDeDocenteId || ''),
+        repassadaDeDocenteNome: String(aula.repassadaDeDocenteNome || '')
     };
     if (!atual) {
         dados.criadoEm = agora;
@@ -1722,6 +1732,8 @@ function ccLimparFormAula() {
     ['cc-aula-disciplina','cc-aula-docente','cc-aula-data','cc-aula-horario','cc-aula-conteudo','cc-aula-av-teorica','cc-aula-av-pratica'].forEach(function (id) {
         var el = document.getElementById(id); if (el) el.value = '';
     });
+    var aviso = document.getElementById('cc-aula-repassada-aviso');
+    if (aviso) { aviso.style.display = 'none'; aviso.innerHTML = ''; }
     var btn = document.getElementById('cc-aula-salvar');
     if (btn) btn.innerHTML = '<i class="fa-solid fa-plus"></i> Cadastrar aula';
     var cancelar = document.getElementById('cc-aula-cancelar');
@@ -1743,6 +1755,18 @@ async function ccEditarAula(id) {
         if (a.docenteId) op.setAttribute('data-id', a.docenteId);
         doc.insertBefore(op, doc.options[1] || null);
     }
+    /* AViso visual: quando a aula foi repassada, o campo mostra o docente que
+       vai ministrar e o nome de quem repassou aparece em vermelho ao lado. */
+    var avisoRepasse = document.getElementById('cc-aula-repassada-aviso');
+    if (avisoRepasse) {
+        if (a.repassadaDeDocenteNome) {
+            avisoRepasse.style.display = '';
+            avisoRepasse.innerHTML = 'Aula repassada por <b style="color:#dc2626">' + ccEsc(a.repassadaDeDocenteNome) + '</b> para <b>' + ccEsc(a.docente || 'docente não informado') + '</b>.';
+        } else {
+            avisoRepasse.style.display = 'none';
+            avisoRepasse.innerHTML = '';
+        }
+    }
     function set(id, v) { var el = document.getElementById(id); if (el) el.value = v == null ? '' : v; }
     set('cc-aula-disciplina', a.disciplina || '');
     set('cc-aula-docente', a.docente || '');
@@ -1754,10 +1778,99 @@ async function ccEditarAula(id) {
     ccEditandoAulaId = a._id;
     var btn = document.getElementById('cc-aula-salvar');
     if (btn) btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Atualizar aula';
+    var avisoRepasseEdit = document.getElementById('cc-aula-repassada-aviso');
+    if (avisoRepasseEdit) {
+        if (a.repassadaDeDocenteNome) {
+            avisoRepasseEdit.style.display = '';
+            avisoRepasseEdit.innerHTML = 'Aula repassada por <b style="color:#dc2626">' + ccEsc(a.repassadaDeDocenteNome) + '</b> para <b>' + ccEsc(a.docente || 'docente não informado') + '</b>.';
+        } else {
+            avisoRepasseEdit.style.display = 'none';
+            avisoRepasseEdit.innerHTML = '';
+        }
+    }
     var cancelar = document.getElementById('cc-aula-cancelar');
     if (cancelar) cancelar.style.display = '';
     var alvo = document.getElementById('cc-aula-disciplina');
     if (alvo && typeof alvo.scrollIntoView === 'function') alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/* ---------- REPASSAR AULA PARA OUTRO DOCENTE ----------
+   O docente de origem perde a aula (docenteId/docente passam a ser do
+   destinatario) e o registro guarda quem repassou. O mesmo dado e gravado
+   na pendencia de apontamento ADM (id aula-<aulaId>) para o ADM enxergar
+   a troca sem duplicar a linha. */
+var ccRepassarAulaId = null;
+async function ccAbrirRepassarAula(id) {
+    var a = (ccAulasCache || []).find(function (x) { return String(x._id) === String(id); });
+    if (!a) { alert('Aula não encontrada.'); return; }
+    ccRepassarAulaId = String(a._id);
+    var tit = document.getElementById('cc-generico-titulo');
+    var body = document.getElementById('cc-generico-body');
+    var m = document.getElementById('cc-modal-generico');
+    if (!tit || !body || !m) { alert('Janela de repasse indisponível.'); return; }
+    await ccCarregarSelectDocentes();
+    tit.textContent = 'Repassar aula';
+    var atualNome = a.docente || 'docente não informado';
+    var lista = (ccDocentesSelectCache || []).filter(function (d) {
+        return String(d.id) !== String(a.docenteId || '') && String(d.nome) !== String(a.docente || '');
+    });
+    body.innerHTML = '<div style="font-size:12px;color:#475569;line-height:1.6">'
+        + 'Aula: <b>' + ccEsc(a.conteudo || a.disciplina || '') + '</b><br>'
+        + 'Data: ' + ccEsc(a.data || '') + ' · ' + ccEsc(a.horario || '') + '<br>'
+        + 'Docente atual: <b>' + ccEsc(atualNome) + '</b>'
+        + (a.repassadaDeDocenteNome ? ' (repassada por ' + ccEsc(a.repassadaDeDocenteNome) + ')' : '')
+        + '</div>'
+        + '<label style="display:block;font-size:11px;font-weight:800;color:#475569;margin:14px 0 5px">Novo docente que vai ministrar</label>'
+        + '<select id="cc-repassar-docente" class="config-input" style="width:100%">'
+        + '<option value="">Selecione o docente...</option>'
+        + lista.map(function (d) {
+            return '<option value="' + ccEsc(d.id) + '" data-nome="' + ccEsc(d.nome) + '">'
+                + ccEsc(d.nome) + (d.matricula ? ' — ' + ccEsc(d.matricula) : '') + '</option>';
+        }).join('')
+        + '</select>'
+        + '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'
+        + '<button class="btn-primary btn-sm" onclick="ccConfirmarRepassarAula()"><i class="fa-solid fa-check" style="margin-right:5px"></i> Salvar repasse</button>'
+        + '<button class="btn-outline btn-sm" onclick="ccFecharGenerico()">Cancelar</button>'
+        + '</div>'
+        + '<p style="font-size:11px;color:#64748b;margin-top:12px">Ao salvar, a aula deixará de aparecer para o docente atual e passará a aparecer para o docente escolhido no Cadastro de Cursos e no Portal do Docente.</p>';
+    m.classList.remove('hidden');
+}
+async function ccConfirmarRepassarAula() {
+    if (!ccRepassarAulaId) return;
+    var sel = document.getElementById('cc-repassar-docente');
+    var destId = sel ? String(sel.value || '') : '';
+    var destNome = '';
+    if (sel && sel.selectedIndex >= 0) destNome = sel.options[sel.selectedIndex].getAttribute('data-nome') || sel.options[sel.selectedIndex].textContent || '';
+    if (!destId || !destNome) { alert('Selecione o novo docente.'); return; }
+    var a = (ccAulasCache || []).find(function (x) { return String(x._id) === String(ccRepassarAulaId); });
+    if (!a) { alert('Aula não encontrada.'); return; }
+    var deId = String(a.docenteId || '');
+    var deNome = String(a.docente || '');
+    var agora = new Date().toISOString();
+    try {
+        await ccRef('aulas', ccRepassarAulaId).update({
+            docenteId: destId,
+            docente: destNome,
+            docenteOriginalNome: deNome || a.docenteOriginalNome || a.docente || '',
+            repassadaDeDocenteId: deId,
+            repassadaDeDocenteNome: deNome,
+            repassadaEm: agora,
+            repassadaPor: ccUsuarioAtual(),
+            atualizadoEm: agora
+        });
+        var atualizado = Object.assign({}, a, {
+            docenteId: destId, docente: destNome,
+            docenteOriginalNome: deNome || a.docenteOriginalNome || a.docente || '',
+            repassadaDeDocenteId: deId, repassadaDeDocenteNome: deNome, repassadaEm: agora
+        });
+        await ccEnviarAulaParaApontamento(atualizado, ccRepassarAulaId);
+        ccFecharGenerico();
+        ccRepassarAulaId = null;
+        await ccLoadAulas();
+        alert('Aula repassada para ' + destNome + '. O campo "Selecione o Docente" foi atualizado e o repasse está destacado em vermelho.');
+    } catch (e) {
+        alert('Erro ao repassar aula: ' + (e && e.message ? e.message : e));
+    }
 }
 
 async function ccSalvarAula() {
@@ -1790,7 +1903,7 @@ async function ccSalvarAula() {
 }
 
 async function ccExcluirAula(id) {
-    if (!confirm('Excluir aula? O apontamento pendente no Apontamento ADM também será removido.')) return;
+    if (!confirm('Excluir aula? Os apontamentos vinculados e a pendência no Apontamento ADM também serão removidos.')) return;
     try {
         var docId = 'aula-' + String(id).replace(/[^A-Za-z0-9_-]/g, '_');
         var ref = ccDb().collection('apontamentosAdm').doc(docId);
@@ -1800,6 +1913,12 @@ async function ccExcluirAula(id) {
             if (!reg.apontadoEm) await ref.delete();
             else await ref.update({ aulaExcluida: true, atualizadoEm: new Date().toISOString() });
         }
+        var apontSnap = await ccRef('apontamentos').where('aulaId', '==', String(id)).get();
+        var apontTarefas = [];
+        apontSnap.forEach(function (d) {
+            apontTarefas.push(ccRef('apontamentos', d.id).delete().catch(function (e) { console.warn('Exclusao do apontamento da aula:', e); }));
+        });
+        await Promise.all(apontTarefas);
         await ccRef('aulas', id).delete();
         await ccLoadAulas();
     } catch (e) { alert('Erro ao excluir aula: ' + (e && e.message ? e.message : e)); }

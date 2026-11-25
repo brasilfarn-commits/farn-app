@@ -208,12 +208,13 @@
         if (d) d.classList.remove('aberto'); if (o) o.classList.remove('aberto');
     }
     function pdSetView(view) {
-        ['inicio', 'dados', 'apontar'].forEach(function (v) {
+        ['inicio', 'dados', 'aulas', 'apontar'].forEach(function (v) {
             var box = document.getElementById('pd-view-' + v); if (box) box.className = 'pd-view' + (v === view ? ' ativo' : '');
             var btn = document.getElementById('pd-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
         });
         pdFecharMenu();
         if (view === 'dados') pdRenderDados();
+        if (view === 'aulas') pdRenderMinhasAulas();
         if (view === 'apontar') { if (!pdAulas.length) pdCarregarAulas(); pdCarregarHistorico(); }
     }
 
@@ -240,6 +241,163 @@
             ['Projetos', pdLista(pdUser.projeto).join(', ')], ['Disciplinas', pdLista(pdUser.disciplinas).join(', ')]
         ];
         box.innerHTML = campos.map(function (c) { return pdCampo(c[0], c[1]); }).join('');
+    }
+
+    /* ---------- secao MINHAS AULAS ---------- */
+    function pdAulaApontada(a) {
+        if (!a) return false;
+        if (a.apontada === true || a.apontada === 'true' || a.apontada === 'Sim') return true;
+        if (a.apontamentoId) return true;
+        return !!a.apontadoPorDocenteId;
+    }
+    function pdRenderMinhasAulas() {
+        var box = document.getElementById('pd-minhas-aulas-lista'); if (!box) return;
+        var aviso = document.getElementById('pd-aulas-aviso');
+        if (aviso) {
+            var apontadas = pdAulas.filter(pdAulaApontada).length;
+            aviso.textContent = pdAulas.length
+                ? pdAulas.length + ' aula(s) cadastrada(s) para você · ' + apontadas + ' apontada(s)'
+                : 'Nenhuma aula cadastrada para você na guia Disciplinas e Aulas do Cadastro de Cursos.';
+            aviso.className = 'pd-aviso ' + (pdAulas.length ? 'pd-ok' : 'pd-erro-box');
+        }
+        if (!pdAulas.length) { box.innerHTML = ''; return; }
+        var grupos = {};
+        pdAulas.forEach(function (a) {
+            var chave = String(a.cursoNome || 'Curso') + '|' + String(a.turma || a.projeto || 'Sem turma');
+            if (!grupos[chave]) {
+                grupos[chave] = {
+                    curso: a.cursoNome || 'Curso',
+                    turma: a.turma || a.projeto || 'Sem turma',
+                    aulas: []
+                };
+            }
+            grupos[chave].aulas.push(a);
+        });
+        box.innerHTML = Object.keys(grupos).map(function (k) {
+            var g = grupos[k];
+            var temRepassada = g.aulas.some(function (a) { return !!a.repassadaDeDocenteNome; });
+            return '<div style="margin-bottom:18px">'
+                + '<div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:8px">'
+                + pdEsc(g.curso) + (g.turma !== 'Sem turma' ? ' · ' + pdEsc(g.turma) : '')
+                + ' <span style="font-size:10px;color:#64748b">(' + g.aulas.length + ' aula(s))</span>'
+                + (temRepassada ? ' <span style="font-size:10px;color:#b91c1c">· contém aula repassada</span>' : '')
+                + '</div>'
+                + g.aulas.map(function (a) {
+                    var apontada = pdAulaApontada(a);
+                    var instrutor = a.docente || a.instrutor || 'Não informado';
+                    if (apontada && (a.instrutorQueMinistrou || a.docenteOriginalNome)) {
+                        instrutor = a.instrutorQueMinistrou || a.docenteOriginalNome;
+                    }
+                    var proximo = a.proximoDocente || a.docenteDestino || '';
+                    return '<div class="pd-aula-linha' + (apontada ? ' pd-apontada' : '') + '">'
+                        + '<div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">'
+                        + '<div style="flex:1;min-width:190px">'
+                        + '<b>' + pdEsc(a.conteudo || a.disciplina || 'Aula') + '</b>'
+                        + '<small>' + pdEsc([pdDataCurto(a.data), a.horario].filter(Boolean).join(' · ')) + '</small>'
+                        + '<div class="pd-instrutor"><i class="fa-solid fa-chalkboard-user" style="margin-right:5px"></i> '
+                        + (apontada ? 'Ministrada por: ' : 'Vai ministrar: ') + pdEsc(instrutor) + '</div>'
+                        + (proximo ? '<div class="pd-instrutor" style="color:#1d4ed8">Próximo docente: ' + pdEsc(proximo) + '</div>' : '')
+                        + (a.repassadaDeDocenteNome
+                            ? '<div class="pd-repasso">Repassada por: ' + pdEsc(a.repassadaDeDocenteNome) + '</div>'
+                            : '')
+                        + '</div>'
+                        + '<div style="text-align:right">'
+                        + '<span class="pd-selo ' + (apontada ? 'pd-selo-apontada' : 'pd-selo-pendente') + '">'
+                        + (apontada ? 'Encerrada e apontada' : 'Ainda não apontada') + '</span>'
+                        + '<div style="margin-top:8px"><button class="pd-btn pd-btn-warn" onclick="pdAbrirRepassar(\'' + pdEsc(a._id) + '\')">'
+                        + '<i class="fa-solid fa-arrow-right-arrow-left" style="margin-right:5px"></i> Repassar Aula</button></div>'
+                        + '</div></div></div>';
+                }).join('')
+                + '</div>';
+        }).join('');
+    }
+
+    var pdRepassarAulaId = '';
+    function pdAbrirRepassar(id) {
+        var a = pdAulas.find(function (x) { return String(x._id) === String(id); });
+        if (!a) { pdStatus('Aula não encontrada.', 'erro'); return; }
+        pdRepassarAulaId = String(a._id);
+        var det = document.getElementById('pd-repassar-detalhe');
+        if (det) {
+            det.innerHTML = 'Aula: <b>' + pdEsc(a.conteudo || a.disciplina || '') + '</b><br>'
+                + 'Curso: ' + pdEsc(a.cursoNome || '') + '<br>'
+                + 'Docente atual: <b>' + pdEsc(a.docente || 'não informado') + '</b>';
+        }
+        var sel = document.getElementById('pd-repassar-docente');
+        if (sel) {
+            sel.innerHTML = '<option value="">Carregando docentes...</option>';
+            db.collection('docentesAdmin').get().then(function (snap) {
+                var lista = [];
+                snap.forEach(function (d) {
+                    var x = d.data() || {};
+                    if (String(d.id) === String(pdUser && pdUser._docId)) return;
+                    if (String(a.docenteId || '') === String(d.id)) return;
+                    lista.push({ id: d.id, nome: x.nome || '', matricula: x.matricula || '' });
+                });
+                lista.sort(function (x, y) { return String(x.nome).localeCompare(String(y.nome), 'pt-BR'); });
+                sel.innerHTML = '<option value="">Selecione o docente...</option>' + lista.map(function (x) {
+                    return '<option value="' + pdEsc(x.id) + '" data-nome="' + pdEsc(x.nome) + '">'
+                        + pdEsc(x.nome) + (x.matricula ? ' — ' + pdEsc(x.matricula) : '') + '</option>';
+                }).join('');
+            }).catch(function (e) {
+                sel.innerHTML = '<option value="">Erro ao carregar docentes</option>';
+                console.warn('Docentes para repasse:', e);
+            });
+        }
+        var modal = document.getElementById('pd-repassar-modal');
+        if (modal) modal.classList.add('aberto');
+    }
+    function pdFecharRepassar() {
+        pdRepassarAulaId = '';
+        var modal = document.getElementById('pd-repassar-modal');
+        if (modal) modal.classList.remove('aberto');
+    }
+    function pdConfirmarRepassar() {
+        var a = pdAulas.find(function (x) { return String(x._id) === String(pdRepassarAulaId); });
+        var sel = document.getElementById('pd-repassar-docente');
+        var destId = sel ? String(sel.value || '') : '';
+        var destNome = '';
+        if (sel && sel.selectedIndex >= 0) destNome = sel.options[sel.selectedIndex].getAttribute('data-nome') || '';
+        if (!a || !destId || !destNome) { alert('Selecione o docente que vai receber a aula.'); return false; }
+        var deId = String(pdUser && pdUser._docId || '');
+        var deNome = pdNome();
+        var agora = new Date().toISOString();
+        var btn = document.querySelector('#pd-repassar-modal .pd-btn-primary');
+        if (btn) btn.disabled = true;
+        var cid = String(a.cursoId || '');
+        db.collection('cursosCadastro').doc(cid).collection('aulas').doc(String(a._id)).update({
+            docenteId: destId,
+            docente: destNome,
+            docenteOriginalNome: deNome || a.docenteOriginalNome || a.docente || '',
+            repassadaDeDocenteId: deId,
+            repassadaDeDocenteNome: deNome,
+            repassadaEm: agora,
+            repassadaPor: deNome,
+            atualizadoEm: agora
+        }).then(function () {
+            var docId = 'aula-' + String(a._id).replace(/[^A-Za-z0-9_-]/g, '_');
+            return db.collection('apontamentosAdm').doc(docId).set({
+                docenteId: destId,
+                docenteNome: destNome,
+                instrutorQueMinistrou: deNome || a.docenteOriginalNome || a.docente || '',
+                repassadaDeDocenteId: deId,
+                repassadaDeDocenteNome: deNome,
+                repassadaEm: agora,
+                atualizadoEm: agora
+            }, { merge: true }).catch(function (e) { console.warn('Sync repasse ADM:', e); });
+        }).then(function () {
+            pdFecharRepassar();
+            return pdCarregarAulas();
+        }).then(function () {
+            pdRenderMinhasAulas();
+            alert('Aula repassada para ' + destNome + '. Ela foi bloqueada para você e liberada para o novo docente.');
+            if (btn) btn.disabled = false;
+        }).catch(function (e) {
+            console.error('Erro ao repassar aula:', e);
+            alert('Erro ao repassar aula: ' + (e && e.message ? e.message : e));
+            if (btn) btn.disabled = false;
+        });
+        return false;
     }
 
     /* ---------- aulas do docente ---------- */
@@ -270,18 +428,28 @@
                 if (!pdCursoPermitido(cursoDoc)) return;
                 var dadosCurso = cursoDoc.data() || {};
                 tarefas.push(
-                    db.collection('cursosCadastro').doc(cursoDoc.id).collection('aulas').get()
-                        .then(function (snap) {
-                            snap.forEach(function (doc) {
-                                var a = Object.assign({ _id: doc.id }, doc.data() || {});
-                                if (!pdAulaEhDoDocente(a)) return;
-                                a.cursoId = String(a.cursoId || cursoDoc.id);
-                                a.cursoNome = String(a.cursoNome || dadosCurso.nome || 'Curso');
-                                a.projeto = String(a.projeto || dadosCurso.projeto || '');
-                                pdAulas.push(a);
-                            });
-                        })
-                        .catch(function (e) { console.warn('Aulas do curso ' + cursoDoc.id + ':', e); })
+                    Promise.all([
+                        db.collection('cursosCadastro').doc(cursoDoc.id).collection('aulas').get(),
+                        db.collection('cursosCadastro').doc(cursoDoc.id).collection('individuos').get()
+                    ]).then(function (resultados) {
+                        var snap = resultados[0];
+                        var turmasIndividuos = {};
+                        resultados[1].forEach(function (p) {
+                            var t = String((p.data() || {}).turma || '').trim();
+                            if (t) turmasIndividuos[pdKey(t)] = t;
+                        });
+                        snap.forEach(function (doc) {
+                            var a = Object.assign({ _id: doc.id }, doc.data() || {});
+                            if (!pdAulaEhDoDocente(a)) return;
+                            a.cursoId = String(a.cursoId || cursoDoc.id);
+                            a.cursoNome = String(a.cursoNome || dadosCurso.nome || 'Curso');
+                            a.projeto = String(a.projeto || dadosCurso.projeto || '');
+                            var tk = pdKey(a.turma || '');
+                            if (!a.turma && tk && turmasIndividuos[tk]) a.turma = turmasIndividuos[tk];
+                            pdAulas.push(a);
+                        });
+                    })
+                    .catch(function (e) { console.warn('Aulas do curso ' + cursoDoc.id + ':', e); })
                 );
             });
             return Promise.all(tarefas);
@@ -290,6 +458,7 @@
                 return String(b.data || b.criadoEm || '').localeCompare(String(a.data || a.criadoEm || ''));
             });
             pdPreencherCursos();
+            pdRenderMinhasAulas();
             if (aviso) {
                 if (pdAulas.length) {
                     aviso.textContent = pdAulas.length + ' aula(s) encontrada(s) para o seu cadastro.';
@@ -387,6 +556,10 @@
         var turma = (document.getElementById('pd-turma') || {}).value || '';
         pdAula = pdAulas.find(function (a) { return String(a._id) === String(id); }) || null;
         if (!pdAula) { pdStatus('Aula não encontrada entre as aulas do seu cadastro.', 'erro'); return; }
+        if (pdAulaApontada(pdAula)) {
+            pdStatus('Esta aula já foi encerrada e apontada. Não é possível apontar novamente.', 'erro');
+            return;
+        }
         var cid = String(pdAula.cursoId || (document.getElementById('pd-curso') || {}).value || '');
         var box = document.getElementById('pd-aula-box'); if (box) box.classList.add('aberto');
         var info = document.getElementById('pd-aula-info');
@@ -715,6 +888,9 @@
     window.pdOnTurmaChange = pdOnTurmaChange;
     window.pdAbrirAula = pdAbrirAula;
     window.pdFecharAula = pdFecharAula;
+    window.pdAbrirRepassar = pdAbrirRepassar;
+    window.pdFecharRepassar = pdFecharRepassar;
+    window.pdConfirmarRepassar = pdConfirmarRepassar;
     window.pdAlternarQr = pdAlternarQr;
     window.pdPararQr = pdPararQr;
     window.pdSetStatus = pdSetStatus;

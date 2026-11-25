@@ -92,8 +92,25 @@
         .pd-tabela th { background:#f1f5f9; font-size:10px; text-transform:uppercase; color:#64748b; padding:8px; text-align:left; }
         .pd-tabela td { border-bottom:1px solid #eef2f7; padding:8px; font-size:12px; }
         .pd-selo { font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; }
-        .pd-selo-presente { background:#dcfce7; color:#166534; }
+        .pd-selo-presente, .pd-selo-apontada { background:#dcfce7; color:#166534; }
         .pd-selo-falta { background:#fee2e2; color:#991b1b; }
+        .pd-selo-pendente { background:#dbeafe; color:#1d4ed8; }
+        .pd-aula-linha { border:1px solid #e2e8f0; border-left:6px solid #1d4ed8; border-radius:10px;
+            padding:11px 12px; margin-bottom:9px; background:#f8fafc; }
+        .pd-aula-linha.pd-apontada { border-left-color:#16a34a; background:#f0fdf4; }
+        .pd-aula-linha b { font-size:13px; color:#0f172a; }
+        .pd-aula-linha small { display:block; font-size:10px; color:#64748b; margin-top:3px; }
+        .pd-instrutor { font-size:11px; font-weight:800; color:#0f766e; margin-top:6px; }
+        .pd-repasso { font-size:11px; font-weight:800; color:#b91c1c; margin-top:3px; }
+        .pd-modal-wrap { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:60;
+            align-items:center; justify-content:center; padding:18px; }
+        .pd-modal-wrap.aberto { display:flex; }
+        .pd-modal-card { width:100%; max-width:460px; max-height:86vh; overflow:auto; background:#fff;
+            border-radius:14px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+        .pd-modal-card h3 { font-size:16px; color:#0f172a; margin-bottom:8px; }
+        .pd-modal-card p { font-size:12px; color:#475569; line-height:1.6; margin-bottom:12px; }
+        .pd-modal-card label { display:block; font-size:11px; font-weight:800; color:#475569; margin:12px 0 5px; }
+        .pd-modal-card select { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; }
         .pd-linha-presente { background:#f0fdf4; }
         .pd-hist-item { border:1px solid #e2e8f0; border-left:6px solid #1d4ed8; border-radius:9px;
             background:#f8fafc; padding:10px 12px; margin-bottom:7px; font-size:12px; }
@@ -125,6 +142,7 @@
         <nav class="pd-drawer-nav">
             <button id="pd-menu-inicio" class="ativo" onclick="pdSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
             <button id="pd-menu-dados" onclick="pdSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
+            <button id="pd-menu-aulas" onclick="pdSetView('aulas')"><i class="fa-solid fa-calendar-day"></i> Minhas Aulas</button>
             <button id="pd-menu-apontar" onclick="pdSetView('apontar')"><i class="fa-solid fa-qrcode"></i> Apontar Aluno</button>
         </nav>
         <div class="pd-drawer-foot">
@@ -142,6 +160,20 @@
                     <div class="pd-topo-nome" id="pd-nome-topo">Docente</div>
                     <div class="pd-topo-matricula" id="pd-matricula-topo">Matrícula: —</div>
                 </div>
+            </div>
+        </div>
+
+        <div class="pd-modal-wrap" id="pd-repassar-modal">
+            <div class="pd-modal-card">
+                <h3><i class="fa-solid fa-arrow-right-arrow-left" style="color:#1d4ed8;margin-right:8px"></i> Repassar aula</h3>
+                <p id="pd-repassar-detalhe"></p>
+                <label for="pd-repassar-docente">Docente que vai ministrar a aula</label>
+                <select id="pd-repassar-docente"><option value="">Selecione o docente...</option></select>
+                <div class="pd-acoes" style="justify-content:flex-end">
+                    <button class="pd-btn pd-btn-warn" onclick="pdFecharRepassar()">Cancelar</button>
+                    <button class="pd-btn pd-btn-primary" onclick="pdConfirmarRepassar()"><i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i> Salvar repasse</button>
+                </div>
+                <p style="font-size:10px;color:#64748b;margin:12px 0 0">A aula sairá da sua lista e passará a aparecer para o docente escolhido.</p>
             </div>
         </div>
 
@@ -172,6 +204,19 @@
                 <h2 class="pd-secao-titulo">Meus Dados</h2>
                 <div class="pd-card">
                     <div class="pd-grid" id="pd-dados-grid"></div>
+                </div>
+            </section>
+
+            <section class="pd-view" id="pd-view-aulas">
+                <h2 class="pd-secao-titulo">Minhas Aulas</h2>
+                <div class="pd-card">
+                    <div class="pd-aviso" id="pd-aulas-aviso">Carregando suas aulas...</div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:11px;color:#64748b">
+                        <span><span class="pd-selo pd-selo-apontada">Verde</span> aula encerrada e apontada</span>
+                        <span><span class="pd-selo pd-selo-pendente">Azul</span> ainda não apontada</span>
+                        <span style="color:#0f766e">Instrutor que ministrou / quem vai ministrar destacado em cada aula</span>
+                    </div>
+                    <div id="pd-minhas-aulas-lista" style="margin-top:14px"></div>
                 </div>
             </section>
 
@@ -220,6 +265,6 @@
 
     <script src="farn-db.js?v=22"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
-    <script src="portal-docente.js?v=1"></script>
+    <script src="portal-docente.js?v=2"></script>
 </body>
 </html>

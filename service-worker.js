@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farn-v117';
+const CACHE_NAME = 'farn-v118';
 const OFFLINE_URLS = [
     './',
     './index.html',
@@ -22,7 +22,8 @@ const OFFLINE_URLS = [
     './portal-aluno.html',
     './portal-docente.html',
     './portal-docente.js',
-    './portal-curso.html'
+    './portal-curso.html',
+    './portal-curso.js'
 ];
 
 self.addEventListener('install', e => {

@@ -2985,7 +2985,8 @@
                                 <div class="card"><div class="card-header"><h3><i class="fa-solid fa-chalkboard" style="color:#2188ff;margin-right:8px"></i> Aulas</h3></div>
                                     <div class="card-body">
                                         <select id="cc-aula-disciplina" class="config-input" style="width:100%;margin-bottom:8px"><option value="">Selecione a disciplina...</option></select>
-                                        <select id="cc-aula-docente" class="config-input" style="width:100%;margin-bottom:8px"><option value="">Selecione o docente...</option></select>
+                                        <select id="cc-aula-docente" class="config-input" style="width:100%;margin-bottom:4px"><option value="">Selecione o docente...</option></select>
+                                        <div id="cc-aula-repassada-aviso" style="display:none;font-size:11px;color:#475569;background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:6px 8px;margin-bottom:8px"></div>
                                         <input type="date" id="cc-aula-data" class="config-input" style="width:100%;margin-bottom:8px">
                                         <input id="cc-aula-horario" class="config-input" placeholder="Horário (ex.: 14:00 às 17:00)" style="width:100%;margin-bottom:8px">
                                         <input id="cc-aula-conteudo" class="config-input" placeholder="Conteúdo / nome da aula" style="width:100%;margin-bottom:8px">
@@ -3326,7 +3327,7 @@
                         <div class="card-body">
                             <p style="font-size:12px;color:#475569;margin:0 0 14px">
                                 Cadastro independente: os docentes ficam na tabela própria <code style="background:#ccfbf1;color:#0f766e;padding:1px 5px;border-radius:4px">docentesAdmin</code>.
-                                Formulário igual ao de Formados do Cadastro de Cursos, sem os campos Projeto e Turma.
+                                Os campos Cursos, Turmas, Projetos e Disciplinas alimentam o Portal do Docente. Use <b>Relatório de Aulas</b> para conferir as aulas de cada docente por curso/turma.
                             </p>
                             <div id="doc-form-painel" style="display:none;margin-bottom:14px"></div>
                             <div id="doc-lista-wrap">
@@ -3349,6 +3350,27 @@
                                         <tbody id="doc-tbody"></tbody>
                                     </table>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL DO RELATORIO DE AULAS DO DOCENTE -->
+                <div id="doc-rel-aulas-modal" class="modal-overlay hidden">
+                    <div class="modal-content" style="max-width:980px;width:95%;max-height:88vh;overflow:auto">
+                        <div class="modal-header">
+                            <h3 id="doc-rel-aulas-titulo"><i class="fa-solid fa-clipboard-list" style="color:#0d9488;margin-right:8px"></i> Relatório de Aulas</h3>
+                            <button class="btn-icon" onclick="docRelatorioAulasFechar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="font-size:11px;color:#475569;margin:0 0 12px;line-height:1.6">
+                                Aulas por <b>curso/turma</b> cadastradas para este docente na guia <b>Disciplinas e Aulas</b> do Cadastro de Cursos.
+                                <span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:8px">Verde</span> = encerrada/apontada;
+                                <span style="background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:8px">Azul</span> = ainda não apontada.
+                            </p>
+                            <div id="doc-rel-aulas-lista"></div>
+                            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                                <button class="btn-outline btn-sm" onclick="docRelatorioAulasFechar()">Fechar</button>
                             </div>
                         </div>
                     </div>
@@ -4989,7 +5011,7 @@
     <script src="cadastro-cursos-nucleo.js?v=2"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
     <script src="portal-permissoes.js?v=9"></script>
-    <script src="coordenacao.js?v=13"></script>
+    <script src="coordenacao.js?v=14"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
@@ -5001,7 +5023,7 @@
     <script src="aluno-acesso.js?v=7"></script>
     <script src="app.js?v=133"></script>
     <script src="recad-admin.js?v=2"></script>
-    <script src="cadastro-cursos.js?v=40"></script>
+    <script src="cadastro-cursos.js?v=41"></script>
     <script src="apontamentos-adm.js?v=5"></script>
     <script src="estatistica.js?v=1"></script>
 
