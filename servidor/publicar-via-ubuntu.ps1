@@ -24,7 +24,6 @@ $arquivos = @(
     'noticias.html',
     'portal-aluno.html',
     'portal-permissoes.js',
-    'portal-usuario.html',
     'service-worker.js',
     'style.css'
 )
@@ -56,6 +55,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao enviar arquivos.' }
 Write-Host ''
 Write-Host 'Aplicando arquivos no servidor...'
 Write-Host 'Digite a senha SSH e, quando pedir, a senha sudo.'
-& ssh @sshArgs "sudo cp $tmpRemoto/* $PastaPublic/ && echo '--- Verificacao ---' && grep -c 'Apontamento' $PastaPublic/portal-aluno.html"
+& ssh @sshArgs "sudo cp $tmpRemoto/* $PastaPublic/ && sudo rm -f $PastaPublic/portal-usuario.html && echo '--- Verificacao ---' && grep -c 'Apontamento' $PastaPublic/portal-aluno.html"
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao aplicar arquivos no servidor.' }
 Write-Host 'Deploy concluido. Reabra o portal no celular.'
