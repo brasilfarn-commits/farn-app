@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farn-v108';
+const CACHE_NAME = 'farn-v109';
 const OFFLINE_URLS = [
     './',
     './index.html',
@@ -51,6 +51,15 @@ self.addEventListener('fetch', e => {
             const clone = resp.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
             return resp;
-        }).catch(() => caches.match(e.request).then(cached => cached || caches.match('./index.html')))
+        }).catch(() => caches.match(e.request, { ignoreSearch: true }).then(cached => {
+            if (cached) return cached;
+            /* Nunca devolver HTML para um .js/.css: o navegador executaria
+               o HTML como script e funcoes como landingLogin ficariam
+               "indefinidas". So navegacoes podem cair no index.html. */
+            if (e.request.mode === 'navigate') return caches.match('./index.html');
+            const tipo = e.request.destination === 'script' ? 'application/javascript'
+                : e.request.destination === 'style' ? 'text/css' : 'text/plain';
+            return new Response('', { status: 503, headers: { 'Content-Type': tipo } });
+        }))
     );
 });
