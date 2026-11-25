@@ -2,8 +2,8 @@
 #  FARN - preparar publicacao enviando arquivos para o Ubuntu
 # ---------------------------------------------------------------------
 #  O sudo -S via pipe falha neste servidor, mas o sudo interativo
-#  funciona. Entao este script so envia os arquivos para /tmp e o
-#  usuario finaliza com um sudo normal dentro do propio Ubuntu.
+#  funciona. Por isso a etapa final usa ssh -t (terminal remoto):
+#  o sudo pede a senha normalmente no proprio PowerShell.
 # =====================================================================
 param(
     [string]$Destino = 'brandserv16041984@192.168.1.6',
@@ -35,6 +35,9 @@ $arquivos = @(
 )
 
 $sshArgs = @('-p', "$Porta", '-o', 'StrictHostKeyChecking=no', $Destino)
+# -t aloca um TTY remoto; sem isso o sudo recusa pedir a senha
+# ("sudo: A terminal is required to authenticate").
+$sshArgsTty = @('-t', '-p', "$Porta", '-o', 'StrictHostKeyChecking=no', $Destino)
 
 Write-Host '======================================================'
 Write-Host ' FARN - preparando publicacao no Ubuntu'
@@ -61,6 +64,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao enviar arquivos.' }
 Write-Host ''
 Write-Host 'Aplicando arquivos no servidor...'
 Write-Host 'Digite a senha SSH e, quando pedir, a senha sudo.'
-& ssh @sshArgs "sudo cp $tmpRemoto/* $PastaPublic/ && sudo rm -f $PastaPublic/portal-usuario.html && echo '--- Verificacao ---' && grep -c 'Apontamento' $PastaPublic/portal-aluno.html && grep -c 'DOCENTE' $PastaPublic/index.html && ls -l $PastaPublic/portal-docente.html $PastaPublic/portal-docente.js"
+& ssh @sshArgsTty "sudo cp $tmpRemoto/* $PastaPublic/ && sudo rm -f $PastaPublic/portal-usuario.html && echo '--- Verificacao ---' && grep -c 'Apontamento' $PastaPublic/portal-aluno.html && grep -c 'DOCENTE' $PastaPublic/index.html && ls -l $PastaPublic/portal-docente.html $PastaPublic/portal-docente.js"
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao aplicar arquivos no servidor.' }
 Write-Host 'Deploy concluido. Reabra o portal no celular.'
