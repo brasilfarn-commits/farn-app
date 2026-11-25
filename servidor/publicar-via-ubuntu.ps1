@@ -21,6 +21,7 @@ $arquivos = @(
     'app.js',
     'cadastro-cursos.js',
     'cadastro-cursos-nucleo.js',
+    'campos-pessoa-comuns.js',
     'coordenacao.js',
     'ficha-geral-compartilhar.js',
     'index.html',
@@ -67,6 +68,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao enviar arquivos.' }
 Write-Host ''
 Write-Host 'Aplicando arquivos no servidor...'
 Write-Host 'Digite a senha SSH e, quando pedir, a senha sudo.'
-& ssh @sshArgsTty "sudo cp $tmpRemoto/* $PastaPublic/ && sudo rm -f $PastaPublic/portal-usuario.html && echo '--- Verificacao ---' && grep -c 'Apontamento' $PastaPublic/portal-aluno.html && grep -c 'DOCENTE' $PastaPublic/index.html && grep -c 'doc-rel-mensal-modal' $PastaPublic/index.html && grep -c 'Apontar Docente' $PastaPublic/portal-docente.html && grep -c 'landingLoginCoordenacao' $PastaPublic/app.js && ls -l $PastaPublic/portal-docente.html $PastaPublic/portal-docente.js $PastaPublic/portal-coordenacao.html $PastaPublic/portal-coordenacao.js $PastaPublic/apontamentos-adm.js"
+& ssh @sshArgsTty "sudo cp $tmpRemoto/* $PastaPublic/ && sudo rm -f $PastaPublic/portal-usuario.html && echo '--- Verificacao ---' && grep -c 'Apontamento' $PastaPublic/portal-aluno.html && grep -c 'DOCENTE' $PastaPublic/index.html && grep -c 'doc-rel-mensal-modal' $PastaPublic/index.html && grep -c 'Apontar Docente' $PastaPublic/portal-docente.html && grep -c 'landingLoginCoordenacao' $PastaPublic/app.js && grep -c 'doc-form-painel' $PastaPublic/portal-coordenacao.html && grep -c 'coordenacao.js' $PastaPublic/portal-coordenacao.html && ls -l $PastaPublic/portal-docente.html $PastaPublic/portal-docente.js $PastaPublic/portal-coordenacao.html $PastaPublic/portal-coordenacao.js $PastaPublic/campos-pessoa-comuns.js $PastaPublic/apontamentos-adm.js"
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao aplicar arquivos no servidor.' }
 Write-Host 'Deploy concluido. Reabra o portal no celular.'

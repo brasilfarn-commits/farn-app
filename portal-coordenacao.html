@@ -206,15 +206,47 @@
 
             <section class="pco-view" id="pco-view-docentes">
                 <h2 class="pco-secao-titulo">Dados de Docente</h2>
-                <div class="pco-card">
-                    <p style="font-size:11px;color:#475569;line-height:1.6;margin-bottom:12px">
-                        Informações da seção <b>Docente</b> do administrador (<b>docentesAdmin</b>). As alterações são gravadas na mesma coleção usada pelo painel administrativo.
-                    </p>
-                    <div class="pco-filtros">
-                        <div><label for="pco-doc-busca">Buscar docente</label>
-                            <input type="text" id="pco-doc-busca" placeholder="Nome, CPF ou matrícula" oninput="pcoRenderDocentes()"></div>
+                <!-- ESTRUTURA IDÊNTICA À SEÇÃO DOCENTE DO ADMINISTRADOR -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-chalkboard-user" style="color:#0d9488;margin-right:8px"></i> Docente</h3>
+                        <div class="header-actions">
+                            <button class="btn-outline btn-sm" onclick="docenteAdminInicializar()" title="Recarregar a lista">
+                                <i class="fa-solid fa-rotate"></i> Atualizar
+                            </button>
+                            <button class="btn-primary" onclick="docNovo()" title="Cadastrar novo docente">
+                                <i class="fa-solid fa-plus"></i> NOVO DOCENTE
+                            </button>
+                        </div>
                     </div>
-                    <div class="pco-tabela-wrap" id="pco-doc-lista" style="margin-top:14px"><div class="pco-aviso">Carregando docentes...</div></div>
+                    <div class="card-body">
+                        <p style="font-size:12px;color:#475569;margin:0 0 14px">
+                            Cadastro independente: os docentes ficam na tabela própria <code style="background:#ccfbf1;color:#0f766e;padding:1px 5px;border-radius:4px">docentesAdmin</code>.
+                            Os campos Cursos, Turmas, Projetos e Disciplinas alimentam o Portal do Docente. A coordenação tem controle total: permissões, relatório de aulas, relatório mensal, editar, imprimir e excluir.
+                        </p>
+                        <div id="doc-form-painel" style="display:none;margin-bottom:14px"></div>
+                        <div id="doc-lista-wrap">
+                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+                                <input id="doc-busca" class="config-input" placeholder="Buscar por nome, CPF, matrícula ou e-mail..." oninput="docRender()" style="width:100%;max-width:520px">
+                                <span id="doc-count" style="font-size:11px;color:#64748b;font-weight:700">0</span>
+                            </div>
+                            <div style="overflow:auto">
+                                <table class="data-table" id="doc-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>CPF</th>
+                                            <th>Matrícula / Credencial</th>
+                                            <th>Contato</th>
+                                            <th>Situação</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="doc-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -278,7 +310,65 @@
         </div>
     </div>
 
+    <!-- MODAIS IDÊNTICOS AOS DO ADMINISTRADOR (RELATÓRIOS DO DOCENTE) -->
+    <div id="doc-rel-aulas-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:980px;width:95%;max-height:88vh;overflow:auto">
+            <div class="modal-header">
+                <h3 id="doc-rel-aulas-titulo"><i class="fa-solid fa-clipboard-list" style="color:#0d9488;margin-right:8px"></i> Relatório de Aulas</h3>
+                <button class="btn-icon" onclick="docRelatorioAulasFechar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:11px;color:#475569;margin:0 0 12px;line-height:1.6">
+                    Aulas por <b>curso/turma</b> cadastradas para este docente na guia <b>Disciplinas e Aulas</b> do Cadastro de Cursos.
+                    <span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:8px">Verde</span> = encerrada/apontada;
+                    <span style="background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:8px">Azul</span> = ainda não apontada.
+                </p>
+                <div id="doc-rel-aulas-lista"></div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                    <button class="btn-outline btn-sm" onclick="docRelatorioAulasFechar()">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="doc-rel-mensal-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:1100px;width:96%;max-height:90vh;overflow:auto">
+            <div class="modal-header">
+                <h3 id="doc-rel-mensal-titulo"><i class="fa-solid fa-calendar-days" style="color:#0d9488;margin-right:8px"></i> Relatório Mensal de Aulas</h3>
+                <button class="btn-icon" onclick="docRelatorioMensalFechar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:11px;color:#475569;margin:0 0 10px;line-height:1.6">
+                    Compara o <b>apontamento de presença do docente</b> com o <b>fechamento dos alunos (Salvar apontamento)</b>.
+                    A referência é de <b>4 horas</b> entre os dois horários. O destaque <b style="color:#0f766e;background:#ccfbf1;padding:1px 6px;border-radius:6px">Quem ficou com a aula</b>
+                    mostra o responsável atual após os repasses.
+                </p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                    <label style="font-size:11px;font-weight:800;color:#475569">Mês:</label>
+                    <input type="month" id="doc-rel-mensal-mes" class="config-input" style="width:170px">
+                    <button class="btn-outline btn-sm" onclick="docRelatorioMensalCarregar()"><i class="fa-solid fa-rotate" style="margin-right:5px"></i> Atualizar</button>
+                    <button class="btn-outline btn-sm" onclick="docRelatorioMensalImprimir()"><i class="fa-solid fa-print" style="margin-right:5px"></i> Imprimir</button>
+                    <button class="btn-primary btn-sm" onclick="docRelatorioMensalSalvar()"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i> Salvar CSV</button>
+                </div>
+                <div id="doc-rel-mensal-resumo"></div>
+                <div id="doc-rel-mensal-lista"></div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                    <button class="btn-outline btn-sm" onclick="docRelatorioMensalFechar()">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="farn-db.js?v=22"></script>
-    <script src="portal-coordenacao.js?v=1"></script>
+    <script>
+        /* Mesma inicialização do index.html: os módulos do administrador
+           (coordenacao.js e portal-permissoes.js) usam estas globais. */
+        var ADMIN_CPF = '';
+        var dbFirestore = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+    </script>
+    <script src="campos-pessoa-comuns.js?v=3"></script>
+    <script src="portal-permissoes.js?v=9"></script>
+    <script src="coordenacao.js?v=15"></script>
+    <script src="portal-coordenacao.js?v=3"></script>
 </body>
 </html>

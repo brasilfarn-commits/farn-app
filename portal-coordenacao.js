@@ -19,17 +19,9 @@
     'use strict';
 
     var CHAVE_SESSAO = 'coordenacao_sessao';
-    var firebaseConfig = {
-        apiKey: 'AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0',
-        authDomain: 'farn-app.firebaseapp.com',
-        databaseURL: 'https://farn-app-default-rtdb.firebaseio.com',
-        projectId: 'farn-app',
-        storageBucket: 'farn-app.firebasestorage.app',
-        messagingSenderId: '16254677061',
-        appId: '1:16254677061:web:3d42c64edfe5cdbffcf32c'
-    };
-    if (window.firebase && firebase.apps && !firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    var db = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+    /* Usa a MESMA instancia dos modulos do administrador (coordenacao.js e
+       portal-permissoes.js), definida no inline script do HTML. */
+    var db = window.dbFirestore || new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
 
     var pcoUser = null;
     var pcoCursos = [];
@@ -60,26 +52,6 @@
         { c: 'profissao', l: 'Profissão' }, { c: 'cidade', l: 'Cidade' },
         { c: 'estado', l: 'Estado' }, { c: 'senha', l: 'Senha do portal', t: 'password' },
         { c: 'fotoUrl', l: 'URL da foto 3x4' }, { c: 'observacoes', l: 'Observações', t: 'textarea' }
-    ];
-    var DOC_CAMPOS = [
-        { c: 'nome', l: 'Nome completo' }, { c: 'cpf', l: 'CPF' },
-        { c: 'matricula', l: 'Matrícula' }, { c: 'nascimento', l: 'Nascimento', t: 'date' },
-        { c: 'estadoCivil', l: 'Estado civil' }, { c: 'telefone', l: 'Telefone / WhatsApp' },
-        { c: 'email', l: 'E-mail' }, { c: 'genero', l: 'Gênero' },
-        { c: 'mae', l: 'Nome da mãe' }, { c: 'pai', l: 'Nome do pai' },
-        { c: 'nacionalidade', l: 'Nacionalidade' }, { c: 'naturalidade', l: 'Naturalidade' },
-        { c: 'profissao', l: 'Profissão' }, { c: 'cidade', l: 'Cidade' },
-        { c: 'estado', l: 'Estado' }, { c: 'cursos', l: 'Cursos' },
-        { c: 'turma', l: 'Turma' }, { c: 'projeto', l: 'Projeto' },
-        { c: 'disciplinas', l: 'Disciplinas' }, { c: 'senha', l: 'Senha do portal', t: 'password' },
-        { c: 'fotoUrl', l: 'URL da foto 3x4' }, { c: 'fatorRh', l: 'Fator RH' },
-        { c: 'hipertensao', l: 'Hipertensão', t: 'select', o: [{ v: '', l: '—' }, { v: 'Sim', l: 'Sim' }, { v: 'Não', l: 'Não' }] },
-        { c: 'diabetes', l: 'Diabetes', t: 'select', o: [{ v: '', l: '—' }, { v: 'Sim', l: 'Sim' }, { v: 'Não', l: 'Não' }] },
-        { c: 'fobias', l: 'Fobias', t: 'select', o: [{ v: '', l: '—' }, { v: 'Sim', l: 'Sim' }, { v: 'Não', l: 'Não' }] },
-        { c: 'problemasCronicos', l: 'Problemas crônicos', t: 'select', o: [{ v: '', l: '—' }, { v: 'Sim', l: 'Sim' }, { v: 'Não', l: 'Não' }] },
-        { c: 'deficienciaFisica', l: 'Deficiência física', t: 'select', o: [{ v: '', l: '—' }, { v: 'Sim', l: 'Sim' }, { v: 'Não', l: 'Não' }] },
-        { c: 'deficienciaAuditiva', l: 'Deficiência auditiva', t: 'select', o: [{ v: '', l: '—' }, { v: 'Sim', l: 'Sim' }, { v: 'Não', l: 'Não' }] },
-        { c: 'observacoes', l: 'Observações', t: 'textarea' }
     ];
     var IND_CAMPOS = [
         { c: 'nome', l: 'Nome completo' }, { c: 'cpf', l: 'CPF' },
@@ -207,6 +179,11 @@
 
     /* ------------------------ sessao / login ----------------------- */
     function pcoSalvarSessao() {
+        /* Os modulos do administrador leem currentUserData e ADMIN_CPF para
+           liberar as acoes. A coordenacao tera controle total, entao o CPF
+           atual e tratado como o CPF administrativo dentro deste portal. */
+        window.currentUserData = pcoUser;
+        window.ADMIN_CPF = (pcoUser && pcoUser.cpf) || '';
         try { localStorage.setItem(CHAVE_SESSAO, JSON.stringify(pcoUser)); } catch (e) {}
         try { localStorage.setItem('farn_user_data', JSON.stringify(pcoUser)); } catch (e) {}
         try { localStorage.setItem('farn_last_cpf', pcoDigitos(pcoUser && pcoUser.cpf)); } catch (e) {}
@@ -320,6 +297,8 @@
             localStorage.removeItem('farn_login');
         } catch (e) {}
         pcoUser = null;
+        window.currentUserData = null;
+        window.ADMIN_CPF = '';
         pcoCursos = []; pcoCursoId = ''; pcoCarregouGeral = false;
         if (redirecionar !== false) location.href = 'index.html';
     }
@@ -403,48 +382,24 @@
     }
 
     /* ---------------------- dados de docente ----------------------- */
+    /* A seção Docente deste portal É o módulo do administrador
+       (coordenacao.js): mesmos campos, tabela, botões e ações. Aqui apenas
+       carregamos a lista e atualizamos o resumo. */
     function pcoCarregarDocentes() {
         pcoLer(db.collection('docentesAdmin')).then(function (lista) {
             pcoCache.docentes = pcoOrdenar(lista, 'nome');
-            pcoRenderDocentes();
+            if (typeof window.docenteAdminInicializar === 'function') window.docenteAdminInicializar(true);
             pcoRenderResumo();
         }).catch(function (e) {
-            var box = document.getElementById('pco-doc-lista');
-            if (box) box.innerHTML = '<p style="color:#dc2626">Erro ao carregar docentes: ' + pcoEsc(e.message) + '</p>';
+            console.error('Portal da Coordenação - docentes:', e);
+            if (typeof window.docenteAdminInicializar === 'function') window.docenteAdminInicializar(true);
         });
     }
     function pcoRenderDocentes() {
-        var box = document.getElementById('pco-doc-lista');
-        if (!box) return;
-        var busca = pcoNormal((document.getElementById('pco-doc-busca') || {}).value || '');
-        var lista = pcoCache.docentes.filter(function (d) {
-            return !busca || pcoNormal([d.nome, d.cpf, d.matricula, d.email].join(' ')).indexOf(busca) >= 0;
-        });
-        if (!lista.length) { box.innerHTML = '<p style="color:#94a3b8;font-size:12px">Nenhum docente encontrado.</p>'; return; }
-        box.innerHTML = '<table class="pco-tabela"><thead><tr><th>Nome</th><th>CPF</th><th>Matrícula</th>'
-            + '<th>Vínculos</th><th>Situação</th><th>Ações</th></tr></thead><tbody>'
-            + lista.map(function (d) {
-                return '<tr><td><b>' + pcoEsc(d.nome || '—') + '</b></td>'
-                    + '<td>' + pcoEsc(pcoDigitos(d.cpf) || '—') + '</td>'
-                    + '<td>' + pcoEsc(d.matricula || '—') + '</td>'
-                    + '<td>' + pcoEsc([d.cursos, d.turma, d.projeto].filter(Boolean).join(' · ') || '—') + '</td>'
-                    + '<td>' + pcoSelo(d.status || d.situacao || 'Ativo', 'pco-selo-apontada') + '</td>'
-                    + '<td><button class="pco-btn pco-btn-primary" onclick="pcoEditarDocente(\'' + pcoEsc(d._id) + '\')">'
-                    + '<i class="fa-solid fa-pen"></i> Editar</button></td></tr>';
-            }).join('') + '</tbody></table>';
+        if (typeof window.docRender === 'function') window.docRender();
     }
     function pcoEditarDocente(id) {
-        var d = pcoCache.docentes.find(function (x) { return String(x._id) === String(id); });
-        if (!d) { alert('Docente não encontrado.'); return; }
-        pcoAbrirForm('Editar docente: ' + (d.nome || ''), DOC_CAMPOS, d, function (dados) {
-            dados.cpf = pcoDigitos(dados.cpf);
-            return db.collection('docentesAdmin').doc(String(id)).update(dados).then(function () {
-                pcoCache.docentes = pcoCache.docentes.map(function (x) {
-                    return String(x._id) === String(id) ? Object.assign({}, x, dados) : x;
-                });
-                pcoRenderDocentes();
-            });
-        });
+        if (typeof window.docEditar === 'function') window.docEditar(id);
     }
 
     /* ----------------------- dados de aluno ------------------------ */
