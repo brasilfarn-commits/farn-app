@@ -42,7 +42,13 @@
     /* Apontamento de presença do docente (mesmo registro do Apontamento ADM). */
     var pddocAula = null;
     var pddocRegistros = {};
-    var pddocPresenca = null;
+    var pddocLocal = null;
+    var pddocQr = null;
+    var pddocQrScanner = null;
+    var pddocQrEscaneando = false;
+    var pddocModoJustificativa = false;
+    var pddocJustTexto = '';
+    var pddocComprovante = null;
 
     /* ---------- helpers ---------- */
     function pdDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
@@ -369,6 +375,7 @@
         box.innerHTML = pdAulas.map(function (a) {
             var reg = pddocRegistros[pddocIdRegistro(a._id)] || null;
             var pres = (reg && reg.presencaDocente) || {};
+            var just = (reg && reg.justificativa) || {};
             var em = reg && (reg.docenteApontadoEm || reg.apontadoEm || pres.apontadoEm);
             var selo = em ? 'pd-selo-presente' : 'pd-selo-pendente';
             var lbl = em ? 'Apontado em ' + pdDataHora(em) : 'Ainda não apontado';
@@ -379,64 +386,333 @@
                 + '<small>' + pdEsc([a.cursoNome, a.turma, a.data, a.horario].filter(Boolean).join(' · ')) + '</small>'
                 + '<div class="pd-instrutor" style="color:#0f766e;background:#ccfbf1;padding:2px 6px;border-radius:6px">'
                 + 'Quem ficou com a aula: <b>' + pdEsc(a.docente || pdNome()) + '</b></div>'
-                + (em ? '<div style="font-size:10px;color:#475569;margin-top:4px">Presença: <b>' + pdEsc(pres.status || 'Apontado') + '</b></div>' : '')
-                + (pres.obs ? '<div style="font-size:10px;color:#64748b;margin-top:2px">Obs: ' + pdEsc(pres.obs) + '</div>' : '')
+                + (em ? '<div style="font-size:10px;color:#475569;margin-top:4px">Presença: <b>' + pdEsc(just.texto ? 'Justificada' : (pres.status || 'Apontado')) + '</b>'
+                + (reg.localizacaoStatus === 'capturado' ? ' · GPS' : '') + (reg.qrAula ? ' · QR' : '') + '</div>' : '')
+                + (just.texto ? '<div style="font-size:10px;color:#92400e;margin-top:2px">Justificativa: ' + pdEsc(just.texto) + '</div>' : '')
                 + '</div>'
                 + '<div style="text-align:right">'
                 + '<span class="pd-selo ' + selo + '">' + pdEsc(lbl) + '</span>'
                 + '<div style="margin-top:8px"><button class="pd-btn pd-btn-success" onclick="pddocAbrir(\'' + pdEsc(a._id) + '\')">'
-                + '<i class="fa-solid fa-clipboard-check" style="margin-right:6px"></i> APONTAR</button></div>'
+                + '<i class="fa-solid fa-' + (em ? 'pen' : 'clipboard-check') + '" style="margin-right:6px"></i> '
+                + (em ? 'EDITAR APONTAMENTO' : 'APONTAR') + '</button></div>'
                 + '</div></div></div>';
         }).join('');
     }
+    /* O QR de início da aula e gerado no Cadastro de Cursos como
+       FARN-INICIO:<aulaId>. Aceita tambem o id puro ou uma URL que o contenha. */
+    function pddocExtrairAulaId(texto) {
+        var s = String(texto == null ? '' : texto).trim();
+        if (!s) return '';
+        var m = s.match(/^FARN-INICIO\s*:\s*(.+)$/i);
+        if (m) return m[1].trim();
+        try {
+            var dec = decodeURIComponent(s);
+            if (dec !== s) return pddocExtrairAulaId(dec);
+        } catch (e) { /* texto com % invalido */ }
+        try {
+            var u = new URL(s);
+            var p = u.searchParams.get('aula') || u.searchParams.get('aulaId') || u.searchParams.get('id') || '';
+            if (p) return p.trim();
+        } catch (e) { /* texto nao e URL */ }
+        return s;
+    }
     function pddocAbrir(id) {
+        pdPararQr();
         pddocAula = pdAulas.find(function (a) { return String(a._id) === String(id); }) || null;
         if (!pddocAula) { alert('Aula não encontrada.'); return; }
         var reg = pddocRegistros[pddocIdRegistro(pddocAula._id)] || null;
-        var ant = (reg && reg.presencaDocente) || {};
-        pddocPresenca = Object.assign({
-            docenteId: pdUser._docId || String(pddocAula.docenteId || ''),
-            docenteNome: pdNome(),
-            docenteCpf: pdDigitos(pdUser.cpf),
-            docenteMatricula: String(pdUser.matricula || pdUser.matriculaDocente || ''),
-            status: 'Presente', obs: ''
-        }, ant);
+        var pres = (reg && reg.presencaDocente) || {};
+        var just = (reg && reg.justificativa) || {};
+        pddocLocal = (reg && reg.localizacao && typeof reg.localizacao.latitude === 'number')
+            ? Object.assign({}, reg.localizacao) : null;
+        pddocQr = (reg && reg.qrAula) ? Object.assign({}, reg.qrAula)
+            : (reg && reg.qrCode ? { valor: String(reg.qrCode), aulaId: String(pddocAula._id) } : null);
+        pddocModoJustificativa = !!(just.texto || pres.status === 'Justificada');
+        pddocJustTexto = String(just.texto || pres.obs || '');
+        pddocComprovante = just.comprovante ? Object.assign({}, just.comprovante) : null;
         var info = document.getElementById('pddoc-info');
         if (info) {
             info.innerHTML = '<b>' + pdEsc(pdNome()) + '</b> • ' + pdEsc(pddocAula.disciplina || '')
                 + ' • ' + pdEsc(pddocAula.conteudo || pddocAula._id) + ' • ' + pdEsc(pddocAula.data || '');
         }
-        pddocRenderTabela();
+        pddocRenderModal();
         var m = document.getElementById('pddoc-modal');
         if (m) m.classList.add('aberto');
+        if (!pddocLocal && navigator.geolocation) pddocCapturarGps(true);
     }
-    function pddocRenderTabela() {
+    function pddocRenderModal() {
         var box = document.getElementById('pddoc-tabela');
-        if (!box) return;
-        var s = pddocPresenca || {};
+        if (!box || !pddocAula) return;
+        var docId = (pdUser && pdUser._docId) ? pdUser._docId : String(pddocAula.docenteId || '');
         box.innerHTML = '<table class="pd-tabela"><thead><tr>'
-            + '<th>Docente</th><th>CPF / Matrícula</th><th>P / F / J</th><th>Obs</th></tr></thead><tbody>'
-            + '<tr>'
-            + '<td style="font-size:12px">' + pdEsc(s.docenteNome || '-') + '</td>'
-            + '<td style="font-size:11px">' + pdEsc(s.docenteCpf || '-') + (s.docenteMatricula ? ' / ' + pdEsc(s.docenteMatricula) : '') + '</td>'
-            + '<td style="text-align:center">'
-            + ['Presente', 'Falta', 'Justificada'].map(function (st) {
-                var lbl = st === 'Presente' ? 'P' : (st === 'Falta' ? 'F' : 'J');
-                var cor = s.status === st ? (st === 'Presente' ? '#16a34a' : (st === 'Falta' ? '#dc2626' : '#d97706')) : '#94a3b8';
-                return '<button onclick="pddocSetStatus(\'' + st + '\')" '
-                    + 'style="border:1px solid ' + cor + ';color:' + cor + ';background:' + (s.status === st ? cor + '22' : 'transparent') + ';border-radius:5px;padding:2px 7px;margin:0 1px;font-size:10px;font-weight:800">' + lbl + '</button>';
-            }).join('')
-            + '</td>'
-            + '<td><input value="' + pdEsc(s.obs || '') + '" onchange="pddocSetObs(this.value)" '
-            + 'style="width:100%;padding:4px;border:1px solid #cbd5e1;border-radius:5px;font-size:11px"></td>'
-            + '</tr></tbody></table>';
+            + '<th>Docente</th><th>CPF / Matrícula</th></tr></thead><tbody><tr>'
+            + '<td style="font-size:12px">' + pdEsc(pdNome()) + '</td>'
+            + '<td style="font-size:11px">' + pdEsc(pdDigitos(pdUser && pdUser.cpf) || '-')
+            + (pdMatricula() !== '—' ? ' / ' + pdEsc(pdMatricula()) : '') + '</td>'
+            + '</tr></tbody></table>'
+            + '<div style="font-size:10px;color:#64748b;margin-top:6px">Registro do docente: ' + pdEsc(docId || '—') + '</div>'
+            + '<div style="margin-top:10px;padding:10px;border:1px solid #86efac;background:#f0fdf4;border-radius:9px">'
+            + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+            + '<button type="button" class="pd-btn pd-btn-warn" onclick="pddocCapturarGps()">'
+            + '<i class="fa-solid fa-location-crosshairs" style="margin-right:6px"></i> Capturar GPS</button>'
+            + '<span id="pddoc-gps-status" style="font-size:12px;color:#166534;font-weight:800">Localização não capturada.</span></div>'
+            + '<div id="pddoc-gps-detalhe" style="font-size:11px;color:#15803d;margin-top:6px"></div>'
+            + '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #86efac">'
+            + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+            + '<button type="button" class="pd-btn pd-btn-warn" onclick="pddocCapturarQr()">'
+            + '<i class="fa-solid fa-qrcode" style="margin-right:6px"></i> Capturar QR Code</button>'
+            + '<button type="button" class="pd-btn pd-btn-warn" id="pddoc-qr-parar" style="display:none" onclick="pddocPararQr()">'
+            + '<i class="fa-solid fa-stop" style="margin-right:6px"></i> Parar leitura</button>'
+            + '<span id="pddoc-qr-status" style="font-size:12px;font-weight:800"></span></div>'
+            + '<div id="pddoc-qr-detalhe" style="font-size:11px;color:#15803d;margin-top:6px"></div>'
+            + '<div id="pddoc-qr-reader" style="display:none;width:100%;min-height:180px;background:#fff;border-radius:8px;margin-top:8px"></div>'
+            + '</div></div>'
+            + '<div style="margin-top:10px;padding:10px;border:1px solid #fde68a;background:#fffbeb;border-radius:9px">'
+            + '<button type="button" class="pd-btn pd-btn-warn" onclick="pddocAlternarJustificativa()">'
+            + '<i class="fa-solid fa-file-circle-check" style="margin-right:6px"></i> '
+            + (pddocModoJustificativa ? 'Fechar justificativa' : 'JUSTIFICAR') + '</button>'
+            + '<div style="font-size:10px;color:#92400e;margin-top:6px">Sem apontamento manual (P / F / J): use o GPS/QR ou justifique com texto e comprovante.</div>'
+            + (pddocModoJustificativa
+                ? '<div style="margin-top:10px">'
+                    + '<label style="display:block;font-size:11px;font-weight:800;color:#92400e;margin-bottom:4px">Justificativa *</label>'
+                    + '<textarea id="pddoc-just-texto" rows="3" placeholder="Digite o motivo da justificativa" '
+                    + 'oninput="pddocSetJustTexto(this.value)" '
+                    + 'style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;resize:vertical">'
+                    + pdEsc(pddocJustTexto) + '</textarea>'
+                    + '<label style="display:block;font-size:11px;font-weight:800;color:#92400e;margin:10px 0 4px">Comprovante da justificativa</label>'
+                    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+                    + '<button type="button" class="pd-btn pd-btn-warn" onclick="pddocAbrirCamera()">'
+                    + '<i class="fa-solid fa-camera" style="margin-right:6px"></i> Tirar foto</button>'
+                    + '<button type="button" class="pd-btn pd-btn-warn" onclick="pddocAbrirArquivo()">'
+                    + '<i class="fa-solid fa-paperclip" style="margin-right:6px"></i> Anexar imagem</button>'
+                    + '<input type="file" id="pddoc-just-camera" accept="image/*" capture="environment" style="display:none" onchange="pddocComprovanteArquivo(this.files)">'
+                    + '<input type="file" id="pddoc-just-arquivo" accept="image/*" style="display:none" onchange="pddocComprovanteArquivo(this.files)">'
+                    + '</div><div id="pddoc-just-preview" style="margin-top:8px"></div></div>'
+                : '')
+            + '</div>';
+        var btn = document.getElementById('pddoc-salvar');
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i> '
+                + (pddocModoJustificativa ? 'Salvar justificativa' : 'Salvar apontamento');
+        }
+        pddocRenderGps();
+        pddocRenderQr();
+        pddocRenderComprovante();
     }
-    function pddocSetStatus(st) { if (pddocPresenca) { pddocPresenca.status = st; pddocRenderTabela(); } }
-    function pddocSetObs(v) { if (pddocPresenca) pddocPresenca.obs = v; }
+
+    /* --------------------------- GPS ------------------------------- */
+    function pddocRenderGps() {
+        var st = document.getElementById('pddoc-gps-status');
+        var dt = document.getElementById('pddoc-gps-detalhe');
+        if (!st) return;
+        if (pddocLocal && typeof pddocLocal.latitude === 'number') {
+            st.textContent = 'Localização capturada ✓';
+            st.style.color = '#15803d';
+            if (dt) {
+                dt.innerHTML = '<b>Latitude:</b> ' + Number(pddocLocal.latitude).toFixed(6)
+                    + ' &nbsp; <b>Longitude:</b> ' + Number(pddocLocal.longitude).toFixed(6)
+                    + '<br><b>Precisão:</b> ' + (pddocLocal.precisao ? Math.round(pddocLocal.precisao) + ' m' : '-')
+                    + ' &nbsp; <b>Capturada em:</b> ' + pdDataHora(pddocLocal.capturadaEm);
+            }
+        } else {
+            st.textContent = 'Localização não capturada.';
+            st.style.color = '#b45309';
+            if (dt) dt.textContent = (pddocLocal && pddocLocal.erro) ? pddocLocal.erro : '';
+        }
+    }
+    function pddocCapturarGps(silencioso) {
+        if (!navigator.geolocation) {
+            pddocLocal = { erro: 'Este navegador não oferece GPS. Libere a localização no site.' };
+            pddocRenderGps();
+            if (!silencioso) alert(pddocLocal.erro);
+            return;
+        }
+        var st = document.getElementById('pddoc-gps-status');
+        if (st) { st.textContent = 'Capturando localização...'; st.style.color = '#2563eb'; }
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            pddocLocal = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                precisao: pos.coords.accuracy,
+                capturadaEm: new Date().toISOString()
+            };
+            pddocRenderGps();
+        }, function (err) {
+            var msg = err && err.code === 1
+                ? 'Permissão de localização negada. Libere o GPS no navegador e tente novamente.'
+                : 'Não foi possível capturar o GPS. Verifique se a localização está ativa.';
+            pddocLocal = { erro: msg };
+            pddocRenderGps();
+            if (!silencioso) alert(msg);
+        }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    }
+
+    /* --------------------------- QR ------------------------------- */
+    function pddocRenderQr() {
+        var st = document.getElementById('pddoc-qr-status');
+        var dt = document.getElementById('pddoc-qr-detalhe');
+        if (!st) return;
+        if (pddocQrEscaneando) {
+            st.textContent = 'Lendo QR Code...';
+            st.style.color = '#2563eb';
+            if (dt) dt.textContent = 'Aponte a câmera para o QR de início desta aula.';
+            return;
+        }
+        if (pddocQr) {
+            st.textContent = 'QR da aula capturado ✓';
+            st.style.color = '#15803d';
+            if (dt) {
+                dt.innerHTML = '<b>Aula:</b> ' + pdEsc(pddocQr.aulaDescricao || pddocQr.aulaId || (pddocAula && pddocAula._id) || '')
+                    + ' &nbsp; <b>Capturada em:</b> ' + pdDataHora(pddocQr.capturadaEm)
+                    + '<br><b>Capturada por:</b> ' + pdEsc(pddocQr.capturadaPor || pdNome())
+                    + '<br><b>Conteúdo:</b> ' + pdEsc(pddocQr.valor);
+            }
+        } else {
+            st.textContent = 'QR da aula não capturado.';
+            st.style.color = '#b45309';
+            if (dt) dt.textContent = '';
+        }
+    }
+    function pddocPararQr() {
+        if (pddocQrScanner && pddocQrEscaneando) {
+            try {
+                var p = pddocQrScanner.stop();
+                if (p && typeof p.catch === 'function') p.catch(function () {});
+            } catch (e) { /* camera ja encerrada */ }
+        }
+        pddocQrScanner = null;
+        pddocQrEscaneando = false;
+        var rd = document.getElementById('pddoc-qr-reader');
+        if (rd) { rd.innerHTML = ''; rd.style.display = 'none'; }
+        var btn = document.getElementById('pddoc-qr-parar');
+        if (btn) btn.style.display = 'none';
+        pddocRenderQr();
+    }
+    function pddocCapturarQr() {
+        if (pddocQrEscaneando) { pddocPararQr(); return; }
+        if (typeof Html5Qrcode === 'undefined') { alert('Biblioteca de leitura de QR não carregada.'); return; }
+        pdPararQr();
+        var rd = document.getElementById('pddoc-qr-reader');
+        if (!rd) return;
+        rd.innerHTML = '';
+        rd.style.display = 'block';
+        var btn = document.getElementById('pddoc-qr-parar');
+        if (btn) btn.style.display = '';
+        pddocQrEscaneando = true;
+        pddocRenderQr();
+        function falha(e) {
+            pddocPararQr();
+            alert('Não foi possível iniciar a câmera: ' + (e && e.message ? e.message : e));
+        }
+        try {
+            pddocQrScanner = new Html5Qrcode('pddoc-qr-reader');
+            var iniciar = pddocQrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, function (texto) {
+                if (!pddocQrEscaneando || !pddocAula) return;
+                var id = pddocExtrairAulaId(texto);
+                if (!id || pdKey(id) !== pdKey(pddocAula._id)) {
+                    alert('Este QR não é da aula selecionada. Aponte para o QR de início desta aula.');
+                    return;
+                }
+                pddocQr = {
+                    valor: String(texto || '').trim(),
+                    aulaId: String(pddocAula._id),
+                    aulaDescricao: pddocAula.conteudo || pddocAula.disciplina || String(pddocAula._id),
+                    cursoId: String(pddocAula.cursoId || ''),
+                    docenteId: String(pddocAula.docenteId || ''),
+                    capturadaEm: new Date().toISOString(),
+                    capturadaPor: pdNome()
+                };
+                pddocPararQr();
+                pddocRenderQr();
+                alert('QR da aula capturado: ' + (pddocQr.aulaDescricao || pddocQr.aulaId) + '.');
+            }, function () { /* quadros sem QR */ });
+            if (iniciar && typeof iniciar.catch === 'function') iniciar.catch(falha);
+        } catch (e) { falha(e); }
+    }
+
+    /* ---------------------- justificativa -------------------------- */
+    function pddocAlternarJustificativa() {
+        var ta = document.getElementById('pddoc-just-texto');
+        if (ta) pddocJustTexto = ta.value;
+        pddocModoJustificativa = !pddocModoJustificativa;
+        pddocRenderModal();
+    }
+    function pddocSetJustTexto(v) { pddocJustTexto = String(v || ''); }
+    function pddocAbrirCamera() {
+        var el = document.getElementById('pddoc-just-camera');
+        if (el) el.click();
+    }
+    function pddocAbrirArquivo() {
+        var el = document.getElementById('pddoc-just-arquivo');
+        if (el) el.click();
+    }
+    function pddocKb(dataUrl) { return String(dataUrl || '').length / 1024; }
+    function pddocRenderComprovante() {
+        var prev = document.getElementById('pddoc-just-preview');
+        if (!prev) return;
+        if (!pddocComprovante || !pddocComprovante.dataUrl) {
+            prev.innerHTML = '<span style="font-size:10px;color:#92400e">Nenhum comprovante anexado.</span>';
+            return;
+        }
+        prev.innerHTML = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+            + '<img src="' + pddocComprovante.dataUrl + '" alt="Comprovante" style="width:70px;height:70px;object-fit:cover;border:1px solid #cbd5e1;border-radius:6px">'
+            + '<span style="font-size:10px;color:#166534">' + pdEsc(pddocComprovante.nome || 'comprovante.jpg')
+            + ' (' + Number(pddocComprovante.tamanhoKb || 0).toFixed(0) + ' KB)</span>'
+            + '<button type="button" class="pd-btn pd-btn-warn" onclick="pddocRemoverComprovante()">Remover</button></div>';
+    }
+    function pddocRemoverComprovante() { pddocComprovante = null; pddocRenderComprovante(); }
+    function pddocComprovanteArquivo(files) {
+        var arquivo = files && files[0];
+        if (!arquivo) return;
+        if (String(arquivo.type || '').indexOf('image/') !== 0) { alert('Escolha uma imagem (foto do comprovante).'); return; }
+        if (arquivo.size > 10 * 1024 * 1024) { alert('Imagem maior que 10 MB. Escolha uma menor.'); return; }
+        var leitor = new FileReader();
+        leitor.onload = function (ev) {
+            var img = new Image();
+            img.onload = function () {
+                var escala = Math.min(1, 1400 / Math.max(img.width, img.height));
+                var w = Math.max(1, Math.round(img.width * escala));
+                var h = Math.max(1, Math.round(img.height * escala));
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                var qualidades = [0.82, 0.7, 0.55, 0.4, 0.3, 0.2, 0.12];
+                var saida = canvas.toDataURL('image/jpeg', 0.1);
+                for (var i = 0; i < qualidades.length; i++) {
+                    var tentativa = canvas.toDataURL('image/jpeg', qualidades[i]);
+                    if (pddocKb(tentativa) <= 320) { saida = tentativa; break; }
+                }
+                if (pddocKb(saida) > 320) {
+                    var menor = document.createElement('canvas');
+                    menor.width = Math.max(1, Math.round(w / 2));
+                    menor.height = Math.max(1, Math.round(h / 2));
+                    menor.getContext('2d').drawImage(canvas, 0, 0, menor.width, menor.height);
+                    saida = menor.toDataURL('image/jpeg', 0.45);
+                }
+                pddocComprovante = {
+                    dataUrl: saida,
+                    nome: String(arquivo.name || 'comprovante.jpg'),
+                    tipo: 'image/jpeg',
+                    tamanhoKb: Math.round(pddocKb(saida)),
+                    enviadoEm: new Date().toISOString()
+                };
+                pddocRenderComprovante();
+            };
+            img.onerror = function () { alert('Não foi possível ler a imagem.'); };
+            img.src = String(ev.target.result || '');
+        };
+        leitor.onerror = function () { alert('Não foi possível ler o arquivo.'); };
+        leitor.readAsDataURL(arquivo);
+    }
     function pddocFechar() {
+        pddocPararQr();
         var m = document.getElementById('pddoc-modal');
         if (m) m.classList.remove('aberto');
-        pddocAula = null; pddocPresenca = null;
+        pddocAula = null; pddocLocal = null; pddocQr = null;
+        pddocModoJustificativa = false; pddocJustTexto = ''; pddocComprovante = null;
     }
     async function pddocGarantirRegistroAdm(a) {
         var docId = pddocIdRegistro(a._id);
@@ -487,27 +763,59 @@
         return docId;
     }
     async function pddocSalvar() {
-        if (!pddocAula || !pddocPresenca) return;
+        if (!pddocAula) return;
+        var ta = document.getElementById('pddoc-just-texto');
+        var texto = String((ta && ta.value) || pddocJustTexto || '').trim();
+        var justificando = pddocModoJustificativa;
+        if (justificando && !texto) { alert('Digite a justificativa antes de salvar.'); return; }
+        if (!justificando && !pddocLocal && !confirm('O GPS não foi capturado. Salvar o apontamento sem registro de localização?')) return;
         var btn = document.getElementById('pddoc-salvar');
         if (btn) btn.disabled = true;
         try {
             var docId = await pddocGarantirRegistroAdm(pddocAula);
-            var st = pddocPresenca.status;
             var apontadoEm = new Date().toISOString();
+            var presenca = {
+                docenteId: String(pddocAula.docenteId || (pdUser && pdUser._docId) || ''),
+                docenteNome: pdNome(),
+                docenteCpf: pdDigitos(pdUser && pdUser.cpf),
+                docenteMatricula: String((pdUser && (pdUser.matricula || pdUser.matriculaDocente)) || ''),
+                status: justificando ? 'Justificada' : 'Presente',
+                obs: texto,
+                apontadoEm: apontadoEm
+            };
+            /* Mesmo documento, mesmos campos do botao APONTAR do Apontamento ADM,
+               acrescidos de GPS, QR da aula e justificativa com comprovante. */
             await db.collection('apontamentosAdm').doc(docId).update({
-                presencaDocente: Object.assign({}, pddocPresenca, { apontadoEm: apontadoEm }),
-                presentes: st === 'Presente' ? 1 : 0,
-                faltas: st === 'Falta' ? 1 : 0,
-                justificadas: st === 'Justificada' ? 1 : 0,
+                presencaDocente: presenca,
+                presentes: justificando ? 0 : 1,
+                faltas: 0,
+                justificadas: justificando ? 1 : 0,
                 apontadoEm: apontadoEm,
                 docenteApontadoEm: apontadoEm,
-                status: 'Apontado',
+                status: justificando ? 'Justificada' : 'Apontado',
                 apontado: true,
+                localizacao: (pddocLocal && typeof pddocLocal.latitude === 'number') ? {
+                    latitude: pddocLocal.latitude,
+                    longitude: pddocLocal.longitude,
+                    precisao: pddocLocal.precisao || null,
+                    capturadaEm: pddocLocal.capturadaEm || apontadoEm
+                } : null,
+                localizacaoStatus: (pddocLocal && typeof pddocLocal.latitude === 'number') ? 'capturado' : 'indisponivel',
+                qrCode: pddocQr ? String(pddocQr.valor || '') : '',
+                qrAula: pddocQr ? Object.assign({}, pddocQr) : null,
+                justificativa: justificando ? {
+                    texto: texto,
+                    comprovante: pddocComprovante ? Object.assign({}, pddocComprovante) : null,
+                    registradaEm: apontadoEm,
+                    registradaPor: pdNome()
+                } : null,
                 atualizadoEm: apontadoEm
             });
             pddocFechar();
             await pddocCarregar();
-            alert('Apontamento do docente salvo: ' + (st === 'Presente' ? 'Presente' : (st === 'Falta' ? 'Falta' : 'Justificada')) + '.');
+            alert(justificando
+                ? 'Justificativa salva com sucesso.'
+                : 'Apontamento por GPS/QR salvo com sucesso.');
         } catch (e) {
             alert('Erro ao salvar: ' + (e && e.message ? e.message : e));
         } finally {
@@ -1105,8 +1413,15 @@
     window.pddocAbrir = pddocAbrir;
     window.pddocFechar = pddocFechar;
     window.pddocSalvar = pddocSalvar;
-    window.pddocSetStatus = pddocSetStatus;
-    window.pddocSetObs = pddocSetObs;
+    window.pddocCapturarGps = pddocCapturarGps;
+    window.pddocCapturarQr = pddocCapturarQr;
+    window.pddocPararQr = pddocPararQr;
+    window.pddocAlternarJustificativa = pddocAlternarJustificativa;
+    window.pddocSetJustTexto = pddocSetJustTexto;
+    window.pddocAbrirCamera = pddocAbrirCamera;
+    window.pddocAbrirArquivo = pddocAbrirArquivo;
+    window.pddocComprovanteArquivo = pddocComprovanteArquivo;
+    window.pddocRemoverComprovante = pddocRemoverComprovante;
     window.pdAlternarQr = pdAlternarQr;
     window.pdPararQr = pdPararQr;
     window.pdSetStatus = pdSetStatus;
