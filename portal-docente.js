@@ -39,6 +39,10 @@
     var ultimoScan = { texto: '', em: 0 };
     var ultimoAluno = { cpf: '', em: 0 };
     var audioCtx = null;
+    /* Apontamento de presença do docente (mesmo registro do Apontamento ADM). */
+    var pddocAula = null;
+    var pddocRegistros = {};
+    var pddocPresenca = null;
 
     /* ---------- helpers ---------- */
     function pdDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
@@ -208,13 +212,14 @@
         if (d) d.classList.remove('aberto'); if (o) o.classList.remove('aberto');
     }
     function pdSetView(view) {
-        ['inicio', 'dados', 'aulas', 'apontar'].forEach(function (v) {
+        ['inicio', 'dados', 'aulas', 'apontar-docente', 'apontar'].forEach(function (v) {
             var box = document.getElementById('pd-view-' + v); if (box) box.className = 'pd-view' + (v === view ? ' ativo' : '');
             var btn = document.getElementById('pd-menu-' + v); if (btn) btn.className = (v === view ? 'ativo' : '');
         });
         pdFecharMenu();
         if (view === 'dados') pdRenderDados();
         if (view === 'aulas') pdRenderMinhasAulas();
+        if (view === 'apontar-docente') { if (!pdAulas.length) pdCarregarAulas(); pddocCarregar(); }
         if (view === 'apontar') { if (!pdAulas.length) pdCarregarAulas(); pdCarregarHistorico(); }
     }
 
@@ -312,6 +317,202 @@
                 }).join('')
                 + '</div>';
         }).join('');
+    }
+
+    /* ---------- secao APONTAR DOCENTE ----------
+       Lista as mesmas aulas filtradas pelo campo "Selecione o Docente" do
+       Cadastro de Cursos e aponta a presenca no mesmo documento usado pelo
+       botao APONTAR do Apontamento ADM: apontamentosAdm/aula-<aulaId>. */
+    function pddocIdRegistro(id) {
+        return 'aula-' + String(id).replace(/[^A-Za-z0-9_-]/g, '_');
+    }
+    function pddocCarregar() {
+        var box = document.getElementById('pddoc-lista');
+        if (!box) return Promise.resolve([]);
+        var aviso = document.getElementById('pddoc-aviso');
+        if (aviso) { aviso.textContent = 'Carregando suas aulas...'; aviso.className = 'pd-aviso'; }
+        if (!pdAulas.length) {
+            pddocRegistros = {};
+            pddocRender();
+            return Promise.resolve([]);
+        }
+        return db.collection('apontamentosAdm').get().then(function (snap) {
+            pddocRegistros = {};
+            snap.forEach(function (d) { pddocRegistros[d.id] = Object.assign({ _id: d.id }, d.data() || {}); });
+            pddocRender();
+            return pdAulas;
+        }).catch(function (e) {
+            console.warn('Apontamentos ADM do docente:', e);
+            pddocRegistros = {};
+            pddocRender();
+            return pdAulas;
+        });
+    }
+    function pddocRender() {
+        var box = document.getElementById('pddoc-lista');
+        if (!box) return;
+        var aviso = document.getElementById('pddoc-aviso');
+        if (aviso) {
+            if (pdAulas.length) {
+                var apontadas = pdAulas.filter(function (a) {
+                    var r = pddocRegistros[pddocIdRegistro(a._id)];
+                    return !!(r && (r.docenteApontadoEm || r.apontadoEm || (r.presencaDocente || {}).apontadoEm));
+                }).length;
+                aviso.textContent = pdAulas.length + ' aula(s) sua(s) · ' + apontadas + ' com apontamento de presença.';
+                aviso.className = 'pd-aviso pd-ok';
+            } else {
+                aviso.textContent = 'Nenhuma aula encontrada com o seu nome no campo "Selecione o Docente" do Cadastro de Cursos.';
+                aviso.className = 'pd-aviso pd-erro-box';
+            }
+        }
+        if (!pdAulas.length) { box.innerHTML = ''; return; }
+        box.innerHTML = pdAulas.map(function (a) {
+            var reg = pddocRegistros[pddocIdRegistro(a._id)] || null;
+            var pres = (reg && reg.presencaDocente) || {};
+            var em = reg && (reg.docenteApontadoEm || reg.apontadoEm || pres.apontadoEm);
+            var selo = em ? 'pd-selo-presente' : 'pd-selo-pendente';
+            var lbl = em ? 'Apontado em ' + pdDataHora(em) : 'Ainda não apontado';
+            return '<div class="pd-aula-linha' + (em ? ' pd-apontada' : '') + '">'
+                + '<div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">'
+                + '<div style="flex:1;min-width:200px">'
+                + '<b>' + pdEsc(a.conteudo || a.disciplina || 'Aula') + '</b>'
+                + '<small>' + pdEsc([a.cursoNome, a.turma, a.data, a.horario].filter(Boolean).join(' · ')) + '</small>'
+                + '<div class="pd-instrutor" style="color:#0f766e;background:#ccfbf1;padding:2px 6px;border-radius:6px">'
+                + 'Quem ficou com a aula: <b>' + pdEsc(a.docente || pdNome()) + '</b></div>'
+                + (em ? '<div style="font-size:10px;color:#475569;margin-top:4px">Presença: <b>' + pdEsc(pres.status || 'Apontado') + '</b></div>' : '')
+                + (pres.obs ? '<div style="font-size:10px;color:#64748b;margin-top:2px">Obs: ' + pdEsc(pres.obs) + '</div>' : '')
+                + '</div>'
+                + '<div style="text-align:right">'
+                + '<span class="pd-selo ' + selo + '">' + pdEsc(lbl) + '</span>'
+                + '<div style="margin-top:8px"><button class="pd-btn pd-btn-success" onclick="pddocAbrir(\'' + pdEsc(a._id) + '\')">'
+                + '<i class="fa-solid fa-clipboard-check" style="margin-right:6px"></i> APONTAR</button></div>'
+                + '</div></div></div>';
+        }).join('');
+    }
+    function pddocAbrir(id) {
+        pddocAula = pdAulas.find(function (a) { return String(a._id) === String(id); }) || null;
+        if (!pddocAula) { alert('Aula não encontrada.'); return; }
+        var reg = pddocRegistros[pddocIdRegistro(pddocAula._id)] || null;
+        var ant = (reg && reg.presencaDocente) || {};
+        pddocPresenca = Object.assign({
+            docenteId: pdUser._docId || String(pddocAula.docenteId || ''),
+            docenteNome: pdNome(),
+            docenteCpf: pdDigitos(pdUser.cpf),
+            docenteMatricula: String(pdUser.matricula || pdUser.matriculaDocente || ''),
+            status: 'Presente', obs: ''
+        }, ant);
+        var info = document.getElementById('pddoc-info');
+        if (info) {
+            info.innerHTML = '<b>' + pdEsc(pdNome()) + '</b> • ' + pdEsc(pddocAula.disciplina || '')
+                + ' • ' + pdEsc(pddocAula.conteudo || pddocAula._id) + ' • ' + pdEsc(pddocAula.data || '');
+        }
+        pddocRenderTabela();
+        var m = document.getElementById('pddoc-modal');
+        if (m) m.classList.add('aberto');
+    }
+    function pddocRenderTabela() {
+        var box = document.getElementById('pddoc-tabela');
+        if (!box) return;
+        var s = pddocPresenca || {};
+        box.innerHTML = '<table class="pd-tabela"><thead><tr>'
+            + '<th>Docente</th><th>CPF / Matrícula</th><th>P / F / J</th><th>Obs</th></tr></thead><tbody>'
+            + '<tr>'
+            + '<td style="font-size:12px">' + pdEsc(s.docenteNome || '-') + '</td>'
+            + '<td style="font-size:11px">' + pdEsc(s.docenteCpf || '-') + (s.docenteMatricula ? ' / ' + pdEsc(s.docenteMatricula) : '') + '</td>'
+            + '<td style="text-align:center">'
+            + ['Presente', 'Falta', 'Justificada'].map(function (st) {
+                var lbl = st === 'Presente' ? 'P' : (st === 'Falta' ? 'F' : 'J');
+                var cor = s.status === st ? (st === 'Presente' ? '#16a34a' : (st === 'Falta' ? '#dc2626' : '#d97706')) : '#94a3b8';
+                return '<button onclick="pddocSetStatus(\'' + st + '\')" '
+                    + 'style="border:1px solid ' + cor + ';color:' + cor + ';background:' + (s.status === st ? cor + '22' : 'transparent') + ';border-radius:5px;padding:2px 7px;margin:0 1px;font-size:10px;font-weight:800">' + lbl + '</button>';
+            }).join('')
+            + '</td>'
+            + '<td><input value="' + pdEsc(s.obs || '') + '" onchange="pddocSetObs(this.value)" '
+            + 'style="width:100%;padding:4px;border:1px solid #cbd5e1;border-radius:5px;font-size:11px"></td>'
+            + '</tr></tbody></table>';
+    }
+    function pddocSetStatus(st) { if (pddocPresenca) { pddocPresenca.status = st; pddocRenderTabela(); } }
+    function pddocSetObs(v) { if (pddocPresenca) pddocPresenca.obs = v; }
+    function pddocFechar() {
+        var m = document.getElementById('pddoc-modal');
+        if (m) m.classList.remove('aberto');
+        pddocAula = null; pddocPresenca = null;
+    }
+    async function pddocGarantirRegistroAdm(a) {
+        var docId = pddocIdRegistro(a._id);
+        var ref = db.collection('apontamentosAdm').doc(docId);
+        var snap = await ref.get();
+        var existe = !!(snap && snap.exists);
+        var agora = new Date().toISOString();
+        var dados = {
+            origem: 'aula-cadastro-cursos',
+            docenteId: String(a.docenteId || pdUser._docId || ''),
+            docenteNome: String(a.docente || pdNome() || ''),
+            docenteCpf: pdDigitos(pdUser.cpf),
+            docenteMatricula: String(pdUser.matricula || pdUser.matriculaDocente || ''),
+            instrutorQueMinistrou: String(a.docenteOriginalNome || a.repassadaDeDocenteNome || ''),
+            cursoId: String(a.cursoId || ''),
+            cursoNome: String(a.cursoNome || ''),
+            disciplina: String(a.disciplina || ''),
+            aulaId: String(a._id),
+            aulaVinculada: true,
+            aula: String(a.conteudo || ''),
+            aulaDescricao: String(a.descricao || ''),
+            dataAula: String(a.data || ''),
+            horaAula: String(a.horario || ''),
+            avTeorica: String(a.avTeorica || ''),
+            avPratica: String(a.avPratica || ''),
+            enviadoEm: agora,
+            enviadoPor: pdNome(),
+            atualizadoEm: agora,
+            aulaExcluida: false,
+            repassadaDeDocenteId: String(a.repassadaDeDocenteId || ''),
+            repassadaDeDocenteNome: String(a.repassadaDeDocenteNome || '')
+        };
+        if (!existe) {
+            Object.assign(dados, {
+                criadoEm: agora,
+                criadoPor: pdNome(),
+                status: 'Pendente',
+                apontado: false,
+                apontadoEm: null,
+                presencaDocente: null,
+                localizacao: null,
+                localizacaoStatus: 'indisponivel',
+                qrCode: '',
+                qrAula: null
+            });
+        }
+        await ref.set(dados, { merge: true });
+        return docId;
+    }
+    async function pddocSalvar() {
+        if (!pddocAula || !pddocPresenca) return;
+        var btn = document.getElementById('pddoc-salvar');
+        if (btn) btn.disabled = true;
+        try {
+            var docId = await pddocGarantirRegistroAdm(pddocAula);
+            var st = pddocPresenca.status;
+            var apontadoEm = new Date().toISOString();
+            await db.collection('apontamentosAdm').doc(docId).update({
+                presencaDocente: Object.assign({}, pddocPresenca, { apontadoEm: apontadoEm }),
+                presentes: st === 'Presente' ? 1 : 0,
+                faltas: st === 'Falta' ? 1 : 0,
+                justificadas: st === 'Justificada' ? 1 : 0,
+                apontadoEm: apontadoEm,
+                docenteApontadoEm: apontadoEm,
+                status: 'Apontado',
+                apontado: true,
+                atualizadoEm: apontadoEm
+            });
+            pddocFechar();
+            await pddocCarregar();
+            alert('Apontamento do docente salvo: ' + (st === 'Presente' ? 'Presente' : (st === 'Falta' ? 'Falta' : 'Justificada')) + '.');
+        } catch (e) {
+            alert('Erro ao salvar: ' + (e && e.message ? e.message : e));
+        } finally {
+            if (btn) btn.disabled = false;
+        }
     }
 
     var pdRepassarAulaId = '';
@@ -461,6 +662,8 @@
             });
             pdPreencherCursos();
             pdRenderMinhasAulas();
+            var viewAtiva = document.querySelector('.pd-view.ativo');
+            if (viewAtiva && viewAtiva.id === 'pd-view-apontar-docente') pddocCarregar();
             if (aviso) {
                 if (pdAulas.length) {
                     aviso.textContent = pdAulas.length + ' aula(s) encontrada(s) para o seu cadastro.';
@@ -899,6 +1102,11 @@
     window.pdAbrirRepassar = pdAbrirRepassar;
     window.pdFecharRepassar = pdFecharRepassar;
     window.pdConfirmarRepassar = pdConfirmarRepassar;
+    window.pddocAbrir = pddocAbrir;
+    window.pddocFechar = pddocFechar;
+    window.pddocSalvar = pddocSalvar;
+    window.pddocSetStatus = pddocSetStatus;
+    window.pddocSetObs = pddocSetObs;
     window.pdAlternarQr = pdAlternarQr;
     window.pdPararQr = pdPararQr;
     window.pdSetStatus = pdSetStatus;

@@ -143,6 +143,7 @@
             <button id="pd-menu-inicio" class="ativo" onclick="pdSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
             <button id="pd-menu-dados" onclick="pdSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
             <button id="pd-menu-aulas" onclick="pdSetView('aulas')"><i class="fa-solid fa-calendar-day"></i> Minhas Aulas</button>
+            <button id="pd-menu-apontar-docente" onclick="pdSetView('apontar-docente')"><i class="fa-solid fa-clipboard-check"></i> Apontar Docente</button>
             <button id="pd-menu-apontar" onclick="pdSetView('apontar')"><i class="fa-solid fa-qrcode"></i> Apontar Aluno</button>
         </nav>
         <div class="pd-drawer-foot">
@@ -174,6 +175,19 @@
                     <button class="pd-btn pd-btn-primary" onclick="pdConfirmarRepassar()"><i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i> Salvar repasse</button>
                 </div>
                 <p style="font-size:10px;color:#64748b;margin:12px 0 0">A aula sairá da sua lista e passará a aparecer para o docente escolhido.</p>
+            </div>
+        </div>
+
+        <div class="pd-modal-wrap" id="pddoc-modal">
+            <div class="pd-modal-card">
+                <h3><i class="fa-solid fa-clipboard-check" style="color:#16a34a;margin-right:8px"></i> Apontar presença do docente</h3>
+                <div id="pddoc-info" style="font-size:12px;color:#475569;margin-bottom:10px"></div>
+                <div id="pddoc-tabela"></div>
+                <div class="pd-acoes" style="justify-content:flex-end">
+                    <button class="pd-btn pd-btn-warn" onclick="pddocFechar()">Cancelar</button>
+                    <button class="pd-btn pd-btn-success" id="pddoc-salvar" onclick="pddocSalvar()"><i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i> Salvar apontamento</button>
+                </div>
+                <p style="font-size:10px;color:#64748b;margin:12px 0 0">Mesmo registro do botão <b>APONTAR</b> da seção Apontamentos ADM.</p>
             </div>
         </div>
 
@@ -217,6 +231,18 @@
                         <span style="color:#0f766e">Instrutor que ministrou / quem vai ministrar destacado em cada aula</span>
                     </div>
                     <div id="pd-minhas-aulas-lista" style="margin-top:14px"></div>
+                </div>
+            </section>
+
+            <section class="pd-view" id="pd-view-apontar-docente">
+                <h2 class="pd-secao-titulo">Apontar Docente</h2>
+                <div class="pd-card">
+                    <div class="pd-aviso" id="pddoc-aviso">Carregando suas aulas...</div>
+                    <p style="font-size:11px;color:#475569;line-height:1.6;margin:12px 0 0">
+                        Lista das aulas em que você está cadastrado no <b>Cadastro de Cursos → Disciplinas e Aulas → Selecione o Docente</b>.
+                        O botão <b>APONTAR</b> usa o mesmo sistema e o mesmo registro do botão <b>APONTAR</b> da seção <b>Apontamentos ADM</b>.
+                    </p>
+                    <div id="pddoc-lista" style="margin-top:14px"></div>
                 </div>
             </section>
 
@@ -265,6 +291,6 @@
 
     <script src="farn-db.js?v=22"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
-    <script src="portal-docente.js?v=3"></script>
+    <script src="portal-docente.js?v=4"></script>
 </body>
 </html>
