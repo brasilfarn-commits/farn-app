@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Portal da Coordenação</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        html, body { height:auto !important; min-height:100vh !important; overflow:visible !important; overflow-y:auto !important; }
+        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; -webkit-overflow-scrolling:touch; }
+        .pco-login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+            background:linear-gradient(135deg,#0f766e,#115e59 45%,#0f172a); }
+        .pco-login-card { width:100%; max-width:400px; background:#fff; border-radius:18px; padding:30px;
+            box-shadow:0 18px 50px rgba(0,0,0,.28); }
+        .pco-login-card h1 { font-size:20px; color:#0f172a; margin-bottom:4px; }
+        .pco-login-card p { font-size:12px; color:#64748b; margin-bottom:22px; line-height:1.6; }
+        .pco-login-card label { display:block; font-size:11px; font-weight:700; color:#475569; margin:12px 0 4px; }
+        .pco-login-card input { width:100%; padding:11px 12px; border:1px solid #cbd5e1; border-radius:9px; font-size:14px; }
+        .pco-login-card button { width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px;
+            background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; font-weight:800; font-size:14px; cursor:pointer; }
+        .pco-login-card button:disabled { opacity:.6; cursor:not-allowed; }
+        .pco-erro { color:#dc2626; font-size:12px; margin-top:12px; display:none; line-height:1.5; }
+        .pco-app { display:none; }
+        .pco-topbar { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:12px 18px;
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .pco-topbar h1 { font-size:16px; white-space:nowrap; }
+        .pco-menu-btn { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); color:#fff;
+            border-radius:8px; padding:8px 11px; cursor:pointer; font-size:16px; line-height:1; }
+        .pco-topo-usuario { margin-left:auto; display:flex; align-items:center; gap:10px; text-align:right; }
+        #pco-foto-topo { width:38px; height:50px; object-fit:cover; border-radius:7px; border:2px solid rgba(255,255,255,.7); background:#fff; }
+        #pco-foto-topo.pco-sem-foto { display:none; }
+        .pco-topo-nome { font-size:13px; font-weight:800; line-height:1.3; }
+        .pco-topo-matricula { font-size:11px; opacity:.85; margin-top:2px; }
+        .pco-container { max-width:1180px; margin:20px auto; padding:0 16px; }
+        .pco-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:18px;
+            box-shadow:0 4px 14px rgba(2,6,23,.06); }
+        .pco-card h2 { font-size:16px; color:#0f172a; margin-bottom:14px; }
+        .pco-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
+        .pco-campo { border:1px solid #e2e8f0; border-radius:9px; padding:10px 12px; background:#f8fafc; }
+        .pco-campo span { display:block; font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .pco-campo b { display:block; font-size:13px; color:#0f172a; margin-top:3px; word-break:break-word; }
+        .pco-aviso { background:#f0fdfa; border:1px solid #99f6e4; color:#115e59; border-radius:10px;
+            padding:12px 14px; font-size:12px; line-height:1.6; }
+        .pco-ok { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+        .pco-erro-box { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+        .pco-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:40; }
+        .pco-drawer-overlay.aberto { display:block; }
+        .pco-drawer { position:fixed; top:0; left:0; bottom:0; width:270px; background:#fff; z-index:41;
+            transform:translateX(-100%); transition:transform .22s; box-shadow:6px 0 24px rgba(0,0,0,.18);
+            display:flex; flex-direction:column; }
+        .pco-drawer.aberto { transform:translateX(0); }
+        .pco-drawer-head { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; padding:20px 18px; }
+        .pco-drawer-head h2 { font-size:16px; margin-top:8px; line-height:1.3; }
+        .pco-drawer-head p { font-size:11px; opacity:.85; margin-top:3px; }
+        .pco-drawer-nav { padding:12px 10px; flex:1; overflow-y:auto; }
+        .pco-drawer-nav button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:transparent; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700;
+            color:#334155; text-align:left; margin-bottom:4px; }
+        .pco-drawer-nav button:hover { background:#f1f5f9; }
+        .pco-drawer-nav button.ativo { background:#ccfbf1; color:#0f766e; }
+        .pco-drawer-foot { padding:12px 10px; border-top:1px solid #e2e8f0; }
+        .pco-drawer-foot button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:#fef2f2; color:#b91c1c; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700; }
+        .pco-view { display:none; }
+        .pco-view.ativo { display:block; }
+        .pco-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+        .pco-inicio-foto { width:110px; height:150px; object-fit:cover; border-radius:14px; border:2px solid #e2e8f0; }
+        .pco-inicio-topo { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+        .pco-filtros { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+        .pco-filtros label { display:block; font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:5px; }
+        .pco-filtros input, .pco-filtros select { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; background:#fff; }
+        .pco-btn { border:none; border-radius:9px; padding:10px 14px; font-size:12px; font-weight:800; cursor:pointer; }
+        .pco-btn-primary { background:linear-gradient(135deg,#0f766e,#115e59); color:#fff; }
+        .pco-btn-success { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; }
+        .pco-btn-warn { background:#fffbeb; color:#92400e; border:1px solid #fde68a; }
+        .pco-btn:disabled { opacity:.55; cursor:not-allowed; }
+        .pco-acoes { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:14px; }
+        .pco-tabs { display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin:16px 0; }
+        .pco-tabs button { border:1px solid #e2e8f0; background:#f8fafc; border-radius:8px; padding:8px 11px;
+            font-size:11px; font-weight:800; color:#475569; cursor:pointer; }
+        .pco-tabs button.ativo { background:#ccfbf1; border-color:#5eead4; color:#0f766e; }
+        .pco-tab { display:none; }
+        .pco-tab.ativo { display:block; }
+        .pco-tabela-wrap { overflow-x:auto; }
+        .pco-tabela { width:100%; border-collapse:collapse; }
+        .pco-tabela th { background:#f1f5f9; font-size:10px; text-transform:uppercase; color:#64748b; padding:8px; text-align:left; white-space:nowrap; }
+        .pco-tabela td { border-bottom:1px solid #eef2f7; padding:8px; font-size:12px; vertical-align:top; }
+        .pco-selo { font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; }
+        .pco-selo-apontada { background:#dcfce7; color:#166534; }
+        .pco-selo-pendente { background:#dbeafe; color:#1d4ed8; }
+        .pco-selo-repassada { background:#fee2e2; color:#b91c1c; }
+        .pco-modal-wrap { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:60;
+            align-items:center; justify-content:center; padding:18px; }
+        .pco-modal-wrap.aberto { display:flex; }
+        .pco-modal-card { width:100%; max-width:720px; max-height:88vh; overflow:auto; background:#fff;
+            border-radius:14px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+        .pco-modal-card h3 { font-size:16px; color:#0f172a; margin-bottom:8px; }
+        .pco-modal-card label { display:block; font-size:11px; font-weight:800; color:#475569; margin:12px 0 5px; }
+        .pco-modal-card input, .pco-modal-card textarea, .pco-modal-card select { width:100%; padding:9px 10px;
+            border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:#fff; }
+        .pco-modal-card textarea { resize:vertical; }
+        .pco-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:4px 12px; }
+        .pco-linha { border:1px solid #e2e8f0; border-left:5px solid #0f766e; border-radius:9px;
+            background:#f8fafc; padding:10px 12px; margin-bottom:8px; font-size:12px; }
+        .pco-linha b { color:#0f172a; }
+        .pco-linha small { display:block; font-size:10px; color:#64748b; margin-top:3px; }
+        @media (max-width:520px) { .pco-topbar h1 { font-size:14px; } .pco-topo-usuario { margin-left:0; width:100%; justify-content:flex-start; text-align:left; } }
+    </style>
+</head>
+<body>
+    <div class="pco-login-wrap" id="pco-tela-login">
+        <form class="pco-login-card" onsubmit="pcoLogin(event)" autocomplete="off">
+            <h1><i class="fa-solid fa-users-between-lines" style="color:#0f766e;margin-right:8px"></i> Portal da Coordenação</h1>
+            <p>Acesso exclusivo a quem está cadastrado na seção <b>Coordenação</b> do administrador. Use o mesmo CPF e senha do portal.</p>
+            <label for="pco-cpf">CPF</label>
+            <input type="text" id="pco-cpf" placeholder="000.000.000-00" maxlength="14" oninput="pcoFormatCpf(this)">
+            <label for="pco-senha">Senha</label>
+            <input type="password" id="pco-senha" placeholder="Sua senha" autocomplete="current-password">
+            <button type="submit" id="pco-btn-login"><i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar</button>
+            <div class="pco-erro" id="pco-erro"></div>
+        </form>
+    </div>
+
+    <div class="pco-drawer-overlay" id="pco-overlay" onclick="pcoFecharMenu()"></div>
+    <aside class="pco-drawer" id="pco-drawer">
+        <div class="pco-drawer-head">
+            <i class="fa-solid fa-users-between-lines" style="font-size:30px"></i>
+            <h2 id="pco-nome-menu">Coordenação</h2>
+            <p id="pco-matricula-menu">—</p>
+        </div>
+        <nav class="pco-drawer-nav">
+            <button id="pco-menu-inicio" class="ativo" onclick="pcoSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
+            <button id="pco-menu-dados" onclick="pcoSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
+            <button id="pco-menu-docentes" onclick="pcoSetView('docentes')"><i class="fa-solid fa-chalkboard-user"></i> Dados de Docente</button>
+            <button id="pco-menu-alunos" onclick="pcoSetView('alunos')"><i class="fa-solid fa-user-graduate"></i> Dados de Aluno</button>
+            <button id="pco-menu-apontamento-adm" onclick="pcoSetView('apontamento-adm')"><i class="fa-solid fa-clipboard-check"></i> Apontamento ADM</button>
+        </nav>
+        <div class="pco-drawer-foot">
+            <button onclick="pcoLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        </div>
+    </aside>
+
+    <div class="pco-app" id="pco-tela-app">
+        <div class="pco-topbar">
+            <button class="pco-menu-btn" onclick="pcoAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+            <h1>FARN · Portal da Coordenação</h1>
+            <div class="pco-topo-usuario">
+                <img id="pco-foto-topo" class="pco-sem-foto" src="" alt="Foto do coordenador">
+                <div>
+                    <div class="pco-topo-nome" id="pco-nome-topo">Coordenação</div>
+                    <div class="pco-topo-matricula" id="pco-matricula-topo">Matrícula: —</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pco-modal-wrap" id="pco-modal">
+            <div class="pco-modal-card">
+                <h3 id="pco-modal-titulo">Editar</h3>
+                <div id="pco-modal-corpo"></div>
+                <div class="pco-acoes" style="justify-content:flex-end">
+                    <button class="pco-btn pco-btn-warn" onclick="pcoFecharForm()">Cancelar</button>
+                    <button class="pco-btn pco-btn-primary" id="pco-modal-salvar" onclick="pcoFormSalvar()">
+                        <i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="pco-container">
+            <section class="pco-view ativo" id="pco-view-inicio">
+                <h2 class="pco-secao-titulo">Início</h2>
+                <div class="pco-card">
+                    <div class="pco-inicio-topo">
+                        <img id="pco-inicio-foto" class="pco-inicio-foto" src="" alt="Foto 3x4" style="display:none">
+                        <div style="flex:1;min-width:220px">
+                            <div style="font-size:18px;font-weight:800;color:#0f172a" id="pco-inicio-nome">Coordenação</div>
+                            <div style="font-size:12px;color:#64748b;margin-top:4px" id="pco-inicio-info">—</div>
+                            <div style="margin-top:10px" id="pco-inicio-badges"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pco-card">
+                    <h2><i class="fa-solid fa-database" style="color:#0f766e;margin-right:8px"></i> Sincronização com o administrador</h2>
+                    <div class="pco-aviso" id="pco-sync-aviso">Consultando o servidor...</div>
+                    <div class="pco-grid" id="pco-resumo-grid" style="margin-top:12px"></div>
+                    <div class="pco-acoes">
+                        <button class="pco-btn pco-btn-primary" onclick="pcoSincronizar()"><i class="fa-solid fa-rotate" style="margin-right:6px"></i> Sincronizar agora</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pco-view" id="pco-view-dados">
+                <h2 class="pco-secao-titulo">Meus Dados</h2>
+                <div class="pco-card">
+                    <div class="pco-acoes" style="margin:0 0 14px 0">
+                        <button class="pco-btn pco-btn-primary" onclick="pcoEditarMeusDados()"><i class="fa-solid fa-pen" style="margin-right:6px"></i> Editar meus dados</button>
+                    </div>
+                    <div class="pco-grid" id="pco-dados-grid"></div>
+                </div>
+            </section>
+
+            <section class="pco-view" id="pco-view-docentes">
+                <h2 class="pco-secao-titulo">Dados de Docente</h2>
+                <div class="pco-card">
+                    <p style="font-size:11px;color:#475569;line-height:1.6;margin-bottom:12px">
+                        Informações da seção <b>Docente</b> do administrador (<b>docentesAdmin</b>). As alterações são gravadas na mesma coleção usada pelo painel administrativo.
+                    </p>
+                    <div class="pco-filtros">
+                        <div><label for="pco-doc-busca">Buscar docente</label>
+                            <input type="text" id="pco-doc-busca" placeholder="Nome, CPF ou matrícula" oninput="pcoRenderDocentes()"></div>
+                    </div>
+                    <div class="pco-tabela-wrap" id="pco-doc-lista" style="margin-top:14px"><div class="pco-aviso">Carregando docentes...</div></div>
+                </div>
+            </section>
+
+            <section class="pco-view" id="pco-view-alunos">
+                <h2 class="pco-secao-titulo">Dados de Aluno</h2>
+                <div class="pco-card">
+                    <p style="font-size:11px;color:#475569;line-height:1.6">
+                        Informações dos <b>cursos em andamento</b> do Cadastro de Cursos. Indivíduos, Disciplina e Aula e Criar Avaliação permitem edição; <b>Apontamento</b> e <b>Seção de Avaliação</b> são somente leitura.
+                    </p>
+                    <div class="pco-filtros" style="margin-top:12px">
+                        <div><label for="pco-curso">Curso em andamento</label><select id="pco-curso" onchange="pcoOnCursoChange()"></select></div>
+                    </div>
+                    <div class="pco-tabs">
+                        <button id="pco-aba-individuos" class="ativo" onclick="pcoSetAba('individuos')">Indivíduos</button>
+                        <button id="pco-aba-aulas" onclick="pcoSetAba('aulas')">Disciplina e Aula</button>
+                        <button id="pco-aba-avaliacao" onclick="pcoSetAba('avaliacao')">Criar Avaliação</button>
+                        <button id="pco-aba-apontamento" onclick="pcoSetAba('apontamento')">Apontamento (sem edição)</button>
+                        <button id="pco-aba-secaoavaliacao" onclick="pcoSetAba('secaoavaliacao')">Seção de Avaliação (sem edição)</button>
+                    </div>
+                    <div class="pco-tab ativo" id="pco-tab-individuos">
+                        <div class="pco-filtros"><div><label for="pco-ind-busca">Buscar indivíduo</label>
+                            <input type="text" id="pco-ind-busca" placeholder="Nome, CPF ou matrícula" oninput="pcoRenderIndividuos()"></div></div>
+                        <div class="pco-tabela-wrap" id="pco-ind-lista" style="margin-top:12px"></div>
+                    </div>
+                    <div class="pco-tab" id="pco-tab-aulas">
+                        <h3 style="font-size:13px;color:#0f172a;margin:8px 0">Disciplinas</h3>
+                        <div class="pco-tabela-wrap" id="pco-disc-lista"></div>
+                        <h3 style="font-size:13px;color:#0f172a;margin:18px 0 8px">Aulas</h3>
+                        <div class="pco-tabela-wrap" id="pco-aula-lista"></div>
+                    </div>
+                    <div class="pco-tab" id="pco-tab-avaliacao">
+                        <div class="pco-acoes" style="margin:8px 0 12px 0">
+                            <button class="pco-btn pco-btn-success" onclick="pcoNovaAvaliacao()"><i class="fa-solid fa-plus" style="margin-right:6px"></i> Nova avaliação</button>
+                        </div>
+                        <div class="pco-tabela-wrap" id="pco-av-lista"></div>
+                    </div>
+                    <div class="pco-tab" id="pco-tab-apontamento">
+                        <div class="pco-aviso">Registro do apontamento do Cadastro de Cursos — exibição sem edição.</div>
+                        <div class="pco-tabela-wrap" id="pco-apt-lista" style="margin-top:12px"></div>
+                    </div>
+                    <div class="pco-tab" id="pco-tab-secaoavaliacao">
+                        <div class="pco-aviso">Notas e avaliações dos indivíduos — exibição sem edição.</div>
+                        <div id="pco-secao-lista" style="margin-top:12px"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pco-view" id="pco-view-apontamento-adm">
+                <h2 class="pco-secao-titulo">Apontamento ADM</h2>
+                <div class="pco-card">
+                    <p style="font-size:11px;color:#475569;line-height:1.6;margin-bottom:12px">
+                        Mesmos registros da seção <b>Apontamentos ADM</b> (<b>apontamentosAdm</b>): presença do docente, GPS, QR, justificativa e fechamento dos alunos.
+                    </p>
+                    <div class="pco-filtros">
+                        <div><label for="pco-adm-busca">Buscar apontamento</label>
+                            <input type="text" id="pco-adm-busca" placeholder="Docente, curso, disciplina ou conteúdo" oninput="pcoRenderAdm()"></div>
+                    </div>
+                    <div class="pco-tabela-wrap" id="pco-adm-lista" style="margin-top:14px"><div class="pco-aviso">Carregando apontamentos...</div></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="farn-db.js?v=22"></script>
+    <script src="portal-coordenacao.js?v=1"></script>
+</body>
+</html>

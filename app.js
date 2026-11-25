@@ -1593,9 +1593,9 @@ function landingCloseMenu() {
 
 /* =====================================================================
    LOGIN DO INDEX
-   O tipo de acesso e definido pelo seletor Administrador / DOCENTE /
-   ALUNO do proprio formulario. Quando o CPF aparece em mais de um
-   cadastro, a origem e escolhida automaticamente conforme esse seletor,
+   O tipo de acesso e definido pelo seletor Administrador / COORDENAÇÃO /
+   DOCENTE / ALUNO do proprio formulario. Quando o CPF aparece em mais de
+   um cadastro, a origem e escolhida automaticamente conforme esse seletor,
    sem pedir ao usuario que escolha a fonte de dados.
    ===================================================================== */
 function landingEhConcluido(txt) {
@@ -1766,6 +1766,54 @@ async function landingLoginAluno(cpf, senha) {
     }
 }
 
+/* Portal da COORDENAÇÃO: fonte unica e a secao Coordenação do
+   administrador (colecao coordenacao). Sessao isolada, sem liberar o
+   painel administrativo completo. Os dados exibidos/editados no portal
+   vem das mesmas colecoes usadas pelo admin (FarnDB compartilhado). */
+async function landingLoginCoordenacao(cpf, senha) {
+    if (!dbFirestore) {
+        landingShowLoginError('Acesso da coordenação indisponível no momento.');
+        return false;
+    }
+    try {
+        var snap = await dbFirestore.collection('coordenacao').get();
+        var coord = null;
+        snap.forEach(function (doc) {
+            if (coord) return;
+            var d = doc.data() || {};
+            if (String(d.senha || '') !== String(senha)) return;
+            if (String(d.situacao || 'Ativo').toLowerCase() === 'inativo') return;
+            /* Aceita CPF salvo com pontuacao no cadastro antigo. */
+            if (String(d.cpf || '').replace(/\D/g, '') !== cpf) return;
+            coord = Object.assign({}, d, {
+                nome: d.nome || 'Coordenador',
+                cpf: cpf,
+                _origem: 'coordenacao',
+                _docId: doc.id,
+                permissoes: d.permissoes || []
+            });
+        });
+        if (!coord) {
+            landingShowLoginError('CPF/senha inválidos ou coordenador não cadastrado na seção Coordenação do administrador.');
+            return false;
+        }
+        currentUserData = coord;
+        saveLastLogin(cpf);
+        try { localStorage.setItem('farn_user_data', JSON.stringify(coord)); } catch (e) {}
+        try { localStorage.setItem('farn_last_cpf', cpf); } catch (e) {}
+        try { localStorage.setItem('coordenacao_sessao', JSON.stringify(coord)); } catch (e) {}
+        /* Sessao isolada: nao pode herdar uma sessao administrativa anterior. */
+        try { localStorage.removeItem('farn_login'); } catch (e) {}
+        try { localStorage.removeItem('farn_admin_session'); } catch (e) {}
+        location.href = 'portal-coordenacao.html';
+        return true;
+    } catch (e) {
+        console.error('Erro no login da coordenação:', e);
+        landingShowLoginError('Falha de conexão. Tente novamente.');
+        return false;
+    }
+}
+
 async function landingLogin(event) {
     if (event) event.preventDefault();
     var cpf = document.getElementById('landing-login-cpf').value.replace(/\D/g, '');
@@ -1776,13 +1824,16 @@ async function landingLogin(event) {
     try {
         var portalSel = document.getElementById('landing-login-portal');
         var portalTipo = portalSel ? String(portalSel.value || '') : '';
-        var portal = portalTipo === 'aluno' || portalTipo === 'docente' ? portalTipo : 'admin';
-        if (portal === 'aluno' || portal === 'docente') {
+        var portal = (portalTipo === 'aluno' || portalTipo === 'docente' || portalTipo === 'coordenacao')
+            ? portalTipo : 'admin';
+        if (portal === 'aluno' || portal === 'docente' || portal === 'coordenacao') {
             var entrou = false;
             try {
                 entrou = portal === 'aluno'
                     ? await landingLoginAluno(cpf, senha)
-                    : await landingLoginDocente(cpf, senha);
+                    : portal === 'docente'
+                        ? await landingLoginDocente(cpf, senha)
+                        : await landingLoginCoordenacao(cpf, senha);
             } catch (ePortal) {
                 console.error('Login ' + portal + ':', ePortal);
                 landingShowLoginError('Falha de conexão. Tente novamente.');
