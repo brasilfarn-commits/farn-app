@@ -36,9 +36,9 @@ Write-Host ' FARN - preparando publicacao no Ubuntu'
 Write-Host " Destino final: $PastaPublic"
 Write-Host '======================================================'
 
-Write-Host 'Criando pasta temporaria no Ubuntu (digite a senha SSH)...'
-& ssh @sshArgs "mkdir -p $tmpRemoto"
-if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar pasta temporaria.' }
+# A pasta /tmp/farn-publicar ja existe apos a primeira publicacao. Evita
+# abrir uma conexao SSH extra so para cria-la (e pedir mais uma senha).
+# Se o servidor foi reinstalado, crie manualmente: mkdir -p /tmp/farn-publicar
 
 $caminhos = @()
 foreach ($nome in $arquivos) {
