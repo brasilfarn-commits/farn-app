@@ -54,8 +54,8 @@ $argsLista = @('-P', "$Porta", '-o', 'StrictHostKeyChecking=no') + $caminhos + @
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao enviar arquivos.' }
 
 Write-Host ''
-Write-Host 'Arquivos enviados. Agora, DENTRO DO UBUNTU, execute:'
-Write-Host ''
-Write-Host "  sudo cp $tmpRemoto/* $PastaPublic/"
-Write-Host ''
-Write-Host 'Digite a senha quando o sudo pedir. Depois reabra o portal no celular.'
+Write-Host 'Aplicando arquivos no servidor...'
+Write-Host 'Digite a senha SSH e, quando pedir, a senha sudo.'
+& ssh @sshArgs "sudo cp $tmpRemoto/* $PastaPublic/ && echo '--- Verificacao ---' && grep -c 'Apontamento' $PastaPublic/portal-aluno.html"
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao aplicar arquivos no servidor.' }
+Write-Host 'Deploy concluido. Reabra o portal no celular.'
