@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="ficha-geral-compartilhar.js?v=31"></script>
     <style>
         * { box-sizing:border-box; margin:0; padding:0; }
         html, body { height:auto !important; min-height:100vh !important; overflow:visible !important; overflow-y:auto !important; }
@@ -138,9 +137,6 @@
             <div class="pa-view" id="pa-view-dados">
                 <div class="pa-secao-titulo"><i class="fa-solid fa-id-card" style="color:#0f766e;margin-right:8px"></i> Meus Dados</div>
                 <div class="pa-card"><h2>Cadastro</h2><div class="pa-grid" id="pa-dados"></div></div>
-                <div class="pa-card"><h2><i class="fa-solid fa-file-lines" style="color:#0f766e;margin-right:8px"></i> Ficha Geral</h2>
-                    <div id="pa-ficha"><div class="pa-aviso">Carregando sua ficha...</div></div>
-                </div>
             </div>
         </div>
     </div>
@@ -254,7 +250,7 @@
             paAplicarFoto();
             paSetView('inicio');
         }
-        async function paCarregarDados() {
+        function paCarregarDados() {
             if (!paUser) return;
             var box = document.getElementById('pa-dados');
             if (box) {
@@ -266,29 +262,6 @@
                     paCampo('Turma', paUser._turma) +
                     paCampo('E-mail', paUser.email) +
                     paCampo('WhatsApp', paUser.whatsapp);
-            }
-            await paCarregarFicha();
-        }
-        async function paCarregarFicha() {
-            var box = document.getElementById('pa-ficha'); if (!box || !paUser) return;
-            var projeto = String(paUser._projeto || paUser.projeto || '').trim();
-            var turma = String(paUser._turma || paUser.turma || '').trim();
-            if (!projeto || !turma || typeof fichaGeralFolha !== 'function') {
-                box.innerHTML = '<div class="pa-aviso">Sua ficha será exibida quando o cadastro possuir projeto e turma vinculados.</div>';
-                return;
-            }
-            try {
-                if (typeof fichaGeralCarregarInstituicao === 'function') await fichaGeralCarregarInstituicao(true);
-                var aulas = typeof fichaGeralCarregarAulas === 'function' ? await fichaGeralCarregarAulas(projeto, turma) : [];
-                var dados = typeof fichaGeralDadosAluno === 'function' ? await fichaGeralDadosAluno(paUser) : {};
-                var calc = typeof fichaGeralCalcular === 'function' ? fichaGeralCalcular(paUser, dados, aulas) : dados;
-                if (typeof fichaGeralProjeto !== 'undefined') fichaGeralProjeto = projeto;
-                if (typeof fichaGeralTurma !== 'undefined') fichaGeralTurma = turma;
-                box.innerHTML = fichaGeralFolha(paUser, calc, paFoto(), 0, aulas);
-                if (typeof fichaGeralAplicarLogo === 'function') fichaGeralAplicarLogo(box);
-            } catch (e) {
-                console.warn('Ficha do aluno:', e);
-                box.innerHTML = '<div class="pa-aviso">Não foi possível carregar a Ficha Geral neste momento.</div>';
             }
         }
         function paEncerrar(msg) {
