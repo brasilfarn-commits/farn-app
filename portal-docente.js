@@ -863,6 +863,64 @@
         var modal = document.getElementById('pd-repassar-modal');
         if (modal) modal.classList.remove('aberto');
     }
+    /* Repasse invalida qualquer apontamento anterior desta aula: o docente
+       que receber precisa apontar a presença e fechar os alunos novamente. */
+    async function pdLimparApontamentosAula(cid, aulaId, deId, apontadoPorId) {
+        var agora = new Date().toISOString();
+        var tarefas = [];
+        var base = db.collection('cursosCadastro').doc(String(cid)).collection('apontamentos');
+        try {
+            var snap = await base.where('aulaId', '==', String(aulaId)).get();
+            snap.forEach(function (d) {
+                tarefas.push(base.doc(d.id).delete().catch(function (e) { console.warn('Excluindo apontamento da aula:', e); }));
+            });
+        } catch (e) { console.warn('Limpar apontamentos da aula:', e); }
+        var ids = [];
+        [deId, apontadoPorId].forEach(function (x) {
+            var v = String(x || '');
+            if (v && ids.indexOf(v) < 0) ids.push(v);
+        });
+        await Promise.all(ids.map(function (idDoc) {
+            return db.collection('docentesAdmin').doc(idDoc).collection('apontamentos')
+                .where('aulaId', '==', String(aulaId)).get().then(function (snap2) {
+                    snap2.forEach(function (d) {
+                        tarefas.push(db.collection('docentesAdmin').doc(idDoc).collection('apontamentos')
+                            .doc(d.id).delete().catch(function (e) { console.warn('Excluindo apontamento do docente:', e); }));
+                    });
+                }).catch(function (e) { console.warn('Limpar apontamento do docente:', e); });
+        }));
+        await Promise.all(tarefas);
+        var docId = 'aula-' + String(aulaId).replace(/[^A-Za-z0-9_-]/g, '_');
+        await db.collection('apontamentosAdm').doc(docId).set({
+            apontado: false,
+            apontadoEm: null,
+            docenteApontadoEm: null,
+            alunosApontadosEm: null,
+            apontadoPor: '',
+            apontadoPorDocente: '',
+            apontadoPorDocenteId: '',
+            instrutorQueMinistrou: '',
+            apontamentoId: '',
+            presencaDocente: null,
+            justificativa: null,
+            localizacao: null,
+            localizacaoStatus: 'indisponivel',
+            qrCode: '',
+            qrAula: null,
+            presentes: 0,
+            faltas: 0,
+            justificadas: 0,
+            status: 'Pendente',
+            atualizadoEm: agora
+        }, { merge: true });
+        await db.collection('cursosCadastro').doc(String(cid)).collection('aulas').doc(String(aulaId)).update({
+            apontada: false,
+            apontamentoId: null,
+            apontadoPorDocenteId: '',
+            apontadoPorDocente: '',
+            atualizadoEm: agora
+        });
+    }
     function pdConfirmarRepassar() {
         var a = pdAulas.find(function (x) { return String(x._id) === String(pdRepassarAulaId); });
         var sel = document.getElementById('pd-repassar-docente');
@@ -884,24 +942,30 @@
             repassadaDeDocenteNome: deNome,
             repassadaEm: agora,
             repassadaPor: deNome,
+            apontada: false,
+            apontamentoId: null,
+            apontadoPorDocenteId: '',
+            apontadoPorDocente: '',
             atualizadoEm: agora
         }).then(function () {
             var docId = 'aula-' + String(a._id).replace(/[^A-Za-z0-9_-]/g, '_');
             return db.collection('apontamentosAdm').doc(docId).set({
                 docenteId: destId,
                 docenteNome: destNome,
-                instrutorQueMinistrou: deNome || a.docenteOriginalNome || a.docente || '',
+                instrutorQueMinistrou: '',
                 repassadaDeDocenteId: deId,
                 repassadaDeDocenteNome: deNome,
                 repassadaEm: agora,
                 atualizadoEm: agora
             }, { merge: true }).catch(function (e) { console.warn('Sync repasse ADM:', e); });
         }).then(function () {
+            return pdLimparApontamentosAula(cid, a._id, deId, a.apontadoPorDocenteId);
+        }).then(function () {
             pdFecharRepassar();
             return pdCarregarAulas();
         }).then(function () {
             pdRenderMinhasAulas();
-            alert('Aula repassada para ' + destNome + '. Ela foi bloqueada para você e liberada para o novo docente.');
+            alert('Aula repassada para ' + destNome + '. Seu apontamento foi removido: quem recebeu deve apontar o docente e os alunos novamente.');
             if (btn) btn.disabled = false;
         }).catch(function (e) {
             console.error('Erro ao repassar aula:', e);

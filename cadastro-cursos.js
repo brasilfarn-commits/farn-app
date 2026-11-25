@@ -1839,6 +1839,65 @@ async function ccAbrirRepassarAula(id) {
         + '<p style="font-size:11px;color:#64748b;margin-top:12px">Ao salvar, a aula deixará de aparecer para o docente atual e passará a aparecer para o docente escolhido no Cadastro de Cursos e no Portal do Docente.</p>';
     m.classList.remove('hidden');
 }
+/* Ao repassar, todos os apontamentos anteriores da aula sao invalidos:
+   somente quem recebeu e apontar novamente (docente e alunos) permanece. */
+async function ccLimparApontamentosAula(cursoId, aulaId, deId, apontadoPorId) {
+    if (!cursoId) return;
+    var agora = new Date().toISOString();
+    var tarefas = [];
+    var base = ccDb().collection('cursosCadastro').doc(String(cursoId)).collection('apontamentos');
+    try {
+        var snap = await base.where('aulaId', '==', String(aulaId)).get();
+        snap.forEach(function (d) {
+            tarefas.push(base.doc(d.id).delete().catch(function (e) { console.warn('Excluindo apontamento da aula:', e); }));
+        });
+    } catch (e) { console.warn('ccLimparApontamentosAula:', e); }
+    var ids = [];
+    [deId, apontadoPorId].forEach(function (x) {
+        var v = String(x || '');
+        if (v && ids.indexOf(v) < 0) ids.push(v);
+    });
+    await Promise.all(ids.map(function (idDoc) {
+        return ccDb().collection('docentesAdmin').doc(idDoc).collection('apontamentos')
+            .where('aulaId', '==', String(aulaId)).get().then(function (snap2) {
+                snap2.forEach(function (d) {
+                    tarefas.push(ccDb().collection('docentesAdmin').doc(idDoc).collection('apontamentos')
+                        .doc(d.id).delete().catch(function (e) { console.warn('Excluindo apontamento do docente:', e); }));
+                });
+            }).catch(function (e) { console.warn('Limpar apontamento do docente:', e); });
+    }));
+    await Promise.all(tarefas);
+    var docId = 'aula-' + String(aulaId).replace(/[^A-Za-z0-9_-]/g, '_');
+    await ccDb().collection('apontamentosAdm').doc(docId).set({
+        apontado: false,
+        apontadoEm: null,
+        docenteApontadoEm: null,
+        alunosApontadosEm: null,
+        apontadoPor: '',
+        apontadoPorDocente: '',
+        apontadoPorDocenteId: '',
+        instrutorQueMinistrou: '',
+        apontamentoId: '',
+        presencaDocente: null,
+        justificativa: null,
+        localizacao: null,
+        localizacaoStatus: 'indisponivel',
+        qrCode: '',
+        qrAula: null,
+        presentes: 0,
+        faltas: 0,
+        justificadas: 0,
+        status: 'Pendente',
+        atualizadoEm: agora
+    }, { merge: true });
+    try {
+        await ccRef('aulas', String(aulaId)).update({
+            apontada: false, apontamentoId: null, apontadoPorDocenteId: '',
+            apontadoPorDocente: '', atualizadoEm: agora
+        });
+    } catch (e) { console.warn('Limpar flags da aula:', e); }
+}
+
 async function ccConfirmarRepassarAula() {
     if (!ccRepassarAulaId) return;
     var sel = document.getElementById('cc-repassar-docente');
@@ -1860,18 +1919,27 @@ async function ccConfirmarRepassarAula() {
             repassadaDeDocenteNome: deNome,
             repassadaEm: agora,
             repassadaPor: ccUsuarioAtual(),
+            apontada: false,
+            apontamentoId: null,
+            apontadoPorDocenteId: '',
+            apontadoPorDocente: '',
             atualizadoEm: agora
         });
         var atualizado = Object.assign({}, a, {
             docenteId: destId, docente: destNome,
             docenteOriginalNome: deNome || a.docenteOriginalNome || a.docente || '',
-            repassadaDeDocenteId: deId, repassadaDeDocenteNome: deNome, repassadaEm: agora
+            repassadaDeDocenteId: deId, repassadaDeDocenteNome: deNome, repassadaEm: agora,
+            apontada: false, apontamentoId: null, apontadoPorDocenteId: '', apontadoPorDocente: ''
         });
         await ccEnviarAulaParaApontamento(atualizado, ccRepassarAulaId);
+        await ccLimparApontamentosAula(
+            String(a.cursoId || (ccAtual && ccAtual._id) || ''),
+            ccRepassarAulaId, deId, a.apontadoPorDocenteId
+        );
         ccFecharGenerico();
         ccRepassarAulaId = null;
         await ccLoadAulas();
-        alert('Aula repassada para ' + destNome + '. O campo "Selecione o Docente" foi atualizado e o repasse está destacado em vermelho.');
+        alert('Aula repassada para ' + destNome + '. O apontamento anterior foi removido: quem recebeu deve apontar o docente e os alunos novamente.');
     } catch (e) {
         alert('Erro ao repassar aula: ' + (e && e.message ? e.message : e));
     }
