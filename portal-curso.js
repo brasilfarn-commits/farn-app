@@ -1,6 +1,6 @@
 /* ============================================================
    PORTAL DO CURSO (aluno)
-   Pagina isolada aberta pela Seção Cursos do Portal do Usuario.
+   Pagina isolada aberta pela secao Cursos.
    Todo dado vem de cursosCadastro/{id}/... — nenhuma colecao
    global do administrador e escrita aqui, alem de respostas de AV.
    ============================================================ */
@@ -67,7 +67,7 @@ function pcFecharMenu() {
     var d = document.getElementById('pc-drawer'), o = document.getElementById('pc-overlay');
     if (d) d.classList.remove('aberto'); if (o) o.classList.remove('aberto');
 }
-function pcVoltar() { location.href = 'portal-usuario.html'; }
+function pcVoltar() { location.href = 'index.html'; }
 function pcSetView(view) {
     pcView = view;
     ['inicio', 'apontamento', 'aulas', 'av-teorica', 'av-pratica', 'apostilas'].forEach(function (v) {
@@ -99,7 +99,7 @@ async function pcInit() {
     var sessao = null;
     try { sessao = JSON.parse(localStorage.getItem('pu_sessao') || 'null'); } catch (e) {}
     if (!pcCursoId || !sessao || !sessao.cpf) {
-        pcMostrarErro('Sessão não encontrada', 'Entre no Portal do Usuário e abra o curso pela seção Meus Cursos.');
+        pcMostrarErro('Sessão não encontrada', 'Entre no app e abra o curso pela seção Cursos.');
         return;
     }
     pcCpf = pcSoDigitos(sessao.cpf);

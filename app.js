@@ -1319,10 +1319,6 @@ async function togglePortais() {
         portaisManutencao = novo;
         atualizarBotaoPortais();
         alert(novo ? 'Portais desligados. Os usuarios verao a mensagem de manutencao.' : 'Portais ligados. Acesso liberado aos portais.');
-        if (!novo) {
-            // Botão "Ligar portais": abre o Portal do Usuário
-            location.href = 'portal-usuario.html';
-        }
     } catch (e) {
         alert('Erro ao salvar o estado dos portais: ' + e.message);
     }
@@ -1700,9 +1696,6 @@ async function landingAplicarOrigem(opcao, cpf) {
     try { localStorage.setItem('farn_last_cpf', currentUserData.cpf || cpf); } catch (e) {}
     if (opcao.destino === 'admin') {
         enterAdminPanel();
-    } else {
-        try { localStorage.setItem('pu_sessao', JSON.stringify(currentUserData)); } catch (e) {}
-        location.href = 'portal-usuario.html';
     }
 }
 /* Portal do ALUNO: so entra quem esta nos individuos de algum curso do
@@ -1740,7 +1733,7 @@ async function landingLogin(event) {
     if (btn) { btn.disabled = true; btn.classList.add('loading'); }
     try {
         var portalSel = document.getElementById('landing-login-portal');
-        var portal = portalSel ? portalSel.value : 'admin';
+        var portal = portalSel && portalSel.value === 'aluno' ? 'aluno' : 'admin';
         if (portal === 'aluno') {
             var entrouComoAluno = false;
             try { entrouComoAluno = await landingLoginAluno(cpf, senha); }
@@ -1751,7 +1744,7 @@ async function landingLogin(event) {
             if (!entrouComoAluno && btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return false;
         }
-        var destino = portal === 'usuario' ? 'usuario' : 'admin';
+        var destino = 'admin';
         var opcoes = await landingDescobrirOrigens(cpf, senha);
         if (!opcoes.length) {
             landingShowLoginError('CPF ou senha inválidos, ou cadastro não está Ativo.');
@@ -1763,9 +1756,7 @@ async function landingLogin(event) {
             if (opcoes[i].destino === destino) { opcao = opcoes[i]; break; }
         }
         if (!opcao) {
-            landingShowLoginError(destino === 'admin'
-                ? 'Este CPF não tem acesso administrativo. Selecione Portal do Usuário.'
-                : 'Este CPF não tem acesso ao Portal do Usuário. Selecione Administrador.');
+            landingShowLoginError('Este CPF não tem acesso administrativo.');
             if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return false;
         }
@@ -1776,23 +1767,6 @@ async function landingLogin(event) {
         if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     }
     return false;
-}
-
-async function landingLoginPortalPerm(cpf, senha, portal) {
-    var permKey = 'portal-' + portal;
-    var snap = await dbFirestore.collection('usuarios').where('cpf', '==', cpf).limit(1).get();
-    if (snap.empty) return false;
-    var user = null;
-    snap.forEach(function(doc) {
-        var u = doc.data();
-        if (u.senha === senha && u.ativo !== false && u.permissoes && u.permissoes.includes(permKey)) user = u;
-    });
-    if (!user) return false;
-    currentUserData = user;
-    saveLastLogin(cpf);
-    try { localStorage.setItem('farn_user_data', JSON.stringify(user)); } catch(e) {}
-    if (portal === 'usuario') location.href = 'portal-usuario.html';
-    return true;
 }
 
 async function landingLoginAdmin(cpf, senha) {
@@ -1826,79 +1800,6 @@ async function landingLoginAdmin(cpf, senha) {
     enterAdminPanel();
     saveLoginState();
     return true;
-}
-
-/* Portal do Usuario: so entra quem esta no Cadastro Geral dos Individuos
-   (candidatos, docentes, usuarios e CFF) com o formulario em status Ativo. */
-async function landingLoginUsuario(cpf, senha) {
-    var fontes = [
-        { colecao: 'candidatos', rotulo: 'Aluno/Formado' },
-        { colecao: 'docentesAdmin', rotulo: 'Docente' },
-        { colecao: 'docentes', rotulo: 'Docente' },
-        { colecao: 'usuarios', rotulo: 'Usuario' },
-        { colecao: 'cffAlunos', rotulo: 'CFF' }
-    ];
-    for (var i = 0; i < fontes.length; i++) {
-        var fonte = fontes[i];
-        try {
-            var snap = await dbFirestore.collection(fonte.colecao).where('cpf', '==', cpf).get();
-            var encontrado = null;
-            snap.forEach(function (doc) {
-                if (encontrado) return;
-                var d = doc.data() || {};
-                if (d.senha !== senha) return;
-                var status = d.status;
-                if (!status && fonte.colecao === 'usuarios') status = (d.ativo === false ? 'Inativo' : 'Acadêmico');
-                if (!status) status = 'Acadêmico';
-                if (!fgStatusAtivo(status)) return;
-                encontrado = Object.assign({}, d, {
-                    _origem: fonte.colecao,
-                    _rotulo: fonte.rotulo,
-                    _docId: doc.id
-                });
-            });
-            if (encontrado) {
-                currentUserData = encontrado;
-                saveLastLogin(cpf);
-                saveLoginState();
-                try { localStorage.setItem('farn_user_data', JSON.stringify(encontrado)); } catch (e) {}
-                try { localStorage.setItem('pu_sessao', JSON.stringify(encontrado)); } catch (e) {}
-                location.href = 'portal-usuario.html';
-                return true;
-            }
-        } catch (e) { console.warn('Portal do Usuario: falha ao consultar ' + fonte.colecao, e); }
-    }
-    /* Cadastro de Cursos: alunos de cursos CONCLUIDOS e EM ANDAMENTO tambem
-       entram no Portal do Usuario com CPF e senha do cadastro do curso. */
-    try {
-        var cursosSnap = await dbFirestore.collection('cursosCadastro').get();
-        for (var c = 0; c < cursosSnap.docs.length; c++) {
-            var cursoDoc = cursosSnap.docs[c];
-            var snapCursos = await dbFirestore.collection('cursosCadastro').doc(cursoDoc.id)
-                .collection('individuos').where('cpf', '==', cpf).limit(1).get();
-            if (snapCursos.empty) continue;
-            var dCurso = snapCursos.docs[0].data() || {};
-            if (dCurso.senha !== senha) continue;
-            /* Quem pediu baixa nao entra; rebaixado/inativo por falta continuam
-               podendo acompanhar o curso pelo portal. */
-            if (dCurso.pediuBaixa === true || String(dCurso.situacaoCurso || '') === 'Pediu Baixa') continue;
-            var encontradoCursos = Object.assign({}, dCurso, {
-                _origem: 'cursosCadastro',
-                _rotulo: 'Curso: ' + String((cursoDoc.data() || {}).nome || ''),
-                _docId: snapCursos.docs[0].id,
-                _cursoId: cursoDoc.id
-            });
-            currentUserData = encontradoCursos;
-            saveLastLogin(cpf);
-            saveLoginState();
-            try { localStorage.setItem('farn_user_data', JSON.stringify(encontradoCursos)); } catch (e) {}
-            try { localStorage.setItem('pu_sessao', JSON.stringify(encontradoCursos)); } catch (e) {}
-            location.href = 'portal-usuario.html';
-            return true;
-        }
-    } catch (e) { console.warn('Portal do Usuario: falha ao consultar cursos', e); }
-    landingShowLoginError('CPF/senha inválidos ou cadastro não está Ativo no Cadastro Geral.');
-    return false;
 }
 
 /* ===== ONLINE TRACKING ===== */
