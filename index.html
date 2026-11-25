@@ -2990,6 +2990,7 @@
                                         <input type="date" id="cc-aula-data" class="config-input" style="width:100%;margin-bottom:8px">
                                         <input id="cc-aula-horario" class="config-input" placeholder="Horário (ex.: 14:00 às 17:00)" style="width:100%;margin-bottom:8px">
                                         <input id="cc-aula-conteudo" class="config-input" placeholder="Conteúdo / nome da aula" style="width:100%;margin-bottom:8px">
+                                        <textarea id="cc-aula-descricao" class="config-input" rows="3" placeholder="Descrição da aula (opcional)" style="width:100%;margin-bottom:8px;resize:vertical"></textarea>
                                         <div style="display:flex;gap:8px;margin-bottom:8px">
                                             <select id="cc-aula-av-teorica" class="config-input"><option value="">AV Teórica</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
                                             <select id="cc-aula-av-pratica" class="config-input"><option value="">AV Prática</option><option value="Sim">Sim</option><option value="Nao">Não</option></select>
@@ -3327,7 +3328,7 @@
                         <div class="card-body">
                             <p style="font-size:12px;color:#475569;margin:0 0 14px">
                                 Cadastro independente: os docentes ficam na tabela própria <code style="background:#ccfbf1;color:#0f766e;padding:1px 5px;border-radius:4px">docentesAdmin</code>.
-                                Os campos Cursos, Turmas, Projetos e Disciplinas alimentam o Portal do Docente. Use <b>Relatório de Aulas</b> para conferir as aulas de cada docente por curso/turma.
+                                Os campos Cursos, Turmas, Projetos e Disciplinas alimentam o Portal do Docente. Use <b>Relatório de Aulas</b> por curso/turma e <b>Relatório Mensal</b> para conferir quantidade de aulas, horários de apontamento e a referência de 4 horas.
                             </p>
                             <div id="doc-form-painel" style="display:none;margin-bottom:14px"></div>
                             <div id="doc-lista-wrap">
@@ -3371,6 +3372,35 @@
                             <div id="doc-rel-aulas-lista"></div>
                             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
                                 <button class="btn-outline btn-sm" onclick="docRelatorioAulasFechar()">Fechar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL DO RELATORIO MENSAL DE AULAS POR DOCENTE -->
+                <div id="doc-rel-mensal-modal" class="modal-overlay hidden">
+                    <div class="modal-content" style="max-width:1100px;width:96%;max-height:90vh;overflow:auto">
+                        <div class="modal-header">
+                            <h3 id="doc-rel-mensal-titulo"><i class="fa-solid fa-calendar-days" style="color:#0d9488;margin-right:8px"></i> Relatório Mensal de Aulas</h3>
+                            <button class="btn-icon" onclick="docRelatorioMensalFechar()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="font-size:11px;color:#475569;margin:0 0 10px;line-height:1.6">
+                                Compara o <b>apontamento de presença do docente</b> com o <b>fechamento dos alunos (Salvar apontamento)</b>.
+                                A referência é de <b>4 horas</b> entre os dois horários. O destaque <b style="color:#0f766e;background:#ccfbf1;padding:1px 6px;border-radius:6px">Quem ficou com a aula</b>
+                                mostra o responsável atual após os repasses.
+                            </p>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                                <label style="font-size:11px;font-weight:800;color:#475569">Mês:</label>
+                                <input type="month" id="doc-rel-mensal-mes" class="config-input" style="width:170px">
+                                <button class="btn-outline btn-sm" onclick="docRelatorioMensalCarregar()"><i class="fa-solid fa-rotate" style="margin-right:5px"></i> Atualizar</button>
+                                <button class="btn-outline btn-sm" onclick="docRelatorioMensalImprimir()"><i class="fa-solid fa-print" style="margin-right:5px"></i> Imprimir</button>
+                                <button class="btn-primary btn-sm" onclick="docRelatorioMensalSalvar()"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i> Salvar CSV</button>
+                            </div>
+                            <div id="doc-rel-mensal-resumo"></div>
+                            <div id="doc-rel-mensal-lista"></div>
+                            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                                <button class="btn-outline btn-sm" onclick="docRelatorioMensalFechar()">Fechar</button>
                             </div>
                         </div>
                     </div>
@@ -5011,7 +5041,7 @@
     <script src="cadastro-cursos-nucleo.js?v=2"></script>
     <script src="campos-pessoa-comuns.js?v=3"></script>
     <script src="portal-permissoes.js?v=9"></script>
-    <script src="coordenacao.js?v=14"></script>
+    <script src="coordenacao.js?v=15"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
@@ -5023,8 +5053,8 @@
     <script src="aluno-acesso.js?v=7"></script>
     <script src="app.js?v=133"></script>
     <script src="recad-admin.js?v=2"></script>
-    <script src="cadastro-cursos.js?v=41"></script>
-    <script src="apontamentos-adm.js?v=5"></script>
+    <script src="cadastro-cursos.js?v=42"></script>
+    <script src="apontamentos-adm.js?v=6"></script>
     <script src="estatistica.js?v=1"></script>
 
     <script src="noticias-slider.js?v=1"></script>

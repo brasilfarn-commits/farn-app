@@ -170,7 +170,8 @@ var ADM_PERM_FIXO = [
         { chave: 'doc:edicao', rotulo: 'Edição de Docentes', acao: true },
         { chave: 'doc:exclusao', rotulo: 'Exclusão de Docentes', acao: true },
         { chave: 'doc:impressao', rotulo: 'Impressão de Docentes', acao: true },
-        { chave: 'doc:relatorioAulas', rotulo: 'Relatório de Aulas do Docente', acao: true }
+        { chave: 'doc:relatorioAulas', rotulo: 'Relatório de Aulas do Docente', acao: true },
+        { chave: 'doc:relatorioMensal', rotulo: 'Relatório Mensal de Aulas por Docente', acao: true }
     ]},
     { titulo: 'APONTAMENTOS ADM', itens: [
         { chave: 'sec:apontamentosAdm', rotulo: 'Acessar Apontamentos ADM' },
@@ -724,6 +725,7 @@ function criarCadastroAdminPessoa(cfg) {
         var podeExcluir = admPermItem('doc:exclusao', 'ver');
         var podeImprimir = admPermItem('doc:impressao', 'ver');
         var podeRelatorioAulas = admPermItem('doc:relatorioAulas', 'ver');
+        var podeRelatorioMensal = admPermItem('doc:relatorioMensal', 'ver');
         tb.innerHTML = lista.map(function (r) {
             var contato = [r.whatsapp || r.telefone, r.email].filter(Boolean).join(' · ') || '-';
             return '<tr style="border-bottom:1px solid #f1f5f9">'
@@ -737,6 +739,9 @@ function criarCadastroAdminPessoa(cfg) {
                 + '<button class="btn-outline btn-sm" title="PERMISSÕES" onclick="' + P + 'Permissoes(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-shield-halved"></i> PERMISSÕES</button>'
                 + (cfg.prefixo === 'doc' && podeRelatorioAulas
                     ? '<button class="btn-outline btn-sm" title="Relatório de Aulas" onclick="docRelatorioAulas(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-file-lines"></i> RELATÓRIO DE AULAS</button>'
+                    : '')
+                + (cfg.prefixo === 'doc' && podeRelatorioMensal
+                    ? '<button class="btn-outline btn-sm" title="Relatório Mensal de Aulas" onclick="docRelatorioMensal(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-calendar-days"></i> RELATÓRIO MENSAL</button>'
                     : '')
                 + (podeEditar
                     ? '<button class="btn-icon" title="Editar" onclick="' + P + 'Editar(\'' + admEsc(r._id) + '\')"><i class="fa-solid fa-pen"></i></button>'
@@ -779,6 +784,11 @@ function criarCadastroAdminPessoa(cfg) {
         window.docRelatorioAulasSalvar = salvarAulaDoRelatorio;
         window.docRelatorioAulasImprimir = imprimirRelatorioAulas;
         window.docRelatorioAulasFechar = fecharRelatorioAulas;
+        window.docRelatorioMensal = abrirRelatorioMensal;
+        window.docRelatorioMensalCarregar = docRelatorioMensalCarregar;
+        window.docRelatorioMensalImprimir = imprimirRelatorioMensal;
+        window.docRelatorioMensalSalvar = salvarRelatorioMensal;
+        window.docRelatorioMensalFechar = fecharRelatorioMensal;
     }
 }
 
@@ -868,7 +878,9 @@ function docRelRender() {
                 return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #f1f5f9;padding:7px 0">'
                     + '<div style="flex:1;min-width:180px;font-size:12px"><b>' + docRelEsc(a.conteudo || a.disciplina || 'Aula') + '</b>'
                     + '<div style="font-size:10px;color:#64748b">' + docRelEsc(a.data || '') + ' ' + docRelEsc(a.horario || '')
-                    + (a.instrutorQueMinistrou || a.docenteOriginalNome ? ' · Ministrada por ' + docRelEsc(a.instrutorQueMinistrou || a.docenteOriginalNome) : '')
+                    + ' · <b style="color:#0f766e">Quem ficou: ' + docRelEsc(a.docente || a.instrutor || 'não informado') + '</b>'
+                    + (a.apontada && (a.apontadoPorDocente || a.instrutorQueMinistrou)
+                        ? ' · Ministrada por ' + docRelEsc(a.apontadoPorDocente || a.instrutorQueMinistrou) : '')
                     + (a.repassadaDeDocenteNome ? ' · <span style="color:#b91c1c">Repassada por ' + docRelEsc(a.repassadaDeDocenteNome) + '</span>' : '')
                     + '</div></div>'
                     + '<span style="font-size:10px;font-weight:800;background:' + fundo + ';color:' + cor + ';padding:3px 8px;border-radius:12px">' + lbl + '</span>'
@@ -977,18 +989,376 @@ function imprimirRelatorioAulas(id) {
         + '<h1>FARN — Relatório de Aulas</h1><p><b>Docente:</b> ' + docRelEsc(docRelDocenteNome) + '</p>'
         + grupos.map(function (g) {
             return '<h2>' + docRelEsc(g.curso) + (g.turma !== 'Sem turma' ? ' · ' + docRelEsc(g.turma) : '') + '</h2>'
-                + '<table><thead><tr><th>Data</th><th>Horário</th><th>Disciplina/Aula</th><th>Status</th><th>Repasse</th></tr></thead><tbody>'
+                + '<table><thead><tr><th>Data</th><th>Horário</th><th>Disciplina/Aula</th><th>Status</th><th>Responsável / repasse</th></tr></thead><tbody>'
                 + g.aulas.map(function (x) {
                     return '<tr><td>' + docRelEsc(x.data || '') + '</td><td>' + docRelEsc(x.horario || '') + '</td>'
                         + '<td>' + docRelEsc(x.conteudo || x.disciplina || '') + '</td>'
                         + '<td class="' + (x.apontada ? 'verde' : 'azul') + '">' + (x.apontada ? 'Encerrada / apontada' : 'Ainda não apontada') + '</td>'
-                        + '<td>' + (x.instrutorQueMinistrou || x.docenteOriginalNome ? 'Ministrada por ' + docRelEsc(x.instrutorQueMinistrou || x.docenteOriginalNome) : '-')
-                        + (x.repassadaDeDocenteNome ? '<br>Repassada por ' + docRelEsc(x.repassadaDeDocenteNome) : '') + '</td></tr>';
+                        + '<td><b>Quem ficou: ' + docRelEsc(x.docente || x.instrutor || 'não informado') + '</b>'
+                        + (x.apontada && (x.apontadoPorDocente || x.instrutorQueMinistrou)
+                            ? '<br>Ministrada por ' + docRelEsc(x.apontadoPorDocente || x.instrutorQueMinistrou) : '')
+                        + (x.repassadaDeDocenteNome ? '<br><span style="color:#b91c1c">Repassada por ' + docRelEsc(x.repassadaDeDocenteNome) + '</span>' : '') + '</td></tr>';
                 }).join('') + '</tbody></table>';
         }).join('')
         + '</body></html>';
     w.document.open(); w.document.write(html); w.document.close();
     setTimeout(function () { try { w.focus(); w.print(); } catch (e) {} }, 300);
+}
+
+/* ---------- RELATORIO MENSAL DE AULAS POR DOCENTE ----------
+   Usa as aulas do relatorio individual e cruza com:
+   - apontamentosAdm/aula-<id>: presenca do docente (docenteApontadoEm);
+   - cursosCadastro/<curso>/apontamentos: fechamento dos alunos
+     (alunosApontadosEm).
+   Referencia: entre os dois apontamentos sao esperadas 4 horas. */
+var docMesCache = [];
+
+function docMesChave(v) {
+    var s = String(v || '');
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 7);
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return '';
+    var mm = String(d.getMonth() + 1);
+    if (mm.length < 2) mm = '0' + mm;
+    return String(d.getFullYear()) + '-' + mm;
+}
+function docMesFmtHora(v) {
+    if (!v) return '-';
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return String(v);
+    return d.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
+}
+function docMesFmtNum(v) {
+    if (v === null || v === undefined || !isFinite(v)) return '-';
+    return Number(v).toFixed(1).replace('.', ',') + 'h';
+}
+function docMesHoras(inicio, fim) {
+    if (!inicio || !fim) return null;
+    var a = new Date(inicio).getTime();
+    var b = new Date(fim).getTime();
+    if (!isFinite(a) || !isFinite(b)) return null;
+    return (b - a) / 3600000;
+}
+function docMesSituacao(diff) {
+    if (diff === null) return { lbl: 'Sem medição', cor: '#64748b', fundo: '#f1f5f9' };
+    if (diff < 0) return { lbl: 'Horários invertidos', cor: '#b91c1c', fundo: '#fee2e2' };
+    if (diff < 4) return { lbl: 'ANTES das 4 horas', cor: '#b91c1c', fundo: '#fee2e2' };
+    if (diff > 4) return { lbl: 'PASSOU das 4 horas', cor: '#b45309', fundo: '#fef3c7' };
+    return { lbl: 'Exatamente 4 horas', cor: '#15803d', fundo: '#dcfce7' };
+}
+function docMesCarregarAdm() {
+    var dbLocal = admDb();
+    return dbLocal.collection('apontamentosAdm').get().then(function (snap) {
+        var mapa = {};
+        snap.forEach(function (d) {
+            var r = Object.assign({ _id: d.id }, d.data() || {});
+            var idAula = String(r.aulaId || '');
+            if (!idAula && String(d.id).indexOf('aula-') === 0) idAula = String(d.id).slice(5);
+            if (idAula) mapa[idAula] = r;
+        });
+        return mapa;
+    }).catch(function (e) { console.warn('Apontamentos ADM do relatorio mensal:', e); return {}; });
+}
+function docMesCarregarApontamentos(aulas) {
+    var dbLocal = admDb();
+    var porCurso = {};
+    aulas.forEach(function (a) {
+        var cid = String(a.cursoId || '');
+        if (cid && !porCurso[cid]) porCurso[cid] = { porAula: {}, porId: {} };
+    });
+    var tarefas = Object.keys(porCurso).map(function (cid) {
+        return dbLocal.collection('cursosCadastro').doc(cid).collection('apontamentos').get()
+            .then(function (snap) {
+                snap.forEach(function (d) {
+                    var r = Object.assign({ _id: d.id }, d.data() || {});
+                    var mapa = porCurso[cid];
+                    mapa.porId[d.id] = r;
+                    var aid = String(r.aulaId || '');
+                    if (!aid) return;
+                    var atual = mapa.porAula[aid];
+                    if (!atual || String(r.criadoEm || '') > String(atual.criadoEm || '')) mapa.porAula[aid] = r;
+                });
+            })
+            .catch(function (e) { console.warn('Apontamentos do curso ' + cid + ' no relatorio mensal:', e); });
+    });
+    return Promise.all(tarefas).then(function () { return porCurso; });
+}
+function docMesPreparar() {
+    if (!admDb()) { alert('Banco de dados indisponível.'); return Promise.resolve([]); }
+    return docRelCarregar().then(function (aulas) {
+        return Promise.all([docMesCarregarAdm(), docMesCarregarApontamentos(aulas)]).then(function (res) {
+            var admMapa = res[0];
+            var porCurso = res[1];
+            docMesCache = aulas.map(function (a) {
+                var idAula = String(a._id);
+                var adm = admMapa[idAula] || admMapa['aula-' + idAula] || null;
+                var cid = String(a.cursoId || '');
+                var mapa = porCurso[cid] || { porAula: {}, porId: {} };
+                var apt = (a.apontamentoId && mapa.porId[String(a.apontamentoId)])
+                    || mapa.porAula[idAula] || null;
+
+                var docenteEm = '';
+                if (adm) {
+                    docenteEm = adm.docenteApontadoEm || '';
+                    if (!docenteEm && !adm.alunosApontadosEm) docenteEm = adm.apontadoEm || '';
+                }
+                if (!docenteEm) docenteEm = a.docenteApontadoEm || '';
+
+                var alunosEm = '';
+                if (apt) alunosEm = apt.alunosApontadosEm || apt.criadoEm || '';
+                if (!alunosEm && adm) {
+                    alunosEm = adm.alunosApontadosEm || '';
+                    if (!alunosEm && adm.docenteApontadoEm) alunosEm = adm.apontadoEm || '';
+                }
+                if (!alunosEm) alunosEm = a.alunosApontadosEm || '';
+
+                var quemFicou = a.docente || a.instrutor || (adm && adm.docenteNome) || 'não informado';
+                var ministrou = a.apontadoPorDocente || (adm && adm.apontadoPorDocente) || '';
+                if (!ministrou && (a.apontada || (adm && adm.apontadoEm))) {
+                    ministrou = (adm && adm.instrutorQueMinistrou) || quemFicou;
+                }
+                return {
+                    _id: idAula,
+                    curso: a.cursoNome || 'Curso',
+                    turma: String(a.turma || a.turmaIndividuo || 'Sem turma'),
+                    data: String(a.data || a.dataAula || (adm && adm.dataAula) || ''),
+                    horario: String(a.horario || a.horaAula || (adm && adm.horaAula) || ''),
+                    nomeAula: String(a.conteudo || a.aula || a.disciplina || 'Aula'),
+                    descricao: String(a.descricao || a.observacao || a.observacoes || a.disciplina || '-'),
+                    quemFicou: String(quemFicou),
+                    ministrou: String(ministrou || ''),
+                    repassadaPor: String(a.repassadaDeDocenteNome || (adm && adm.repassadaDeDocenteNome) || ''),
+                    apontada: !!(a.apontada || a.apontamentoId || (adm && adm.apontadoEm)),
+                    docenteEm: docenteEm,
+                    alunosEm: alunosEm,
+                    diffHoras: docMesHoras(docenteEm, alunosEm)
+                };
+            });
+            docMesCache.sort(function (x, y) {
+                var d = String(y.data).localeCompare(String(x.data));
+                if (d) return d;
+                return String(x.horario).localeCompare(String(y.horario));
+            });
+            return docMesCache;
+        });
+    });
+}
+function docMesFiltrar() {
+    var mes = (((document.getElementById('doc-rel-mensal-mes') || {}).value) || '').trim();
+    return docMesCache.filter(function (r) { return !mes || docMesChave(r.data) === mes; });
+}
+function docMesResumo(registros) {
+    var horas = 0, medidas = 0;
+    registros.forEach(function (r) {
+        if (r.diffHoras !== null && r.diffHoras > 0) { horas += r.diffHoras; medidas++; }
+    });
+    function agrupar(campo) {
+        var g = {};
+        registros.forEach(function (r) {
+            var k = String(r[campo] || '-');
+            if (!g[k]) g[k] = { chave: k, aulas: 0, horas: 0, medidas: 0 };
+            g[k].aulas++;
+            if (r.diffHoras !== null && r.diffHoras > 0) { g[k].horas += r.diffHoras; g[k].medidas++; }
+        });
+        return Object.keys(g).map(function (k) { return g[k]; }).sort(function (x, y) {
+            return String(x.chave).localeCompare(String(y.chave), 'pt-BR', { numeric: true });
+        });
+    }
+    return {
+        total: registros.length,
+        horas: horas,
+        medidas: medidas,
+        porAula: agrupar('nomeAula'),
+        porTurma: agrupar('turma'),
+        porDia: agrupar('data')
+    };
+}
+function docMesTabela(titulo, itens) {
+    if (!itens.length) return '';
+    return '<div style="font-size:11px;font-weight:800;color:#0f172a;margin:10px 0 4px">' + docRelEsc(titulo) + '</div>'
+        + '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>'
+        + '<th style="background:#f1f5f9;border:1px solid #e2e8f0;padding:5px;text-align:left">Item</th>'
+        + '<th style="background:#f1f5f9;border:1px solid #e2e8f0;padding:5px;text-align:right">Aulas</th>'
+        + '<th style="background:#f1f5f9;border:1px solid #e2e8f0;padding:5px;text-align:right">Horas</th>'
+        + '</tr></thead><tbody>'
+        + itens.map(function (i) {
+            return '<tr><td style="border:1px solid #e2e8f0;padding:5px">' + docRelEsc(i.chave || '-') + '</td>'
+                + '<td style="border:1px solid #e2e8f0;padding:5px;text-align:right">' + i.aulas + '</td>'
+                + '<td style="border:1px solid #e2e8f0;padding:5px;text-align:right">' + docMesFmtNum(i.horas) + '</td></tr>';
+        }).join('')
+        + '</tbody></table>';
+}
+function docMesRender() {
+    var resumoBox = document.getElementById('doc-rel-mensal-resumo');
+    var box = document.getElementById('doc-rel-mensal-lista');
+    var tit = document.getElementById('doc-rel-mensal-titulo');
+    if (!box || !resumoBox) return;
+    var mes = (((document.getElementById('doc-rel-mensal-mes') || {}).value) || '').trim();
+    var registros = docMesFiltrar();
+    var r = docMesResumo(registros);
+    if (tit) tit.innerHTML = '<i class="fa-solid fa-calendar-days" style="color:#0d9488;margin-right:8px"></i> Relatório Mensal — '
+        + docRelEsc(docRelDocenteNome) + (mes ? ' · ' + docRelEsc(mes) : '');
+    resumoBox.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
+        + '<div style="flex:1;min-width:150px;border:1px solid #cbd5e1;border-radius:9px;padding:9px;background:#f8fafc">'
+        + '<div style="font-size:10px;color:#64748b">Aulas no mês</div><div style="font-size:20px;font-weight:800;color:#0f172a">' + r.total + '</div></div>'
+        + '<div style="flex:1;min-width:150px;border:1px solid #cbd5e1;border-radius:9px;padding:9px;background:#f8fafc">'
+        + '<div style="font-size:10px;color:#64748b">Horas apontadas</div><div style="font-size:20px;font-weight:800;color:#0d9488">' + docMesFmtNum(r.horas) + '</div>'
+        + '<div style="font-size:9px;color:#94a3b8">' + r.medidas + ' aula(s) com os dois horários</div></div>'
+        + '<div style="flex:1;min-width:150px;border:1px solid #cbd5e1;border-radius:9px;padding:9px;background:#f8fafc">'
+        + '<div style="font-size:10px;color:#64748b">Média por aula</div><div style="font-size:20px;font-weight:800;color:#1d4ed8">'
+        + (r.total ? docMesFmtNum(r.horas / r.total) : '-') + '</div></div>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">'
+        + '<div>' + docMesTabela('Por aula', r.porAula) + '</div>'
+        + '<div>' + docMesTabela('Por turma', r.porTurma) + '</div>'
+        + '<div>' + docMesTabela('Por dia', r.porDia) + '</div>'
+        + '</div>';
+    if (!registros.length) {
+        box.innerHTML = '<div style="font-size:12px;color:#64748b;padding:18px;text-align:center">Nenhuma aula deste docente no mês selecionado.</div>';
+        return;
+    }
+    var grupos = {};
+    registros.forEach(function (r2) {
+        var k = r2.curso + '|' + r2.turma;
+        if (!grupos[k]) grupos[k] = { curso: r2.curso, turma: r2.turma, aulas: [] };
+        grupos[k].aulas.push(r2);
+    });
+    box.innerHTML = Object.keys(grupos).map(function (k) {
+        var g = grupos[k];
+        return '<div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:12px;overflow:hidden">'
+            + '<div style="background:#f1f5f9;padding:8px 10px;font-size:12px;font-weight:800;color:#0f172a">'
+            + docRelEsc(g.curso) + ' · ' + docRelEsc(g.turma)
+            + ' <span style="font-size:10px;color:#64748b">(' + g.aulas.length + ' aula(s))</span></div>'
+            + g.aulas.map(function (x) {
+                var sit = docMesSituacao(x.diffHoras);
+                return '<div style="padding:9px 10px;border-bottom:1px solid #f1f5f9">'
+                    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+                    + '<div style="flex:1;min-width:220px">'
+                    + '<div style="font-size:12px"><b>' + docRelEsc(x.nomeAula) + '</b>'
+                    + ' <span style="font-size:10px;color:#64748b">' + docRelEsc(x.data) + ' ' + docRelEsc(x.horario) + '</span></div>'
+                    + '<div style="font-size:10px;color:#475569;margin-top:3px"><b>Descrição:</b> ' + docRelEsc(x.descricao) + '</div>'
+                    + '<div style="font-size:10px;margin-top:4px;color:#0f766e;background:#ccfbf1;display:inline-block;padding:2px 6px;border-radius:6px">'
+                    + '<b>Quem ficou com a aula: ' + docRelEsc(x.quemFicou) + '</b></div>'
+                    + (x.ministrou ? '<div style="font-size:10px;color:#475569;margin-top:3px">Ministrada por: <b>' + docRelEsc(x.ministrou) + '</b></div>' : '')
+                    + (x.repassadaPor ? '<div style="font-size:10px;color:#b91c1c;margin-top:3px">Repassada por: <b>' + docRelEsc(x.repassadaPor) + '</b></div>' : '')
+                    + '</div>'
+                    + '<span style="font-size:10px;font-weight:800;background:' + sit.fundo + ';color:' + sit.cor
+                    + ';padding:4px 8px;border-radius:12px">' + docRelEsc(sit.lbl) + '</span>'
+                    + '</div>'
+                    + '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:#475569;margin-top:6px">'
+                    + '<span><b>Apontamento do docente:</b> ' + docRelEsc(docMesFmtHora(x.docenteEm)) + '</span>'
+                    + '<span><b>Fechamento dos alunos:</b> ' + docRelEsc(docMesFmtHora(x.alunosEm)) + '</span>'
+                    + '<span><b>Diferença:</b> ' + docMesFmtNum(x.diffHoras) + '</span>'
+                    + '<span style="color:' + sit.cor + '"><b>' + docRelEsc(sit.lbl) + '</b></span>'
+                    + '</div></div>';
+            }).join('')
+            + '</div>';
+    }).join('');
+}
+function docRelatorioMensalCarregar() {
+    var box = document.getElementById('doc-rel-mensal-lista');
+    if (box) box.innerHTML = '<div style="font-size:12px;color:#64748b;padding:18px;text-align:center">Carregando...</div>';
+    return docMesPreparar().then(function (aulas) {
+        var inp = document.getElementById('doc-rel-mensal-mes');
+        if (inp && !inp.value) {
+            var contagem = {};
+            aulas.forEach(function (a) { var m = docMesChave(a.data); if (m) contagem[m] = (contagem[m] || 0) + 1; });
+            var melhor = '', maior = -1;
+            Object.keys(contagem).forEach(function (m) { if (contagem[m] > maior) { maior = contagem[m]; melhor = m; } });
+            inp.value = melhor || new Date().toISOString().slice(0, 7);
+        }
+        docMesRender();
+    }).catch(function (e) { alert('Erro ao carregar o relatório mensal: ' + (e && e.message ? e.message : e)); });
+}
+function abrirRelatorioMensal(id) {
+    var dbLocal = admDb();
+    if (!dbLocal) { alert('Banco de dados indisponível.'); return; }
+    return dbLocal.collection(DOC_COLECAO).doc(id).get().then(function (doc) {
+        if (!doc || !doc.exists) { alert('Docente não encontrado.'); return; }
+        var d = doc.data() || {};
+        docRelDocenteId = String(id);
+        docRelDocenteNome = d.nome || '';
+        var m = document.getElementById('doc-rel-mensal-modal');
+        var inp = document.getElementById('doc-rel-mensal-mes');
+        if (inp) inp.value = '';
+        var box = document.getElementById('doc-rel-mensal-lista');
+        if (box) box.innerHTML = '<div style="font-size:12px;color:#64748b;padding:18px;text-align:center">Carregando...</div>';
+        if (m) m.classList.remove('hidden');
+        return docRelatorioMensalCarregar();
+    }).catch(function (e) { alert('Erro ao abrir relatório mensal: ' + (e && e.message ? e.message : e)); });
+}
+function fecharRelatorioMensal() {
+    var m = document.getElementById('doc-rel-mensal-modal');
+    if (m) m.classList.add('hidden');
+}
+function imprimirRelatorioMensal() {
+    var mes = (((document.getElementById('doc-rel-mensal-mes') || {}).value) || '').trim();
+    var registros = docMesFiltrar();
+    var r = docMesResumo(registros);
+    var w = window.open('', '_blank');
+    if (!w) { alert('Permita pop-ups para imprimir.'); return; }
+    var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório Mensal — '
+        + docRelEsc(docRelDocenteNome) + '</title><style>'
+        + 'body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{font-size:18px}h2{font-size:13px;margin-top:18px;border-bottom:2px solid #1d4ed8;padding-bottom:4px}'
+        + 'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #cbd5e1;padding:6px;font-size:11px;text-align:left}th{background:#f1f5f9}'
+        + '.dono{color:#0f766e}.repasse{color:#b91c1c}.aviso{font-weight:700}</style></head><body>'
+        + '<h1>FARN — Relatório Mensal de Aulas por Docente</h1>'
+        + '<p><b>Docente:</b> ' + docRelEsc(docRelDocenteNome) + ' &nbsp; <b>Mês:</b> ' + docRelEsc(mes || 'todos')
+        + '<br><b>Aulas:</b> ' + r.total + ' &nbsp; <b>Horas apontadas:</b> ' + docMesFmtNum(r.horas)
+        + ' &nbsp; <b>Média por aula:</b> ' + (r.total ? docMesFmtNum(r.horas / r.total) : '-') + '</p>'
+        + docMesTabela('Por aula', r.porAula) + docMesTabela('Por turma', r.porTurma) + docMesTabela('Por dia', r.porDia)
+        + '<h2>Aulas do mês</h2><table><thead><tr><th>Data/Hora</th><th>Aula e descrição</th><th>Responsável</th>'
+        + '<th>Apontamento do docente</th><th>Fechamento dos alunos</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>'
+        + registros.map(function (x) {
+            var sit = docMesSituacao(x.diffHoras);
+            return '<tr><td>' + docRelEsc(x.data + ' ' + x.horario) + '</td>'
+                + '<td><b>' + docRelEsc(x.nomeAula) + '</b><br>' + docRelEsc(x.descricao) + '</td>'
+                + '<td><span class="dono"><b>' + docRelEsc(x.quemFicou) + '</b></span>'
+                + (x.ministrou ? '<br>Ministrada por ' + docRelEsc(x.ministrou) : '')
+                + (x.repassadaPor ? '<br><span class="repasse">Repassada por ' + docRelEsc(x.repassadaPor) + '</span>' : '') + '</td>'
+                + '<td>' + docRelEsc(docMesFmtHora(x.docenteEm)) + '</td>'
+                + '<td>' + docRelEsc(docMesFmtHora(x.alunosEm)) + '</td>'
+                + '<td>' + docMesFmtNum(x.diffHoras) + '</td>'
+                + '<td class="aviso" style="color:' + sit.cor + '">' + docRelEsc(sit.lbl) + '</td></tr>';
+        }).join('')
+        + '</tbody></table></body></html>';
+    w.document.open(); w.document.write(html); w.document.close();
+    setTimeout(function () { try { w.focus(); w.print(); } catch (e) {} }, 300);
+}
+function salvarRelatorioMensal() {
+    var mes = (((document.getElementById('doc-rel-mensal-mes') || {}).value) || '').trim();
+    var registros = docMesFiltrar();
+    if (!registros.length) { alert('Nenhuma aula no mês selecionado para salvar.'); return; }
+    var linhas = [[
+        'Mês', 'Docente', 'Curso', 'Turma', 'Data', 'Horário', 'Nome da aula', 'Descrição',
+        'Quem ficou com a aula', 'Ministrada por', 'Repassada por',
+        'Apontamento do docente', 'Fechamento dos alunos', 'Horas', 'Situação'
+    ]];
+    registros.forEach(function (x) {
+        var sit = docMesSituacao(x.diffHoras);
+        linhas.push([
+            mes || '', docRelDocenteNome, x.curso, x.turma, x.data, x.horario,
+            x.nomeAula, x.descricao, x.quemFicou, x.ministrou, x.repassadaPor,
+            docMesFmtHora(x.docenteEm), docMesFmtHora(x.alunosEm),
+            x.diffHoras === null ? '' : Number(x.diffHoras).toFixed(2).replace('.', ','),
+            sit.lbl
+        ]);
+    });
+    var csv = linhas.map(function (linha) {
+        return linha.map(function (v) { return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+    try {
+        var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = 'relatorio-mensal-' + String(docRelDocenteNome || 'docente').replace(/[^A-Za-z0-9_-]/g, '_') + '-' + (mes || 'todos') + '.csv';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (e) { alert('Não foi possível salvar o CSV: ' + (e && e.message ? e.message : e)); }
 }
 
 /* Helpers globais usados por app.js e cadastro-cursos.js. */

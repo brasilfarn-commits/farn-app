@@ -790,6 +790,7 @@
             dados.criadoPor = (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.nome) ? currentUserData.nome : 'Administrador';
         } else {
             dados.apontadoEm = regSalvo.apontadoEm || null;
+            dados.docenteApontadoEm = regSalvo.docenteApontadoEm || regSalvo.apontadoEm || null;
         }
         if (!dados.localizacao && !confirm('O GPS não foi capturado. Salvar o apontamento sem registro de localização?')) return;
         try {
@@ -891,6 +892,9 @@
                 presencaDocente: Object.assign({}, presencaDocente, { apontadoEm: apontadoEm }),
                 presentes: presentes, faltas: faltas, justificadas: just,
                 apontadoEm: apontadoEm,
+                /* Campo explicito: usado pelo Relatorio Mensal para separar
+                   o apontamento de presenca do docente do fechamento da turma. */
+                docenteApontadoEm: apontadoEm,
                 status: 'Apontado',
                 apontado: true,
                 atualizadoEm: apontadoEm

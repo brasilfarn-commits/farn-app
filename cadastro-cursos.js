@@ -1629,14 +1629,16 @@ async function ccLoadAulas() {
                 + '<div style="flex:1;min-width:200px">'
                 + '<b style="font-size:13px;color:#0f172a">' + ccEsc(a.conteudo || a.disciplina) + '</b><br>'
                 + '<span style="font-size:11px;color:#64748b">' + ccEsc(a.data || '') + ' ' + ccEsc(a.horario || '') + '</span>'
-                + (a.docente ? ' · <span style="font-size:10px;color:#64748b">Docente: ' + ccEsc(a.docente) + '</span>' : '')
+                + '<br><span style="font-size:10px;color:#0f766e;background:#ccfbf1;padding:2px 6px;border-radius:6px"><b>Quem ficou com a aula: '
+                + ccEsc(a.docente || a.instrutor || 'não informado') + '</b></span>'
                 + (a.enviadoApontamentoAdm ? '<br><span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">Enviada ao Apontamento ADM</span>' : '')
                 + (a.apontada ? ' <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:8px">Apontada</span>' : '')
                 + (a.repassadaDeDocenteNome
                     ? '<br><span style="font-size:10px;background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:8px">Repassada por: ' + ccEsc(a.repassadaDeDocenteNome) + '</span>'
                     : '')
-                + (a.instrutorQueMinistrou || a.docenteOriginalNome
-                    ? '<br><span style="font-size:10px;color:#0f766e">Ministrada por: ' + ccEsc(a.instrutorQueMinistrou || a.docenteOriginalNome) + '</span>'
+                + (a.apontada && (a.apontadoPorDocente || a.instrutorQueMinistrou)
+                    ? '<br><span style="font-size:10px;color:#475569">Ministrada por: <b>'
+                    + ccEsc(a.apontadoPorDocente || a.instrutorQueMinistrou) + '</b></span>'
                     : '')
                 + '</div>'
                 + '<div class="actions-cell" style="display:flex;gap:5px;flex-wrap:wrap">'
@@ -1689,6 +1691,7 @@ async function ccEnviarAulaParaApontamento(aula, aulaId) {
         aulaId: String(aulaId),
         aulaVinculada: true,
         aula: String(aula.conteudo || ''),
+        aulaDescricao: String(aula.descricao || ''),
         dataAula: String(aula.data || ''),
         horaAula: String(aula.horario || ''),
         avTeorica: aula.avTeorica || '',
@@ -1729,7 +1732,7 @@ async function ccEnviarAulaApontamento(id) {
 
 function ccLimparFormAula() {
     ccEditandoAulaId = null;
-    ['cc-aula-disciplina','cc-aula-docente','cc-aula-data','cc-aula-horario','cc-aula-conteudo','cc-aula-av-teorica','cc-aula-av-pratica'].forEach(function (id) {
+    ['cc-aula-disciplina','cc-aula-docente','cc-aula-data','cc-aula-horario','cc-aula-conteudo','cc-aula-descricao','cc-aula-av-teorica','cc-aula-av-pratica'].forEach(function (id) {
         var el = document.getElementById(id); if (el) el.value = '';
     });
     var aviso = document.getElementById('cc-aula-repassada-aviso');
@@ -1773,6 +1776,7 @@ async function ccEditarAula(id) {
     set('cc-aula-data', a.data || '');
     set('cc-aula-horario', a.horario || '');
     set('cc-aula-conteudo', a.conteudo || '');
+    set('cc-aula-descricao', a.descricao || '');
     set('cc-aula-av-teorica', a.avTeorica || '');
     set('cc-aula-av-pratica', a.avPratica || '');
     ccEditandoAulaId = a._id;
@@ -1886,6 +1890,7 @@ async function ccSalvarAula() {
         data: data,
         horario: ((document.getElementById('cc-aula-horario') || {}).value || '').trim(),
         conteudo: ((document.getElementById('cc-aula-conteudo') || {}).value || '').trim(),
+        descricao: ((document.getElementById('cc-aula-descricao') || {}).value || '').trim(),
         avTeorica: ((document.getElementById('cc-aula-av-teorica') || {}).value || ''),
         avPratica: ((document.getElementById('cc-aula-av-pratica') || {}).value || ''),
         atualizadoEm: agora

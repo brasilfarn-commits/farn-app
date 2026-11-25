@@ -285,8 +285,8 @@
                 + g.aulas.map(function (a) {
                     var apontada = pdAulaApontada(a);
                     var instrutor = a.docente || a.instrutor || 'Não informado';
-                    if (apontada && (a.instrutorQueMinistrou || a.docenteOriginalNome)) {
-                        instrutor = a.instrutorQueMinistrou || a.docenteOriginalNome;
+                    if (apontada) {
+                        instrutor = a.apontadoPorDocente || a.instrutorQueMinistrou || instrutor;
                     }
                     var proximo = a.proximoDocente || a.docenteDestino || '';
                     return '<div class="pd-aula-linha' + (apontada ? ' pd-apontada' : '') + '">'
@@ -294,6 +294,8 @@
                         + '<div style="flex:1;min-width:190px">'
                         + '<b>' + pdEsc(a.conteudo || a.disciplina || 'Aula') + '</b>'
                         + '<small>' + pdEsc([pdDataCurto(a.data), a.horario].filter(Boolean).join(' · ')) + '</small>'
+                        + '<div class="pd-instrutor" style="color:#0f766e;background:#ccfbf1;padding:2px 6px;border-radius:6px">'
+                        + '<i class="fa-solid fa-user-check" style="margin-right:5px"></i> Quem ficou com a aula: <b>' + pdEsc(a.docente || a.instrutor || 'Não informado') + '</b></div>'
                         + '<div class="pd-instrutor"><i class="fa-solid fa-chalkboard-user" style="margin-right:5px"></i> '
                         + (apontada ? 'Ministrada por: ' : 'Vai ministrar: ') + pdEsc(instrutor) + '</div>'
                         + (proximo ? '<div class="pd-instrutor" style="color:#1d4ed8">Próximo docente: ' + pdEsc(proximo) + '</div>' : '')
@@ -788,6 +790,9 @@
             alunos: alunos,
             presentes: presentes, faltas: faltas, justificadas: just,
             criadoEm: agora,
+            /* Horario do fechamento do apontamento dos alunos (usado no
+               relatorio mensal para comparar com o apontamento do docente). */
+            alunosApontadosEm: agora,
             salvoPor: pdNome()
         };
         var btn = document.getElementById('pd-btn-salvar'); if (btn) btn.disabled = true;
@@ -817,8 +822,11 @@
                     apontado: true,
                     apontadoEm: agora,
                     apontadoPor: pdNome(),
+                    apontadoPorDocente: pdNome(),
                     apontadoPorDocenteId: pdUser._docId || '',
+                    instrutorQueMinistrou: pdNome(),
                     apontamentoId: aptId,
+                    alunosApontadosEm: agora,
                     atualizadoEm: agora
                 }, { merge: true })
             );
