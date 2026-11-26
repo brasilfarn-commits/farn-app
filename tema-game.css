@@ -1,0 +1,328 @@
+/* =====================================================================
+   FARN - TEMA GAME 3D
+   Aplica ao painel administrativo e aos portais (aluno, formado,
+   coordenacao, docente e curso). Fundo da pagina permanece branco.
+   ===================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap');
+
+:root {
+    --game-blue:   #2563eb;
+    --game-yellow: #facc15;
+    --game-red:    #ef4444;
+    --game-black:  #0b1020;
+    --game-white:  #ffffff;
+    --game-green:  #22c55e;
+    --game-purple: #8b5cf6;
+    --game-orange: #f97316;
+    --game-ink:    #0f172a;
+    --game-arco: linear-gradient(100deg, var(--game-blue) 0%, var(--game-purple) 26%, var(--game-red) 52%, var(--game-orange) 74%, var(--game-yellow) 100%);
+}
+
+/* Fundo sempre branco, inclusive nas telas de login. */
+html, body { background:#fff !important; }
+
+.pa-login-wrap, .pf-login-wrap, .pd-login-wrap, .pco-login-wrap {
+    background:#fff !important;
+    position:relative;
+    overflow:hidden;
+}
+.pa-login-wrap::before, .pf-login-wrap::before, .pd-login-wrap::before, .pco-login-wrap::before {
+    content:'';
+    position:absolute;
+    left:0; right:0; top:0;
+    height:12px;
+    background:linear-gradient(90deg, var(--game-blue), var(--game-purple), var(--game-red), var(--game-orange), var(--game-yellow), var(--game-green));
+}
+.pa-login-wrap::after, .pf-login-wrap::after, .pd-login-wrap::after, .pco-login-wrap::after {
+    content:'';
+    position:absolute;
+    width:280px; height:280px;
+    right:-120px; bottom:-140px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(139,92,246,.18), transparent 68%);
+    pointer-events:none;
+}
+.pa-login-card, .pf-login-card, .pd-login-card, .pco-login-card {
+    border:2px solid var(--game-black) !important;
+    border-radius:22px !important;
+    box-shadow:0 6px 0 var(--game-blue), 0 22px 46px rgba(11,16,32,.20) !important;
+    position:relative;
+    z-index:1;
+}
+.pa-login-card h1, .pf-login-card h1, .pd-login-card h1, .pco-login-card h1,
+.pa-topbar h1, .pf-topbar h1, .pd-topbar h1, .pco-topbar h1, .pc-topbar h1 {
+    font-family:'Orbitron', Inter, sans-serif !important;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+}
+.pa-login-card button, .pf-login-card button, .pd-login-card button, .pco-login-card button {
+    background:var(--game-arco) !important;
+    color:#fff !important;
+    border:2px solid var(--game-black) !important;
+    border-radius:12px !important;
+    box-shadow:0 4px 0 var(--game-black) !important;
+    text-shadow:0 1px 3px rgba(0,0,0,.5);
+    transition:transform .16s ease, box-shadow .16s ease;
+}
+.pa-login-card button:hover, .pf-login-card button:hover, .pd-login-card button:hover, .pco-login-card button:hover {
+    transform:translateY(-2px);
+    box-shadow:0 6px 0 var(--game-black) !important;
+}
+
+/* Barras superiores em arco-iris, com faixa game na base. */
+.pa-topbar, .pf-topbar, .pd-topbar, .pco-topbar, .pc-topbar {
+    background:var(--game-arco) !important;
+    color:#fff !important;
+    border-bottom:4px solid var(--game-black) !important;
+    box-shadow:0 6px 18px rgba(11,16,32,.22) !important;
+    position:relative;
+    overflow:hidden;
+}
+.pa-topbar::after, .pf-topbar::after, .pd-topbar::after, .pco-topbar::after, .pc-topbar::after {
+    content:'';
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:5px;
+    background:repeating-linear-gradient(90deg,
+        var(--game-green) 0 20px, var(--game-yellow) 20px 40px,
+        var(--game-red) 40px 60px, var(--game-purple) 60px 80px);
+    opacity:.95;
+}
+.pa-topbar h1, .pf-topbar h1, .pd-topbar h1, .pco-topbar h1, .pc-topbar h1 {
+    color:#fff !important;
+    text-shadow:0 2px 4px rgba(0,0,0,.45);
+    font-size:16px !important;
+}
+.pa-topo-nome, .pf-topo-nome, .pd-topo-nome, .pco-topo-nome,
+.pa-topo-matricula, .pf-topo-matricula, .pd-topo-matricula, .pco-topo-matricula {
+    text-shadow:0 1px 3px rgba(0,0,0,.45);
+}
+.pa-menu-btn, .pf-menu-btn, .pd-menu-btn, .pco-menu-btn {
+    background:rgba(11,16,32,.45) !important;
+    border:1px solid rgba(255,255,255,.75) !important;
+    box-shadow:0 3px 0 rgba(11,16,32,.55) !important;
+}
+
+/* Menu lateral com niveis coloridos. */
+.pa-drawer-head, .pf-drawer-head, .pd-drawer-head, .pco-drawer-head, .pc-drawer-head {
+    background:var(--game-arco) !important;
+    border-bottom:4px solid var(--game-black);
+    color:#fff !important;
+}
+.pa-drawer-head h2, .pf-drawer-head h2, .pd-drawer-head h2, .pco-drawer-head h2, .pc-drawer-head h2 {
+    font-family:'Orbitron', Inter, sans-serif !important;
+    text-shadow:0 2px 4px rgba(0,0,0,.4);
+}
+.pa-drawer-nav button, .pf-drawer-nav button, .pd-drawer-nav button, .pco-drawer-nav button, .pc-drawer-nav button {
+    border-left:5px solid transparent !important;
+    border-radius:11px !important;
+    transition:transform .15s ease, background .15s ease;
+}
+.pa-drawer-nav button:nth-child(1), .pf-drawer-nav button:nth-child(1), .pd-drawer-nav button:nth-child(1), .pco-drawer-nav button:nth-child(1), .pc-drawer-nav button:nth-child(1) { border-left-color:var(--game-blue) !important; }
+.pa-drawer-nav button:nth-child(2), .pf-drawer-nav button:nth-child(2), .pd-drawer-nav button:nth-child(2), .pco-drawer-nav button:nth-child(2), .pc-drawer-nav button:nth-child(2) { border-left-color:var(--game-green) !important; }
+.pa-drawer-nav button:nth-child(3), .pf-drawer-nav button:nth-child(3), .pd-drawer-nav button:nth-child(3), .pco-drawer-nav button:nth-child(3), .pc-drawer-nav button:nth-child(3) { border-left-color:var(--game-red) !important; }
+.pa-drawer-nav button:nth-child(4), .pf-drawer-nav button:nth-child(4), .pd-drawer-nav button:nth-child(4), .pco-drawer-nav button:nth-child(4), .pc-drawer-nav button:nth-child(4) { border-left-color:var(--game-orange) !important; }
+.pa-drawer-nav button:hover, .pf-drawer-nav button:hover, .pd-drawer-nav button:hover, .pco-drawer-nav button:hover, .pc-drawer-nav button:hover { transform:translateX(3px); }
+.pa-drawer-nav button.ativo, .pf-drawer-nav button.ativo, .pd-drawer-nav button.ativo,
+.pco-drawer-nav button.ativo, .pc-drawer-nav button.ativo {
+    background:linear-gradient(90deg, rgba(37,99,235,.16), rgba(139,92,246,.10)) !important;
+    color:var(--game-ink) !important;
+    box-shadow:0 3px 10px rgba(37,99,235,.16) !important;
+}
+.pa-drawer-foot button, .pf-drawer-foot button, .pd-drawer-foot button, .pco-drawer-foot button {
+    border:1px solid #fecaca !important;
+    border-left:5px solid var(--game-red) !important;
+}
+
+/* Cartoes com profundidade 3D. */
+.pa-card, .pf-card, .pd-card, .pco-card, .pc-card, .pc-estado-card {
+    background:#fff !important;
+    border:1px solid #dbe3f0 !important;
+    border-radius:18px !important;
+    box-shadow:0 3px 0 rgba(37,99,235,.20), 0 14px 30px rgba(15,23,42,.10) !important;
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform .22s ease, box-shadow .22s ease;
+}
+.pa-card::before, .pf-card::before, .pd-card::before, .pco-card::before, .pc-card::before {
+    content:'';
+    position:absolute;
+    left:20px; right:20px; top:0;
+    height:4px;
+    border-radius:0 0 8px 8px;
+    background:linear-gradient(90deg, var(--game-blue), var(--game-purple), var(--game-red), var(--game-orange), var(--game-yellow), var(--game-green));
+}
+.pa-card:hover, .pf-card:hover, .pd-card:hover, .pco-card:hover, .pc-card:hover {
+    transform:translateY(-3px) rotateX(1.4deg) rotateY(-1.4deg);
+    box-shadow:0 5px 0 rgba(139,92,246,.24), 0 20px 38px rgba(15,23,42,.14) !important;
+}
+.pa-card h2, .pf-card h2, .pd-card h2, .pco-card h2, .pc-card h2,
+.pa-secao-titulo, .pf-secao-titulo, .pd-secao-titulo, .pco-secao-titulo, .pc-secao-titulo {
+    font-family:'Orbitron', Inter, sans-serif !important;
+    letter-spacing:.04em;
+    color:var(--game-ink) !important;
+}
+.pa-campo, .pf-campo, .pd-campo, .pco-campo, .pc-item, .pa-curso-item, .pf-item,
+.pc-apt-curso, .pa-apt-curso, .pc-item {
+    border:1px solid #dbe3f0 !important;
+    border-left:5px solid var(--game-purple) !important;
+    border-radius:12px !important;
+    background:#f8fbff !important;
+}
+.pa-badge, .pf-badge, .pd-badge, .pco-badge, .pc-badge,
+.pa-apt-selo, .pf-apt-selo, .pd-apt-selo, .pco-apt-selo {
+    background:linear-gradient(135deg, var(--game-purple), var(--game-blue)) !important;
+    color:#fff !important;
+    border:1px solid var(--game-black) !important;
+    box-shadow:0 3px 0 var(--game-black) !important;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    border-radius:8px !important;
+}
+.pf-btn, .pd-btn, .pco-btn, .pc-btn {
+    border:1px solid var(--game-black) !important;
+    border-bottom-width:3px !important;
+    border-radius:9px !important;
+    background:linear-gradient(135deg,#eff6ff,#e0e7ff) !important;
+    color:var(--game-ink) !important;
+    font-family:'Orbitron', Inter, sans-serif !important;
+    font-size:10px !important;
+}
+
+/* Banner dos inicios: imagem real + camada de cor, sempre com fundo branco atras. */
+#pa-view-inicio > .pa-card:first-child,
+#pf-view-inicio > .pf-card:first-child,
+#pd-view-inicio > .pd-card:first-child,
+#pco-view-inicio > .pco-card:first-child,
+#pc-view-inicio > .pc-card:first-child {
+    background:
+        linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(37,99,235,.86) 55%, rgba(139,92,246,.72) 100%),
+        url('WhatsApp%20Image%202026-08-08%20at%2015.18.01%20(2).png') center 35% / cover !important;
+    color:#fff !important;
+    border:2px solid var(--game-black) !important;
+    box-shadow:0 6px 0 var(--game-orange), 0 22px 44px rgba(11,16,32,.26) !important;
+    overflow:hidden;
+}
+#pf-view-inicio > .pf-card:first-child {
+    background:
+        linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(139,92,246,.86) 55%, rgba(249,115,22,.74) 100%),
+        url('CERTIFICADO.png') center / cover !important;
+}
+#pa-view-inicio > .pa-card:first-child h2, #pa-view-inicio > .pa-card:first-child p,
+#pf-view-inicio > .pf-card:first-child h2, #pf-view-inicio > .pf-card:first-child p,
+#pd-view-inicio > .pd-card:first-child h2, #pd-view-inicio > .pd-card:first-child p,
+#pco-view-inicio > .pco-card:first-child h2, #pco-view-inicio > .pco-card:first-child p,
+#pc-view-inicio > .pc-card:first-child h2, #pc-view-inicio > .pc-card:first-child p {
+    color:#fff !important;
+    text-shadow:0 2px 6px rgba(0,0,0,.6);
+}
+#pa-view-inicio > .pa-card:first-child::after,
+#pf-view-inicio > .pf-card:first-child::after,
+#pd-view-inicio > .pd-card:first-child::after,
+#pco-view-inicio > .pco-card:first-child::after,
+#pc-view-inicio > .pc-card:first-child::after {
+    content:'NÍVEL 01  •  FARN QUEST';
+    position:absolute;
+    top:14px; right:16px;
+    padding:5px 10px;
+    border:1px solid rgba(255,255,255,.75);
+    border-radius:8px;
+    background:rgba(11,16,32,.55);
+    color:var(--game-yellow);
+    font-family:'Orbitron', Inter, sans-serif;
+    font-size:9px;
+    letter-spacing:.12em;
+    box-shadow:0 3px 0 rgba(0,0,0,.4);
+}
+.pa-inicio-foto, .pf-inicio-foto, .pd-inicio-foto, .pco-inicio-foto {
+    border:3px solid var(--game-yellow) !important;
+    border-radius:16px !important;
+    box-shadow:0 5px 0 var(--game-black), 0 12px 22px rgba(0,0,0,.3) !important;
+}
+
+/* ---------------- PAINEL ADMINISTRADOR ---------------- */
+#screen-admin .topbar {
+    background:var(--game-arco) !important;
+    color:#fff !important;
+    border-bottom:4px solid var(--game-black) !important;
+    box-shadow:0 6px 18px rgba(11,16,32,.20) !important;
+}
+#screen-admin .topbar h1 {
+    color:#fff !important;
+    text-shadow:0 2px 4px rgba(0,0,0,.4);
+    font-family:'Orbitron', Inter, sans-serif !important;
+    letter-spacing:.06em;
+}
+#screen-admin .nav-item.active {
+    background:var(--game-arco) !important;
+    color:#fff !important;
+    border-radius:11px !important;
+    box-shadow:0 4px 12px rgba(37,99,235,.32) !important;
+    text-shadow:0 1px 2px rgba(0,0,0,.35);
+}
+#screen-admin .nav-item { border-left:4px solid transparent; }
+#screen-admin .sidebar-nav .nav-item:nth-child(3n+1) { border-left-color:var(--game-yellow); }
+#screen-admin .sidebar-nav .nav-item:nth-child(3n+2) { border-left-color:var(--game-green); }
+#screen-admin .sidebar-nav .nav-item:nth-child(3n+3) { border-left-color:var(--game-purple); }
+#screen-admin .admin-home-container {
+    background:linear-gradient(135deg, #fff 0%, #f8fbff 60%, #fff 100%) !important;
+    border:2px solid var(--game-black) !important;
+    box-shadow:0 6px 0 var(--game-blue), 0 24px 48px rgba(15,23,42,.16) !important;
+    color:var(--game-ink) !important;
+    position:relative;
+    overflow:hidden;
+}
+#screen-admin .admin-home-container::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 88% 12%, rgba(37,99,235,.14), transparent 42%),
+               radial-gradient(circle at 8% 88%, rgba(249,115,22,.13), transparent 42%);
+    pointer-events:none;
+}
+#screen-admin .admin-home-logo {
+    border:3px solid var(--game-yellow) !important;
+    box-shadow:0 6px 0 var(--game-black), 0 14px 26px rgba(11,16,32,.22) !important;
+}
+#screen-admin .admin-home-title {
+    background:var(--game-arco) !important;
+    -webkit-background-clip:text !important;
+    background-clip:text !important;
+    -webkit-text-fill-color:transparent !important;
+    color:var(--game-ink) !important;
+    font-family:'Orbitron', Inter, sans-serif !important;
+}
+#screen-admin .admin-home-subtitle,
+#screen-admin .admin-home-desc,
+#screen-admin .admin-home-divider {
+    color:#475569 !important;
+}
+#screen-admin .admin-home-divider { background:var(--game-arco) !important; opacity:1 !important; height:3px !important; border-radius:4px; }
+#screen-admin .admin-home-card {
+    background:#fff !important;
+    border:1px solid #dbe3f0 !important;
+    border-top:5px solid var(--game-purple) !important;
+    border-radius:16px !important;
+    box-shadow:0 4px 0 rgba(37,99,235,.22), 0 14px 26px rgba(15,23,42,.10) !important;
+    color:var(--game-ink) !important;
+    transition:transform .18s ease, box-shadow .18s ease;
+}
+#screen-admin .admin-home-card:nth-child(2n) { border-top-color:var(--game-orange) !important; }
+#screen-admin .admin-home-card:nth-child(3n) { border-top-color:var(--game-green) !important; }
+#screen-admin .admin-home-card:hover {
+    transform:translateY(-4px) rotateX(2deg);
+    box-shadow:0 6px 0 rgba(139,92,246,.26), 0 20px 34px rgba(15,23,42,.16) !important;
+}
+#screen-admin .admin-home-card i, #screen-admin .admin-home-card span { color:var(--game-ink) !important; }
+#screen-admin .admin-home-card i { color:var(--game-blue) !important; }
+
+/* Respeita a impressao e nao aplica efeitos 3D la. */
+@media print {
+    .pa-card, .pf-card, .pd-card, .pco-card, .pc-card, #screen-admin .admin-home-card {
+        transform:none !important;
+        box-shadow:none !important;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pa-card, .pf-card, .pd-card, .pco-card, .pc-card, #screen-admin .admin-home-card { transition:none !important; }
+}
