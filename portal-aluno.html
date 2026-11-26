@@ -94,7 +94,7 @@
         .pa-apt-amarelo .pa-apt-selo { background:#fef3c7; color:#92400e; }
         @media (max-width:520px) { .pa-topbar h1 { font-size:14px; } .pa-topo-usuario { margin-left:0; width:100%; justify-content:flex-start; text-align:left; } }
     </style>
-    <link rel="stylesheet" href="tema-game.css?v=3">
+    <link rel="stylesheet" href="tema-game.css?v=4">
 </head>
 <body>
     <div class="pa-login-wrap" id="pa-tela-login">
@@ -252,6 +252,24 @@
                 if (b) b.style.display = foto ? '' : 'none';
             });
         }
+        /* Usa, no banner inicial, a imagem cadastrada como icone do curso do
+           aluno logado. O caminho e relativo para funcionar no site e no tunel. */
+        function paAplicarIconeCurso() {
+            var card = document.querySelector('#pa-view-inicio > .pa-card:first-child');
+            if (!card) return;
+            var id = String((paUser && (paUser._cursoId || paUser.cursoId)) || '');
+            if (!id) return;
+            var url = '/api/arquivo/cursos/' + encodeURIComponent(id) + '/icone.jpg';
+            var img = new Image();
+            img.onload = function () {
+                card.style.setProperty('background-image',
+                    'linear-gradient(100deg, rgba(11,16,32,.90) 0%, rgba(37,99,235,.78) 55%, rgba(139,92,246,.62) 100%), url("' + url + '")', 'important');
+                card.style.setProperty('background-position', 'center, right center', 'important');
+                card.style.setProperty('background-size', 'cover, contain', 'important');
+                card.style.setProperty('background-repeat', 'no-repeat', 'important');
+            };
+            img.src = url;
+        }
         function paCampoSe(rotulo, valor) {
             var v = String(valor == null ? '' : valor).trim();
             return v ? paCampo(rotulo, v) : '';
@@ -293,6 +311,7 @@
             el = document.getElementById('pa-boas-vindas-nome'); if (el) el.textContent = nome.split(' ')[0];
             paAtualizarCards();
             paAplicarFoto();
+            paAplicarIconeCurso();
             paSetView('inicio');
         }
         function paCarregarDados() {
@@ -518,6 +537,7 @@
                 try { localStorage.setItem(PA_CHAVE, JSON.stringify(ainda)); } catch (e) {}
                 paAtualizarCards();
                 paAplicarFoto();
+                paAplicarIconeCurso();
             } catch (e) { console.warn('Validação da sessão do aluno:', e); }
         }
         async function paLogin(ev) {

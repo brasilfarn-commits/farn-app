@@ -189,8 +189,8 @@ html, body { background:#fff !important; }
     font-size:10px !important;
 }
 
-/* Banner dos inicios: imagem real + camada de cor, sempre com fundo branco atras. */
-#pa-view-inicio > .pa-card:first-child,
+/* Banner dos inicios: imagem real + camada de cor, sempre com fundo branco atras.
+   No portal do aluno a imagem e aplicada via JS com o icone do curso logado. */
 #pf-view-inicio > .pf-card:first-child,
 #pd-view-inicio > .pd-card:first-child,
 #pco-view-inicio > .pco-card:first-child,
@@ -198,6 +198,14 @@ html, body { background:#fff !important; }
     background:
         linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(37,99,235,.86) 55%, rgba(139,92,246,.72) 100%),
         url('WhatsApp%20Image%202026-08-08%20at%2015.18.01%20(2).png') center 35% / cover !important;
+    color:#fff !important;
+    border:2px solid var(--game-black) !important;
+    box-shadow:0 6px 0 var(--game-orange), 0 22px 44px rgba(11,16,32,.26) !important;
+    overflow:hidden;
+}
+#pa-view-inicio > .pa-card:first-child {
+    background:
+        linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(37,99,235,.86) 55%, rgba(139,92,246,.72) 100%) !important;
     color:#fff !important;
     border:2px solid var(--game-black) !important;
     box-shadow:0 6px 0 var(--game-orange), 0 22px 44px rgba(11,16,32,.26) !important;
