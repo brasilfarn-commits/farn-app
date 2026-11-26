@@ -85,7 +85,7 @@
         }
     }
 
-    function montarVinculo(cursoDoc, dados, indivId, turmaValida, projetoValido, turmaForm) {
+    function montarVinculo(cursoDoc, dados, indivId, turmaValida, projetoValido, turmaForm, turmaCert) {
         var curso = cursoDoc.data() || {};
         var turma = turmaValida || {};
         var detalhe = mesclarTurma(turmaForm, turmaValida);
@@ -102,6 +102,9 @@
             _turma: String(dados.formadoTurma || dados.turma || '').trim(),
             _turmaStatus: turmaValida ? (turma.status || turma.situacao || 'Concluido') : 'Concluido',
             _turmaDados: Object.keys(detalhe).length ? detalhe : null,
+            /* Turma do proprio curso, usada para inicio/previsao do certificado
+               mesmo quando o cadastro antigo do individuo traz outra turma. */
+            _certTurmaDados: turmaCert ? Object.assign({}, turmaCert) : null,
             _projeto: String(detalhe.projeto || turma.projeto || dados.projeto || '').trim(),
             _projetoDados: projetoValido ? Object.assign({}, projetoValido) : null,
             formadoEm: dados.formadoEm || null
@@ -135,11 +138,18 @@
             var nomeTurma = String(dados.formadoTurma || dados.turma || '').trim();
             var chaveIndividuo = chaveTurma(nomeTurma);
             var turmaValida = null;
+            var turmaCert = null;
             var turmaConcluidaAchada = false;
             var turmaEmAndamento = false;
             var turmas = await db.collection('cursosCadastro').doc(cursoDoc.id).collection('turmas').get();
             for (var t = 0; t < turmas.docs.length; t++) {
                 var turma = turmas.docs[t].data() || {};
+                /* Guarda a turma do curso com as datas preenchidas para a
+                   declaracao, independente do nome antigo do individuo. */
+                if (!turmaCert || ((turma.inicio || '') + (turma.previsao || '')).length
+                    > ((turmaCert.inicio || '') + (turmaCert.previsao || '')).length) {
+                    turmaCert = turma;
+                }
                 var chaveDoc = chaveTurma(turma.nome);
                 if (chaveIndividuo && chaveDoc !== chaveIndividuo) continue;
                 if (turmaConcluida(turma.status || turma.situacao)) {
@@ -173,7 +183,7 @@
             } catch (e) {}
 
             var turmaForm = await turmaDoFormulario(db, nomeTurma);
-            lista.push(montarVinculo(cursoDoc, dados, indiv.docs[0].id, turmaValida, projetoValido, turmaForm));
+            lista.push(montarVinculo(cursoDoc, dados, indiv.docs[0].id, turmaValida, projetoValido, turmaForm, turmaCert));
             if (apenasPrimeiro) return lista;
         }
         return lista;
@@ -184,9 +194,60 @@
         return lista.length ? lista[0] : null;
     }
 
+    /* ---------- declaracao do certificado (usada no portal e no admin) ---------- */
+    function soDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+    function fmtCpf(v) {
+        var s = soDigitos(v);
+        return s.length === 11 ? s.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : s;
+    }
+    function dataBr(v) {
+        var s = String(v == null ? '' : v).trim();
+        if (!s) return '';
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4);
+        if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.slice(0, 10);
+        var d = new Date(s);
+        if (isNaN(d.getTime())) return s.slice(0, 10);
+        return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+    }
+
+    /* Substitui os marcadores da declaracao gravada na guia Certificado.
+       Executa no navegador do formado e tambem na pre-via do administrador. */
+    function declaracaoPersonalizar(txt, individuo, opcoes) {
+        var u = individuo || {};
+        var o = opcoes || {};
+        var curso = o.curso || {};
+        var turma = o.turma || {};
+        var turmaCert = o.turmaCert || {};
+        var matricula = String(u.matricula || u.credencial || '').trim();
+        var mapa = {
+            '[CRED]': matricula,
+            '[MATRICULA]': matricula,
+            '[NOME]': String(u.nome || u.nomeCompleto || '').trim(),
+            '[CPF]': fmtCpf(u.cpf),
+            '[000.000.000-00]': fmtCpf(u.cpf),
+            '[0000000000000]': soDigitos(u.cpf),
+            '[CURSO]': String(curso._cursoNome || curso.nome || u.cursoNome || '').trim(),
+            '[TURMA]': String(curso._turma || u.formadoTurma || u.turma || turma.nome || '').trim(),
+            '[PROJETO]': String(curso._projeto || turma.projeto || u.formadoProjeto || u.projeto || '').trim(),
+            /* Inicio e Fim vem do formulario da turma do curso. Primeiro a
+               turma do proprio curso (turmaCert), depois a turma antiga do
+               individuo e, so em ultimo caso, as datas do cadastro dele. */
+            '[INICIO]': dataBr(turmaCert.inicio) || dataBr(turma.inicio)
+                || dataBr(u.dataInscricao || u.dataCadastro),
+            '[FIM]': dataBr(turmaCert.previsao) || dataBr(turma.previsao)
+                || dataBr(curso._cursoPrevisao || curso.previsao)
+                || dataBr(u.dataFinal || u.formadoEm),
+            '[DATA]': dataBr(u.formadoEm) || new Date().toLocaleDateString('pt-BR')
+        };
+        var out = String(txt == null ? '' : txt);
+        Object.keys(mapa).forEach(function (k) { out = out.split(k).join(mapa[k]); });
+        return out;
+    }
+
     global.farnFormadoLocalizar = farnFormadoLocalizar;
     global.farnFormadoListarCursos = farnFormadoListarCursos;
     global.farnFormadoConcluido = concluido;
     global.farnFormadoNormalizar = normalizar;
     global.farnFormadoChaveTurma = chaveTurma;
+    global.farnDeclaracaoPersonalizar = declaracaoPersonalizar;
 })(window);

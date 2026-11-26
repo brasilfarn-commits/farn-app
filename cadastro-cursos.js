@@ -3687,9 +3687,51 @@ function ccAvalRenderAba() {
 
 /* ============ ABA CERTIFICADOS DO CURSO ============ */
 var ccCertsCache = [];
+
+/* Contexto usado na pre-visualizacao: primeiro individuo do curso e a turma
+   dele (ou a primeira turma cadastrada). Assim os marcadores aparecem
+   substituidos tambem na guia Certificado do administrador. */
+function ccCertContexto() {
+    var pessoa = (ccIndividuosCache && ccIndividuosCache[0]) || null;
+    var turma = (ccTurmasCurso && ccTurmasCurso[0]) || null;
+    var nomeTurma = pessoa ? String(pessoa.formadoTurma || pessoa.turma || '').trim() : '';
+    if (nomeTurma && ccTurmasCurso) {
+        var chave = (typeof farnFormadoChaveTurma === 'function')
+            ? farnFormadoChaveTurma(nomeTurma)
+            : nomeTurma.toLowerCase();
+        var achada = ccTurmasCurso.find(function (t) {
+            var chaveT = (typeof farnFormadoChaveTurma === 'function')
+                ? farnFormadoChaveTurma(t.nome)
+                : String(t.nome || '').toLowerCase();
+            return chaveT === chave;
+        });
+        if (achada) turma = achada;
+    }
+    return { pessoa: pessoa, turma: turma || {} };
+}
+
+function ccDeclaracaoPersonalizada(c) {
+    var ctx = ccCertContexto();
+    var texto = String((c && c.declaracao) || '');
+    if (typeof farnDeclaracaoPersonalizar !== 'function') return texto;
+    return farnDeclaracaoPersonalizar(texto, ctx.pessoa, {
+        curso: {
+            _cursoNome: ccAtual ? ccAtual.nome : '',
+            _turma: (ctx.pessoa && String(ctx.pessoa.formadoTurma || ctx.pessoa.turma || '').trim())
+                || (ctx.turma && ctx.turma.nome) || '',
+            _projeto: ctx.turma && ctx.turma.projeto,
+            _cursoPrevisao: ctx.turma && ctx.turma.previsao
+        },
+        turma: ctx.turma || {},
+        turmaCert: ctx.turma || {}
+    });
+}
+
 async function ccInitCertificados() {
     var box = document.getElementById('cc-certs-lista');
     if (!box || !ccAtual) return;
+    if (!ccTurmasCurso || !ccTurmasCurso.length) await ccCarregarProjetosTurmas();
+    if (!ccIndividuosCache || !ccIndividuosCache.length) await ccLoadIndividuos();
     try {
         var snap = await ccRef('certificados').orderBy('criadoEm', 'desc').get();
         ccCertsCache = [];
@@ -3698,7 +3740,7 @@ async function ccInitCertificados() {
             return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;background:#fff">'
                 + '<b style="font-size:13px">' + ccEsc(c.nome || 'Certificado') + '</b> '
                 + (c.ativo !== false ? '<span style="font-size:9px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:8px;font-weight:800">ATIVO</span>' : '')
-                + '<div style="font-size:11px;color:#64748b;margin-top:4px">' + ccEsc((c.declaracao || '').substring(0, 90)) + '</div>'
+                + '<div style="font-size:11px;color:#64748b;margin-top:4px">' + ccEsc(ccDeclaracaoPersonalizada(c).substring(0, 90)) + '</div>'
                 + '<div style="display:flex;gap:6px;margin-top:8px">'
                 + '<button class="btn-outline btn-sm" onclick="ccVerCertificado(\'' + c._id + '\')"><i class="fa-solid fa-eye"></i> Ver</button>'
                 + '<button class="btn-outline btn-sm" onclick="ccAbrirFormCert(\'' + c._id + '\')"><i class="fa-solid fa-pen"></i></button>'
@@ -3774,8 +3816,11 @@ async function ccExcluirCertificado(id) {
     if (!confirm('Excluir este certificado?')) return;
     try { await ccRef('certificados', id).delete(); ccInitCertificados(); } catch (e) { alert(e.message); }
 }
-function ccVerCertificado(id) {
+async function ccVerCertificado(id) {
     var c = ccCertsCache.find(function (x) { return x._id === id; }); if (!c) return;
+    if (!ccTurmasCurso || !ccTurmasCurso.length) await ccCarregarProjetosTurmas();
+    if (!ccIndividuosCache || !ccIndividuosCache.length) await ccLoadIndividuos();
+    var ctx = ccCertContexto();
     var img = function (url) {
         return url ? '<img src="' + ccEsc(url) + '" style="max-width:80px;height:112px;object-fit:contain;margin-top:10px;border:1px solid #cbd5e1;border-radius:6px" alt="Imagem do certificado">' : '';
     };
@@ -3783,8 +3828,10 @@ function ccVerCertificado(id) {
         + '<div style="font-size:12px;font-weight:800;color:#1d4ed8;letter-spacing:2px">' + ccEsc(c.instituicao || 'FARN') + '</div>'
         + img(c.frente) + img(c.verso)
         + '<h2 style="margin:18px 0;color:#0f172a">CERTIFICADO</h2>'
-        + '<p style="font-size:14px;color:#334155;line-height:1.8">' + ccEsc(c.declaracao || '') + '</p>'
-        + '<div style="margin-top:36px;font-size:12px;color:#64748b">' + ccEsc(ccAtual ? ccAtual.nome : '') + '</div></div>';
+        + '<p style="font-size:14px;color:#334155;line-height:1.8">' + ccEsc(ccDeclaracaoPersonalizada(c)) + '</p>'
+        + '<div style="margin-top:36px;font-size:12px;color:#64748b">' + ccEsc(ccAtual ? ccAtual.nome : '') + '</div>'
+        + '<div style="margin-top:10px;font-size:10px;color:#94a3b8">Prévia com os dados de '
+        + ccEsc((ctx.pessoa && ctx.pessoa.nome) || '—') + '</div></div>';
     var tit = document.getElementById('cc-generico-titulo'); var body = document.getElementById('cc-generico-body'); var m = document.getElementById('cc-modal-generico');
     if (tit) tit.textContent = c.nome || 'Certificado';
     if (body) body.innerHTML = html;

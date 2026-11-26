@@ -62,24 +62,27 @@ $js = Get-Content -Raw -LiteralPath (Join-Path $raiz 'cadastro-cursos.js')
 if ($js -notmatch 'ccPreMsgAprovacaoWhatsApp') { throw 'Funcao da mensagem NAO encontrada em cadastro-cursos.js.' }
 if ($js -notmatch 'cpf\.substring\(0, 6\)') { throw 'Regra da senha (6 digitos do CPF) NAO encontrada.' }
 if ($js -notmatch 'ccSiteBaseURL') { throw 'Gerador da URL atual NAO encontrado em cadastro-cursos.js.' }
+if ($js -notmatch 'ccDeclaracaoPersonalizada') { throw 'cadastro-cursos.js nao personaliza a declaracao na guia Certificado.' }
 if ($js -match 'https://farn-app\.web\.app') { throw 'A URL antiga ainda esta em cadastro-cursos.js.' }
 $html = Get-Content -Raw -LiteralPath (Join-Path $raiz 'index.html')
-if ($html -notmatch 'cadastro-cursos\.js\?v=46') { throw 'index.html nao esta com cadastro-cursos.js?v=46.' }
+if ($html -notmatch 'cadastro-cursos\.js\?v=47') { throw 'index.html nao esta com cadastro-cursos.js?v=47.' }
 if ($html -notmatch 'foto3x4-visualizar\.js\?v=1') { throw 'index.html nao carrega o visualizador de zoom.' }
 if ($html -notmatch 'option value="formado"') { throw 'index.html nao tem a opcao FORMADO no login.' }
-if ($html -notmatch 'formado-acesso\.js\?v=2') { throw 'index.html nao carrega a regra de acesso do formado.' }
+if ($html -notmatch 'formado-acesso\.js\?v=3') { throw 'index.html nao carrega a regra de acesso do formado.' }
 $not = Get-Content -Raw -LiteralPath (Join-Path $raiz 'noticias.html')
-if ($not -notmatch 'formado-acesso\.js\?v=2') { throw 'noticias.html nao carrega a regra de acesso do formado.' }
+if ($not -notmatch 'formado-acesso\.js\?v=3') { throw 'noticias.html nao carrega a regra de acesso do formado.' }
 if ($not -notmatch 'app\.js\?v=136') { throw 'noticias.html nao esta com app.js?v=136.' }
 $app = Get-Content -Raw -LiteralPath (Join-Path $raiz 'app.js')
 if ($app -notmatch 'landingLoginFormado') { throw 'app.js nao tem o login do formado.' }
 $formado = Get-Content -Raw -LiteralPath (Join-Path $raiz 'formado-acesso.js')
 if ($formado -notmatch 'turmaDoFormulario') { throw 'formado-acesso.js nao le inicio/previsao da turma.' }
+if ($formado -notmatch 'farnDeclaracaoPersonalizar') { throw 'formado-acesso.js nao tem a regra da declaracao.' }
+if ($formado -notmatch "'\[CRED\]': matricula") { throw 'formado-acesso.js nao troca [CRED] pela matricula.' }
+if ($formado -notmatch "turma\.previsao") { throw 'formado-acesso.js nao usa a previsao da turma em [FIM].' }
 $portal = Get-Content -Raw -LiteralPath (Join-Path $raiz 'portal-formado.js')
-if ($portal -notmatch "'\[CRED\]': matricula") { throw 'portal-formado.js nao troca [CRED] pela matricula.' }
-if ($portal -notmatch "turma\.previsao") { throw 'portal-formado.js nao usa a previsao da turma em [FIM].' }
+if ($portal -notmatch 'farnDeclaracaoPersonalizar') { throw 'portal-formado.js nao usa a regra da declaracao.' }
 $sw = Get-Content -Raw -LiteralPath (Join-Path $raiz 'service-worker.js')
-if ($sw -notmatch 'farn-v127') { throw 'service-worker.js nao esta com o cache farn-v127.' }
+if ($sw -notmatch 'farn-v128') { throw 'service-worker.js nao esta com o cache farn-v128.' }
 if ($sw -notmatch './foto3x4-visualizar\.js') { throw 'service-worker.js nao inclui o visualizador.' }
 if ($sw -notmatch './portal-formado\.html') { throw 'service-worker.js nao inclui o portal do formado.' }
 Write-Host '[OK] Arquivos locais conferidos.'
@@ -123,7 +126,7 @@ grep -Fq 'foto3x4-visualizar.js?v=1' "$DEST/index.html"
 grep -Fq 'option value="formado"' "$DEST/index.html"
 grep -Fq 'landingLoginFormado' "$DEST/app.js"
 grep -Fq 'formado-acesso.js?v=2' "$DEST/noticias.html"
-grep -Fq 'farn-v127' "$DEST/service-worker.js"
+grep -Fq 'farn-v128' "$DEST/service-worker.js"
 test -f "$DEST/foto3x4-visualizar.js"
 test -f "$DEST/formado-acesso.js"
 test -f "$DEST/portal-formado.html"

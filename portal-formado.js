@@ -239,7 +239,7 @@
         }
         box.innerHTML = pfCertificados.map(function (r, i) {
             var inst = r.instituicao || {};
-            var resumo = String(r.declaracao || '').replace(/\s+/g, ' ').trim();
+            var resumo = pfPersonalizar(r.declaracao || '').replace(/\s+/g, ' ').trim();
             return '<div class="pf-item">'
                 + '<h3><i class="fa-solid fa-award" style="color:#1e40af"></i> ' + pfEsc(r.curso || r.nome || 'Certificado')
                 + ' <span class="pf-badge">CURSO CONCLUÍDO</span></h3>'
@@ -254,35 +254,21 @@
         }).join('');
     }
 
-    /* Substituicao da declaracao cadastrada na guia Certificado do
-       Cadastro de Curso. Cada marcador busca o valor no cadastro do
-       individuo logado, na turma(formulario) e no curso concluido. */
+    /* Usa a mesma regra do Cadastro de Curso (formado-acesso.js) para que a
+       declaracao exibida no portal seja identica a pre-via do administrador. */
     function pfPersonalizar(txt) {
-        var u = pfUser || {};
         var curso = pfCursos[0] || {};
-        var turma = curso._turmaDados || {};
-        var matricula = String(u.matricula || u.credencial || '').trim();
-        var mapa = {
-            '[NOME]': String(u.nome || u.nomeCompleto || '').trim(),
-            '[CPF]': pfFmtCpf(u.cpf),
-            '[000.000.000-00]': pfFmtCpf(u.cpf),
-            '[0000000000000]': pfSoDigitos(u.cpf),
-            '[CRED]': matricula,
-            '[MATRICULA]': matricula,
-            '[CURSO]': curso._cursoNome || u.cursoNome || '',
-            '[TURMA]': curso._turma || u.formadoTurma || u.turma || '',
-            '[PROJETO]': curso._projeto || u.formadoProjeto || u.projeto || '',
-            /* Inicio = campo inicio do formulario da turma do curso.
-               Fim = campo previsao da turma/curso. Se nao houver nada
-               gravado nesses campos, usa as datas do proprio individuo
-               para nao deixar a declaracao em branco. */
-            '[INICIO]': pfDataBr(turma.inicio) || pfDataBr(u.dataInscricao || u.dataCadastro),
-            '[FIM]': pfDataBr(turma.previsao) || pfDataBr(curso._cursoPrevisao) || pfDataBr(u.dataFinal || u.formadoEm),
-            '[DATA]': pfDataBr(u.formadoEm) || new Date().toLocaleDateString('pt-BR')
-        };
-        var out = String(txt || '');
-        Object.keys(mapa).forEach(function (k) { out = out.split(k).join(mapa[k]); });
-        return out;
+        if (typeof farnDeclaracaoPersonalizar !== 'function') return String(txt || '');
+        return farnDeclaracaoPersonalizar(txt, pfUser, {
+            curso: {
+                _cursoNome: curso._cursoNome,
+                _cursoPrevisao: curso._cursoPrevisao,
+                _turma: curso._turma,
+                _projeto: curso._projeto
+            },
+            turma: curso._turmaDados || {},
+            turmaCert: curso._certTurmaDados || {}
+        });
     }
 
     function pfAbrirCertificado(i) {
