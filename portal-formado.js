@@ -117,6 +117,24 @@
             if (pfUser) b.setAttribute('data-cpf', pfSoDigitos(pfUser.cpf));
         });
     }
+    /* Mostra no cartao inicial o icone cadastrado no curso do formado logado.
+       Caminho relativo para funcionar no site e no tunel. */
+    function pfAplicarIconeCurso() {
+        var card = document.querySelector('#pf-view-inicio > .pf-card:first-child');
+        if (!card) return;
+        var id = String((pfUser && (pfUser._cursoId || pfUser.cursoId)) || '');
+        if (!id) return;
+        var url = '/api/arquivo/cursos/' + encodeURIComponent(id) + '/icone.jpg';
+        var img = new Image();
+        img.onload = function () {
+            card.style.setProperty('background-image',
+                'linear-gradient(100deg, rgba(11,16,32,.90) 0%, rgba(139,92,246,.78) 55%, rgba(249,115,22,.62) 100%), url("' + url + '")', 'important');
+            card.style.setProperty('background-position', 'center, right center', 'important');
+            card.style.setProperty('background-size', 'cover, contain', 'important');
+            card.style.setProperty('background-repeat', 'no-repeat', 'important');
+        };
+        img.src = url;
+    }
 
     function pfAtualizarCursos() {
         var box = document.getElementById('pf-inicio-cursos');
@@ -149,6 +167,7 @@
         el = document.getElementById('pf-boas-vindas-nome'); if (el) el.textContent = nome.split(' ')[0];
         pfAtualizarCursos();
         pfAplicarFoto();
+        pfAplicarIconeCurso();
         pfSetView('inicio');
     }
 
@@ -336,6 +355,7 @@
             try { localStorage.setItem(PF_CHAVE, JSON.stringify(ainda)); } catch (e) {}
             pfAtualizarCursos();
             pfAplicarFoto();
+            pfAplicarIconeCurso();
         } catch (e) { console.warn('Validação da sessão do formado:', e); }
     }
 

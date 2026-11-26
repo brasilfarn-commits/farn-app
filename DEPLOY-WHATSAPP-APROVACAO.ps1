@@ -83,13 +83,13 @@ if ($formado -notmatch "turma\.previsao") { throw 'formado-acesso.js nao usa a p
 $portal = Get-Content -Raw -LiteralPath (Join-Path $raiz 'portal-formado.js')
 if ($portal -notmatch 'farnDeclaracaoPersonalizar') { throw 'portal-formado.js nao usa a regra da declaracao.' }
 $sw = Get-Content -Raw -LiteralPath (Join-Path $raiz 'service-worker.js')
-if ($sw -notmatch 'farn-v132') { throw 'service-worker.js nao esta com o cache farn-v132.' }
+if ($sw -notmatch 'farn-v133') { throw 'service-worker.js nao esta com o cache farn-v133.' }
 if ($sw -notmatch './foto3x4-visualizar\.js') { throw 'service-worker.js nao inclui o visualizador.' }
 if ($sw -notmatch './portal-formado\.html') { throw 'service-worker.js nao inclui o portal do formado.' }
 if ($sw -notmatch './tema-game\.css') { throw 'service-worker.js nao inclui o tema game.' }
 $tema = Get-Content -Raw -LiteralPath (Join-Path $raiz 'tema-game.css')
 if ($tema -notmatch 'TEMA GAME 3D') { throw 'tema-game.css nao encontrado ou incompleto.' }
-if ($html -notmatch 'tema-game\.css\?v=4') { throw 'index.html nao carrega o tema game.' }
+if ($html -notmatch 'tema-game\.css\?v=5') { throw 'index.html nao carrega o tema game.' }
 Write-Host '[OK] Arquivos locais conferidos.'
 
 if (!(Get-Command scp -ErrorAction SilentlyContinue)) { throw 'scp nao encontrado (OpenSSH Client).' }
@@ -133,10 +133,10 @@ grep -Fq 'foto3x4-visualizar.js?v=1' "$DEST/index.html"
 grep -Fq 'option value="formado"' "$DEST/index.html"
 grep -Fq 'landingLoginFormado' "$DEST/app.js"
 grep -Fq 'formado-acesso.js?v=3' "$DEST/noticias.html"
-grep -Fq 'farn-v132' "$DEST/service-worker.js"
+grep -Fq 'farn-v133' "$DEST/service-worker.js"
 grep -Fq './tema-game.css' "$DEST/service-worker.js"
 grep -Fq 'TEMA GAME 3D' "$DEST/tema-game.css"
-grep -Fq 'tema-game.css?v=4' "$DEST/index.html"
+grep -Fq 'tema-game.css?v=5' "$DEST/index.html"
 test -f "$DEST/foto3x4-visualizar.js"
 test -f "$DEST/formado-acesso.js"
 test -f "$DEST/portal-formado.html"

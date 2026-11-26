@@ -190,8 +190,8 @@ html, body { background:#fff !important; }
 }
 
 /* Banner dos inicios: imagem real + camada de cor, sempre com fundo branco atras.
-   No portal do aluno a imagem e aplicada via JS com o icone do curso logado. */
-#pf-view-inicio > .pf-card:first-child,
+   Nos portais do aluno e do formado a imagem e aplicada via JS com o icone
+   cadastrado no curso de cada usuario. */
 #pd-view-inicio > .pd-card:first-child,
 #pco-view-inicio > .pco-card:first-child,
 #pc-view-inicio > .pc-card:first-child {
@@ -213,8 +213,7 @@ html, body { background:#fff !important; }
 }
 #pf-view-inicio > .pf-card:first-child {
     background:
-        linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(139,92,246,.86) 55%, rgba(249,115,22,.74) 100%),
-        url('CERTIFICADO.png') center / cover !important;
+        linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(139,92,246,.86) 55%, rgba(249,115,22,.74) 100%) !important;
 }
 #pa-view-inicio > .pa-card:first-child h2, #pa-view-inicio > .pa-card:first-child p,
 #pf-view-inicio > .pf-card:first-child h2, #pf-view-inicio > .pf-card:first-child p,
