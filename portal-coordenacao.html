@@ -150,7 +150,7 @@
             <button class="pco-menu-btn" onclick="pcoAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
             <h1>FARN · Portal da Coordenação</h1>
             <div class="pco-topo-usuario">
-                <img id="pco-foto-topo" class="pco-sem-foto" src="" alt="Foto do coordenador">
+                <span class="farn-foto-wrap"><img id="pco-foto-topo" class="pco-sem-foto" src="" alt="Foto do coordenador"><button type="button" id="pco-foto-topo-ampliar" class="farn-foto-ampliar" data-titulo="Foto do coordenador" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
                 <div>
                     <div class="pco-topo-nome" id="pco-nome-topo">Coordenação</div>
                     <div class="pco-topo-matricula" id="pco-matricula-topo">Matrícula: —</div>
@@ -176,7 +176,7 @@
                 <h2 class="pco-secao-titulo">Início</h2>
                 <div class="pco-card">
                     <div class="pco-inicio-topo">
-                        <img id="pco-inicio-foto" class="pco-inicio-foto" src="" alt="Foto 3x4" style="display:none">
+                        <span class="farn-foto-wrap"><img id="pco-inicio-foto" class="pco-inicio-foto" src="" alt="Foto 3x4" style="display:none"><button type="button" id="pco-inicio-foto-ampliar" class="farn-foto-ampliar" data-titulo="Foto 3x4" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
                         <div style="flex:1;min-width:220px">
                             <div style="font-size:18px;font-weight:800;color:#0f172a" id="pco-inicio-nome">Coordenação</div>
                             <div style="font-size:12px;color:#64748b;margin-top:4px" id="pco-inicio-info">—</div>
@@ -366,9 +366,10 @@
         var ADMIN_CPF = '';
         var dbFirestore = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
     </script>
-    <script src="campos-pessoa-comuns.js?v=3"></script>
+    <script src="campos-pessoa-comuns.js?v=4"></script>
+    <script src="foto3x4-visualizar.js?v=1"></script>
     <script src="portal-permissoes.js?v=9"></script>
-    <script src="coordenacao.js?v=15"></script>
-    <script src="portal-coordenacao.js?v=3"></script>
+    <script src="coordenacao.js?v=16"></script>
+    <script src="portal-coordenacao.js?v=4"></script>
 </body>
 </html>

@@ -148,6 +148,12 @@ function admDocFotoComprimir(arquivo, pronto) {
 function admDocFotoKB(dataUrl) {
     return Math.round(String(dataUrl || '').length * 3 / 4 / 1024);
 }
+function admFotoBotaoHTML(nome, visivel) {
+    var titulo = String(nome || 'Foto 3x4').replace(/["'<]/g, '');
+    return '<button type="button" class="farn-foto-ampliar" data-titulo="' + titulo + '"'
+        + ' title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom"'
+        + (visivel === false ? ' style="display:none"' : '') + '><i class="fa-solid fa-magnifying-glass-plus"></i></button>';
+}
 function admUsuarioAtual() {
     try {
         var u = JSON.parse(localStorage.getItem('usuarioLogado') || localStorage.getItem('adminUsuario') || 'null');
@@ -299,9 +305,9 @@ function criarCadastroAdminPessoa(cfg) {
         } else if (tipo === 'foto') {
             var fotoAtual = valor ? String(valor) : '';
             input = '<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">'
-                + '<div id="' + P + '-foto-preview" style="width:72px;height:96px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#f1f5f9;display:flex;align-items:center;justify-content:center">'
-                + (fotoAtual ? '<img src="' + v + '" style="width:100%;height:100%;object-fit:cover">'
-                             : '<i class="fa-solid fa-image" style="font-size:22px;color:#94a3b8"></i>')
+                + '<div id="' + P + '-foto-preview" class="farn-foto-wrap" style="width:72px;height:96px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#f1f5f9;display:flex;align-items:center;justify-content:center">'
+                + (fotoAtual ? '<img src="' + v + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">' + admFotoBotaoHTML('Foto 3x4')
+                             : '<i class="fa-solid fa-image" style="font-size:22px;color:#94a3b8"></i>' + admFotoBotaoHTML('Foto 3x4', false))
                 + '</div>'
                 + '<div><input type="hidden" id="' + id + '" value="' + v + '">'
                 + '<input type="file" id="' + P + '-foto-file" accept="image/*" style="display:none" onchange="' + P + 'FotoArquivo(this.files)">'
@@ -400,7 +406,7 @@ function criarCadastroAdminPessoa(cfg) {
             var campoFoto = el('fotoUrl');
             if (campoFoto) campoFoto.value = dataUrl;
             var prev = el('foto-preview');
-            if (prev) prev.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover">';
+            if (prev) prev.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">' + admFotoBotaoHTML('Foto 3x4');
             if (status) {
                 status.textContent = 'Foto anexada (' + admDocFotoKB(dataUrl) + ' KB). Clique em Salvar para gravar.';
                 status.style.color = '#16a34a';
@@ -413,7 +419,7 @@ function criarCadastroAdminPessoa(cfg) {
         var file = el('foto-file');
         if (file) file.value = '';
         var prev = el('foto-preview');
-        if (prev) prev.innerHTML = '<i class="fa-solid fa-image" style="font-size:22px;color:#94a3b8"></i>';
+        if (prev) prev.innerHTML = '<i class="fa-solid fa-image" style="font-size:22px;color:#94a3b8"></i>' + admFotoBotaoHTML('Foto 3x4', false);
         var status = el('foto-status');
         if (status) { status.textContent = 'Foto será removida ao salvar.'; status.style.color = '#f57f17'; }
     }

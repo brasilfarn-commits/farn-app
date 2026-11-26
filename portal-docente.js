@@ -201,6 +201,10 @@
             if (foto) { el.src = foto; el.style.display = ''; el.classList.remove(x[1]); }
             else { el.style.display = 'none'; el.classList.add(x[1]); }
         });
+        ['pd-foto-topo-ampliar', 'pd-inicio-foto-ampliar'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b) b.style.display = foto ? '' : 'none';
+        });
         var badges = document.getElementById('pd-inicio-badges');
         if (badges) {
             badges.innerHTML = '<span class="pd-selo pd-selo-presente">' + pdCursos.length + ' curso(s)</span> '

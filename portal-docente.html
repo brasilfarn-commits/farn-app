@@ -156,7 +156,7 @@
             <button class="pd-menu-btn" onclick="pdAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
             <h1>FARN · Portal do Docente</h1>
             <div class="pd-topo-usuario">
-                <img id="pd-foto-topo" class="pd-sem-foto" src="" alt="Foto do docente">
+                <span class="farn-foto-wrap"><img id="pd-foto-topo" class="pd-sem-foto" src="" alt="Foto do docente"><button type="button" id="pd-foto-topo-ampliar" class="farn-foto-ampliar" data-titulo="Foto do docente" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
                 <div>
                     <div class="pd-topo-nome" id="pd-nome-topo">Docente</div>
                     <div class="pd-topo-matricula" id="pd-matricula-topo">Matrícula: —</div>
@@ -196,7 +196,7 @@
                 <h2 class="pd-secao-titulo">Início</h2>
                 <div class="pd-card">
                     <div class="pd-inicio-topo">
-                        <img id="pd-inicio-foto" class="pd-inicio-foto" src="" alt="Foto 3x4 do docente" style="display:none">
+                        <span class="farn-foto-wrap"><img id="pd-inicio-foto" class="pd-inicio-foto" src="" alt="Foto 3x4 do docente" style="display:none"><button type="button" id="pd-inicio-foto-ampliar" class="farn-foto-ampliar" data-titulo="Foto 3x4 do docente" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
                         <div style="flex:1;min-width:220px">
                             <div style="font-size:18px;font-weight:800;color:#0f172a" id="pd-inicio-nome">Docente</div>
                             <div style="font-size:12px;color:#64748b;margin-top:4px" id="pd-inicio-guerra">—</div>
@@ -290,7 +290,8 @@
     </div>
 
     <script src="farn-db.js?v=22"></script>
-    <script src="campos-pessoa-comuns.js?v=3"></script>
-    <script src="portal-docente.js?v=6"></script>
+    <script src="campos-pessoa-comuns.js?v=4"></script>
+    <script src="foto3x4-visualizar.js?v=1"></script>
+    <script src="portal-docente.js?v=7"></script>
 </body>
 </html>

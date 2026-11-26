@@ -271,6 +271,10 @@
             if (foto) { img.src = foto; img.style.display = ''; img.classList.remove('pco-sem-foto'); }
             else { img.style.display = 'none'; img.classList.add('pco-sem-foto'); }
         });
+        ['pco-foto-topo-ampliar', 'pco-inicio-foto-ampliar'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b) b.style.display = foto ? '' : 'none';
+        });
     }
     function pcoMostrarApp() {
         var login = document.getElementById('pco-tela-login'), app = document.getElementById('pco-tela-app');

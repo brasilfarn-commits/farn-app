@@ -972,6 +972,23 @@ async function ccPrePromoverIndividuo(c) {
     var ref = await ccRef('individuos').add(dados);
     return ref.id;
 }
+/* URL atual do site. Antes era fixa e ficava desatualizada
+   quando o tunel mudava. No servidor proprio usa a propria origem; em testes
+   locais usa a URL configurada em Configurar Servidor. */
+function ccSiteBaseURL() {
+    try {
+        if (/^https?:$/.test(location.protocol) && location.hostname
+            && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'
+            && location.hostname !== 'farn-app.web.app'
+            && location.hostname.indexOf('github.io') < 0) {
+            return String(location.origin).replace(/\/$/, '');
+        }
+        var cfg = JSON.parse(localStorage.getItem('farn_api_config') || 'null');
+        if (cfg && cfg.url) return String(cfg.url).replace(/\/$/, '');
+    } catch (e) {}
+    return 'https://howto-alliance-pest-contest.trycloudflare.com';
+}
+
 /* Texto da mensagem enviada pelo WhatsApp ao aprovar o pre-inscrito.
    Nome e CPF vem do cadastro; a senha e sempre os seis primeiros digitos
    do CPF (a mesma gravada no individuo na aprovacao). */
@@ -985,7 +1002,7 @@ function ccPreMsgAprovacaoWhatsApp(c) {
     return 'Parabéns, ' + nome + '!\n\n'
         + 'Ao analisar seu pré-cadastro, verificamos que você se enquadra no perfil para o curso de ' + curso + '.\n\n'
         + 'Somos uma instituição que promove cursos filantrópicos em todo o Estado.\n\n'
-        + 'A partir de agora você pode acompanhar tudo através do nosso grupo de WhatsApp e pelo Portal do Aluno em nosso site (https://farn-app.web.app).\n\n'
+        + 'A partir de agora você pode acompanhar tudo através do nosso grupo de WhatsApp e pelo Portal do Aluno em nosso site (' + ccSiteBaseURL() + ').\n\n'
         + 'Este é o seu acesso: escolha ALUNO, digite seu CPF e senha para ter acesso a tudo do curso.\n\n'
         + 'Nome: ' + nome + '\n'
         + 'CPF: ' + cpfExibicao + '\n'
@@ -1022,9 +1039,15 @@ async function ccPreMudarStatus(id, status) {
         if (status === 'Ativo') {
             alert('Aprovado e incluído na lista de indivíduos deste curso.');
             var wpp = String(c.whatsapp || c.telefone || c.fone || '').trim();
-            if (wpp && typeof farnGerarLinkWhatsApp === 'function') {
+            if (!wpp) {
+                alert('Aprovação concluída, mas este cadastro não possui WhatsApp informado. A mensagem não foi enviada.\nPreencha o campo Telefone / WhatsApp na pré-inscrição e aprove novamente.');
+            } else if (typeof farnGerarLinkWhatsApp !== 'function') {
+                alert('Aprovação concluída, mas o gerador de link do WhatsApp não está disponível nesta página.');
+            } else {
                 var linkWa = farnGerarLinkWhatsApp(wpp, ccPreMsgAprovacaoWhatsApp(c));
-                if (linkWa && confirm('Enviar a mensagem de aprovação pelo WhatsApp para ' + (c.nome || 'o pré-inscrito') + '?')) {
+                if (!linkWa) {
+                    alert('Aprovação concluída, mas o WhatsApp "' + wpp + '" não é válido. Confira o número no cadastro.');
+                } else if (confirm('Enviar a mensagem de aprovação pelo WhatsApp para ' + (c.nome || 'o pré-inscrito') + '?')) {
                     window.open(linkWa, '_blank');
                 }
             }
@@ -1053,7 +1076,7 @@ async function ccPreGerarLink(modo) {
     if (res) res.innerHTML = '<span style="font-size:12px;color:#7c3aed"><i class="fa-solid fa-spinner fa-spin"></i> Gerando...</span>';
     try {
         var token = 'PL' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-        var base = (location.hostname.indexOf('github.io') >= 0 || location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'https://farn-app.web.app' : location.origin;
+        var base = ccSiteBaseURL();
         var link = base + '/pre-inscricao-via-link.html?v=24&curso=' + encodeURIComponent(ccAtual._id) + '&token=' + token;
         await ccRef('linksPreInscricao', token).set({
             token: token, projeto: projeto, turma: turma, curso: projeto,
@@ -3011,7 +3034,10 @@ async function ccInitFicha() {
             var aplicar = function (src) {
                 if (!src) return;
                 var el = document.getElementById('cc-fg-foto-' + i);
-                if (el) el.innerHTML = '<img src="' + ccEsc(src) + '" alt="Foto 3x4" style="width:92px;height:122px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">';
+                if (el) el.innerHTML = '<img src="' + ccEsc(src) + '" alt="Foto 3x4" style="width:92px;height:122px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">'
+                    + '<button type="button" class="farn-foto-ampliar" data-titulo="' + ccEsc(pessoa.nome || 'Foto 3x4') + '"'
+                    + (String(pessoa.cpf || '').replace(/\D/g, '') ? ' data-cpf="' + String(pessoa.cpf).replace(/\D/g, '') + '"' : '')
+                    + ' title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></button>';
                 item.foto = src;
             };
             var digits = String(pessoa.cpf || '').replace(/\D/g, '');
@@ -3038,9 +3064,14 @@ function ccFichaCursoFolha(item, fotoSrc, idx) {
     var turma = p.turma || '—';
     var telefone = p.telefone || p.fone || p.whatsapp || '';
 
+    var cpfDigits = String(p.cpf || '').replace(/\D/g, '');
+    var botaoZoom = '<button type="button" class="farn-foto-ampliar" data-titulo="' + ccEsc(nome) + '"'
+        + (cpfDigits ? ' data-cpf="' + cpfDigits + '"' : '')
+        + ' title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></button>';
     var fotoHtml = fotoSrc
-        ? '<img src="' + ccEsc(fotoSrc) + '" alt="Foto 3x4" style="width:92px;height:122px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">'
-        : '<div id="cc-fg-foto-' + idx + '" style="width:92px;height:122px;border:2px dashed #94a3b8;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;text-align:center;padding:4px;box-sizing:border-box">Sem foto</div>';
+        ? '<span class="farn-foto-wrap"><img src="' + ccEsc(fotoSrc) + '" alt="Foto 3x4" style="width:92px;height:122px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">'
+            + botaoZoom + '</span>'
+        : '<div id="cc-fg-foto-' + idx + '" class="farn-foto-wrap" style="width:92px;height:122px;border:2px dashed #94a3b8;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;text-align:center;padding:4px;box-sizing:border-box">Sem foto</div>';
 
     /* 1) Dados da instituicao (configuracoes/instituicao) */
     var contatos = (typeof fgChipContato === 'function')

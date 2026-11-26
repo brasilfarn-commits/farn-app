@@ -955,8 +955,11 @@ function fichaGeralFolha(c, calc, fotoSrc, idx, aulas) {
     const st = c.status || '—';
     const stCor = fichaGeralStatusCor(st);
     const fotoHtml = fotoSrc
-        ? '<img src="' + fotoSrc + '" alt="Foto 3x4" style="width:86px;height:114px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">'
-        : '<div id="fg-foto-' + idx + '" style="width:86px;height:114px;border:2px dashed #94a3b8;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;text-align:center;padding:4px;box-sizing:border-box">Carregando foto...<i class="fa-solid fa-spinner fa-spin" style="margin-left:6px"></i></div>';
+        ? '<span class="farn-foto-wrap"><img src="' + fotoSrc + '" alt="Foto 3x4" style="width:86px;height:114px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">'
+            + '<button type="button" class="farn-foto-ampliar" data-titulo="' + String(nome || 'Foto 3x4').replace(/["'<]/g, '') + '"'
+            + (String(c.cpf || '').replace(/\D/g, '') ? ' data-cpf="' + String(c.cpf).replace(/\D/g, '') + '"' : '')
+            + ' title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>'
+        : '<div id="fg-foto-' + idx + '" class="farn-foto-wrap" style="width:86px;height:114px;border:2px dashed #94a3b8;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;text-align:center;padding:4px;box-sizing:border-box">Carregando foto...<i class="fa-solid fa-spinner fa-spin" style="margin-left:6px"></i></div>';
 
     // Secao 1 - Dados Pessoais
     const secoes = [];

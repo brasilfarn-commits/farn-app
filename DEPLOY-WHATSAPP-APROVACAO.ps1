@@ -1,10 +1,9 @@
 # =====================================================================
-#  FARN - deploy COM SUDO dos arquivos alterados (WhatsApp na aprovacao)
+#  FARN - deploy COM SUDO das alteracoes (WhatsApp, zoom e Portal do Formado)
 # ---------------------------------------------------------------------
-#  Envia somente cadastro-cursos.js e index.html e aplica com sudo numa
-#  UNICA sessao SSH (evita o "Connection closed" do envio completo).
-#  O servidor.js NAO foi alterado, por isso nao e enviado/reiniciado
-#  separadamente; o servico e reiniciado no final do comando sudo.
+#  Envia somente os arquivos alterados e aplica com sudo numa UNICA
+#  sessao SSH (evita o "Connection closed" do envio completo do site).
+#  O servidor.js NAO foi alterado; o servico so e reiniciado no final.
 #
 #  Senha SSH : pedida pelo scp (uma vez).
 #  Senha sudo: parametro -SudoSenha, variavel FARN_SUDO_SENHA ou prompt.
@@ -25,27 +24,65 @@ $ErrorActionPreference = 'Stop'
 $raiz = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $raiz
 
-$arquivos = @('cadastro-cursos.js', 'index.html')
+$arquivos = @(
+    'app.js',
+    'cadastro-cursos.js',
+    'cadastro-cursos-nucleo.js',
+    'campos-pessoa-comuns.js',
+    'coordenacao.js',
+    'ficha-geral-compartilhar.js',
+    'formado-acesso.js',
+    'foto3x4-visualizar.js',
+    'noticias-feed.js',
+    'portal-formado.html',
+    'portal-formado.js',
+    'service-worker.js',
+    'index.html',
+    'consultar-regularidade.html',
+    'noticias.html',
+    'portal-aluno.html',
+    'portal-coordenacao.html',
+    'portal-coordenacao.js',
+    'portal-curso.html',
+    'portal-docente.html',
+    'portal-docente.js',
+    'pre-inscricao-via-link.html',
+    'recadastramento.html'
+)
 
 Write-Host '======================================================'
-Write-Host ' FARN - deploy COM SUDO: WhatsApp na aprovacao'
+Write-Host ' FARN - deploy COM SUDO: WhatsApp, zoom e Portal do Formado'
 Write-Host " Origem  : $raiz"
 Write-Host " Destino : $Destino`:$PastaRemota/servidor/public/"
+Write-Host " Arquivos: $($arquivos.Count)"
 Write-Host '======================================================'
 
-# Conferencia de seguranca: nao envia se a alteracao nao estiver nos arquivos.
+# Conferencias locais: nao envia nada se uma alteracao estiver faltando.
 $js = Get-Content -Raw -LiteralPath (Join-Path $raiz 'cadastro-cursos.js')
-if ($js -notmatch 'ccPreMsgAprovacaoWhatsApp') {
-    throw 'Alteracao do WhatsApp NAO encontrada em cadastro-cursos.js.'
-}
-if ($js -notmatch 'cpf\.substring\(0, 6\)') {
-    throw 'Regra da senha (6 digitos do CPF) NAO encontrada em cadastro-cursos.js.'
-}
+if ($js -notmatch 'ccPreMsgAprovacaoWhatsApp') { throw 'Funcao da mensagem NAO encontrada em cadastro-cursos.js.' }
+if ($js -notmatch 'cpf\.substring\(0, 6\)') { throw 'Regra da senha (6 digitos do CPF) NAO encontrada.' }
+if ($js -notmatch 'ccSiteBaseURL') { throw 'Gerador da URL atual NAO encontrado em cadastro-cursos.js.' }
+if ($js -match 'https://farn-app\.web\.app') { throw 'A URL antiga ainda esta em cadastro-cursos.js.' }
 $html = Get-Content -Raw -LiteralPath (Join-Path $raiz 'index.html')
-if ($html -notmatch 'cadastro-cursos\.js\?v=44') {
-    throw 'index.html nao esta com cadastro-cursos.js?v=44.'
-}
-Write-Host '[OK] Arquivos locais conferidos: cadastro-cursos.js e index.html'
+if ($html -notmatch 'cadastro-cursos\.js\?v=46') { throw 'index.html nao esta com cadastro-cursos.js?v=46.' }
+if ($html -notmatch 'foto3x4-visualizar\.js\?v=1') { throw 'index.html nao carrega o visualizador de zoom.' }
+if ($html -notmatch 'option value="formado"') { throw 'index.html nao tem a opcao FORMADO no login.' }
+if ($html -notmatch 'formado-acesso\.js\?v=2') { throw 'index.html nao carrega a regra de acesso do formado.' }
+$not = Get-Content -Raw -LiteralPath (Join-Path $raiz 'noticias.html')
+if ($not -notmatch 'formado-acesso\.js\?v=2') { throw 'noticias.html nao carrega a regra de acesso do formado.' }
+if ($not -notmatch 'app\.js\?v=136') { throw 'noticias.html nao esta com app.js?v=136.' }
+$app = Get-Content -Raw -LiteralPath (Join-Path $raiz 'app.js')
+if ($app -notmatch 'landingLoginFormado') { throw 'app.js nao tem o login do formado.' }
+$formado = Get-Content -Raw -LiteralPath (Join-Path $raiz 'formado-acesso.js')
+if ($formado -notmatch 'turmaDoFormulario') { throw 'formado-acesso.js nao le inicio/previsao da turma.' }
+$portal = Get-Content -Raw -LiteralPath (Join-Path $raiz 'portal-formado.js')
+if ($portal -notmatch "'\[CRED\]': matricula") { throw 'portal-formado.js nao troca [CRED] pela matricula.' }
+if ($portal -notmatch "turma\.previsao") { throw 'portal-formado.js nao usa a previsao da turma em [FIM].' }
+$sw = Get-Content -Raw -LiteralPath (Join-Path $raiz 'service-worker.js')
+if ($sw -notmatch 'farn-v127') { throw 'service-worker.js nao esta com o cache farn-v127.' }
+if ($sw -notmatch './foto3x4-visualizar\.js') { throw 'service-worker.js nao inclui o visualizador.' }
+if ($sw -notmatch './portal-formado\.html') { throw 'service-worker.js nao inclui o portal do formado.' }
+Write-Host '[OK] Arquivos locais conferidos.'
 
 if (!(Get-Command scp -ErrorAction SilentlyContinue)) { throw 'scp nao encontrado (OpenSSH Client).' }
 if (!(Get-Command ssh -ErrorAction SilentlyContinue)) { throw 'ssh nao encontrado (OpenSSH Client).' }
@@ -56,30 +93,42 @@ if (-not $SudoSenha) {
         [Runtime.InteropServices.Marshal]::SecureStringToBSTR($segura))
 }
 
-# Pasta temporaria local com so os dois arquivos -> uma unica conexao scp.
-$tmpLocal = Join-Path $env:TEMP 'farn-deploy-wa'
+# Pasta temporaria so com os arquivos alterados -> uma unica conexao scp.
+$tmpLocal = Join-Path $env:TEMP 'farn-deploy-atual'
 if (Test-Path -LiteralPath $tmpLocal) { Remove-Item -LiteralPath $tmpLocal -Recurse -Force }
 New-Item -ItemType Directory -Path $tmpLocal -Force | Out-Null
 foreach ($nome in $arquivos) {
-    Copy-Item -LiteralPath (Join-Path $raiz $nome) -Destination (Join-Path $tmpLocal $nome) -Force
+    $origem = Join-Path $raiz $nome
+    if (!(Test-Path -LiteralPath $origem)) { throw "Arquivo local ausente: $nome" }
+    Copy-Item -LiteralPath $origem -Destination (Join-Path $tmpLocal $nome) -Force
 }
 
-try {
-    Write-Host ''
-    Write-Host '[1/2] Enviando arquivos (digite a senha SSH)...'
-    & scp -P "$Porta" -o 'StrictHostKeyChecking=no' -r $tmpLocal "${Destino}:/tmp/"
-    if ($LASTEXITCODE -ne 0) { throw "Falha no scp (codigo $LASTEXITCODE)" }
+$copias = ($arquivos | ForEach-Object { 'cp -f ' + $_ + ' "$DEST/' + $_ + '"' }) -join "`n"
 
-    $cmd = @"
+$modelo = @'
 set -e
-rm -f /tmp/farn-site.tgz /tmp/farn-server-novo.js
-cd /tmp/farn-deploy-wa
-cp -f cadastro-cursos.js $PastaRemota/servidor/public/cadastro-cursos.js
-cp -f index.html $PastaRemota/servidor/public/index.html
-rm -rf /tmp/farn-deploy-wa
-grep -Fq 'ccPreMsgAprovacaoWhatsApp' $PastaRemota/servidor/public/cadastro-cursos.js
-grep -Fq 'cadastro-cursos.js?v=44' $PastaRemota/servidor/public/index.html
-echo '[OK] Arquivos conferidos no servidor.'
+DEST=__DEST__
+rm -f /tmp/farn-site.tgz /tmp/farn-server-novo.js /tmp/farn-deploy-wa
+cd /tmp/farn-deploy-atual
+__COPIAS__
+rm -rf /tmp/farn-deploy-atual
+grep -Fq 'ccPreMsgAprovacaoWhatsApp' "$DEST/cadastro-cursos.js"
+grep -Fq 'ccSiteBaseURL' "$DEST/cadastro-cursos.js"
+if grep -Fq 'https://farn-app.web.app' "$DEST/cadastro-cursos.js"; then
+  echo 'ERRO: a URL antiga ainda esta no servidor.'
+  exit 1
+fi
+grep -Fq 'cadastro-cursos.js?v=46' "$DEST/index.html"
+grep -Fq 'foto3x4-visualizar.js?v=1' "$DEST/index.html"
+grep -Fq 'option value="formado"' "$DEST/index.html"
+grep -Fq 'landingLoginFormado' "$DEST/app.js"
+grep -Fq 'formado-acesso.js?v=2' "$DEST/noticias.html"
+grep -Fq 'farn-v127' "$DEST/service-worker.js"
+test -f "$DEST/foto3x4-visualizar.js"
+test -f "$DEST/formado-acesso.js"
+test -f "$DEST/portal-formado.html"
+test -f "$DEST/portal-formado.js"
+echo '[OK] Arquivos e versoes conferidos no servidor.'
 systemctl restart farn-server
 sleep 4
 echo '[2/2] Verificando...'
@@ -89,7 +138,15 @@ printf 'HTTP site: '
 curl -fsS -o /dev/null -w '%{http_code}\n' http://localhost:8787/
 echo 'URL do tunel:'
 journalctl -u farn-tunel -n 300 --no-pager 2>/dev/null | grep -o 'https://[^ ]*trycloudflare.com' | tail -1 || true
-"@
+'@
+
+$cmd = $modelo.Replace('__DEST__', "$PastaRemota/servidor/public").Replace('__COPIAS__', $copias)
+
+try {
+    Write-Host ''
+    Write-Host '[1/2] Enviando arquivos (digite a senha SSH)...'
+    & scp -P "$Porta" -o 'StrictHostKeyChecking=no' -r $tmpLocal "${Destino}:/tmp/"
+    if ($LASTEXITCODE -ne 0) { throw "Falha no scp (codigo $LASTEXITCODE)" }
 
     Write-Host '[2/2] Aplicando com sudo (digite a senha sudo)...'
     "$SudoSenha`n$cmd" | & ssh -p "$Porta" -o 'StrictHostKeyChecking=no' $Destino 'sudo -S bash -s'

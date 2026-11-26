@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farn-v124';
+const CACHE_NAME = 'farn-v127';
 const OFFLINE_URLS = [
     './',
     './index.html',
@@ -7,6 +7,7 @@ const OFFLINE_URLS = [
     './farn-db.js',
     './campos-pessoa-comuns.js',
     './foto3x4-editor.js',
+    './foto3x4-visualizar.js',
     './cadastro-cursos-nucleo.js',
     './cadastro-cursos.js',
     './coordenacao.js',
@@ -14,12 +15,17 @@ const OFFLINE_URLS = [
     './estatistica.js',
     './portal-permissoes.js',
     './aluno-acesso.js',
+    './formado-acesso.js',
+    './noticias-feed.js',
+    './certificados.js',
     './ficha-geral-compartilhar.js',
     './manifest.json',
     './logo-farn.png.png',
     './consultar-regularidade.html',
     './configurar-servidor.html',
     './portal-aluno.html',
+    './portal-formado.html',
+    './portal-formado.js',
     './portal-docente.html',
     './portal-docente.js',
     './portal-coordenacao.html',

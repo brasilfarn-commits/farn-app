@@ -17,14 +17,17 @@ $remoto = "$Destino`:$PastaRemota/servidor/public/"
 
 $arquivos = @(
     'aluno-acesso.js',
+    'formado-acesso.js',
     'app.js',
     'cadastro-cursos.js',
     'coordenacao.js',
     'index.html',
     'noticias.html',
+    'noticias-feed.js',
     'portal-aluno.html',
+    'portal-formado.html',
+    'portal-formado.js',
     'portal-permissoes.js',
-    'portal-usuario.html',
     'service-worker.js',
     'style.css'
 )

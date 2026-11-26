@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FARN - Portal do Formado</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        html, body { height:auto !important; min-height:100vh !important; overflow:visible !important; overflow-y:auto !important; }
+        body { font-family:Inter,Arial,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; -webkit-overflow-scrolling:touch; }
+        .pf-login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+            background:linear-gradient(135deg,#1e3a8a,#1e40af 45%,#0f172a); }
+        .pf-login-card { width:100%; max-width:400px; background:#fff; border-radius:18px; padding:30px;
+            box-shadow:0 18px 50px rgba(0,0,0,.28); }
+        .pf-login-card h1 { font-size:20px; color:#0f172a; margin-bottom:4px; }
+        .pf-login-card p { font-size:12px; color:#64748b; margin-bottom:22px; line-height:1.6; }
+        .pf-login-card label { display:block; font-size:11px; font-weight:700; color:#475569; margin:12px 0 4px; }
+        .pf-login-card input { width:100%; padding:11px 12px; border:1px solid #cbd5e1; border-radius:9px; font-size:14px; }
+        .pf-login-card button { width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px;
+            background:linear-gradient(135deg,#1e3a8a,#1e40af); color:#fff; font-weight:800; font-size:14px; cursor:pointer; }
+        .pf-login-card button:disabled { opacity:.6; cursor:not-allowed; }
+        .pf-erro { color:#dc2626; font-size:12px; margin-top:12px; display:none; line-height:1.5; }
+        .pf-app { display:none; }
+        .pf-topbar { background:linear-gradient(135deg,#1e3a8a,#1e40af); color:#fff; padding:12px 18px;
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .pf-topbar h1 { font-size:16px; white-space:nowrap; }
+        .pf-menu-btn { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); color:#fff;
+            border-radius:8px; padding:8px 11px; cursor:pointer; font-size:16px; line-height:1; }
+        .pf-topo-usuario { margin-left:auto; display:flex; align-items:center; gap:10px; text-align:right; }
+        #pf-foto-topo { width:38px; height:50px; object-fit:cover; border-radius:7px; border:2px solid rgba(255,255,255,.7); background:#fff; }
+        #pf-foto-topo.pf-sem-foto { display:none; }
+        .pf-topo-nome { font-size:13px; font-weight:800; line-height:1.3; }
+        .pf-topo-matricula { font-size:11px; opacity:.85; margin-top:2px; }
+        .pf-container { max-width:900px; margin:20px auto; padding:0 16px; }
+        .pf-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:18px;
+            box-shadow:0 4px 14px rgba(2,6,23,.06); }
+        .pf-card h2 { font-size:16px; color:#0f172a; margin-bottom:14px; }
+        .pf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
+        .pf-campo { border:1px solid #e2e8f0; border-radius:9px; padding:10px 12px; background:#f8fafc; }
+        .pf-campo span { display:block; font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .pf-campo b { display:block; font-size:13px; color:#0f172a; margin-top:3px; word-break:break-word; }
+        .pf-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:800;
+            background:#dbeafe; color:#1e40af; border:1px solid #bfdbfe; }
+        .pf-aviso { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px;
+            padding:12px 14px; font-size:12px; line-height:1.6; }
+        .pf-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:40; }
+        .pf-drawer-overlay.aberto { display:block; }
+        .pf-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#fff; z-index:41;
+            transform:translateX(-100%); transition:transform .22s; box-shadow:6px 0 24px rgba(0,0,0,.18);
+            display:flex; flex-direction:column; }
+        .pf-drawer.aberto { transform:translateX(0); }
+        .pf-drawer-head { background:linear-gradient(135deg,#1e3a8a,#1e40af); color:#fff; padding:20px 18px; }
+        .pf-drawer-head h2 { font-size:16px; margin-top:8px; line-height:1.3; }
+        .pf-drawer-head p { font-size:11px; opacity:.85; margin-top:3px; }
+        .pf-drawer-nav { padding:12px 10px; flex:1; }
+        .pf-drawer-nav button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:transparent; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700;
+            color:#334155; text-align:left; margin-bottom:4px; }
+        .pf-drawer-nav button:hover { background:#f1f5f9; }
+        .pf-drawer-nav button.ativo { background:#eff6ff; color:#1e40af; }
+        .pf-drawer-foot { padding:12px 10px; border-top:1px solid #e2e8f0; }
+        .pf-drawer-foot button { width:100%; display:flex; align-items:center; gap:10px; padding:12px;
+            border:none; background:#fef2f2; color:#b91c1c; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700; }
+        .pf-view { display:none; }
+        .pf-view.ativo { display:block; }
+        .pf-secao-titulo { font-size:18px; font-weight:800; color:#0f172a; margin-bottom:14px; }
+        .pf-inicio-foto { width:110px; height:150px; object-fit:cover; border-radius:14px; border:2px solid #e2e8f0; }
+        .pf-inicio-topo { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+        .pf-lista { display:flex; flex-direction:column; gap:12px; }
+        .pf-item { border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; background:#f8fafc; }
+        .pf-item h3 { font-size:14px; color:#0f172a; display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+        .pf-item p { font-size:12px; color:#475569; line-height:1.65; margin-top:8px; }
+        .pf-btn { border:1px solid #bfdbfe; background:#eff6ff; color:#1e40af; border-radius:8px;
+            padding:7px 11px; font-size:11px; font-weight:800; cursor:pointer; margin-top:10px; }
+        .pf-btn:hover { background:#dbeafe; }
+        .pf-cert-overlay { display:none; position:fixed; inset:0; z-index:60; background:rgba(15,23,42,.72);
+            align-items:center; justify-content:center; padding:18px; }
+        .pf-cert-modal { background:#fff; border-radius:16px; width:100%; max-width:760px; max-height:92vh;
+            overflow:auto; padding:22px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+        .pf-cert-modal h2 { font-size:17px; color:#1e3a8a; margin-bottom:14px; padding-right:36px; }
+        .pf-cert-fechar { position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%;
+            border:1px solid #e2e8f0; background:#f8fafc; color:#475569; cursor:pointer; font-size:16px; }
+        .pf-cert-papel { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;
+            display:flex; justify-content:center; margin-bottom:14px; }
+        .pf-cert-papel img { max-width:100%; width:100%; border:1px solid #dbeafe; border-radius:6px; }
+        .pf-cert-texto { white-space:pre-wrap; font-size:13px; color:#334155; line-height:1.8;
+            background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; }
+        @media (max-width:520px) { .pf-topbar h1 { font-size:14px; } .pf-topo-usuario { margin-left:0; width:100%; justify-content:flex-start; text-align:left; } }
+    </style>
+</head>
+<body>
+    <div class="pf-login-wrap" id="pf-tela-login">
+        <form class="pf-login-card" onsubmit="pfLogin(event)" autocomplete="off">
+            <h1><i class="fa-solid fa-user-graduate" style="color:#1e40af;margin-right:8px"></i> Portal do Formado</h1>
+            <p>Acesso aos certificados e notícias de quem concluiu curso/turma no <b>Cadastro de Cursos</b>.</p>
+            <label for="pf-cpf">CPF</label>
+            <input type="text" id="pf-cpf" placeholder="000.000.000-00" maxlength="14" oninput="pfFormatCpf(this)">
+            <label for="pf-senha">Senha</label>
+            <input type="password" id="pf-senha" placeholder="Sua senha" autocomplete="current-password">
+            <button type="submit" id="pf-btn-login"><i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Entrar</button>
+            <div class="pf-erro" id="pf-erro"></div>
+        </form>
+    </div>
+
+    <div class="pf-drawer-overlay" id="pf-overlay" onclick="pfFecharMenu()"></div>
+    <aside class="pf-drawer" id="pf-drawer">
+        <div class="pf-drawer-head">
+            <i class="fa-solid fa-user-graduate" style="font-size:30px"></i>
+            <h2 id="pf-nome-menu">Formado</h2>
+            <p id="pf-turma-menu">—</p>
+        </div>
+        <nav class="pf-drawer-nav">
+            <button id="pf-menu-inicio" class="ativo" onclick="pfSetView('inicio')"><i class="fa-solid fa-house"></i> Início</button>
+            <button id="pf-menu-dados" onclick="pfSetView('dados')"><i class="fa-solid fa-id-card"></i> Meus Dados</button>
+            <button id="pf-menu-certificados" onclick="pfSetView('certificados')"><i class="fa-solid fa-award"></i> Certificados</button>
+            <button id="pf-menu-blog" onclick="pfSetView('blog')"><i class="fa-solid fa-newspaper"></i> Blog</button>
+        </nav>
+        <div class="pf-drawer-foot">
+            <button onclick="pfLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        </div>
+    </aside>
+
+    <div class="pf-app" id="pf-tela-app">
+        <div class="pf-topbar">
+            <button class="pf-menu-btn" onclick="pfAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+            <h1>Portal do Formado</h1>
+            <div class="pf-topo-usuario">
+                <span class="farn-foto-wrap"><img id="pf-foto-topo" class="pf-sem-foto" src="" alt="Foto 3x4 do formado"><button type="button" id="pf-foto-topo-ampliar" class="farn-foto-ampliar" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
+                <div>
+                    <div class="pf-topo-nome" id="pf-nome-topo">—</div>
+                    <div class="pf-topo-matricula" id="pf-matricula-topo">Matrícula: —</div>
+                </div>
+            </div>
+        </div>
+        <div class="pf-container">
+            <div class="pf-view ativo" id="pf-view-inicio">
+                <div class="pf-card">
+                    <div class="pf-inicio-topo">
+                        <span class="farn-foto-wrap"><img id="pf-inicio-foto" class="pf-inicio-foto" src="" alt="Foto 3x4 do formado" style="display:none"><button type="button" id="pf-inicio-foto-ampliar" class="farn-foto-ampliar" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
+                        <div>
+                            <h2>Bem-vindo, <span id="pf-boas-vindas-nome">formado</span>!</h2>
+                            <p style="font-size:13px;color:#64748b;margin-top:6px">Seus cursos concluídos, certificados e notícias em um só lugar.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="pf-card"><h2><i class="fa-solid fa-award" style="color:#1e40af;margin-right:8px"></i> Meus cursos concluídos</h2>
+                    <div class="pf-lista" id="pf-inicio-cursos"></div>
+                </div>
+            </div>
+            <div class="pf-view" id="pf-view-dados">
+                <div class="pf-secao-titulo"><i class="fa-solid fa-id-card" style="color:#1e40af;margin-right:8px"></i> Meus Dados</div>
+                <div class="pf-card"><h2>Cadastro</h2><div class="pf-grid" id="pf-dados"></div></div>
+            </div>
+            <div class="pf-view" id="pf-view-certificados">
+                <div class="pf-secao-titulo"><i class="fa-solid fa-award" style="color:#1e40af;margin-right:8px"></i> Certificados</div>
+                <div class="pf-card"><h2>Certificados dos cursos/turmas concluídos</h2>
+                    <div class="pf-lista" id="pf-lista-certificados"></div>
+                </div>
+            </div>
+            <div class="pf-view" id="pf-view-blog">
+                <div class="pf-secao-titulo"><i class="fa-solid fa-newspaper" style="color:#1e40af;margin-right:8px"></i> Blog</div>
+                <div class="pf-card"><h2>Notícias</h2>
+                    <div id="pf-lista-noticias"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pf-cert-overlay" id="pf-cert-overlay" onclick="pfFecharCertificado(event)">
+        <div class="pf-cert-modal" onclick="event.stopPropagation()">
+            <button type="button" class="pf-cert-fechar" onclick="pfFecharCertificado()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="pf-cert-titulo">Certificado</h2>
+            <div class="pf-cert-papel" id="pf-cert-papel"></div>
+            <div class="pf-cert-texto" id="pf-cert-texto"></div>
+        </div>
+    </div>
+
+    <script src="farn-db.js?v=22"></script>
+    <script src="formado-acesso.js?v=2"></script>
+    <script src="noticias-feed.js?v=7"></script>
+    <script src="foto3x4-visualizar.js?v=1"></script>
+    <script src="portal-formado.js?v=2"></script>
+</body>
+</html>

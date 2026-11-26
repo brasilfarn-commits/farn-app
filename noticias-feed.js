@@ -659,6 +659,10 @@
     }
 
     function postDoPortal(n, portal) {
+        /* 'todos' e usado pelo Portal do Formado: mostra todas as noticias
+           ativas publicadas na secao Blog do administrador, independente
+           da marcação de portal feita no formulario. */
+        if (portal === 'todos' || portal === 'all') return true;
         var lista = n.portais;
         if (Array.isArray(lista)) {
             return lista.indexOf(portal) !== -1;

@@ -132,7 +132,7 @@
             <button class="pa-menu-btn" onclick="paAbrirMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
             <h1>Portal do Aluno</h1>
             <div class="pa-topo-usuario">
-                <img id="pa-foto-topo" class="pa-sem-foto" src="" alt="Foto 3x4 do aluno">
+                <span class="farn-foto-wrap"><img id="pa-foto-topo" class="pa-sem-foto" src="" alt="Foto 3x4 do aluno"><button type="button" id="pa-foto-topo-ampliar" class="farn-foto-ampliar" data-titulo="Foto 3x4 do aluno" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
                 <div>
                     <div class="pa-topo-nome" id="pa-nome-topo">—</div>
                     <div class="pa-topo-matricula" id="pa-matricula-topo">Matrícula: —</div>
@@ -143,7 +143,7 @@
             <div class="pa-view ativo" id="pa-view-inicio">
                 <div class="pa-card">
                     <div class="pa-inicio-topo">
-                        <img id="pa-inicio-foto" class="pa-inicio-foto" src="" alt="Foto 3x4 do aluno" style="display:none">
+                        <span class="farn-foto-wrap"><img id="pa-inicio-foto" class="pa-inicio-foto" src="" alt="Foto 3x4 do aluno" style="display:none"><button type="button" id="pa-inicio-foto-ampliar" class="farn-foto-ampliar" data-titulo="Foto 3x4 do aluno" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button></span>
                         <div>
                             <h2>Bem-vindo, <span id="pa-boas-vindas-nome">aluno</span>!</h2>
                             <p style="font-size:13px;color:#64748b;margin-top:6px">Acompanhe seus dados e sua turma em andamento.</p>
@@ -178,6 +178,7 @@
 
     <script src="farn-db.js?v=22"></script>
     <script src="aluno-acesso.js?v=7"></script>
+    <script src="foto3x4-visualizar.js?v=1"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",
@@ -245,6 +246,10 @@
             }
             var ini = document.getElementById('pa-inicio-foto');
             if (ini) { if (foto) { ini.src = foto; ini.style.display = ''; } else { ini.style.display = 'none'; } }
+            ['pa-foto-topo-ampliar', 'pa-inicio-foto-ampliar'].forEach(function (id) {
+                var b = document.getElementById(id);
+                if (b) b.style.display = foto ? '' : 'none';
+            });
         }
         function paCampoSe(rotulo, valor) {
             var v = String(valor == null ? '' : valor).trim();

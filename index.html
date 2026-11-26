@@ -879,6 +879,7 @@
                             <option value="coordenacao">COORDENAÇÃO</option>
                             <option value="docente">DOCENTE</option>
                             <option value="aluno">ALUNO</option>
+                            <option value="formado">FORMADO</option>
                         </select>
                     </div>
                     <div class="landing-login-field">
@@ -3892,6 +3893,7 @@
                                     <div style="width:105px;height:140px;border:2px dashed #b45309;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
                                         <i id="condec-foto-icon" class="fa-solid fa-user" style="font-size:30px;color:#b45309"></i>
                                         <img id="condec-foto-preview" src="" alt="Foto 3x4" style="display:none;width:100%;height:100%;object-fit:cover">
+                                        <button type="button" id="condec-foto-ampliar" class="farn-foto-ampliar" data-titulo="Foto 3x4" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
                                     </div>
                                 </div>
                                 <div class="form-group" style="flex:1">
@@ -4177,9 +4179,10 @@
                         <div class="form-section-title"><i class="fa-solid fa-id-card" style="color:#2563eb"></i><h3>Foto 3x4</h3></div>
                         <div class="form-section-body">
                             <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
-                                <div style="width:120px;height:160px;background:#f1f5f9;border:3px solid #2563eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                <div style="width:120px;height:160px;background:#f1f5f9;border:3px solid #2563eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">
                                     <img id="intr-foto-preview" src="" alt="Foto 3x4 do docente" style="width:100%;height:100%;object-fit:cover;display:none">
                                     <i id="intr-foto-icon" class="fa-solid fa-user" style="font-size:40px;color:#cbd5e1"></i>
+                                    <button type="button" id="intr-foto-ampliar" class="farn-foto-ampliar" data-titulo="Foto 3x4 do docente" title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom" style="display:none"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
                                 </div>
                                 <div style="flex:1;min-width:240px">
                                     <div style="font-size:12.5px;color:#64748b;line-height:1.5;margin-bottom:12px">
@@ -5039,22 +5042,24 @@
         </div>
     </div>
 
-    <script src="cadastro-cursos-nucleo.js?v=2"></script>
-    <script src="campos-pessoa-comuns.js?v=3"></script>
+    <script src="cadastro-cursos-nucleo.js?v=3"></script>
+    <script src="campos-pessoa-comuns.js?v=4"></script>
     <script src="portal-permissoes.js?v=9"></script>
-    <script src="coordenacao.js?v=15"></script>
+    <script src="coordenacao.js?v=16"></script>
     <script src="patentes.js?v=3"></script>
     <script src="foto3x4-editor.js?v=4"></script>
+    <script src="foto3x4-visualizar.js?v=1"></script>
     <script src="foto3x4-bloqueio.js?v=8"></script>
-    <script src="noticias-feed.js?v=6"></script>
+    <script src="noticias-feed.js?v=7"></script>
     <script src="oportunidades.js?v=6"></script>
     <script src="certificados.js?v=4"></script>
     <script src="farn-arquivo.js?v=1"></script>
     <script src="farn-storage.js?v=3"></script>
     <script src="aluno-acesso.js?v=7"></script>
-    <script src="app.js?v=134"></script>
+    <script src="formado-acesso.js?v=2"></script>
+    <script src="app.js?v=136"></script>
     <script src="recad-admin.js?v=2"></script>
-    <script src="cadastro-cursos.js?v=44"></script>
+    <script src="cadastro-cursos.js?v=46"></script>
     <script src="apontamentos-adm.js?v=6"></script>
     <script src="estatistica.js?v=1"></script>
 

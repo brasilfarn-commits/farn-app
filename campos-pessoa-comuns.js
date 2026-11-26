@@ -88,9 +88,14 @@
             partes.push('<div class="form-group pcp-foto-grupo" style="grid-column:1/-1">'
                 + '<label><i class="fa-solid fa-id-card" style="color:#2563eb;margin-right:6px"></i> Foto 3x4</label>'
                 + '<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">'
+                + '<div class="farn-foto-wrap">'
                 + '<div id="' + prefixo + '-foto3x4-preview" style="width:72px;height:96px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex:none">'
                 + (preview ? '<img src="' + esc(preview) + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">'
                         : '<i class="fa-solid fa-user" style="font-size:24px;color:#94a3b8"></i>')
+                + '</div>'
+                + '<button type="button" class="farn-foto-ampliar" data-titulo="' + esc(r.nome || 'Foto 3x4') + '"'
+                + (String(r.cpf || '').replace(/\D/g, '') ? ' data-cpf="' + String(r.cpf).replace(/\D/g, '') + '"' : '')
+                + ' title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom"' + (preview ? '' : ' style="display:none"') + '><i class="fa-solid fa-magnifying-glass-plus"></i></button>'
                 + '</div>'
                 + '<div style="min-width:180px">'
                 + '<input type="hidden" id="' + prefixo + '-foto3x4" value="' + esc(foto) + '">'
@@ -154,6 +159,7 @@
             var prev = document.getElementById(prefixo + '-foto3x4-preview');
             if (hidden) hidden.value = dataUrl;
             if (prev) prev.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">';
+            atualizarBotaoZoom(prefixo);
             if (status) {
                 status.textContent = 'Foto ajustada (' + kb(dataUrl) + ' KB / teto ' + limiteKb + ' KB). Clique em Salvar para gravar.';
                 status.style.color = '#16a34a';
@@ -202,6 +208,14 @@
         }
     }
 
+    /* Botao de ampliar so aparece quando ha imagem no preview. */
+    function atualizarBotaoZoom(prefixo) {
+        var prev = document.getElementById(prefixo + '-foto3x4-preview');
+        if (!prev || !prev.parentElement) return;
+        var btn = prev.parentElement.querySelector('.farn-foto-ampliar');
+        if (btn) btn.style.display = prev.querySelector('img') ? '' : 'none';
+    }
+
     function arquivo(prefixo, files) {
         var arquivo = files && files[0];
         if (!arquivo) return;
@@ -244,6 +258,7 @@
         if (hidden) hidden.value = '';
         if (input) input.value = '';
         if (prev) prev.innerHTML = '<i class="fa-solid fa-user" style="font-size:24px;color:#94a3b8"></i>';
+        atualizarBotaoZoom(prefixo);
         if (status) { status.textContent = 'Foto será removida ao salvar.'; status.style.color = '#f57f17'; }
     }
 

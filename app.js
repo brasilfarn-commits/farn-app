@@ -1594,7 +1594,7 @@ function landingCloseMenu() {
 /* =====================================================================
    LOGIN DO INDEX
    O tipo de acesso e definido pelo seletor Administrador / COORDENAÇÃO /
-   DOCENTE / ALUNO do proprio formulario. Quando o CPF aparece em mais de
+   DOCENTE / ALUNO / FORMADO do proprio formulario. Quando o CPF aparece em mais de
    um cadastro, a origem e escolhida automaticamente conforme esse seletor,
    sem pedir ao usuario que escolha a fonte de dados.
    ===================================================================== */
@@ -1766,6 +1766,33 @@ async function landingLoginAluno(cpf, senha) {
     }
 }
 
+/* Portal do FORMADO: so entra quem esta nos individuos de um curso do
+   Cadastro de Cursos marcado como CONCLUIDO, com a turma tambem concluida.
+   Sessao separada, sem liberar cursos/AV em andamento do Portal do Aluno. */
+async function landingLoginFormado(cpf, senha) {
+    if (!dbFirestore || typeof farnFormadoLocalizar !== 'function') {
+        landingShowLoginError('Acesso do formado indisponível no momento.');
+        return false;
+    }
+    try {
+        var formado = await farnFormadoLocalizar(dbFirestore, cpf, senha);
+        if (!formado) {
+            landingShowLoginError('CPF/senha inválidos ou nenhum curso/turma CONCLUÍDO encontrado para este CPF.');
+            return false;
+        }
+        currentUserData = formado;
+        saveLastLogin(cpf);
+        try { localStorage.setItem('farn_user_data', JSON.stringify(formado)); } catch (e) {}
+        try { localStorage.setItem('formado_sessao', JSON.stringify(formado)); } catch (e) {}
+        location.href = 'portal-formado.html';
+        return true;
+    } catch (e) {
+        console.error('Erro no login do formado:', e);
+        landingShowLoginError('Falha de conexão. Tente novamente.');
+        return false;
+    }
+}
+
 /* Portal da COORDENAÇÃO: fonte unica e a secao Coordenação do
    administrador (colecao coordenacao). Sessao isolada, sem liberar o
    painel administrativo completo. Os dados exibidos/editados no portal
@@ -1824,16 +1851,19 @@ async function landingLogin(event) {
     try {
         var portalSel = document.getElementById('landing-login-portal');
         var portalTipo = portalSel ? String(portalSel.value || '') : '';
-        var portal = (portalTipo === 'aluno' || portalTipo === 'docente' || portalTipo === 'coordenacao')
+        var portal = (portalTipo === 'aluno' || portalTipo === 'docente'
+            || portalTipo === 'coordenacao' || portalTipo === 'formado')
             ? portalTipo : 'admin';
-        if (portal === 'aluno' || portal === 'docente' || portal === 'coordenacao') {
+        if (portal === 'aluno' || portal === 'docente' || portal === 'coordenacao' || portal === 'formado') {
             var entrou = false;
             try {
                 entrou = portal === 'aluno'
                     ? await landingLoginAluno(cpf, senha)
                     : portal === 'docente'
                         ? await landingLoginDocente(cpf, senha)
-                        : await landingLoginCoordenacao(cpf, senha);
+                        : portal === 'coordenacao'
+                            ? await landingLoginCoordenacao(cpf, senha)
+                            : await landingLoginFormado(cpf, senha);
             } catch (ePortal) {
                 console.error('Login ' + portal + ':', ePortal);
                 landingShowLoginError('Falha de conexão. Tente novamente.');
@@ -2747,7 +2777,7 @@ const turmaObj = turmas.find(t => t.nome === turma && t.projeto === projeto);
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; }
     try {
         const token = 'PL' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-        const base = (location.hostname.indexOf('github.io') >= 0 || location.hostname.indexOf('127.0.0.1') >= 0 || location.hostname === 'localhost') ? 'https://farn-app.web.app' : location.origin;
+        const base = farnSiteBaseURL();
         const link = base + '/pre-inscricao-via-link.html?v=23&token=' + token;
         const docData = {
             token: token,
@@ -2861,7 +2891,7 @@ function viewCandidato(i) {
     document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user" style="color:#1e88e5"></i> Detalhes do Candidato';
     getFoto(c.cpf).then(function(photoSrc) {
     document.getElementById('modal-body').innerHTML = `
-        ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #1e88e5;border-radius:8px" alt="Foto 3x4"></div>` : ''}
+        ${photoSrc ? `<div style="text-align:center;margin-bottom:16px"><span class="farn-foto-wrap"><img src="${photoSrc}" style="width:120px;height:160px;object-fit:cover;border:2px solid #1e88e5;border-radius:8px" alt="Foto 3x4">${farnFotoBotaoHTML(c.nome, c.cpf)}</span></div>` : ''}
         <div class="detail-grid">
             <div class="detail-section-title">Dados Pessoais</div>
             <div class="detail-item full"><span class="detail-label">Nome</span><span class="detail-value"${c.pediuBaixa ? ' style="color:#dc2626;font-weight:700"' : (c.atualizarCadastro ? ' style="color:#a5d6a7;font-weight:700"' : '')}>${c.nome}${c.pediuBaixa ? ' <i class="fa-solid fa-power-off" style="font-size:11px;color:#dc2626"></i>' : ''}${c.atualizarCadastro ? ' <i class="fa-solid fa-pen" style="font-size:11px;color:#66bb6a"></i>' : ''}</span></div>
@@ -3591,7 +3621,7 @@ async function changeStatus(i, newStatus) {
     renderList();
     if (newStatus === 'Ativo' && candidatos[i].whatsapp) {
         var c = candidatos[i];
-        var linkWa = farnGerarLinkWhatsApp(c.whatsapp, 'Parabéns ' + c.nome + '! Seu cadastro na FARN foi ATIVADO!\nAcesse o portal: https://farn-app.web.app\nCPF: ' + c.cpf + '\nSenha: ' + c.senha);
+        var linkWa = farnGerarLinkWhatsApp(c.whatsapp, 'Parabéns ' + c.nome + '! Seu cadastro na FARN foi ATIVADO!\nAcesse o portal: ' + farnSiteBaseURL() + '\nCPF: ' + c.cpf + '\nSenha: ' + c.senha);
         if (linkWa && confirm('Cadastro de ' + c.nome + ' ativado. Enviar notificação de ativação pelo WhatsApp?')) {
             window.open(linkWa, '_blank');
         }
@@ -3992,7 +4022,7 @@ function foto3x4RenderList() {
         const mat = c.matricula || generateMatricula(c.cpf);
         const cpfSeguro = String(c.cpf || '').replace(/'/g, '');
         return '<tr>' +
-            '<td style="vertical-align:middle"><div id="foto3x4-cell-' + fi + '" onclick="foto3x4VerFoto(' + fi + ')" title="Clique para ampliar" style="width:54px;height:72px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#cbd5e1;cursor:pointer;position:relative"><i class="fa-solid fa-user" style="font-size:20px"></i><span style="position:absolute;bottom:0;left:0;right:0;background:rgba(37,99,235,.85);color:#fff;font-size:8px;text-align:center;padding:2px 0;font-weight:700">AMPLIAR</span></div></td>' +
+            '<td style="vertical-align:middle"><div id="foto3x4-cell-' + fi + '" class="farn-foto-wrap" onclick="foto3x4VerFoto(' + fi + ')" title="Clique para ampliar" style="width:54px;height:72px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#cbd5e1;position:relative"><i class="fa-solid fa-user" style="font-size:20px"></i><span style="position:absolute;bottom:0;left:0;right:0;background:rgba(37,99,235,.85);color:#fff;font-size:8px;text-align:center;padding:2px 0;font-weight:700">AMPLIAR</span>' + farnFotoBotaoHTML(c.nome, c.cpf) + '</div></td>' +
             '<td style="font-weight:600">' + (c.nome || '---') + '</td>' +
             '<td style="color:#16a34a;font-weight:800;letter-spacing:1px;font-family:\'Courier New\',monospace;font-size:13px">' + (mat || '-') + '</td>' +
             '<td>' + formatCPFDisplay(c.cpf) + '</td>' +
@@ -4012,7 +4042,7 @@ function foto3x4RenderList() {
             const cell = document.getElementById('foto3x4-cell-' + fi);
             if (!cell) return;
             if (photoSrc) {
-                cell.innerHTML = '<img src="' + photoSrc + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">';
+                cell.innerHTML = '<img src="' + photoSrc + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">' + farnFotoBotaoHTML(c.nome, c.cpf);
             }
         }).catch(function() {});
     });
@@ -4443,24 +4473,55 @@ function paFotoAdminSalvar(c, dataUrl, fi) {
     setFoto(c.cpf, dataUrl);
     const cell = document.getElementById('foto3x4-cell-' + fi);
     if (cell) {
-        cell.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">';
+        cell.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover" alt="Foto 3x4">' + farnFotoBotaoHTML(c.nome, c.cpf);
     }
     alert('Foto atualizada com sucesso para ' + (c.nome || 'o aluno') + '.');
+}
+
+/* URL atual do site: no servidor proprio usa a origem; em testes locais
+   usa a URL salva em Configurar Servidor. Nunca mais web.app fixo. */
+function farnSiteBaseURL() {
+    try {
+        if (/^https?:$/.test(location.protocol) && location.hostname
+            && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'
+            && location.hostname !== 'farn-app.web.app'
+            && location.hostname.indexOf('github.io') < 0) {
+            return String(location.origin).replace(/\/$/, '');
+        }
+        var cfg = JSON.parse(localStorage.getItem('farn_api_config') || 'null');
+        if (cfg && cfg.url) return String(cfg.url).replace(/\/$/, '');
+    } catch (e) {}
+    return 'https://howto-alliance-pest-contest.trycloudflare.com';
+}
+
+/* Botao de ampliar com zoom sobreposto a uma miniatura de foto 3x4. */
+function farnFotoBotaoHTML(nome, cpf) {
+    const titulo = String(nome || 'Foto 3x4').replace(/["'<]/g, '');
+    const digits = String(cpf || '').replace(/\D/g, '');
+    return '<button type="button" class="farn-foto-ampliar" data-titulo="' + titulo + '"'
+        + (digits ? ' data-cpf="' + digits + '"' : '')
+        + ' title="Ampliar foto com zoom" aria-label="Ampliar foto com zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></button>';
 }
 
 function foto3x4VerFoto(fi) {
     const c = foto3x4CandidatoPorIndice(fi);
     if (!c) return;
     getFoto(c.cpf).then(function(photoSrc) {
+        if (!photoSrc) { alert('Este aluno ainda não tem foto 3x4.'); return; }
+        const info = 'Matrícula: ' + (c.matricula || generateMatricula(c.cpf) || '-')
+            + ' | CPF: ' + formatCPFDisplay(c.cpf) + ' | Turma: ' + (c.turma || '-');
+        if (window.FarnFotoViewer) {
+            FarnFotoViewer.abrir(photoSrc, c.nome || 'Aluno', info);
+            return;
+        }
+        /* Fallback caso o visualizador nao tenha sido carregado. */
         const modal = document.getElementById('foto3x4-modal');
         const img = document.getElementById('foto3x4-modal-img');
         const nomeEl = document.getElementById('foto3x4-modal-nome');
         const infoEl = document.getElementById('foto3x4-modal-info');
         if (nomeEl) nomeEl.textContent = c.nome || 'Aluno';
-        if (img) img.src = photoSrc || '';
-        if (infoEl) {
-            infoEl.innerHTML = '<strong>Matricula:</strong> ' + (c.matricula || generateMatricula(c.cpf) || '-') + ' &nbsp;|&nbsp; <strong>CPF:</strong> ' + formatCPFDisplay(c.cpf) + ' &nbsp;|&nbsp; <strong>Turma:</strong> ' + (c.turma || '-');
-        }
+        if (img) img.src = photoSrc;
+        if (infoEl) infoEl.textContent = info;
         if (modal) modal.style.display = 'block';
     });
 }
@@ -11526,6 +11587,8 @@ function docenteFotoExibir(dataUrl) {
         else { img.removeAttribute('src'); img.style.display = 'none'; }
     }
     if (icon) icon.style.display = dataUrl ? 'none' : 'block';
+    var btnZoom = document.getElementById('intr-foto-ampliar');
+    if (btnZoom) btnZoom.style.display = dataUrl ? '' : 'none';
     var btn = document.getElementById('intr-foto-limpar-btn');
     if (btn) btn.style.display = dataUrl ? 'inline-flex' : 'none';
     /* Com foto na tela, da para reabrir o editor e reenquadrar */
@@ -16892,7 +16955,8 @@ async function fichaGeralRenderList() {
             getFoto(c.cpf).then(src => {
                 const el = document.getElementById('fg-foto-' + i);
                 if (el && src) {
-                    el.innerHTML = '<img src="' + src + '" alt="Foto 3x4" style="width:86px;height:114px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">';
+                    el.innerHTML = '<img src="' + src + '" alt="Foto 3x4" style="width:86px;height:114px;object-fit:cover;border-radius:8px;border:2px solid #0ea5e9">'
+                        + farnFotoBotaoHTML(c.nome, c.cpf);
                 }
             }).catch(() => {});
         });
@@ -17340,6 +17404,8 @@ function condecExibirFoto(dataUrl) {
     }
     if (icon) icon.style.display = tem ? 'none' : '';
     if (btn) btn.style.display = tem ? '' : 'none';
+    var btnZoom = document.getElementById('condec-foto-ampliar');
+    if (btnZoom) btnZoom.style.display = tem ? '' : 'none';
 }
 
 /* Abre o mesmo editor de zoom e recorte 3x4 usado no cadastro de docente.
