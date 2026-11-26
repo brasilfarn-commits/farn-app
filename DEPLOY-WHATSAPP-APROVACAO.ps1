@@ -117,15 +117,17 @@ __COPIAS__
 rm -rf /tmp/farn-deploy-atual
 grep -Fq 'ccPreMsgAprovacaoWhatsApp' "$DEST/cadastro-cursos.js"
 grep -Fq 'ccSiteBaseURL' "$DEST/cadastro-cursos.js"
+grep -Fq 'ccDeclaracaoPersonalizada' "$DEST/cadastro-cursos.js"
+grep -Fq 'farnDeclaracaoPersonalizar' "$DEST/formado-acesso.js"
 if grep -Fq 'https://farn-app.web.app' "$DEST/cadastro-cursos.js"; then
   echo 'ERRO: a URL antiga ainda esta no servidor.'
   exit 1
 fi
-grep -Fq 'cadastro-cursos.js?v=46' "$DEST/index.html"
+grep -Fq 'cadastro-cursos.js?v=47' "$DEST/index.html"
 grep -Fq 'foto3x4-visualizar.js?v=1' "$DEST/index.html"
 grep -Fq 'option value="formado"' "$DEST/index.html"
 grep -Fq 'landingLoginFormado' "$DEST/app.js"
-grep -Fq 'formado-acesso.js?v=2' "$DEST/noticias.html"
+grep -Fq 'formado-acesso.js?v=3' "$DEST/noticias.html"
 grep -Fq 'farn-v128' "$DEST/service-worker.js"
 test -f "$DEST/foto3x4-visualizar.js"
 test -f "$DEST/formado-acesso.js"
