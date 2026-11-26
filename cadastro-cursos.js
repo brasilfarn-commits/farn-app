@@ -972,6 +972,27 @@ async function ccPrePromoverIndividuo(c) {
     var ref = await ccRef('individuos').add(dados);
     return ref.id;
 }
+/* Texto da mensagem enviada pelo WhatsApp ao aprovar o pre-inscrito.
+   Nome e CPF vem do cadastro; a senha e sempre os seis primeiros digitos
+   do CPF (a mesma gravada no individuo na aprovacao). */
+function ccPreMsgAprovacaoWhatsApp(c) {
+    var cpf = String(c.cpf || '').replace(/\D/g, '');
+    var nome = String(c.nome || '').trim() || 'Pre-inscrito';
+    var senha = cpf ? cpf.substring(0, 6) : '';
+    var curso = String((ccAtual && ccAtual.nome) || 'Socorrista APH').trim();
+    var cpfExibicao = (typeof formatCPFDisplay === 'function' && cpf.length === 11)
+        ? formatCPFDisplay(cpf) : String(c.cpf || cpf);
+    return 'Parabéns, ' + nome + '!\n\n'
+        + 'Ao analisar seu pré-cadastro, verificamos que você se enquadra no perfil para o curso de ' + curso + '.\n\n'
+        + 'Somos uma instituição que promove cursos filantrópicos em todo o Estado.\n\n'
+        + 'A partir de agora você pode acompanhar tudo através do nosso grupo de WhatsApp e pelo Portal do Aluno em nosso site (https://farn-app.web.app).\n\n'
+        + 'Este é o seu acesso: escolha ALUNO, digite seu CPF e senha para ter acesso a tudo do curso.\n\n'
+        + 'Nome: ' + nome + '\n'
+        + 'CPF: ' + cpfExibicao + '\n'
+        + 'Senha: ' + senha + '\n\n'
+        + 'Estamos melhorando nosso site aos poucos, mas em breve enviaremos mais informações de horário e dias de aula.';
+}
+
 async function ccPreMudarStatus(id, status) {
     var c = ccPreCandidatos.find(function (x) { return x._id === id; });
     if (!c) return;
@@ -985,11 +1006,29 @@ async function ccPreMudarStatus(id, status) {
             patch.individuoId = await ccPrePromoverIndividuo(c);
             if (patch.individuoId) patch.promovidoEm = new Date().toISOString();
         }
+        /* A senha do portal e sempre os 6 primeiros digitos do CPF. */
+        if (status === 'Ativo') {
+            var senha6 = String(c.cpf || '').replace(/\D/g, '').substring(0, 6);
+            if (senha6) {
+                patch.senha = senha6;
+                var indId = patch.individuoId || c.individuoId;
+                if (indId) await ccRef('individuos', indId).update({ senha: senha6 });
+            }
+        }
         await ccRef('preInscricoes', id).update(patch);
         await ccInitPreInscricao();
         await ccLoadIndividuos();
         ccIndRefreshVinculos();
-        if (status === 'Ativo') alert('Aprovado e incluído na lista de indivíduos deste curso.');
+        if (status === 'Ativo') {
+            alert('Aprovado e incluído na lista de indivíduos deste curso.');
+            var wpp = String(c.whatsapp || c.telefone || c.fone || '').trim();
+            if (wpp && typeof farnGerarLinkWhatsApp === 'function') {
+                var linkWa = farnGerarLinkWhatsApp(wpp, ccPreMsgAprovacaoWhatsApp(c));
+                if (linkWa && confirm('Enviar a mensagem de aprovação pelo WhatsApp para ' + (c.nome || 'o pré-inscrito') + '?')) {
+                    window.open(linkWa, '_blank');
+                }
+            }
+        }
     } catch (e) { alert('Erro ao alterar status: ' + e.message); }
 }
 async function ccPreExcluir(id) {
