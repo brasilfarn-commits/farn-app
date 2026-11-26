@@ -89,7 +89,7 @@ if ($sw -notmatch './portal-formado\.html') { throw 'service-worker.js nao inclu
 if ($sw -notmatch './tema-game\.css') { throw 'service-worker.js nao inclui o tema game.' }
 $tema = Get-Content -Raw -LiteralPath (Join-Path $raiz 'tema-game.css')
 if ($tema -notmatch 'TEMA GAME 3D') { throw 'tema-game.css nao encontrado ou incompleto.' }
-if ($html -notmatch 'tema-game\.css\?v=1') { throw 'index.html nao carrega o tema game.' }
+if ($html -notmatch 'tema-game\.css\?v=3') { throw 'index.html nao carrega o tema game.' }
 Write-Host '[OK] Arquivos locais conferidos.'
 
 if (!(Get-Command scp -ErrorAction SilentlyContinue)) { throw 'scp nao encontrado (OpenSSH Client).' }
