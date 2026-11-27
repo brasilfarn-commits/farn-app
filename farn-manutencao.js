@@ -65,13 +65,13 @@
         overlay.id = 'farn-manutencao-overlay';
         overlay.setAttribute('role', 'alertdialog');
         overlay.setAttribute('aria-label', 'Portal em manutenção');
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#f2e6c8;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Cinzel,Georgia,serif;color:#3b2a17';
-        overlay.innerHTML = '<div style="max-width:420px;width:100%;text-align:center;background:#fbf4df;border:2px solid #6b4a24;border-radius:4px;padding:30px 24px;box-shadow:inset 0 0 0 5px #fbf4df,inset 0 0 0 7px #b8860b,0 12px 36px rgba(90,60,20,.3)">'
-            + '<div style="width:74px;height:74px;margin:0 auto 18px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#6b4a24,#b8860b,#1f4e79,#8b2e1f);border:3px solid #6b4a24;box-shadow:0 5px 0 #6b4a24;color:#fff;font-size:30px"><i class="fa-solid fa-screwdriver-wrench"></i></div>'
-            + '<div style="font-size:10px;font-weight:700;letter-spacing:.16em;color:#8b2e1f;margin-bottom:8px">FARN • PERGAMINHO</div>'
-            + '<h1 style="font-family:Cinzel,Georgia,serif;font-size:21px;line-height:1.25;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em;color:#3b2a17">PORTAL ' + nome + ' EM MANUTENÇÃO</h1>'
-            + '<p style="font-size:14px;line-height:1.6;color:#705a3a;margin:0 0 18px">Este portal está temporariamente desligado pela administração. Volte em instantes.</p>'
-            + '<button type="button" onclick="location.reload()" style="border:2px solid #6b4a24;border-radius:3px;background:linear-gradient(90deg,#6b4a24,#b8860b);color:#fff;font-weight:700;text-transform:uppercase;padding:11px 22px;box-shadow:0 4px 0 #6b4a24;cursor:pointer"><i class="fa-solid fa-rotate-right" style="margin-right:7px"></i> Tentar novamente</button>'
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Poppins,Inter,sans-serif;color:#111827';
+        overlay.innerHTML = '<div style="max-width:420px;width:100%;text-align:center;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:30px 24px;box-shadow:0 24px 70px rgba(17,24,39,.18)">'
+            + '<div style="width:74px;height:74px;margin:0 auto 18px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#fbbf24);box-shadow:0 10px 22px rgba(245,158,11,.28);color:#111827;font-size:30px"><i class="fa-solid fa-screwdriver-wrench"></i></div>'
+            + '<div style="font-size:10px;font-weight:600;letter-spacing:.16em;color:#d97706;margin-bottom:8px">FARN • SISTEMA</div>'
+            + '<h1 style="font-family:Poppins,Inter,sans-serif;font-size:21px;font-weight:600;line-height:1.25;margin:0 0 10px;color:#111827">PORTAL ' + nome + ' EM MANUTENÇÃO</h1>'
+            + '<p style="font-size:14px;line-height:1.6;color:#6b7280;margin:0 0 18px">Este portal está temporariamente desligado pela administração. Volte em instantes.</p>'
+            + '<button type="button" onclick="location.reload()" style="border:none;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#111827;font-weight:600;padding:11px 22px;box-shadow:0 10px 22px rgba(245,158,11,.28);cursor:pointer"><i class="fa-solid fa-rotate-right" style="margin-right:7px"></i> Tentar novamente</button>'
             + '</div>';
         (document.body || document.documentElement).appendChild(overlay);
     }
