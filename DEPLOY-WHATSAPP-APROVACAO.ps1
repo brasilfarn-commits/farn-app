@@ -96,7 +96,7 @@ if ($sw -notmatch './foto3x4-visualizar\.js') { throw 'service-worker.js nao inc
 if ($sw -notmatch './portal-formado\.html') { throw 'service-worker.js nao inclui o portal do formado.' }
 if ($sw -notmatch './tema-game\.css') { throw 'service-worker.js nao inclui o tema papiro.' }
 $tema = Get-Content -Raw -LiteralPath (Join-Path $raiz 'tema-game.css')
-if ($tema -notmatch 'TEMA PAPIRO ANTIGUIDADE') { throw 'tema-game.css nao encontrado ou incompleto.' }
+if ($tema -notmatch 'TEMA PAPIRO / ANTIGUIDADE') { throw 'tema-game.css nao encontrado ou incompleto.' }
 if ($html -notmatch 'tema-game\.css\?v=13') { throw 'index.html nao carrega o tema papiro.' }
 Write-Host '[OK] Arquivos locais conferidos.'
 
@@ -147,7 +147,7 @@ grep -Fq 'formado-acesso.js?v=3' "$DEST/noticias.html"
 grep -Fq 'farn-v141' "$DEST/service-worker.js"
 grep -Fq './farn-manutencao.js' "$DEST/service-worker.js"
 grep -Fq './tema-game.css' "$DEST/service-worker.js"
-grep -Fq 'TEMA PAPIRO ANTIGUIDADE' "$DEST/tema-game.css"
+grep -Fq 'TEMA PAPIRO / ANTIGUIDADE' "$DEST/tema-game.css"
 grep -Fq 'tema-game.css?v=13' "$DEST/index.html"
 test -f "$DEST/foto3x4-visualizar.js"
 test -f "$DEST/formado-acesso.js"
