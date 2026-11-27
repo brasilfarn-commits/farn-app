@@ -426,8 +426,8 @@ html, body { background:#fff !important; }
 .landing-value:nth-child(3) i { background:linear-gradient(135deg,var(--game-green),var(--game-blue)) !important; }
 .landing-news-right-head {
     background:
-        linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(37,99,235,.84) 60%, rgba(139,92,246,.72) 100%),
-        url('WhatsApp%20Image%202026-08-08%20at%2015.18.01%20(2).png') center / cover !important;
+        linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(37,99,235,.78) 48%, rgba(139,92,246,.22) 100%),
+        url('logo-farn.png.png') right center / contain no-repeat !important;
     border:2px solid var(--game-black) !important;
     border-radius:18px !important;
     padding:18px !important;

@@ -849,7 +849,7 @@
             navigator.serviceWorker.register('./service-worker.js').catch(() => {});
         }
     </script>
-    <link rel="stylesheet" href="tema-game.css?v=5">
+    <link rel="stylesheet" href="tema-game.css?v=6">
 </head>
 <body>
 
@@ -5068,10 +5068,31 @@
     <script src="whatfarn.js?v=19"></script>
     <script>
     (function(){
+        /* O cartao azul de noticias usa sempre a logo cadastrada na instituicao. */
+        var cartao = document.querySelector('.landing-news-right-head');
+        function aplicarLogoNoticias(src){
+            if(!cartao || !src) return;
+            cartao.style.setProperty('background-image',
+                'linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(37,99,235,.78) 48%, rgba(139,92,246,.22) 100%), url("' + src + '")', 'important');
+            cartao.style.setProperty('background-position', 'center, right center', 'important');
+            cartao.style.setProperty('background-size', 'cover, contain', 'important');
+            cartao.style.setProperty('background-repeat', 'no-repeat', 'important');
+        }
+        var logoAtual = document.querySelector('[data-farn-logo]');
+        if(logoAtual && logoAtual.getAttribute('src')) aplicarLogoNoticias(logoAtual.src);
+        /* app.js e este bloco trocam o src das logos quando a configuracao chega. */
+        var observador = new MutationObserver(function(){
+            var img = document.querySelector('.landing-brand-logo') || document.querySelector('[data-farn-logo]');
+            if(img && img.getAttribute('src')) aplicarLogoNoticias(img.src);
+        });
+        document.querySelectorAll('[data-farn-logo]').forEach(function(img){
+            observador.observe(img, { attributes:true, attributeFilter:['src'] });
+        });
         if(!firebase.apps.length) firebase.initializeApp({apiKey:"AIzaSyCjKeFfSkQp9wPxsEytxr9Vrl9g_HmdfF0",projectId:"farn-app",storageBucket:"farn-app.firebasestorage.app"});
         new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com').collection('configuracoes').doc('instituicao').get().then(function(doc){
             if(doc.exists && doc.data().logo){
                 document.querySelectorAll('[data-farn-logo]').forEach(function(img){ img.src = doc.data().logo; });
+                aplicarLogoNoticias(doc.data().logo);
             }
         }).catch(function(){});
     })();
