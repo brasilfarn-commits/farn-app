@@ -1275,10 +1275,10 @@ function enterAdminPanel() {
 
 /* ===== PORTAL LIGA/DESLIGA (MANUTENCAO POR PORTAL) ===== */
 const PORTAIS_MANUTENCAO = [
-    { id: 'aluno', nome: 'ALUNO', cor: '#2563eb', icone: 'fa-user-graduate' },
-    { id: 'formado', nome: 'FORMADO', cor: '#8b5cf6', icone: 'fa-award' },
-    { id: 'coordenacao', nome: 'COORDENAÇÃO', cor: '#16a34a', icone: 'fa-users' },
-    { id: 'docente', nome: 'DOCENTE', cor: '#f59e0b', icone: 'fa-chalkboard-user' }
+    { id: 'aluno', nome: 'ALUNO', cor: '#4b5320', icone: 'fa-user-graduate' },
+    { id: 'formado', nome: 'FORMADO', cor: '#1f3a5f', icone: 'fa-award' },
+    { id: 'coordenacao', nome: 'COORDENAÇÃO', cor: '#6b4f2a', icone: 'fa-users' },
+    { id: 'docente', nome: 'DOCENTE', cor: '#d4af37', icone: 'fa-chalkboard-user' }
 ];
 let estadoManutencaoPortais = {};
 

@@ -65,13 +65,13 @@
         overlay.id = 'farn-manutencao-overlay';
         overlay.setAttribute('role', 'alertdialog');
         overlay.setAttribute('aria-label', 'Portal em manutenção');
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Poppins,Inter,sans-serif;color:#0b1020';
-        overlay.innerHTML = '<div style="max-width:420px;width:100%;text-align:center;background:#fff;border:2px solid #0b1020;border-radius:24px;padding:30px 24px;box-shadow:0 6px 0 #8b5cf6,0 24px 50px rgba(11,16,32,.22)">'
-            + '<div style="width:74px;height:74px;margin:0 auto 18px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#8b5cf6,#ef4444,#f59e0b);border:3px solid #0b1020;box-shadow:0 5px 0 #0b1020;color:#fff;font-size:30px"><i class="fa-solid fa-screwdriver-wrench"></i></div>'
-            + '<div style="font-size:10px;font-weight:800;letter-spacing:.16em;color:#2563eb;margin-bottom:8px">FARN • SISTEMA</div>'
-            + '<h1 style="font-family:Orbitron,Inter,sans-serif;font-size:21px;line-height:1.25;margin:0 0 10px">PORTAL ' + nome + ' EM MANUTENÇÃO</h1>'
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Rajdhani,Inter,sans-serif;color:#12160f';
+        overlay.innerHTML = '<div style="max-width:420px;width:100%;text-align:center;background:#fff;border:2px solid #12160f;border-radius:3px;padding:30px 24px;box-shadow:0 5px 0 #4b5320,0 24px 50px rgba(18,22,15,.25)">'
+            + '<div style="width:74px;height:74px;margin:0 auto 18px;border-radius:2px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1f3a5f,#4b5320,#6b4f2a,#c2b280);border:3px solid #12160f;box-shadow:0 5px 0 #12160f;color:#fff;font-size:30px"><i class="fa-solid fa-screwdriver-wrench"></i></div>'
+            + '<div style="font-size:10px;font-weight:700;letter-spacing:.16em;color:#4b5320;margin-bottom:8px">FARN • SISTEMA</div>'
+            + '<h1 style="font-family:Rajdhani,Inter,sans-serif;font-size:21px;line-height:1.25;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em">PORTAL ' + nome + ' EM MANUTENÇÃO</h1>'
             + '<p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 18px">Este portal está temporariamente desligado pela administração. Volte em instantes.</p>'
-            + '<button type="button" onclick="location.reload()" style="border:2px solid #0b1020;border-radius:12px;background:linear-gradient(90deg,#2563eb,#8b5cf6);color:#fff;font-weight:800;padding:11px 22px;box-shadow:0 4px 0 #0b1020;cursor:pointer"><i class="fa-solid fa-rotate-right" style="margin-right:7px"></i> Tentar novamente</button>'
+            + '<button type="button" onclick="location.reload()" style="border:2px solid #12160f;border-radius:2px;background:linear-gradient(90deg,#1f3a5f,#4b5320);color:#fff;font-weight:700;text-transform:uppercase;padding:11px 22px;box-shadow:0 4px 0 #12160f;cursor:pointer"><i class="fa-solid fa-rotate-right" style="margin-right:7px"></i> Tentar novamente</button>'
             + '</div>';
         (document.body || document.documentElement).appendChild(overlay);
     }

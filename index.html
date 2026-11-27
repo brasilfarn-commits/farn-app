@@ -682,7 +682,6 @@
         .admin-home-subtitle,.admin-home-desc{color:rgba(255,255,255,.82)!important;position:relative;z-index:1}
         .admin-home-desc{margin-bottom:24px!important}
         .admin-home-divider{background:#fff!important;opacity:.7;position:relative;z-index:1}
-        .admin-home-grid{max-width:1000px!important;position:relative;z-index:1;margin-top:4px}
         .admin-home-card{background:rgba(255,255,255,.16)!important;border:1px solid rgba(255,255,255,.22)!important;border-radius:16px!important;padding:14px 10px!important;box-shadow:0 8px 20px rgba(40,20,120,.14)!important;backdrop-filter:blur(6px)}
         .admin-home-card:hover{background:rgba(255,255,255,.24)!important;box-shadow:0 12px 26px rgba(40,20,120,.22)!important}
         .admin-home-card i,.admin-home-card span{color:#fff!important}
@@ -847,7 +846,7 @@
             navigator.serviceWorker.register('./service-worker.js').catch(() => {});
         }
     </script>
-    <link rel="stylesheet" href="tema-game.css?v=9">
+    <link rel="stylesheet" href="tema-game.css?v=11">
 </head>
 <body>
 
@@ -1110,24 +1109,24 @@
                         <div class="admin-home-divider"></div>
                         <p class="admin-home-desc">Sistema de Gestão Educacional</p>
                         <div id="portais-controles" style="margin:22px 0 6px">
-                            <div style="text-align:center;font-size:10px;font-weight:800;letter-spacing:.14em;color:#475569;margin-bottom:12px"><i class="fa-solid fa-gamepad" style="margin-right:6px;color:#8b5cf6"></i> CONTROLE DOS PORTAIS</div>
+                            <div style="text-align:center;font-size:10px;font-weight:800;letter-spacing:.14em;color:#475569;margin-bottom:12px"><i class="fa-solid fa-gamepad" style="margin-right:6px;color:#4b5320"></i> CONTROLE DOS PORTAIS</div>
                             <div class="portal-manutencao-grid">
-                                <div class="portal-manutencao-item" style="--portal-cor:#2563eb">
+                                <div class="portal-manutencao-item" style="--portal-cor:#4b5320">
                                     <button id="btn-portal-aluno" class="portal-manutencao-btn" onclick="togglePortalManutencao('aluno')" title="Desligar portal ALUNO"><i class="fa-solid fa-power-off"></i></button>
                                     <div class="portal-manutencao-nome" id="portal-nome-aluno">DESLIGAR PORTAL ALUNO</div>
                                     <div class="portal-manutencao-status" id="portal-status-aluno"></div>
                                 </div>
-                                <div class="portal-manutencao-item" style="--portal-cor:#8b5cf6">
+                                <div class="portal-manutencao-item" style="--portal-cor:#1f3a5f">
                                     <button id="btn-portal-formado" class="portal-manutencao-btn" onclick="togglePortalManutencao('formado')" title="Desligar portal FORMADO"><i class="fa-solid fa-power-off"></i></button>
                                     <div class="portal-manutencao-nome" id="portal-nome-formado">DESLIGAR PORTAL FORMADO</div>
                                     <div class="portal-manutencao-status" id="portal-status-formado"></div>
                                 </div>
-                                <div class="portal-manutencao-item" style="--portal-cor:#16a34a">
+                                <div class="portal-manutencao-item" style="--portal-cor:#6b4f2a">
                                     <button id="btn-portal-coordenacao" class="portal-manutencao-btn" onclick="togglePortalManutencao('coordenacao')" title="Desligar portal COORDENAÇÃO"><i class="fa-solid fa-power-off"></i></button>
                                     <div class="portal-manutencao-nome" id="portal-nome-coordenacao">DESLIGAR PORTAL COORDENAÇÃO</div>
                                     <div class="portal-manutencao-status" id="portal-status-coordenacao"></div>
                                 </div>
-                                <div class="portal-manutencao-item" style="--portal-cor:#f59e0b">
+                                <div class="portal-manutencao-item" style="--portal-cor:#d4af37">
                                     <button id="btn-portal-docente" class="portal-manutencao-btn" onclick="togglePortalManutencao('docente')" title="Desligar portal DOCENTE"><i class="fa-solid fa-power-off"></i></button>
                                     <div class="portal-manutencao-nome" id="portal-nome-docente">DESLIGAR PORTAL DOCENTE</div>
                                     <div class="portal-manutencao-status" id="portal-status-docente"></div>
@@ -1138,32 +1137,6 @@
                             <div id="admin-home-cnpj" style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px"></div>
                             <div id="admin-home-fone" style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px"></div>
                             <div id="admin-home-email" style="font-size:12px;color:rgba(255,255,255,.7)"></div>
-                        </div>
-                        <div class="admin-home-grid">
-
-                            <div class="admin-home-card" onclick="showAdminSection('admin-relatorios', document.querySelector('.nav-item[data-secao="admin-relatorios"]')))">
-                                <i class="fa-solid fa-chart-bar"></i>
-                                <span>Relatórios</span>
-                            </div>
-
-                            <div class="admin-home-card admin-home-card-download" onclick="showDownloadModal()">
-                                <i class="fa-solid fa-mobile-screen-button"></i>
-                                <span>Baixar App Android</span>
-                            </div>
-
-
-
-
-                            <div class="admin-home-card" onclick="showAdminSection('admin-noticias', document.querySelector('.nav-item[data-secao="admin-noticias"]'))); blogInicializar()">
-                                <i class="fa-solid fa-newspaper"></i>
-                                <span>Blog</span>
-                            </div>
-
-
-
-
-
-
                         </div>
                     </div>
                 </div>
@@ -5077,8 +5050,8 @@
     <script src="farn-storage.js?v=3"></script>
     <script src="aluno-acesso.js?v=7"></script>
     <script src="formado-acesso.js?v=3"></script>
-    <script src="farn-manutencao.js?v=2"></script>
-    <script src="app.js?v=138"></script>
+    <script src="farn-manutencao.js?v=3"></script>
+    <script src="app.js?v=139"></script>
     <script src="recad-admin.js?v=2"></script>
     <script src="cadastro-cursos.js?v=47"></script>
     <script src="apontamentos-adm.js?v=6"></script>
