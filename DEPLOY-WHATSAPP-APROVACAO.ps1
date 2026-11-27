@@ -74,7 +74,7 @@ if ($html -notmatch 'option value="formado"') { throw 'index.html nao tem a opca
 if ($html -notmatch 'formado-acesso\.js\?v=3') { throw 'index.html nao carrega a regra de acesso do formado.' }
 $not = Get-Content -Raw -LiteralPath (Join-Path $raiz 'noticias.html')
 if ($not -notmatch 'formado-acesso\.js\?v=3') { throw 'noticias.html nao carrega a regra de acesso do formado.' }
-if ($not -notmatch 'app\.js\?v=139') { throw 'noticias.html nao esta com app.js?v=139.' }
+if ($not -notmatch 'app\.js\?v=140') { throw 'noticias.html nao esta com app.js?v=140.' }
 $app = Get-Content -Raw -LiteralPath (Join-Path $raiz 'app.js')
 if ($app -notmatch 'landingLoginFormado') { throw 'app.js nao tem o login do formado.' }
 if ($app -notmatch 'togglePortalManutencao') { throw 'app.js nao tem o controle de manutencao por portal.' }
@@ -90,14 +90,14 @@ if ($formado -notmatch "turma\.previsao") { throw 'formado-acesso.js nao usa a p
 $portal = Get-Content -Raw -LiteralPath (Join-Path $raiz 'portal-formado.js')
 if ($portal -notmatch 'farnDeclaracaoPersonalizar') { throw 'portal-formado.js nao usa a regra da declaracao.' }
 $sw = Get-Content -Raw -LiteralPath (Join-Path $raiz 'service-worker.js')
-if ($sw -notmatch 'farn-v139') { throw 'service-worker.js nao esta com o cache farn-v139.' }
+if ($sw -notmatch 'farn-v140') { throw 'service-worker.js nao esta com o cache farn-v140.' }
 if ($sw -notmatch './farn-manutencao\.js') { throw 'service-worker.js nao inclui o controle de manutencao.' }
 if ($sw -notmatch './foto3x4-visualizar\.js') { throw 'service-worker.js nao inclui o visualizador.' }
 if ($sw -notmatch './portal-formado\.html') { throw 'service-worker.js nao inclui o portal do formado.' }
-if ($sw -notmatch './tema-game\.css') { throw 'service-worker.js nao inclui o tema militar.' }
+if ($sw -notmatch './tema-game\.css') { throw 'service-worker.js nao inclui o tema bombeiro.' }
 $tema = Get-Content -Raw -LiteralPath (Join-Path $raiz 'tema-game.css')
-if ($tema -notmatch 'TEMA MILITAR FAB') { throw 'tema-game.css nao encontrado ou incompleto.' }
-if ($html -notmatch 'tema-game\.css\?v=11') { throw 'index.html nao carrega o tema game.' }
+if ($tema -notmatch 'TEMA BOMBEIRO TATICO') { throw 'tema-game.css nao encontrado ou incompleto.' }
+if ($html -notmatch 'tema-game\.css\?v=12') { throw 'index.html nao carrega o tema bombeiro.' }
 Write-Host '[OK] Arquivos locais conferidos.'
 
 if (!(Get-Command scp -ErrorAction SilentlyContinue)) { throw 'scp nao encontrado (OpenSSH Client).' }
@@ -144,11 +144,11 @@ grep -Fq 'togglePortalManutencao' "$DEST/app.js"
 grep -Fq 'farnManutencao' "$DEST/farn-manutencao.js"
 grep -Fq 'btn-portal-aluno' "$DEST/index.html"
 grep -Fq 'formado-acesso.js?v=3' "$DEST/noticias.html"
-grep -Fq 'farn-v139' "$DEST/service-worker.js"
+grep -Fq 'farn-v140' "$DEST/service-worker.js"
 grep -Fq './farn-manutencao.js' "$DEST/service-worker.js"
 grep -Fq './tema-game.css' "$DEST/service-worker.js"
-grep -Fq 'TEMA MILITAR FAB' "$DEST/tema-game.css"
-grep -Fq 'tema-game.css?v=11' "$DEST/index.html"
+grep -Fq 'TEMA BOMBEIRO TATICO' "$DEST/tema-game.css"
+grep -Fq 'tema-game.css?v=12' "$DEST/index.html"
 test -f "$DEST/foto3x4-visualizar.js"
 test -f "$DEST/formado-acesso.js"
 test -f "$DEST/portal-formado.html"
