@@ -1273,54 +1273,77 @@ function enterAdminPanel() {
     carregarEstadoPortais();
 }
 
-/* ===== PORTAL LIGA/DESLIGA (MANUTENCAO) ===== */
-let portaisManutencao = false;
+/* ===== PORTAL LIGA/DESLIGA (MANUTENCAO POR PORTAL) ===== */
+const PORTAIS_MANUTENCAO = [
+    { id: 'aluno', nome: 'ALUNO', cor: '#2563eb', icone: 'fa-user-graduate' },
+    { id: 'formado', nome: 'FORMADO', cor: '#8b5cf6', icone: 'fa-award' },
+    { id: 'coordenacao', nome: 'COORDENAÇÃO', cor: '#16a34a', icone: 'fa-users' },
+    { id: 'docente', nome: 'DOCENTE', cor: '#f59e0b', icone: 'fa-chalkboard-user' },
+    { id: 'curso', nome: 'CURSO', cor: '#ef4444', icone: 'fa-book-open' }
+];
+let estadoManutencaoPortais = {};
 
 async function carregarEstadoPortais() {
+    PORTAIS_MANUTENCAO.forEach(function (p) { estadoManutencaoPortais[p.id] = false; });
     try {
         const snap = await dbFirestore.collection('config').doc('portais').get();
-        portaisManutencao = snap.exists ? (snap.data().manutencao === true) : false;
+        const dados = snap.exists ? (snap.data() || {}) : {};
+        const porPortal = dados.manutencaoPortais || dados.portais || {};
+        const legado = dados.manutencao === true;
+        PORTAIS_MANUTENCAO.forEach(function (p) {
+            estadoManutencaoPortais[p.id] = legado || porPortal[p.id] === true;
+        });
     } catch (e) {
-        portaisManutencao = false;
+        PORTAIS_MANUTENCAO.forEach(function (p) { estadoManutencaoPortais[p.id] = false; });
     }
-    atualizarBotaoPortais();
+    atualizarBotoesPortais();
 }
 
-function atualizarBotaoPortais() {
-    const btn = document.getElementById('btn-portais');
-    const statusEl = document.getElementById('portais-status');
-    if (!btn) return;
+function atualizarBotoesPortais() {
     const isGeral = currentUserData && currentUserData.cpf === ADMIN_CPF;
-    if (!isGeral) {
-        btn.style.display = 'none';
-        if (statusEl) statusEl.style.display = 'none';
-        return;
-    }
-    btn.style.display = '';
-    if (statusEl) statusEl.style.display = '';
-    if (portaisManutencao) {
-        btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Ligar portais';
-        btn.style.background = '#dc2626';
-        btn.style.borderColor = '#dc2626';
-        if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-circle" style="color:#fbbf24"></i> Portais DESLIGADOS - manutencao ativa';
-    } else {
-        btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Desligar portais';
-        btn.style.background = '#16a34a';
-        btn.style.borderColor = '#16a34a';
-        if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-circle" style="color:#22c55e"></i> Portais LIGADOS - acesso liberado';
-    }
+    const area = document.getElementById('portais-controles');
+    if (area) area.style.display = isGeral ? '' : 'none';
+    PORTAIS_MANUTENCAO.forEach(function (p) {
+        const btn = document.getElementById('btn-portal-' + p.id);
+        const nome = document.getElementById('portal-nome-' + p.id);
+        const status = document.getElementById('portal-status-' + p.id);
+        if (!btn) return;
+        const desligado = !!estadoManutencaoPortais[p.id];
+        btn.classList.toggle('desligado', desligado);
+        btn.style.setProperty('--portal-cor', desligado ? '#dc2626' : p.cor);
+        btn.innerHTML = '<i class="fa-solid ' + (desligado ? 'fa-screwdriver-wrench' : 'fa-power-off') + '"></i>';
+        btn.setAttribute('aria-label', (desligado ? 'Ligar' : 'Desligar') + ' portal ' + p.nome);
+        btn.setAttribute('title', (desligado ? 'Ligar' : 'Desligar') + ' portal ' + p.nome);
+        if (nome) nome.textContent = (desligado ? 'LIGAR' : 'DESLIGAR') + ' PORTAL ' + p.nome;
+        if (status) status.innerHTML = '<i class="fa-solid fa-circle" style="color:' + (desligado ? '#fbbf24' : '#22c55e') + '"></i> ' + (desligado ? 'MANUTENÇÃO' : 'ONLINE');
+    });
 }
 
-async function togglePortais() {
-    if (!currentUserData) return;
-    const novo = !portaisManutencao;
+async function togglePortalManutencao(id) {
+    if (!currentUserData || currentUserData.cpf !== ADMIN_CPF) return;
+    const portal = PORTAIS_MANUTENCAO.find(function (p) { return p.id === id; });
+    if (!portal) return;
+    const novo = !estadoManutencaoPortais[id];
     try {
-        await dbFirestore.collection('config').doc('portais').set({ manutencao: novo }, { merge: true });
-        portaisManutencao = novo;
-        atualizarBotaoPortais();
-        alert(novo ? 'Portais desligados. Os usuarios verao a mensagem de manutencao.' : 'Portais ligados. Acesso liberado aos portais.');
+        const mapa = {};
+        PORTAIS_MANUTENCAO.forEach(function (p) {
+            mapa[p.id] = !!(p.id === id ? novo : estadoManutencaoPortais[p.id]);
+        });
+        /* O campo antigo e zerado para nao manter todos os portais desligados
+           depois que um unico portal for religado. */
+        await dbFirestore.collection('config').doc('portais').set({
+            manutencaoPortais: mapa,
+            manutencao: false,
+            atualizadoEm: Date.now()
+        }, { merge: true });
+        estadoManutencaoPortais[id] = novo;
+        if (window.farnManutencao) window.farnManutencao.invalidar();
+        atualizarBotoesPortais();
+        alert(novo
+            ? 'Portal ' + portal.nome + ' desligado. Os usuários verão a tela de manutenção.'
+            : 'Portal ' + portal.nome + ' ligado. Acesso liberado.');
     } catch (e) {
-        alert('Erro ao salvar o estado dos portais: ' + e.message);
+        alert('Erro ao salvar o estado do portal: ' + e.message);
     }
 }
 
@@ -1708,6 +1731,10 @@ async function landingLoginDocente(cpf, senha) {
         landingShowLoginError('Acesso do docente indisponível no momento.');
         return false;
     }
+    if (window.farnManutencao && await window.farnManutencao.ativo(dbFirestore, 'docente')) {
+        landingShowLoginError('Portal do docente em manutenção. Tente novamente mais tarde.');
+        return false;
+    }
     try {
         var snap = await dbFirestore.collection('docentesAdmin').where('cpf', '==', cpf).limit(1).get();
         var docente = null;
@@ -1748,6 +1775,10 @@ async function landingLoginAluno(cpf, senha) {
         landingShowLoginError('Acesso do aluno indisponível no momento.');
         return false;
     }
+    if (window.farnManutencao && await window.farnManutencao.ativo(dbFirestore, 'aluno')) {
+        landingShowLoginError('Portal do aluno em manutenção. Tente novamente mais tarde.');
+        return false;
+    }
     try {
         var aluno = await farnAlunoLocalizar(dbFirestore, cpf, senha);
         if (!aluno) {
@@ -1772,6 +1803,10 @@ async function landingLoginAluno(cpf, senha) {
 async function landingLoginFormado(cpf, senha) {
     if (!dbFirestore || typeof farnFormadoLocalizar !== 'function') {
         landingShowLoginError('Acesso do formado indisponível no momento.');
+        return false;
+    }
+    if (window.farnManutencao && await window.farnManutencao.ativo(dbFirestore, 'formado')) {
+        landingShowLoginError('Portal do formado em manutenção. Tente novamente mais tarde.');
         return false;
     }
     try {
@@ -1800,6 +1835,10 @@ async function landingLoginFormado(cpf, senha) {
 async function landingLoginCoordenacao(cpf, senha) {
     if (!dbFirestore) {
         landingShowLoginError('Acesso da coordenação indisponível no momento.');
+        return false;
+    }
+    if (window.farnManutencao && await window.farnManutencao.ativo(dbFirestore, 'coordenacao')) {
+        landingShowLoginError('Portal da coordenação em manutenção. Tente novamente mais tarde.');
         return false;
     }
     try {

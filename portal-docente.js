@@ -1496,8 +1496,17 @@
     window.pdSalvarApontamento = pdSalvarApontamento;
     window.pdLogout = function () { pdSair(true); };
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pdRestaurarSessao);
-    else pdRestaurarSessao();
+    function pdIniciar() {
+        if (window.farnManutencao) {
+            window.farnManutencao.proteger(null, 'docente').then(function (parado) {
+                if (!parado) pdRestaurarSessao();
+            });
+        } else {
+            pdRestaurarSessao();
+        }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pdIniciar);
+    else pdIniciar();
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./service-worker.js').catch(function () {});

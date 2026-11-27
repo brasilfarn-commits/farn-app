@@ -368,6 +368,10 @@
         if (cpf.length !== 11 || !senha) { pfErro('Informe CPF e senha.'); return false; }
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...'; }
         try {
+            if (global.farnManutencao && await global.farnManutencao.ativo(dbFirestore, 'formado')) {
+                pfErro('Portal do formado em manutenção. Tente novamente mais tarde.');
+                return false;
+            }
             if (typeof farnFormadoLocalizar !== 'function') throw new Error('Regra de acesso indisponível.');
             var formado = await farnFormadoLocalizar(dbFirestore, cpf, senha);
             if (!formado) {
@@ -402,7 +406,8 @@
     global.pfAbrirCertificado = pfAbrirCertificado;
     global.pfFecharCertificado = pfFecharCertificado;
 
-    window.addEventListener('DOMContentLoaded', function () {
+    window.addEventListener('DOMContentLoaded', async function () {
+        if (global.farnManutencao && await global.farnManutencao.proteger(dbFirestore, 'formado', [PF_CHAVE])) return;
         var salvo = null;
         try { salvo = JSON.parse(localStorage.getItem(PF_CHAVE) || 'null'); } catch (e) {}
         if (!salvo || !salvo.cpf) return;

@@ -487,4 +487,12 @@ function pcRenderApostilas() {
     box.innerHTML = html || '<div class="pc-aviso">Nenhuma apostila anexada a este curso.</div>';
 }
 
-window.addEventListener('DOMContentLoaded', pcInit);
+window.addEventListener('DOMContentLoaded', function () {
+    if (window.farnManutencao) {
+        window.farnManutencao.proteger(null, 'curso').then(function (parado) {
+            if (!parado) pcInit();
+        });
+    } else {
+        pcInit();
+    }
+});

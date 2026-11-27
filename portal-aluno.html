@@ -94,7 +94,7 @@
         .pa-apt-amarelo .pa-apt-selo { background:#fef3c7; color:#92400e; }
         @media (max-width:520px) { .pa-topbar h1 { font-size:14px; } .pa-topo-usuario { margin-left:0; width:100%; justify-content:flex-start; text-align:left; } }
     </style>
-    <link rel="stylesheet" href="tema-game.css?v=6">
+    <link rel="stylesheet" href="tema-game.css?v=7">
 </head>
 <body>
     <div class="pa-login-wrap" id="pa-tela-login">
@@ -178,6 +178,7 @@
     </div>
 
     <script src="farn-db.js?v=22"></script>
+    <script src="farn-manutencao.js?v=1"></script>
     <script src="aluno-acesso.js?v=7"></script>
     <script src="foto3x4-visualizar.js?v=1"></script>
     <script>
@@ -549,6 +550,10 @@
             if (cpf.length !== 11 || !senha) { paErro('Informe CPF e senha.'); return false; }
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...'; }
             try {
+                if (window.farnManutencao && await window.farnManutencao.ativo(dbFirestore, 'aluno')) {
+                    paErro('Portal do aluno em manutenção. Tente novamente mais tarde.');
+                    return false;
+                }
                 var aluno = typeof farnAlunoLocalizar === 'function'
                     ? await farnAlunoLocalizar(dbFirestore, cpf, senha) : null;
                 if (!aluno) {
@@ -570,7 +575,8 @@
             try { localStorage.removeItem(PA_CHAVE); } catch (e) {}
             location.href = 'index.html';
         }
-        window.addEventListener('DOMContentLoaded', function () {
+        window.addEventListener('DOMContentLoaded', async function () {
+            if (window.farnManutencao && await window.farnManutencao.proteger(dbFirestore, 'aluno', [PA_CHAVE])) return;
             var salvo = null;
             try { salvo = JSON.parse(localStorage.getItem(PA_CHAVE) || 'null'); } catch (e) {}
             if (!salvo || !salvo.cpf) return;

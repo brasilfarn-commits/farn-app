@@ -829,8 +829,17 @@
     window.pcoFecharForm = pcoFecharForm;
     window.pcoFormSalvar = pcoFormSalvar;
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pcoRestaurarSessao);
-    else pcoRestaurarSessao();
+    function pcoIniciar() {
+        if (window.farnManutencao) {
+            window.farnManutencao.proteger(null, 'coordenacao').then(function (parado) {
+                if (!parado) pcoRestaurarSessao();
+            });
+        } else {
+            pcoRestaurarSessao();
+        }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pcoIniciar);
+    else pcoIniciar();
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
