@@ -846,7 +846,7 @@
             navigator.serviceWorker.register('./service-worker.js').catch(() => {});
         }
     </script>
-    <link rel="stylesheet" href="tema-game.css?v=14">
+    <link rel="stylesheet" href="tema-game.css?v=15">
 </head>
 <body>
 
@@ -913,47 +913,230 @@
             </nav>
         </aside>
 
-        <!-- INSTITUICAO + NOTICIAS -->
-        <section class="landing-sobre" id="landing-sobre">
-            <div class="landing-sobre-inner landing-news-grid">
-                <div class="landing-news-left">
-                    <div class="landing-sobre-text">
-                        <img data-farn-logo src="logo-farn.png.png" alt="BS Brasil" class="landing-sobre-logo">
-                        <div>
-                            <span class="landing-eyebrow">Nossa Instituição</span>
-                            <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
-                            <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
-                        </div>
+        <!-- HERO DIVIDIDO (ESTRUTURA DO ANEXO) -->
+        <section class="landing-hero">
+            <div class="landing-hero-inner">
+                <div class="landing-hero-text">
+                    <span class="landing-eyebrow">Ordem e profissionalismo</span>
+                    <h1>Formação técnica com <span>disciplina, honra e dedicação</span></h1>
+                    <p>Preparamos cidadãos preparados para os desafios da carreira e da vida, com corpo docente qualificado, estrutura digital e acompanhamento em cada etapa da formação.</p>
+                    <div class="landing-hero-actions">
+                        <button type="button" class="landing-hero-btn primary" onclick="landingFocarLogin()"><i class="fa-solid fa-right-to-bracket"></i> Acessar portal</button>
+                        <a class="landing-hero-btn ghost" href="noticias.html"><i class="fa-solid fa-newspaper"></i> Últimas notícias</a>
                     </div>
-                    <div class="landing-values">
-                        <div class="landing-value">
-                            <i class="fa-solid fa-helmet-safety"></i>
-                            <h4>Disciplina</h4>
-                            <p>Rotina, hierarquia e compromisso como base do aprendizado.</p>
-                        </div>
-                        <div class="landing-value">
-                            <i class="fa-solid fa-hand-fist"></i>
-                            <h4>Coragem</h4>
-                            <p>Desenvolvimento físico, mental e emocional do aluno.</p>
-                        </div>
-                        <div class="landing-value">
-                            <i class="fa-solid fa-book-open"></i>
-                            <h4>Conhecimento</h4>
-                            <p>Conteúdo técnico, atualizado e aplicado a cada etapa.</p>
-                        </div>
+                    <div class="landing-hero-chips">
+                        <span><i class="fa-solid fa-award"></i> Certificado digital</span>
+                        <span><i class="fa-solid fa-lock"></i> Ambiente seguro</span>
+                        <span><i class="fa-solid fa-mobile-screen"></i> Acesso 100% online</span>
                     </div>
                 </div>
-                <div class="landing-news-right">
-                    <div class="landing-news-right-inner">
-                        <div class="landing-news-right-head">
-                            <span class="landing-eyebrow">Notícias</span>
-                            <h2>Fique por dentro das novidades</h2>
-                        </div>
-                        <div id="landing-noticias-feed"></div>
-                        <a class="landing-noticias-link" href="noticias.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-weight:600">Ver todas as notícias <i class="fa-solid fa-arrow-right"></i></a>
+                <div class="landing-hero-art">
+                    <div class="landing-hero-orb"></div>
+                    <div class="landing-hero-frame">
+                        <img data-farn-logo src="logo-farn.png.png" alt="Logo da instituição">
+                    </div>
+                    <span class="landing-hero-tag">Ensino • Resgate • Socorro</span>
+                    <div class="landing-float-card fc1">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <div><strong>Certificados</strong><span>Emissão digital</span></div>
+                    </div>
+                    <div class="landing-float-card fc2">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <div><strong>Formação</strong><span>Padrão técnico</span></div>
+                    </div>
+                    <div class="landing-float-card fc3">
+                        <i class="fa-solid fa-star"></i>
+                        <div><strong>16/04</strong><span>Desde 2006</span></div>
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- FAIXA ESCURA DE ESTATISTICAS -->
+        <section class="landing-stats">
+            <div class="landing-stats-inner">
+                <div class="landing-stat"><strong>2006</strong><span>Fundação da instituição</span></div>
+                <div class="landing-stat"><strong>20+</strong><span>Anos de trajetória</span></div>
+                <div class="landing-stat"><strong>100%</strong><span>Certificação digital</span></div>
+                <div class="landing-stat"><strong>24h</strong><span>Acesso ao portal</span></div>
+            </div>
+        </section>
+
+        <!-- INSTITUICAO + VALORES -->
+        <section class="landing-sobre" id="landing-sobre">
+            <div class="landing-sobre-inner">
+                <div class="landing-sobre-text">
+                    <img data-farn-logo src="logo-farn.png.png" alt="BS Brasil" class="landing-sobre-logo">
+                    <div>
+                        <span class="landing-eyebrow">Nossa Instituição</span>
+                        <h2 id="landing-razao-titulo">Instituição de ensino com padrão paramilitar</h2>
+                        <p>Nossa formação é baseada em valores como <strong>disciplina, honra e dedicação</strong>, preparando cidadãos preparados para os desafios da carreira e da vida.</p>
+                    </div>
+                </div>
+                <div class="landing-values">
+                    <div class="landing-value">
+                        <i class="fa-solid fa-helmet-safety"></i>
+                        <h4>Disciplina</h4>
+                        <p>Rotina, hierarquia e compromisso como base do aprendizado.</p>
+                    </div>
+                    <div class="landing-value">
+                        <i class="fa-solid fa-hand-fist"></i>
+                        <h4>Coragem</h4>
+                        <p>Desenvolvimento físico, mental e emocional do aluno.</p>
+                    </div>
+                    <div class="landing-value">
+                        <i class="fa-solid fa-book-open"></i>
+                        <h4>Conhecimento</h4>
+                        <p>Conteúdo técnico, atualizado e aplicado a cada etapa.</p>
+                    </div>
+                    <div class="landing-value">
+                        <i class="fa-solid fa-handshake-angle"></i>
+                        <h4>Ética</h4>
+                        <p>Conduta, respeito e responsabilidade em cada atividade.</p>
+                    </div>
+                    <div class="landing-value">
+                        <i class="fa-solid fa-people-group"></i>
+                        <h4>Trabalho em equipe</h4>
+                        <p>Formação preparada para ações integradas e em conjunto.</p>
+                    </div>
+                    <div class="landing-value">
+                        <i class="fa-solid fa-medal"></i>
+                        <h4>Excelência</h4>
+                        <p>Padrão de qualidade do início ao certificado final.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODALIDADES (CARTOES DE VALORES) -->
+        <section class="landing-planos">
+            <div class="landing-section-head">
+                <span class="landing-eyebrow">Modalidades</span>
+                <h2>Escolha a sua formação</h2>
+                <p>Turmas com estrutura técnica, acompanhamento de coordenação e certificação ao concluir.</p>
+            </div>
+            <div class="landing-plans">
+                <div class="landing-plan">
+                    <span class="landing-plan-num">01</span>
+                    <h3>Formação inicial</h3>
+                    <p class="landing-plan-desc">Primeiros passos com base técnica e disciplina.</p>
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> Aulas teóricas e práticas</li>
+                        <li><i class="fa-solid fa-check"></i> Acompanhamento do docente</li>
+                        <li><i class="fa-solid fa-check"></i> Acesso pelo portal do aluno</li>
+                        <li><i class="fa-solid fa-check"></i> Certificado ao concluir</li>
+                    </ul>
+                    <a class="landing-plan-btn" href="#" onclick="landingFocarLogin();return false;">Quero começar</a>
+                </div>
+                <div class="landing-plan destaque">
+                    <span class="landing-plan-badge">Destaque</span>
+                    <span class="landing-plan-num">02</span>
+                    <h3>Aperfeiçoamento</h3>
+                    <p class="landing-plan-desc">Aprofundamento para quem já concluiu a etapa inicial.</p>
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> Conteúdo avançado</li>
+                        <li><i class="fa-solid fa-check"></i> Turmas reduzidas</li>
+                        <li><i class="fa-solid fa-check"></i> Avaliações por módulo</li>
+                        <li><i class="fa-solid fa-check"></i> Certificado digital</li>
+                    </ul>
+                    <a class="landing-plan-btn" href="#" onclick="landingFocarLogin();return false;">Saiba mais</a>
+                </div>
+                <div class="landing-plan">
+                    <span class="landing-plan-num">03</span>
+                    <h3>Reciclagem</h3>
+                    <p class="landing-plan-desc">Atualização de conhecimentos e normas vigentes.</p>
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> Conteúdo atualizado</li>
+                        <li><i class="fa-solid fa-check"></i> Horário flexível</li>
+                        <li><i class="fa-solid fa-check"></i> Suporte da coordenação</li>
+                        <li><i class="fa-solid fa-check"></i> Registro no histórico</li>
+                    </ul>
+                    <a class="landing-plan-btn" href="#" onclick="landingFocarLogin();return false;">Falar com a coordenação</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- GRAFICO DE DESEMPENHO -->
+        <section class="landing-grafico">
+            <div class="landing-section-head">
+                <span class="landing-eyebrow">Desempenho</span>
+                <h2>Evolução dos nossos alunos</h2>
+                <p>Acompanhamento de frequência e aprovação ao longo das etapas.</p>
+            </div>
+            <div class="landing-chart-card">
+                <div class="landing-chart-main">
+                    <div class="landing-chart-legend">
+                        <span><i class="dot oliva"></i> Aprovações</span>
+                        <span><i class="dot ouro"></i> Frequência</span>
+                    </div>
+                    <div class="landing-chart-bars">
+                        <div class="landing-bar"><span style="height:46%"></span><em>Jan</em></div>
+                        <div class="landing-bar"><span style="height:58%"></span><em>Mar</em></div>
+                        <div class="landing-bar"><span style="height:52%"></span><em>Mai</em></div>
+                        <div class="landing-bar"><span style="height:70%"></span><em>Jul</em></div>
+                        <div class="landing-bar"><span style="height:64%"></span><em>Set</em></div>
+                        <div class="landing-bar"><span style="height:82%"></span><em>Nov</em></div>
+                        <div class="landing-bar"><span style="height:92%"></span><em>Dez</em></div>
+                    </div>
+                </div>
+                <div class="landing-chart-side">
+                    <div class="landing-donut"><span>92%</span></div>
+                    <h4>Taxa de aprovação</h4>
+                    <p>Alunos aprovados nas avaliações do período.</p>
+                    <div class="landing-chart-mini">
+                        <div><strong>98%</strong><span>Frequência</span></div>
+                        <div><strong>100%</strong><span>Certificados</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEPOIMENTOS -->
+        <section class="landing-depoimentos">
+            <div class="landing-section-head">
+                <span class="landing-eyebrow">Depoimentos</span>
+                <h2>Quem viveu a formação recomenda</h2>
+                <p>A opinião de quem passou pelos nossos portais.</p>
+            </div>
+            <div class="landing-depo-grid">
+                <div class="landing-depo">
+                    <div class="landing-depo-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                    <p>“A rotina e o acompanhamento dos docentes fizeram toda a diferença na minha formação.”</p>
+                    <div class="landing-depo-user"><span>A F</span><div><strong>Aluno(a) formado(a)</strong><em>Turma 2026</em></div></div>
+                </div>
+                <div class="landing-depo">
+                    <div class="landing-depo-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                    <p>“Portal simples de usar: certificados, dados e notícias sempre à mão.”</p>
+                    <div class="landing-depo-user"><span>D C</span><div><strong>Corpo docente</strong><em>Ensino técnico</em></div></div>
+                </div>
+                <div class="landing-depo">
+                    <div class="landing-depo-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+                    <p>“Organização das turmas e comunicação muito boas do início ao fim.”</p>
+                    <div class="landing-depo-user"><span>C O</span><div><strong>Coordenação</strong><em>Gestão de turmas</em></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NOTICIAS -->
+        <section class="landing-noticias-sec">
+            <div class="landing-news-right-inner">
+                <div class="landing-news-right-head">
+                    <span class="landing-eyebrow">Notícias</span>
+                    <h2>Fique por dentro das novidades</h2>
+                </div>
+                <div id="landing-noticias-feed"></div>
+                <a class="landing-noticias-link" href="noticias.html">Ver todas as notícias <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </section>
+
+        <!-- BANNER DE CHAMADA -->
+        <section class="landing-cta">
+            <div class="landing-cta-text">
+                <span class="landing-eyebrow">Pronto para começar?</span>
+                <h2>Acesse o portal e acompanhe sua formação</h2>
+                <p>Entre com o seu CPF e senha para ver notas, certificados e notícias.</p>
+            </div>
+            <button type="button" class="landing-hero-btn primary" onclick="landingFocarLogin()"><i class="fa-solid fa-right-to-bracket"></i> Entrar agora</button>
         </section>
 
         <footer class="landing-footer" id="landing-contato">
@@ -5066,7 +5249,7 @@
         function aplicarLogoNoticias(src){
             if(!cartao || !src) return;
             cartao.style.setProperty('background-image',
-                'linear-gradient(100deg, rgba(11,16,32,.94) 0%, rgba(37,99,235,.78) 48%, rgba(139,92,246,.22) 100%), url("' + src + '")', 'important');
+                'linear-gradient(100deg, rgba(17,24,39,.96) 0%, rgba(75,83,32,.88) 48%, rgba(212,175,55,.34) 100%), url("' + src + '")', 'important');
             cartao.style.setProperty('background-position', 'center, right center', 'important');
             cartao.style.setProperty('background-size', 'cover, contain', 'important');
             cartao.style.setProperty('background-repeat', 'no-repeat', 'important');

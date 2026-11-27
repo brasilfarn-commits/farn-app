@@ -90,14 +90,17 @@ if ($formado -notmatch "turma\.previsao") { throw 'formado-acesso.js nao usa a p
 $portal = Get-Content -Raw -LiteralPath (Join-Path $raiz 'portal-formado.js')
 if ($portal -notmatch 'farnDeclaracaoPersonalizar') { throw 'portal-formado.js nao usa a regra da declaracao.' }
 $sw = Get-Content -Raw -LiteralPath (Join-Path $raiz 'service-worker.js')
-if ($sw -notmatch 'farn-v142') { throw 'service-worker.js nao esta com o cache farn-v142.' }
+if ($sw -notmatch 'farn-v143') { throw 'service-worker.js nao esta com o cache farn-v143.' }
 if ($sw -notmatch './farn-manutencao\.js') { throw 'service-worker.js nao inclui o controle de manutencao.' }
 if ($sw -notmatch './foto3x4-visualizar\.js') { throw 'service-worker.js nao inclui o visualizador.' }
 if ($sw -notmatch './portal-formado\.html') { throw 'service-worker.js nao inclui o portal do formado.' }
 if ($sw -notmatch './tema-game\.css') { throw 'service-worker.js nao inclui o tema dourado.' }
 $tema = Get-Content -Raw -LiteralPath (Join-Path $raiz 'tema-game.css')
 if ($tema -notmatch 'TEMA OURO MODERNO') { throw 'tema-game.css nao encontrado ou incompleto.' }
-if ($html -notmatch 'tema-game\.css\?v=14') { throw 'index.html nao carrega o tema dourado.' }
+if ($html -notmatch 'tema-game\.css\?v=15') { throw 'index.html nao carrega o tema dourado (v=15).' }
+if ($html -notmatch 'landing-hero') { throw 'index.html nao tem o hero da landing.' }
+if ($html -notmatch 'landing-noticias-feed') { throw 'index.html nao tem o feed de noticias.' }
+if ($html -notmatch 'landing-cta') { throw 'index.html nao tem o banner de chamada da landing.' }
 Write-Host '[OK] Arquivos locais conferidos.'
 
 if (!(Get-Command scp -ErrorAction SilentlyContinue)) { throw 'scp nao encontrado (OpenSSH Client).' }
@@ -144,11 +147,13 @@ grep -Fq 'togglePortalManutencao' "$DEST/app.js"
 grep -Fq 'farnManutencao' "$DEST/farn-manutencao.js"
 grep -Fq 'btn-portal-aluno' "$DEST/index.html"
 grep -Fq 'formado-acesso.js?v=3' "$DEST/noticias.html"
-grep -Fq 'farn-v142' "$DEST/service-worker.js"
+grep -Fq 'farn-v143' "$DEST/service-worker.js"
 grep -Fq './farn-manutencao.js' "$DEST/service-worker.js"
 grep -Fq './tema-game.css' "$DEST/service-worker.js"
 grep -Fq 'TEMA OURO MODERNO' "$DEST/tema-game.css"
-grep -Fq 'tema-game.css?v=14' "$DEST/index.html"
+grep -Fq 'tema-game.css?v=15' "$DEST/index.html"
+grep -Fq 'landing-hero' "$DEST/index.html"
+grep -Fq 'landing-noticias-feed' "$DEST/index.html"
 test -f "$DEST/foto3x4-visualizar.js"
 test -f "$DEST/formado-acesso.js"
 test -f "$DEST/portal-formado.html"

@@ -128,7 +128,7 @@
         var img = new Image();
         img.onload = function () {
             card.style.setProperty('background-image',
-                'linear-gradient(100deg, rgba(11,16,32,.90) 0%, rgba(139,92,246,.78) 55%, rgba(249,115,22,.62) 100%), url("' + url + '")', 'important');
+                'linear-gradient(100deg, rgba(17,24,39,.94) 0%, rgba(75,83,32,.84) 55%, rgba(212,175,55,.55) 100%), url("' + url + '")', 'important');
             card.style.setProperty('background-position', 'center, right center', 'important');
             card.style.setProperty('background-size', 'cover, contain', 'important');
             card.style.setProperty('background-repeat', 'no-repeat', 'important');
