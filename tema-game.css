@@ -647,49 +647,49 @@ input:focus, select:focus, textarea:focus {
 /* ---------------- CONTROLE DE MANUTENCAO POR PORTAL ---------------- */
 .portal-manutencao-grid {
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(138px,1fr));
-    gap:12px;
+    grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+    gap:9px;
 }
 .portal-manutencao-item {
     background:#fff !important;
     border:2px solid var(--game-black) !important;
-    border-radius:20px !important;
-    padding:14px 10px 12px;
+    border-radius:16px !important;
+    padding:10px 7px 9px;
     text-align:center;
-    box-shadow:0 4px 0 var(--portal-cor), 0 12px 24px rgba(11,16,32,.10) !important;
+    box-shadow:0 3px 0 var(--portal-cor), 0 8px 18px rgba(11,16,32,.10) !important;
     transition:transform .16s ease, box-shadow .16s ease;
 }
-.portal-manutencao-item:hover { transform:translateY(-3px); }
+.portal-manutencao-item:hover { transform:translateY(-2px); }
 .portal-manutencao-btn {
-    width:58px; height:58px;
-    margin:0 auto 10px;
+    width:40px; height:40px;
+    margin:0 auto 7px;
     display:flex; align-items:center; justify-content:center;
-    border:3px solid var(--game-black) !important;
+    border:2px solid var(--game-black) !important;
     border-radius:50% !important;
     background:linear-gradient(135deg,var(--portal-cor),rgba(255,255,255,.85)) !important;
     color:#fff !important;
-    font-size:22px !important;
-    box-shadow:0 4px 0 var(--game-black), 0 8px 16px rgba(11,16,32,.18) !important;
+    font-size:15px !important;
+    box-shadow:0 3px 0 var(--game-black), 0 6px 12px rgba(11,16,32,.16) !important;
     cursor:pointer;
     transition:transform .14s ease, box-shadow .14s ease;
 }
-.portal-manutencao-btn:hover { transform:translateY(-2px); box-shadow:0 6px 0 var(--game-black) !important; }
-.portal-manutencao-btn:active { transform:translateY(2px); box-shadow:0 2px 0 var(--game-black) !important; }
+.portal-manutencao-btn:hover { transform:translateY(-2px); box-shadow:0 5px 0 var(--game-black) !important; }
+.portal-manutencao-btn:active { transform:translateY(1px); box-shadow:0 2px 0 var(--game-black) !important; }
 .portal-manutencao-btn.desligado {
     background:linear-gradient(135deg,#dc2626,#7f1d1d) !important;
-    box-shadow:0 4px 0 var(--game-black), 0 0 0 4px rgba(220,38,38,.22) !important;
+    box-shadow:0 3px 0 var(--game-black), 0 0 0 3px rgba(220,38,38,.22) !important;
 }
 .portal-manutencao-nome {
     font-family:'Orbitron', Inter, sans-serif !important;
-    font-size:9px !important;
+    font-size:8px !important;
     font-weight:800 !important;
-    line-height:1.4;
-    letter-spacing:.04em;
+    line-height:1.35;
+    letter-spacing:.03em;
     color:var(--game-ink) !important;
 }
 .portal-manutencao-status {
-    margin-top:6px;
-    font-size:10px !important;
+    margin-top:4px;
+    font-size:9px !important;
     font-weight:700 !important;
     color:#475569 !important;
 }

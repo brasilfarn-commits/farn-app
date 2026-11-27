@@ -13,15 +13,13 @@
         aluno: 'ALUNO',
         formado: 'FORMADO',
         coordenacao: 'COORDENAÇÃO',
-        docente: 'DOCENTE',
-        curso: 'CURSO'
+        docente: 'DOCENTE'
     };
     var SESSOES = {
         aluno: ['aluno_sessao'],
         formado: ['formado_sessao'],
         coordenacao: ['coordenacao_sessao'],
-        docente: ['docente_sessao'],
-        curso: ['pu_sessao']
+        docente: ['docente_sessao']
     };
     var cache = null;
 

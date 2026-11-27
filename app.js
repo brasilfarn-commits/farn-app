@@ -1278,8 +1278,7 @@ const PORTAIS_MANUTENCAO = [
     { id: 'aluno', nome: 'ALUNO', cor: '#2563eb', icone: 'fa-user-graduate' },
     { id: 'formado', nome: 'FORMADO', cor: '#8b5cf6', icone: 'fa-award' },
     { id: 'coordenacao', nome: 'COORDENAÇÃO', cor: '#16a34a', icone: 'fa-users' },
-    { id: 'docente', nome: 'DOCENTE', cor: '#f59e0b', icone: 'fa-chalkboard-user' },
-    { id: 'curso', nome: 'CURSO', cor: '#ef4444', icone: 'fa-book-open' }
+    { id: 'docente', nome: 'DOCENTE', cor: '#f59e0b', icone: 'fa-chalkboard-user' }
 ];
 let estadoManutencaoPortais = {};
 
