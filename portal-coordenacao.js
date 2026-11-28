@@ -21,7 +21,7 @@
     var CHAVE_SESSAO = 'coordenacao_sessao';
     /* Usa a MESMA instancia dos modulos do administrador (coordenacao.js e
        portal-permissoes.js), definida no inline script do HTML. */
-    var db = window.dbFirestore || new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+    var db = window.dbFirestore || new FarnDB('https://lessons-refinance-likelihood-hop.trycloudflare.com');
 
     var pcoUser = null;
     var pcoCursos = [];

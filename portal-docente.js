@@ -25,7 +25,7 @@
         appId: '1:16254677061:web:3d42c64edfe5cdbffcf32c'
     };
     if (window.firebase && firebase.apps && !firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    var db = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+    var db = new FarnDB('https://lessons-refinance-likelihood-hop.trycloudflare.com');
 
     var pdUser = null;
     var pdCursos = [];

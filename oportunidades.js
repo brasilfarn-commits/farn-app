@@ -1,7 +1,7 @@
 (function(){
   if (typeof firebase === 'undefined') return;
 
-  var db = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+  var db = new FarnDB('https://lessons-refinance-likelihood-hop.trycloudflare.com');
   var storage = null;
   try { if (firebase.storage) storage = firebase.storage(); } catch(e) {}
   var _pendingFile = null;

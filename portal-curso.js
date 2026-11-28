@@ -14,7 +14,7 @@ const firebaseConfig = {
     appId: "1:16254677061:web:3d42c64edfe5cdbffcf32c"
 };
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const dbFirestore = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+const dbFirestore = new FarnDB('https://lessons-refinance-likelihood-hop.trycloudflare.com');
 
 var pcCursoId = '', pcCurso = {}, pcAluno = {}, pcCpf = '';
 var pcAulas = [], pcApontamentos = [], pcAvs = [], pcRespostas = [], pcFicha = {};

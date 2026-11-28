@@ -139,7 +139,7 @@
       setTimeout(aguardarFirebase, 100);
       return;
     }
-    db = new FarnDB('https://howto-alliance-pest-contest.trycloudflare.com');
+    db = new FarnDB('https://lessons-refinance-likelihood-hop.trycloudflare.com');
     iniciar();
   }
 

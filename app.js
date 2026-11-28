@@ -4529,7 +4529,7 @@ function farnSiteBaseURL() {
         var cfg = JSON.parse(localStorage.getItem('farn_api_config') || 'null');
         if (cfg && cfg.url) return String(cfg.url).replace(/\/$/, '');
     } catch (e) {}
-    return 'https://howto-alliance-pest-contest.trycloudflare.com';
+    return 'https://lessons-refinance-likelihood-hop.trycloudflare.com';
 }
 
 /* Botao de ampliar com zoom sobreposto a uma miniatura de foto 3x4. */

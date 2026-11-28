@@ -12,8 +12,9 @@
   var KEY_QUEUE = 'farn_db_queue_v1';
   var KEY_SINCE = 'farn_db_since_v1';
   var KEY_SYNC = 'farn_db_sync_v1';
-  var URL_PADRAO = 'https://howto-alliance-pest-contest.trycloudflare.com';
+  var URL_PADRAO = 'https://lessons-refinance-likelihood-hop.trycloudflare.com';
   var URLS_TUNEIS_ANTIGOS = [
+    'https://howto-alliance-pest-contest.trycloudflare.com',
     'https://planets-linear-vbulletin-colin.trycloudflare.com',
     'https://location-anthropology-martial-fares.trycloudflare.com'
   ];
